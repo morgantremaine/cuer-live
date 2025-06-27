@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -22,13 +23,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('AuthProvider: Initializing auth state...');
+    console.log('Initializing auth state...');
     
     // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthProvider: Auth state changed:', event, session?.user?.email || 'no user');
+      console.log('Auth state changed:', event, session?.user?.email || 'no user');
       setUser(session?.user ?? null)
       setLoading(false)
       
@@ -43,9 +44,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // THEN get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        console.error('AuthProvider: Error getting initial session:', error);
+        console.error('Error getting initial session:', error);
       }
-      console.log('AuthProvider: Initial session:', session?.user?.email || 'no user');
+      console.log('Initial session:', session?.user?.email || 'no user');
       setUser(session?.user ?? null)
       setLoading(false)
       
@@ -56,27 +57,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })
 
     return () => {
-      console.log('AuthProvider: Cleaning up auth subscription');
+      console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     }
-  }, [])
+  }, []) // Remove the initialized dependency to prevent multiple runs
 
   const signIn = async (email: string, password: string) => {
-    console.log('AuthProvider: Attempting to sign in:', email);
+    console.log('Attempting to sign in:', email);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
     if (error) {
-      console.error('AuthProvider: Sign in error:', error);
-    } else {
-      console.log('AuthProvider: Sign in successful');
+      console.error('Sign in error:', error);
     }
     return { error }
   }
 
   const signUp = async (email: string, password: string, fullName?: string, inviteCode?: string) => {
-    console.log('AuthProvider: Attempting to sign up:', email);
+    console.log('Attempting to sign up:', email);
     
     // For normal signups (from login page), require invite code
     // For team invitation signups, inviteCode will be undefined and we skip validation
@@ -98,9 +97,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Don't try to create profile manually - let the database trigger handle it
     // The handle_new_user() trigger will create the profile automatically
     if (error) {
-      console.error('AuthProvider: Sign up error:', error);
+      console.error('Sign up error:', error);
     } else {
-      console.log('AuthProvider: Account created successfully - profile will be created by database trigger');
+      console.log('Account created successfully - profile will be created by database trigger');
     }
     
     return { error }
@@ -108,11 +107,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      console.log('AuthProvider: Attempting to sign out...')
+      console.log('Attempting to sign out...')
       const { error } = await supabase.auth.signOut()
       
       if (error) {
-        console.error('AuthProvider: Server-side logout error:', error)
+        console.error('Server-side logout error:', error)
       }
       
       // Clear any pending invitation tokens on logout
@@ -120,14 +119,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Force clear the user state locally
       setUser(null)
-      console.log('AuthProvider: User state cleared locally')
+      console.log('User state cleared locally')
       
     } catch (error) {
-      console.error('AuthProvider: Logout error:', error)
+      console.error('Logout error:', error)
       // Always clear local state even if logout fails
       setUser(null)
       localStorage.removeItem('pendingInvitationToken')
-      console.log('AuthProvider: User state cleared due to error')
+      console.log('User state cleared due to error')
     }
   }
 

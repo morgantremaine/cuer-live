@@ -1,6 +1,4 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import { SearchHighlight } from '../SearchHighlight';
 
 interface TextAreaCellProps {
   value: string;
@@ -10,9 +8,6 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  isCurrentMatch?: boolean;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -26,9 +21,6 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
-  searchTerm = '',
-  caseSensitive = false,
-  isCurrentMatch = false,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -37,7 +29,6 @@ const TextAreaCell = ({
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
-  const [isEditing, setIsEditing] = useState(false);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -146,7 +137,6 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
-    setIsEditing(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -156,7 +146,6 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
-    setIsEditing(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -175,27 +164,8 @@ const TextAreaCell = ({
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
-  // Determine if we should show highlighted text or editable textarea
-  const shouldShowHighlighting = !isEditing && searchTerm && value && 
-    (caseSensitive 
-      ? value.includes(searchTerm) 
-      : value.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-  const currentMatchClass = isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : '';
-
-  console.log('🔍 TextAreaCell render:', {
-    itemId,
-    cellRefKey,
-    shouldShowHighlighting,
-    isEditing,
-    searchTerm,
-    value: value.substring(0, 50) + (value.length > 50 ? '...' : ''),
-    isCurrentMatch
-  });
-
   return (
-    <div className={`relative w-full ${currentMatchClass}`} style={{ backgroundColor, height: calculatedHeight }}>
+    <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -208,64 +178,35 @@ const TextAreaCell = ({
         }}
       />
       
-      {shouldShowHighlighting ? (
-        // Show highlighted text when not editing and there's a search term
-        <div 
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} cursor-text overflow-hidden ${
-            isDuration ? 'font-mono text-center' : 'text-left'
-          }`}
-          style={{ 
-            color: textColor || 'inherit',
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3'
-          }}
-          onClick={(e) => {
-            // Focus the textarea when clicking on highlighted text
-            if (textareaRef.current) {
-              textareaRef.current.focus();
-            }
-            onCellClick(e);
-          }}
-        >
-          <SearchHighlight
-            text={value}
-            searchTerm={searchTerm}
-            caseSensitive={caseSensitive}
-            style={{ color: textColor || 'inherit' }}
-          />
-        </div>
-      ) : (
-        // Show regular textarea for editing
-        <textarea
-          ref={(el) => {
-            textareaRef.current = el;
-            if (el) {
-              cellRefs.current[cellKey] = el;
-            } else {
-              delete cellRefs.current[cellKey];
-            }
-          }}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onClick={onCellClick}
-          onMouseDown={handleMouseDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          data-cell-id={cellKey}
-          data-cell-ref={cellKey}
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
-            isDuration ? 'font-mono' : ''
-          }`}
-          style={{ 
-            backgroundColor: 'transparent',
-            color: textColor || 'inherit',
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
-          }}
-        />
-      )}
+      <textarea
+        ref={(el) => {
+          textareaRef.current = el;
+          if (el) {
+            cellRefs.current[cellKey] = el;
+          } else {
+            delete cellRefs.current[cellKey];
+          }
+        }}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onClick={onCellClick}
+        onMouseDown={handleMouseDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        data-cell-id={cellKey}
+        data-cell-ref={cellKey}
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          isDuration ? 'font-mono' : ''
+        }`}
+        style={{ 
+          backgroundColor: 'transparent',
+          color: textColor || 'inherit',
+          height: `${calculatedHeight}px`,
+          lineHeight: '1.3',
+          textAlign: isDuration ? 'center' : 'left'
+        }}
+      />
     </div>
   );
 };

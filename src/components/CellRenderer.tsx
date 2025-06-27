@@ -4,7 +4,6 @@ import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
-import { SearchHighlight } from './SearchHighlight';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -20,9 +19,6 @@ interface CellRendererProps {
   textColor?: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  isCurrentMatch?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -36,9 +32,6 @@ const CellRenderer = ({
   textColor,
   backgroundColor,
   currentSegmentId,
-  searchTerm = '',
-  caseSensitive = false,
-  isCurrentMatch = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -99,29 +92,14 @@ const CellRenderer = ({
   const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
   const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
 
-  // Check if this field/item combination is the current search match
-  const isCurrentSearchMatch = isCurrentMatch && searchTerm && value && 
-    (caseSensitive ? value.includes(searchTerm) : value.toLowerCase().includes(searchTerm.toLowerCase()));
-
   // Use TimeDisplayCell for calculated time fields
   if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
     return (
-      <div className={isCurrentSearchMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''}>
-        <TimeDisplayCell 
-          value={value} 
-          backgroundColor={showcallerBackgroundColor} 
-          textColor={showcallerTextColor}
-        />
-        {searchTerm && value && (
-          <div className="sr-only">
-            <SearchHighlight
-              text={value}
-              searchTerm={searchTerm}
-              caseSensitive={caseSensitive}
-            />
-          </div>
-        )}
-      </div>
+      <TimeDisplayCell 
+        value={value} 
+        backgroundColor={showcallerBackgroundColor} 
+        textColor={showcallerTextColor}
+      />
     );
   }
 
@@ -131,43 +109,39 @@ const CellRenderer = ({
   // Use ImageCell for images column - check both column.key and column.id
   if (column.key === 'images' || column.id === 'images') {
     return (
-      <div className={isCurrentSearchMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''}>
-        <ImageCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={column.key}
-          cellRefs={cellRefs}
-          textColor={showcallerTextColor}
-          backgroundColor={showcallerBackgroundColor}
-          onUpdateValue={(newValue) => {
-            // Always use 'images' as the field name for the images column
-            onUpdateItem(item.id, 'images', newValue);
-          }}
-          onCellClick={(e) => {
-            onCellClick(item.id, column.key);
-          }}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      <ImageCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={showcallerTextColor}
+        backgroundColor={showcallerBackgroundColor}
+        onUpdateValue={(newValue) => {
+          // Always use 'images' as the field name for the images column
+          onUpdateItem(item.id, 'images', newValue);
+        }}
+        onCellClick={(e) => {
+          onCellClick(item.id, column.key);
+        }}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
   // Use ExpandableScriptCell for script and notes fields (both built-in columns)
   if (column.key === 'script' || column.key === 'notes') {
     return (
-      <div className={isCurrentSearchMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''}>
-        <ExpandableScriptCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={column.key}
-          cellRefs={cellRefs}
-          textColor={showcallerTextColor}
-          onUpdateValue={(newValue) => {
-            onUpdateItem(item.id, column.key, newValue);
-          }}
-          onKeyDown={onKeyDown}
-        />
-      </div>
+      <ExpandableScriptCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={showcallerTextColor}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onKeyDown={onKeyDown}
+      />
     );
   }
 
@@ -175,7 +149,7 @@ const CellRenderer = ({
   if (isCurrentSegmentName) {
     return (
       <div 
-        className={`absolute inset-0 flex items-center px-3 py-1 ${isCurrentSearchMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+        className="absolute inset-0 flex items-center px-3 py-1"
         style={{ 
           backgroundColor: showcallerBackgroundColor,
           color: showcallerTextColor,
@@ -191,9 +165,6 @@ const CellRenderer = ({
           textColor={showcallerTextColor}
           backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
           isDuration={column.key === 'duration'}
-          searchTerm={searchTerm}
-          caseSensitive={caseSensitive}
-          isCurrentMatch={isCurrentSearchMatch}
           onUpdateValue={(newValue) => {
             // Handle custom fields vs built-in fields
             if (column.isCustom) {
@@ -223,9 +194,6 @@ const CellRenderer = ({
       textColor={showcallerTextColor}
       backgroundColor={showcallerBackgroundColor}
       isDuration={column.key === 'duration'}
-      searchTerm={searchTerm}
-      caseSensitive={caseSensitive}
-      isCurrentMatch={isCurrentSearchMatch}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

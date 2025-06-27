@@ -2,7 +2,6 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
-import { SearchHighlight } from '../SearchHighlight';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -19,9 +18,6 @@ interface RegularRowContentProps {
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
   currentSegmentId?: string | null;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -39,9 +35,6 @@ const RegularRowContent = ({
   isDraggingMultiple = false,
   isSelected = false,
   currentSegmentId,
-  searchTerm = '',
-  caseSensitive = false,
-  currentMatch = null,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -63,13 +56,7 @@ const RegularRowContent = ({
               className="h-5 w-5 text-blue-500 fill-blue-500" 
             />
           )}
-          <SearchHighlight 
-            text={rowNumber}
-            searchTerm={searchTerm}
-            caseSensitive={caseSensitive}
-            className={textColor ? '' : ''}
-            style={{ color: textColor }}
-          />
+          <span style={{ color: textColor }}>{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
@@ -78,32 +65,15 @@ const RegularRowContent = ({
         const isCurrentSegmentName = currentSegmentId === item.id && 
           (column.key === 'segmentName' || column.key === 'name');
         
-        // Check if this specific field contains the current search match
-        const fieldValue = column.isCustom 
-          ? (item.customFields?.[column.key] || '')
-          : (item as any)[column.key] || '';
-        
-        const hasSearchMatch = searchTerm && fieldValue && 
-          (caseSensitive 
-            ? fieldValue.includes(searchTerm) 
-            : fieldValue.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-
-        const isCurrentMatch = currentMatch?.itemId === item.id && currentMatch?.field === column.key;
-        
         return (
           <td
             key={column.id}
-            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''} ${
-              isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-            }`}
+            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
               backgroundColor 
             }}
-            data-field={column.key}
-            data-has-match={hasSearchMatch}
           >
             <CellRenderer
               column={column}
@@ -112,9 +82,6 @@ const RegularRowContent = ({
               textColor={textColor}
               backgroundColor={backgroundColor}
               currentSegmentId={currentSegmentId}
-              searchTerm={searchTerm}
-              caseSensitive={caseSensitive}
-              isCurrentMatch={isCurrentMatch}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

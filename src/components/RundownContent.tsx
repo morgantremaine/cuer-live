@@ -30,7 +30,7 @@ interface RundownContentProps {
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string, itemIndex: number) => void;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
@@ -47,11 +47,6 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatchIndex?: number;
-  matchCount?: number;
-  matches?: any[];
 }
 
 const RundownContent = ({
@@ -93,12 +88,7 @@ const RundownContent = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere,
-  searchTerm = '',
-  caseSensitive = false,
-  currentMatchIndex = 0,
-  matchCount = 0,
-  matches = []
+  onJumpToHere
 }: RundownContentProps) => {
 
   // Initialize autoscroll functionality
@@ -139,19 +129,11 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
-            searchTerm={searchTerm}
-            caseSensitive={caseSensitive}
-            currentMatchIndex={currentMatchIndex}
-            matchCount={matchCount}
-            matches={matches}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
-            getHeaderDuration={(itemId: string) => {
-              const itemIndex = items.findIndex(item => item.id === itemId);
-              return itemIndex !== -1 ? calculateHeaderDuration(itemIndex) : '00:00:00';
-            }}
+            getHeaderDuration={calculateHeaderDuration}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}

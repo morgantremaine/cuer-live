@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff, Loader2, Search } from 'lucide-react';
+import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
-import { FindReplaceDialog } from './FindReplaceDialog';
-import { useFindReplace } from '@/hooks/useFindReplace';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { format } from 'date-fns';
 
@@ -33,15 +30,6 @@ interface RundownHeaderProps {
   timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  onUpdateItem?: (id: string, field: string, value: string) => void;
-  onJumpToItem?: (itemId: string) => void;
-  searchState?: {
-    searchTerm: string;
-    caseSensitive: boolean;
-    currentMatchIndex: number;
-    matchCount: number;
-  };
-  onSearchStateChange?: (state: any) => void;
 }
 
 const RundownHeader = ({
@@ -64,50 +52,10 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  items = [],
-  onUpdateItem,
-  onJumpToItem,
-  searchState,
-  onSearchStateChange
+  items = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-
-  // Find and Replace functionality
-  const findReplace = useFindReplace({
-    items,
-    onUpdateItem: onUpdateItem || (() => {}),
-    onJumpToItem
-  });
-
-  // Use external search state if provided, otherwise use internal state
-  const searchTerm = searchState?.searchTerm ?? findReplace.searchTerm;
-  const caseSensitive = searchState?.caseSensitive ?? findReplace.caseSensitive;
-  const currentMatchIndex = searchState?.currentMatchIndex ?? findReplace.currentMatchIndex;
-  const matchCount = searchState?.matchCount ?? findReplace.matchCount;
-
-  // Handlers that update both internal and external state
-  const handleSearchTermChange = (term: string) => {
-    findReplace.setSearchTerm(term);
-    if (onSearchStateChange) {
-      onSearchStateChange({ ...searchState, searchTerm: term });
-    }
-  };
-
-  const handleCaseSensitiveChange = (enabled: boolean) => {
-    findReplace.setCaseSensitive(enabled);
-    if (onSearchStateChange) {
-      onSearchStateChange({ ...searchState, caseSensitive: enabled });
-    }
-  };
-
-  const handleNextMatch = () => {
-    findReplace.nextMatch();
-  };
-
-  const handlePreviousMatch = () => {
-    findReplace.previousMatch();
-  };
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -117,18 +65,6 @@ const RundownHeader = ({
     currentSegmentId,
     timeRemaining
   });
-
-  // Keyboard shortcut for find and replace
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
@@ -203,18 +139,6 @@ const RundownHeader = ({
     }
   };
 
-  // Create the search trigger button
-  const searchTrigger = (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-8 w-8 p-0"
-      title="Find & Replace (Ctrl+F)"
-    >
-      <Search className="h-4 w-4" />
-    </Button>
-  );
-
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -247,22 +171,6 @@ const RundownHeader = ({
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span>{format(currentTime, 'HH:mm:ss')}</span>
-            <FindReplaceDialog
-              searchTerm={searchTerm}
-              replaceTerm={findReplace.replaceTerm}
-              caseSensitive={caseSensitive}
-              currentMatchIndex={currentMatchIndex}
-              matchCount={matchCount}
-              onSearchTermChange={handleSearchTermChange}
-              onReplaceTermChange={findReplace.setReplaceTerm}
-              onCaseSensitiveChange={handleCaseSensitiveChange}
-              onNextMatch={handleNextMatch}
-              onPreviousMatch={handlePreviousMatch}
-              onReplaceCurrent={findReplace.replaceCurrent}
-              onReplaceAll={findReplace.replaceAll}
-              onReset={findReplace.reset}
-              trigger={searchTrigger}
-            />
           </div>
           
           <div className="flex items-center gap-2">
@@ -349,22 +257,6 @@ const RundownHeader = ({
               currentTimezone={timezone}
               onTimezoneChange={() => {}}
             />
-            <FindReplaceDialog
-              searchTerm={searchTerm}
-              replaceTerm={findReplace.replaceTerm}
-              caseSensitive={caseSensitive}
-              currentMatchIndex={currentMatchIndex}
-              matchCount={matchCount}
-              onSearchTermChange={handleSearchTermChange}
-              onReplaceTermChange={findReplace.setReplaceTerm}
-              onCaseSensitiveChange={handleCaseSensitiveChange}
-              onNextMatch={handleNextMatch}
-              onPreviousMatch={handlePreviousMatch}
-              onReplaceCurrent={findReplace.replaceCurrent}
-              onReplaceAll={findReplace.replaceAll}
-              onReset={findReplace.reset}
-              trigger={searchTrigger}
-            />
           </div>
           
           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -441,23 +333,6 @@ const RundownHeader = ({
           <TimezoneSelector
             currentTimezone={timezone}
             onTimezoneChange={() => {}}
-          />
-          
-          <FindReplaceDialog
-            searchTerm={searchTerm}
-            replaceTerm={findReplace.replaceTerm}
-            caseSensitive={caseSensitive}
-            currentMatchIndex={currentMatchIndex}
-            matchCount={matchCount}
-            onSearchTermChange={handleSearchTermChange}
-            onReplaceTermChange={findReplace.setReplaceTerm}
-            onCaseSensitiveChange={handleCaseSensitiveChange}
-            onNextMatch={handleNextMatch}
-            onPreviousMatch={handlePreviousMatch}
-            onReplaceCurrent={findReplace.replaceCurrent}
-            onReplaceAll={findReplace.replaceAll}
-            onReset={findReplace.reset}
-            trigger={searchTrigger}
           />
           
           <div className="flex items-center space-x-2">

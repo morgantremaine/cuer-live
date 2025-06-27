@@ -2,9 +2,6 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
-import { FindReplaceDialog } from '@/components/FindReplaceDialog';
-import { Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownHeaderSectionProps {
@@ -48,23 +45,6 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  // Find/Replace props
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatchIndex?: number;
-  matchCount?: number;
-  matches?: any[];
-  findReplaceActions?: {
-    setSearchTerm: (term: string) => void;
-    setReplaceTerm: (term: string) => void;
-    setCaseSensitive: (caseSensitive: boolean) => void;
-    nextMatch: () => void;
-    previousMatch: () => void;
-    replaceCurrent: () => void;
-    replaceAll: () => void;
-    reset: () => void;
-    replaceTerm: string;
-  };
 }
 
 const RundownHeaderSection = ({
@@ -107,13 +87,7 @@ const RundownHeaderSection = ({
   isProcessingRealtimeUpdate,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  searchTerm = '',
-  caseSensitive = false,
-  currentMatchIndex = 0,
-  matchCount = 0,
-  matches = [],
-  findReplaceActions
+  onToggleAutoScroll
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -138,60 +112,29 @@ const RundownHeaderSection = ({
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
       />
-      <div className="flex items-center justify-between p-2 border-b border-border bg-background">
-        <RundownToolbar
-          onAddRow={() => onAddRow(selectedRowId)}
-          onAddHeader={() => onAddHeader(selectedRowId)}
-          onShowColumnManager={onShowColumnManager}
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          onReset={onReset}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-          rundownTitle={rundownTitle}
-          rundownData={rundownData}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
-        />
-        
-        {/* Find & Replace Button */}
-        {findReplaceActions && (
-          <FindReplaceDialog
-            searchTerm={searchTerm}
-            replaceTerm={findReplaceActions.replaceTerm}
-            caseSensitive={caseSensitive}
-            currentMatchIndex={currentMatchIndex}
-            matchCount={matchCount}
-            onSearchTermChange={findReplaceActions.setSearchTerm}
-            onReplaceTermChange={findReplaceActions.setReplaceTerm}
-            onCaseSensitiveChange={findReplaceActions.setCaseSensitive}
-            onNextMatch={findReplaceActions.nextMatch}
-            onPreviousMatch={findReplaceActions.previousMatch}
-            onReplaceCurrent={findReplaceActions.replaceCurrent}
-            onReplaceAll={findReplaceActions.replaceAll}
-            onReset={findReplaceActions.reset}
-            trigger={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                title="Find & Replace"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            }
-          />
-        )}
-      </div>
+      <RundownToolbar
+        onAddRow={() => onAddRow(selectedRowId)}
+        onAddHeader={() => onAddHeader(selectedRowId)}
+        onShowColumnManager={onShowColumnManager}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        onReset={onReset}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        rundownTitle={rundownTitle}
+        rundownData={rundownData}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
+      />
     </div>
   );
 };

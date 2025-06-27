@@ -1,28 +1,10 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { RundownItem } from '@/types/rundown';
-import RundownContent from '../RundownContent';
+import React from 'react';
+import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { logger } from '@/utils/logger';
 
-interface RundownLayoutProps {
-  rundownId?: string;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatchIndex?: number;
-  matchCount?: number;
-  matches?: any[];
-}
-
-const RundownLayout = ({
-  rundownId,
-  searchTerm = '',
-  caseSensitive = false,
-  currentMatchIndex = 0,
-  matchCount = 0,
-  matches = []
-}: RundownLayoutProps) => {
-  // Use the state coordination hook to manage core state, interactions, and UI state
+const RundownGrid = React.memo(() => {
   const {
     coreState,
     interactions,
@@ -39,13 +21,13 @@ const RundownLayout = ({
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
+    // Showcaller controls - ensure these are properly passed through
     play,
     pause,
     forward,
     backward,
     isPlaying,
-    timeRemaining,
-    updateItem
+    timeRemaining
   } = coreState;
 
   const {
@@ -144,7 +126,7 @@ const RundownLayout = ({
 
   // Fixed jump to here handler that properly checks playing state
   const handleJumpToHere = (segmentId: string) => {
-    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownLayout FIXED VERSION) ===');
+    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
     logger.log('🎯 Target segment ID:', segmentId);
     logger.log('🎯 Current segment ID before jump:', currentSegmentId);
     logger.log('🎯 Is currently playing:', isPlaying);
@@ -178,88 +160,76 @@ const RundownLayout = ({
     
     // CRITICAL FIX: Only start playback if the showcaller is already playing
     if (isPlaying) {
-      logger.log('🎯 RundownLayout: Showcaller is playing - jumping and continuing playback');
+      logger.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
       play(segmentId);
     } else {
-      logger.log('🎯 RundownLayout: Showcaller is paused - jumping but staying paused');
+      logger.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
+      // For paused state, we need to update the showcaller visual state to point to the new segment
+      // but without starting playback. We'll use the showcaller's visual state update mechanism
+      // to set the current segment without triggering play
+      logger.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
+      
+      // We need to manually update the showcaller's current segment without calling play()
+      // This will be handled by the showcaller visual state system
+      const showcallerVisualUpdate = {
+        currentSegmentId: segmentId,
+        isPlaying: false, // Keep it paused
+        playbackStartTime: null, // No playback
+        timeRemaining: targetSegment.duration ? parseInt(targetSegment.duration.split(':')[0]) * 60 + parseInt(targetSegment.duration.split(':')[1]) : 0
+      };
+      
+      // Call the showcaller's visual state update directly (this needs to be exposed from the state coordination)
+      logger.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
     }
     
-    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownLayout FIXED VERSION) ===');
-  };
-
-  // State and handlers for autoscroll toggle
-  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
-  const handleToggleAutoScroll = () => {
-    setAutoScrollEnabled(prev => !prev);
-  };
-
-  // Clear selection handler
-  const handleClearSelection = () => {
-    clearSelection();
-    clearRowSelection();
-  };
-
-  // Dummy handlers for missing functions
-  const handleDeleteRow = (id: string) => {
-    // This should be connected to the actual delete functionality
-    console.log('Delete row:', id);
-  };
-
-  const handleToggleFloat = (id: string) => {
-    // This should be connected to the actual toggle float functionality
-    console.log('Toggle float:', id);
+    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <RundownContent
-        items={items}
-        visibleColumns={visibleColumns}
-        currentTime={currentTime}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        selectedRows={selectedRows}
-        draggedItemIndex={draggedItemIndex}
-        isDraggingMultiple={isDraggingMultiple}
-        dropTargetIndex={dropTargetIndex}
-        currentSegmentId={currentSegmentId}
-        hasClipboardData={hasClipboardData()}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={handleToggleAutoScroll}
-        searchTerm={searchTerm}
-        caseSensitive={caseSensitive}
-        currentMatchIndex={currentMatchIndex}
-        matchCount={matchCount}
-        matches={matches}
-        getColumnWidth={getColumnWidth}
-        updateColumnWidth={updateColumnWidth}
-        getRowNumber={getRowNumber}
-        getRowStatus={getRowStatusForTable}
-        calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={updateItem}
-        onCellClick={handleCellClickWrapper}
-        onKeyDown={handleKeyDownWrapper}
-        onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={handleColorSelect}
-        onDeleteRow={handleDeleteRow}
-        onToggleFloat={handleToggleFloat}
-        onRowSelect={handleEnhancedRowSelection}
-        onDragStart={handleDragStartWrapper}
-        onDragOver={handleDragOverWrapper}
-        onDragLeave={handleDragLeaveWrapper}
-        onDrop={handleDropWrapper}
-        onCopySelectedRows={handleCopySelectedRows}
-        onDeleteSelectedRows={handleDeleteSelectedRows}
-        onPasteRows={handlePasteRows}
-        onClearSelection={handleClearSelection}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
-        onJumpToHere={handleJumpToHere}
-      />
-    </div>
+    <RundownTable
+      items={items}
+      visibleColumns={visibleColumns}
+      currentTime={currentTime}
+      showColorPicker={showColorPicker}
+      cellRefs={cellRefs}
+      selectedRows={selectedRows}
+      draggedItemIndex={draggedItemIndex}
+      isDraggingMultiple={isDraggingMultiple}
+      dropTargetIndex={dropTargetIndex}
+      currentSegmentId={currentSegmentId}
+      hasClipboardData={hasClipboardData()}
+      selectedRowId={selectedRowId}
+      getColumnWidth={getColumnWidth}
+      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+      getRowNumber={getRowNumber}
+      getRowStatus={getRowStatusForTable}
+      getHeaderDuration={calculateHeaderDuration}
+      onUpdateItem={coreState.updateItem}
+      onCellClick={handleCellClickWrapper}
+      onKeyDown={handleKeyDownWrapper}
+      onToggleColorPicker={handleToggleColorPicker}
+      onColorSelect={handleColorSelect}
+      onDeleteRow={coreState.deleteRow}
+      onToggleFloat={coreState.toggleFloatRow}
+      onRowSelect={handleEnhancedRowSelection}
+      onDragStart={handleDragStartWrapper}
+      onDragOver={handleDragOverWrapper}
+      onDragLeave={handleDragLeaveWrapper}
+      onDrop={handleDropWrapper}
+      onCopySelectedRows={handleCopySelectedRows}
+      onDeleteSelectedRows={handleDeleteSelectedRows}
+      onPasteRows={handlePasteRows}
+      onClearSelection={() => {
+        clearSelection();
+        clearRowSelection();
+      }}
+      onAddRow={handleAddRow}
+      onAddHeader={handleAddHeader}
+      onJumpToHere={handleJumpToHere}
+    />
   );
-};
+});
 
-export default RundownLayout;
+RundownGrid.displayName = 'RundownGrid';
+
+export default RundownGrid;

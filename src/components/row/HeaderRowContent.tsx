@@ -1,7 +1,6 @@
 
 import React from 'react';
 import CellRenderer from '../CellRenderer';
-import { SearchHighlight } from '../SearchHighlight';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -13,9 +12,6 @@ interface HeaderRowContentProps {
   rowNumber: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatch?: { itemId: string; field: string } | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -30,9 +26,6 @@ const HeaderRowContent = ({
   rowNumber,
   backgroundColor,
   currentSegmentId,
-  searchTerm = '',
-  caseSensitive = false,
-  currentMatch = null,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -54,16 +47,12 @@ const HeaderRowContent = ({
           maxWidth: '64px' // Ensure exact width matching
         }}
       >
-        <SearchHighlight 
-          text={rowNumber}
-          searchTerm={searchTerm}
-          caseSensitive={caseSensitive}
-        />
+        <span style={{ color: textColor }}>{rowNumber}</span>
       </td>
       {/* Dynamic columns */}
       {columns.map((column) => {
         const columnWidth = getColumnWidth(column);
-        const isCurrentMatch = currentMatch?.itemId === item.id && currentMatch?.field === column.key;
+        const widthValue = parseInt(columnWidth.replace('px', ''));
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName' || column.key === 'name') {
@@ -71,9 +60,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle border border-border min-h-[56px] relative overflow-visible ${
-                isCurrentMatch ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-              }`}
+              className="align-middle border border-border min-h-[56px] relative overflow-visible"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -95,9 +82,6 @@ const HeaderRowContent = ({
                   textColor={textColor}
                   backgroundColor={backgroundColor}
                   currentSegmentId={currentSegmentId}
-                  searchTerm={searchTerm}
-                  caseSensitive={caseSensitive}
-                  isCurrentMatch={isCurrentMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
@@ -120,11 +104,7 @@ const HeaderRowContent = ({
               }}
             >
               <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
-                <SearchHighlight 
-                  text={`(${headerDuration})`}
-                  searchTerm={searchTerm}
-                  caseSensitive={caseSensitive}
-                />
+                ({headerDuration})
               </div>
             </td>
           );

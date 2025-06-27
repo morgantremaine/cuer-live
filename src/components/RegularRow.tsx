@@ -22,9 +22,6 @@ interface RegularRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
-  searchTerm?: string;
-  caseSensitive?: boolean;
-  currentMatch?: { itemId: string; field: string } | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -61,9 +58,6 @@ const RegularRow = (props: RegularRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
-    searchTerm,
-    caseSensitive,
-    currentMatch,
     onToggleFloat,
     onColorSelect,
     onClearSelection,
@@ -206,9 +200,6 @@ const RegularRow = (props: RegularRowProps) => {
           isSelected={isSelected}
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
-          searchTerm={searchTerm}
-          caseSensitive={caseSensitive}
-          currentMatch={currentMatch}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

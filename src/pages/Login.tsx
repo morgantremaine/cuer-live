@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,43 +18,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
-  const { user, signIn, signUp, resetPassword, resendConfirmation } = useAuth()
+  const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
   const { toast } = useToast()
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  console.log('🔄 Login component render - user:', user?.email || 'no user');
-
-  // More aggressive redirect if already logged in
-  useEffect(() => {
-    console.log('🔄 Login useEffect - user:', user?.email || 'no user');
-    if (user) {
-      const from = location.state?.from?.pathname || '/dashboard'
-      console.log('🔄 Login: User authenticated, redirecting to:', from);
-      // Force immediate navigation without delay
-      navigate(from, { replace: true })
-    }
-  }, [user, navigate, location])
-
-  // Block rendering if user is already authenticated
-  if (user) {
-    console.log('🔄 Login: User is authenticated, should redirect...');
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('🔄 Login: Attempting sign in for:', email);
     setLoading(true)
     
     const { error } = await signIn(email, password)
     
     if (error) {
-      console.log('🔄 Login: Sign in error:', error.message);
       if (error.message.includes('Email not confirmed')) {
         setShowResendConfirmation(true)
         toast({
@@ -71,14 +43,11 @@ const Login = () => {
         })
       }
     } else {
-      console.log('🔄 Login: Sign in successful');
       toast({
         title: 'Success',
         description: 'Signed in successfully!',
       })
-      // Force immediate redirect after successful sign in
-      const from = location.state?.from?.pathname || '/dashboard'
-      navigate(from, { replace: true })
+      // Remove manual navigation - let App.tsx handle the redirect based on auth state
     }
     
     setLoading(false)
