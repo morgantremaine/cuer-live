@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import Footer from '@/components/Footer';
+import CuerLogo from '@/components/common/CuerLogo';
 
 const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
@@ -338,11 +338,7 @@ const JoinTeam = () => {
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2">
-              <img 
-                src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
-                alt="Cuer Logo" 
-                className="h-12 w-auto"
-              />
+              <CuerLogo isDark={true} className="h-12 w-auto" />
             </div>
             <CardTitle className="text-white">Join Team: {invitation.teams?.name || 'Team'}</CardTitle>
             <CardDescription className="text-gray-400">
