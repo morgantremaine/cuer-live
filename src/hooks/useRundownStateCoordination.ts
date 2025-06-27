@@ -1,3 +1,4 @@
+
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -78,36 +79,13 @@ export const useRundownStateCoordination = () => {
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    simplifiedState.setItems(itemsToAdd);
-  };
-
-  // Add the missing functions that simplifiedState should provide
-  const addRowAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addRowAtIndex) {
-      simplifiedState.addRowAtIndex(insertIndex);
-    } else {
-      simplifiedState.addRow();
-    }
-  };
-
-  const addHeaderAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addHeaderAtIndex) {
-      simplifiedState.addHeaderAtIndex(insertIndex);
-    } else {
-      simplifiedState.addHeader();
-    }
+    simplifiedState.setItems(prevItems => [...prevItems, ...itemsToAdd]);
   };
 
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     simplifiedState.items,
-    (updater) => {
-      if (typeof updater === 'function') {
-        simplifiedState.setItems(updater(simplifiedState.items));
-      } else {
-        simplifiedState.setItems(updater);
-      }
-    },
+    simplifiedState.setItems,
     simplifiedState.updateItem,
     simplifiedState.addRow,
     simplifiedState.addHeader,
@@ -127,8 +105,8 @@ export const useRundownStateCoordination = () => {
       // markAsChanged - handled internally by simplified state
     },
     simplifiedState.setTitle,
-    addRowAtIndex,
-    addHeaderAtIndex
+    simplifiedState.addRowAtIndex,
+    simplifiedState.addHeaderAtIndex
   );
 
   // Get UI state with enhanced navigation
@@ -194,8 +172,8 @@ export const useRundownStateCoordination = () => {
       setTimezone: simplifiedState.setTimezone,
       addRow: simplifiedState.addRow,
       addHeader: simplifiedState.addHeader,
-      addRowAtIndex,
-      addHeaderAtIndex,
+      addRowAtIndex: simplifiedState.addRowAtIndex,
+      addHeaderAtIndex: simplifiedState.addHeaderAtIndex,
       
       // Column management
       addColumn: simplifiedState.addColumn,

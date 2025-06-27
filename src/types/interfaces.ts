@@ -1,6 +1,14 @@
-
 import { RundownItem } from './rundown';
-import { Column } from '@/hooks/useColumnsManager';
+
+export interface Column {
+  id: string;
+  key: string;
+  name: string;
+  width?: number;
+  visible?: boolean;
+  isCustom?: boolean;
+  isResizable?: boolean;
+}
 
 export interface CoreRundownState {
   // Core data

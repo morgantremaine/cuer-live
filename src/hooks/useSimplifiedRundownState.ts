@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { RundownItem } from '@/types/rundown';
@@ -21,7 +22,7 @@ export const useSimplifiedRundownState = () => {
   const [columns, setColumns] = useState<Column[]>([]);
   const [rundownTitle, setRundownTitle] = useState('Untitled Rundown');
   const [rundownStartTime, setRundownStartTime] = useState('12:00:00');
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [timezone, setRundownTimezone] = useState('America/New_York');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export const useSimplifiedRundownState = () => {
       setIsSaving(true);
       try {
         await storage.saveRundown(rundownId, data.items, data.columns, data.rundownTitle, data.rundownStartTime, data.timezone);
-        changeTracking.resetChangeTracking(data);
+        changeTracking.markAsSaved(data.items, data.rundownTitle, data.columns, data.timezone, data.rundownStartTime);
         return true;
       } catch (error) {
         logger.error('Autosave failed:', error);
@@ -88,14 +89,14 @@ export const useSimplifiedRundownState = () => {
     const loadRundown = async () => {
       setIsLoading(true);
       try {
-        const data = await storage.loadRundown(rundownId);
+        const data = await storage.loadSingleRundown(rundownId);
         if (data) {
           setItems(data.items);
           setColumns(data.columns);
           setRundownTitle(data.rundownTitle);
           setRundownStartTime(data.rundownStartTime);
-          setTimezone(data.timezone);
-          changeTracking.resetChangeTracking(data);
+          setRundownTimezone(data.timezone);
+          changeTracking.markAsSaved(data.items, data.rundownTitle, data.columns, data.timezone, data.rundownStartTime);
         }
       } catch (error) {
         logger.error('Error loading rundown:', error);
@@ -120,16 +121,16 @@ export const useSimplifiedRundownState = () => {
       setColumns(updatedRundown.columns || []);
       setRundownTitle(updatedRundown.title || 'Untitled Rundown');
       setRundownStartTime(updatedRundown.start_time || '12:00:00');
-      setTimezone(updatedRundown.timezone || 'America/New_York');
+      setRundownTimezone(updatedRundown.timezone || 'America/New_York');
       
       // Reset change tracking after applying remote update
-      changeTracking.resetChangeTracking({
-        items: updatedRundown.items || [],
-        columns: updatedRundown.columns || [],
-        rundownTitle: updatedRundown.title || 'Untitled Rundown',
-        rundownStartTime: updatedRundown.start_time || '12:00:00',
-        timezone: updatedRundown.timezone || 'America/New_York'
-      });
+      changeTracking.markAsSaved(
+        updatedRundown.items || [],
+        updatedRundown.title || 'Untitled Rundown',
+        updatedRundown.columns || [],
+        updatedRundown.timezone || 'America/New_York',
+        updatedRundown.start_time || '12:00:00'
+      );
     }
   }, [changeTracking]);
 
@@ -179,18 +180,27 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   const setTimezone = useCallback((timezone: string) => {
-    setTimezone(timezone);
+    setRundownTimezone(timezone);
   }, []);
 
   const addRow = useCallback(() => {
     const newItem: RundownItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'item',
-      title: 'New Item',
+      type: 'regular',
+      rowNumber: '',
+      name: 'New Item',
       duration: '00:01',
-      content: '',
       startTime: '00:00:00',
-      endTime: '00:01:00'
+      endTime: '00:01:00',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      images: '',
+      notes: '',
+      color: '',
+      isFloating: false
     };
     setItems(prevItems => [...prevItems, newItem]);
   }, []);
@@ -199,11 +209,74 @@ export const useSimplifiedRundownState = () => {
     const newHeader: RundownItem = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: 'header',
-      title: 'New Header',
+      rowNumber: '',
+      name: 'New Header',
       startTime: '00:00:00',
-      duration: '00:00'
+      duration: '00:00',
+      endTime: '00:00:00',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      images: '',
+      notes: '',
+      color: '',
+      isFloating: false
     };
     setItems(prevItems => [...prevItems, newHeader]);
+  }, []);
+
+  const addRowAtIndex = useCallback((insertIndex: number) => {
+    const newItem: RundownItem = {
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'regular',
+      rowNumber: '',
+      name: 'New Item',
+      duration: '00:01',
+      startTime: '00:00:00',
+      endTime: '00:01:00',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      images: '',
+      notes: '',
+      color: '',
+      isFloating: false
+    };
+    setItems(prevItems => {
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newItem);
+      return newItems;
+    });
+  }, []);
+
+  const addHeaderAtIndex = useCallback((insertIndex: number) => {
+    const newHeader: RundownItem = {
+      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'header',
+      rowNumber: '',
+      name: 'New Header',
+      startTime: '00:00:00',
+      duration: '00:00',
+      endTime: '00:00:00',
+      elapsedTime: '',
+      talent: '',
+      script: '',
+      gfx: '',
+      video: '',
+      images: '',
+      notes: '',
+      color: '',
+      isFloating: false
+    };
+    setItems(prevItems => {
+      const newItems = [...prevItems];
+      newItems.splice(insertIndex, 0, newHeader);
+      return newItems;
+    });
   }, []);
 
   const addColumn = useCallback((column: Column) => {
@@ -297,6 +370,9 @@ export const useSimplifiedRundownState = () => {
     setTimezone,
     addRow,
     addHeader,
+    addRowAtIndex,
+    addHeaderAtIndex,
+    setItems,
     
     // Column management
     addColumn,
