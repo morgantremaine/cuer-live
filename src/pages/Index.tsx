@@ -61,6 +61,12 @@ const Index = () => {
     return status;
   };
 
+  // Create wrapper for onKeyDown that finds the itemIndex
+  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    const itemIndex = coreState.items.findIndex(item => item.id === itemId);
+    uiState.handleKeyDown(e, itemId, field, itemIndex);
+  };
+
   // Create the props object for RundownContainer
   const containerProps = {
     currentTime: coreState.currentTime,
@@ -86,7 +92,7 @@ const Index = () => {
     calculateHeaderDuration: coreState.calculateHeaderDuration,
     onUpdateItem: coreState.updateItem,
     onCellClick: (itemId: string, field: string) => uiState.handleCellClick(itemId, field),
-    onKeyDown: uiState.handleKeyDown,
+    onKeyDown: handleKeyDownWrapper,
     onToggleColorPicker: uiState.handleToggleColorPicker,
     onColorSelect: uiState.selectColor,
     onDeleteRow: interactions.handleDeleteRow,
