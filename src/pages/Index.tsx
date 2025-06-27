@@ -17,7 +17,9 @@ const Index = () => {
   // Initialize find/replace functionality
   const findReplace = useFindReplace({
     items,
-    onUpdateItem: updateItem,
+    onUpdateItem: (itemId: string, field: string, value: string) => {
+      updateItem(itemId, { [field]: value });
+    },
     onJumpToItem: (itemId: string) => {
       // Scroll to the item
       const element = document.querySelector(`[data-item-id="${itemId}"]`);
