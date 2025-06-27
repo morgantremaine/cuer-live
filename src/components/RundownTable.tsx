@@ -41,6 +41,7 @@ interface RundownTableProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onJumpToItem?: (itemId: string) => void;
 }
 
 const RundownTable = ({
@@ -79,7 +80,8 @@ const RundownTable = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onJumpToHere,
+  onJumpToItem
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container
