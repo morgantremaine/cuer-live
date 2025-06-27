@@ -50,7 +50,12 @@ export const useTeam = () => {
 
   // Debounced load function to prevent excessive calls
   const debouncedLoadTeamData = useCallback(async () => {
-    if (!user || isLoadingRef.current || lastLoadedUserRef.current === user.id) {
+    if (!user || isLoadingRef.current) {
+      return;
+    }
+
+    // Check if we already loaded for this user
+    if (lastLoadedUserRef.current === user.id) {
       return;
     }
 
@@ -164,32 +169,49 @@ export const useTeam = () => {
         };
         const userRole = membershipData.role;
 
-        // Load team members and their profiles
+        // Load team members - Fix the query to properly join with profiles
         const { data: teamMembersData, error: teamMembersError } = await supabase
           .from('team_members')
           .select(`
             id,
             user_id,
             role,
-            joined_at,
-            profiles (
-              full_name,
-              email
-            )
+            joined_at
           `)
           .eq('team_id', team.id)
           .order('joined_at');
 
         if (teamMembersError) throw teamMembersError;
 
-        // Fix: Transform the data properly - profiles is a single object, not an array
-        const members: TeamMember[] = (teamMembersData || []).map(member => ({
-          id: member.id,
-          user_id: member.user_id,
-          role: member.role,
-          joined_at: member.joined_at,
-          profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
-        }));
+        // Get profiles separately to avoid complex join issues
+        const members: TeamMember[] = [];
+        if (teamMembersData && teamMembersData.length > 0) {
+          const userIds = teamMembersData.map(member => member.user_id);
+          
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+
+          if (profilesError) {
+            console.warn('Error loading profiles:', profilesError);
+          }
+
+          // Combine team member data with profiles
+          teamMembersData.forEach(member => {
+            const profile = profilesData?.find(p => p.id === member.user_id);
+            members.push({
+              id: member.id,
+              user_id: member.user_id,
+              role: member.role,
+              joined_at: member.joined_at,
+              profiles: profile ? {
+                full_name: profile.full_name,
+                email: profile.email
+              } : undefined
+            });
+          });
+        }
 
         // Load pending invitations if user is admin
         let pendingInvitations: any[] = [];
@@ -223,7 +245,7 @@ export const useTeam = () => {
       } finally {
         isLoadingRef.current = false;
       }
-    }, 300); // 300ms debounce
+    }, 500); // Increased debounce timeout
   }, [user, toast]);
 
   // Load team data when user changes, but only if it's actually different

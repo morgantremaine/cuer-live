@@ -89,7 +89,7 @@ export const useRundownStorage = () => {
         setLoading(false);
         isLoadingRef.current = false;
       }
-    }, 200); // 200ms debounce
+    }, 300); // Increased debounce timeout
   }, [user, teamId]);
 
   // Load rundowns when user or team changes
