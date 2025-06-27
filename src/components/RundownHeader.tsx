@@ -85,13 +85,12 @@ const RundownHeader = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        findReplace.open();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [findReplace.open]);
+  }, []);
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
@@ -211,8 +210,6 @@ const RundownHeader = ({
             <Clock className="h-4 w-4" />
             <span>{format(currentTime, 'HH:mm:ss')}</span>
             <FindReplaceDialog
-              isOpen={findReplace.isOpen}
-              onClose={findReplace.close}
               searchTerm={findReplace.searchTerm}
               replaceTerm={findReplace.replaceTerm}
               caseSensitive={findReplace.caseSensitive}
@@ -315,8 +312,6 @@ const RundownHeader = ({
               onTimezoneChange={() => {}}
             />
             <FindReplaceDialog
-              isOpen={findReplace.isOpen}
-              onClose={findReplace.close}
               searchTerm={findReplace.searchTerm}
               replaceTerm={findReplace.replaceTerm}
               caseSensitive={findReplace.caseSensitive}
@@ -411,8 +406,6 @@ const RundownHeader = ({
           />
           
           <FindReplaceDialog
-            isOpen={findReplace.isOpen}
-            onClose={findReplace.close}
             searchTerm={findReplace.searchTerm}
             replaceTerm={findReplace.replaceTerm}
             caseSensitive={findReplace.caseSensitive}

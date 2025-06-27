@@ -9,8 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 
 interface FindReplaceDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   searchTerm: string;
   replaceTerm: string;
   caseSensitive: boolean;
@@ -28,8 +26,6 @@ interface FindReplaceDialogProps {
 }
 
 export const FindReplaceDialog = ({
-  isOpen,
-  onClose,
   searchTerm,
   replaceTerm,
   caseSensitive,
@@ -46,6 +42,7 @@ export const FindReplaceDialog = ({
   trigger
 }: FindReplaceDialogProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = React.useState(false);
 
   // Focus search input when dialog opens
   useEffect(() => {
@@ -71,20 +68,25 @@ export const FindReplaceDialog = ({
         onPreviousMatch();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        setIsOpen(false);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onNextMatch, onPreviousMatch, onClose]);
+  }, [isOpen, onNextMatch, onPreviousMatch]);
 
   const hasMatches = matchCount > 0;
   const hasSearchTerm = searchTerm.trim().length > 0;
   const canReplace = hasMatches && replaceTerm.trim().length > 0;
 
+  const handleClose = () => {
+    setIsOpen(false);
+    onReset();
+  };
+
   return (
-    <Popover open={isOpen} onOpenChange={onClose}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         {trigger}
       </PopoverTrigger>
@@ -104,7 +106,7 @@ export const FindReplaceDialog = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={handleClose}
               className="h-6 w-6 p-0"
             >
               <X className="h-4 w-4" />
