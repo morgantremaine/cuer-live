@@ -29,7 +29,6 @@ interface UseRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
   onShowcallerActivity?: (active: boolean) => void;
   onShowcallerStateReceived?: (state: any) => void;
-  onProcessingStateChange?: (isProcessing: boolean) => void;
 }
 
 // Centralized timeout management to prevent memory leaks
@@ -66,8 +65,7 @@ export const useRealtimeRundown = ({
   isProcessingRealtimeUpdate = false,
   trackOwnUpdate,
   onShowcallerActivity,
-  onShowcallerStateReceived,
-  onProcessingStateChange
+  onShowcallerStateReceived
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
@@ -75,7 +73,6 @@ export const useRealtimeRundown = ({
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const onShowcallerActivityRef = useRef(onShowcallerActivity);
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
-  const onProcessingStateChangeRef = useRef(onProcessingStateChange);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
@@ -85,7 +82,6 @@ export const useRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   onShowcallerActivityRef.current = onShowcallerActivity;
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
-  onProcessingStateChangeRef.current = onProcessingStateChange;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
   // Signal activity with centralized timeout management
@@ -160,7 +156,7 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // Enhanced update handler with processing state management
+  // Enhanced update handler with better showcaller detection
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -228,11 +224,6 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
-    // Set processing state to true when we receive a team sync update
-    if (onProcessingStateChangeRef.current) {
-      onProcessingStateChangeRef.current(true);
-    }
-
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
@@ -245,14 +236,6 @@ export const useRealtimeRundown = ({
       } catch (error) {
         logger.error('Error processing realtime update:', error);
       }
-
-      // Set processing state back to false after a minimum display duration (500ms)
-      // This ensures the loading indicator is visible long enough to be noticed
-      timeoutManagerRef.current.set('processing-complete', () => {
-        if (onProcessingStateChangeRef.current) {
-          onProcessingStateChangeRef.current(false);
-        }
-      }, 500);
     }, 150);
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
