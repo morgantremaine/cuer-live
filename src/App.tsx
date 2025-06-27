@@ -28,7 +28,10 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { user, loading } = useAuth();
 
+  console.log('AppRoutes render - loading:', loading, 'user:', user?.email || 'no user');
+
   if (loading) {
+    console.log('AppRoutes: Showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -36,19 +39,35 @@ const AppRoutes = () => {
     );
   }
 
+  console.log('AppRoutes: Auth state determined, rendering routes');
+
   return (
     <Routes>
       {/* Redirect root to appropriate page based on auth state */}
       <Route 
         path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        } 
+      />
+      
+      {/* Login route - redirect if already authenticated */}
+      <Route 
+        path="/login" 
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Login />
+          )
+        } 
       />
       
       {/* Public routes */}
-      <Route 
-        path="/login" 
-        element={!user ? <Login /> : <Navigate to="/dashboard" replace />} 
-      />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/ad-view/:id" element={<ADView />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />

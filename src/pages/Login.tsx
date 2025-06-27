@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,21 +24,27 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
+  console.log('Login component render - user:', user?.email || 'no user');
+
   // Redirect if already logged in
   useEffect(() => {
+    console.log('Login useEffect - user:', user?.email || 'no user');
     if (user) {
       const from = location.state?.from?.pathname || '/dashboard'
+      console.log('Login: User already authenticated, redirecting to:', from);
       navigate(from, { replace: true })
     }
   }, [user, navigate, location])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Login: Attempting sign in for:', email);
     setLoading(true)
     
     const { error } = await signIn(email, password)
     
     if (error) {
+      console.log('Login: Sign in error:', error.message);
       if (error.message.includes('Email not confirmed')) {
         setShowResendConfirmation(true)
         toast({
@@ -55,11 +60,12 @@ const Login = () => {
         })
       }
     } else {
+      console.log('Login: Sign in successful');
       toast({
         title: 'Success',
         description: 'Signed in successfully!',
       })
-      // Navigation will be handled by useEffect above
+      // Navigation will be handled by useEffect above when user state updates
     }
     
     setLoading(false)
