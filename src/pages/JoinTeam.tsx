@@ -25,6 +25,7 @@ const JoinTeam = () => {
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
   const [profileError, setProfileError] = useState(false);
+  const [invitationProcessed, setInvitationProcessed] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -148,16 +149,17 @@ const JoinTeam = () => {
     }
   };
 
+  // Handle invitation acceptance when user is authenticated
   useEffect(() => {
-    // If user is already logged in and we have an invitation, accept it
-    if (user && invitation && !isProcessing) {
-      console.log('User is logged in, accepting invitation automatically');
+    if (user && invitation && !invitationProcessed && !isProcessing) {
+      console.log('User is authenticated and invitation is loaded, processing invitation');
+      setInvitationProcessed(true);
       handleAcceptInvitation();
     }
-  }, [user, invitation]);
+  }, [user, invitation, invitationProcessed, isProcessing]);
 
   const handleAcceptInvitation = async () => {
-    if (!token) return;
+    if (!token || isProcessing) return;
 
     setIsProcessing(true);
     
@@ -173,6 +175,7 @@ const JoinTeam = () => {
           variant: 'destructive',
         });
         setIsProcessing(false);
+        setInvitationProcessed(false); // Reset so user can try again
       } else {
         console.log('Invitation accepted successfully');
         localStorage.removeItem('pendingInvitationToken');
@@ -180,7 +183,11 @@ const JoinTeam = () => {
           title: 'Success',
           description: 'Welcome to the team!',
         });
-        navigate('/dashboard');
+        
+        // Add a small delay before navigation to ensure toast is visible
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       }
     } catch (error) {
       console.error('Error accepting invitation:', error);
@@ -190,6 +197,7 @@ const JoinTeam = () => {
         variant: 'destructive',
       });
       setIsProcessing(false);
+      setInvitationProcessed(false);
     }
   };
 
@@ -237,11 +245,20 @@ const JoinTeam = () => {
     
     if (error) {
       console.error('Sign in error:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      
+      if (error.message.includes('Email not confirmed')) {
+        toast({
+          title: 'Email not confirmed',
+          description: 'Please check your email and click the confirmation link first, then try signing in again.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
       setIsProcessing(false);
     }
     // If successful, the useEffect will handle accepting the invitation
@@ -278,7 +295,7 @@ const JoinTeam = () => {
     );
   }
 
-  if (user) {
+  if (user && !isProcessing) {
     return (
       <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
@@ -292,7 +309,7 @@ const JoinTeam = () => {
             <Button 
               onClick={handleAcceptInvitation} 
               className="w-full" 
-              disabled={isProcessing}
+              disabled={isProcessing || invitationProcessed}
             >
               {isProcessing ? 'Joining Team...' : 'Accept Invitation'}
             </Button>

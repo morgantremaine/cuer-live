@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -20,23 +21,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
+    if (initialized) return; // Prevent multiple initializations
+    
     console.log('Initializing auth state...');
     
     // Set up auth state listener FIRST
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('Auth state changed:', _event, session?.user?.email || 'no user');
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email || 'no user');
       setUser(session?.user ?? null)
       setLoading(false)
       
       // Only clean up invalid tokens when there's actually a user session
       // This prevents clearing tokens during initial auth state determination
-      if (session?.user) {
+      if (session?.user && event === 'SIGNED_IN') {
         // Use a small delay to prevent interference with auth flow
-        setTimeout(() => clearInvalidTokens(), 100);
+        setTimeout(() => clearInvalidTokens(), 500);
       }
     })
 
@@ -51,15 +55,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Only clean up invalid tokens if there's a user
       if (session?.user) {
-        setTimeout(() => clearInvalidTokens(), 100);
+        setTimeout(() => clearInvalidTokens(), 500);
       }
     })
+
+    setInitialized(true);
 
     return () => {
       console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
     }
-  }, [])
+  }, [initialized])
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting to sign in:', email);
