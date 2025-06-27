@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -94,26 +93,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // Create profile manually (restored from original working system)
-    if (data.user && !error) {
-      console.log('Creating profile for new user:', data.user.id);
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-        })
-      
-      if (profileError) {
-        console.error('Error creating profile:', profileError)
-        // Don't return the profile error to avoid breaking the signup flow
-      }
-    }
-
+    // Don't try to create profile manually - let the database trigger handle it
+    // The handle_new_user() trigger will create the profile automatically
     if (error) {
       console.error('Sign up error:', error);
+    } else {
+      console.log('Account created successfully - profile will be created by database trigger');
     }
+    
     return { error }
   }
 
