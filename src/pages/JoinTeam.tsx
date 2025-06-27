@@ -315,60 +315,6 @@ const JoinTeam = () => {
     return 'A team member';
   };
 
-  const handleCreateAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password.length < 6) {
-      toast({
-        title: 'Error',
-        description: 'Password must be at least 6 characters long',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    console.log('Creating account for:', email);
-    
-    const { error } = await signUp(email, password, fullName);
-    
-    if (error) {
-      console.error('Sign up error:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-    } else {
-      console.log('Account created successfully');
-      toast({
-        title: 'Account Created',
-        description: 'Please check your email to verify your account, then return to this page to join the team.',
-      });
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    setIsProcessing(true);
-    console.log('Signing in user:', email);
-    
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      console.error('Sign in error:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-    }
-    // If successful, the useEffect will handle accepting the invitation
-  };
-
   return (
     <div className="dark min-h-screen flex flex-col bg-gray-900">
       <div className="flex-1 flex items-center justify-center p-4">
