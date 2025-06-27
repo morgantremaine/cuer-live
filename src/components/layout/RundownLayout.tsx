@@ -210,16 +210,6 @@ const RundownLayout = ({
     console.log('Toggle float:', id);
   };
 
-  const handleAddRow = () => {
-    // This should be connected to the actual add row functionality
-    console.log('Add row');
-  };
-
-  const handleAddHeader = () => {
-    // This should be connected to the actual add header functionality
-    console.log('Add header');
-  };
-
   return (
     <div className="h-full flex flex-col">
       <RundownContent
