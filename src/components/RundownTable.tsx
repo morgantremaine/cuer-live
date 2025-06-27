@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { ColorPicker } from "@/components/ColorPicker";
+import ColorPicker from "@/components/ColorPicker";
 import { GripVertical } from 'lucide-react';
 
 interface RundownTableProps {
@@ -137,8 +137,8 @@ const RundownTable = ({
           const isDragging = draggedItemIndex !== null;
           const isMultipleSelection = selectedRows.size > 1;
 
-          // Determine if this row contains the current segment
-          const isCurrentSegment = item.segmentId === currentSegmentId;
+          // Determine if this row contains the current segment - use item.id as fallback if segmentId doesn't exist
+          const isCurrentSegment = (item as any).segmentId === currentSegmentId || item.id === currentSegmentId;
 
           return (
             <TableRow
@@ -234,18 +234,24 @@ const RundownTable = ({
                       <div className="px-2 py-1 whitespace-pre-line">
                         {searchMatch ? (
                           <>
-                            {searchMatch.indices.map((match, matchIndex) => (
-                              <React.Fragment key={matchIndex}>
-                                {matchIndex > 0 ? itemValue.substring(searchMatch.indices[matchIndex - 1].index + searchMatch.indices[matchIndex - 1].length, match.index) : itemValue.substring(0, match.index)}
-                                <mark className={searchMatch.isCurrent ? 'bg-primary text-primary-foreground' : 'bg-yellow-200'}>
-                                  {itemValue.substring(match.index, match.index + match.length)}
-                                </mark>
-                              </React.Fragment>
-                            ))}
-                            {itemValue.substring(searchMatch.indices[searchMatch.indices.length - 1].index + searchMatch.indices[searchMatch.indices.length - 1].length)}
+                            {searchMatch.indices.map((match, matchIndex) => {
+                              const itemValue = String(item[columnKey] || '');
+                              return (
+                                <React.Fragment key={matchIndex}>
+                                  {matchIndex > 0 ? itemValue.substring(searchMatch.indices[matchIndex - 1].index + searchMatch.indices[matchIndex - 1].length, match.index) : itemValue.substring(0, match.index)}
+                                  <mark className={searchMatch.isCurrent ? 'bg-primary text-primary-foreground' : 'bg-yellow-200'}>
+                                    {itemValue.substring(match.index, match.index + match.length)}
+                                  </mark>
+                                </React.Fragment>
+                              );
+                            })}
+                            {(() => {
+                              const itemValue = String(item[columnKey] || '');
+                              return itemValue.substring(searchMatch.indices[searchMatch.indices.length - 1].index + searchMatch.indices[searchMatch.indices.length - 1].length);
+                            })()}
                           </>
                         ) : (
-                          itemValue
+                          cellValue
                         )}
                       </div>
                     )}
@@ -391,9 +397,10 @@ const RundownTable = ({
                         </Button>
                         {showColorPicker === itemId && (
                           <ColorPicker
-                            color={item.color || '#ffffff'}
-                            onColorSelect={(color) => onColorSelect(itemId, color)}
-                            onClose={() => onToggleColorPicker(itemId)}
+                            itemId={itemId}
+                            showColorPicker={showColorPicker}
+                            onToggle={onToggleColorPicker}
+                            onColorSelect={onColorSelect}
                           />
                         )}
                       </div>

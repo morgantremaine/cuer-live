@@ -148,7 +148,10 @@ const RundownContent = ({
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
-            getHeaderDuration={calculateHeaderDuration}
+            getHeaderDuration={(itemId: string) => {
+              const itemIndex = items.findIndex(item => item.id === itemId);
+              return itemIndex !== -1 ? calculateHeaderDuration(itemIndex) : '00:00:00';
+            }}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
