@@ -11,24 +11,24 @@ export const executeQuery = async <T = any>(
   data?: any
 ): Promise<DatabaseResponse<T>> => {
   try {
-    let query = supabase.from(table);
+    let query: any;
     
     // Build query based on operation
     switch (operation) {
       case 'select':
-        query = query.select(options.select || '*');
+        query = supabase.from(table).select(options.select || '*');
         break;
       case 'insert':
-        query = query.insert(data);
+        query = supabase.from(table).insert(data);
         break;
       case 'update':
-        query = query.update(data);
+        query = supabase.from(table).update(data);
         break;
       case 'delete':
-        query = query.delete();
+        query = supabase.from(table).delete();
         break;
       case 'upsert':
-        query = query.upsert(data);
+        query = supabase.from(table).upsert(data);
         break;
     }
     
@@ -55,7 +55,7 @@ export const executeQuery = async <T = any>(
     const result = await query;
     
     if (result.error) {
-      logger.error(`Database ${operation} operation failed on ${table}`, result.error);
+      logger.error(`Database ${operation} operation failed on ${table}: ${result.error.message}`);
       return {
         data: null,
         error: {
@@ -74,7 +74,7 @@ export const executeQuery = async <T = any>(
     };
     
   } catch (error) {
-    logger.error(`Database ${operation} operation threw exception on ${table}`, error);
+    logger.error(`Database ${operation} operation threw exception on ${table}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return {
       data: null,
       error: {
