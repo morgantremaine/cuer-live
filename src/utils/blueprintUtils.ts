@@ -1,5 +1,6 @@
 
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { BlueprintList } from '@/types/blueprint';
 import { logger } from '@/utils/logger';
 
 export interface AvailableColumn {
@@ -111,4 +112,34 @@ export const getUniqueItems = (items: string[]): string[] => {
   const unique = [...new Set(items)];
   logger.blueprint('Unique items:', { originalCount: items.length, uniqueCount: unique.length });
   return unique;
+};
+
+export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
+  logger.blueprint('generateDefaultBlueprint called', { rundownId, rundownTitle, itemCount: items.length });
+  
+  const availableColumns = getAvailableColumns(items);
+  const defaultLists: BlueprintList[] = [];
+  
+  // Generate a default list for each available column (up to 3 to avoid overwhelming)
+  const columnsToUse = availableColumns.slice(0, 3);
+  
+  columnsToUse.forEach((column, index) => {
+    const listItems = generateListFromColumn(items, column.value);
+    
+    if (listItems.length > 0) {
+      const list: BlueprintList = {
+        id: `${column.value}_${Date.now() + index}`,
+        name: column.name,
+        sourceColumn: column.value,
+        items: listItems,
+        checkedItems: {}
+      };
+      
+      defaultLists.push(list);
+      logger.blueprint('Created default list:', { name: list.name, itemCount: list.items.length });
+    }
+  });
+  
+  logger.blueprint('Generated default blueprint with lists:', defaultLists.length);
+  return defaultLists;
 };
