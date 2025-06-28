@@ -38,6 +38,9 @@ export const useShowcallerInitialState = ({
 
       if (error) {
         console.error('📺 Error loading initial showcaller state:', error);
+        // Still mark as loaded even if there's an error
+        hasLoadedRef.current = true;
+        loadedRundownRef.current = rundownId;
         return;
       }
 
@@ -50,9 +53,17 @@ export const useShowcallerInitialState = ({
         onStateLoaded(data.showcaller_state);
         hasLoadedRef.current = true;
         loadedRundownRef.current = rundownId;
+      } else {
+        // No showcaller state exists yet, still mark as loaded
+        console.log('📺 No existing showcaller state found');
+        hasLoadedRef.current = true;
+        loadedRundownRef.current = rundownId;
       }
     } catch (error) {
       console.error('📺 Error loading initial state:', error);
+      // Still mark as loaded to prevent infinite retries
+      hasLoadedRef.current = true;
+      loadedRundownRef.current = rundownId;
     } finally {
       isLoadingRef.current = false;
     }

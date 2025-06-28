@@ -107,8 +107,16 @@ export const useShowcallerVisualState = ({
 
   // Mark as initialized when either state loads or no state exists
   useEffect(() => {
-    if (rundownId && !isInitialized && hasLoaded) {
-      setIsInitialized(true);
+    if (rundownId && !isInitialized) {
+      // If no saved state exists after loading attempt, still mark as initialized
+      const initTimer = setTimeout(() => {
+        if (!isInitialized) {
+          console.log('📺 No saved state found, initializing with default state');
+          setIsInitialized(true);
+        }
+      }, 2000);
+
+      return () => clearTimeout(initTimer);
     }
   }, [rundownId, hasLoaded, isInitialized]);
 
@@ -473,8 +481,6 @@ export const useShowcallerVisualState = ({
     }, true, true);
   }, [stopPrecisionTimer, updateVisualState, userId]);
 
-  // ... keep existing code (forward, backward, reset functions with minimal changes)
-
   const forward = useCallback(() => {
     console.log('📺 Visual forward called');
     
@@ -571,12 +577,6 @@ export const useShowcallerVisualState = ({
       return;
     }
 
-    // Skip updates if we're currently the controller (prevent conflicts)
-    if (visualState.controllerId === userId && externalState.controllerId !== userId) {
-      console.log('⏭️ Skipping external update - we are the controller');
-      return;
-    }
-
     lastProcessedUpdateRef.current = externalState.lastUpdate;
     
     console.log('📺 Applying external visual state from controller:', externalState.controllerId);
@@ -602,7 +602,7 @@ export const useShowcallerVisualState = ({
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       setTimeout(() => startPrecisionTimer(), 50);
     }
-  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer, visualState.controllerId, userId]);
+  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer]);
 
   // Initialize current segment - skip floated items, but only after state is loaded
   useEffect(() => {
