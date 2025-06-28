@@ -85,7 +85,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     isLoadingRef.current = true;
     loadedRundownRef.current = rundownId;
-    console.log('🔄 Loading column preferences for rundown:', rundownId);
 
     try {
       const { data, error } = await supabase
@@ -120,11 +119,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         // Merge with team columns
         const mergedColumns = mergeColumnsWithTeamColumns(fixedColumns);
         
-        console.log('✅ Loaded user column preferences:', mergedColumns.length, 'columns');
         setColumns(mergedColumns);
         lastSavedRef.current = JSON.stringify(fixedColumns); // Only save personal columns
       } else {
-        console.log('📋 No saved preferences, using defaults');
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
         lastSavedRef.current = JSON.stringify(defaultColumns);
@@ -183,7 +180,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           console.error('Error saving column preferences:', error);
         } else {
           lastSavedRef.current = currentSignature;
-          console.log('✅ Column preferences saved successfully');
         }
       } catch (error) {
         console.error('Failed to save column preferences:', error);
@@ -207,7 +203,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add new custom columns to team_custom_columns table
     for (const newCol of newCustomColumns) {
       if (team?.id && user?.id) {
-        console.log('🔄 Adding new team custom column:', newCol.name);
         await addTeamColumn(newCol.key, newCol.name);
       }
     }
