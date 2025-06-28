@@ -10,7 +10,6 @@ import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
-import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
@@ -164,8 +163,8 @@ const BlueprintContent = () => {
       return;
     }
 
-    // Handle special components reordering
-    if (draggedId === 'crew-list' || draggedId === 'camera-plot' || draggedId === 'scratchpad') {
+    // Handle special components reordering (removed crew-list references)
+    if (draggedId === 'camera-plot' || draggedId === 'scratchpad') {
       const currentComponentOrder = [...state.componentOrder];
       const draggedIndex = currentComponentOrder.indexOf(draggedId);
       
@@ -266,31 +265,8 @@ const BlueprintContent = () => {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Create component mapping for rendering in the correct order
+  // Create component mapping for rendering in the correct order (removed crew-list)
   const componentMap = {
-    'crew-list': (
-      <div 
-        key="crew-list"
-        className={`${draggedListId === 'crew-list' ? 'opacity-50' : ''}`}
-        draggable
-        onDragStart={(e) => handleDragStart(e, 'crew-list')}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          const componentIndex = state.lists.length + state.componentOrder.indexOf('crew-list');
-          handleDragEnterContainer(e, componentIndex);
-        }}
-        onDragEnd={handleDragEnd}
-      >
-        <CrewList 
-          rundownId={id || ''}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-          isDragging={draggedListId === 'crew-list'}
-          onDragStart={handleDragStart}
-          onDragEnterContainer={handleDragEnterContainer}
-          onDragEnd={handleDragEnd}
-        />
-      </div>
-    ),
     'camera-plot': (
       <div 
         key="camera-plot"

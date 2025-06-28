@@ -8,7 +8,6 @@ interface PartialSaveOptions {
   lists?: BlueprintList[];
   showDate?: string;
   notes?: string;
-  crewData?: any[];
   cameraPlots?: any[];
   componentOrder?: string[];
 }
@@ -38,11 +37,6 @@ export const useBlueprintPartialSave = (
     await savePartialBlueprint({ notes });
   }, [savePartialBlueprint]);
 
-  const saveCrewDataOnly = useCallback(async (crewData: any[]) => {
-    logger.blueprint('PARTIAL SAVE - Crew data only:', { count: crewData.length });
-    await savePartialBlueprint({ crewData });
-  }, [savePartialBlueprint]);
-
   const saveCameraPlotsOnly = useCallback(async (cameraPlots: any[]) => {
     logger.blueprint('PARTIAL SAVE - Camera plots only:', { count: cameraPlots.length });
     await savePartialBlueprint({ cameraPlots });
@@ -61,7 +55,6 @@ export const useBlueprintPartialSave = (
   return {
     saveListsOnly,
     saveNotesOnly,
-    saveCrewDataOnly,
     saveCameraPlotsOnly,
     saveComponentOrderOnly,
     saveShowDateOnly,

@@ -1,7 +1,5 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import { BlueprintList } from '@/types/blueprint';
-import { CrewMember } from '@/types/crew';
 import { CameraPlotScene } from '@/hooks/cameraPlot/core/useCameraPlotData';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
@@ -12,7 +10,6 @@ export interface BlueprintState {
   lists: BlueprintList[];
   showDate: string;
   notes: string;
-  crewData: CrewMember[];
   cameraPlots: CameraPlotScene[];
   componentOrder: string[];
   isLoading: boolean;
@@ -31,7 +28,6 @@ export type BlueprintAction =
   | { type: 'UPDATE_LISTS'; payload: BlueprintList[] }
   | { type: 'UPDATE_SHOW_DATE'; payload: string }
   | { type: 'UPDATE_NOTES'; payload: string }
-  | { type: 'UPDATE_CREW_DATA'; payload: CrewMember[] }
   | { type: 'UPDATE_CAMERA_PLOTS'; payload: CameraPlotScene[] }
   | { type: 'UPDATE_COMPONENT_ORDER'; payload: string[] }
   | { type: 'MERGE_REMOTE_STATE'; payload: Partial<BlueprintState> }
@@ -41,9 +37,8 @@ const initialState: BlueprintState = {
   lists: [],
   showDate: '',
   notes: '',
-  crewData: [],
   cameraPlots: [],
-  componentOrder: ['crew-list', 'camera-plot', 'scratchpad'],
+  componentOrder: ['camera-plot', 'scratchpad'], // Removed 'crew-list'
   isLoading: false,
   isInitialized: false,
   isSaving: false,
@@ -76,9 +71,6 @@ function blueprintReducer(state: BlueprintState, action: BlueprintAction): Bluep
     case 'UPDATE_NOTES':
       logger.blueprint('Updating notes in reducer:', { length: action.payload.length });
       return { ...state, notes: action.payload };
-    case 'UPDATE_CREW_DATA':
-      logger.blueprint('Updating crew data in reducer:', { count: action.payload.length });
-      return { ...state, crewData: action.payload };
     case 'UPDATE_CAMERA_PLOTS':
       logger.blueprint('Updating camera plots in reducer:', { count: action.payload.length });
       return { ...state, cameraPlots: action.payload };
@@ -129,7 +121,6 @@ interface BlueprintContextValue {
   // Other data operations
   updateShowDate: (date: string) => void;
   updateNotes: (notes: string) => void;
-  updateCrewData: (crewData: CrewMember[]) => void;
   updateCameraPlots: (plots: CameraPlotScene[]) => void;
   updateComponentOrder: (order: string[]) => void;
   
@@ -164,11 +155,10 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     setSavedBlueprint
   );
 
-  // Use partial save hooks for different components
+  // Use partial save hooks for different components (removed crew data)
   const {
     saveListsOnly,
     saveNotesOnly,
-    saveCrewDataOnly,
     saveCameraPlotsOnly,
     saveComponentOrderOnly,
     saveShowDateOnly
@@ -209,7 +199,6 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             lists: blueprintData.lists?.length || 0,
             showDate: blueprintData.show_date,
             notes: blueprintData.notes?.length || 0,
-            crewData: blueprintData.crew_data?.length || 0,
             cameraPlots: blueprintData.camera_plots?.length || 0,
             componentOrder: blueprintData.component_order
           });
@@ -228,9 +217,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
             notes: blueprintData.notes || '',
-            crewData: blueprintData.crew_data || [],
             cameraPlots: blueprintData.camera_plots || [],
-            componentOrder: blueprintData.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+            componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
           }});
         } else {
           logger.blueprint('No existing blueprint found, starting with empty state');
@@ -353,14 +341,6 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     debouncedSave();
   }, [createDebouncedSave, saveNotesOnly]);
 
-  const updateCrewData = React.useCallback((crewData: CrewMember[]) => {
-    logger.blueprint('Context updateCrewData called with', { count: crewData.length });
-    dispatch({ type: 'UPDATE_CREW_DATA', payload: crewData });
-    
-    const debouncedSave = createDebouncedSave(() => saveCrewDataOnly(crewData));
-    debouncedSave();
-  }, [createDebouncedSave, saveCrewDataOnly]);
-
   const updateCameraPlots = React.useCallback((plots: CameraPlotScene[]) => {
     logger.blueprint('Context updateCameraPlots called with', { count: plots.length });
     dispatch({ type: 'UPDATE_CAMERA_PLOTS', payload: plots });
@@ -393,9 +373,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           lists: blueprintData.lists || [],
           showDate: blueprintData.show_date || '',
           notes: blueprintData.notes || '',
-          crewData: blueprintData.crew_data || [],
           cameraPlots: blueprintData.camera_plots || [],
-          componentOrder: blueprintData.component_order || ['crew-list', 'camera-plot', 'scratchpad']
+          componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
         }});
       }
     } catch (error) {
@@ -425,7 +404,6 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     updateCheckedItems,
     updateShowDate,
     updateNotes,
-    updateCrewData,
     updateCameraPlots,
     updateComponentOrder,
     saveBlueprint,
