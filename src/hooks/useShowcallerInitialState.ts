@@ -15,14 +15,19 @@ export const useShowcallerInitialState = ({
 }: UseShowcallerInitialStateProps) => {
   const hasLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
+  const loadedRundownRef = useRef<string | null>(null);
 
   const loadInitialState = useCallback(async () => {
-    if (!rundownId || hasLoadedRef.current || isLoadingRef.current) {
+    if (!rundownId || isLoadingRef.current) {
+      return;
+    }
+
+    // Prevent duplicate loading for the same rundown
+    if (loadedRundownRef.current === rundownId && hasLoadedRef.current) {
       return;
     }
 
     isLoadingRef.current = true;
-    console.log('📺 Loading initial showcaller state for rundown:', rundownId);
 
     try {
       const { data, error } = await supabase
@@ -37,12 +42,6 @@ export const useShowcallerInitialState = ({
       }
 
       if (data?.showcaller_state) {
-        console.log('📺 Found saved showcaller state:', {
-          isPlaying: data.showcaller_state.isPlaying,
-          currentSegment: data.showcaller_state.currentSegmentId,
-          controller: data.showcaller_state.controllerId
-        });
-
         // Mark this as our own tracked update to prevent feedback
         if (data.showcaller_state.lastUpdate) {
           trackOwnUpdate(data.showcaller_state.lastUpdate);
@@ -50,8 +49,7 @@ export const useShowcallerInitialState = ({
 
         onStateLoaded(data.showcaller_state);
         hasLoadedRef.current = true;
-      } else {
-        console.log('📺 No saved showcaller state found');
+        loadedRundownRef.current = rundownId;
       }
     } catch (error) {
       console.error('📺 Error loading initial state:', error);
@@ -60,11 +58,12 @@ export const useShowcallerInitialState = ({
     }
   }, [rundownId, onStateLoaded, trackOwnUpdate]);
 
-  // Reset loading flag when rundownId changes
+  // Reset loading flags when rundownId changes
   useEffect(() => {
-    if (rundownId) {
+    if (rundownId && rundownId !== loadedRundownRef.current) {
       hasLoadedRef.current = false;
       isLoadingRef.current = false;
+      loadedRundownRef.current = null;
       // Small delay to ensure other hooks are ready
       const timer = setTimeout(loadInitialState, 100);
       return () => clearTimeout(timer);

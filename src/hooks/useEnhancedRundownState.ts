@@ -16,7 +16,7 @@ export const useEnhancedRundownState = () => {
   // Get basic rundown data loading
   const dataLoader = useRundownData();
 
-  // Memoized validated data
+  // Memoized validated data to prevent unnecessary re-processing
   const validatedData = useMemo(() => {
     if (!dataLoader.data) return null;
     
@@ -52,12 +52,12 @@ export const useEnhancedRundownState = () => {
     // Combined loading state
     isFullyLoading: dataLoader.isLoading || cleanState.isLoading,
     
-    // Enhanced debugging info
-    debugInfo: {
+    // Enhanced debugging info (only in development)
+    debugInfo: process.env.NODE_ENV === 'development' ? {
       hasValidData: !!validatedData,
       itemCount: validatedData?.items.length || 0,
       columnCount: validatedData?.columns.length || 0,
       rundownId: dataLoader.rundownId
-    }
+    } : undefined
   };
 };
