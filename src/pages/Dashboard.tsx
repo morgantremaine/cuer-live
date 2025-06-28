@@ -18,7 +18,6 @@ import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import DashboardRundownGridSkeleton from '@/components/DashboardRundownGridSkeleton';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -323,24 +322,20 @@ const Dashboard = () => {
                   </CSVImportDialog>
                 </div>
                 
-                {/* Rundowns Grid or Loading Skeleton */}
-                {loading ? (
-                  <DashboardRundownGridSkeleton />
-                ) : (
-                  <DashboardRundownGrid 
-                    title={folderTitle}
-                    rundowns={filteredRundowns}
-                    loading={loading}
-                    onOpen={handleOpenRundown}
-                    onDelete={handleDeleteRundown}
-                    onArchive={handleArchiveRundown}
-                    onUnarchive={handleUnarchiveRundown}
-                    onDuplicate={handleDuplicateRundown}
-                    isArchived={folderType === 'archived'}
-                    showEmptyState={true}
-                    currentUserId={user?.id}
-                  />
-                )}
+                {/* Rundowns Grid */}
+                <DashboardRundownGrid 
+                  title={folderTitle}
+                  rundowns={filteredRundowns}
+                  loading={loading}
+                  onOpen={handleOpenRundown}
+                  onDelete={handleDeleteRundown}
+                  onArchive={handleArchiveRundown}
+                  onUnarchive={handleUnarchiveRundown}
+                  onDuplicate={handleDuplicateRundown}
+                  isArchived={folderType === 'archived'}
+                  showEmptyState={true}
+                  currentUserId={user?.id}
+                />
               </div>
             </div>
           </main>
