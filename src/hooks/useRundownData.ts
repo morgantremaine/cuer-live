@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { RundownItem } from '@/types/rundown';
@@ -22,6 +22,8 @@ export const useRundownData = () => {
   const [data, setData] = useState<RundownData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadedRundownRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   const loadData = useCallback(async () => {
     if (!rundownId) {
@@ -29,6 +31,14 @@ export const useRundownData = () => {
       setIsLoading(false);
       return;
     }
+
+    // Prevent duplicate loading for the same rundown
+    if (loadedRundownRef.current === rundownId || isLoadingRef.current) {
+      return;
+    }
+
+    isLoadingRef.current = true;
+    loadedRundownRef.current = rundownId;
 
     try {
       const { data: rundownData, error: queryError } = await supabase
@@ -62,12 +72,17 @@ export const useRundownData = () => {
       setData(null);
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
   }, [rundownId]);
 
+  // Load data when rundown ID changes
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (rundownId !== loadedRundownRef.current) {
+      loadedRundownRef.current = null; // Reset to allow new load
+      loadData();
+    }
+  }, [rundownId, loadData]);
 
   return {
     data,

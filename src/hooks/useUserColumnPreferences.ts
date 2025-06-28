@@ -40,6 +40,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
+  const loadedRundownRef = useRef<string | null>(null);
 
   // Merge team custom columns with user's column layout
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
@@ -76,7 +77,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
+    // Prevent duplicate loading for the same rundown
+    if (loadedRundownRef.current === rundownId) {
+      setIsLoading(false);
+      return;
+    }
+
     isLoadingRef.current = true;
+    loadedRundownRef.current = rundownId;
     console.log('🔄 Loading column preferences for rundown:', rundownId);
 
     try {
@@ -227,14 +235,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     });
   }, [saveColumnPreferences]);
 
-  // Load preferences when rundown, user, or team columns change
+  // Load preferences when rundown changes, but prevent duplicate loads
   useEffect(() => {
-    loadColumnPreferences();
-  }, [loadColumnPreferences]);
+    if (rundownId && rundownId !== loadedRundownRef.current) {
+      loadedRundownRef.current = null; // Reset to allow new load
+      loadColumnPreferences();
+    }
+  }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change
+  // Update columns when team columns change, but only if not currently loading
   useEffect(() => {
-    if (!isLoadingRef.current && teamColumns.length > 0) {
+    if (!isLoadingRef.current && teamColumns.length > 0 && loadedRundownRef.current) {
       setColumns(prevColumns => mergeColumnsWithTeamColumns(prevColumns));
     }
   }, [teamColumns, mergeColumnsWithTeamColumns]);
