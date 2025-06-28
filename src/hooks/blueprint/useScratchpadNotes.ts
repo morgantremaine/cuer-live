@@ -4,8 +4,8 @@ import { ScratchpadNote, ScratchpadState } from '@/types/scratchpad';
 import { useBlueprintContext } from '@/contexts/BlueprintContext';
 
 export const useScratchpadNotes = (rundownId: string) => {
-  const { updateNotes } = useBlueprintContext();
-  const [state, setState] = useState<ScratchpadState>({
+  const { state, updateNotes } = useBlueprintContext();
+  const [localState, setLocalState] = useState<ScratchpadState>({
     notes: [],
     activeNoteId: null,
     searchQuery: ''
@@ -16,65 +16,91 @@ export const useScratchpadNotes = (rundownId: string) => {
 
   // Auto-save debounce timer
   const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load notes from localStorage on mount
+  // Initialize notes from blueprint context
   useEffect(() => {
-    const savedNotes = localStorage.getItem(`scratchpad-notes-${rundownId}`);
-    const savedRenamedNotes = localStorage.getItem(`scratchpad-renamed-notes-${rundownId}`);
+    if (isInitialized) return;
     
-    if (savedNotes) {
-      try {
-        const parsedState = JSON.parse(savedNotes);
-        setState(prev => ({
-          ...prev,
-          notes: parsedState.notes || [],
-          activeNoteId: parsedState.activeNoteId || null
-        }));
-        
-        if (savedRenamedNotes) {
-          setManuallyRenamedNotes(new Set(JSON.parse(savedRenamedNotes)));
+    try {
+      // Try to parse notes from blueprint context as JSON (new format)
+      let parsedNotes = [];
+      if (state.notes && typeof state.notes === 'string') {
+        try {
+          const parsed = JSON.parse(state.notes);
+          if (Array.isArray(parsed)) {
+            parsedNotes = parsed;
+          } else {
+            // Handle old text format - convert to new format
+            parsedNotes = [{
+              id: `note-${Date.now()}`,
+              title: 'Show Notes',
+              content: state.notes,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }];
+          }
+        } catch {
+          // Handle old text format - convert to new format
+          parsedNotes = [{
+            id: `note-${Date.now()}`,
+            title: 'Show Notes',
+            content: state.notes,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }];
         }
-      } catch (error) {
-        console.error('Error loading scratchpad notes:', error);
-        createDefaultNote();
       }
-    } else {
+
+      if (parsedNotes.length === 0) {
+        parsedNotes = [{
+          id: `note-${Date.now()}`,
+          title: 'Show Notes',
+          content: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }];
+      }
+
+      setLocalState(prev => ({
+        ...prev,
+        notes: parsedNotes,
+        activeNoteId: parsedNotes[0]?.id || null
+      }));
+      
+      setIsInitialized(true);
+    } catch (error) {
+      console.error('Error initializing scratchpad notes:', error);
       createDefaultNote();
     }
-  }, [rundownId]);
+  }, [state.notes, isInitialized]);
 
-  // Save notes to localStorage with debouncing
-  const saveToStorage = useCallback((newState: ScratchpadState, renamedNotes: Set<string>) => {
+  // Save notes to blueprint context with debouncing
+  const saveToBlueprint = useCallback((newState: ScratchpadState) => {
+    if (!isInitialized) return;
+    
+    // Clear existing timeout
     if (saveTimer) {
       clearTimeout(saveTimer);
     }
     
     const timer = setTimeout(() => {
-      localStorage.setItem(`scratchpad-notes-${rundownId}`, JSON.stringify({
-        notes: newState.notes,
-        activeNoteId: newState.activeNoteId
-      }));
-      
-      localStorage.setItem(`scratchpad-renamed-notes-${rundownId}`, JSON.stringify(Array.from(renamedNotes)));
-      
-      // Update blueprint context with active note content for backward compatibility
-      const activeNote = newState.notes.find(note => note.id === newState.activeNoteId);
-      if (activeNote) {
-        updateNotes(activeNote.content);
-      }
+      // Convert notes array to JSON string for storage
+      const notesJson = JSON.stringify(newState.notes);
+      updateNotes(notesJson);
     }, 500); // 500ms debounce
     
     setSaveTimer(timer);
-  }, [saveTimer, rundownId, updateNotes]);
+  }, [saveTimer, updateNotes, isInitialized]);
 
   // Update state and trigger save
   const updateState = useCallback((updater: (prev: ScratchpadState) => ScratchpadState) => {
-    setState(prev => {
+    setLocalState(prev => {
       const newState = updater(prev);
-      saveToStorage(newState, manuallyRenamedNotes);
+      saveToBlueprint(newState);
       return newState;
     });
-  }, [saveToStorage, manuallyRenamedNotes]);
+  }, [saveToBlueprint]);
 
   const createDefaultNote = useCallback(() => {
     const defaultNote: ScratchpadNote = {
@@ -85,17 +111,18 @@ export const useScratchpadNotes = (rundownId: string) => {
       updatedAt: new Date().toISOString()
     };
 
-    setState(prev => ({
+    setLocalState(prev => ({
       ...prev,
       notes: [defaultNote],
       activeNoteId: defaultNote.id
     }));
+    setIsInitialized(true);
   }, []);
 
   const createNote = useCallback(() => {
     const newNote: ScratchpadNote = {
       id: `note-${Date.now()}`,
-      title: `Note ${state.notes.length + 1}`,
+      title: `Note ${localState.notes.length + 1}`,
       content: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -106,7 +133,7 @@ export const useScratchpadNotes = (rundownId: string) => {
       notes: [newNote, ...prev.notes],
       activeNoteId: newNote.id
     }));
-  }, [state.notes.length, updateState]);
+  }, [localState.notes.length, updateState]);
 
   const selectNote = useCallback((noteId: string) => {
     updateState(prev => ({
@@ -116,12 +143,12 @@ export const useScratchpadNotes = (rundownId: string) => {
   }, [updateState]);
 
   const updateNoteContent = useCallback((content: string) => {
-    if (!state.activeNoteId) return;
+    if (!localState.activeNoteId) return;
 
     updateState(prev => ({
       ...prev,
       notes: prev.notes.map(note => {
-        if (note.id === state.activeNoteId) {
+        if (note.id === localState.activeNoteId) {
           // Only auto-update title if note hasn't been manually renamed AND has no title or default title
           const shouldAutoUpdateTitle = !manuallyRenamedNotes.has(note.id) && 
             (!note.title || note.title.startsWith('Note ') || note.title === 'Show Notes');
@@ -136,7 +163,7 @@ export const useScratchpadNotes = (rundownId: string) => {
         return note;
       })
     }));
-  }, [state.activeNoteId, updateState, manuallyRenamedNotes]);
+  }, [localState.activeNoteId, updateState, manuallyRenamedNotes]);
 
   const renameNote = useCallback((noteId: string, newTitle: string) => {
     // Mark this note as manually renamed
@@ -156,12 +183,7 @@ export const useScratchpadNotes = (rundownId: string) => {
           : note
       )
     }));
-
-    // Save the updated manually renamed notes
-    setTimeout(() => {
-      saveToStorage(state, newManuallyRenamed);
-    }, 0);
-  }, [updateState, manuallyRenamedNotes, saveToStorage, state]);
+  }, [updateState, manuallyRenamedNotes]);
 
   const deleteNote = useCallback((noteId: string) => {
     // Remove from manually renamed notes if it exists
@@ -184,7 +206,7 @@ export const useScratchpadNotes = (rundownId: string) => {
   }, [updateState, manuallyRenamedNotes]);
 
   const setSearchQuery = useCallback((query: string) => {
-    setState(prev => ({
+    setLocalState(prev => ({
       ...prev,
       searchQuery: query
     }));
@@ -199,7 +221,7 @@ export const useScratchpadNotes = (rundownId: string) => {
     return firstLine.substring(0, 30) || null;
   };
 
-  const activeNote = state.notes.find(note => note.id === state.activeNoteId);
+  const activeNote = localState.notes.find(note => note.id === localState.activeNoteId);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -211,9 +233,9 @@ export const useScratchpadNotes = (rundownId: string) => {
   }, [saveTimer]);
 
   return {
-    notes: state.notes,
+    notes: localState.notes,
     activeNote,
-    searchQuery: state.searchQuery,
+    searchQuery: localState.searchQuery,
     createNote,
     selectNote,
     updateNoteContent,
