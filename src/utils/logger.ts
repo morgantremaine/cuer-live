@@ -6,13 +6,17 @@ interface LoggerConfig {
   enableConsoleLogging: boolean;
   enableErrorReporting: boolean;
   logLevel: LogLevel;
+  enableBlueprintDebug: boolean;
+  enableRundownDebug: boolean;
 }
 
 const config: LoggerConfig = {
   isDevelopment: import.meta.env.DEV,
   enableConsoleLogging: import.meta.env.DEV,
   enableErrorReporting: import.meta.env.PROD,
-  logLevel: import.meta.env.DEV ? 'debug' : 'error'
+  logLevel: import.meta.env.DEV ? 'info' : 'error', // Changed from 'debug' to 'info'
+  enableBlueprintDebug: false, // Disable verbose blueprint debugging
+  enableRundownDebug: false // Disable verbose rundown debugging
 };
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -36,7 +40,7 @@ const formatMessage = (level: LogLevel, message: string, data?: any): string => 
   return `${prefix} ${message}`;
 };
 
-// Enhanced logging utility with proper production handling
+// Enhanced logging utility with production handling and selective debugging
 export const logger = {
   error: (message: string, data?: any) => {
     if (!shouldLog('error')) return;
@@ -91,6 +95,27 @@ export const logger = {
     
     if (config.enableConsoleLogging) {
       console.debug(formattedMessage);
+    }
+  },
+
+  // Specialized loggers for specific domains
+  blueprint: (message: string, data?: any) => {
+    if (!config.enableBlueprintDebug || !shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📋 ${message}`, data);
+    
+    if (config.enableConsoleLogging) {
+      console.log(formattedMessage);
+    }
+  },
+
+  rundown: (message: string, data?: any) => {
+    if (!config.enableRundownDebug || !shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📝 ${message}`, data);
+    
+    if (config.enableConsoleLogging) {
+      console.log(formattedMessage);
     }
   }
 };
