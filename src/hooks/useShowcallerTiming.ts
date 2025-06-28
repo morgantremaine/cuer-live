@@ -118,13 +118,17 @@ export const useShowcallerTiming = ({
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     }
     
+    // FIXED: Round the difference to prevent flickering between seconds
+    // This eliminates the oscillation between +00:02:04 and +00:02:05
+    const roundedDifferenceSeconds = Math.round(differenceSeconds);
+    
     // TIMING LOGIC:
     // Positive difference = showcaller is ahead of where it should be = UNDER time
     // Negative difference = showcaller is behind where it should be = OVER time
-    const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
+    const isOnTime = Math.abs(roundedDifferenceSeconds) <= 5;
+    const isAhead = roundedDifferenceSeconds > 5; // Showcaller ahead of schedule = under time
     
-    const absoluteDifference = Math.abs(differenceSeconds);
+    const absoluteDifference = Math.abs(roundedDifferenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
 
     return {
