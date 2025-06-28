@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -28,6 +29,9 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   const isMobile = useIsMobile();
+  
+  // Track initial loading state separately from the loading state
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -46,6 +50,13 @@ const Dashboard = () => {
   
   // Handle any pending team invitations after login
   useInvitationHandler();
+
+  // Track when initial data has loaded
+  useEffect(() => {
+    if (!loading && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [loading, isInitialLoad]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -268,6 +279,46 @@ const Dashboard = () => {
 
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
+
+  // Show loading skeleton during initial load
+  if (isInitialLoad) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col">
+        <DashboardHeader 
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+        />
+        
+        <div className="flex flex-1">
+          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-full bg-gray-700" />
+              <Skeleton className="h-6 w-3/4 bg-gray-700" />
+              <Skeleton className="h-6 w-1/2 bg-gray-700" />
+              <Skeleton className="h-6 w-2/3 bg-gray-700" />
+            </div>
+          </div>
+          
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+              <div className="px-4 py-6 sm:px-0 space-y-6">
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-40 bg-gray-700" />
+                  <Skeleton className="h-12 w-32 bg-gray-700" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">

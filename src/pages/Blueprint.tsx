@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
 import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
@@ -12,6 +13,37 @@ import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
+
+const BlueprintLoadingSkeleton = () => (
+  <div className="min-h-screen bg-gray-900">
+    <DashboardHeader 
+      userEmail=""
+      onSignOut={() => {}} 
+      showBackButton={true}
+      onBack={() => {}}
+    />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-6">
+        {/* Header skeleton */}
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64 bg-gray-700" />
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-32 bg-gray-700" />
+            <Skeleton className="h-10 w-40 bg-gray-700" />
+            <Skeleton className="h-10 w-28 bg-gray-700" />
+          </div>
+        </div>
+        
+        {/* Content skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64 w-full bg-gray-700" />
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const BlueprintContent = () => {
   const { id } = useParams<{ id: string }>();
@@ -196,33 +228,9 @@ const BlueprintContent = () => {
     navigate('/dashboard');
   };
 
-  if (loading || state.isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!rundown) {
-    return (
-      <div className="min-h-screen bg-gray-900">
-        <DashboardHeader 
-          userEmail={user?.email} 
-          onSignOut={handleSignOut} 
-          showBackButton={true}
-          onBack={handleBack}
-        />
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
-            <Button onClick={() => navigate('/dashboard')}>
-              Return to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+  // Show loading skeleton while loading or if no rundown yet
+  if (loading || !rundown) {
+    return <BlueprintLoadingSkeleton />;
   }
 
   // Create component mapping for rendering in the correct order
@@ -389,14 +397,10 @@ const Blueprint = () => {
 
   // Show loading state while fetching rundowns
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <BlueprintLoadingSkeleton />;
   }
 
-  // Show error state if rundown not found - but don't wrap in provider
+  // Show error state if rundown not found after loading is complete
   if (!rundown) {
     return (
       <div className="min-h-screen bg-gray-900">
