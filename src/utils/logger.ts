@@ -1,4 +1,5 @@
 
+
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
 interface LoggerConfig {
@@ -14,7 +15,7 @@ const config: LoggerConfig = {
   isDevelopment: import.meta.env.DEV,
   enableConsoleLogging: import.meta.env.DEV,
   enableErrorReporting: import.meta.env.PROD,
-  logLevel: import.meta.env.DEV ? 'info' : 'error', // Changed from 'debug' to 'info'
+  logLevel: import.meta.env.DEV ? 'warn' : 'error', // Only show warnings and errors in dev
   enableBlueprintDebug: false, // Disable verbose blueprint debugging
   enableRundownDebug: false // Disable verbose rundown debugging
 };
@@ -40,7 +41,7 @@ const formatMessage = (level: LogLevel, message: string, data?: any): string => 
   return `${prefix} ${message}`;
 };
 
-// Enhanced logging utility with production handling and selective debugging
+// Production-ready logging utility with minimal console noise
 export const logger = {
   error: (message: string, data?: any) => {
     if (!shouldLog('error')) return;
@@ -98,7 +99,7 @@ export const logger = {
     }
   },
 
-  // Specialized loggers for specific domains
+  // Specialized loggers for specific domains - completely disabled for production readiness
   blueprint: (message: string, data?: any) => {
     if (!config.enableBlueprintDebug || !shouldLog('debug')) return;
     
@@ -119,3 +120,4 @@ export const logger = {
     }
   }
 };
+
