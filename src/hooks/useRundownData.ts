@@ -1,0 +1,79 @@
+
+import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/lib/supabaseClient';
+import { RundownItem } from '@/types/rundown';
+import { logger } from '@/utils/logger';
+
+interface RundownData {
+  id: string;
+  title: string;
+  items: RundownItem[];
+  columns: any[];
+  startTime: string;
+  timezone?: string;
+  visibility?: string;
+}
+
+export const useRundownData = () => {
+  const params = useParams<{ id: string }>();
+  const rundownId = params.id;
+  
+  const [data, setData] = useState<RundownData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    if (!rundownId) {
+      setError('No rundown ID provided');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data: rundownData, error: queryError } = await supabase
+        .from('rundowns')
+        .select('id, title, items, columns, start_time, timezone, visibility')
+        .eq('id', rundownId)
+        .single();
+
+      if (queryError) {
+        if (queryError.code === 'PGRST116') {
+          setError('Rundown not found');
+        } else {
+          setError(`Database error: ${queryError.message}`);
+        }
+        setData(null);
+      } else if (rundownData) {
+        setData({
+          id: rundownData.id,
+          title: rundownData.title || 'Untitled Rundown',
+          items: rundownData.items || [],
+          columns: rundownData.columns || [],
+          startTime: rundownData.start_time || '09:00:00',
+          timezone: rundownData.timezone || 'UTC',
+          visibility: rundownData.visibility || 'private'
+        });
+        setError(null);
+      }
+    } catch (error) {
+      logger.error(`Failed to load rundown data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError('Failed to load rundown data');
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [rundownId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    reload: loadData,
+    rundownId
+  };
+};

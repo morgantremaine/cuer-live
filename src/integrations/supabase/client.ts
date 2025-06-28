@@ -1,4 +1,4 @@
 
-// Re-export the enhanced supabase client to maintain consistency
-export { supabase } from '@/lib/supabase'
-export type { Database } from '@/lib/supabase'
+// Clean re-export of the enhanced supabase client
+export { supabase, createQuery } from '@/lib/supabaseClient';
+export type { Database } from '@/lib/supabaseClient';
