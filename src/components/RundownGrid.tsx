@@ -2,6 +2,7 @@
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
 import { logger } from '@/utils/logger';
 
 const RundownGrid = React.memo(() => {
@@ -15,20 +16,33 @@ const RundownGrid = React.memo(() => {
     items,
     visibleColumns,
     currentTime,
-    currentSegmentId,
-    getRowNumber,
-    calculateHeaderDuration,
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    // Showcaller controls - ensure these are properly passed through
+    rundownId,
+    userId
+  } = coreState;
+
+  // Use coordinated showcaller state for better synchronization
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    isController,
+    isInitialized,
+    isConnected,
+    getItemVisualStatus,
     play,
     pause,
     forward,
     backward,
-    isPlaying,
-    timeRemaining
-  } = coreState;
+    reset,
+    jumpToSegment
+  } = useShowcallerStateCoordination({
+    items,
+    rundownId,
+    userId
+  });
 
   const {
     selectedRows,
@@ -52,7 +66,6 @@ const RundownGrid = React.memo(() => {
   const { 
     showColorPicker, 
     handleToggleColorPicker, 
-    getRowStatus, 
     selectColor,
     getColumnWidth,
     updateColumnWidth,
@@ -63,7 +76,6 @@ const RundownGrid = React.memo(() => {
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
-    // Create a mock event since the original expects an event parameter
     const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
     handleCellClick(itemId, field, mockEvent);
   };
@@ -79,110 +91,93 @@ const RundownGrid = React.memo(() => {
     selectColor(id, color);
   };
 
-  // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
-  const getRowStatusForTable = (item: any): 'upcoming' | 'current' | 'completed' => {
-    const status = getRowStatus(item);
-    if (status === 'header') {
-      return 'upcoming'; // Default fallback for headers
+  // Enhanced row status that uses showcaller visual state
+  const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
+    if (item.type === 'header') {
+      return 'upcoming'; // Headers don't have visual status
     }
-    return status;
+    
+    const visualStatus = getItemVisualStatus(item.id);
+    if (visualStatus === 'current' || visualStatus === 'completed') {
+      return visualStatus as 'current' | 'completed';
+    }
+    
+    return 'upcoming';
   };
 
   // Enhanced row selection that properly handles both single and multi-selection
   const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     if (isShiftClick || isCtrlClick) {
-      // Multi-selection mode
       handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
-      // Clear single selection when doing multi-selection
       if (selectedRowId !== null) {
         clearRowSelection();
       }
     } else {
-      // Single selection mode
       handleRowSelection(itemId);
-      // Clear multi-selection when doing single selection
       if (selectedRows.size > 0) {
         clearSelection();
       }
     }
   };
 
-  // Create wrapper functions that match the expected signatures
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    interactions.handleDragStart(e, index);
-  };
-
-  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
-    interactions.handleDragOver(e, targetIndex);
-  };
-
-  const handleDragLeaveWrapper = (e: React.DragEvent) => {
-    interactions.handleDragLeave(e);
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
-    interactions.handleDrop(e, targetIndex);
-  };
-
-  // Fixed jump to here handler that properly checks playing state
+  // Enhanced jump to here handler with better coordination
   const handleJumpToHere = (segmentId: string) => {
-    logger.log('🎯 === JUMP TO HERE DEBUG START (RundownGrid FIXED VERSION) ===');
+    logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
     logger.log('🎯 Target segment ID:', segmentId);
-    logger.log('🎯 Current segment ID before jump:', currentSegmentId);
+    logger.log('🎯 Current segment ID:', currentSegmentId);
     logger.log('🎯 Is currently playing:', isPlaying);
-    logger.log('🎯 Time remaining:', timeRemaining);
+    logger.log('🎯 Is controller:', isController);
+    logger.log('🎯 Is initialized:', isInitialized);
+    logger.log('🎯 Is connected:', isConnected);
     
-    // Find the target segment to ensure it exists
+    // Find the target segment
     const targetSegment = items.find(item => item.id === segmentId);
-    logger.log('🎯 Target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
-    
     if (!targetSegment) {
-      logger.error('🎯 Target segment not found for ID:', segmentId);
+      logger.error('🎯 Target segment not found:', segmentId);
       return;
     }
     
-    // Update item statuses for visual feedback regardless of playing state
-    const selectedIndex = items.findIndex(item => item.id === segmentId);
-    items.forEach((item, index) => {
-      if (item.type === 'regular') {
-        if (index < selectedIndex) {
-          // Mark previous items as completed
-          coreState.updateItem(item.id, 'status', 'completed');
-        } else if (index === selectedIndex) {
-          // Mark target item as current
-          coreState.updateItem(item.id, 'status', 'current');
-        } else {
-          // Mark future items as upcoming
-          coreState.updateItem(item.id, 'status', 'upcoming');
-        }
-      }
+    logger.log('🎯 Target segment found:', { 
+      id: targetSegment.id, 
+      name: targetSegment.name, 
+      type: targetSegment.type 
     });
     
-    // CRITICAL FIX: Only start playback if the showcaller is already playing
+    // Use coordinated jump function
     if (isPlaying) {
-      logger.log('🎯 RundownGrid: Showcaller is playing - jumping and continuing playback');
+      logger.log('🎯 Showcaller is playing - jumping and continuing playback');
       play(segmentId);
     } else {
-      logger.log('🎯 RundownGrid: Showcaller is paused - jumping but staying paused');
-      // For paused state, we need to update the showcaller visual state to point to the new segment
-      // but without starting playback. We'll use the showcaller's visual state update mechanism
-      // to set the current segment without triggering play
-      logger.log('🎯 RundownGrid: Updating showcaller current segment without starting playback');
-      
-      // We need to manually update the showcaller's current segment without calling play()
-      // This will be handled by the showcaller visual state system
-      const showcallerVisualUpdate = {
-        currentSegmentId: segmentId,
-        isPlaying: false, // Keep it paused
-        playbackStartTime: null, // No playback
-        timeRemaining: targetSegment.duration ? parseInt(targetSegment.duration.split(':')[0]) * 60 + parseInt(targetSegment.duration.split(':')[1]) : 0
-      };
-      
-      // Call the showcaller's visual state update directly (this needs to be exposed from the state coordination)
-      logger.log('🎯 RundownGrid: Visual state update needed for paused jump:', showcallerVisualUpdate);
+      logger.log('🎯 Showcaller is paused - jumping but staying paused');
+      jumpToSegment(segmentId);
     }
     
-    logger.log('🎯 === JUMP TO HERE DEBUG END (RundownGrid FIXED VERSION) ===');
+    // Clear selections
+    if (selectedRows.size > 0) {
+      clearSelection();
+    }
+    if (selectedRowId !== null) {
+      clearRowSelection();
+    }
+    
+    logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
+  };
+
+  // Create wrapper functions for drag operations
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    handleDragStart(e, index);
+  };
+
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    handleDragOver(e, targetIndex);
+  };
+
+  const handleDragLeaveWrapper = (e: React.DragEvent) => {
+    handleDragLeave(e);
+  };
+
+  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
+    handleDrop(e, targetIndex);
   };
 
   return (
@@ -201,9 +196,9 @@ const RundownGrid = React.memo(() => {
       selectedRowId={selectedRowId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      getRowNumber={getRowNumber}
-      getRowStatus={getRowStatusForTable}
-      getHeaderDuration={calculateHeaderDuration}
+      getRowNumber={coreState.getRowNumber}
+      getRowStatus={getRowStatus}
+      getHeaderDuration={coreState.calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
       onCellClick={handleCellClickWrapper}
       onKeyDown={handleKeyDownWrapper}
