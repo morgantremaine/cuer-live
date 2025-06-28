@@ -15,7 +15,7 @@ const config: LoggerConfig = {
   isDevelopment: import.meta.env.DEV,
   enableConsoleLogging: import.meta.env.DEV,
   enableErrorReporting: import.meta.env.PROD,
-  logLevel: import.meta.env.DEV ? 'warn' : 'error', // Only show warnings and errors in dev
+  logLevel: 'error', // Only show errors in both dev and prod for clean console
   enableBlueprintDebug: false, // Disable verbose blueprint debugging
   enableRundownDebug: false // Disable verbose rundown debugging
 };
@@ -101,23 +101,13 @@ export const logger = {
 
   // Specialized loggers for specific domains - completely disabled for production readiness
   blueprint: (message: string, data?: any) => {
-    if (!config.enableBlueprintDebug || !shouldLog('debug')) return;
-    
-    const formattedMessage = formatMessage('debug', `📋 ${message}`, data);
-    
-    if (config.enableConsoleLogging) {
-      console.log(formattedMessage);
-    }
+    // Completely disabled to eliminate all blueprint logging
+    return;
   },
 
   rundown: (message: string, data?: any) => {
-    if (!config.enableRundownDebug || !shouldLog('debug')) return;
-    
-    const formattedMessage = formatMessage('debug', `📝 ${message}`, data);
-    
-    if (config.enableConsoleLogging) {
-      console.log(formattedMessage);
-    }
+    // Completely disabled to eliminate all rundown logging
+    return;
   }
 };
 
