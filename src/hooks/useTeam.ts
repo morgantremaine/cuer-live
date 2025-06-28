@@ -150,7 +150,7 @@ export const useTeam = () => {
           user_id,
           role,
           joined_at,
-          profiles (
+          profiles!inner (
             email,
             full_name
           )
@@ -161,7 +161,15 @@ export const useTeam = () => {
       if (error) {
         console.error('Error loading team members:', error);
       } else {
-        setTeamMembers(data || []);
+        // Transform the data to match the TeamMember interface
+        const transformedMembers: TeamMember[] = (data || []).map(member => ({
+          id: member.id,
+          user_id: member.user_id,
+          role: member.role,
+          joined_at: member.joined_at,
+          profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+        }));
+        setTeamMembers(transformedMembers);
       }
     } catch (error) {
       console.error('Failed to load team members:', error);
