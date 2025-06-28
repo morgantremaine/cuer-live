@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -376,7 +375,7 @@ const Dashboard = () => {
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-700 border-gray-300"
                     >
                       <Plus className="h-5 w-5 mr-2" />
                       Import CSV
