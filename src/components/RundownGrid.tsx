@@ -1,11 +1,14 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 
 const RundownGrid = React.memo(() => {
+  const { user } = useAuth();
+  const userId = user?.id;
+
   const {
     coreState,
     interactions,
@@ -19,8 +22,7 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    rundownId,
-    userId
+    rundownId
   } = coreState;
 
   // Use coordinated showcaller state for better synchronization
