@@ -1,7 +1,8 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react'
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo, useRef } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { clearInvalidTokens } from '@/utils/invitationUtils'
+import { logger } from '@/utils/logger'
 
 interface AuthContextType {
   user: User | null
@@ -20,12 +21,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const mountedRef = useRef(true)
 
   // Initialize auth state only once
   useEffect(() => {
-    console.log('Initializing auth state...');
+    logger.debug('Initializing auth state...');
     
-    let mounted = true;
     let loadingTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
@@ -34,9 +35,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange(async (event, session) => {
-          if (!mounted) return;
+          if (!mountedRef.current) return;
           
-          console.log('Auth state changed:', event, session?.user?.email || 'no user');
+          logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user' });
           
           // Clear any existing timeout
           if (loadingTimeout) {
@@ -58,11 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (mounted) {
+        if (mountedRef.current) {
           if (error) {
-            console.error('Error getting initial session:', error);
+            logger.error('Error getting initial session', error);
           } else {
-            console.log('Initial session:', session?.user?.email || 'no user');
+            logger.debug('Initial session', { userEmail: session?.user?.email || 'no user' });
           }
           
           setUser(session?.user ?? null);
@@ -76,8 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Set a timeout fallback to prevent infinite loading
         loadingTimeout = setTimeout(() => {
-          if (mounted) {
-            console.log('Auth loading timeout - forcing loading to false');
+          if (mountedRef.current) {
+            logger.warn('Auth loading timeout - forcing loading to false');
             setLoading(false);
           }
         }, 5000);
@@ -89,8 +90,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         };
       } catch (error) {
-        if (mounted) {
-          console.error('Auth initialization error:', error);
+        if (mountedRef.current) {
+          logger.error('Auth initialization error', error);
           setLoading(false);
         }
       }
@@ -99,13 +100,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const cleanup = initializeAuth();
     
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       cleanup?.then(cleanupFn => cleanupFn?.());
     };
   }, []); // Remove dependencies to prevent re-initialization
 
+  // Memoized auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
-    console.log('Attempting to sign in:', email);
+    logger.debug('Attempting to sign in', { email });
     
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -114,21 +116,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
-        console.error('Sign in error:', error);
+        logger.error('Sign in error', error);
         return { error };
       }
       
-      // Success - auth state change will handle the rest
-      console.log('Sign in successful');
+      logger.debug('Sign in successful');
       return { error: null };
     } catch (err) {
-      console.error('Sign in catch error:', err);
+      logger.error('Sign in catch error', err);
       return { error: err };
     }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string, inviteCode?: string) => {
-    console.log('Attempting to sign up:', email);
+    logger.debug('Attempting to sign up', { email });
     
     // For normal signups (from login page), require invite code
     // For team invitation signups, inviteCode will be undefined and we skip validation
@@ -148,9 +149,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })
 
     if (error) {
-      console.error('Sign up error:', error);
+      logger.error('Sign up error', error);
     } else {
-      console.log('Account created successfully - profile will be created by database trigger');
+      logger.debug('Account created successfully - profile will be created by database trigger');
     }
     
     return { error }
@@ -158,24 +159,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(async () => {
     try {
-      console.log('Attempting to sign out...')
+      logger.debug('Attempting to sign out...')
       
       const { error } = await supabase.auth.signOut()
       
       if (error) {
-        console.error('Server-side logout error:', error)
+        logger.error('Server-side logout error', error)
       }
       
       // Clear any pending invitation tokens on logout
       localStorage.removeItem('pendingInvitationToken')
       
-      console.log('Sign out completed')
+      logger.debug('Sign out completed')
       
     } catch (error) {
-      console.error('Logout error:', error)
+      logger.error('Logout error', error)
       // Clear local storage even if logout fails
       localStorage.removeItem('pendingInvitationToken')
-      console.log('User state cleared due to error')
+      logger.debug('User state cleared due to error')
     }
   }, []);
 
