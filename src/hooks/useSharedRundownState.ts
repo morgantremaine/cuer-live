@@ -114,7 +114,7 @@ export const useSharedRundownState = () => {
       return;
     }
 
-    logger.log('📊 Loading rundown data for ID:', rundownId);
+    logger.debug(`Loading rundown data for ID: ${rundownId}`);
     isLoadingRef.current = true;
 
     try {
@@ -153,7 +153,7 @@ export const useSharedRundownState = () => {
             visibility: data.visibility || 'private'
           };
           
-          logger.log('✅ Updated rundown data:', newRundownData.title, showcallerChanged ? '(showcaller changed)' : '(content changed)');
+          logger.debug(`Updated rundown data: ${newRundownData.title} ${showcallerChanged ? '(showcaller changed)' : '(content changed)'}`);
           setRundownData(newRundownData);
           lastUpdateTimestamp.current = data.updated_at;
           lastShowcallerTimestamp.current = JSON.stringify(data.showcaller_state);
@@ -165,7 +165,7 @@ export const useSharedRundownState = () => {
       }
     } catch (error) {
       if (!mountedRef.current) return;
-      logger.error('💥 Network error loading rundown:', error);
+      logger.error('Network error loading rundown', error);
       setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setRundownData(null);
     }
@@ -186,7 +186,7 @@ export const useSharedRundownState = () => {
       realtimeSubscription.current = null;
     }
 
-    logger.log('📺 Setting up real-time subscription for showcaller updates');
+    logger.debug('Setting up real-time subscription for showcaller updates');
 
     const channel = supabase
       .channel(`shared-showcaller-${rundownId}`)
@@ -201,27 +201,27 @@ export const useSharedRundownState = () => {
         (payload) => {
           if (!mountedRef.current) return;
           
-          logger.log('📺 Received real-time update:', payload);
+          logger.debug('Received real-time update', payload);
           
           // Immediately update if showcaller state changed
           if (payload.new?.showcaller_state) {
             const newShowcallerState = JSON.stringify(payload.new.showcaller_state);
             if (newShowcallerState !== lastShowcallerTimestamp.current) {
-              logger.log('📺 Showcaller state changed via real-time, updating immediately');
+              logger.debug('Showcaller state changed via real-time, updating immediately');
               loadRundownData(true);
             }
           }
         }
       )
       .subscribe((status) => {
-        logger.log('📺 Real-time subscription status:', status);
+        logger.debug(`Real-time subscription status: ${status}`);
       });
 
     realtimeSubscription.current = channel;
 
     return () => {
       if (realtimeSubscription.current) {
-        logger.log('📺 Cleaning up real-time subscription');
+        logger.debug('Cleaning up real-time subscription');
         supabase.removeChannel(realtimeSubscription.current);
         realtimeSubscription.current = null;
       }
@@ -253,7 +253,7 @@ export const useSharedRundownState = () => {
     
     if (isPlaying) {
       // Very fast polling for showcaller updates when playing (every 500ms)
-      logger.log('🚀 Starting ultra-fast showcaller polling (500ms interval)');
+      logger.debug('Starting ultra-fast showcaller polling (500ms interval)');
       showcallerPollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
@@ -266,7 +266,7 @@ export const useSharedRundownState = () => {
       }, 500); // Much faster for playing state
     } else {
       // Moderate polling for general updates when not playing (every 5 seconds)
-      logger.log('📡 Starting moderate general polling (5s interval)');
+      logger.debug('Starting moderate general polling (5s interval)');
       pollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
