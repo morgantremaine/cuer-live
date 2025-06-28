@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -30,8 +31,8 @@ const Dashboard = () => {
   const { handleLoadLayout } = useColumnsManager();
   const isMobile = useIsMobile();
   
-  // Track initial loading state separately from the loading state
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // Improved loading state tracking
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -51,12 +52,20 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Track when initial data has loaded
+  // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && isInitialLoad) {
-      setIsInitialLoad(false);
+    if (!loading && !hasInitiallyLoaded && user && teamId) {
+      // Only mark as initially loaded if we have user/teamId (actual data fetch attempt)
+      setHasInitiallyLoaded(true);
     }
-  }, [loading, isInitialLoad]);
+  }, [loading, hasInitiallyLoaded, user, teamId]);
+
+  // Reset loading state when user/team changes
+  useEffect(() => {
+    if (user && teamId) {
+      setHasInitiallyLoaded(false);
+    }
+  }, [user?.id, teamId]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -280,8 +289,10 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show loading skeleton during initial load
-  if (isInitialLoad) {
+  // Show loading skeleton if we haven't loaded data yet OR if actively loading
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0);
+
+  if (shouldShowLoadingSkeleton) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col">
         <DashboardHeader 
@@ -377,7 +388,7 @@ const Dashboard = () => {
                 <DashboardRundownGrid 
                   title={folderTitle}
                   rundowns={filteredRundowns}
-                  loading={loading}
+                  loading={loading && savedRundowns.length > 0} // Only show loading for updates, not initial load
                   onOpen={handleOpenRundown}
                   onDelete={handleDeleteRundown}
                   onArchive={handleArchiveRundown}
