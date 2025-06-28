@@ -143,34 +143,55 @@ export const useTeam = () => {
 
   const loadTeamMembers = async (teamId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get team members
+      const { data: membersData, error: membersError } = await supabase
         .from('team_members')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at,
-          profiles!inner (
-            email,
-            full_name
-          )
-        `)
+        .select('id, user_id, role, joined_at')
         .eq('team_id', teamId)
         .order('joined_at', { ascending: true });
 
-      if (error) {
-        console.error('Error loading team members:', error);
-      } else {
-        // Transform the data to match the TeamMember interface
-        const transformedMembers: TeamMember[] = (data || []).map(member => ({
-          id: member.id,
-          user_id: member.user_id,
-          role: member.role,
-          joined_at: member.joined_at,
-          profiles: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
-        }));
-        setTeamMembers(transformedMembers);
+      if (membersError) {
+        console.error('Error loading team members:', membersError);
+        return;
       }
+
+      // Then get profiles for each user
+      const userIds = membersData?.map(member => member.user_id) || [];
+      
+      if (userIds.length === 0) {
+        setTeamMembers([]);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        // Still set members without profile data
+        const membersWithoutProfiles = membersData.map(member => ({
+          ...member,
+          profiles: undefined
+        }));
+        setTeamMembers(membersWithoutProfiles);
+        return;
+      }
+
+      // Combine the data
+      const transformedMembers: TeamMember[] = membersData.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
+        return {
+          ...member,
+          profiles: profile ? {
+            email: profile.email,
+            full_name: profile.full_name
+          } : undefined
+        };
+      });
+
+      setTeamMembers(transformedMembers);
     } catch (error) {
       console.error('Failed to load team members:', error);
     }
