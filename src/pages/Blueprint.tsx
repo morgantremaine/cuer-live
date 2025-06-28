@@ -14,6 +14,7 @@ import CrewList from '@/components/blueprint/CrewList';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
+import { logger } from '@/utils/logger';
 
 const BlueprintLoadingSkeleton = () => (
   <div className="min-h-screen bg-gray-900">
@@ -78,7 +79,7 @@ const BlueprintContent = () => {
 
   // Add new list
   const addNewList = React.useCallback((name: string, sourceColumn: string) => {
-    console.log('📋 Adding new list:', name, 'from column:', sourceColumn);
+    logger.blueprint('Adding new list:', { name, sourceColumn });
     
     if (!rundown?.items) return;
     
@@ -90,13 +91,13 @@ const BlueprintContent = () => {
       checkedItems: {}
     };
     
-    console.log('📋 Generated new list:', newList);
+    logger.blueprint('Generated new list:', newList);
     addList(newList);
   }, [rundown?.items, addList]);
 
   // Refresh all lists
   const refreshAllLists = React.useCallback(() => {
-    console.log('📋 Refreshing all lists with current rundown data');
+    logger.blueprint('Refreshing all lists with current rundown data');
     if (!rundown?.items) return;
     
     const refreshedLists = state.lists.map(list => ({
@@ -108,13 +109,13 @@ const BlueprintContent = () => {
 
   // Toggle unique items display
   const toggleUniqueItems = React.useCallback((listId: string, showUnique: boolean) => {
-    console.log('📋 BlueprintContent: toggleUniqueItems called for list', listId, 'showUnique:', showUnique);
+    logger.blueprint('BlueprintContent: toggleUniqueItems called for list', { listId, showUnique });
     
     const updatedLists = state.lists.map(list => 
       list.id === listId ? { ...list, showUniqueOnly: showUnique } : list
     );
     
-    console.log('📋 BlueprintContent: updating lists with showUniqueOnly toggle');
+    logger.blueprint('BlueprintContent: updating lists with showUniqueOnly toggle');
     updateLists(updatedLists);
   }, [state.lists, updateLists]);
 
@@ -124,7 +125,7 @@ const BlueprintContent = () => {
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
-    console.log('📋 Drag start:', itemId);
+    logger.blueprint('Drag start:', itemId);
     setDraggedListId(itemId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemId);
@@ -139,7 +140,7 @@ const BlueprintContent = () => {
   const handleDragEnterContainer = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedListId) {
-      console.log('📋 Drag enter container at index:', index, 'for item:', draggedListId);
+      logger.blueprint('Drag enter container at index:', { index, draggedListId });
       setInsertionIndex(index);
     }
   };
@@ -155,7 +156,7 @@ const BlueprintContent = () => {
     e.preventDefault();
     
     const draggedId = e.dataTransfer.getData('text/plain');
-    console.log('📋 Drop event:', { draggedId, insertionIndex });
+    logger.blueprint('Drop event:', { draggedId, insertionIndex });
     
     if (!draggedId || insertionIndex === null) {
       setDraggedListId(null);
@@ -181,7 +182,7 @@ const BlueprintContent = () => {
         currentComponentOrder.splice(targetPosition, 0, draggedId);
         
         // Update the component order
-        console.log('📋 Updating component order:', currentComponentOrder);
+        logger.blueprint('Updating component order:', currentComponentOrder);
         updateComponentOrder(currentComponentOrder);
       }
       
@@ -202,7 +203,7 @@ const BlueprintContent = () => {
     const [draggedList] = newLists.splice(draggedIndex, 1);
     newLists.splice(insertionIndex, 0, draggedList);
     
-    console.log('📋 Reordered lists:', newLists.map(l => l.name));
+    logger.blueprint('Reordered lists:', newLists.map(l => l.name));
     updateLists(newLists);
 
     setDraggedListId(null);
@@ -210,7 +211,7 @@ const BlueprintContent = () => {
   };
 
   const handleDragEnd = () => {
-    console.log('📋 Drag end');
+    logger.blueprint('Drag end');
     setDraggedListId(null);
     setInsertionIndex(null);
     

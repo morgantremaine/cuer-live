@@ -6,6 +6,7 @@ import { BlueprintList } from '@/types/blueprint';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { useToast } from '@/hooks/use-toast';
 import { getUniqueItems } from '@/utils/blueprintUtils';
+import { logger } from '@/utils/logger';
 import BlueprintListHeader from './listCard/BlueprintListHeader';
 import BlueprintListItem from './listCard/BlueprintListItem';
 
@@ -43,16 +44,16 @@ const BlueprintListCard = ({
   const itemsToDisplay = list.showUniqueOnly ? uniqueItems : list.items;
 
   const handleCheckboxChange = (itemIndex: number, checked: boolean) => {
-    console.log('📋 BlueprintListCard: checkbox change for item', itemIndex, 'checked:', checked);
-    console.log('📋 BlueprintListCard: current list checkedItems before update:', list.checkedItems);
+    logger.blueprint('BlueprintListCard: checkbox change for item', { itemIndex, checked });
+    logger.blueprint('BlueprintListCard: current list checkedItems before update:', list.checkedItems);
     
     const updatedCheckedItems = {
       ...list.checkedItems,
       [itemIndex]: checked
     };
     
-    console.log('📋 BlueprintListCard: calling onUpdateCheckedItems with:', updatedCheckedItems);
-    console.log('📋 BlueprintListCard: list ID:', list.id);
+    logger.blueprint('BlueprintListCard: calling onUpdateCheckedItems with:', updatedCheckedItems);
+    logger.blueprint('BlueprintListCard: list ID:', list.id);
     onUpdateCheckedItems(list.id, updatedCheckedItems);
   };
 
@@ -109,7 +110,10 @@ const BlueprintListCard = ({
   };
 
   // Enhanced logging for debugging checkbox state
-  console.log('📋 BlueprintListCard: rendering list', list.name, 'with checkedItems:', list.checkedItems);
+  logger.blueprint('BlueprintListCard: rendering list', { 
+    name: list.name, 
+    checkedItems: list.checkedItems 
+  });
 
   return (
     <Card 
@@ -155,7 +159,7 @@ const BlueprintListCard = ({
               const originalIndex = list.showUniqueOnly ? list.items.indexOf(item) : itemIndex;
               const isChecked = list.checkedItems?.[originalIndex] || false;
               
-              console.log(`📋 BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
+              logger.blueprint(`BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
               
               return (
                 <BlueprintListItem

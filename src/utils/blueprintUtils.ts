@@ -1,138 +1,114 @@
 
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { BlueprintList } from '@/types/blueprint';
+import { logger } from '@/utils/logger';
 
-export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): string[] => {
-  console.log('📋 generateListFromColumn called with:', { sourceColumn, itemsCount: items.length });
+export interface AvailableColumn {
+  name: string;
+  value: string;
+}
+
+export const getAvailableColumns = (items: RundownItem[]): AvailableColumn[] => {
+  logger.blueprint('getAvailableColumns called with items:', { count: items.length });
   
-  if (!items || items.length === 0) {
-    console.log('📋 No items provided to generateListFromColumn');
-    return [];
-  }
-
-  switch (sourceColumn) {
-    case 'headers':
-      const headerItems = items
-        .filter(item => isHeaderItem(item))
-        .map(item => {
-          // Try different possible header text sources
-          if (item.notes && item.notes.trim()) return item.notes.trim();
-          if (item.name && item.name.trim()) return item.name.trim();
-          if (item.segmentName && item.segmentName.trim()) return item.segmentName.trim();
-          if (item.rowNumber && item.rowNumber.toString().trim()) return item.rowNumber.toString().trim();
-          return 'Untitled Header';
-        })
-        .filter(text => text && text.length > 0);
-      
-      console.log('📋 Generated header items:', headerItems);
-      return headerItems;
-
-    case 'talent':
-    case 'gfx':
-    case 'video':
-    case 'notes':
-    case 'script':
-      const fieldItems = items
-        .map(item => item[sourceColumn as keyof RundownItem])
-        .filter(value => value && typeof value === 'string' && value.trim() !== '')
-        .map(value => (value as string).trim());
-      
-      console.log(`📋 Generated ${sourceColumn} items:`, fieldItems);
-      return fieldItems;
-
-    default:
-      console.log('📋 Unknown source column:', sourceColumn);
-      return [];
-  }
-};
-
-export const getUniqueItems = (items: string[]): string[] => {
-  const seen = new Set<string>();
-  const uniqueItems: string[] = [];
+  const columns: AvailableColumn[] = [];
   
-  items.forEach(item => {
-    if (!seen.has(item)) {
-      seen.add(item);
-      uniqueItems.push(item);
+  // Check for headers (segments)
+  const hasHeaders = items.some(item => isHeaderItem(item));
+  logger.blueprint('Has headers:', hasHeaders);
+  
+  if (hasHeaders) {
+    columns.push({ name: 'Headers/Segments', value: 'headers' });
+  }
+  
+  // Standard fields to check
+  const standardFields = [
+    { key: 'talent', name: 'Talent' },
+    { key: 'gfx', name: 'Graphics' },
+    { key: 'video', name: 'Video' },
+    { key: 'script', name: 'Script' }
+  ];
+  
+  standardFields.forEach(field => {
+    const hasField = items.some(item => 
+      !isHeaderItem(item) && item[field.key as keyof RundownItem] && 
+      String(item[field.key as keyof RundownItem]).trim() !== ''
+    );
+    
+    if (hasField) {
+      logger.blueprint('Found standard field:', field.key);
+      columns.push({ name: field.name, value: field.key });
     }
   });
   
-  return uniqueItems;
-};
-
-export const getAvailableColumns = (items: RundownItem[]) => {
-  console.log('📋 getAvailableColumns called with items:', items.length);
-  
-  if (!items || items.length === 0) {
-    console.log('📋 No items provided to getAvailableColumns');
-    return [];
-  }
-
-  const columns = [];
-  
-  // Check for headers
-  const hasHeaders = items.some(item => isHeaderItem(item));
-  console.log('📋 Has headers:', hasHeaders);
-  if (hasHeaders) {
-    columns.push({ name: 'Headers', value: 'headers' });
-  }
-  
-  // Check for other standard fields with proper null checks
-  const standardFields = ['talent', 'gfx', 'video', 'notes', 'script'];
-  standardFields.forEach(field => {
-    const hasField = items.some(item => {
-      const value = item[field as keyof RundownItem];
-      return value && typeof value === 'string' && value.trim() !== '';
-    });
-    if (hasField) {
-      console.log('📋 Found standard field:', field);
-      columns.push({ 
-        name: field.charAt(0).toUpperCase() + field.slice(1), 
-        value: field 
+  // Check for custom fields
+  const customFields = new Set<string>();
+  items.forEach(item => {
+    if (!isHeaderItem(item) && item.customFields) {
+      Object.keys(item.customFields).forEach(key => {
+        if (item.customFields![key] && String(item.customFields![key]).trim() !== '') {
+          customFields.add(key);
+        }
       });
     }
   });
   
-  console.log('📋 All found columns:', columns.map(c => c.value));
-  console.log('📋 Final available columns:', columns);
+  customFields.forEach(field => {
+    logger.blueprint('Found custom field:', field);
+    columns.push({ name: field, value: `custom_${field}` });
+  });
+  
+  logger.blueprint('All found columns:', columns.map(col => col.value));
+  logger.blueprint('Final available columns:', columns);
+  
   return columns;
 };
 
-export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
-  console.log('📋 generateDefaultBlueprint called with:', { rundownId, rundownTitle, itemsCount: items.length });
+export const generateListFromColumn = (items: RundownItem[], sourceColumn: string): string[] => {
+  logger.blueprint('generateListFromColumn called', { sourceColumn, itemCount: items.length });
   
-  if (!items || items.length === 0) {
-    console.log('📋 No items provided to generateDefaultBlueprint');
-    return [];
+  const list: string[] = [];
+  
+  if (sourceColumn === 'headers') {
+    // Extract header/segment names
+    items.forEach(item => {
+      if (isHeaderItem(item)) {
+        // Try different fields for the header text
+        const headerText = item.notes || item.name || item.segmentName || item.rowNumber || 'Unnamed Segment';
+        if (headerText && String(headerText).trim() !== '') {
+          list.push(String(headerText).trim());
+        }
+      }
+    });
+  } else if (sourceColumn.startsWith('custom_')) {
+    // Extract custom field data
+    const customFieldKey = sourceColumn.replace('custom_', '');
+    items.forEach(item => {
+      if (!isHeaderItem(item) && item.customFields && item.customFields[customFieldKey]) {
+        const value = String(item.customFields[customFieldKey]).trim();
+        if (value !== '') {
+          list.push(value);
+        }
+      }
+    });
+  } else {
+    // Extract standard field data
+    items.forEach(item => {
+      if (!isHeaderItem(item)) {
+        const value = item[sourceColumn as keyof RundownItem];
+        if (value && String(value).trim() !== '') {
+          list.push(String(value).trim());
+        }
+      }
+    });
   }
-
-  const availableColumns = getAvailableColumns(items);
-  const defaultLists: BlueprintList[] = [];
-
-  // Create default lists for available columns (max 2 to start)
-  const columnsToCreate = availableColumns.slice(0, 2);
-  console.log('📋 Creating default lists for columns:', columnsToCreate.map(c => c.value));
-
-  columnsToCreate.forEach(column => {
-    const listItems = generateListFromColumn(items, column.value);
-    if (listItems.length > 0) {
-      const newList: BlueprintList = {
-        id: `${column.value}_${Date.now()}`,
-        name: column.name,
-        sourceColumn: column.value,
-        items: listItems,
-        checkedItems: {},
-        showUniqueOnly: false
-      };
-      defaultLists.push(newList);
-      console.log('📋 Created default list:', newList.name, 'with', newList.items.length, 'items');
-    }
-  });
-
-  console.log('📋 Generated', defaultLists.length, 'default lists');
-  return defaultLists;
+  
+  logger.blueprint('Generated list:', { sourceColumn, count: list.length });
+  return list;
 };
 
-export const generateListId = (sourceColumn: string): string => {
-  return `${sourceColumn}_${Date.now()}`;
+export const getUniqueItems = (items: string[]): string[] => {
+  logger.blueprint('getUniqueItems called with', { count: items.length });
+  const unique = [...new Set(items)];
+  logger.blueprint('Unique items:', { originalCount: items.length, uniqueCount: unique.length });
+  return unique;
 };

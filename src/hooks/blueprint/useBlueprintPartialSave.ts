@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { useBlueprintPersistence } from './useBlueprintPersistence';
 import { BlueprintList } from '@/types/blueprint';
+import { logger } from '@/utils/logger';
 
 interface PartialSaveOptions {
   lists?: BlueprintList[];
@@ -28,32 +29,32 @@ export const useBlueprintPartialSave = (
   );
 
   const saveListsOnly = useCallback(async (lists: BlueprintList[]) => {
-    console.log('📋 PARTIAL SAVE - Lists only:', lists.length);
+    logger.blueprint('PARTIAL SAVE - Lists only:', { count: lists.length });
     await savePartialBlueprint({ lists });
   }, [savePartialBlueprint]);
 
   const saveNotesOnly = useCallback(async (notes: string) => {
-    console.log('📋 PARTIAL SAVE - Notes only:', notes.length, 'characters');
+    logger.blueprint('PARTIAL SAVE - Notes only:', { length: notes.length });
     await savePartialBlueprint({ notes });
   }, [savePartialBlueprint]);
 
   const saveCrewDataOnly = useCallback(async (crewData: any[]) => {
-    console.log('📋 PARTIAL SAVE - Crew data only:', crewData.length);
+    logger.blueprint('PARTIAL SAVE - Crew data only:', { count: crewData.length });
     await savePartialBlueprint({ crewData });
   }, [savePartialBlueprint]);
 
   const saveCameraPlotsOnly = useCallback(async (cameraPlots: any[]) => {
-    console.log('📋 PARTIAL SAVE - Camera plots only:', cameraPlots.length);
+    logger.blueprint('PARTIAL SAVE - Camera plots only:', { count: cameraPlots.length });
     await savePartialBlueprint({ cameraPlots });
   }, [savePartialBlueprint]);
 
   const saveComponentOrderOnly = useCallback(async (componentOrder: string[]) => {
-    console.log('📋 PARTIAL SAVE - Component order only:', componentOrder);
+    logger.blueprint('PARTIAL SAVE - Component order only:', componentOrder);
     await savePartialBlueprint({ componentOrder });
   }, [savePartialBlueprint]);
 
   const saveShowDateOnly = useCallback(async (showDate: string) => {
-    console.log('📋 PARTIAL SAVE - Show date only:', showDate);
+    logger.blueprint('PARTIAL SAVE - Show date only:', showDate);
     await savePartialBlueprint({ showDate });
   }, [savePartialBlueprint]);
 

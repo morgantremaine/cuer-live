@@ -1,5 +1,3 @@
-
-
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
 interface LoggerConfig {
@@ -99,15 +97,26 @@ export const logger = {
     }
   },
 
-  // Specialized loggers for specific domains - completely disabled for production readiness
+  // Specialized loggers for specific domains - now properly controlled by config
   blueprint: (message: string, data?: any) => {
-    // Completely disabled to eliminate all blueprint logging
-    return;
+    // Only log if blueprint debugging is enabled AND we're in development
+    if (!config.enableBlueprintDebug || !config.isDevelopment) return;
+    
+    const formattedMessage = formatMessage('debug', `📋 ${message}`, data);
+    
+    if (config.enableConsoleLogging) {
+      console.log(formattedMessage);
+    }
   },
 
   rundown: (message: string, data?: any) => {
-    // Completely disabled to eliminate all rundown logging
-    return;
+    // Only log if rundown debugging is enabled AND we're in development
+    if (!config.enableRundownDebug || !config.isDevelopment) return;
+    
+    const formattedMessage = formatMessage('debug', `📝 ${message}`, data);
+    
+    if (config.enableConsoleLogging) {
+      console.log(formattedMessage);
+    }
   }
 };
-
