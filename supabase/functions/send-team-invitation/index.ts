@@ -30,6 +30,17 @@ serve(async (req) => {
       )
     }
 
+    // Validate and sanitize the inviter name and team name
+    const safeInviterName = inviterName && typeof inviterName === 'string' && inviterName.trim() 
+      ? inviterName.trim() 
+      : 'A team member';
+    
+    const safeTeamName = teamName && typeof teamName === 'string' && teamName.trim() 
+      ? teamName.trim() 
+      : 'a team';
+
+    console.log('Using safe names:', { safeInviterName, safeTeamName });
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -120,12 +131,14 @@ serve(async (req) => {
     
     console.log('Sending invitation email to:', email);
     console.log('Invitation URL:', inviteUrl);
+    console.log('Email will use inviter name:', safeInviterName);
+    console.log('Email will use team name:', safeTeamName);
 
     // Send email using Resend - using cuer.live domain with improved styling
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
-      subject: `You're invited to join ${teamName} on Cuer`,
+      subject: `You're invited to join ${safeTeamName} on Cuer`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -276,7 +289,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><span class="highlight">${inviterName || 'A team member'}</span> has invited you to join their team on Cuer.</p>
+                <p><span class="highlight">${safeInviterName}</span> has invited you to join <span class="highlight">${safeTeamName}</span> on Cuer.</p>
                 
                 <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 

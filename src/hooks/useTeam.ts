@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -266,10 +267,28 @@ export const useTeam = () => {
     }
 
     try {
+      // Get user's profile to ensure we have the latest name
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+      }
+
+      // Use profile data if available, otherwise fall back to auth metadata
+      const inviterName = profileData?.full_name || 
+                         user.user_metadata?.full_name || 
+                         profileData?.email || 
+                         user.email || 
+                         'A team member';
+
       console.log('Calling send-team-invitation edge function with:', {
         email,
         teamId: team.id,
-        inviterName: user.user_metadata?.full_name || user.email,
+        inviterName,
         teamName: team.name
       });
 
@@ -277,7 +296,7 @@ export const useTeam = () => {
         body: { 
           email, 
           teamId: team.id,
-          inviterName: user.user_metadata?.full_name || user.email,
+          inviterName,
           teamName: team.name
         }
       });
