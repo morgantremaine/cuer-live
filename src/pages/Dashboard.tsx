@@ -19,6 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
+import { useTeam } from '@/hooks/useTeam';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Dashboard = () => {
   const { teamId } = useTeamId();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
+  const { team, teamMembers } = useTeam();
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   const isMobile = useIsMobile();
@@ -396,6 +398,7 @@ const Dashboard = () => {
                   isArchived={folderType === 'archived'}
                   showEmptyState={true}
                   currentUserId={user?.id}
+                  teamMembers={teamMembers} // Pass team members to the grid
                 />
               </div>
             </div>
