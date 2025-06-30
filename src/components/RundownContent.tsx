@@ -6,6 +6,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
+import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 
 interface RundownContentProps {
   items: RundownItem[];
@@ -99,6 +100,21 @@ const RundownContent = ({
     items
   });
 
+  // Initialize drag auto-scroll functionality
+  const isDragging = draggedItemIndex !== null;
+  const { handleDragAutoScroll } = useDragAutoScroll({
+    scrollContainerRef,
+    isActive: isDragging
+  });
+
+  // Enhanced drag over handler that includes auto-scroll
+  const handleEnhancedDragOver = (e: React.DragEvent, index?: number) => {
+    // Handle auto-scroll first
+    handleDragAutoScroll(e);
+    // Then handle regular drag over logic
+    onDragOver(e, index);
+  };
+
   return (
     <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
@@ -143,7 +159,7 @@ const RundownContent = ({
             onToggleFloat={onToggleFloat}
             onRowSelect={onRowSelect}
             onDragStart={onDragStart}
-            onDragOver={onDragOver}
+            onDragOver={handleEnhancedDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             onCopySelectedRows={onCopySelectedRows}

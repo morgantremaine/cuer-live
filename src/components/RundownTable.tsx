@@ -82,19 +82,19 @@ const RundownTable = ({
   onJumpToHere
 }: RundownTableProps) => {
 
-  // Handler for drag over events on the table container
+  // Handler for drag over events on the table container - passes auto-scroll handling up
   const handleTableDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onDragOver(e);
   };
 
-  // Enhanced row drag over handler that calculates drop target index
+  // Enhanced row drag over handler that calculates drop target index and handles auto-scroll
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Call the parent handler with target index
+    // Call the parent handler with target index - this will handle both auto-scroll and drop target calculation
     onDragOver(e, targetIndex);
   };
 

@@ -5,7 +5,8 @@ import { RundownItem } from './useRundownItems';
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
-  selectedRows: Set<string>
+  selectedRows: Set<string>,
+  scrollContainerRef?: React.RefObject<HTMLElement>
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -129,10 +130,13 @@ export const useDragAndDrop = (
     setIsDraggingMultiple(false);
   };
 
+  const isDragging = draggedItemIndex !== null;
+
   return {
     draggedItemIndex,
     isDraggingMultiple,
     dropTargetIndex,
+    isDragging,
     handleDragStart,
     handleDragOver,
     handleDragLeave,
