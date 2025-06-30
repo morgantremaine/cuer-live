@@ -79,7 +79,7 @@ const PlaybackControls = ({
   };
 
   // Show timer when actively playing OR when paused after having been started
-  const shouldShowTimer = currentSegmentId && hasBeenStarted && timeRemaining > 0;
+  const shouldShowTimer = currentSegmentId && (isPlaying || (hasBeenStarted && timeRemaining > 0));
 
   return (
     <div className="flex items-center space-x-1">
