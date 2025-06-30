@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,7 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const timeInputRef = useRef<HTMLInputElement>(null);
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -67,49 +69,53 @@ const RundownHeader = ({
   });
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
+    const value = e.target.value;
     
-    // Format as HH:MM:SS
-    if (value.length >= 2) {
-      value = value.substring(0, 2) + ':' + value.substring(2);
-    }
-    if (value.length >= 6) {
-      value = value.substring(0, 5) + ':' + value.substring(5, 7);
+    // Allow natural typing - only restrict clearly invalid characters
+    // Allow digits, colons, and common separators
+    if (!/^[0-9:]*$/.test(value)) {
+      return;
     }
     
-    // Limit to 8 characters (HH:MM:SS)
-    if (value.length > 8) {
-      value = value.substring(0, 8);
-    }
-    
+    // Update the value directly without aggressive formatting
     onRundownStartTimeChange(value);
   };
 
   const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
-    // Validate and format the time
-    const timeRegex = /^(\d{1,2}):?(\d{0,2}):?(\d{0,2})$/;
-    const match = value.match(timeRegex);
+    // Only format and validate on blur
+    let formattedTime = value;
     
-    if (match) {
-      let [, hours, minutes, seconds] = match;
+    // Remove any non-digit, non-colon characters
+    formattedTime = formattedTime.replace(/[^0-9:]/g, '');
+    
+    // Split by colon and pad/validate each part
+    const parts = formattedTime.split(':');
+    
+    if (parts.length >= 1) {
+      // Hours
+      let hours = parts[0] || '00';
+      if (hours.length === 1) hours = '0' + hours;
+      if (parseInt(hours) > 23) hours = '23';
       
-      // Pad with zeros and validate ranges
-      hours = hours.padStart(2, '0');
-      minutes = (minutes || '00').padStart(2, '0');
-      seconds = (seconds || '00').padStart(2, '0');
+      // Minutes
+      let minutes = parts[1] || '00';
+      if (minutes.length === 1) minutes = '0' + minutes;
+      if (parseInt(minutes) > 59) minutes = '59';
       
-      // Validate ranges
-      const h = parseInt(hours);
-      const m = parseInt(minutes);
-      const s = parseInt(seconds);
+      // Seconds
+      let seconds = parts[2] || '00';
+      if (seconds.length === 1) seconds = '0' + seconds;
+      if (parseInt(seconds) > 59) seconds = '59';
       
-      if (h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59) {
-        const formattedTime = `${hours}:${minutes}:${seconds}`;
-        onRundownStartTimeChange(formattedTime);
-      }
+      formattedTime = `${hours}:${minutes}:${seconds}`;
+    } else {
+      // If no valid format, default to current time or 00:00:00
+      formattedTime = rundownStartTime || '00:00:00';
     }
+    
+    onRundownStartTimeChange(formattedTime);
   };
 
   const handleTitleEdit = () => {
@@ -263,6 +269,7 @@ const RundownHeader = ({
             <div className="flex items-center gap-2">
               <span>Start:</span>
               <input
+                ref={timeInputRef}
                 type="text"
                 value={rundownStartTime}
                 onChange={handleTimeInputChange}
@@ -338,6 +345,7 @@ const RundownHeader = ({
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
             <input
+              ref={timeInputRef}
               type="text"
               value={rundownStartTime}
               onChange={handleTimeInputChange}
