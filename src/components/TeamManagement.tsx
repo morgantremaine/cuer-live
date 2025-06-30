@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ const TeamManagement = () => {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
+  const [teamAdminName, setTeamAdminName] = useState<string>('');
   
   const {
     team,
@@ -49,6 +50,19 @@ const TeamManagement = () => {
   } = useTeam();
   
   const { toast } = useToast();
+
+  // Get the admin's name from team members
+  useEffect(() => {
+    if (teamMembers.length > 0) {
+      const admin = teamMembers.find(member => member.role === 'admin');
+      if (admin?.profiles?.full_name) {
+        setTeamAdminName(admin.profiles.full_name);
+      } else if (admin?.profiles?.email) {
+        // Fallback to email if no full name
+        setTeamAdminName(admin.profiles.email.split('@')[0]);
+      }
+    }
+  }, [teamMembers]);
 
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,6 +226,8 @@ const TeamManagement = () => {
     );
   }
 
+  const displayTeamName = teamAdminName ? `${teamAdminName}'s Team` : team.name;
+
   return (
     <div className="space-y-6">
       {/* Team Info */}
@@ -219,7 +235,7 @@ const TeamManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Users className="h-5 w-5" />
-            {team.name}
+            {displayTeamName}
           </CardTitle>
           <CardDescription className="text-gray-400">
             Manage your team members and collaborate on rundowns. You have {userRole} access.
