@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -6,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText, User } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
 
@@ -17,19 +18,6 @@ interface SavedRundown {
   created_at: string
   updated_at: string
   archived?: boolean
-  user_id: string
-  team_id: string
-}
-
-interface TeamMember {
-  id: string
-  user_id: string
-  role: 'admin' | 'member'
-  joined_at: string
-  profiles?: {
-    email: string
-    full_name: string | null
-  }
 }
 
 interface RundownCardProps {
@@ -40,7 +28,6 @@ interface RundownCardProps {
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
-  teamMembers?: TeamMember[]
 }
 
 const RundownCard = ({ 
@@ -50,13 +37,8 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
-  isArchived = false,
-  teamMembers = []
+  isArchived = false 
 }: RundownCardProps) => {
-  // Find the creator's name from team members
-  const creator = teamMembers.find(member => member.user_id === rundown.user_id);
-  const creatorName = creator?.profiles?.full_name || creator?.profiles?.email || 'Unknown User';
-
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     window.location.href = `/blueprint/${rundown.id}`
@@ -142,10 +124,6 @@ const RundownCard = ({
               {rundown.title}
             </CardTitle>
             <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
-              <div className="flex items-center">
-                <User className="h-4 w-4 mr-1" />
-                Created by: {creatorName}
-              </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
                 Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
