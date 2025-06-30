@@ -35,6 +35,20 @@ const JoinTeam = () => {
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
 
+  // Define helper function early in the component
+  const getInviterDisplayName = () => {
+    if (profileError) {
+      return 'A team member';
+    }
+    if (inviterProfile?.full_name) {
+      return inviterProfile.full_name;
+    }
+    if (inviterProfile?.email) {
+      return inviterProfile.email;
+    }
+    return 'A team member';
+  };
+
   // Store invitation token in localStorage when page loads
   useEffect(() => {
     console.log('Token from useParams:', token);
@@ -345,19 +359,6 @@ const JoinTeam = () => {
       </div>
     );
   }
-
-  const getInviterDisplayName = () => {
-    if (profileError) {
-      return 'A team member';
-    }
-    if (inviterProfile?.full_name) {
-      return inviterProfile.full_name;
-    }
-    if (inviterProfile?.email) {
-      return inviterProfile.email;
-    }
-    return 'A team member';
-  };
 
   return (
     <div className="dark min-h-screen flex flex-col bg-gray-900">
