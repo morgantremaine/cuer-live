@@ -104,7 +104,9 @@ export const useSimpleAutoSave = (
 
     // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
-      console.log('💾 No content changes detected - skipping save');
+      console.log('💾 No content changes detected - marking as saved');
+      // Mark as saved since there are no actual content changes
+      onSaved();
       return;
     }
 
@@ -135,7 +137,9 @@ export const useSimpleAutoSave = (
       const finalSignature = createContentSignature();
       
       if (finalSignature === lastSavedRef.current) {
-        console.log('💾 No changes in final check - skipping save');
+        console.log('💾 No changes in final check - marking as saved');
+        // Mark as saved since there are no actual content changes
+        onSaved();
         return;
       }
       
