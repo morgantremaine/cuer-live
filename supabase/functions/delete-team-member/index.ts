@@ -122,17 +122,48 @@ serve(async (req) => {
     const userIdToDelete = transferResult.user_id_to_delete;
     
     if (userIdToDelete) {
-      console.log('Deleting auth user:', userIdToDelete);
+      console.log('Attempting to delete auth user:', userIdToDelete);
       
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(userIdToDelete);
-      
-      if (deleteError) {
-        console.error('Error deleting auth user:', deleteError);
-        // Don't fail the entire operation if auth deletion fails
-        // The data transfer already completed successfully
-      } else {
-        console.log('Auth user deleted successfully');
+      try {
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(userIdToDelete);
+        
+        if (deleteError) {
+          console.error('Error deleting auth user:', deleteError);
+          // Still return success since data transfer completed
+          return new Response(
+            JSON.stringify({
+              success: true,
+              rundownsTransferred: transferResult.rundowns_transferred || 0,
+              blueprintsTransferred: transferResult.blueprints_transferred || 0,
+              userDeleted: false,
+              warning: 'Data transferred successfully but failed to delete user account: ' + deleteError.message
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          )
+        } else {
+          console.log('Auth user deleted successfully');
+        }
+      } catch (authDeleteError) {
+        console.error('Exception when deleting auth user:', authDeleteError);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            rundownsTransferred: transferResult.rundowns_transferred || 0,
+            blueprintsTransferred: transferResult.blueprints_transferred || 0,
+            userDeleted: false,
+            warning: 'Data transferred successfully but failed to delete user account due to exception'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
       }
+    } else {
+      console.log('No user ID to delete found in transfer result');
     }
 
     return new Response(
