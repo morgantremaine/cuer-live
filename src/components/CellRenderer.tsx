@@ -10,7 +10,7 @@ import { RundownItem } from '@/types/rundown';
 interface CellRendererProps {
   item: RundownItem;
   column: Column;
-  onUpdate?: (field: string, value: any) => void; // Made optional
+  onUpdate?: (field: string, value: any) => void;
   onUserTyping?: (typing: boolean) => void;
   isSelected?: boolean;
   className?: string;
@@ -156,7 +156,11 @@ const CellRenderer = memo(({
                   ...item.customFields,
                   [column.key]: value
                 };
-                handleUpdate(updatedCustomFields);
+                if (onUpdate) {
+                  onUpdate('customFields', updatedCustomFields);
+                } else if (onUpdateItem) {
+                  onUpdateItem(item.id, 'customFields', updatedCustomFields);
+                }
               }}
               onUserTyping={handleUserTyping}
               placeholder={`Enter ${column.name.toLowerCase()}`}
