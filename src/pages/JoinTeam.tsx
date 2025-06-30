@@ -329,7 +329,7 @@ const JoinTeam = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-white">Join Team</CardTitle>
             <CardDescription className="text-gray-400">
-              You're about to join {invitation.teams?.name || 'this team'}
+              You're about to join {getInviterDisplayName()}'s team
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -367,7 +367,7 @@ const JoinTeam = () => {
             <div className="flex justify-center mb-2">
               <CuerLogo isDark={true} className="h-12 w-auto" />
             </div>
-            <CardTitle className="text-white">Join Team: {invitation.teams?.name || 'Team'}</CardTitle>
+            <CardTitle className="text-white">Join {getInviterDisplayName()}'s Team</CardTitle>
             <CardDescription className="text-gray-400">
               {getInviterDisplayName()} has invited you to join their team.
             </CardDescription>
