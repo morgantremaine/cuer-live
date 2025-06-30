@@ -22,6 +22,8 @@ interface CellRendererProps {
   onCellClick?: (itemId: string, field: string) => void;
   onKeyDown?: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
+  // Support both onUpdate and onUpdateItem for compatibility
+  onUpdateItem?: (id: string, field: string, value: any) => void;
 }
 
 // Memoized cell renderer for better performance
@@ -29,6 +31,7 @@ const CellRenderer = memo(({
   item, 
   column, 
   onUpdate, 
+  onUpdateItem,
   onUserTyping,
   isSelected = false,
   className = '',
@@ -41,10 +44,14 @@ const CellRenderer = memo(({
   onKeyDown,
   width
 }: CellRendererProps) => {
-  // Memoized update handler
+  // Memoized update handler that supports both interfaces
   const handleUpdate = useCallback((value: any) => {
-    onUpdate(column.key, value);
-  }, [onUpdate, column.key]);
+    if (onUpdate) {
+      onUpdate(column.key, value);
+    } else if (onUpdateItem) {
+      onUpdateItem(item.id, column.key, value);
+    }
+  }, [onUpdate, onUpdateItem, column.key, item.id]);
 
   // Memoized typing handler
   const handleUserTyping = useCallback((typing: boolean) => {
@@ -149,7 +156,7 @@ const CellRenderer = memo(({
                   ...item.customFields,
                   [column.key]: value
                 };
-                onUpdate('customFields', updatedCustomFields);
+                handleUpdate(updatedCustomFields);
               }}
               onUserTyping={handleUserTyping}
               placeholder={`Enter ${column.name.toLowerCase()}`}

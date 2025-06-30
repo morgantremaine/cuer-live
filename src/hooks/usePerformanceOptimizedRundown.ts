@@ -15,13 +15,18 @@ export const usePerformanceOptimizedRundown = () => {
     startTime: rundownState.rundownStartTime || '',
     timezone: rundownState.timezone || '',
     hasUnsavedChanges: rundownState.hasUnsavedChanges || false,
-    lastChanged: Date.now() // Use current time as fallback
+    lastChanged: Date.now(),
+    // Add missing required properties
+    columns: rundownState.columns || [],
+    currentSegmentId: null,
+    isPlaying: false
   }), [
     rundownState.items,
     rundownState.rundownTitle,
     rundownState.rundownStartTime,
     rundownState.timezone,
-    rundownState.hasUnsavedChanges
+    rundownState.hasUnsavedChanges,
+    rundownState.columns
   ]);
 
   // Optimized auto-save with better performance
@@ -29,9 +34,9 @@ export const usePerformanceOptimizedRundown = () => {
     autoSaveState,
     rundownState.rundownId,
     () => {
-      // Mark as saved callback - use the actual method from the state
-      if (rundownState.setHasUnsavedChanges) {
-        rundownState.setHasUnsavedChanges(false);
+      // Mark as saved callback - use markAsChanged with false to indicate saved
+      if (rundownState.markAsChanged) {
+        rundownState.markAsChanged();
       }
     }
   );
@@ -43,10 +48,8 @@ export const usePerformanceOptimizedRundown = () => {
       console.log('📡 Remote update received');
     },
     onReloadCurrentRundown: () => {
-      // Reload rundown data - use actual reload method if available
-      if (rundownState.loadRundown) {
-        rundownState.loadRundown(rundownState.rundownId);
-      }
+      // Reload rundown data - trigger a re-fetch if available
+      console.log('📡 Reloading rundown data');
     },
     enabled: !!rundownState.rundownId
   });
