@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -33,12 +33,33 @@ const PlaybackControls = ({
   autoScrollEnabled = false,
   onToggleAutoScroll
 }: PlaybackControlsProps) => {
+  const [hasBeenStarted, setHasBeenStarted] = useState(false);
+
+  // Track when timer has been started
+  useEffect(() => {
+    if (isPlaying && currentSegmentId) {
+      setHasBeenStarted(true);
+    }
+  }, [isPlaying, currentSegmentId]);
+
+  // Reset the started state when segment changes or is reset
+  useEffect(() => {
+    if (!currentSegmentId) {
+      setHasBeenStarted(false);
+    }
+  }, [currentSegmentId]);
+
   const handlePlay = () => {
     if (selectedRowId) {
       onPlay(selectedRowId);
     } else {
       onPlay();
     }
+  };
+
+  const handleReset = () => {
+    setHasBeenStarted(false);
+    onReset();
   };
 
   const formatTime = (seconds: number): string => {
@@ -53,9 +74,8 @@ const PlaybackControls = ({
     }
   };
 
-  // Show timer only when actively playing OR when paused after having been played
-  // (timeRemaining < total duration indicates it has been started)
-  const shouldShowTimer = currentSegmentId && (isPlaying || (!isPlaying && timeRemaining > 0 && timeRemaining < 300)); // assuming max 5min segments
+  // Show timer only when actively playing OR when paused after having been started
+  const shouldShowTimer = currentSegmentId && hasBeenStarted && timeRemaining > 0;
 
   return (
     <div className="flex items-center space-x-1">
@@ -90,7 +110,7 @@ const PlaybackControls = ({
       </Button>
       
       <Button
-        onClick={onReset}
+        onClick={handleReset}
         variant="outline"
         size={size}
         className="flex items-center space-x-1"
