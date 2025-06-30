@@ -14,17 +14,102 @@ serve(async (req) => {
   }
 
   try {
-    const { email, inviterName, teamName, token } = await req.json()
+    console.log('Send team invitation function called');
+    
+    const { email, teamId, inviterName, teamName } = await req.json()
+    console.log('Request body:', { email, teamId, inviterName, teamName });
+
+    if (!email || !teamId) {
+      console.error('Missing required fields:', { email, teamId });
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: email and teamId' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+    // Get the current user (inviter)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error('No authorization header found');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
+    // Create a supabase client with the user's auth token to get user info
+    const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    // Get the current user
+    const { data: { user }, error: userError } = await userSupabase.auth.getUser()
+    
+    if (userError || !user) {
+      console.error('Error getting user:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to get user information' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
+    console.log('Current user:', user.id);
+
+    // Generate a unique token for the invitation
+    const token = crypto.randomUUID()
+    console.log('Generated invitation token:', token);
+
+    // Create the invitation record
+    const { data: invitation, error: invitationError } = await supabase
+      .from('team_invitations')
+      .insert({
+        email,
+        team_id: teamId,
+        invited_by: user.id,
+        token,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+      })
+      .select()
+      .single()
+
+    if (invitationError) {
+      console.error('Error creating invitation:', invitationError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to create invitation', details: invitationError.message }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    console.log('Created invitation:', invitation);
+
     // Get Resend API key
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
     if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY not configured')
+      console.error('RESEND_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Email service not configured' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
     }
 
     const resend = new Resend(resendApiKey)
@@ -32,6 +117,9 @@ serve(async (req) => {
     // Use the custom domain - prioritize SITE_URL env var, fallback to custom domain
     const siteUrl = Deno.env.get('SITE_URL') || 'https://cuer.live'
     const inviteUrl = `${siteUrl}/join-team/${token}`
+    
+    console.log('Sending invitation email to:', email);
+    console.log('Invitation URL:', inviteUrl);
 
     // Send email using Resend - using cuer.live domain with improved styling
     const emailResult = await resend.emails.send({
@@ -188,7 +276,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><span class="highlight">${inviterName}</span> has invited you to join their team on Cuer.</p>
+                <p><span class="highlight">${inviterName || 'A team member'}</span> has invited you to join their team on Cuer.</p>
                 
                 <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 
@@ -224,7 +312,12 @@ serve(async (req) => {
     console.log('Email sent successfully:', emailResult)
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Invitation sent successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Invitation sent successfully',
+        token: token,
+        inviteUrl: inviteUrl
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

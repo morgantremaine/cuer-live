@@ -223,19 +223,44 @@ export const useTeam = () => {
       return { error: 'No team found' };
     }
 
+    if (!user?.id) {
+      return { error: 'User not authenticated' };
+    }
+
     try {
-      const { data, error } = await supabase.functions.invoke('send-team-invitation', {
-        body: { email, teamId: team.id }
+      console.log('Calling send-team-invitation edge function with:', {
+        email,
+        teamId: team.id,
+        inviterName: user.user_metadata?.full_name || user.email,
+        teamName: team.name
       });
 
+      const { data, error } = await supabase.functions.invoke('send-team-invitation', {
+        body: { 
+          email, 
+          teamId: team.id,
+          inviterName: user.user_metadata?.full_name || user.email,
+          teamName: team.name
+        }
+      });
+
+      console.log('Edge function response:', { data, error });
+
       if (error) {
+        console.error('Edge function error:', error);
         return { error: error.message };
+      }
+
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        return { error: data.error };
       }
 
       // Reload pending invitations
       await loadPendingInvitations(team.id);
       return { success: true };
     } catch (error) {
+      console.error('Exception in inviteTeamMember:', error);
       return { error: 'Failed to send invitation' };
     }
   };

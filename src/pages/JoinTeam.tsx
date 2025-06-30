@@ -15,6 +15,11 @@ import CuerLogo from '@/components/common/CuerLogo';
 const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  
+  console.log('JoinTeam component loaded with token:', token);
+  console.log('useParams result:', useParams());
+  console.log('Current URL:', window.location.href);
+  
   const [invitation, setInvitation] = useState<any>(null);
   const [inviterProfile, setInviterProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -32,17 +37,35 @@ const JoinTeam = () => {
 
   // Store invitation token in localStorage when page loads
   useEffect(() => {
-    if (token) {
+    console.log('Token from useParams:', token);
+    console.log('Type of token:', typeof token);
+    
+    if (token && token !== 'undefined') {
       console.log('Storing invitation token in localStorage:', token);
       localStorage.setItem('pendingInvitationToken', token);
+    } else {
+      console.error('Invalid token received:', token);
+      console.log('Removing any existing token from localStorage');
+      localStorage.removeItem('pendingInvitationToken');
+      
+      // If we have an invalid token, redirect to login with an error message
+      toast({
+        title: 'Invalid Invitation Link',
+        description: 'The invitation link appears to be malformed. Please request a new invitation.',
+        variant: 'destructive',
+      });
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+      return;
     }
-  }, [token]);
+  }, [token, navigate, toast]);
 
   useEffect(() => {
     const loadInvitation = async () => {
-      if (!token) {
-        console.log('No token provided, redirecting to login');
-        navigate('/login');
+      if (!token || token === 'undefined') {
+        console.log('No valid token provided, redirecting to login');
         return;
       }
 
@@ -270,6 +293,7 @@ const JoinTeam = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-300">Loading invitation...</p>
+          <p className="mt-2 text-sm text-gray-500">Token: {token || 'No token'}</p>
         </div>
       </div>
     );
@@ -284,6 +308,9 @@ const JoinTeam = () => {
             <CardDescription className="text-gray-400">
               This invitation link is invalid or has expired.
             </CardDescription>
+            <p className="text-xs text-gray-500 mt-2">
+              Token received: {token || 'undefined'}
+            </p>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/login')} className="w-full">

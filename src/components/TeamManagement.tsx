@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,22 +54,36 @@ const TeamManagement = () => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
 
+    console.log('Inviting team member:', inviteEmail.trim());
     setIsInviting(true);
-    const { error } = await inviteTeamMember(inviteEmail.trim());
     
-    if (error) {
+    try {
+      const { error } = await inviteTeamMember(inviteEmail.trim());
+      
+      if (error) {
+        console.error('Error inviting team member:', error);
+        toast({
+          title: 'Error',
+          description: error,
+          variant: 'destructive',
+        });
+      } else {
+        console.log('Team member invited successfully');
+        toast({
+          title: 'Success',
+          description: 'Invitation sent successfully!',
+        });
+        setInviteEmail('');
+      }
+    } catch (err) {
+      console.error('Unexpected error inviting team member:', err);
       toast({
         title: 'Error',
-        description: error,
+        description: 'An unexpected error occurred while sending the invitation.',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Invitation sent successfully!',
-      });
-      setInviteEmail('');
     }
+    
     setIsInviting(false);
   };
 
