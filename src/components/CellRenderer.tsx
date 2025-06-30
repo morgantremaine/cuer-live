@@ -1,215 +1,159 @@
 
-import React from 'react';
-import TextAreaCell from './cells/TextAreaCell';
-import TimeDisplayCell from './cells/TimeDisplayCell';
-import ImageCell from './cells/ImageCell';
-import ExpandableScriptCell from './ExpandableScriptCell';
-import { RundownItem } from '@/hooks/useRundownItems';
+import React, { memo, useCallback } from 'react';
+import { CustomFieldCell } from './cells/CustomFieldCell';
+import { ImageCell } from './cells/ImageCell';
+import { TextAreaCell } from './cells/TextAreaCell';
+import { TimeDisplayCell } from './cells/TimeDisplayCell';
 import { Column } from '@/hooks/useColumnsManager';
+import { RundownItem } from '@/types/rundown';
 
 interface CellRendererProps {
+  item: RundownItem;
   column: Column;
-  item: RundownItem & {
-    calculatedStartTime?: string;
-    calculatedEndTime?: string;
-    calculatedElapsedTime?: string;
-    calculatedRowNumber?: string;
-  };
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
-  textColor?: string;
-  backgroundColor?: string;
-  currentSegmentId?: string | null;
-  onUpdateItem: (id: string, field: string, value: string) => void;
-  onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  width?: string;
+  onUpdate: (field: string, value: any) => void;
+  onUserTyping?: (typing: boolean) => void;
+  isSelected?: boolean;
+  className?: string;
 }
 
-const CellRenderer = ({
-  column,
-  item,
-  cellRefs,
-  textColor,
-  backgroundColor,
-  currentSegmentId,
-  onUpdateItem,
-  onCellClick,
-  onKeyDown,
-  width
+// Memoized cell renderer for better performance
+const CellRenderer = memo(({ 
+  item, 
+  column, 
+  onUpdate, 
+  onUserTyping,
+  isSelected = false,
+  className = '' 
 }: CellRendererProps) => {
-  // Get the current value for this cell
-  const getCellValue = () => {
-    if (column.isCustom) {
-      return item.customFields?.[column.key] || '';
-    }
-    
-    switch (column.key) {
-      case 'segmentName':
-        // For segment name column, always use item.name (the actual segment description)
-        return item.name || '';
-      case 'name':
-        // Also handle 'name' key directly
-        return item.name || '';
-      case 'duration':
-        return item.duration || '';
-      case 'startTime':
-        return item.calculatedStartTime || item.startTime || '';
-      case 'endTime':
-        return item.calculatedEndTime || item.endTime || '';
-      case 'elapsedTime':
-        return item.calculatedElapsedTime || item.elapsedTime || '';
-      case 'talent':
-        return item.talent || '';
-      case 'script':
-        return item.script || '';
-      case 'notes':
-        return item.notes || '';
-      case 'gfx':
-        return item.gfx || '';
-      case 'video':
-        return item.video || '';
-      case 'images':
-        // Explicitly handle images column
-        return item.images || '';
-      default:
-        return (item as any)[column.key] || '';
-    }
-  };
+  // Memoized update handler
+  const handleUpdate = useCallback((value: any) => {
+    onUpdate(column.key, value);
+  }, [onUpdate, column.key]);
 
-  const value = getCellValue();
+  // Memoized typing handler
+  const handleUserTyping = useCallback((typing: boolean) => {
+    onUserTyping?.(typing);
+  }, [onUserTyping]);
 
-  // Determine if this is a read-only field
-  const isReadOnly = !column.isEditable || 
-    column.key === 'startTime' || 
-    column.key === 'endTime' || 
-    column.key === 'elapsedTime';
+  const baseClassName = `p-2 border-r border-gray-200 dark:border-gray-700 ${className}`;
 
-  // Check if this is the current segment and segment name column for showcaller highlighting
-  const isCurrentSegmentName = currentSegmentId === item.id && 
-    (column.key === 'segmentName' || column.key === 'name');
+  // Handle different cell types with optimized components
+  switch (column.key) {
+    case 'rowNumber':
+      return (
+        <div className={`${baseClassName} text-center font-mono text-sm text-gray-500`}>
+          {item.rowNumber || ''}
+        </div>
+      );
 
-  // Override colors for showcaller highlighting
-  const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
-  const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
+    case 'name':
+    case 'talent':
+    case 'notes':
+      return (
+        <div className={baseClassName}>
+          <TextAreaCell
+            value={item[column.key as keyof RundownItem] as string || ''}
+            onChange={handleUpdate}
+            onUserTyping={handleUserTyping}
+            placeholder={`Enter ${column.name.toLowerCase()}`}
+            maxRows={column.key === 'notes' ? 4 : 2}
+            className="w-full border-0 p-0 focus:ring-0 bg-transparent resize-none"
+          />
+        </div>
+      );
 
-  // Use TimeDisplayCell for calculated time fields
-  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
-    return (
-      <TimeDisplayCell 
-        value={value} 
-        backgroundColor={showcallerBackgroundColor} 
-        textColor={showcallerTextColor}
-      />
-    );
+    case 'script':
+      return (
+        <div className={baseClassName}>
+          <TextAreaCell
+            value={item.script || ''}
+            onChange={handleUpdate}
+            onUserTyping={handleUserTyping}
+            placeholder="Enter script content"
+            maxRows={6}
+            className="w-full border-0 p-0 focus:ring-0 bg-transparent resize-none"
+          />
+        </div>
+      );
+
+    case 'duration':
+    case 'startTime':
+    case 'endTime':
+      return (
+        <div className={baseClassName}>
+          <TimeDisplayCell
+            value={item[column.key as keyof RundownItem] as string || '00:00'}
+            onChange={handleUpdate}
+            onUserTyping={handleUserTyping}
+            className="w-full text-center font-mono"
+          />
+        </div>
+      );
+
+    case 'gfx':
+    case 'video':
+      return (
+        <div className={baseClassName}>
+          <TextAreaCell
+            value={item[column.key as keyof RundownItem] as string || ''}
+            onChange={handleUpdate}
+            onUserTyping={handleUserTyping}
+            placeholder={`Enter ${column.name.toLowerCase()}`}
+            maxRows={3}
+            className="w-full border-0 p-0 focus:ring-0 bg-transparent resize-none"
+          />
+        </div>
+      );
+
+    case 'images':
+      return (
+        <div className={baseClassName}>
+          <ImageCell
+            images={item.images || []}
+            onChange={handleUpdate}
+            className="w-full"
+          />
+        </div>
+      );
+
+    default:
+      // Handle custom fields with optimized component
+      if (column.isCustom && item.customFields) {
+        return (
+          <div className={baseClassName}>
+            <CustomFieldCell
+              value={item.customFields[column.key] || ''}
+              onChange={(value) => {
+                const updatedCustomFields = {
+                  ...item.customFields,
+                  [column.key]: value
+                };
+                onUpdate('customFields', updatedCustomFields);
+              }}
+              onUserTyping={handleUserTyping}
+              placeholder={`Enter ${column.name.toLowerCase()}`}
+              className="w-full border-0 p-0 focus:ring-0 bg-transparent"
+            />
+          </div>
+        );
+      }
+
+      // Default text cell
+      return (
+        <div className={baseClassName}>
+          <TextAreaCell
+            value={item[column.key as keyof RundownItem] as string || ''}
+            onChange={handleUpdate}
+            onUserTyping={handleUserTyping}
+            placeholder={`Enter ${column.name.toLowerCase()}`}
+            maxRows={2}
+            className="w-full border-0 p-0 focus:ring-0 bg-transparent resize-none"
+          />
+        </div>
+      );
   }
+});
 
-  // Create cell key for referencing
-  const cellKey = `${item.id}-${column.key}`;
-
-  // Use ImageCell for images column - check both column.key and column.id
-  if (column.key === 'images' || column.id === 'images') {
-    return (
-      <ImageCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        backgroundColor={showcallerBackgroundColor}
-        onUpdateValue={(newValue) => {
-          // Always use 'images' as the field name for the images column
-          onUpdateItem(item.id, 'images', newValue);
-        }}
-        onCellClick={(e) => {
-          onCellClick(item.id, column.key);
-        }}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
-
-  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
-  if (column.key === 'script' || column.key === 'notes') {
-    return (
-      <ExpandableScriptCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
-        }}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
-
-  // For showcaller highlighting on segment name, wrap the entire cell content
-  if (isCurrentSegmentName) {
-    return (
-      <div 
-        className="absolute inset-0 flex items-center px-3 py-1"
-        style={{ 
-          backgroundColor: showcallerBackgroundColor,
-          color: showcallerTextColor,
-          minHeight: '100%',
-          height: '100%'
-        }}
-      >
-        <TextAreaCell
-          value={value}
-          itemId={item.id}
-          cellRefKey={column.key}
-          cellRefs={cellRefs}
-          textColor={showcallerTextColor}
-          backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
-          isDuration={column.key === 'duration'}
-          onUpdateValue={(newValue) => {
-            // Handle custom fields vs built-in fields
-            if (column.isCustom) {
-              const field = `customFields.${column.key}`;
-              onUpdateItem(item.id, field, newValue);
-            } else {
-              // For segmentName column, always update the 'name' field
-              // For name column, also update the 'name' field
-              const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-              onUpdateItem(item.id, field, newValue);
-            }
-          }}
-          onCellClick={(e) => onCellClick(item.id, column.key)}
-          onKeyDown={onKeyDown}
-        />
-      </div>
-    );
-  }
-
-  // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
-  return (
-    <TextAreaCell
-      value={value}
-      itemId={item.id}
-      cellRefKey={column.key}
-      cellRefs={cellRefs}
-      textColor={showcallerTextColor}
-      backgroundColor={showcallerBackgroundColor}
-      isDuration={column.key === 'duration'}
-      onUpdateValue={(newValue) => {
-        // Handle custom fields vs built-in fields
-        if (column.isCustom) {
-          const field = `customFields.${column.key}`;
-          onUpdateItem(item.id, field, newValue);
-        } else {
-          // For segmentName column, always update the 'name' field
-          // For name column, also update the 'name' field
-          const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-          onUpdateItem(item.id, field, newValue);
-        }
-      }}
-      onCellClick={(e) => onCellClick(item.id, column.key)}
-      onKeyDown={onKeyDown}
-    />
-  );
-};
+CellRenderer.displayName = 'CellRenderer';
 
 export default CellRenderer;

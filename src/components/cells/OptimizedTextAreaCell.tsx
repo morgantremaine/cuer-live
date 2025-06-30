@@ -2,23 +2,25 @@
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 
-interface TextAreaCellProps {
+interface OptimizedTextAreaCellProps {
   value: string;
   onChange: (value: string) => void;
   onUserTyping?: (typing: boolean) => void;
   placeholder?: string;
   className?: string;
-  maxRows?: number;
+  maxHeight?: number;
+  minHeight?: number;
 }
 
-export const TextAreaCell = ({
+export const OptimizedTextAreaCell = ({
   value,
   onChange,
   onUserTyping,
   placeholder,
   className = '',
-  maxRows = 5
-}: TextAreaCellProps) => {
+  maxHeight = 200,
+  minHeight = 60
+}: OptimizedTextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const changeTimeoutRef = useRef<NodeJS.Timeout>();
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -32,25 +34,24 @@ export const TextAreaCell = ({
     }
   }, [value, isTyping]);
 
-  // Optimized height adjustment with performance improvements
+  // Optimized height adjustment
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Use requestAnimationFrame for smoother performance
-    requestAnimationFrame(() => {
-      textarea.style.height = 'auto';
-      const maxHeight = maxRows * 24; // Approximate line height
-      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-      textarea.style.height = `${newHeight}px`;
-    });
-  }, [maxRows]);
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate new height within bounds
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, [maxHeight, minHeight]);
 
-  // Optimized change handler with better debouncing
+  // Debounced change handler to reduce update frequency
   const handleChange = useCallback((newValue: string) => {
     setLocalValue(newValue);
     
-    // Signal typing state
+    // Signal that user is typing
     if (!isTyping) {
       setIsTyping(true);
       onUserTyping?.(true);
@@ -64,26 +65,32 @@ export const TextAreaCell = ({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Debounced onChange to reduce update frequency
+    // Debounce the onChange call to reduce update frequency
     changeTimeoutRef.current = setTimeout(() => {
       onChange(newValue);
-    }, 200); // Reduced debounce time for better responsiveness
+    }, 300); // 300ms debounce for changes
 
-    // Typing timeout
+    // Set typing timeout
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       onUserTyping?.(false);
-    }, 800); // Reduced from 1000ms
+    }, 1000); // 1 second after stopping typing
   }, [onChange, onUserTyping, isTyping]);
 
+  // Handle input change
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     handleChange(newValue);
-    adjustHeight();
+    
+    // Adjust height immediately for better UX
+    requestAnimationFrame(() => {
+      adjustHeight();
+    });
   }, [handleChange, adjustHeight]);
 
+  // Handle blur to ensure final value is saved
   const handleBlur = useCallback(() => {
-    // Ensure final save on blur
+    // Clear timeouts and ensure final save
     if (changeTimeoutRef.current) {
       clearTimeout(changeTimeoutRef.current);
     }
@@ -91,6 +98,7 @@ export const TextAreaCell = ({
       clearTimeout(typingTimeoutRef.current);
     }
     
+    // Ensure final value is saved
     if (localValue !== value) {
       onChange(localValue);
     }
@@ -104,7 +112,7 @@ export const TextAreaCell = ({
     adjustHeight();
   }, [adjustHeight]);
 
-  // Cleanup
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (changeTimeoutRef.current) {
@@ -123,10 +131,11 @@ export const TextAreaCell = ({
       onChange={handleInputChange}
       onBlur={handleBlur}
       placeholder={placeholder}
-      className={`resize-none overflow-hidden transition-none ${className}`}
+      className={`resize-none overflow-hidden transition-all duration-150 ${className}`}
       style={{
-        minHeight: '60px',
-        maxHeight: `${maxRows * 24}px`
+        minHeight: `${minHeight}px`,
+        maxHeight: `${maxHeight}px`,
+        height: `${minHeight}px`
       }}
     />
   );
