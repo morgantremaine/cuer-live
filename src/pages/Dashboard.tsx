@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeamId } from '@/hooks/useTeamId';
+import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,6 +25,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { teamId } = useTeamId();
+  const { teamMembers } = useTeam();
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
@@ -387,7 +389,7 @@ const Dashboard = () => {
                 <DashboardRundownGrid 
                   title={folderTitle}
                   rundowns={filteredRundowns}
-                  loading={loading && savedRundowns.length > 0} // Only show loading for updates, not initial load
+                  loading={loading && savedRundowns.length > 0}
                   onOpen={handleOpenRundown}
                   onDelete={handleDeleteRundown}
                   onArchive={handleArchiveRundown}
@@ -396,6 +398,7 @@ const Dashboard = () => {
                   isArchived={folderType === 'archived'}
                   showEmptyState={true}
                   currentUserId={user?.id}
+                  teamMembers={teamMembers}
                 />
               </div>
             </div>

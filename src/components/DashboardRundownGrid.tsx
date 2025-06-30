@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -23,6 +22,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+interface TeamMember {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'member';
+  joined_at: string;
+  profiles?: {
+    email: string;
+    full_name: string | null;
+  };
+}
+
 interface DashboardRundownGridProps {
   title?: string
   rundowns: SavedRundown[]
@@ -36,6 +46,7 @@ interface DashboardRundownGridProps {
   isArchived?: boolean
   showEmptyState?: boolean
   currentUserId?: string
+  teamMembers?: TeamMember[]
 }
 
 const DashboardRundownGrid = ({ 
@@ -50,7 +61,8 @@ const DashboardRundownGrid = ({
   onDuplicate,
   isArchived = false,
   showEmptyState = true,
-  currentUserId
+  currentUserId,
+  teamMembers = []
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
 
@@ -71,6 +83,16 @@ const DashboardRundownGrid = ({
       return 'You'
     }
     
+    // First try to find the team member by user_id
+    const teamMember = teamMembers.find(member => member.user_id === rundown.user_id);
+    if (teamMember?.profiles?.full_name) {
+      return teamMember.profiles.full_name;
+    }
+    if (teamMember?.profiles?.email) {
+      return teamMember.profiles.email;
+    }
+    
+    // Fallback to creator_profile if available
     if (rundown.creator_profile?.full_name) {
       return rundown.creator_profile.full_name
     }
