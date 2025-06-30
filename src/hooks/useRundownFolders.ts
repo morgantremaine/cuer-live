@@ -114,18 +114,23 @@ export const useRundownFolders = (teamId?: string) => {
 
   const reorderFolders = async (reorderedFolders: RundownFolder[]) => {
     try {
-      // Update positions in database
-      const updates = reorderedFolders.map(folder => ({
-        id: folder.id,
-        position: folder.position,
-        updated_at: new Date().toISOString()
-      }));
+      console.log('Reordering folders:', reorderedFolders.map(f => ({ id: f.id, position: f.position })));
+      
+      // Update positions one by one instead of using upsert
+      for (const folder of reorderedFolders) {
+        const { error } = await supabase
+          .from('rundown_folders')
+          .update({ 
+            position: folder.position,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', folder.id);
 
-      const { error } = await supabase
-        .from('rundown_folders')
-        .upsert(updates, { onConflict: 'id' });
-
-      if (error) throw error;
+        if (error) {
+          console.error('Error updating folder position:', error);
+          throw error;
+        }
+      }
 
       // Update local state
       setFolders(reorderedFolders);
