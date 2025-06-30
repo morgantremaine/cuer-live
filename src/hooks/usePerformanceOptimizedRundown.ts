@@ -1,4 +1,3 @@
-
 import { useOptimizedAutoSave } from './useOptimizedAutoSave';
 import { useOptimizedRealtimeCollaboration } from './useOptimizedRealtimeCollaboration';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
@@ -44,17 +43,11 @@ export const usePerformanceOptimizedRundown = () => {
     rundownId: rundownState.rundownId,
     onRemoteUpdate: () => {
       console.log('📡 Remote update received');
-      // Reload the rundown data if needed
-      if (rundownState.loadRundown) {
-        rundownState.loadRundown(rundownState.rundownId);
-      }
+      // The simplified rundown state will handle updates automatically
     },
     onReloadCurrentRundown: () => {
-      // Reload rundown data - trigger a re-fetch if available
+      // The simplified rundown state will handle reloading automatically
       console.log('📡 Reloading rundown data');
-      if (rundownState.loadRundown) {
-        rundownState.loadRundown(rundownState.rundownId);
-      }
     },
     enabled: !!rundownState.rundownId
   });
