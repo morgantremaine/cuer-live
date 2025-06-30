@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import RundownCard from './RundownCard'
 import { FileText, Plus } from 'lucide-react'
 import { RundownItem } from '@/hooks/useRundownItems'
@@ -38,7 +39,7 @@ interface DashboardRundownGridProps {
   isArchived?: boolean
   showEmptyState?: boolean
   currentUserId?: string
-  teamMembers?: TeamMember[] // Add teamMembers prop
+  teamMembers?: TeamMember[]
 }
 
 const DashboardRundownGrid = ({ 
@@ -53,7 +54,7 @@ const DashboardRundownGrid = ({
   isArchived = false,
   showEmptyState = true,
   currentUserId,
-  teamMembers = [] // Default to empty array
+  teamMembers = []
 }: DashboardRundownGridProps) => {
   const emptyState = (
     <Card className="bg-gray-800 border-gray-700">
@@ -104,7 +105,7 @@ const DashboardRundownGrid = ({
               onUnarchive={onUnarchive}
               onDuplicate={onDuplicate}
               isArchived={isArchived}
-              teamMembers={teamMembers} // Pass team members to each card
+              teamMembers={teamMembers}
             />
           ))}
         </div>
