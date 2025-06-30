@@ -112,6 +112,36 @@ export const useRundownFolders = (teamId?: string) => {
     }
   };
 
+  const reorderFolders = async (reorderedFolders: RundownFolder[]) => {
+    try {
+      // Update positions in database
+      const updates = reorderedFolders.map(folder => ({
+        id: folder.id,
+        position: folder.position,
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('rundown_folders')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      // Update local state
+      setFolders(reorderedFolders);
+      
+      return true;
+    } catch (error) {
+      console.error('Error reordering folders:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to reorder folders',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const deleteFolder = async (id: string) => {
     try {
       const { error } = await supabase
@@ -181,6 +211,7 @@ export const useRundownFolders = (teamId?: string) => {
     createFolder,
     updateFolder,
     deleteFolder,
+    reorderFolders,
     moveRundownToFolder,
     refetch: fetchFolders
   };

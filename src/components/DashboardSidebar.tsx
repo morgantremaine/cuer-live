@@ -65,13 +65,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   searchQuery,
   onSearchChange
 }) => {
-  const { folders, createFolder, updateFolder, deleteFolder } = useRundownFolders(teamId);
+  const { folders, createFolder, updateFolder, deleteFolder, reorderFolders } = useRundownFolders(teamId);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['system']));
+  
+  // Folder drag and drop state
+  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
+  const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
 
   // Calculate counts for system folders
   const allCount = rundowns.length;
@@ -128,11 +132,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     await deleteFolder(folder.id);
   };
 
+  // Rundown drag handlers
   const handleDragOver = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
-    // Use a special identifier for "All Rundowns" to avoid null confusion
-    const dragId = folderId === null ? 'all-rundowns' : folderId;
-    setDragOverFolder(dragId);
+    // Only handle rundown drops, not folder reordering
+    if (e.dataTransfer.types.includes('text/rundown-id')) {
+      const dragId = folderId === null ? 'all-rundowns' : folderId;
+      setDragOverFolder(dragId);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -148,11 +155,70 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const handleDrop = (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
-    const rundownId = e.dataTransfer.getData('text/plain');
-    if (rundownId) {
-      onRundownDrop(rundownId, folderId);
+    
+    // Handle rundown drops
+    if (e.dataTransfer.types.includes('text/rundown-id')) {
+      const rundownId = e.dataTransfer.getData('text/rundown-id');
+      if (rundownId) {
+        onRundownDrop(rundownId, folderId);
+      }
+      setDragOverFolder(null);
     }
-    setDragOverFolder(null);
+  };
+
+  // Folder drag handlers
+  const handleFolderDragStart = (e: React.DragEvent, folderId: string) => {
+    setDraggedFolderId(folderId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/folder-id', folderId);
+  };
+
+  const handleFolderDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    
+    // Only handle folder reordering
+    if (e.dataTransfer.types.includes('text/folder-id')) {
+      e.dataTransfer.dropEffect = 'move';
+      setDropIndicatorIndex(index);
+    }
+  };
+
+  const handleFolderDragEnd = () => {
+    setDraggedFolderId(null);
+    setDropIndicatorIndex(null);
+  };
+
+  const handleFolderDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (e.dataTransfer.types.includes('text/folder-id')) {
+      const draggedId = e.dataTransfer.getData('text/folder-id');
+      
+      if (draggedId && draggedFolderId) {
+        const currentIndex = folders.findIndex(folder => folder.id === draggedId);
+        
+        if (currentIndex !== -1 && currentIndex !== dropIndex) {
+          // Create new order array
+          const newFolders = [...folders];
+          const [draggedFolder] = newFolders.splice(currentIndex, 1);
+          
+          // Adjust drop index if moving from before to after
+          const adjustedIndex = dropIndex > currentIndex ? dropIndex - 1 : dropIndex;
+          newFolders.splice(adjustedIndex, 0, draggedFolder);
+          
+          // Update positions and save
+          const updatedFolders = newFolders.map((folder, index) => ({
+            ...folder,
+            position: index
+          }));
+          
+          await reorderFolders(updatedFolders);
+        }
+      }
+    }
+    
+    setDropIndicatorIndex(null);
+    setDraggedFolderId(null);
   };
 
   const toggleFolderExpansion = (folderId: string) => {
@@ -351,15 +417,18 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               </Dialog>
             </div>
 
-            <div className="space-y-1">
-              {folders.map((folder) => {
+            <div className="space-y-1 relative">
+              {folders.map((folder, index) => {
                 const isSelected = folderType === 'custom' && selectedFolder === folder.id;
                 const isDragOver = dragOverFolder === folder.id;
+                const isDragging = draggedFolderId === folder.id;
                 
                 // Priority: drag-over > selected > default hover
-                let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
+                let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors relative ";
                 
-                if (isDragOver) {
+                if (isDragging) {
+                  containerClasses += "opacity-50";
+                } else if (isDragOver) {
                   containerClasses += "bg-gray-700 text-white";
                 } else if (isSelected) {
                   containerClasses += "bg-blue-600 text-white";
@@ -368,77 +437,102 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 }
                 
                 return (
-                  <div
-                    key={folder.id}
-                    className={containerClasses}
-                    onClick={() => onFolderSelect(folder.id, 'custom')}
-                    onDragOver={(e) => handleDragOver(e, folder.id)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, folder.id)}
-                  >
-                    <div className="flex items-center flex-1">
-                      <Folder className="h-4 w-4 mr-2 text-white" />
-                      {editingFolder === folder.id ? (
-                        <Input
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
-                          onBlur={() => handleEditFolder(folder)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleEditFolder(folder);
-                            } else if (e.key === 'Escape') {
-                              setEditingFolder(null);
-                              setEditName('');
-                            }
-                          }}
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="text-sm">{folder.name}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingFolder(folder.id);
-                              setEditName(folder.name);
+                  <div key={folder.id}>
+                    {/* Drop indicator line */}
+                    {dropIndicatorIndex === index && (
+                      <div className="h-0.5 bg-gray-400 mx-2 mb-1 rounded"></div>
+                    )}
+                    
+                    <div
+                      className={containerClasses}
+                      draggable
+                      onClick={() => onFolderSelect(folder.id, 'custom')}
+                      onDragStart={(e) => handleFolderDragStart(e, folder.id)}
+                      onDragOver={(e) => handleFolderDragOver(e, index)}
+                      onDragEnd={handleFolderDragEnd}
+                      onDrop={(e) => handleFolderDrop(e, index)}
+                      onDragOverCapture={(e) => handleDragOver(e, folder.id)}
+                      onDragLeave={handleDragLeave}
+                      onDropCapture={(e) => handleDrop(e, folder.id)}
+                    >
+                      <div className="flex items-center flex-1">
+                        <Folder className="h-4 w-4 mr-2 text-white" />
+                        {editingFolder === folder.id ? (
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
+                            onBlur={() => handleEditFolder(folder)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleEditFolder(folder);
+                              } else if (e.key === 'Escape') {
+                                setEditingFolder(null);
+                                setEditName('');
+                              }
                             }}
-                            className="text-gray-300 hover:text-white hover:bg-gray-700"
-                          >
-                            <Edit2 className="h-4 w-4 mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFolder(folder);
-                            }}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="text-sm">{folder.name}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingFolder(folder.id);
+                                setEditName(folder.name);
+                              }}
+                              className="text-gray-300 hover:text-white hover:bg-gray-700"
+                            >
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteFolder(folder);
+                              }}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
+                    
+                    {/* Drop indicator line at the end */}
+                    {dropIndicatorIndex === folders.length && index === folders.length - 1 && (
+                      <div className="h-0.5 bg-gray-400 mx-2 mt-1 rounded"></div>
+                    )}
                   </div>
                 );
               })}
+              
+              {/* Drop zone at the end of the list */}
+              {folders.length > 0 && (
+                <div
+                  className="h-4"
+                  onDragOver={(e) => handleFolderDragOver(e, folders.length)}
+                  onDrop={(e) => handleFolderDrop(e, folders.length)}
+                />
+              )}
             </div>
           </div>
         </div>
