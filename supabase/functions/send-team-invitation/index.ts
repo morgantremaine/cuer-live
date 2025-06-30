@@ -138,7 +138,7 @@ serve(async (req) => {
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
-      subject: `You're invited to join ${safeTeamName} on Cuer`,
+      subject: `You're invited to join ${safeInviterName}'s team on Cuer`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -289,7 +289,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi there!</p>
                 
-                <p><span class="highlight">${safeInviterName}</span> has invited you to join <span class="highlight">${safeTeamName}</span> on Cuer.</p>
+                <p><span class="highlight">${safeInviterName}</span> has invited you to join their team on Cuer.</p>
                 
                 <p>Cuer is a powerful rundown management platform that helps teams collaborate on broadcast rundowns and blueprints.</p>
                 
