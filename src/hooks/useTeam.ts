@@ -370,24 +370,41 @@ export const useTeam = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('remove_team_member_with_transfer', {
-        member_id: memberId,
-        admin_id: user.id,
-        team_id_param: team.id
+      console.log('Calling delete-team-member edge function with:', {
+        memberId,
+        teamId: team.id
       });
 
+      const { data, error } = await supabase.functions.invoke('delete-team-member', {
+        body: { 
+          memberId, 
+          teamId: team.id
+        }
+      });
+
+      console.log('Edge function response:', { data, error });
+
       if (error) {
+        console.error('Edge function error:', error);
         return { error: error.message };
       }
 
-      if (data.error) {
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
         return { error: data.error };
       }
 
-      // Reload team members
+      // Reload team members after successful deletion
       await loadTeamMembers(team.id);
-      return { result: data };
+      
+      return { 
+        result: {
+          rundownsTransferred: data.rundownsTransferred || 0,
+          blueprintsTransferred: data.blueprintsTransferred || 0
+        }
+      };
     } catch (error) {
+      console.error('Exception in removeTeamMemberWithTransfer:', error);
       return { error: 'Failed to remove team member' };
     }
   };
