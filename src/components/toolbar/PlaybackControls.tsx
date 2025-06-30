@@ -53,6 +53,9 @@ const PlaybackControls = ({
     }
   };
 
+  // Show timer if there's a current segment and time remaining (whether playing or paused)
+  const shouldShowTimer = currentSegmentId && timeRemaining > 0;
+
   return (
     <div className="flex items-center space-x-1">
       <Button
@@ -71,7 +74,7 @@ const PlaybackControls = ({
         className="flex items-center space-x-1"
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        {isPlaying && timeRemaining > 0 && (
+        {shouldShowTimer && (
           <span className="text-xs font-mono">{formatTime(timeRemaining)}</span>
         )}
       </Button>
