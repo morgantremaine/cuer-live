@@ -53,8 +53,9 @@ const PlaybackControls = ({
     }
   };
 
-  // Show timer if there's a current segment and time remaining (whether playing or paused)
-  const shouldShowTimer = currentSegmentId && timeRemaining > 0;
+  // Show timer only when actively playing OR when paused after having been played
+  // (timeRemaining < total duration indicates it has been started)
+  const shouldShowTimer = currentSegmentId && (isPlaying || (!isPlaying && timeRemaining > 0 && timeRemaining < 300)); // assuming max 5min segments
 
   return (
     <div className="flex items-center space-x-1">
