@@ -1,8 +1,10 @@
+
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
+import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
@@ -15,6 +17,13 @@ export const useRundownStateCoordination = () => {
 
   // Single source of truth for all rundown state (NO showcaller interference)
   const simplifiedState = useSimplifiedRundownState();
+
+  // Add performance optimization layer
+  const performanceOptimization = useRundownPerformanceOptimization({
+    items: simplifiedState.items,
+    columns: simplifiedState.columns,
+    startTime: simplifiedState.rundownStartTime
+  });
 
   // Autoscroll state with localStorage persistence
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
@@ -100,10 +109,33 @@ export const useRundownStateCoordination = () => {
 
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
-    simplifiedState.items,
+    // Use performance-optimized calculated items, but still pass the original updateItem function
+    performanceOptimization.calculatedItems,
     (updater) => {
       if (typeof updater === 'function') {
-        simplifiedState.setItems(updater(simplifiedState.items));
+        // Extract just the core RundownItem properties for the updater
+        const coreItems = performanceOptimization.calculatedItems.map(item => ({
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          duration: item.duration,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          elapsedTime: item.elapsedTime,
+          isFloating: item.isFloating,
+          isFloated: item.isFloated,
+          talent: item.talent,
+          script: item.script,
+          notes: item.notes,
+          gfx: item.gfx,
+          video: item.video,
+          images: item.images,
+          color: item.color,
+          customFields: item.customFields,
+          rowNumber: item.rowNumber,
+          segmentName: item.segmentName
+        }));
+        simplifiedState.setItems(updater(coreItems));
       } else {
         simplifiedState.setItems(updater);
       }
@@ -131,10 +163,10 @@ export const useRundownStateCoordination = () => {
     addHeaderAtIndex
   );
 
-  // Get UI state with enhanced navigation
+  // Get UI state with enhanced navigation - use performance-optimized data
   const uiState = useRundownUIState(
-    simplifiedState.items,
-    simplifiedState.visibleColumns,
+    performanceOptimization.calculatedItems,
+    performanceOptimization.visibleColumns,
     simplifiedState.updateItem,
     simplifiedState.setColumns,
     simplifiedState.columns
@@ -142,10 +174,10 @@ export const useRundownStateCoordination = () => {
 
   return {
     coreState: {
-      // Core data (NO showcaller interference)
-      items: simplifiedState.items,
+      // Core data (performance optimized but same interface)
+      items: performanceOptimization.calculatedItems,
       columns: simplifiedState.columns,
-      visibleColumns: simplifiedState.visibleColumns,
+      visibleColumns: performanceOptimization.visibleColumns,
       rundownTitle: simplifiedState.rundownTitle,
       rundownStartTime: simplifiedState.rundownStartTime,
       timezone: simplifiedState.timezone,
@@ -174,14 +206,11 @@ export const useRundownStateCoordination = () => {
       handleRowSelection: simplifiedState.handleRowSelection,
       clearRowSelection: simplifiedState.clearRowSelection,
       
-      // Calculations
-      totalRuntime: simplifiedState.totalRuntime,
-      getRowNumber: simplifiedState.getRowNumber,
-      getHeaderDuration: simplifiedState.getHeaderDuration,
-      calculateHeaderDuration: (index: number) => {
-        const item = simplifiedState.items[index];
-        return item ? simplifiedState.getHeaderDuration(item.id) : '00:00:00';
-      },
+      // Calculations (performance optimized)
+      totalRuntime: performanceOptimization.totalRuntime,
+      getRowNumber: performanceOptimization.getRowNumber,
+      getHeaderDuration: performanceOptimization.getHeaderDuration,
+      calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
       // Core actions (NO showcaller interference)
       updateItem: simplifiedState.updateItem,
@@ -208,7 +237,7 @@ export const useRundownStateCoordination = () => {
       forward: showcallerVisual.forward,
       backward: showcallerVisual.backward,
       reset: showcallerVisual.reset,
-      jumpToSegment: showcallerVisual.jumpToSegment, // Add the new function
+      jumpToSegment: showcallerVisual.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,
