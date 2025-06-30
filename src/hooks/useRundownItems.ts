@@ -133,7 +133,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
-      // Renumber all headers after adding the new one
+      // Renumber all headers after adding the new one - this ensures correct letter assignment
       const renumberedItems = renumberItems(newItems);
       
       markAsChanged();
@@ -184,7 +184,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
     });
   }, [markAsChanged]);
 
-  // Simplified getRowNumber function - first header is always A
+  // Enhanced getRowNumber function that works with current items state
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= items.length) return '';
     
