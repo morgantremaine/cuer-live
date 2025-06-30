@@ -1,9 +1,9 @@
 
 import React, { memo, useCallback } from 'react';
 import { CustomFieldCell } from './cells/CustomFieldCell';
-import { ImageCell } from './cells/ImageCell';
+import ImageCell from './cells/ImageCell';
 import { TextAreaCell } from './cells/TextAreaCell';
-import { TimeDisplayCell } from './cells/TimeDisplayCell';
+import TimeDisplayCell from './cells/TimeDisplayCell';
 import { Column } from '@/hooks/useColumnsManager';
 import { RundownItem } from '@/types/rundown';
 
@@ -14,6 +14,14 @@ interface CellRendererProps {
   onUserTyping?: (typing: boolean) => void;
   isSelected?: boolean;
   className?: string;
+  // Legacy props that might be passed from existing row components
+  cellRefs?: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  textColor?: string;
+  backgroundColor?: string;
+  currentSegmentId?: string | null;
+  onCellClick?: (itemId: string, field: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  width?: string;
 }
 
 // Memoized cell renderer for better performance
@@ -23,7 +31,15 @@ const CellRenderer = memo(({
   onUpdate, 
   onUserTyping,
   isSelected = false,
-  className = '' 
+  className = '',
+  // Legacy props - we'll ignore these for now but accept them to prevent errors
+  cellRefs,
+  textColor,
+  backgroundColor,
+  currentSegmentId,
+  onCellClick,
+  onKeyDown,
+  width
 }: CellRendererProps) => {
   // Memoized update handler
   const handleUpdate = useCallback((value: any) => {
@@ -83,9 +99,8 @@ const CellRenderer = memo(({
         <div className={baseClassName}>
           <TimeDisplayCell
             value={item[column.key as keyof RundownItem] as string || '00:00'}
-            onChange={handleUpdate}
-            onUserTyping={handleUserTyping}
-            className="w-full text-center font-mono"
+            backgroundColor={backgroundColor}
+            textColor={textColor}
           />
         </div>
       );
@@ -109,9 +124,15 @@ const CellRenderer = memo(({
       return (
         <div className={baseClassName}>
           <ImageCell
-            images={item.images || []}
-            onChange={handleUpdate}
-            className="w-full"
+            value={item.images || ''}
+            itemId={item.id}
+            cellRefKey="images"
+            cellRefs={cellRefs || { current: {} }}
+            textColor={textColor}
+            backgroundColor={backgroundColor}
+            onUpdateValue={handleUpdate}
+            onCellClick={onCellClick ? (e) => onCellClick(item.id, 'images') : undefined}
+            onKeyDown={onKeyDown || (() => {})}
           />
         </div>
       );

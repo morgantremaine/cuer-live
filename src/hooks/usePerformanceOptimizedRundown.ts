@@ -1,3 +1,4 @@
+
 import { useOptimizedAutoSave } from './useOptimizedAutoSave';
 import { useOptimizedRealtimeCollaboration } from './useOptimizedRealtimeCollaboration';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
@@ -7,13 +8,31 @@ export const usePerformanceOptimizedRundown = () => {
   // Core state management (unchanged from existing)
   const rundownState = useSimplifiedRundownState();
 
+  // Create a compatible state object for the auto-save hook
+  const autoSaveState = useMemo(() => ({
+    items: rundownState.items || [],
+    title: rundownState.rundownTitle || '',
+    startTime: rundownState.rundownStartTime || '',
+    timezone: rundownState.timezone || '',
+    hasUnsavedChanges: rundownState.hasUnsavedChanges || false,
+    lastChanged: Date.now() // Use current time as fallback
+  }), [
+    rundownState.items,
+    rundownState.rundownTitle,
+    rundownState.rundownStartTime,
+    rundownState.timezone,
+    rundownState.hasUnsavedChanges
+  ]);
+
   // Optimized auto-save with better performance
   const autoSave = useOptimizedAutoSave(
-    rundownState,
+    autoSaveState,
     rundownState.rundownId,
     () => {
-      // Mark as saved callback
-      rundownState.markAsSaved?.();
+      // Mark as saved callback - use the actual method from the state
+      if (rundownState.setHasUnsavedChanges) {
+        rundownState.setHasUnsavedChanges(false);
+      }
     }
   );
 
@@ -24,8 +43,10 @@ export const usePerformanceOptimizedRundown = () => {
       console.log('📡 Remote update received');
     },
     onReloadCurrentRundown: () => {
-      // Reload rundown data
-      rundownState.reloadData?.();
+      // Reload rundown data - use actual reload method if available
+      if (rundownState.loadRundown) {
+        rundownState.loadRundown(rundownState.rundownId);
+      }
     },
     enabled: !!rundownState.rundownId
   });
