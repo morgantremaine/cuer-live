@@ -44,13 +44,13 @@ const PlaybackControls = ({
     }
   }, [isPlaying, currentSegmentId]);
 
-  // Reset the started state when segment changes or there's no segment
+  // Reset the started state when segment changes or there's no segment, but only if not currently playing
   useEffect(() => {
-    if (!currentSegmentId || (currentSegmentId !== lastSegmentId && lastSegmentId !== null)) {
+    if (!currentSegmentId || (currentSegmentId !== lastSegmentId && lastSegmentId !== null && !isPlaying)) {
       setHasBeenStarted(false);
       setLastSegmentId(currentSegmentId);
     }
-  }, [currentSegmentId, lastSegmentId]);
+  }, [currentSegmentId, lastSegmentId, isPlaying]);
 
   const handlePlay = () => {
     if (selectedRowId) {
@@ -78,7 +78,7 @@ const PlaybackControls = ({
     }
   };
 
-  // Show timer only when actively playing OR when paused after having been started
+  // Show timer when actively playing OR when paused after having been started
   const shouldShowTimer = currentSegmentId && hasBeenStarted && timeRemaining > 0;
 
   return (
