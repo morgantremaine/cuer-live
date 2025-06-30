@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,26 +8,6 @@ export type { RundownItem } from '@/types/rundown';
 
 export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
-
-  // Helper function to renumber all headers in sequence
-  const renumberItems = useCallback((items: RundownItem[]) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
-    let headerIndex = 0; // Always start at A (0)
-    
-    return items.map(item => {
-      if (item.type === 'header') {
-        const newHeaderLetter = letters[headerIndex] || 'A';
-        headerIndex++;
-        return {
-          ...item,
-          rowNumber: newHeaderLetter
-        };
-      } else {
-        return item;
-      }
-    });
-  }, []);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
     setItems(prevItems => {
@@ -93,7 +74,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const newItem: RundownItem = {
         id: uuidv4(),
         type: 'header',
-        rowNumber: '', // Don't preset - let renumberItems calculate it
+        rowNumber: '', // Will be calculated properly by the calculation layer
         name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
         startTime: '',
         duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
@@ -133,48 +114,26 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
-      // Renumber all headers after adding the new one - this ensures correct letter assignment
-      const renumberedItems = renumberItems(newItems);
-      
       markAsChanged();
-      return renumberedItems;
+      return newItems;
     });
-  }, [markAsChanged, renumberItems]);
+  }, [markAsChanged]);
 
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
-      const itemToDelete = prevItems.find(item => item.id === id);
       const newItems = prevItems.filter(item => item.id !== id);
-      
-      // If we deleted a header, renumber all remaining headers
-      if (itemToDelete?.type === 'header') {
-        const renumberedItems = renumberItems(newItems);
-        markAsChanged();
-        return renumberedItems;
-      }
-      
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, renumberItems]);
+  }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
-      const itemsToDelete = prevItems.filter(item => ids.includes(item.id));
-      const hasHeaderDeleted = itemsToDelete.some(item => item.type === 'header');
       const newItems = prevItems.filter(item => !ids.includes(item.id));
-      
-      // If any deleted item was a header, renumber all remaining headers
-      if (hasHeaderDeleted) {
-        const renumberedItems = renumberItems(newItems);
-        markAsChanged();
-        return renumberedItems;
-      }
-      
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, renumberItems]);
+  }, [markAsChanged]);
 
   const addMultipleRows = useCallback((newItems: RundownItem[]) => {
     setItems(prevItems => {
@@ -183,43 +142,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
       return allItems;
     });
   }, [markAsChanged]);
-
-  // Enhanced getRowNumber function that works with current items state
-  const getRowNumber = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return '';
-    
-    const item = items[index];
-    if (!item) return '';
-    
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
-    // For headers, use the stored rowNumber (which should be set by renumberItems)
-    if (item.type === 'header') {
-      return item.rowNumber || 'A';
-    }
-    
-    // For regular items, find which segment they belong to
-    let currentSegmentLetter = 'A';
-    let itemCountInSegment = 0;
-    let segmentHeaderCount = 0;
-    
-    // Go through items up to current index
-    for (let i = 0; i <= index; i++) {
-      const currentItem = items[i];
-      if (!currentItem) continue;
-      
-      if (currentItem.type === 'header') {
-        // Update which segment we're in
-        currentSegmentLetter = letters[segmentHeaderCount] || 'A';
-        segmentHeaderCount++;
-        itemCountInSegment = 0; // Reset count for new segment
-      } else if (currentItem.type === 'regular') {
-        itemCountInSegment++;
-      }
-    }
-    
-    return `${currentSegmentLetter}${itemCountInSegment}`;
-  }, [items]);
 
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems => {
@@ -300,7 +222,6 @@ export const useRundownItems = (markAsChanged: () => void) => {
     deleteRow,
     deleteMultipleRows,
     addMultipleRows,
-    getRowNumber,
     toggleFloatRow,
     calculateTotalRuntime,
     calculateHeaderDuration

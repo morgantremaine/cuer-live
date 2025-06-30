@@ -50,21 +50,39 @@ export const isFloated = (item: RundownItem): boolean => {
   return item.isFloating || item.isFloated || false;
 };
 
+// Helper function to renumber headers sequentially
+const renumberHeaders = (items: RundownItem[]): RundownItem[] => {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let headerIndex = 0;
+  
+  return items.map(item => {
+    if (isHeaderItem(item)) {
+      const letter = letters[headerIndex] || 'A';
+      headerIndex++;
+      return { ...item, rowNumber: letter, segmentName: letter };
+    }
+    return item;
+  });
+};
+
 // Pure function to calculate all items with timing and row numbers
 export const calculateItemsWithTiming = (
   items: RundownItem[],
   rundownStartTime: string
 ): CalculatedRundownItem[] => {
+  // First, ensure all headers have correct row numbers
+  const itemsWithCorrectHeaders = renumberHeaders(items);
+  
   let currentTime = rundownStartTime;
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   
   // Check if there are regular rows before the first header
-  const firstHeaderIndex = items.findIndex(item => isHeaderItem(item));
+  const firstHeaderIndex = itemsWithCorrectHeaders.findIndex(item => isHeaderItem(item));
   const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
   
   let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
 
-  return items.map((item, index) => {
+  return itemsWithCorrectHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
     let calculatedEndTime = currentTime;
     let calculatedRowNumber = '';
@@ -73,7 +91,8 @@ export const calculateItemsWithTiming = (
       // Headers get the current timeline position and don't advance time
       calculatedStartTime = currentTime;
       calculatedEndTime = currentTime;
-      calculatedRowNumber = letters[headerIndex] || 'A';
+      // Use the corrected rowNumber from renumberHeaders
+      calculatedRowNumber = item.rowNumber || letters[headerIndex] || 'A';
       headerIndex++;
     } else {
       // Regular items
@@ -98,9 +117,9 @@ export const calculateItemsWithTiming = (
       let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start counting from A or B
       
       for (let i = 0; i <= index; i++) {
-        const currentItem = items[i];
+        const currentItem = itemsWithCorrectHeaders[i];
         if (isHeaderItem(currentItem)) {
-          currentSegment = letters[segmentHeaderCount] || 'A';
+          currentSegment = currentItem.rowNumber || letters[segmentHeaderCount] || 'A';
           segmentHeaderCount++;
           itemCountInSegment = 0;
         } else {
