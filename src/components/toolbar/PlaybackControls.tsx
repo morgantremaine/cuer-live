@@ -34,20 +34,23 @@ const PlaybackControls = ({
   onToggleAutoScroll
 }: PlaybackControlsProps) => {
   const [hasBeenStarted, setHasBeenStarted] = useState(false);
+  const [lastSegmentId, setLastSegmentId] = useState<string | null>(null);
 
-  // Track when timer has been started
+  // Track when timer has been started for the current segment
   useEffect(() => {
     if (isPlaying && currentSegmentId) {
       setHasBeenStarted(true);
+      setLastSegmentId(currentSegmentId);
     }
   }, [isPlaying, currentSegmentId]);
 
-  // Reset the started state when segment changes or is reset
+  // Reset the started state when segment changes or there's no segment
   useEffect(() => {
-    if (!currentSegmentId) {
+    if (!currentSegmentId || (currentSegmentId !== lastSegmentId && lastSegmentId !== null)) {
       setHasBeenStarted(false);
+      setLastSegmentId(currentSegmentId);
     }
-  }, [currentSegmentId]);
+  }, [currentSegmentId, lastSegmentId]);
 
   const handlePlay = () => {
     if (selectedRowId) {
@@ -59,6 +62,7 @@ const PlaybackControls = ({
 
   const handleReset = () => {
     setHasBeenStarted(false);
+    setLastSegmentId(null);
     onReset();
   };
 
