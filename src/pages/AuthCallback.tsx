@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
@@ -7,10 +7,14 @@ import { useToast } from '@/hooks/use-toast'
 const AuthCallback = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const [isProcessing, setIsProcessing] = useState(true)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('Processing auth callback...')
+        
+        // Get the session first
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -24,14 +28,65 @@ const AuthCallback = () => {
           return
         }
 
-        if (data.session) {
-          toast({
-            title: 'Success',
-            description: 'Email confirmed successfully! Welcome to Cuer.',
-          })
-          navigate('/dashboard')
+        if (data.session?.user) {
+          console.log('User authenticated successfully:', data.session.user.email)
+          
+          // Ensure user profile exists
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.session.user.id,
+              email: data.session.user.email,
+              full_name: data.session.user.user_metadata?.full_name || ''
+            })
+          
+          if (profileError) {
+            console.error('Profile creation error:', profileError)
+          }
+
+          // Check for pending invitation token
+          const pendingToken = localStorage.getItem('pendingInvitationToken')
+          
+          if (pendingToken && pendingToken !== 'undefined') {
+            console.log('Processing pending invitation after authentication')
+            
+            // Try to accept the invitation
+            const { data: acceptResult, error: acceptError } = await supabase.rpc(
+              'accept_team_invitation_safe',
+              { invitation_token: pendingToken }
+            )
+
+            if (acceptError) {
+              console.error('Error accepting invitation:', acceptError)
+              localStorage.removeItem('pendingInvitationToken')
+            } else if (acceptResult?.success) {
+              console.log('Invitation accepted successfully')
+              localStorage.removeItem('pendingInvitationToken')
+              toast({
+                title: 'Success',
+                description: 'Email confirmed and team invitation accepted! Welcome to the team.',
+              })
+            } else {
+              console.log('Invitation acceptance failed:', acceptResult?.error)
+              localStorage.removeItem('pendingInvitationToken')
+              toast({
+                title: 'Email Confirmed',
+                description: 'Your email has been confirmed, but there was an issue with the team invitation.',
+              })
+            }
+          } else {
+            toast({
+              title: 'Success',
+              description: 'Email confirmed successfully! Welcome to Cuer.',
+            })
+          }
+
+          // Wait a moment for everything to settle, then navigate
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 1000)
         } else {
-          // No session, redirect to login
+          console.log('No session found, redirecting to login')
           navigate('/login')
         }
       } catch (error) {
@@ -42,6 +97,8 @@ const AuthCallback = () => {
           variant: 'destructive',
         })
         navigate('/login')
+      } finally {
+        setIsProcessing(false)
       }
     }
 
@@ -52,7 +109,9 @@ const AuthCallback = () => {
     <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-300">Confirming your email...</p>
+        <p className="mt-4 text-gray-300">
+          {isProcessing ? 'Confirming your email...' : 'Processing...'}
+        </p>
       </div>
     </div>
   )
