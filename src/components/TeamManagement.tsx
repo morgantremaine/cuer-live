@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ const TeamManagement = () => {
     pendingInvitations,
     userRole,
     loading,
+    error,
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
@@ -155,6 +157,25 @@ const TeamManagement = () => {
       <div className="space-y-6">
         <div className="h-32 bg-gray-800 rounded-lg animate-pulse" />
         <div className="h-64 bg-gray-800 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Error Loading Team
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              {error}
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
@@ -287,45 +308,51 @@ const TeamManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-3 border border-gray-600 rounded-lg bg-gray-700">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">
-                        {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
-                      </span>
-                      {member.role === 'admin' && (
-                        <Crown className="h-4 w-4 text-yellow-500" />
-                      )}
+          {teamMembers.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400">No team members found. Try refreshing the page.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {teamMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-600 rounded-lg bg-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-white">
+                          {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
+                        </span>
+                        {member.role === 'admin' && (
+                          <Crown className="h-4 w-4 text-yellow-500" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-400">
+                        {member.profiles?.email}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-400">
-                      {member.profiles?.email}
-                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className={member.role === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'}>
+                      {member.role}
+                    </Badge>
+                    {userRole === 'admin' && member.role !== 'admin' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-gray-300 hover:text-white hover:bg-gray-600"
+                        onClick={() => handleRemoveMemberClick(
+                          member.id, 
+                          member.profiles?.full_name || member.profiles?.email || 'Unknown User'
+                        )}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className={member.role === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'}>
-                    {member.role}
-                  </Badge>
-                  {userRole === 'admin' && member.role !== 'admin' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-gray-300 hover:text-white hover:bg-gray-600"
-                      onClick={() => handleRemoveMemberClick(
-                        member.id, 
-                        member.profiles?.full_name || member.profiles?.email || 'Unknown User'
-                      )}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

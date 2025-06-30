@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -106,9 +105,11 @@ export const useTeam = () => {
           setUserRole(membershipData.role);
           setError(null);
 
-          // Load team members and pending invitations if user is admin
+          // Load team members for ALL team members (not just admins)
+          await loadTeamMembers(teamData.id);
+          
+          // Load pending invitations only if user is admin
           if (membershipData.role === 'admin') {
-            await loadTeamMembers(teamData.id);
             await loadPendingInvitations(teamData.id);
           }
         } else {
