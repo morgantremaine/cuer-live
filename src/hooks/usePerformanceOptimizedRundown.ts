@@ -1,4 +1,3 @@
-
 import { useOptimizedAutoSave } from './useOptimizedAutoSave';
 import { useOptimizedRealtimeCollaboration } from './useOptimizedRealtimeCollaboration';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
@@ -34,10 +33,8 @@ export const usePerformanceOptimizedRundown = () => {
     autoSaveState,
     rundownState.rundownId,
     () => {
-      // Mark as saved callback - use markAsChanged with false to indicate saved
-      if (rundownState.markAsChanged) {
-        rundownState.markAsChanged();
-      }
+      // Mark as saved callback - just a simple callback since the auto-save will handle state
+      console.log('📡 Rundown saved successfully');
     }
   );
 

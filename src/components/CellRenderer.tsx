@@ -10,7 +10,7 @@ import { RundownItem } from '@/types/rundown';
 interface CellRendererProps {
   item: RundownItem;
   column: Column;
-  onUpdate: (field: string, value: any) => void;
+  onUpdate?: (field: string, value: any) => void; // Made optional
   onUserTyping?: (typing: boolean) => void;
   isSelected?: boolean;
   className?: string;
