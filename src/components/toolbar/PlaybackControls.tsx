@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,7 @@ const PlaybackControls = ({
         className="flex items-center space-x-1"
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        {timeRemaining > 0 && (
+        {isPlaying && timeRemaining > 0 && (
           <span className="text-xs font-mono">{formatTime(timeRemaining)}</span>
         )}
       </Button>
