@@ -93,7 +93,7 @@ export const useRundownItems = (markAsChanged: () => void) => {
       const newItem: RundownItem = {
         id: uuidv4(),
         type: 'header',
-        rowNumber: 'A', // Will be renumbered below
+        rowNumber: '', // Don't preset - let renumberItems calculate it
         name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
         startTime: '',
         duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
@@ -193,17 +193,9 @@ export const useRundownItems = (markAsChanged: () => void) => {
     
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    // For headers, count how many headers we've seen so far
+    // For headers, use the stored rowNumber (which should be set by renumberItems)
     if (item.type === 'header') {
-      let headerCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (items[i]?.type === 'header') {
-          headerCount++;
-        }
-      }
-      // First header is always A (index 0)
-      const headerIndex = headerCount - 1;
-      return letters[headerIndex] || 'A';
+      return item.rowNumber || 'A';
     }
     
     // For regular items, find which segment they belong to
