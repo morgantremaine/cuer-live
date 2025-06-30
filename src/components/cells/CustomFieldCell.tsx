@@ -1,118 +1,69 @@
 
-import React, { useCallback, useRef, useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import React from 'react';
 
 interface CustomFieldCellProps {
   value: string;
-  onChange: (value: string) => void;
-  onUserTyping?: (typing: boolean) => void;
-  placeholder?: string;
-  className?: string;
-  multiline?: boolean;
+  itemId: string;
+  cellRefKey: string;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  textColor?: string;
+  backgroundColor?: string;
+  onUpdateValue: (value: string) => void;
+  onCellClick: (e: React.MouseEvent) => void;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
 
-export const CustomFieldCell = ({
+const CustomFieldCell = ({
   value,
-  onChange,
-  onUserTyping,
-  placeholder,
-  className = '',
-  multiline = false
+  itemId,
+  cellRefKey,
+  cellRefs,
+  textColor,
+  backgroundColor,
+  onUpdateValue,
+  onCellClick,
+  onKeyDown
 }: CustomFieldCellProps) => {
-  const changeTimeoutRef = useRef<NodeJS.Timeout>();
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const [localValue, setLocalValue] = useState(value);
-  const [isTyping, setIsTyping] = useState(false);
-
-  // Update local value when prop changes
-  useEffect(() => {
-    if (!isTyping) {
-      setLocalValue(value);
-    }
-  }, [value, isTyping]);
-
-  // Optimized change handler
-  const handleChange = useCallback((newValue: string) => {
-    setLocalValue(newValue);
-    
-    if (!isTyping) {
-      setIsTyping(true);
-      onUserTyping?.(true);
-    }
-
-    // Clear existing timeouts
-    if (changeTimeoutRef.current) {
-      clearTimeout(changeTimeoutRef.current);
-    }
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Debounced onChange
-    changeTimeoutRef.current = setTimeout(() => {
-      onChange(newValue);
-    }, 250);
-
-    // Typing timeout
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      onUserTyping?.(false);
-    }, 800);
-  }, [onChange, onUserTyping, isTyping]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    handleChange(e.target.value);
-  }, [handleChange]);
-
-  const handleBlur = useCallback(() => {
-    if (changeTimeoutRef.current) {
-      clearTimeout(changeTimeoutRef.current);
-    }
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
+  // Simple key navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // For Enter key and arrow keys, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      onKeyDown(e, itemId, cellRefKey);
+      return;
     }
     
-    if (localValue !== value) {
-      onChange(localValue);
-    }
-    
-    setIsTyping(false);
-    onUserTyping?.(false);
-  }, [localValue, value, onChange, onUserTyping]);
+    // Allow other keys to work normally
+  };
 
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (changeTimeoutRef.current) {
-        clearTimeout(changeTimeoutRef.current);
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  if (multiline) {
-    return (
-      <Textarea
-        value={localValue}
-        onChange={handleInputChange}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        className={`resize-none transition-none ${className}`}
-        style={{ minHeight: '60px', maxHeight: '120px' }}
-      />
-    );
-  }
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <Input
-      value={localValue}
-      onChange={handleInputChange}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      className={`transition-none ${className}`}
-    />
+    <div className="w-full h-full flex items-center" style={{ backgroundColor }}>
+      <textarea
+        ref={el => {
+          if (el) {
+            cellRefs.current[cellKey] = el;
+          } else {
+            delete cellRefs.current[cellKey];
+          }
+        }}
+        value={value}
+        onChange={(e) => onUpdateValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onClick={onCellClick}
+        data-cell-id={cellKey}
+        data-cell-ref={cellKey}
+        className="w-full px-2 py-1 text-sm border-0 focus:border-0 focus:outline-none rounded-sm resize-none"
+        style={{ 
+          backgroundColor: 'transparent',
+          color: textColor || 'inherit',
+          minHeight: '28px'
+        }}
+        rows={1}
+      />
+    </div>
   );
 };
+
+export default CustomFieldCell;
