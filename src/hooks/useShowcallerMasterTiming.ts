@@ -41,23 +41,27 @@ export const useShowcallerMasterTiming = ({
 
   // Calculate precise time remaining internally for accuracy
   const calculatePreciseTimeRemaining = useCallback((): number => {
-    if (!isPlaying || !currentSegmentId || !playbackStartTime) {
-      const segment = items.find(item => item.id === currentSegmentId);
-      return segment ? timeToSeconds(segment.duration || '00:00') : 0;
+    if (!currentSegmentId) {
+      return 0;
     }
 
     const segment = items.find(item => item.id === currentSegmentId);
     if (!segment) return 0;
 
     const segmentDurationSeconds = timeToSeconds(segment.duration || '00:00');
+
+    if (!isPlaying || !playbackStartTime) {
+      return segmentDurationSeconds;
+    }
+
     const elapsedSeconds = (Date.now() - playbackStartTime) / 1000;
-    
     return Math.max(0, segmentDurationSeconds - elapsedSeconds);
   }, [isPlaying, currentSegmentId, playbackStartTime, items]);
 
-  // Calculate timing status (over/under) with stable logic
+  // Calculate timing status (over/under) with corrected logic
   const calculateTimingStatus = useCallback((preciseTimeRemaining: number) => {
-    if (!isPlaying || !currentSegmentId || !rundownStartTime) {
+    // Only show timing status when playing and have a valid segment
+    if (!isPlaying || !currentSegmentId || !rundownStartTime || rundownStartTime === '00:00:00') {
       return {
         isOnTime: false,
         isAhead: false,
@@ -86,21 +90,21 @@ export const useShowcallerMasterTiming = ({
       };
     }
 
-    // Calculate showcaller position in rundown
-    let showcallerElapsedSeconds = 0;
+    // Calculate when this segment should have started according to schedule
+    let scheduledElapsedSeconds = 0;
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
+        scheduledElapsedSeconds += timeToSeconds(item.duration || '00:00');
       }
     }
-    
-    // Add elapsed time in current segment
+
+    // Calculate current position in segment
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = currentSegmentDuration - preciseTimeRemaining;
-    showcallerElapsedSeconds += elapsedInCurrentSegment;
+    const totalScheduledTime = scheduledElapsedSeconds + elapsedInCurrentSegment;
 
-    // Calculate real elapsed time since rundown start
+    // Calculate actual elapsed time since rundown start
     const now = new Date();
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
@@ -114,11 +118,11 @@ export const useShowcallerMasterTiming = ({
       realElapsedSeconds = (24 * 3600) - rundownStartSeconds + currentTimeSeconds;
     }
 
-    // Calculate difference (positive = ahead/under, negative = behind/over)
-    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+    // Calculate difference: negative = behind schedule (over), positive = ahead of schedule (under)
+    const differenceSeconds = totalScheduledTime - realElapsedSeconds;
     
     const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5;
+    const isAhead = differenceSeconds > 5; // Showcaller is ahead of real time
     const timeDifference = secondsToTime(Math.abs(differenceSeconds));
 
     return {
@@ -152,7 +156,7 @@ export const useShowcallerMasterTiming = ({
     // Initial calculation (synchronous, no race condition)
     updateDisplay();
 
-    if (isPlaying) {
+    if (isPlaying && currentSegmentId) {
       // Stable 1000ms timer for display updates
       stableTimerRef.current = setInterval(updateDisplay, 1000);
     }

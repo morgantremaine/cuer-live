@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -45,11 +44,12 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Completely separate showcaller visual state management
+  // Completely separate showcaller visual state management with proper start time
   const showcallerVisual = useShowcallerVisualState({
     items: simplifiedState.items,
     rundownId: simplifiedState.rundownId,
-    userId: userId
+    userId: userId,
+    rundownStartTime: simplifiedState.rundownStartTime // Pass actual start time
   });
 
   // Separate realtime sync for showcaller visual state only  

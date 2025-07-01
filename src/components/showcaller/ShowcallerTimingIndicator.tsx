@@ -15,6 +15,7 @@ const ShowcallerTimingIndicator = ({
   timeDifference,
   isVisible
 }: ShowcallerTimingIndicatorProps) => {
+  // Don't render anything if not visible
   if (!isVisible) return null;
 
   let statusText: string;

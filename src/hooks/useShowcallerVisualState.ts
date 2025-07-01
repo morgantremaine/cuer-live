@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerMasterTiming } from './useShowcallerMasterTiming';
@@ -7,12 +6,14 @@ interface UseShowcallerVisualStateProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
+  rundownStartTime?: string; // Add proper start time prop
 }
 
 export const useShowcallerVisualState = ({
   items,
   rundownId,
-  userId
+  userId,
+  rundownStartTime = '00:00:00' // Default fallback
 }: UseShowcallerVisualStateProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
@@ -24,10 +25,10 @@ export const useShowcallerVisualState = ({
 
   const initializationRef = useRef(false);
 
-  // Use master timing for consistent time calculations
+  // Use master timing with proper rundown start time
   const { timeRemaining, timingStatus } = useShowcallerMasterTiming({
     items,
-    rundownStartTime: '00:00:00', // This should come from rundown state
+    rundownStartTime: rundownStartTime || '00:00:00',
     isPlaying,
     currentSegmentId,
     playbackStartTime
@@ -47,6 +48,13 @@ export const useShowcallerVisualState = ({
     const targetSegmentId = selectedSegmentId || currentSegmentId;
     if (!targetSegmentId) return;
 
+    // Only allow play on regular segments, not headers
+    const targetSegment = items.find(item => item.id === targetSegmentId);
+    if (!targetSegment || targetSegment.type !== 'regular') {
+      console.warn('📺 Cannot play on header segments');
+      return;
+    }
+
     console.log('📺 Play called with master timing:', { targetSegmentId });
     
     setCurrentSegmentId(targetSegmentId);
@@ -54,7 +62,7 @@ export const useShowcallerVisualState = ({
     setIsPlaying(true);
     setIsController(true);
     setLastUpdateTime(new Date().toISOString());
-  }, [currentSegmentId]);
+  }, [currentSegmentId, items]);
 
   const pause = useCallback(() => {
     console.log('📺 Pause called');
@@ -64,7 +72,12 @@ export const useShowcallerVisualState = ({
 
   const forward = useCallback(() => {
     const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    const nextIndex = currentIndex + 1;
+    let nextIndex = currentIndex + 1;
+    
+    // Skip to next regular (non-header) segment
+    while (nextIndex < items.length && items[nextIndex].type !== 'regular') {
+      nextIndex++;
+    }
     
     if (nextIndex < items.length) {
       const nextSegment = items[nextIndex];
@@ -78,7 +91,12 @@ export const useShowcallerVisualState = ({
 
   const backward = useCallback(() => {
     const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    const prevIndex = currentIndex - 1;
+    let prevIndex = currentIndex - 1;
+    
+    // Skip to previous regular (non-header) segment
+    while (prevIndex >= 0 && items[prevIndex].type !== 'regular') {
+      prevIndex--;
+    }
     
     if (prevIndex >= 0) {
       const prevSegment = items[prevIndex];
@@ -99,11 +117,18 @@ export const useShowcallerVisualState = ({
   }, []);
 
   const jumpToSegment = useCallback((segmentId: string) => {
+    // Only allow jumping to regular segments
+    const targetSegment = items.find(item => item.id === segmentId);
+    if (!targetSegment || targetSegment.type !== 'regular') {
+      console.warn('📺 Cannot jump to header segments');
+      return;
+    }
+
     console.log('📺 Jump to segment:', segmentId);
     setCurrentSegmentId(segmentId);
     setPlaybackStartTime(Date.now());
     setLastUpdateTime(new Date().toISOString());
-  }, []);
+  }, [items]);
 
   // Visual status functions
   const getItemVisualStatus = useCallback((itemId: string): 'upcoming' | 'current' | 'completed' => {
