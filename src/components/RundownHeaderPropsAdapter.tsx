@@ -12,6 +12,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
   const {
     currentTime,
     timezone,
+    onTimezoneChange,
     totalRuntime,
     rundownTitle,
     onTitleChange,
@@ -38,13 +39,16 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
   logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
     autoScrollEnabled,
     hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll
+    toggleFunctionType: typeof onToggleAutoScroll,
+    hasTimezoneHandler: !!onTimezoneChange,
+    currentTimezone: timezone
   });
 
   return (
     <RundownHeader
       currentTime={currentTime}
       timezone={timezone}
+      onTimezoneChange={onTimezoneChange}
       totalRuntime={totalRuntime}
       hasUnsavedChanges={hasUnsavedChanges}
       isSaving={isSaving}

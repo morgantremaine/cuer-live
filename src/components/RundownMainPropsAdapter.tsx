@@ -89,6 +89,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     visibleColumns: visibleColumns || []
   };
 
+  // Calculate current segment name for RundownMainContent
+  const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar Section */}
@@ -139,7 +142,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       <div className="flex-1 overflow-hidden">
         <RundownMainContent
           {...props}
-          currentSegmentName={currentSegmentId ? items.find(item => item.id === currentSegmentId)?.name || '' : ''}
+          currentSegmentName={currentSegmentName}
           totalDuration={totalRuntime}
         />
       </div>
