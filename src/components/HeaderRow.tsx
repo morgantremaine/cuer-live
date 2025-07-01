@@ -94,7 +94,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     item,
     isSelected,
     isDragging,
-    selectedRowsCount
+    selectedRowsCount,
+    isHeader: true
   });
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;

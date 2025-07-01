@@ -75,7 +75,8 @@ const RegularRow = (props: RegularRowProps) => {
     isSelected,
     status,
     color: item.color,
-    isFloated: item.isFloated
+    isFloated: item.isFloated,
+    item
   });
 
   const {
@@ -85,7 +86,10 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenuDelete,
     handleContextMenuFloat,
     handleContextMenuColor,
-    handleContextMenuPaste
+    handleContextMenuPaste,
+    handleJumpToHere,
+    handleDragStart,
+    handleMouseDown
   } = useRowEventHandlers({
     item,
     index,
@@ -98,13 +102,15 @@ const RegularRow = (props: RegularRowProps) => {
     onToggleColorPicker: props.onToggleColorPicker,
     selectedRows,
     onPasteRows: props.onPasteRows,
-    onToggleFloat: props.onToggleFloat
+    onToggleFloat: props.onToggleFloat,
+    onDragStart: props.onDragStart,
+    onJumpToHere: props.onJumpToHere
   });
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
   // Enhanced drag start handler that prevents dragging when selecting text
-  const handleDragStart = (e: React.DragEvent) => {
+  const handleDragStartEnhanced = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
     // Check if the target is an input, textarea, or if there's an active text selection
@@ -132,7 +138,7 @@ const RegularRow = (props: RegularRowProps) => {
   };
 
   // Enhanced mouse down handler to detect text selection intent
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDownEnhanced = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     
@@ -152,12 +158,11 @@ const RegularRow = (props: RegularRowProps) => {
 
   return (
     <RundownContextMenu
-      children={undefined}
       selectedCount={isSelected ? selectedRowsCount : 1}
       selectedRows={selectedRows}
       isFloated={item.isFloated}
       hasClipboardData={hasClipboardData}
-      showColorPicker={showColorPicker}
+      showColorPicker={showColorPicker === item.id}
       itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
@@ -177,10 +182,10 @@ const RegularRow = (props: RegularRowProps) => {
         }}
         data-item-id={item.id}
         draggable
-        onDragStart={handleDragStart}
+        onDragStart={handleDragStartEnhanced}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
-        onMouseDown={handleMouseDown}
+        onMouseDown={handleMouseDownEnhanced}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
       >

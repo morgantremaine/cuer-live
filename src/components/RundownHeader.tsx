@@ -1,4 +1,3 @@
-
 import React from 'react';
 import HeaderLogo from './header/HeaderLogo';
 import HeaderTitle from './header/HeaderTitle';
@@ -86,9 +85,6 @@ const RundownHeader = ({
         <HeaderTitle
           title={title}
           onTitleChange={onTitleChange}
-          startTime={rundownStartTime}
-          onStartTimeChange={onRundownStartTimeChange}
-          duration={duration}
           hasUnsavedChanges={hasUnsavedChanges}
           isSaving={isSaving}
         />
@@ -105,7 +101,6 @@ const RundownHeader = ({
         {/* Connection status indicator */}
         <ConnectionStatusBadge 
           isConnected={isConnected}
-          isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         />
       </div>
     </div>

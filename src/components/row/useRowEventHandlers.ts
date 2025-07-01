@@ -7,6 +7,7 @@ interface UseRowEventHandlersProps {
   isSelected?: boolean;
   selectedRowsCount?: number;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
   onDeleteRow: (id: string) => void;
   onDeleteSelectedRows: () => void;
   onCopySelectedRows: () => void;
@@ -24,6 +25,7 @@ export const useRowEventHandlers = ({
   isSelected = false,
   selectedRowsCount = 1,
   onRowSelect,
+  onDragStart,
   onDeleteRow,
   onDeleteSelectedRows,
   onCopySelectedRows,
@@ -34,6 +36,26 @@ export const useRowEventHandlers = ({
   onClearSelection,
   onJumpToHere
 }: UseRowEventHandlersProps) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    onDragStart(e, index);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    
+    if (isTextInput) {
+      const row = e.currentTarget as HTMLElement;
+      row.setAttribute('draggable', 'false');
+      
+      setTimeout(() => {
+        if (row) {
+          row.setAttribute('draggable', 'true');
+        }
+      }, 100);
+    }
+  };
+
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
@@ -104,6 +126,8 @@ export const useRowEventHandlers = ({
   };
 
   return {
+    handleDragStart,
+    handleMouseDown,
     handleRowClick,
     handleContextMenu,
     handleContextMenuCopy,

@@ -1,5 +1,6 @@
 
 interface UseRowStylingProps {
+  item?: { color?: string; id: string };
   isDragging: boolean;
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
@@ -9,9 +10,11 @@ interface UseRowStylingProps {
   color?: string;
   isHeader?: boolean;
   status?: 'upcoming' | 'current' | 'completed';
+  selectedRowsCount?: number;
 }
 
 export const useRowStyling = ({
+  item,
   isDragging,
   isDraggingMultiple = false,
   isSelected = false,
@@ -20,8 +23,13 @@ export const useRowStyling = ({
   isCurrentlyPlaying = false,
   color,
   isHeader = false,
-  status
+  status,
+  selectedRowsCount = 1
 }: UseRowStylingProps) => {
+  // Use color from item if provided, otherwise use the color prop
+  const effectiveColor = item?.color || color;
+  const effectiveIsFloated = isFloated || (item && 'isFloated' in item && item.isFloated);
+  
   let rowClass = '';
   let backgroundColorOverride: string | undefined = undefined;
   
@@ -33,11 +41,11 @@ export const useRowStyling = ({
     }
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold';
-  } else if (isFloating || isFloated) {
+  } else if (isFloating || effectiveIsFloated) {
     // Apply full red background for floated rows
     rowClass = 'border-l-4 border-red-600';
     backgroundColorOverride = '#ef4444'; // Full red background
-  } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
+  } else if (effectiveColor && effectiveColor !== '#FFFFFF' && effectiveColor !== '#ffffff') {
     // For colored rows, no additional styling needed
     rowClass = '';
   } else {
@@ -49,7 +57,7 @@ export const useRowStyling = ({
     if (isHeader) {
       // For headers: add blue selection border while preserving left border
       rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
-    } else if (isFloating || isFloated) {
+    } else if (isFloating || effectiveIsFloated) {
       // For floated rows: add blue selection border while preserving red left border
       rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-red-600';
     } else {
@@ -58,7 +66,7 @@ export const useRowStyling = ({
     }
     
     // Add subtle background highlight for non-colored rows only
-    if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
+    if ((!effectiveColor || effectiveColor === '#FFFFFF' || effectiveColor === '#ffffff') && !isFloating && !effectiveIsFloated) {
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
   }
