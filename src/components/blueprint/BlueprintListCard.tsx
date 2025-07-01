@@ -159,6 +159,9 @@ const BlueprintListCard = ({
               const originalIndex = list.showUniqueOnly ? list.items.indexOf(item) : itemIndex;
               const isChecked = list.checkedItems?.[originalIndex] || false;
               
+              // Hide time for the first item in headers list
+              const shouldHideTime = list.sourceColumn === 'headers' && itemIndex === 0;
+              
               logger.blueprint(`BlueprintListCard: item ${itemIndex} "${item}" isChecked:`, isChecked);
               
               return (
@@ -167,7 +170,7 @@ const BlueprintListCard = ({
                   item={item}
                   index={originalIndex}
                   isChecked={isChecked}
-                  startTime={startTime}
+                  startTime={shouldHideTime ? null : startTime}
                   onCheckboxChange={handleCheckboxChange}
                 />
               );
