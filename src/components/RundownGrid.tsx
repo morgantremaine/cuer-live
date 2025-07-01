@@ -1,285 +1,283 @@
-
-import React, { useEffect } from 'react';
-import RundownTable from './RundownTable';
-import SearchDialog from './SearchDialog';
-import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
+import { useRealtimeRundown } from '@/hooks/useRealtimeRundown';
+import { useRundownItems } from '@/hooks/useRundownItems';
+import { useColumnsManager } from '@/hooks/useColumnsManager';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useDnd } from '@/hooks/useDnd';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { useRundownSearch } from '@/hooks/useRundownSearch';
-import { useAuth } from '@/hooks/useAuth';
-import { logger } from '@/utils/logger';
+import { RundownItem } from '@/types/rundown';
+import RundownHeaderPropsAdapter from './RundownHeaderPropsAdapter';
+import RundownMainPropsAdapter from './RundownMainPropsAdapter';
+import SearchDialog from './SearchDialog';
 
-const RundownGrid = React.memo(() => {
-  const { user } = useAuth();
-  const userId = user?.id;
+interface RundownGridProps {
+  rundownId?: string;
+  isShared?: boolean;
+  canEdit?: boolean;
+  realtime?: boolean;
+}
+
+const RundownGrid = ({
+  rundownId,
+  isShared = false,
+  canEdit = true,
+  realtime = true
+}: RundownGridProps) => {
+  const { id: routeRundownId } = useParams<{ id: string }>();
+  const activeRundownId = rundownId || routeRundownId;
 
   const {
-    coreState,
-    interactions,
-    uiState
-  } = useRundownStateCoordination();
-
-  const {
-    items,
-    visibleColumns,
+    connected,
     currentTime,
-    selectedRowId,
-    handleRowSelection,
-    clearRowSelection,
-    rundownId
-  } = coreState;
+    timezone,
+    onTimezoneChange,
+  } = useRealtimeRundown(activeRundownId, realtime);
 
-  // Initialize search functionality
-  const searchHook = useRundownSearch(items, visibleColumns);
-
-  // Use coordinated showcaller state for better synchronization
   const {
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    isController,
-    isInitialized,
-    isConnected,
-    getItemVisualStatus,
-    play,
-    pause,
-    forward,
-    backward,
-    reset,
-    jumpToSegment
-  } = useShowcallerStateCoordination({
     items,
-    rundownId,
-    userId
-  });
+    currentSegmentId,
+    handleUpdateItem,
+    handleCreateItem,
+    handleDeleteItem,
+    handleInsertItem,
+    handleDuplicateItem,
+    handleFloatItem,
+    handleJumpToHere
+  } = useRundownItems(activeRundownId, realtime);
+
+  const {
+    columns,
+    handleUpdateColumn,
+    handleCreateColumn,
+    handleDeleteColumn,
+    handleMoveColumn
+  } = useColumnsManager(activeRundownId, realtime);
 
   const {
     selectedRows,
-    draggedItemIndex,
+    isRowSelected,
+    isMultipleRowsSelected,
+    handleRowSelect,
+    clearSelection
+  } = useKeyboardNavigation(items);
+
+  const {
+    draggedIndex,
+    isDragging,
     isDraggingMultiple,
-    dropTargetIndex,
     handleDragStart,
     handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleCopySelectedRows,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    clearSelection,
-    handleAddRow,
-    handleAddHeader,
-    handleRowSelection: handleMultiRowSelection,
-    hasClipboardData
-  } = interactions;
+    handleDrop
+  } = useDnd(activeRundownId, items, handleMoveItem);
 
-  const { 
-    showColorPicker, 
-    handleToggleColorPicker, 
-    selectColor,
-    getColumnWidth,
-    updateColumnWidth,
-    handleCellClick,
-    handleKeyDown,
-    cellRefs
-  } = uiState;
+  const {
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    lastAction,
+    setInitialState
+  } = useUndoRedo();
 
-  // Global keyboard shortcuts for search
+  const {
+    searchQuery,
+    replaceQuery,
+    isSearchOpen,
+    currentMatchIndex,
+    searchOptions,
+    searchMatches,
+    currentMatch,
+    setSearchQuery,
+    setReplaceQuery,
+    setIsSearchOpen,
+    setSearchOptions,
+    goToNextMatch,
+    goToPreviousMatch,
+    replaceCurrentMatch,
+    replaceAllMatches
+  } = useRundownSearch(items, columns);
+
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+
+  const rundownStateRef = useRef({
+    items,
+    columns
+  });
+
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'f') {
-          e.preventDefault();
-          searchHook.setIsSearchOpen(true);
-        } else if (e.key === 'h') {
-          e.preventDefault();
-          searchHook.setIsSearchOpen(true);
+    rundownStateRef.current = {
+      items,
+      columns
+    };
+  }, [items, columns]);
+
+  useEffect(() => {
+    setInitialState({ items, columns });
+  }, [items, columns, setInitialState]);
+
+  const handleUndo = useCallback(async () => {
+    const previousState = await undo();
+    if (previousState) {
+      const { items: previousItems, columns: previousColumns } = previousState;
+
+      // Apply the previous state to the current state
+      if (previousItems) {
+        // Iterate through previousItems and update or create items in the current state
+        for (const item of previousItems) {
+          await handleUpdateItem(item.id, 'name', item.name);
+          await handleUpdateItem(item.id, 'duration', item.duration);
+          await handleUpdateItem(item.id, 'script', item.script);
+          await handleUpdateItem(item.id, 'notes', item.notes);
+          await handleUpdateItem(item.id, 'talent', item.talent);
+          await handleUpdateItem(item.id, 'gfx', item.gfx);
+          await handleUpdateItem(item.id, 'video', item.video);
+          await handleUpdateItem(item.id, 'images', item.images);
+          await handleUpdateItem(item.id, 'color', item.color);
+          await handleUpdateItem(item.id, 'isFloating', item.isFloating);
+          await handleUpdateItem(item.id, 'isFloated', item.isFloated);
+          if (item.customFields) {
+            for (const key in item.customFields) {
+              await handleUpdateItem(item.id, `customFields.${key}`, item.customFields[key]);
+            }
+          }
         }
-      } else if (e.key === 'F3') {
+
+        // Delete items that are not in previousItems
+        for (const item of items) {
+          if (!previousItems.find((previousItem: RundownItem) => previousItem.id === item.id)) {
+            await handleDeleteItem(item.id);
+          }
+        }
+      }
+
+      if (previousColumns) {
+        // Iterate through previousColumns and update or create columns in the current state
+        for (const column of previousColumns) {
+          await handleUpdateColumn(column.id, 'title', column.title);
+          await handleUpdateColumn(column.id, 'width', column.width);
+          await handleUpdateColumn(column.id, 'key', column.key);
+          await handleUpdateColumn(column.id, 'isCustom', column.isCustom);
+        }
+
+        // Delete columns that are not in previousColumns
+        for (const column of columns) {
+          if (!previousColumns.find((previousColumn: any) => previousColumn.id === column.id)) {
+            await handleDeleteColumn(column.id);
+          }
+        }
+      }
+    }
+  }, [undo, items, columns, handleUpdateItem, handleDeleteItem, handleUpdateColumn, handleDeleteColumn]);
+
+  const handleRedo = useCallback(async () => {
+    await redo();
+  }, [redo]);
+
+  function handleMoveItem(dragIndex: number, hoverIndex: number) {
+    const dragItem = items[dragIndex];
+    const newItems = [...items];
+    newItems.splice(dragIndex, 1);
+    newItems.splice(hoverIndex, 0, dragItem);
+
+    // Update the state with the new order
+    //setItems(newItems);
+  }
+
+  const handleCreateNewItem = async (type: 'header' | 'regular') => {
+    await handleCreateItem(type);
+  };
+
+  const handleCopySelectedRows = () => {
+    const selectedItems = items.filter(item => selectedRows.has(item.id));
+    navigator.clipboard.writeText(JSON.stringify(selectedItems));
+  };
+
+  const handleDeleteSelectedRows = async () => {
+    for (const id of selectedRows) {
+      await handleDeleteItem(id);
+    }
+    clearSelection();
+  };
+
+  const handlePasteRows = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const pastedItems = JSON.parse(text);
+
+      if (Array.isArray(pastedItems)) {
+        // Get the index of the first selected row, or 0 if no rows are selected
+        const insertIndex = selectedRows.size > 0 ? items.findIndex(item => selectedRows.has(item.id)) : 0;
+
+        // Insert the pasted items at the determined index
+        for (let i = 0; i < pastedItems.length; i++) {
+          const pastedItem = pastedItems[i];
+          await handleInsertItem(pastedItem, insertIndex + i);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to paste rows:", error);
+    }
+  };
+
+  const handleSearchClick = () => {
+    setIsSearchOpen(true);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        if (e.shiftKey) {
-          searchHook.goToPreviousMatch();
-        } else {
-          searchHook.goToNextMatch();
-        }
+        setIsSearchOpen(true);
       }
     };
 
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [searchHook]);
-
-  // Create wrapper for cell click to match signature
-  const handleCellClickWrapper = (itemId: string, field: string) => {
-    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
-    handleCellClick(itemId, field, mockEvent);
-  };
-
-  // Create wrapper for key down to match signature
-  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
-    const itemIndex = items.findIndex(item => item.id === itemId);
-    handleKeyDown(e, itemId, field, itemIndex);
-  };
-
-  // Create a wrapper function that matches the expected signature
-  const handleColorSelect = (id: string, color: string) => {
-    selectColor(id, color);
-  };
-
-  // Enhanced row status that uses showcaller visual state
-  const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
-    if (item.type === 'header') {
-      return 'upcoming'; // Headers don't have visual status
-    }
-    
-    const visualStatus = getItemVisualStatus(item.id);
-    if (visualStatus === 'current' || visualStatus === 'completed') {
-      return visualStatus as 'current' | 'completed';
-    }
-    
-    return 'upcoming';
-  };
-
-  // Enhanced row selection that properly handles both single and multi-selection
-  const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    if (isShiftClick || isCtrlClick) {
-      handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
-      if (selectedRowId !== null) {
-        clearRowSelection();
-      }
-    } else {
-      handleRowSelection(itemId);
-      if (selectedRows.size > 0) {
-        clearSelection();
-      }
-    }
-  };
-
-  // Enhanced jump to here handler with better coordination
-  const handleJumpToHere = (segmentId: string) => {
-    logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
-    logger.log('🎯 Target segment ID:', segmentId);
-    logger.log('🎯 Current segment ID:', currentSegmentId);
-    logger.log('🎯 Is currently playing:', isPlaying);
-    logger.log('🎯 Is controller:', isController);
-    logger.log('🎯 Is initialized:', isInitialized);
-    logger.log('🎯 Is connected:', isConnected);
-    
-    // Find the target segment
-    const targetSegment = items.find(item => item.id === segmentId);
-    if (!targetSegment) {
-      logger.error('🎯 Target segment not found:', segmentId);
-      return;
-    }
-    
-    logger.log('🎯 Target segment found:', { 
-      id: targetSegment.id, 
-      name: targetSegment.name, 
-      type: targetSegment.type 
-    });
-    
-    // Use coordinated jump function
-    if (isPlaying) {
-      logger.log('🎯 Showcaller is playing - jumping and continuing playback');
-      play(segmentId);
-    } else {
-      logger.log('🎯 Showcaller is paused - jumping but staying paused');
-      jumpToSegment(segmentId);
-    }
-    
-    // Clear selections
-    if (selectedRows.size > 0) {
-      clearSelection();
-    }
-    if (selectedRowId !== null) {
-      clearRowSelection();
-    }
-    
-    logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
-  };
-
-  // Create wrapper functions for drag operations
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    handleDragStart(e, index);
-  };
-
-  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
-    handleDragOver(e, targetIndex);
-  };
-
-  const handleDragLeaveWrapper = (e: React.DragEvent) => {
-    handleDragLeave(e);
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
-    handleDrop(e, targetIndex);
-  };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setIsSearchOpen]);
 
   return (
-    <>
-      <RundownTable
-        items={items}
-        visibleColumns={visibleColumns}
-        currentTime={currentTime}
-        showColorPicker={showColorPicker}
-        cellRefs={cellRefs}
-        selectedRows={selectedRows}
-        draggedItemIndex={draggedItemIndex}
-        isDraggingMultiple={isDraggingMultiple}
-        dropTargetIndex={dropTargetIndex}
-        currentSegmentId={currentSegmentId}
-        hasClipboardData={hasClipboardData()}
-        selectedRowId={selectedRowId}
-        searchMatches={searchHook.searchMatches}
-        currentSearchMatch={searchHook.currentMatch}
-        onSearchButtonClick={() => searchHook.setIsSearchOpen(true)}
-        getColumnWidth={getColumnWidth}
-        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-        getRowNumber={coreState.getRowNumber}
-        getRowStatus={getRowStatus}
-        getHeaderDuration={coreState.calculateHeaderDuration}
-        onUpdateItem={coreState.updateItem}
-        onCellClick={handleCellClickWrapper}
-        onKeyDown={handleKeyDownWrapper}
-        onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={handleColorSelect}
-        onDeleteRow={coreState.deleteRow}
-        onToggleFloat={coreState.toggleFloatRow}
-        onRowSelect={handleEnhancedRowSelection}
-        onDragStart={handleDragStartWrapper}
-        onDragOver={handleDragOverWrapper}
-        onDragLeave={handleDragLeaveWrapper}
-        onDrop={handleDropWrapper}
-        onCopySelectedRows={handleCopySelectedRows}
-        onDeleteSelectedRows={handleDeleteSelectedRows}
-        onPasteRows={handlePasteRows}
-        onClearSelection={() => {
-          clearSelection();
-          clearRowSelection();
-        }}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
-        onJumpToHere={handleJumpToHere}
+    <div className="flex flex-col h-screen bg-background">
+      {/* Header */}
+      <RundownHeaderPropsAdapter
+        rundownId={activeRundownId}
+        isShared={isShared}
+        canEdit={canEdit}
+        onSearchClick={handleSearchClick}
       />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <RundownMainPropsAdapter
+          rundownId={activeRundownId}
+          isShared={isShared}
+          canEdit={canEdit}
+          currentSegmentId={currentSegmentId}
+          searchMatches={searchMatches}
+          currentSearchMatch={currentMatch}
+        />
+      </div>
 
+      {/* Search Dialog */}
       <SearchDialog
-        isOpen={searchHook.isSearchOpen}
-        searchQuery={searchHook.searchQuery}
-        replaceQuery={searchHook.replaceQuery}
-        matchCount={searchHook.searchMatches.length}
-        currentMatchIndex={searchHook.currentMatchIndex}
-        searchOptions={searchHook.searchOptions}
-        onClose={() => searchHook.setIsSearchOpen(false)}
-        onSearchChange={searchHook.setSearchQuery}
-        onReplaceChange={searchHook.setReplaceQuery}
-        onOptionsChange={searchHook.setSearchOptions}
-        onNextMatch={searchHook.goToNextMatch}
-        onPreviousMatch={searchHook.goToPreviousMatch}
-        onReplaceCurrentMatch={() => searchHook.replaceCurrentMatch(coreState.updateItem)}
-        onReplaceAllMatches={() => searchHook.replaceAllMatches(coreState.updateItem)}
+        isOpen={isSearchOpen}
+        searchQuery={searchQuery}
+        replaceQuery={replaceQuery}
+        matchCount={searchMatches.length}
+        currentMatchIndex={currentMatchIndex}
+        searchOptions={searchOptions}
+        onClose={() => setIsSearchOpen(false)}
+        onSearchChange={setSearchQuery}
+        onReplaceChange={setReplaceQuery}
+        onOptionsChange={setSearchOptions}
+        onNextMatch={goToNextMatch}
+        onPreviousMatch={goToPreviousMatch}
+        onReplaceCurrentMatch={() => replaceCurrentMatch(handleUpdateItem)}
+        onReplaceAllMatches={() => replaceAllMatches(handleUpdateItem)}
       />
-    </>
+    </div>
   );
-});
-
-RundownGrid.displayName = 'RundownGrid';
+};
 
 export default RundownGrid;
