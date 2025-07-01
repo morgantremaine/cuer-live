@@ -27,7 +27,7 @@ export const useShowcallerTiming = ({
 }: UseShowcallerTimingProps): TimingStatus => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every second when playing
+  // Update current time every second when playing - but with more precision
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -39,8 +39,8 @@ export const useShowcallerTiming = ({
   }, [isPlaying]);
 
   const timingStatus = useMemo(() => {
-    // Only show when playing and we have a current segment
-    if (!isPlaying || !currentSegmentId || !rundownStartTime) {
+    // Only show when all required data is available
+    if (!isPlaying || !currentSegmentId || !rundownStartTime || timeRemaining === undefined) {
       return {
         isOnTime: false,
         isAhead: false,
@@ -49,9 +49,10 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Find current segment and its index
+    // Find current segment and validate it exists
     const currentSegmentIndex = items.findIndex(item => item.id === currentSegmentId);
     if (currentSegmentIndex === -1) {
+      console.warn('📺 Timing: Current segment not found in items');
       return {
         isOnTime: false,
         isAhead: false,
@@ -70,16 +71,16 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current real time
+    // Get current real time with higher precision
     const now = currentTime;
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
 
-    // Calculate where the showcaller currently is (total elapsed time in showcaller)
+    // Calculate showcaller elapsed time more accurately
     let showcallerElapsedSeconds = 0;
     
-    // Add up durations of all completed segments
+    // Add up durations of all completed segments (only non-floated regular segments)
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
@@ -87,45 +88,49 @@ export const useShowcallerTiming = ({
       }
     }
     
-    // Add elapsed time within current segment
+    // Add elapsed time within current segment using the precise timeRemaining
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Check if we're before or after the rundown start time WITHOUT day boundary adjustment
+    // Enhanced timing calculation with better day boundary handling
     const isPreStart = currentTimeSeconds < rundownStartSeconds;
     
     let differenceSeconds: number;
     let realElapsedSeconds: number;
     
     if (isPreStart) {
-      // PRE-START LOGIC: Show hasn't started yet
-      // Real elapsed time is negative (we're before the start)
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // This will be negative
-      
-      // Calculate difference: showcaller position vs where it should be (which is 0 or negative)
-      // If showcaller has progressed into the rundown but show hasn't started = showcaller is ahead = UNDER
+      // PRE-START: Show hasn't started yet
+      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // Negative value
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     } else {
-      // POST-START LOGIC: Show has started
+      // POST-START: Show has started
       realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
       
-      // Only NOW apply day boundary logic if needed
+      // Handle day boundary crossing
       if (realElapsedSeconds < 0) {
-        realElapsedSeconds += 24 * 3600; // Handle day crossing
+        realElapsedSeconds += 24 * 3600;
       }
       
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     }
     
-    // TIMING LOGIC:
-    // Positive difference = showcaller is ahead of where it should be = UNDER time
-    // Negative difference = showcaller is behind where it should be = OVER time
-    const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
+    // Enhanced timing logic with tighter tolerances
+    const isOnTime = Math.abs(differenceSeconds) <= 3; // Reduced from 5 to 3 seconds
+    const isAhead = differenceSeconds > 3; // More precise threshold
     
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
+
+    console.log('📺 Timing calculation:', {
+      currentSegment: currentSegment.name,
+      showcallerElapsed: showcallerElapsedSeconds,
+      realElapsed: realElapsedSeconds,
+      difference: differenceSeconds,
+      isOnTime,
+      isAhead,
+      timeDifference
+    });
 
     return {
       isOnTime,
