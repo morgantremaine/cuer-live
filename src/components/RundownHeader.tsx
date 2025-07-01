@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -8,6 +7,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
+import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -32,12 +32,6 @@ interface RundownHeaderProps {
   timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  getTimingStatus?: (rundownStartTime: string) => {
-    isOnTime: boolean;
-    isAhead: boolean;
-    timeDifference: string;
-    isVisible: boolean;
-  };
 }
 
 const RundownHeader = ({
@@ -61,7 +55,6 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  getTimingStatus,
   items = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
@@ -69,18 +62,20 @@ const RundownHeader = ({
   const timeInputRef = useRef<HTMLInputElement>(null);
 
   // Get showcaller timing status
-  const timingStatus = getTimingStatus ? getTimingStatus(rundownStartTime) : {
-    isOnTime: false,
-    isAhead: false,
-    timeDifference: '00:00:00',
-    isVisible: false
-  };
+  const timingStatus = useShowcallerTiming({
+    items,
+    rundownStartTime,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining
+  });
 
   // Format time in the selected timezone
   const formatTimeInTimezone = (time: Date, tz: string) => {
     try {
       return formatInTimeZone(time, tz, 'HH:mm:ss');
     } catch {
+      // Fallback to local time if timezone is invalid
       return format(time, 'HH:mm:ss');
     }
   };
@@ -88,37 +83,47 @@ const RundownHeader = ({
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
+    // Allow natural typing - only restrict clearly invalid characters
+    // Allow digits, colons, and common separators
     if (!/^[0-9:]*$/.test(value)) {
       return;
     }
     
+    // Update the value directly without aggressive formatting
     onRundownStartTimeChange(value);
   };
 
   const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     
+    // Only format and validate on blur
     let formattedTime = value;
     
+    // Remove any non-digit, non-colon characters
     formattedTime = formattedTime.replace(/[^0-9:]/g, '');
     
+    // Split by colon and pad/validate each part
     const parts = formattedTime.split(':');
     
     if (parts.length >= 1) {
+      // Hours
       let hours = parts[0] || '00';
       if (hours.length === 1) hours = '0' + hours;
       if (parseInt(hours) > 23) hours = '23';
       
+      // Minutes
       let minutes = parts[1] || '00';
       if (minutes.length === 1) minutes = '0' + minutes;
       if (parseInt(minutes) > 59) minutes = '59';
       
+      // Seconds
       let seconds = parts[2] || '00';
       if (seconds.length === 1) seconds = '0' + seconds;
       if (parseInt(seconds) > 59) seconds = '59';
       
       formattedTime = `${hours}:${minutes}:${seconds}`;
     } else {
+      // If no valid format, default to current time or 00:00:00
       formattedTime = rundownStartTime || '00:00:00';
     }
     
@@ -141,6 +146,7 @@ const RundownHeader = ({
     }
   };
 
+  // Helper function to render connection status icon
   const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
       return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
@@ -154,6 +160,7 @@ const RundownHeader = ({
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Title */}
         <div className="mb-3">
           <div className="flex-1 min-w-0">
             {isEditingTitle ? (
@@ -177,6 +184,7 @@ const RundownHeader = ({
           </div>
         </div>
         
+        {/* Bottom row - Compact info */}
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -184,7 +192,9 @@ const RundownHeader = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <ShowcallerTimingIndicator {...timingStatus} />
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
             <span>Runtime: {totalRuntime}</span>
             {isConnected !== undefined && (
               <div className="flex items-center">
@@ -200,6 +210,7 @@ const RundownHeader = ({
   if (isTablet) {
     return (
       <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Logo, Title, and connection status */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
@@ -242,7 +253,9 @@ const RundownHeader = ({
               </div>
             )}
             
-            <ShowcallerTimingIndicator {...timingStatus} />
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
           </div>
           
           {isConnected !== undefined && (
@@ -252,6 +265,7 @@ const RundownHeader = ({
           )}
         </div>
         
+        {/* Bottom row - Time info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -283,6 +297,7 @@ const RundownHeader = ({
     );
   }
 
+  // Desktop layout - with properly centered title and timing indicator
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
@@ -327,7 +342,9 @@ const RundownHeader = ({
             </div>
           )}
           
-          <ShowcallerTimingIndicator {...timingStatus} />
+          <ShowcallerTimingIndicator
+            {...timingStatus}
+          />
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">

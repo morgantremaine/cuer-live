@@ -26,7 +26,6 @@ export interface CoreRundownState {
   timeRemaining: number;
   isController: boolean;
   showcallerActivity: boolean;
-  playbackStartTime: string | null; // Added for AD View compatibility
   
   // Selection state
   selectedRowId: string | null;
@@ -63,8 +62,6 @@ export interface CoreRundownState {
   pause: () => void;
   forward: () => void;
   backward: () => void;
-  reset: () => void;
-  jumpToSegment: (segmentId: string) => void;
   
   // Undo functionality
   undo: () => void;
@@ -75,14 +72,6 @@ export interface CoreRundownState {
   calculateEndTime: (startTime: string, duration: string) => string;
   markAsChanged: () => void;
   addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void;
-  
-  // Timing status function
-  getTimingStatus: (rundownStartTime: string) => {
-    isOnTime: boolean;
-    isAhead: boolean;
-    timeDifference: string;
-    isVisible: boolean;
-  };
 }
 
 export interface RundownInteractions {
