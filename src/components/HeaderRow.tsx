@@ -1,6 +1,7 @@
+
 import React from 'react';
-import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
+import RundownContextMenu from './RundownContextMenu';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -64,84 +65,37 @@ const HeaderRow = (props: HeaderRowProps) => {
     isDragging
   } = props;
 
-  const { rowClass } = useRowStyling({
-    isDragging,
-    isSelected,
-    isHeader: true,
-    color: item.color
-  });
-
+  // Use the row event handlers hook
   const {
+    handleDragStart,
+    handleMouseDown,
     handleRowClick,
     handleContextMenu,
     handleContextMenuCopy,
     handleContextMenuDelete,
+    handleContextMenuFloat,
     handleContextMenuColor,
     handleContextMenuPaste
   } = useRowEventHandlers({
     item,
     index,
     isSelected,
-    selectedRowsCount,
     onRowSelect: props.onRowSelect,
-    onDeleteRow: props.onDeleteRow,
-    onDeleteSelectedRows: props.onDeleteSelectedRows,
+    onDragStart: props.onDragStart,
     onCopySelectedRows: props.onCopySelectedRows,
+    onDeleteSelectedRows: props.onDeleteSelectedRows,
+    onDeleteRow: props.onDeleteRow,
     onToggleColorPicker: props.onToggleColorPicker,
-    selectedRows,
     onPasteRows: props.onPasteRows
   });
 
-  const handleContextMenuFloat = () => {
-    // Headers don't float, but we'll keep the interface consistent
-  };
-
-  // Enhanced drag start handler that prevents dragging when selecting text
-  const handleDragStart = (e: React.DragEvent) => {
-    const target = e.target as HTMLElement;
-    
-    // Check if the target is an input, textarea, or if there's an active text selection
-    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    const hasTextSelection = window.getSelection()?.toString().length > 0;
-    
-    // If user is selecting text or interacting with text inputs, prevent dragging
-    if (isTextInput || hasTextSelection) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    
-    // Check if the mouse is down on a text input (even if target isn't the input itself)
-    const textInputs = document.querySelectorAll('input, textarea');
-    for (const input of textInputs) {
-      if (input === document.activeElement) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-    }
-    
-    props.onDragStart(e, index);
-  };
-
-  // Enhanced mouse down handler to detect text selection intent
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    
-    // If clicking on text input, disable draggable temporarily
-    if (isTextInput) {
-      const row = e.currentTarget as HTMLElement;
-      row.setAttribute('draggable', 'false');
-      
-      // Re-enable draggable after a short delay to allow text selection
-      setTimeout(() => {
-        if (row) {
-          row.setAttribute('draggable', 'true');
-        }
-      }, 100);
-    }
-  };
+  // Use the row styling hook
+  const { rowClass } = useRowStyling({
+    item,
+    isSelected,
+    isDragging,
+    selectedRowsCount
+  });
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
@@ -151,7 +105,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       selectedRows={selectedRows}
       isFloated={false}
       hasClipboardData={hasClipboardData}
-      showColorPicker={showColorPicker}
+      showColorPicker={showColorPicker === item.id}
       itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}

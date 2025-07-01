@@ -9,45 +9,10 @@ interface RundownMainContentProps extends RundownContainerProps {
   totalDuration: string;
 }
 
-const RundownMainContent = ({
-  showColumnManager,
-  setShowColumnManager,
-  columns,
-  visibleColumns,
-  handleAddColumn,
-  handleReorderColumns,
-  handleDeleteColumnWithCleanup,
-  handleRenameColumn,
-  handleToggleColumnVisibility,
-  handleLoadLayout,
-  currentSegmentName,
-  totalDuration,
-  autoScrollEnabled,
-  onToggleAutoScroll,
-  ...contentProps
-}: RundownMainContentProps) => {
-
+const RundownMainContent = (props: RundownMainContentProps) => {
   return (
     <>
-      <RundownContent 
-        {...contentProps}
-        visibleColumns={visibleColumns}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
-      />
-      
-      {showColumnManager && (
-        <ColumnManager
-          columns={columns}
-          onClose={() => setShowColumnManager(false)}
-          onAddColumn={handleAddColumn}
-          onReorderColumns={handleReorderColumns}
-          onDeleteColumn={handleDeleteColumnWithCleanup}
-          onRenameColumn={handleRenameColumn}
-          onToggleColumnVisibility={handleToggleColumnVisibility}
-          onLoadLayout={handleLoadLayout}
-        />
-      )}
+      <RundownContent {...props} />
     </>
   );
 };

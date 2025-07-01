@@ -21,7 +21,7 @@ interface RundownHeaderSectionProps {
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
-  timeRemaining: number;
+  timeRemaining: string;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -45,6 +45,7 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onSearchOpen?: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -87,7 +88,8 @@ const RundownHeaderSection = ({
   isProcessingRealtimeUpdate,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  onSearchOpen
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -107,13 +109,14 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        isConnected={isConnected || false}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate || false}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
+        autoScrollEnabled={autoScrollEnabled || false}
+        onToggleAutoScroll={onToggleAutoScroll || (() => {})}
+        onSearchOpen={onSearchOpen}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
@@ -135,8 +138,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
+        autoScrollEnabled={autoScrollEnabled || false}
+        onToggleAutoScroll={onToggleAutoScroll || (() => {})}
       />
     </div>
   );
