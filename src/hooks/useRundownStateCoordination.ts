@@ -2,8 +2,7 @@
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
+import { useShowcallerMaster } from './useShowcallerMaster';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -15,7 +14,7 @@ export const useRundownStateCoordination = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Single source of truth for all rundown state (NO showcaller interference)
+  // Single source of truth for all rundown state
   const simplifiedState = useSimplifiedRundownState();
 
   // Add performance optimization layer
@@ -45,18 +44,11 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Completely separate showcaller visual state management
-  const showcallerVisual = useShowcallerVisualState({
+  // Single showcaller master hook that replaces all others
+  const showcaller = useShowcallerMaster({
     items: simplifiedState.items,
     rundownId: simplifiedState.rundownId,
     userId: userId
-  });
-
-  // Separate realtime sync for showcaller visual state only  
-  const showcallerSync = useShowcallerRealtimeSync({
-    rundownId: simplifiedState.rundownId,
-    onExternalVisualStateReceived: showcallerVisual.applyExternalVisualState,
-    enabled: !!simplifiedState.rundownId
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -107,7 +99,7 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // UI interactions that depend on the core state (NO showcaller interference)
+  // UI interactions that depend on the core state
   const interactions = useRundownGridInteractions(
     // Use performance-optimized calculated items, but still pass the original updateItem function
     performanceOptimization.calculatedItems,
@@ -184,22 +176,22 @@ export const useRundownStateCoordination = () => {
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
-      // State flags (NO showcaller interference)
+      // State flags
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
+      isConnected: simplifiedState.isConnected,
       isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
       
-      // Showcaller visual state from completely separate system
-      currentSegmentId: showcallerVisual.currentSegmentId,
-      isPlaying: showcallerVisual.isPlaying,
-      timeRemaining: showcallerVisual.timeRemaining,
-      isController: showcallerVisual.isController,
+      // Showcaller state from master hook
+      currentSegmentId: showcaller.currentSegmentId,
+      isPlaying: showcaller.isPlaying,
+      timeRemaining: showcaller.timeRemaining,
+      isController: showcaller.isController,
       showcallerActivity: false, // No longer interferes with main state
       
-      // Visual status overlay function (doesn't touch main state)
-      getItemVisualStatus: showcallerVisual.getItemVisualStatus,
+      // Visual status function
+      getItemVisualStatus: showcaller.getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -212,7 +204,7 @@ export const useRundownStateCoordination = () => {
       getHeaderDuration: performanceOptimization.getHeaderDuration,
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
-      // Core actions (NO showcaller interference)
+      // Core actions
       updateItem: simplifiedState.updateItem,
       deleteRow: simplifiedState.deleteRow,
       toggleFloatRow: simplifiedState.toggleFloat,
@@ -231,13 +223,13 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Showcaller visual controls (completely separate from main state)
-      play: showcallerVisual.play,
-      pause: showcallerVisual.pause,
-      forward: showcallerVisual.forward,
-      backward: showcallerVisual.backward,
-      reset: showcallerVisual.reset,
-      jumpToSegment: showcallerVisual.jumpToSegment,
+      // Showcaller controls from master hook
+      play: showcaller.play,
+      pause: showcaller.pause,
+      forward: showcaller.forward,
+      backward: showcaller.backward,
+      reset: showcaller.reset,
+      jumpToSegment: showcaller.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,
@@ -251,9 +243,12 @@ export const useRundownStateCoordination = () => {
       },
       addMultipleRows,
       
-      // Autoscroll state with enhanced debugging
+      // Autoscroll state
       autoScrollEnabled,
-      toggleAutoScroll
+      toggleAutoScroll,
+      
+      // Timing status function
+      getTimingStatus: showcaller.getTimingStatus
     },
     interactions,
     uiState
