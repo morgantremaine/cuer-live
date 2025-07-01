@@ -22,10 +22,11 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    rundownId
+    rundownId,
+    rundownStartTime
   } = coreState;
 
-  // Use coordinated showcaller state for better synchronization
+  // Use new coordinated showcaller state with timing
   const {
     isPlaying,
     currentSegmentId,
@@ -33,6 +34,7 @@ const RundownGrid = React.memo(() => {
     isController,
     isInitialized,
     isConnected,
+    timingStatus,
     getItemVisualStatus,
     play,
     pause,
@@ -96,7 +98,7 @@ const RundownGrid = React.memo(() => {
   // Enhanced row status that uses showcaller visual state
   const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
     if (item.type === 'header') {
-      return 'upcoming'; // Headers don't have visual status
+      return 'upcoming';
     }
     
     const visualStatus = getItemVisualStatus(item.id);
@@ -196,6 +198,7 @@ const RundownGrid = React.memo(() => {
       currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
       selectedRowId={selectedRowId}
+      timingStatus={timingStatus}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
       getRowNumber={coreState.getRowNumber}
