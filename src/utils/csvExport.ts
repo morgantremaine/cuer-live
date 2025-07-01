@@ -4,6 +4,7 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { isHeaderItem } from '@/types/rundown';
 import { calculateItemsWithTiming, timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import { generateHeaderLabel } from '@/utils/headerUtils';
 
 export interface CSVExportData {
   items: RundownItem[];
@@ -17,7 +18,6 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
   if (!item) return '';
   
   // Calculate row numbers based purely on position and type, matching rundown display
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   
   // For headers, count how many headers we've seen so far
   if (isHeaderItem(item)) {
@@ -27,7 +27,7 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
         headerCount++;
       }
     }
-    return letters[headerCount - 1] || 'A';
+    return generateHeaderLabel(headerCount - 1);
   }
   
   // For regular items, find which segment they belong to and count within that segment
@@ -47,7 +47,7 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
           headerCount++;
         }
       }
-      currentSegmentLetter = letters[headerCount - 1] || 'A';
+      currentSegmentLetter = generateHeaderLabel(headerCount - 1);
       itemCountInSegment = 0; // Reset count for new segment
     } else {
       // This is a regular item

@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
 
 export const useRundownCalculations = (items: RundownItem[]) => {
   const timeToSeconds = useCallback((timeStr: string) => {
@@ -24,12 +25,8 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     const item = items[index];
     if (!item) return '';
     
-    // Calculate row numbers based purely on position and type, not stored values
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
     // Check if there are regular rows before the first header
-    const firstHeaderIndex = items.findIndex(item => isHeaderItem(item));
-    const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+    const hasRowsBeforeFirstHeader = checkRowsBeforeFirstHeader(items);
     
     // For headers, count how many headers we've seen so far
     if (isHeaderItem(item)) {
@@ -41,7 +38,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
       }
       // Adjust header numbering based on whether there are rows before first header
       const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
-      return letters[headerIndex] || 'A';
+      return generateHeaderLabel(headerIndex);
     }
     
     // For regular items, find which segment they belong to and count within that segment
@@ -56,7 +53,7 @@ export const useRundownCalculations = (items: RundownItem[]) => {
       
       if (isHeaderItem(currentItem)) {
         // Update which segment we're in
-        currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+        currentSegmentLetter = generateHeaderLabel(segmentHeaderCount);
         segmentHeaderCount++;
         itemCountInSegment = 0; // Reset count for new segment
       } else {

@@ -1,4 +1,5 @@
 import { RundownItem } from '@/types/rundown';
+import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns) return [];
@@ -12,9 +13,6 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   const item = items[index];
   if (!item) return '';
   
-  // Calculate row numbers based purely on position and type, not stored values
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  
   // For headers, count how many headers we've seen so far
   if (item.type === 'header') {
     let headerCount = 0;
@@ -25,7 +23,7 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
     }
     // First header is always A (index 0)
     const headerIndex = headerCount - 1;
-    return letters[headerIndex] || 'A';
+    return generateHeaderLabel(headerIndex);
   }
   
   // For regular items, find which segment they belong to and count within that segment
@@ -40,7 +38,7 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
     
     if (currentItem.type === 'header') {
       // Update which segment we're in
-      currentSegmentLetter = letters[segmentHeaderCount] || 'A';
+      currentSegmentLetter = generateHeaderLabel(segmentHeaderCount);
       segmentHeaderCount++;
       itemCountInSegment = 0; // Reset count for new segment
     } else {

@@ -1,5 +1,6 @@
 
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
 
 export interface CalculatedRundownItem extends RundownItem {
   calculatedStartTime: string;
@@ -52,12 +53,11 @@ export const isFloated = (item: RundownItem): boolean => {
 
 // Helper function to renumber headers sequentially
 const renumberHeaders = (items: RundownItem[]): RundownItem[] => {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let headerIndex = 0;
   
   return items.map(item => {
     if (isHeaderItem(item)) {
-      const letter = letters[headerIndex] || 'A';
+      const letter = generateHeaderLabel(headerIndex);
       headerIndex++;
       return { ...item, rowNumber: letter, segmentName: letter };
     }
@@ -74,11 +74,9 @@ export const calculateItemsWithTiming = (
   const itemsWithCorrectHeaders = renumberHeaders(items);
   
   let currentTime = rundownStartTime;
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   
   // Check if there are regular rows before the first header
-  const firstHeaderIndex = itemsWithCorrectHeaders.findIndex(item => isHeaderItem(item));
-  const hasRowsBeforeFirstHeader = firstHeaderIndex > 0;
+  const hasRowsBeforeFirstHeader = checkRowsBeforeFirstHeader(itemsWithCorrectHeaders);
   
   let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
 
@@ -92,7 +90,7 @@ export const calculateItemsWithTiming = (
       calculatedStartTime = currentTime;
       calculatedEndTime = currentTime;
       // Use the corrected rowNumber from renumberHeaders
-      calculatedRowNumber = item.rowNumber || letters[headerIndex] || 'A';
+      calculatedRowNumber = item.rowNumber || generateHeaderLabel(headerIndex);
       headerIndex++;
     } else {
       // Regular items
@@ -119,7 +117,7 @@ export const calculateItemsWithTiming = (
       for (let i = 0; i <= index; i++) {
         const currentItem = itemsWithCorrectHeaders[i];
         if (isHeaderItem(currentItem)) {
-          currentSegment = currentItem.rowNumber || letters[segmentHeaderCount] || 'A';
+          currentSegment = currentItem.rowNumber || generateHeaderLabel(segmentHeaderCount);
           segmentHeaderCount++;
           itemCountInSegment = 0;
         } else {

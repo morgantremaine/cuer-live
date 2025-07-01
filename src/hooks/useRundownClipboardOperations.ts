@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { generateHeaderLabel } from '@/utils/headerUtils';
 
 interface UseRundownClipboardOperationsProps {
   items: RundownItem[];
@@ -15,18 +16,6 @@ interface UseRundownClipboardOperationsProps {
   hasClipboardData: boolean;
 }
 
-// Helper function to generate segment names (A, B, C, etc.)
-const generateSegmentName = (index: number): string => {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  if (index < alphabet.length) {
-    return alphabet[index];
-  }
-  // For indices beyond Z, use AA, AB, AC, etc.
-  const firstLetter = Math.floor(index / alphabet.length) - 1;
-  const secondLetter = index % alphabet.length;
-  return alphabet[firstLetter] + alphabet[secondLetter];
-};
-
 // Helper function to update all header segment names based on their position
 const updateHeaderSegmentNames = (items: RundownItem[]): RundownItem[] => {
   let headerIndex = 0;
@@ -34,7 +23,7 @@ const updateHeaderSegmentNames = (items: RundownItem[]): RundownItem[] => {
     if (isHeaderItem(item)) {
       const updatedItem = {
         ...item,
-        segmentName: generateSegmentName(headerIndex)
+        segmentName: generateHeaderLabel(headerIndex)
       };
       headerIndex++;
       return updatedItem;
