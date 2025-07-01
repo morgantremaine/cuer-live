@@ -44,12 +44,9 @@ export const useRowStyling = ({
     rowClass = 'bg-background';
   }
 
-  // Simplified selection styling with consistent border approach
-  if (isSelected) {
-    if (isHeader) {
-      // For headers: add blue selection border while preserving left border
-      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
-    } else if (isFloating || isFloated) {
+  // Selection styling - skip for headers
+  if (isSelected && !isHeader) {
+    if (isFloating || isFloated) {
       // For floated rows: add blue selection border while preserving red left border
       rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-red-600';
     } else {
