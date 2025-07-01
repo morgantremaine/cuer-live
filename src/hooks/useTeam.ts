@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -47,8 +48,9 @@ export const useTeam = () => {
       return;
     }
 
+    console.log('Loading team data for user:', user.id);
     isLoadingRef.current = true;
-    loadedUserRef.current = user.id; // Set this FIRST to prevent loops
+    loadedUserRef.current = user.id;
 
     try {
       // Add a small delay to ensure auth state is fully established
@@ -69,11 +71,14 @@ export const useTeam = () => {
         .limit(1)
         .maybeSingle();
 
+      console.log('Membership query result:', { membershipData, membershipError });
+
       if (membershipError) {
         console.error('Error loading team membership:', membershipError);
         
         // If it's a 406 error or auth issue, try to create a team instead
         if (membershipError.code === 'PGRST301' || membershipError.message?.includes('406')) {
+          console.log('Auth issue detected, trying to create user team');
           const { data: newTeamData, error: createError } = await supabase.rpc(
             'get_or_create_user_team',
             { user_uuid: user.id }
@@ -83,8 +88,10 @@ export const useTeam = () => {
             console.error('Error creating team:', createError);
             setError('Failed to set up team');
           } else if (newTeamData) {
-            // Schedule a single retry without resetting loadedUserRef
+            console.log('Team created successfully, reloading...');
+            // Retry loading team data
             setTimeout(() => {
+              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -100,6 +107,7 @@ export const useTeam = () => {
         const pendingToken = localStorage.getItem('pendingInvitationToken');
         
         if (!membershipData && pendingToken && pendingToken !== 'undefined') {
+          console.log('No team membership found, but have pending token:', pendingToken);
           // User has pending invitation, try to accept it
           const { data: acceptResult, error: acceptError } = await supabase.rpc(
             'accept_team_invitation_safe',
@@ -110,9 +118,11 @@ export const useTeam = () => {
             console.error('Error accepting invitation:', acceptError);
             localStorage.removeItem('pendingInvitationToken');
           } else if (acceptResult?.success) {
+            console.log('Invitation accepted successfully');
             localStorage.removeItem('pendingInvitationToken');
-            // Schedule a single retry without resetting loadedUserRef
+            // Reload team data after successful invitation acceptance
             setTimeout(() => {
+              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -122,6 +132,7 @@ export const useTeam = () => {
 
         if (membershipData?.teams) {
           const teamData = Array.isArray(membershipData.teams) ? membershipData.teams[0] : membershipData.teams;
+          console.log('Setting team data:', teamData);
           setTeam({
             id: teamData.id,
             name: teamData.name
@@ -137,6 +148,7 @@ export const useTeam = () => {
             await loadPendingInvitations(teamData.id);
           }
         } else {
+          console.log('No team found, creating one...');
           // User has no team, create one
           const { data: newTeamData, error: createError } = await supabase.rpc(
             'get_or_create_user_team',
@@ -147,8 +159,10 @@ export const useTeam = () => {
             console.error('Error creating team:', createError);
             setError('Failed to create team');
           } else if (newTeamData) {
-            // Schedule a single retry without resetting loadedUserRef
+            console.log('Team created, reloading data...');
+            // Reload team data after team creation
             setTimeout(() => {
+              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -271,6 +285,13 @@ export const useTeam = () => {
                          user.email || 
                          'A team member';
 
+      console.log('Calling send-team-invitation edge function with:', {
+        email,
+        teamId: team.id,
+        inviterName,
+        teamName: team.name
+      });
+
       const { data, error } = await supabase.functions.invoke('send-team-invitation', {
         body: { 
           email, 
@@ -279,6 +300,8 @@ export const useTeam = () => {
           teamName: team.name
         }
       });
+
+      console.log('Edge function response:', { data, error });
 
       if (error) {
         console.error('Edge function error:', error);
@@ -347,12 +370,19 @@ export const useTeam = () => {
     }
 
     try {
+      console.log('Calling delete-team-member edge function with:', {
+        memberId,
+        teamId: team.id
+      });
+
       const { data, error } = await supabase.functions.invoke('delete-team-member', {
         body: { 
           memberId, 
           teamId: team.id
         }
       });
+
+      console.log('Edge function response:', { data, error });
 
       if (error) {
         console.error('Edge function error:', error);
@@ -393,11 +423,9 @@ export const useTeam = () => {
         return { error: data.error };
       }
 
-      // Reload team data after successful invitation acceptance - but don't reset loadedUserRef
-      setTimeout(() => {
-        isLoadingRef.current = false;
-        loadTeamData();
-      }, 100);
+      // Reload team data after successful invitation acceptance
+      loadedUserRef.current = null;
+      setTimeout(() => loadTeamData(), 100);
       return { success: true };
     } catch (error) {
       return { error: 'Failed to accept invitation' };
@@ -407,14 +435,13 @@ export const useTeam = () => {
   // Load team data when user changes, with better handling
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current) {
-      // Only log when it's actually changing users
-      if (loadedUserRef.current !== null) {
-        console.log('User changed, loading team data for:', user.id);
-      }
+      console.log('User changed, loading team data for:', user.id);
+      loadedUserRef.current = null; // Reset to allow new load
       setIsLoading(true);
       // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
+      console.log('No user, resetting team state');
       setTeam(null);
       setTeamMembers([]);
       setPendingInvitations([]);

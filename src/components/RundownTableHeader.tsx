@@ -1,53 +1,51 @@
 
 import React from 'react';
-import { Column } from '@/hooks/useColumnsManager';
 import ResizableColumnHeader from './ResizableColumnHeader';
-import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
-import { TimingStatus } from '@/hooks/useShowcallerUnifiedTiming';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
-  timingStatus?: TimingStatus;
 }
 
-const RundownTableHeader = ({ 
-  visibleColumns, 
-  getColumnWidth, 
-  updateColumnWidth,
-  timingStatus 
+const RundownTableHeader = ({
+  visibleColumns,
+  getColumnWidth,
+  updateColumnWidth
 }: RundownTableHeaderProps) => {
   return (
-    <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center min-h-[48px]">
-        {/* Timing indicator - positioned at the start */}
-        {timingStatus && (
-          <div className="flex-shrink-0 px-4">
-            <ShowcallerTimingIndicator
-              isOnTime={timingStatus.isOnTime}
-              isAhead={timingStatus.isAhead}
-              timeDifference={timingStatus.timeDifference}
-              isVisible={timingStatus.isVisible}
-            />
-          </div>
-        )}
-        
-        {/* Column headers */}
-        <div className="flex flex-1">
-          {visibleColumns.map((column) => (
+    <thead className="bg-blue-600 dark:bg-blue-700">
+      <tr>
+        {/* Row number column - matches the structure in RundownTable exactly */}
+        <th 
+          className="px-2 py-1 text-left text-sm font-semibold text-white border-r border-blue-500 bg-blue-600"
+          style={{ 
+            width: '64px', 
+            minWidth: '64px',
+            maxWidth: '64px'
+          }}
+        >
+          #
+        </th>
+        {/* Dynamic columns */}
+        {visibleColumns.map((column, index) => {
+          const columnWidth = getColumnWidth(column);
+          
+          return (
             <ResizableColumnHeader
               key={column.id}
               column={column}
-              width={getColumnWidth(column)}
-              onWidthChange={(columnId, width) => updateColumnWidth(columnId, width)}
+              width={columnWidth}
+              onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+              showLeftSeparator={index > 0}
             >
-              {column.name}
+              {column.name || column.key}
             </ResizableColumnHeader>
-          ))}
-        </div>
-      </div>
-    </div>
+          );
+        })}
+      </tr>
+    </thead>
   );
 };
 
