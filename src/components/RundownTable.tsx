@@ -101,7 +101,6 @@ const RundownTable = ({
               index={index}
               rowNumber={getRowNumber(index)}
               columns={visibleColumns}
-              currentTime={currentTime}
               showColorPicker={showColorPicker}
               cellRefs={cellRefs}
               isSelected={selectedRows.has(item.id)}
@@ -133,6 +132,7 @@ const RundownTable = ({
               onAddRow={onAddRow}
               onAddHeader={onAddHeader}
               onJumpToHere={onJumpToHere}
+              isDragging={draggedItemIndex === index}
             />
           </Fragment>
         ))}

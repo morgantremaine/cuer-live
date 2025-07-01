@@ -40,8 +40,10 @@ const RundownTableHeader = ({
               key={column.id}
               column={column}
               width={getColumnWidth(column)}
-              onResize={(width) => updateColumnWidth(column.id, width)}
-            />
+              onWidthChange={(columnId, width) => updateColumnWidth(columnId, width)}
+            >
+              {column.name}
+            </ResizableColumnHeader>
           ))}
         </div>
       </div>
