@@ -60,19 +60,21 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px] relative overflow-visible"
+              className="align-middle border border-border min-h-[56px] relative"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                // Remove maxWidth constraint for header segment names to allow overflow
+                backgroundColor,
+                overflow: 'visible' // Allow content to overflow
               }}
             >
               <div 
-                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-10" 
+                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative" 
                 style={{ 
                   color: textColor,
-                  minWidth: 'max-content'
+                  minWidth: 'max-content',
+                  zIndex: 10 // Ensure text appears above other cells
                 }}
               >
                 <CellRenderer
