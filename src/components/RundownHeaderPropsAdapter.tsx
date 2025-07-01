@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRealtime } from '@/hooks/useRealtime';
@@ -31,7 +32,7 @@ const RundownHeaderPropsAdapter = ({
   const { 
     rundown, 
     lastAction 
-  } = useRundown(activeRundownId, realtime: true);
+  } = useRundown(activeRundownId, { realtime: true });
   
   const { 
     undo, 
