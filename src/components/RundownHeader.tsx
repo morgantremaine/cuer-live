@@ -2,11 +2,12 @@ import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import { format } from 'date-fns';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -68,6 +69,16 @@ const RundownHeader = ({
     currentSegmentId,
     timeRemaining
   });
+
+  // Format time in the selected timezone
+  const formatTimeInTimezone = (time: Date, tz: string) => {
+    try {
+      return formatInTimeZone(time, tz, 'HH:mm:ss');
+    } catch {
+      // Fallback to local time if timezone is invalid
+      return format(time, 'HH:mm:ss');
+    }
+  };
 
   const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -177,7 +188,7 @@ const RundownHeader = ({
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{format(currentTime, 'HH:mm:ss')}</span>
+            <span>{formatTimeInTimezone(currentTime, timezone)}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -258,7 +269,7 @@ const RundownHeader = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-mono">{format(currentTime, 'HH:mm:ss')}</span>
+              <span className="text-sm font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
             </div>
             <TimezoneSelector
               currentTimezone={timezone}
@@ -337,7 +348,7 @@ const RundownHeader = ({
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">
-          <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
+          <span className="text-lg font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
           <TimezoneSelector
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
