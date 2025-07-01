@@ -1,8 +1,10 @@
 
 import React from 'react';
 import RundownRow from './RundownRow';
+import SearchButton from './SearchButton';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RundownTableProps {
   items: any[];
@@ -17,6 +19,9 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch | null;
+  onSearchButtonClick?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -56,6 +61,9 @@ const RundownTable = ({
   currentSegmentId,
   hasClipboardData,
   selectedRowId,
+  searchMatches = [],
+  currentSearchMatch,
+  onSearchButtonClick,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -112,6 +120,13 @@ const RundownTable = ({
 
   return (
     <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
+      {/* Search Button - positioned absolutely in top right */}
+      {onSearchButtonClick && (
+        <div className="absolute top-4 right-4 z-10">
+          <SearchButton onClick={onSearchButtonClick} />
+        </div>
+      )}
+      
       <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {
@@ -152,6 +167,8 @@ const RundownTable = ({
                   hasClipboardData={hasClipboardData}
                   currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
+                  searchMatches={searchMatches}
+                  currentSearchMatch={currentSearchMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

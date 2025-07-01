@@ -1,4 +1,7 @@
+
 import React, { useEffect, useRef, useState } from 'react';
+import HighlightedText from './HighlightedText';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface TextAreaCellProps {
   value: string;
@@ -8,6 +11,8 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -21,6 +26,8 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
+  searchMatches = [],
+  currentSearchMatch,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -29,6 +36,18 @@ const TextAreaCell = ({
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Scroll to this cell if it contains the current search match
+  useEffect(() => {
+    if (currentSearchMatch && textareaRef.current) {
+      textareaRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  }, [currentSearchMatch]);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -137,6 +156,7 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
+    setIsEditing(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -146,6 +166,7 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
+    setIsEditing(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -164,6 +185,17 @@ const TextAreaCell = ({
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
 
+  // Convert search matches to highlight format
+  const highlightMatches = searchMatches.map(match => ({
+    startIndex: match.startIndex,
+    endIndex: match.endIndex
+  }));
+
+  const currentHighlightMatch = currentSearchMatch ? {
+    startIndex: currentSearchMatch.startIndex,
+    endIndex: currentSearchMatch.endIndex
+  } : undefined;
+
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       {/* Hidden measurement div */}
@@ -177,6 +209,28 @@ const TextAreaCell = ({
           zIndex: -1
         }}
       />
+      
+      {/* Show highlighted text overlay when not editing and has search matches */}
+      {!isEditing && searchMatches.length > 0 && (
+        <div 
+          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} pointer-events-none overflow-hidden ${
+            isDuration ? 'font-mono' : ''
+          }`}
+          style={{ 
+            color: textColor || 'inherit',
+            lineHeight: '1.3',
+            textAlign: isDuration ? 'center' : 'left',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word'
+          }}
+        >
+          <HighlightedText
+            text={value}
+            matches={highlightMatches}
+            currentMatch={currentHighlightMatch}
+          />
+        </div>
+      )}
       
       <textarea
         ref={(el) => {
@@ -198,10 +252,10 @@ const TextAreaCell = ({
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        }`}
+        } ${!isEditing && searchMatches.length > 0 ? 'text-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
-          color: textColor || 'inherit',
+          color: isEditing || searchMatches.length === 0 ? (textColor || 'inherit') : 'transparent',
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'

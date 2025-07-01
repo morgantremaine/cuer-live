@@ -1,7 +1,10 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import RundownTable from './RundownTable';
+import SearchDialog from './SearchDialog';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+import { useRundownSearch } from '@/hooks/useRundownSearch';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 
@@ -24,6 +27,9 @@ const RundownGrid = React.memo(() => {
     clearRowSelection,
     rundownId
   } = coreState;
+
+  // Initialize search functionality
+  const searchHook = useRundownSearch(items, visibleColumns);
 
   // Use coordinated showcaller state for better synchronization
   const {
@@ -75,6 +81,31 @@ const RundownGrid = React.memo(() => {
     handleKeyDown,
     cellRefs
   } = uiState;
+
+  // Global keyboard shortcuts for search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'f') {
+          e.preventDefault();
+          searchHook.setIsSearchOpen(true);
+        } else if (e.key === 'h') {
+          e.preventDefault();
+          searchHook.setIsSearchOpen(true);
+        }
+      } else if (e.key === 'F3') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          searchHook.goToPreviousMatch();
+        } else {
+          searchHook.goToNextMatch();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [searchHook]);
 
   // Create wrapper for cell click to match signature
   const handleCellClickWrapper = (itemId: string, field: string) => {
@@ -183,47 +214,69 @@ const RundownGrid = React.memo(() => {
   };
 
   return (
-    <RundownTable
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData()}
-      selectedRowId={selectedRowId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      getRowNumber={coreState.getRowNumber}
-      getRowStatus={getRowStatus}
-      getHeaderDuration={coreState.calculateHeaderDuration}
-      onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClickWrapper}
-      onKeyDown={handleKeyDownWrapper}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={coreState.deleteRow}
-      onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
-      onDragLeave={handleDragLeaveWrapper}
-      onDrop={handleDropWrapper}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={() => {
-        clearSelection();
-        clearRowSelection();
-      }}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
-    />
+    <>
+      <RundownTable
+        items={items}
+        visibleColumns={visibleColumns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData()}
+        selectedRowId={selectedRowId}
+        searchMatches={searchHook.searchMatches}
+        currentSearchMatch={searchHook.currentMatch}
+        onSearchButtonClick={() => searchHook.setIsSearchOpen(true)}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        getRowNumber={coreState.getRowNumber}
+        getRowStatus={getRowStatus}
+        getHeaderDuration={coreState.calculateHeaderDuration}
+        onUpdateItem={coreState.updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={handleColorSelect}
+        onDeleteRow={coreState.deleteRow}
+        onToggleFloat={coreState.toggleFloatRow}
+        onRowSelect={handleEnhancedRowSelection}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
+        onCopySelectedRows={handleCopySelectedRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onPasteRows={handlePasteRows}
+        onClearSelection={() => {
+          clearSelection();
+          clearRowSelection();
+        }}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        onJumpToHere={handleJumpToHere}
+      />
+
+      <SearchDialog
+        isOpen={searchHook.isSearchOpen}
+        searchQuery={searchHook.searchQuery}
+        replaceQuery={searchHook.replaceQuery}
+        matchCount={searchHook.searchMatches.length}
+        currentMatchIndex={searchHook.currentMatchIndex}
+        searchOptions={searchHook.searchOptions}
+        onClose={() => searchHook.setIsSearchOpen(false)}
+        onSearchChange={searchHook.setSearchQuery}
+        onReplaceChange={searchHook.setReplaceQuery}
+        onOptionsChange={searchHook.setSearchOptions}
+        onNextMatch={searchHook.goToNextMatch}
+        onPreviousMatch={searchHook.goToPreviousMatch}
+        onReplaceCurrentMatch={() => searchHook.replaceCurrentMatch(coreState.updateItem)}
+        onReplaceAllMatches={() => searchHook.replaceAllMatches(coreState.updateItem)}
+      />
+    </>
   );
 });
 
