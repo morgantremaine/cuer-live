@@ -32,7 +32,6 @@ interface RundownHeaderProps {
   timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  onSearchClick?: () => void;
 }
 
 const RundownHeader = ({
@@ -56,8 +55,7 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  items = [],
-  onSearchClick
+  items = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -301,7 +299,7 @@ const RundownHeader = ({
 
   // Desktop layout - with properly centered title and timing indicator
   return (
-    <header className="bg-background border-b border-border p-4 shrink-0 print:hidden">
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
@@ -380,17 +378,7 @@ const RundownHeader = ({
           )}
         </div>
       </div>
-      
-      <HeaderControls
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
-        onSearchClick={onSearchClick}
-      />
-    </header>
+    </div>
   );
 };
 

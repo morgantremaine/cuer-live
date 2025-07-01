@@ -6,7 +6,6 @@ import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface CellRendererProps {
   column: Column;
@@ -20,8 +19,6 @@ interface CellRendererProps {
   textColor?: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
-  searchMatches?: SearchMatch[];
-  currentSearchMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,8 +32,6 @@ const CellRenderer = ({
   textColor,
   backgroundColor,
   currentSegmentId,
-  searchMatches = [],
-  currentSearchMatch,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -83,17 +78,6 @@ const CellRenderer = ({
 
   const value = getCellValue();
 
-  // Get search matches for this cell
-  const cellMatches = searchMatches.filter(match => 
-    match.itemId === item.id && match.columnKey === column.key
-  );
-  
-  const cellCurrentMatch = currentSearchMatch && 
-    currentSearchMatch.itemId === item.id && 
-    currentSearchMatch.columnKey === column.key 
-      ? currentSearchMatch 
-      : undefined;
-
   // Determine if this is a read-only field
   const isReadOnly = !column.isEditable || 
     column.key === 'startTime' || 
@@ -115,8 +99,6 @@ const CellRenderer = ({
         value={value} 
         backgroundColor={showcallerBackgroundColor} 
         textColor={showcallerTextColor}
-        searchMatches={cellMatches}
-        currentSearchMatch={cellCurrentMatch}
       />
     );
   }
@@ -134,8 +116,6 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
         backgroundColor={showcallerBackgroundColor}
-        searchMatches={cellMatches}
-        currentSearchMatch={cellCurrentMatch}
         onUpdateValue={(newValue) => {
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
@@ -157,8 +137,6 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
-        searchMatches={cellMatches}
-        currentSearchMatch={cellCurrentMatch}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -187,8 +165,6 @@ const CellRenderer = ({
           textColor={showcallerTextColor}
           backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
           isDuration={column.key === 'duration'}
-          searchMatches={cellMatches}
-          currentSearchMatch={cellCurrentMatch}
           onUpdateValue={(newValue) => {
             // Handle custom fields vs built-in fields
             if (column.isCustom) {
@@ -218,8 +194,6 @@ const CellRenderer = ({
       textColor={showcallerTextColor}
       backgroundColor={showcallerBackgroundColor}
       isDuration={column.key === 'duration'}
-      searchMatches={cellMatches}
-      currentSearchMatch={cellCurrentMatch}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

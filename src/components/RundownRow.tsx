@@ -4,7 +4,6 @@ import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RundownRowProps {
   item: RundownItem;
@@ -22,8 +21,6 @@ interface RundownRowProps {
   headerDuration?: string;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
-  searchMatches?: SearchMatch[];
-  currentSearchMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -72,8 +69,6 @@ const RundownRow = (props: RundownRowProps) => {
         selectedRows={props.selectedRows}
         hasClipboardData={props.hasClipboardData}
         currentSegmentId={props.currentSegmentId}
-        searchMatches={props.searchMatches}
-        currentSearchMatch={props.currentSearchMatch}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
@@ -93,8 +88,6 @@ const RundownRow = (props: RundownRowProps) => {
       selectedRows={props.selectedRows}
       hasClipboardData={props.hasClipboardData}
       currentSegmentId={props.currentSegmentId}
-      searchMatches={props.searchMatches}
-      currentSearchMatch={props.currentSearchMatch}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}

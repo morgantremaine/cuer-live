@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
-import SearchButton from '../SearchButton';
 import AuthModal from '../AuthModal';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,7 +20,6 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  onSearchClick?: () => void;
 }
 
 const HeaderControls = ({
@@ -30,8 +28,7 @@ const HeaderControls = ({
   onTimezoneChange,
   onUndo,
   canUndo,
-  lastAction,
-  onSearchClick
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -70,7 +67,7 @@ const HeaderControls = ({
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
-      <SearchButton onClick={onSearchClick} />
+      {/* Search functionality removed */}
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">

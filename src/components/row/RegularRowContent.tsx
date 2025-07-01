@@ -5,7 +5,6 @@ import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RegularRowContentProps {
   item: RundownItem;
@@ -19,8 +18,6 @@ interface RegularRowContentProps {
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
   currentSegmentId?: string | null;
-  searchMatches?: SearchMatch[];
-  currentSearchMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -38,8 +35,6 @@ const RegularRowContent = ({
   isDraggingMultiple = false,
   isSelected = false,
   currentSegmentId,
-  searchMatches = [],
-  currentSearchMatch,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -87,8 +82,6 @@ const RegularRowContent = ({
               textColor={textColor}
               backgroundColor={backgroundColor}
               currentSegmentId={currentSegmentId}
-              searchMatches={searchMatches}
-              currentSearchMatch={currentSearchMatch}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
