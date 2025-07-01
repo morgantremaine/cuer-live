@@ -1,5 +1,4 @@
 
-
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -45,27 +44,24 @@ export const useRowStyling = ({
     rowClass = 'bg-background';
   }
 
-  // Add selection styling with box-shadow for better visibility
+  // Simplified selection styling with consistent border approach
   if (isSelected) {
-    // Check if row has custom color OR is floated (both need prominent selection styling)
-    if ((color && color !== '#FFFFFF' && color !== '#ffffff') || (isFloating || isFloated)) {
-      // For colored backgrounds or floated rows, use a prominent box-shadow that creates a thick border
-      rowClass += ' !shadow-[inset_0_0_0_3px_rgb(59_130_246)] !outline !outline-2 !outline-blue-500 !outline-offset-[-2px]';
+    if (isHeader) {
+      // For headers: add blue selection border while preserving left border
+      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
+    } else if (isFloating || isFloated) {
+      // For floated rows: add blue selection border while preserving red left border
+      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-red-600';
     } else {
-      // Standard ring for non-colored backgrounds
-      rowClass += ' !ring-2 !ring-blue-500 !ring-inset';
+      // For regular rows: clean blue border all around with left emphasis
+      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
     }
     
-    if (isHeader) {
-      // For headers, only add the ring - don't change background color
-      // The header keeps its original bg-muted styling
-    } else if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
-      // For regular rows without custom colors and not floated, add subtle background highlight
+    // Add subtle background highlight for non-colored rows only
+    if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
-    // For rows with custom colors or floated rows, we rely on the box-shadow and outline to show selection
   }
 
   return { rowClass, backgroundColorOverride };
 };
-
