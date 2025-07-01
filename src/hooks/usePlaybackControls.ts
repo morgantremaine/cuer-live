@@ -83,6 +83,7 @@ export const usePlaybackControls = (
     isPlaying: showcaller.isInitialized ? showcaller.isPlaying : false,
     currentSegmentId: showcaller.isInitialized ? showcaller.currentSegmentId : null,
     timeRemaining: showcaller.isInitialized ? showcaller.timeRemaining : 0,
+    playbackStartTime: showcaller.isInitialized ? showcaller.playbackStartTime : null,
     play: safePlay,
     pause: safePause,
     forward: safeForward,

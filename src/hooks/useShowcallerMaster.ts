@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { supabase } from '@/integrations/supabase/client';
-import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 
 interface ShowcallerState {
   isPlaying: boolean;
@@ -12,6 +12,7 @@ interface ShowcallerState {
   controllerId: string | null;
   lastUpdate: string;
   isInitialized: boolean;
+  playbackStartTime: string | null; // Added for AD View compatibility
 }
 
 interface ShowcallerMasterProps {
@@ -40,10 +41,11 @@ export const useShowcallerMaster = ({
     currentSegmentIndex: -1,
     controllerId: null,
     lastUpdate: '',
-    isInitialized: false
+    isInitialized: false,
+    playbackStartTime: null
   });
 
-  // Timing calculation state
+  // Timing calculation state - stores baseline when segment starts
   const [timingBaseline, setTimingBaseline] = useState<{
     startTime: string;
     segmentStartTime: Date;
@@ -69,7 +71,7 @@ export const useShowcallerMaster = ({
     }
   }, []);
 
-  // Save state to database (debounced)
+  // Save state to database (debounced to every 10 seconds)
   const saveState = useCallback(() => {
     if (!rundownId || !state.isInitialized) return;
 
@@ -85,7 +87,8 @@ export const useShowcallerMaster = ({
           timeRemaining: state.timeRemaining,
           currentSegmentIndex: state.currentSegmentIndex,
           controllerId: state.controllerId,
-          lastUpdate: new Date().toISOString()
+          lastUpdate: new Date().toISOString(),
+          playbackStartTime: state.playbackStartTime
         };
 
         await supabase
@@ -95,7 +98,7 @@ export const useShowcallerMaster = ({
       } catch (error) {
         console.error('📺 Error saving showcaller state:', error);
       }
-    }, 2000); // Debounce saves to every 2 seconds
+    }, 10000); // Debounce saves to every 10 seconds
   }, [rundownId, state]);
 
   // Initialize showcaller state
@@ -120,6 +123,7 @@ export const useShowcallerMaster = ({
             currentSegmentIndex: savedState.currentSegmentIndex || -1,
             controllerId: savedState.controllerId || null,
             lastUpdate: savedState.lastUpdate || '',
+            playbackStartTime: savedState.playbackStartTime || null,
             isInitialized: true
           }));
         } else {
@@ -158,7 +162,8 @@ export const useShowcallerMaster = ({
               timeRemaining: newState.timeRemaining || 0,
               currentSegmentIndex: newState.currentSegmentIndex || -1,
               controllerId: newState.controllerId || null,
-              lastUpdate: newState.lastUpdate || ''
+              lastUpdate: newState.lastUpdate || '',
+              playbackStartTime: newState.playbackStartTime || null
             }));
           }
         }
@@ -174,28 +179,76 @@ export const useShowcallerMaster = ({
     };
   }, [rundownId, state.isInitialized]);
 
-  // Timer logic - simple 1-second intervals
+  // Auto-advance logic when timer reaches 0
+  const autoAdvance = useCallback(() => {
+    const nextIndex = state.currentSegmentIndex + 1;
+    if (nextIndex < regularItems.length) {
+      const nextItem = regularItems[nextIndex];
+      const duration = timeToSeconds(nextItem.duration || '00:00');
+      
+      // Set new timing baseline for auto-advance
+      setTimingBaseline({
+        startTime: nextItem.startTime || '00:00:00',
+        segmentStartTime: new Date(),
+        expectedPosition: nextIndex
+      });
+
+      const timestamp = new Date().toISOString();
+      ownUpdateRef.current = timestamp;
+
+      setState(prev => ({
+        ...prev,
+        currentSegmentId: nextItem.id,
+        currentSegmentIndex: nextIndex,
+        timeRemaining: duration,
+        controllerId: userId || 'unknown',
+        lastUpdate: timestamp
+      }));
+
+      console.log('📺 Auto-advanced to next segment:', nextItem.name);
+    } else {
+      // End of rundown - stop playing
+      const timestamp = new Date().toISOString();
+      ownUpdateRef.current = timestamp;
+
+      setState(prev => ({
+        ...prev,
+        isPlaying: false,
+        lastUpdate: timestamp
+      }));
+
+      console.log('📺 Reached end of rundown, stopping playback');
+    }
+  }, [state.currentSegmentIndex, regularItems, userId]);
+
+  // Timer logic with auto-advance
   useEffect(() => {
     if (state.isPlaying && state.timeRemaining > 0) {
       timerRef.current = setTimeout(() => {
-        setState(prev => ({
-          ...prev,
-          timeRemaining: Math.max(0, prev.timeRemaining - 1)
-        }));
+        setState(prev => {
+          const newTimeRemaining = Math.max(0, prev.timeRemaining - 1);
+          return {
+            ...prev,
+            timeRemaining: newTimeRemaining
+          };
+        });
       }, 1000);
+    } else if (state.isPlaying && state.timeRemaining === 0) {
+      // Auto-advance when timer reaches 0
+      autoAdvance();
     } else {
       clearTimer();
     }
 
     return clearTimer;
-  }, [state.isPlaying, state.timeRemaining, clearTimer]);
+  }, [state.isPlaying, state.timeRemaining, autoAdvance, clearTimer]);
 
-  // Auto-save state changes
+  // Auto-save state changes (debounced)
   useEffect(() => {
     if (state.isInitialized) {
       saveState();
     }
-  }, [state.isPlaying, state.currentSegmentId, state.timeRemaining, state.currentSegmentIndex, saveState]);
+  }, [state.isPlaying, state.currentSegmentId, state.timeRemaining, state.currentSegmentIndex, state.playbackStartTime, saveState]);
 
   // Control functions
   const play = useCallback((selectedSegmentId?: string) => {
@@ -227,6 +280,7 @@ export const useShowcallerMaster = ({
       }
 
       const timestamp = new Date().toISOString();
+      const playbackStartTime = new Date().toTimeString().slice(0, 8);
       ownUpdateRef.current = timestamp;
 
       setState(prev => ({
@@ -236,8 +290,11 @@ export const useShowcallerMaster = ({
         currentSegmentIndex: targetIndex,
         timeRemaining: duration,
         controllerId: userId || 'unknown',
-        lastUpdate: timestamp
+        lastUpdate: timestamp,
+        playbackStartTime
       }));
+
+      console.log('📺 Started playing:', targetItem.name);
     }
   }, [state.currentSegmentId, state.currentSegmentIndex, regularItems, userId]);
 
@@ -250,6 +307,8 @@ export const useShowcallerMaster = ({
       isPlaying: false,
       lastUpdate: timestamp
     }));
+
+    console.log('📺 Paused playback');
   }, []);
 
   const forward = useCallback(() => {
@@ -276,6 +335,8 @@ export const useShowcallerMaster = ({
         controllerId: userId || 'unknown',
         lastUpdate: timestamp
       }));
+
+      console.log('📺 Forwarded to:', nextItem.name);
     }
   }, [state.currentSegmentIndex, regularItems, userId]);
 
@@ -303,6 +364,8 @@ export const useShowcallerMaster = ({
         controllerId: userId || 'unknown',
         lastUpdate: timestamp
       }));
+
+      console.log('📺 Backed to:', prevItem.name);
     }
   }, [state.currentSegmentIndex, regularItems, userId]);
 
@@ -320,8 +383,11 @@ export const useShowcallerMaster = ({
       timeRemaining: 0,
       currentSegmentIndex: -1,
       controllerId: null,
-      lastUpdate: timestamp
+      lastUpdate: timestamp,
+      playbackStartTime: null
     }));
+
+    console.log('📺 Reset showcaller');
   }, [clearTimer]);
 
   const jumpToSegment = useCallback((segmentId: string) => {
@@ -348,10 +414,12 @@ export const useShowcallerMaster = ({
         controllerId: userId || 'unknown',
         lastUpdate: timestamp
       }));
+
+      console.log('📺 Jumped to segment:', targetItem.name);
     }
   }, [regularItems, userId]);
 
-  // Calculate timing status
+  // Calculate timing status - simplified and stable
   const getTimingStatus = useCallback((rundownStartTime: string): TimingStatus => {
     // Only show timing when playing and we have a baseline
     if (!state.isPlaying || !state.currentSegmentId || !timingBaseline || !rundownStartTime) {
@@ -396,8 +464,8 @@ export const useShowcallerMaster = ({
     // Calculate difference
     const differenceSeconds = expectedElapsedSeconds - realElapsedSeconds;
     
-    // Determine status
-    const isOnTime = Math.abs(differenceSeconds) <= 10; // 10 second tolerance
+    // Determine status with 10 second tolerance
+    const isOnTime = Math.abs(differenceSeconds) <= 10;
     const isAhead = differenceSeconds > 10; // We're ahead of schedule = under time
     
     return {
@@ -442,6 +510,7 @@ export const useShowcallerMaster = ({
     timeRemaining: state.timeRemaining,
     isController: state.controllerId === userId,
     isInitialized: state.isInitialized,
+    playbackStartTime: state.playbackStartTime,
     
     // Controls
     play,

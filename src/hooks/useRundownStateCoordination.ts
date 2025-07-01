@@ -189,6 +189,7 @@ export const useRundownStateCoordination = () => {
       timeRemaining: showcaller.timeRemaining,
       isController: showcaller.isController,
       showcallerActivity: false, // No longer interferes with main state
+      playbackStartTime: showcaller.playbackStartTime, // Added for AD View compatibility
       
       // Visual status function
       getItemVisualStatus: showcaller.getItemVisualStatus,
