@@ -1,7 +1,10 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
+import SearchDialog from './search/SearchDialog';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+import useRundownSearch from '@/hooks/useRundownSearch';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 
@@ -45,6 +48,13 @@ const RundownGrid = React.memo(() => {
     rundownId,
     userId
   });
+
+  // Add search functionality
+  const { searchState, actions: searchActions, currentMatch } = useRundownSearch(
+    items,
+    visibleColumns,
+    coreState.updateItem
+  );
 
   const {
     selectedRows,
@@ -182,48 +192,74 @@ const RundownGrid = React.memo(() => {
     handleDrop(e, targetIndex);
   };
 
+  // Global keyboard shortcuts for search
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        searchActions.openSearch();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        searchActions.openSearch();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchActions]);
+
   return (
-    <RundownTable
-      items={items}
-      visibleColumns={visibleColumns}
-      currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
-      currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData()}
-      selectedRowId={selectedRowId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-      getRowNumber={coreState.getRowNumber}
-      getRowStatus={getRowStatus}
-      getHeaderDuration={coreState.calculateHeaderDuration}
-      onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClickWrapper}
-      onKeyDown={handleKeyDownWrapper}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
-      onDeleteRow={coreState.deleteRow}
-      onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
-      onDragLeave={handleDragLeaveWrapper}
-      onDrop={handleDropWrapper}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
-      onClearSelection={() => {
-        clearSelection();
-        clearRowSelection();
-      }}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
-    />
+    <>
+      <RundownTable
+        items={items}
+        visibleColumns={visibleColumns}
+        currentTime={currentTime}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        hasClipboardData={hasClipboardData()}
+        selectedRowId={selectedRowId}
+        searchState={searchState}
+        currentMatch={currentMatch}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+        getRowNumber={coreState.getRowNumber}
+        getRowStatus={getRowStatus}
+        getHeaderDuration={coreState.calculateHeaderDuration}
+        onUpdateItem={coreState.updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={handleColorSelect}
+        onDeleteRow={coreState.deleteRow}
+        onToggleFloat={coreState.toggleFloatRow}
+        onRowSelect={handleEnhancedRowSelection}
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
+        onCopySelectedRows={handleCopySelectedRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onPasteRows={handlePasteRows}
+        onClearSelection={() => {
+          clearSelection();
+          clearRowSelection();
+        }}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        onJumpToHere={handleJumpToHere}
+        onSearchOpen={searchActions.openSearch}
+      />
+      
+      <SearchDialog
+        searchState={searchState}
+        actions={searchActions}
+      />
+    </>
   );
 });
 

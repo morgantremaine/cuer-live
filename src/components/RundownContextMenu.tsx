@@ -1,229 +1,151 @@
-
-import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation } from 'lucide-react';
+import React from 'react';
+import { MoreHorizontal, Copy, Trash2, Clock, Droplet, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
-import ColorPicker from './ColorPicker';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import SearchButton from './search/SearchButton';
 
 interface RundownContextMenuProps {
   children: React.ReactNode;
   selectedCount: number;
   selectedRows?: Set<string>;
-  isFloated?: boolean;
-  hasClipboardData?: boolean;
-  showColorPicker?: string | null;
+  isFloated: boolean;
+  hasClipboardData: boolean;
+  showColorPicker: boolean;
   itemId: string;
-  itemType?: 'regular' | 'header';
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
   onColorPicker: () => void;
   onColorSelect: (itemId: string, color: string) => void;
-  onCloseColorPicker?: () => void;
   onPaste?: () => void;
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (segmentId: string) => void;
+  onSearchOpen?: () => void;
 }
 
-const RundownContextMenu = memo(({
+const RundownContextMenu = ({
   children,
   selectedCount,
   selectedRows,
-  isFloated = false,
-  hasClipboardData = false,
+  isFloated,
+  hasClipboardData,
   showColorPicker,
   itemId,
-  itemType = 'regular',
   onCopy,
   onDelete,
   onToggleFloat,
   onColorPicker,
   onColorSelect,
-  onCloseColorPicker,
   onPaste,
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onSearchOpen
 }: RundownContextMenuProps) => {
-  const isMultipleSelection = selectedCount > 1;
-
-  // Handle color selection for multiple rows
-  const handleColorSelect = (id: string, color: string) => {
-    if (isMultipleSelection && selectedRows) {
-      // Apply color to all selected rows
-      selectedRows.forEach(selectedId => {
-        onColorSelect(selectedId, color);
-      });
-    } else {
-      // Apply color to single row
-      onColorSelect(id, color);
-    }
-    
-    // Always close the color picker after selection
-    if (onCloseColorPicker) {
-      onCloseColorPicker();
-    }
-    
-    // Clear selection after color selection
-    if (onClearSelection) {
-      onClearSelection();
-    }
-  };
-
-  // Handle float toggle for multiple rows
-  const handleContextMenuFloat = () => {
-    if (isMultipleSelection && selectedRows) {
-      // Toggle float for all selected rows
-      selectedRows.forEach(selectedId => {
-        onToggleFloat();
-      });
-    } else {
-      // Toggle float for single row
-      onToggleFloat();
-    }
-  };
-
-  const handleJumpToHere = () => {
-    console.log('🎯 Context menu Jump to here clicked for item:', itemId);
-    if (onJumpToHere && itemType === 'regular') {
-      console.log('🎯 Calling onJumpToHere with segmentId:', itemId);
-      onJumpToHere(itemId);
-    } else {
-      console.log('🎯 Jump to here not available - onJumpToHere:', !!onJumpToHere, 'itemType:', itemType);
-    }
-  };
+  const ContextMenuItem = ({ children, onClick }: { children: React.ReactNode; onClick: () => void }) => (
+    <DropdownMenuItem onClick={onClick} className="cursor-pointer">
+      {children}
+    </DropdownMenuItem>
+  );
 
   return (
-    <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          {children}
-        </ContextMenuTrigger>
-        <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
-          {onAddRow && (
-            <ContextMenuItem 
-              onClick={onAddRow} 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Segment
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        {children}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-40">
+        {selectedCount > 1 && selectedRows && selectedRows.size > 1 ? (
+          <>
+            <ContextMenuItem onClick={onCopy}>
+              <Copy className="mr-2 h-4 w-4" />
+              <span>Copy Rows</span>
             </ContextMenuItem>
-          )}
-          
-          {onAddHeader && (
-            <ContextMenuItem 
-              onClick={onAddHeader} 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Header
+            <ContextMenuItem onClick={onDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete Rows</span>
             </ContextMenuItem>
-          )}
-          
-          {(onAddRow || onAddHeader) && <ContextMenuSeparator />}
-          
-          {/* Jump to here - only show for regular segments and single selection */}
-          {onJumpToHere && itemType === 'regular' && !isMultipleSelection && (
-            <>
-              <ContextMenuItem 
-                onClick={handleJumpToHere} 
-                className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Navigation className="mr-2 h-4 w-4" />
-                Jump to here
+            {onClearSelection && (
+              <ContextMenuItem onClick={onClearSelection}>
+                <Clock className="mr-2 h-4 w-4" />
+                <span>Clear Selection</span>
               </ContextMenuItem>
-              <ContextMenuSeparator />
-            </>
-          )}
-          
-          <ContextMenuItem 
-            onClick={onCopy} 
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <Copy className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
-          </ContextMenuItem>
-          
-          {hasClipboardData && onPaste && (
-            <ContextMenuItem 
-              onClick={onPaste} 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <ClipboardPaste className="mr-2 h-4 w-4" />
-              Paste rows
+            )}
+          </>
+        ) : (
+          <>
+            <ContextMenuItem onClick={onCopy}>
+              <Copy className="mr-2 h-4 w-4" />
+              <span>Copy Row</span>
             </ContextMenuItem>
-          )}
-          
-          <ContextMenuSeparator />
-          
-          <ContextMenuItem 
-            onClick={handleContextMenuFloat} 
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <span className="mr-2 h-4 w-4 flex items-center justify-center">🛟</span>
-            {isFloated ? 
-              (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
-              (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
-            }
-          </ContextMenuItem>
-          
-          <ContextMenuItem 
-            onClick={onColorPicker} 
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <Palette className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-          </ContextMenuItem>
-          
-          <ContextMenuSeparator />
-          
-          {isMultipleSelection && onClearSelection && (
-            <ContextMenuItem 
-              onClick={onClearSelection} 
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Clear selection
+            <ContextMenuItem onClick={onDelete}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete Row</span>
             </ContextMenuItem>
-          )}
-          
-          <ContextMenuItem 
-            onClick={onDelete} 
-            className="text-red-600 focus:text-red-600 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Delete ${selectedCount} rows` : 'Delete row'}
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-      
-      {/* Color picker positioned outside the context menu */}
-      {showColorPicker === itemId && (
-        <div className="fixed z-[10000]" style={{ 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)'
-        }}>
-          <ColorPicker
-            itemId={itemId}
-            showColorPicker={showColorPicker}
-            onToggle={onColorPicker}
-            onColorSelect={handleColorSelect}
-          />
-        </div>
-      )}
-    </>
+            <ContextMenuItem onClick={onToggleFloat}>
+              <Clock className="mr-2 h-4 w-4" />
+              <span>{isFloated ? 'Unfloat Row' : 'Float Row'}</span>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={onColorPicker}>
+              <Droplet className="mr-2 h-4 w-4" />
+              <span>{showColorPicker ? 'Close Color' : 'Pick Color'}</span>
+            </ContextMenuItem>
+            {showColorPicker && (
+              <div className="px-2 py-1">
+                <div className="flex flex-wrap gap-1">
+                  {['#fef08a', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b', '#d97706', '#b45309'].map((color) => (
+                    <Button
+                      key={color}
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 p-0 rounded-full"
+                      style={{ backgroundColor: color }}
+                      onClick={() => onColorSelect(itemId, color)}
+                    ></Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {onPaste && hasClipboardData && (
+              <ContextMenuItem onClick={onPaste}>
+                <Copy className="mr-2 h-4 w-4" />
+                <span>Paste Rows</span>
+              </ContextMenuItem>
+            )}
+            {onClearSelection && (
+              <ContextMenuItem onClick={onClearSelection}>
+                <Clock className="mr-2 h-4 w-4" />
+                <span>Clear Selection</span>
+              </ContextMenuItem>
+            )}
+            {onAddRow && (
+              <ContextMenuItem onClick={onAddRow}>
+                <MoreHorizontal className="mr-2 h-4 w-4" />
+                <span>Add Row Below</span>
+              </ContextMenuItem>
+            )}
+            {onAddHeader && (
+              <ContextMenuItem onClick={onAddHeader}>
+                <MoreHorizontal className="mr-2 h-4 w-4" />
+                <span>Add Header Below</span>
+              </ContextMenuItem>
+            )}
+            {onSearchOpen && (
+              <ContextMenuItem onClick={onSearchOpen}>
+                <Search className="mr-2 h-4 w-4" />
+                <span>Search</span>
+              </ContextMenuItem>
+            )}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-});
-
-RundownContextMenu.displayName = 'RundownContextMenu';
+};
 
 export default RundownContextMenu;

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RundownRowProps {
   item: RundownItem;
@@ -21,6 +21,8 @@ interface RundownRowProps {
   headerDuration?: string;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchState?: SearchState;
+  currentMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -39,6 +41,7 @@ interface RundownRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onSearchOpen?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -69,10 +72,13 @@ const RundownRow = (props: RundownRowProps) => {
         selectedRows={props.selectedRows}
         hasClipboardData={props.hasClipboardData}
         currentSegmentId={props.currentSegmentId}
+        searchState={props.searchState}
+        currentMatch={props.currentMatch}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
+        onSearchOpen={props.onSearchOpen}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
@@ -88,11 +94,14 @@ const RundownRow = (props: RundownRowProps) => {
       selectedRows={props.selectedRows}
       hasClipboardData={props.hasClipboardData}
       currentSegmentId={props.currentSegmentId}
+      searchState={props.searchState}
+      currentMatch={props.currentMatch}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
+      onSearchOpen={props.onSearchOpen}
       onJumpToHere={handleJumpToHereDebug}
     />
   );

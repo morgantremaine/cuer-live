@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -6,40 +5,44 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RegularRowProps {
   item: RundownItem;
   index: number;
   rowNumber: string;
   status: 'upcoming' | 'current' | 'completed';
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   columns: Column[];
-  selectedRowsCount?: number;
-  selectedRows?: Set<string>;
   isSelected?: boolean;
   isCurrentlyPlaying?: boolean;
   isDraggingMultiple?: boolean;
-  showColorPicker: string | null;
+  selectedRowsCount?: number;
+  selectedRows?: Set<string>;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchState?: SearchState;
+  currentMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onToggleColorPicker: (itemId: string) => void;
+  onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onToggleFloat: (id: string) => void;
+  onToggleFloat?: (id: string) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
-  onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onSearchOpen?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -53,28 +56,25 @@ const RegularRow = (props: RegularRowProps) => {
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
-    isCurrentlyPlaying = false,
-    isDraggingMultiple = false,
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
-    onToggleFloat,
+    searchState,
+    currentMatch,
     onColorSelect,
     onClearSelection,
     onAddRow,
     onAddHeader,
     onJumpToHere,
+    onSearchOpen,
     isDragging
   } = props;
 
-  const { rowClass, backgroundColorOverride } = useRowStyling({
+  const { rowClass } = useRowStyling({
     isDragging,
-    isDraggingMultiple,
     isSelected,
-    isCurrentlyPlaying,
     status,
     color: item.color,
-    isFloating: item.isFloating,
     isFloated: item.isFloated
   });
 
@@ -83,10 +83,9 @@ const RegularRow = (props: RegularRowProps) => {
     handleContextMenu,
     handleContextMenuCopy,
     handleContextMenuDelete,
-    handleContextMenuColor,
-    handleContextMenuPaste,
     handleContextMenuFloat,
-    handleJumpToHere
+    handleContextMenuColor,
+    handleContextMenuPaste
   } = useRowEventHandlers({
     item,
     index,
@@ -97,12 +96,12 @@ const RegularRow = (props: RegularRowProps) => {
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
-    onToggleFloat,
     selectedRows,
     onPasteRows: props.onPasteRows,
-    onClearSelection,
-    onJumpToHere
+    onToggleFloat: props.onToggleFloat
   });
+
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
   // Enhanced drag start handler that prevents dragging when selecting text
   const handleDragStart = (e: React.DragEvent) => {
@@ -151,19 +150,15 @@ const RegularRow = (props: RegularRowProps) => {
     }
   };
 
-  // Use backgroundColorOverride for floated rows, otherwise use item color
-  const backgroundColor = backgroundColorOverride || 
-    (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
-
   return (
     <RundownContextMenu
+      children={undefined}
       selectedCount={isSelected ? selectedRowsCount : 1}
       selectedRows={selectedRows}
-      isFloated={item.isFloating || false}
+      isFloated={item.isFloated}
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
-      itemType="regular"
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={handleContextMenuFloat}
@@ -173,10 +168,10 @@ const RegularRow = (props: RegularRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
-      onJumpToHere={handleJumpToHere}
+      onSearchOpen={onSearchOpen}
     >
-      <tr 
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
+      <tr
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
         style={{
           backgroundColor
         }}
@@ -191,15 +186,17 @@ const RegularRow = (props: RegularRowProps) => {
       >
         <RegularRowContent
           item={item}
-          columns={props.columns}
           rowNumber={rowNumber}
-          status={status}
+          columns={props.columns}
+          cellRefs={props.cellRefs}
           backgroundColor={backgroundColor}
-          isCurrentlyPlaying={isCurrentlyPlaying}
-          isDraggingMultiple={isDraggingMultiple}
+          status={status}
+          isCurrentlyPlaying={props.isCurrentlyPlaying}
+          isDraggingMultiple={props.isDraggingMultiple}
           isSelected={isSelected}
           currentSegmentId={currentSegmentId}
-          cellRefs={props.cellRefs}
+          searchState={searchState}
+          currentMatch={currentMatch}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

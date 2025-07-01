@@ -19,19 +19,20 @@ interface RundownHeaderProps {
   title: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
-  onRundownStartTimeChange: (startTime: string) => void;
-  items?: any[];
-  visibleColumns?: any[];
+  onRundownStartTimeChange: (time: string) => void;
+  items: any[];
+  visibleColumns: any[];
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  isConnected?: boolean;
-  isProcessingRealtimeUpdate?: boolean;
+  isConnected: boolean;
+  isProcessingRealtimeUpdate: boolean;
   isPlaying: boolean;
   currentSegmentId: string | null;
-  timeRemaining: number;
-  autoScrollEnabled?: boolean;
-  onToggleAutoScroll?: () => void;
+  timeRemaining: string;
+  autoScrollEnabled: boolean;
+  onToggleAutoScroll: () => void;
+  onSearchOpen?: () => void;
 }
 
 const RundownHeader = ({
@@ -45,6 +46,8 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
+  items,
+  visibleColumns,
   onUndo,
   canUndo,
   lastAction,
@@ -55,7 +58,7 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  items = []
+  onSearchOpen
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -299,83 +302,64 @@ const RundownHeader = ({
 
   // Desktop layout - with properly centered title and timing indicator
   return (
-    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center space-x-4 flex-1 min-w-0">
+    <div className="sticky top-0 z-50 bg-background border-b border-border">
+      <div className="flex flex-col space-y-4 p-4 bg-gray-50 dark:bg-gray-900">
+        {/* Top section with logo and controls */}
+        <div className="flex items-center justify-between">
           <HeaderLogo />
-          <div className="flex-1 min-w-0 flex items-center">
+          <HeaderControls
+            currentTime={currentTime}
+            timezone={timezone}
+            onTimezoneChange={onTimezoneChange}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            lastAction={lastAction}
+            onSearchOpen={onSearchOpen}
+          />
+        </div>
+
+        {/* Top row - Title */}
+        <div className="mb-3">
+          <div className="flex-1 min-w-0">
             {isEditingTitle ? (
-              <textarea
+              <Input
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
                 onBlur={handleTitleSubmit}
                 onKeyDown={handleTitleKeyPress}
-                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
                 placeholder="Untitled Rundown"
-                rows={1}
-                style={{ 
-                  minHeight: 'auto',
-                  lineHeight: '1.25'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = target.scrollHeight + 'px';
-                }}
                 autoFocus
               />
             ) : (
               <span 
                 onClick={handleTitleEdit}
-                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
               >
                 {title || "Untitled Rundown"}
               </span>
             )}
           </div>
-          
-          {hasUnsavedChanges && (
-            <div className="flex-shrink-0 flex items-center">
-              <span className="text-sm text-orange-500 dark:text-orange-400">
-                {isSaving ? 'Saving...' : 'Unsaved changes'}
-              </span>
-            </div>
-          )}
-          
-          <ShowcallerTimingIndicator
-            {...timingStatus}
-          />
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0">
-          <span className="text-lg font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
-          <TimezoneSelector
-            currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
-          />
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
-            <input
-              ref={timeInputRef}
-              type="text"
-              value={rundownStartTime}
-              onChange={handleTimeInputChange}
-              onBlur={handleTimeInputBlur}
-              placeholder="HH:MM:SS"
-              className="w-24 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
-            />
+        {/* Bottom row - Compact info */}
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span>{formatTimeInTimezone(currentTime, timezone)}</span>
           </div>
           
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Runtime: {totalRuntime}
-          </span>
-          
-          {isConnected !== undefined && (
-            <div className="flex items-center space-x-2">
-              {renderConnectionIcon()}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
+            <span>Runtime: {totalRuntime}</span>
+            {isConnected !== undefined && (
+              <div className="flex items-center">
+                {renderConnectionIcon()}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

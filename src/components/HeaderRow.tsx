@@ -5,6 +5,7 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface HeaderRowProps {
   item: RundownItem;
@@ -19,6 +20,8 @@ interface HeaderRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchState?: SearchState;
+  currentMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,6 +38,7 @@ interface HeaderRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onSearchOpen?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -50,10 +54,13 @@ const HeaderRow = (props: HeaderRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
+    searchState,
+    currentMatch,
     onColorSelect,
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onSearchOpen,
     isDragging
   } = props;
 
@@ -155,6 +162,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onSearchOpen={onSearchOpen}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
@@ -177,6 +185,8 @@ const HeaderRow = (props: HeaderRowProps) => {
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
           currentSegmentId={currentSegmentId}
+          searchState={searchState}
+          currentMatch={currentMatch}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

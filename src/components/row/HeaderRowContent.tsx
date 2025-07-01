@@ -1,9 +1,9 @@
-
 import React from 'react';
 import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface HeaderRowContentProps {
   item: RundownItem;
@@ -12,6 +12,8 @@ interface HeaderRowContentProps {
   rowNumber: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
+  searchState?: SearchState;
+  currentMatch?: SearchMatch | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -26,6 +28,8 @@ const HeaderRowContent = ({
   rowNumber,
   backgroundColor,
   currentSegmentId,
+  searchState,
+  currentMatch,
   cellRefs,
   onUpdateItem,
   onCellClick,
@@ -82,6 +86,8 @@ const HeaderRowContent = ({
                   textColor={textColor}
                   backgroundColor={backgroundColor}
                   currentSegmentId={currentSegmentId}
+                  searchState={searchState}
+                  currentMatch={currentMatch}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
