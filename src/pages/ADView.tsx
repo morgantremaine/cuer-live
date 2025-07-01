@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -442,6 +443,9 @@ const ADView = () => {
   // Determine if script should be shown based on content availability
   const shouldShowScript = showScript && currentSegment && hasScriptContent(currentSegment.script);
 
+  // Determine if timing boxes should be shown based on showcaller state
+  const shouldShowTiming = isShowcallerPlaying;
+
   // Calculate dynamic font size for script based on content and container height
   useEffect(() => {
     if (!shouldShowScript || !scriptContainerRef.current || !scriptContentRef.current || !currentSegment?.script) {
@@ -546,6 +550,19 @@ const ADView = () => {
     );
   }
 
+  // Dynamic grid layout based on what should be shown
+  const getGridLayout = () => {
+    if (shouldShowTiming && shouldShowScript) {
+      return 'grid-cols-12'; // Left timing (2) + Center segments (6) + Right script (4)
+    } else if (shouldShowTiming && !shouldShowScript) {
+      return 'grid-cols-8'; // Left timing (2) + Center segments (6)
+    } else if (!shouldShowTiming && shouldShowScript) {
+      return 'grid-cols-10'; // Center segments (6) + Right script (4)
+    } else {
+      return 'grid-cols-6'; // Center segments only (6)
+    }
+  };
+
   return (
     <ErrorBoundary fallbackTitle="AD View Error">
       <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden">
@@ -598,52 +615,54 @@ const ADView = () => {
 
         {/* Main Content */}
         <div className="flex-1 px-0 py-0">
-          <div className={`grid gap-[1.5vh] h-full p-[1vh] ${shouldShowScript ? 'grid-cols-12' : 'grid-cols-8'}`}>
-            {/* Left Side - Timing Cards centered vertically with container-relative sizing */}
-            <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
-              {/* Show Elapsed Time */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW ELAPSED</div>
-                  <div className={`font-mono font-bold text-blue-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {showElapsedTime}
-                  </div>
-                </CardContent>
-              </Card>
+          <div className={`grid gap-[1.5vh] h-full p-[1vh] ${getGridLayout()}`}>
+            {/* Left Side - Timing Cards (only when showcaller is playing) */}
+            {shouldShowTiming && (
+              <div className="col-span-2 flex flex-col justify-center space-y-[1.5vh]">
+                {/* Show Elapsed Time */}
+                <Card className="bg-gray-900 border-zinc-700 flex-1">
+                  <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
+                    <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW ELAPSED</div>
+                    <div className={`font-mono font-bold text-blue-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
+                      {showElapsedTime}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Show Remaining Time */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW REMAINING</div>
-                  <div className={`font-mono font-bold text-orange-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {showRemainingTime}
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Show Remaining Time */}
+                <Card className="bg-gray-900 border-zinc-700 flex-1">
+                  <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
+                    <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>SHOW REMAINING</div>
+                    <div className={`font-mono font-bold text-orange-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
+                      {showRemainingTime}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Current Item Elapsed */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM ELAPSED</div>
-                  <div className={`font-mono font-bold text-green-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {currentItemElapsed}
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Current Item Elapsed */}
+                <Card className="bg-gray-900 border-zinc-700 flex-1">
+                  <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
+                    <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM ELAPSED</div>
+                    <div className={`font-mono font-bold text-green-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
+                      {currentItemElapsed}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Current Item Time Remaining */}
-              <Card className="bg-gray-900 border-zinc-700 flex-1">
-                <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
-                  <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM REMAINING</div>
-                  <div className={`font-mono font-bold text-yellow-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
-                    {formatTimeRemaining(timeRemaining)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                {/* Current Item Time Remaining */}
+                <Card className="bg-gray-900 border-zinc-700 flex-1">
+                  <CardContent className="px-[0.8vw] py-[0.8vh] text-center h-full flex flex-col justify-center">
+                    <div className={`text-zinc-400 font-semibold tracking-wider ${shouldShowScript ? 'text-[clamp(0.6rem,2.2vh,1.5rem)] mb-[0.3vh]' : 'text-[clamp(0.7rem,3vh,2rem)] mb-[0.5vh]'}`}>ITEM REMAINING</div>
+                    <div className={`font-mono font-bold text-yellow-400 flex items-center justify-center leading-none ${shouldShowScript ? 'text-[clamp(1.2rem,4.5vh,3rem)]' : 'text-[clamp(1.5rem,6vh,4rem)]'}`}>
+                      {formatTimeRemaining(timeRemaining)}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Center - Current Header Banner and Segments Display */}
-            <div className={`${shouldShowScript ? 'col-span-6' : 'col-span-6'} flex flex-col space-y-[0.5vh]`}>
+            <div className="col-span-6 flex flex-col space-y-[0.5vh]">
               {/* Current Header Section Banner */}
               {currentHeaderInfo.letter && (
                 <div className="bg-gray-700 border border-zinc-600 rounded-lg px-[1vw] py-[0.3vh]">
