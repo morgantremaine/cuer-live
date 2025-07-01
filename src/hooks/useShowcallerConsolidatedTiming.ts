@@ -290,14 +290,32 @@ export const useShowcallerConsolidatedTiming = ({
       const segment = items.find(item => item.id === selectedSegmentId);
       const duration = segment ? timeToSeconds(segment.duration || '00:00') : 0;
       
-      updateState({
+      // IMMEDIATE state update with precise timing - fixes the race condition
+      setState(prev => ({
+        ...prev,
         isPlaying: true,
         currentSegmentId: selectedSegmentId,
         timeRemaining: duration,
         playbackStartTime: preciseStartTime,
         controllerId: userId,
-        currentItemStatuses: newStatuses
-      }, true);
+        currentItemStatuses: newStatuses,
+        lastUpdate: new Date().toISOString(),
+        isController: userId ? true : false
+      }));
+      
+      // Save state and start timer immediately
+      if (onSaveState) {
+        const stateToSave = {
+          isPlaying: true,
+          currentSegmentId: selectedSegmentId,
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId,
+          currentItemStatuses: newStatuses,
+          lastUpdate: new Date().toISOString()
+        };
+        onSaveState(stateToSave);
+      }
     } else if (!state.currentSegmentId) {
       // Find first non-floated segment
       const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
@@ -305,26 +323,58 @@ export const useShowcallerConsolidatedTiming = ({
         newStatuses.set(firstSegment.id, 'current');
         const duration = timeToSeconds(firstSegment.duration || '00:00');
         
-        updateState({
+        // IMMEDIATE state update
+        setState(prev => ({
+          ...prev,
           isPlaying: true,
           currentSegmentId: firstSegment.id,
           timeRemaining: duration,
           playbackStartTime: preciseStartTime,
           controllerId: userId,
-          currentItemStatuses: newStatuses
-        }, true);
+          currentItemStatuses: newStatuses,
+          lastUpdate: new Date().toISOString(),
+          isController: userId ? true : false
+        }));
+        
+        if (onSaveState) {
+          const stateToSave = {
+            isPlaying: true,
+            currentSegmentId: firstSegment.id,
+            timeRemaining: duration,
+            playbackStartTime: preciseStartTime,
+            controllerId: userId,
+            currentItemStatuses: newStatuses,
+            lastUpdate: new Date().toISOString()
+          };
+          onSaveState(stateToSave);
+        }
       }
     } else {
-      // Resume current segment
-      updateState({
+      // Resume current segment - IMMEDIATE state update
+      setState(prev => ({
+        ...prev,
         isPlaying: true,
         playbackStartTime: preciseStartTime,
-        controllerId: userId
-      }, true);
+        controllerId: userId,
+        lastUpdate: new Date().toISOString(),
+        isController: userId ? true : false
+      }));
+      
+      if (onSaveState) {
+        const stateToSave = {
+          ...state,
+          isPlaying: true,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId,
+          lastUpdate: new Date().toISOString()
+        };
+        onSaveState(stateToSave);
+      }
     }
     
-    startConsolidatedTimer();
-  }, [items, state.currentSegmentId, userId, timeToSeconds, updateState, startConsolidatedTimer, getPreciseTime]);
+    // Start timer immediately after state update
+    setTimeout(() => startConsolidatedTimer(), 10);
+  }, [items, state.currentSegmentId, userId, timeToSeconds, startConsolidatedTimer, getPreciseTime, onSaveState]);
 
   const pause = useCallback(() => {
     console.log('📺 Consolidated pause called');
