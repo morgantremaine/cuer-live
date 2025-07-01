@@ -44,10 +44,10 @@ export const useRowStyling = ({
     rowClass = 'bg-background';
   }
 
-  // Simplified selection styling with consistent border approach
+  // Selection styling with special handling for headers
   if (isSelected) {
     if (isHeader) {
-      // For headers: add blue selection border while preserving left border
+      // For headers: add blue selection border while preserving left border, but NO background change
       rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
     } else if (isFloating || isFloated) {
       // For floated rows: add blue selection border while preserving red left border
@@ -57,8 +57,8 @@ export const useRowStyling = ({
       rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
     }
     
-    // Add subtle background highlight for non-colored rows only
-    if ((!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
+    // Add subtle background highlight for non-header, non-colored rows only
+    if (!isHeader && (!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
       rowClass += ' !bg-blue-50 dark:!bg-blue-950/20';
     }
   }
