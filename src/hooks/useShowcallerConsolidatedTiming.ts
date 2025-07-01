@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -48,6 +47,7 @@ export const useShowcallerConsolidatedTiming = ({
   const initializationRef = useRef<boolean>(false);
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
+  const lastDisplayedSecondsRef = useRef<number>(0); // Add buffer for stable display
 
   // High-precision time utilities
   const getPreciseTime = useCallback((): number => {
@@ -127,7 +127,7 @@ export const useShowcallerConsolidatedTiming = ({
     });
   }, [userId, onSaveState]);
 
-  // Single consolidated precision timer
+  // Single consolidated precision timer with stable second display
   const startConsolidatedTimer = useCallback(() => {
     console.log('📺 Starting consolidated precision timer');
     
@@ -151,13 +151,27 @@ export const useShowcallerConsolidatedTiming = ({
         
         const segmentDurationMs = timeToMilliseconds(currentSegment.duration || '00:00');
         const remainingMs = Math.max(0, segmentDurationMs - elapsedMs);
-        const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+        
+        // Stable second calculation with buffer to prevent flickering
+        let remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+        
+        // Add buffer zone to prevent flickering between seconds
+        // If we're within 200ms of a second boundary, maintain the last displayed value
+        const millisecondsInSecond = remainingMs % 1000;
+        if (millisecondsInSecond < 200 && lastDisplayedSecondsRef.current === remainingSeconds + 1) {
+          remainingSeconds = lastDisplayedSecondsRef.current;
+        } else if (millisecondsInSecond > 800 && lastDisplayedSecondsRef.current === remainingSeconds - 1) {
+          remainingSeconds = lastDisplayedSecondsRef.current;
+        } else {
+          lastDisplayedSecondsRef.current = remainingSeconds;
+        }
 
         console.log('📺 Timer update:', {
           segment: currentSegment.name,
           elapsedMs: Math.round(elapsedMs),
           remainingMs: Math.round(remainingMs),
-          remainingSeconds
+          remainingSeconds,
+          millisecondsInSecond: Math.round(millisecondsInSecond)
         });
 
         // Check for segment advancement
@@ -176,6 +190,7 @@ export const useShowcallerConsolidatedTiming = ({
           if (prevState.isController) {
             isAdvancingRef.current = true;
             lastAdvancementTimeRef.current = currentTime;
+            lastDisplayedSecondsRef.current = 0; // Reset buffer for new segment
 
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
@@ -228,6 +243,7 @@ export const useShowcallerConsolidatedTiming = ({
               }
               
               isAdvancingRef.current = false;
+              lastDisplayedSecondsRef.current = 0; // Reset buffer
               return newState;
             }
           }
@@ -265,6 +281,7 @@ export const useShowcallerConsolidatedTiming = ({
       timerRef.current = null;
     }
     isAdvancingRef.current = false;
+    lastDisplayedSecondsRef.current = 0; // Reset buffer when stopping
   }, []);
 
   // Control functions
@@ -501,6 +518,7 @@ export const useShowcallerConsolidatedTiming = ({
     console.log('📺 Applying external consolidated state:', externalState);
     
     stopConsolidatedTimer();
+    lastDisplayedSecondsRef.current = 0; // Reset buffer on external state
     
     // Convert statusMap if needed
     const statusMap = new Map();
@@ -532,6 +550,9 @@ export const useShowcallerConsolidatedTiming = ({
           ...synchronizedState,
           timeRemaining: syncedTimeRemaining
         };
+        
+        // Initialize buffer with synced time
+        lastDisplayedSecondsRef.current = syncedTimeRemaining;
         
         console.log('📺 Synchronized external timing:', {
           elapsedMs: Math.round(elapsedMs),
