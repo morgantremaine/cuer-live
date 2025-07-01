@@ -1,71 +1,34 @@
 
 import React from 'react';
 import RundownHeader from './RundownHeader';
-import { RundownContainerProps } from '@/types/rundownContainer';
-import { logger } from '@/utils/logger';
 
 interface RundownHeaderPropsAdapterProps {
-  props: RundownContainerProps;
+  currentTime: Date;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
+  totalRuntime: string;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  title: string;
+  onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
+  items: any[];
+  visibleColumns: any[];
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string;
+  isConnected?: boolean;
+  isProcessingRealtimeUpdate?: boolean;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
-const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
-  const {
-    currentTime,
-    timezone,
-    totalRuntime,
-    rundownTitle,
-    onTitleChange,
-    rundownStartTime,
-    onRundownStartTimeChange,
-    rundownId,
-    hasUnsavedChanges,
-    isSaving,
-    onUndo,
-    canUndo,
-    lastAction,
-    items,
-    visibleColumns,
-    isConnected,
-    isProcessingRealtimeUpdate,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    autoScrollEnabled,
-    onToggleAutoScroll
-  } = props;
-
-  // Debug logging for prop passing
-  logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll
-  });
-
-  return (
-    <RundownHeader
-      currentTime={currentTime}
-      timezone={timezone}
-      totalRuntime={totalRuntime}
-      hasUnsavedChanges={hasUnsavedChanges}
-      isSaving={isSaving}
-      title={rundownTitle}
-      onTitleChange={onTitleChange}
-      rundownStartTime={rundownStartTime}
-      onRundownStartTimeChange={onRundownStartTimeChange}
-      items={items}
-      visibleColumns={visibleColumns}
-      onUndo={onUndo}
-      canUndo={canUndo}
-      lastAction={lastAction}
-      isConnected={isConnected}
-      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-      isPlaying={isPlaying}
-      currentSegmentId={currentSegmentId}
-      timeRemaining={timeRemaining}
-      autoScrollEnabled={autoScrollEnabled}
-      onToggleAutoScroll={onToggleAutoScroll}
-    />
-  );
+const RundownHeaderPropsAdapter = (props: RundownHeaderPropsAdapterProps) => {
+  return <RundownHeader {...props} />;
 };
 
 export default RundownHeaderPropsAdapter;
