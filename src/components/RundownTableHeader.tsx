@@ -1,21 +1,21 @@
 
 import React from 'react';
-import { Column } from '@/types/columns';
+import { Column } from '@/hooks/useColumnsManager';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { TimingStatus } from '@/hooks/useShowcallerUnifiedTiming';
 
 interface RundownTableHeaderProps {
-  columns: Column[];
-  getColumnWidth: (columnId: string) => number;
-  onColumnResize: (columnId: string, width: number) => void;
+  visibleColumns: Column[];
+  getColumnWidth: (column: Column) => string;
+  updateColumnWidth: (columnId: string, width: number) => void;
   timingStatus?: TimingStatus;
 }
 
 const RundownTableHeader = ({ 
-  columns, 
+  visibleColumns, 
   getColumnWidth, 
-  onColumnResize,
+  updateColumnWidth,
   timingStatus 
 }: RundownTableHeaderProps) => {
   return (
@@ -35,12 +35,12 @@ const RundownTableHeader = ({
         
         {/* Column headers */}
         <div className="flex flex-1">
-          {columns.map((column) => (
+          {visibleColumns.map((column) => (
             <ResizableColumnHeader
               key={column.id}
               column={column}
-              width={getColumnWidth(column.id)}
-              onResize={(width) => onColumnResize(column.id, width)}
+              width={getColumnWidth(column)}
+              onResize={(width) => updateColumnWidth(column.id, width)}
             />
           ))}
         </div>

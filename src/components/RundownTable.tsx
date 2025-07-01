@@ -1,7 +1,7 @@
 
 import React, { Fragment } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { Column } from '@/types/columns';
+import { Column } from '@/hooks/useColumnsManager';
 import RundownRow from './RundownRow';
 import RundownTableHeader from './RundownTableHeader';
 import { TimingStatus } from '@/hooks/useShowcallerUnifiedTiming';
@@ -9,9 +9,9 @@ import { TimingStatus } from '@/hooks/useShowcallerUnifiedTiming';
 interface RundownTableProps {
   items: RundownItem[];
   visibleColumns: Column[];
-  currentTime: string;
-  showColorPicker: { [key: string]: boolean };
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLElement | null }>;
+  currentTime: Date;
+  showColorPicker: string | null;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
@@ -20,10 +20,10 @@ interface RundownTableProps {
   hasClipboardData: boolean;
   selectedRowId: string | null;
   timingStatus?: TimingStatus;
-  getColumnWidth: (columnId: string) => number;
+  getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
-  getRowNumber: (index: number) => number;
-  getRowStatus: (item: RundownItem) => 'upcoming' | 'current' | 'completed';
+  getRowNumber: (index: number) => string;
+  getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   getHeaderDuration: (headerIndex: number) => string;
   onUpdateItem: (id: string, field: string, value: any) => void;
   onCellClick: (itemId: string, field: string) => void;
@@ -88,9 +88,9 @@ const RundownTable = ({
   return (
     <div className="space-y-0">
       <RundownTableHeader
-        columns={visibleColumns}
+        visibleColumns={visibleColumns}
         getColumnWidth={getColumnWidth}
-        onColumnResize={updateColumnWidth}
+        updateColumnWidth={updateColumnWidth}
         timingStatus={timingStatus}
       />
       <div className="space-y-0">
@@ -102,7 +102,7 @@ const RundownTable = ({
               rowNumber={getRowNumber(index)}
               columns={visibleColumns}
               currentTime={currentTime}
-              showColorPicker={showColorPicker[item.id] || false}
+              showColorPicker={showColorPicker}
               cellRefs={cellRefs}
               isSelected={selectedRows.has(item.id)}
               isDragged={draggedItemIndex === index}
@@ -111,7 +111,7 @@ const RundownTable = ({
               isCurrentSegment={currentSegmentId === item.id}
               hasClipboardData={hasClipboardData}
               isSelectedRow={selectedRowId === item.id}
-              status={getRowStatus(item)}
+              status={getRowStatus(item, currentTime)}
               headerDuration={item.type === 'header' ? getHeaderDuration(index) : undefined}
               getColumnWidth={getColumnWidth}
               onUpdateItem={onUpdateItem}

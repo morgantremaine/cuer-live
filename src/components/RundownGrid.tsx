@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -96,7 +97,7 @@ const RundownGrid = React.memo(() => {
   };
 
   // Enhanced row status that uses showcaller visual state
-  const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
+  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
     if (item.type === 'header') {
       return 'upcoming';
     }
