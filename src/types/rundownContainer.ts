@@ -1,4 +1,5 @@
 
+
 import { RundownItem } from '@/types/rundown';
 
 export interface RundownContainerProps {
@@ -11,7 +12,7 @@ export interface RundownContainerProps {
   items: RundownItem[];
   visibleColumns: any[];
   columns: any[];
-  showColorPicker: { [key: string]: boolean };
+  showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
@@ -74,3 +75,4 @@ export interface RundownContainerProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
 }
+

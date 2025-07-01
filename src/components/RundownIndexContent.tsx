@@ -1,4 +1,5 @@
 
+
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -212,6 +213,16 @@ const RundownIndexContent = () => {
     handleRowSelection(id, itemIndex, mockEvent.shiftKey, mockEvent.ctrlKey || mockEvent.metaKey);
   };
 
+  // Create wrapper for showColorPicker to convert object to string format expected by RundownContent
+  const showColorPickerWrapper = (() => {
+    if (!showColorPicker || typeof showColorPicker !== 'object') {
+      return null;
+    }
+    // Find the first item ID that has showColorPicker set to true
+    const activeColorPickerId = Object.keys(showColorPicker).find(key => showColorPicker[key] === true);
+    return activeColorPickerId || null;
+  })();
+
   // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
@@ -365,7 +376,7 @@ const RundownIndexContent = () => {
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={showColorPicker}
+        showColorPicker={showColorPickerWrapper}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
@@ -435,3 +446,4 @@ const RundownIndexContent = () => {
 };
 
 export default RundownIndexContent;
+
