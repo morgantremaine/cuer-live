@@ -32,7 +32,6 @@ interface RundownRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
@@ -74,7 +73,6 @@ const RundownRow = (props: RundownRowProps) => {
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
-        onDragEnd={props.onDragEnd}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
@@ -96,7 +94,6 @@ const RundownRow = (props: RundownRowProps) => {
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHereDebug}
-      onDragEnd={props.onDragEnd}
     />
   );
 };

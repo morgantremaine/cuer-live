@@ -25,24 +25,11 @@ export const useRowStyling = ({
   let rowClass = '';
   let backgroundColorOverride: string | undefined = undefined;
   
-  // Debug logging to track styling issues
-  console.log('🎨 Row styling:', { 
-    isDragging, 
-    isDraggingMultiple, 
-    isSelected, 
-    isHeader,
-    color 
-  });
-  
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
-      // Blue ring for multiple selection drag - consistent with selection styling
-      rowClass = 'opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1';
+      rowClass = 'opacity-70';
     } else {
-      // Blue ring for single drag - consistent with selection styling
-      rowClass = isHeader 
-        ? 'bg-muted opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1' 
-        : 'opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1';
+      rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold';
