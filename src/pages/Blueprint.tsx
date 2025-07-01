@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
@@ -67,7 +66,8 @@ const BlueprintContent = () => {
     renameList,
     updateCheckedItems,
     updateShowDate,
-    updateComponentOrder
+    updateComponentOrder,
+    autoRefreshLists
   } = useBlueprintContext();
 
   // Get available columns from rundown items
@@ -94,17 +94,16 @@ const BlueprintContent = () => {
     addList(newList);
   }, [rundown?.items, addList]);
 
-  // Refresh all lists
+  // Refresh all lists - now using the context's autoRefreshLists
   const refreshAllLists = React.useCallback(() => {
-    logger.blueprint('Refreshing all lists with current rundown data');
-    if (!rundown?.items) return;
+    logger.blueprint('Manual refresh all lists triggered');
+    if (!rundown?.items) {
+      logger.blueprint('No rundown items available for refresh');
+      return;
+    }
     
-    const refreshedLists = state.lists.map(list => ({
-      ...list,
-      items: generateListFromColumn(rundown.items, list.sourceColumn)
-    }));
-    updateLists(refreshedLists);
-  }, [rundown?.items, state.lists, updateLists]);
+    autoRefreshLists(rundown.items);
+  }, [rundown?.items, autoRefreshLists]);
 
   // Toggle unique items display
   const toggleUniqueItems = React.useCallback((listId: string, showUnique: boolean) => {
@@ -440,11 +439,12 @@ const Blueprint = () => {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Only wrap in provider when we have a valid rundown
+  // Only wrap in provider when we have a valid rundown - now passing rundown items
   return (
     <BlueprintProvider 
       rundownId={id || ''} 
       rundownTitle={rundown.title || 'Unknown Rundown'}
+      rundownItems={rundown.items || []}
     >
       <BlueprintContent />
     </BlueprintProvider>

@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import { BlueprintList } from '@/types/blueprint';
 import { CameraPlotScene } from '@/hooks/cameraPlot/core/useCameraPlotData';
+import { RundownItem } from '@/types/rundown';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
 import { useBlueprintRealtimeSync } from '@/hooks/blueprint/useBlueprintRealtimeSync';
+import { generateListFromColumn } from '@/utils/blueprintUtils';
 import { logger } from '@/utils/logger';
 
 export interface BlueprintState {
@@ -127,6 +129,7 @@ interface BlueprintContextValue {
   // Utility functions
   saveBlueprint: () => Promise<void>;
   refreshBlueprint: () => Promise<void>;
+  autoRefreshLists: (rundownItems: RundownItem[]) => void;
 }
 
 const BlueprintContext = createContext<BlueprintContextValue | null>(null);
@@ -135,17 +138,20 @@ interface BlueprintProviderProps {
   children: ReactNode;
   rundownId: string;
   rundownTitle: string;
+  rundownItems?: RundownItem[];
 }
 
 export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   children,
   rundownId,
-  rundownTitle
+  rundownTitle,
+  rundownItems = []
 }) => {
   const [state, dispatch] = useReducer(blueprintReducer, initialState);
   const [savedBlueprint, setSavedBlueprint] = React.useState<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const initializationRef = useRef(false);
+  const autoRefreshTriggeredRef = useRef(false);
 
   const { loadBlueprint } = useBlueprintPersistence(
     rundownId,
@@ -220,8 +226,12 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
             cameraPlots: blueprintData.camera_plots || [],
             componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
           }});
+          
+          // Mark that we'll need to auto-refresh once rundown items are available
+          autoRefreshTriggeredRef.current = false;
         } else {
           logger.blueprint('No existing blueprint found, starting with empty state');
+          autoRefreshTriggeredRef.current = false;
         }
         
         dispatch({ type: 'SET_INITIALIZED', payload: true });
@@ -236,6 +246,45 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     
     initializeBlueprint();
   }, [rundownId, loadBlueprint, state.isInitialized]);
+
+  // Auto-refresh lists when blueprint is initialized and rundown items are available
+  useEffect(() => {
+    if (
+      state.isInitialized && 
+      rundownItems.length > 0 && 
+      state.lists.length > 0 && 
+      !autoRefreshTriggeredRef.current &&
+      !state.isLoading
+    ) {
+      logger.blueprint('Auto-refreshing lists with current rundown data on initialization');
+      autoRefreshTriggeredRef.current = true;
+      
+      // Refresh all lists with current rundown data
+      const refreshedLists = state.lists.map(list => ({
+        ...list,
+        items: generateListFromColumn(rundownItems, list.sourceColumn)
+        // Preserve existing checkedItems and other properties
+      }));
+      
+      // Only update if there are actual changes
+      const listsChanged = refreshedLists.some((refreshedList, index) => {
+        const originalList = state.lists[index];
+        return !originalList || 
+               JSON.stringify(refreshedList.items) !== JSON.stringify(originalList.items);
+      });
+      
+      if (listsChanged) {
+        logger.blueprint('Lists changed, updating with refreshed data');
+        dispatch({ type: 'UPDATE_LISTS', payload: refreshedLists });
+        
+        // Save the refreshed lists
+        const debouncedSave = createDebouncedSave(() => saveListsOnly(refreshedLists));
+        debouncedSave();
+      } else {
+        logger.blueprint('No changes detected in lists, skipping update');
+      }
+    }
+  }, [state.isInitialized, rundownItems, state.lists, state.isLoading, saveListsOnly]);
 
   // Enhanced debounced save function with partial saves
   const createDebouncedSave = React.useCallback((saveFunction: () => Promise<void>, delay: number = 1000) => {
@@ -269,7 +318,27 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     };
   }, [state.isInitialized]);
 
-  // Action creators with component-specific partial saves
+  // Manual refresh function for user-triggered refreshes
+  const autoRefreshLists = React.useCallback((currentRundownItems: RundownItem[]) => {
+    if (state.lists.length === 0 || currentRundownItems.length === 0) {
+      logger.blueprint('Skipping auto-refresh - no lists or rundown items available');
+      return;
+    }
+    
+    logger.blueprint('Manual auto-refresh triggered for lists');
+    
+    const refreshedLists = state.lists.map(list => ({
+      ...list,
+      items: generateListFromColumn(currentRundownItems, list.sourceColumn)
+      // Preserve existing checkedItems and other properties
+    }));
+    
+    dispatch({ type: 'UPDATE_LISTS', payload: refreshedLists });
+    
+    const debouncedSave = createDebouncedSave(() => saveListsOnly(refreshedLists));
+    debouncedSave();
+  }, [state.lists, createDebouncedSave, saveListsOnly]);
+
   const updateLists = React.useCallback((lists: BlueprintList[]) => {
     logger.blueprint('Context updateLists called with:', { count: lists.length });
     logger.blueprint('Context updateLists - detailed data:');
@@ -407,7 +476,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     updateCameraPlots,
     updateComponentOrder,
     saveBlueprint,
-    refreshBlueprint
+    refreshBlueprint,
+    autoRefreshLists
   };
 
   return (
