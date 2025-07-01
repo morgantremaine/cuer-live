@@ -1,6 +1,6 @@
-
 import { useState, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
+import { useDragStateSafety } from './useDragStateSafety';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
@@ -31,14 +31,23 @@ export const useDragAndDrop = (
     });
   };
 
-  // Comprehensive state clearing function
+  // Comprehensive state clearing function with debugging
   const clearDragState = useCallback(() => {
+    console.log('🧹 Clearing drag state:', { 
+      draggedItemIndex, 
+      isDraggingMultiple, 
+      dropTargetIndex 
+    });
     setDraggedItemIndex(null);
     setIsDraggingMultiple(false);
     setDropTargetIndex(null);
-  }, []);
+  }, [draggedItemIndex, isDraggingMultiple, dropTargetIndex]);
+
+  // Use safety hook to prevent stuck drag states
+  useDragStateSafety(draggedItemIndex, clearDragState);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
+    console.log('🚀 Drag start - index:', index);
     const item = items[index];
     const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
     
@@ -85,11 +94,13 @@ export const useDragAndDrop = (
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    console.log('📦 Drop event - dropIndex:', dropIndex, 'draggedItemIndex:', draggedItemIndex);
     
     // Clear drop target immediately
     setDropTargetIndex(null);
     
     if (draggedItemIndex === null) {
+      console.log('⚠️ No dragged item index, clearing state');
       clearDragState();
       return;
     }
@@ -114,6 +125,7 @@ export const useDragAndDrop = (
     } else {
       // Handle single item drag (existing logic)
       if (draggedItemIndex === dropIndex) {
+        console.log('📍 Same position drop, clearing state');
         clearDragState();
         return;
       }
@@ -131,26 +143,46 @@ export const useDragAndDrop = (
       newItems = renumberItems(newItems);
     }
     
+    console.log('✅ Drop successful, updating items and clearing state');
     setItems(newItems);
     
     // Clear drag state immediately after successful drop
     clearDragState();
   };
 
-  // New drag end handler to ensure state always clears
+  // Enhanced drag end handler with more aggressive clearing
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    console.log('🏁 Drag end event triggered');
     
-    // Clear all drag state
+    // Clear all drag state immediately
     clearDragState();
     
-    // Add a small timeout as fallback to ensure state is cleared
+    // Add multiple fallbacks to ensure state is cleared
     setTimeout(() => {
-      clearDragState();
+      console.log('🏁 Drag end timeout fallback 1');
+      setDraggedItemIndex(null);
+      setIsDraggingMultiple(false);
+      setDropTargetIndex(null);
+    }, 0);
+    
+    setTimeout(() => {
+      console.log('🏁 Drag end timeout fallback 2');
+      setDraggedItemIndex(null);
+      setIsDraggingMultiple(false);
+      setDropTargetIndex(null);
     }, 100);
   }, [clearDragState]);
 
   const isDragging = draggedItemIndex !== null;
+
+  // Debug logging for state changes
+  console.log('🎯 Drag state:', { 
+    draggedItemIndex, 
+    isDraggingMultiple, 
+    dropTargetIndex, 
+    isDragging 
+  });
 
   return {
     draggedItemIndex,

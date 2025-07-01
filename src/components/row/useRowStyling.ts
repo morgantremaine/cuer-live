@@ -1,5 +1,4 @@
 
-
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -26,13 +25,24 @@ export const useRowStyling = ({
   let rowClass = '';
   let backgroundColorOverride: string | undefined = undefined;
   
+  // Debug logging to track styling issues
+  console.log('🎨 Row styling:', { 
+    isDragging, 
+    isDraggingMultiple, 
+    isSelected, 
+    isHeader,
+    color 
+  });
+  
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
-      // Improved opacity for multiple selection drag - less faded
-      rowClass = 'opacity-80 transition-opacity duration-150';
+      // Improved opacity for multiple selection drag - better visibility
+      rowClass = 'opacity-70 transition-opacity duration-200 ring-2 ring-blue-400';
     } else {
-      // Improved opacity for single drag - less faded, smoother transition
-      rowClass = isHeader ? 'bg-muted opacity-60 transition-opacity duration-150' : 'opacity-60 transition-opacity duration-150';
+      // Improved opacity for single drag - better visibility with visual cue
+      rowClass = isHeader 
+        ? 'bg-muted opacity-70 transition-opacity duration-200 ring-2 ring-gray-400' 
+        : 'opacity-70 transition-opacity duration-200 ring-2 ring-gray-400';
     }
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold';
