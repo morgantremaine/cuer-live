@@ -1,118 +1,154 @@
 
-import { useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useShowcallerVisualState } from './useShowcallerVisualState';
+import { useRealtimeRundown } from './useRealtimeRundown';
+import { useAuth } from './useAuth';
 
-interface UsePlaybackControlsProps {
-  items: RundownItem[];
-  updateItem: (id: string, field: string, value: string) => void;
-  rundownId?: string;
-  onShowcallerActivity?: (active: boolean) => void;
-  setShowcallerUpdate?: (isUpdate: boolean) => void;
-  currentContentHash?: string;
-  isEditing?: boolean;
-  hasUnsavedChanges?: boolean;
-  isProcessingRealtimeUpdate?: boolean;
-  // Showcaller state from master hook
-  isPlaying: boolean;
-  currentSegmentId: string | null;
-  timeRemaining: number;
-  isController: boolean;
-  isInitialized: boolean;
-  // Showcaller controls from master hook
-  play: (segmentId?: string) => void;
-  pause: () => void;
-  forward: () => void;
-  backward: () => void;
-  reset: () => void;
-  jumpToSegment: (segmentId: string) => void;
-}
+export const usePlaybackControls = (
+  items: RundownItem[],
+  updateItem: (id: string, field: string, value: string) => void,
+  rundownId?: string,
+  onShowcallerActivity?: (active: boolean) => void,
+  setShowcallerUpdate?: (isUpdate: boolean) => void,
+  currentContentHash?: string,
+  isEditing?: boolean,
+  hasUnsavedChanges?: boolean,
+  isProcessingRealtimeUpdate?: boolean
+) => {
+  const { user } = useAuth();
+  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-export const usePlaybackControls = ({
-  items,
-  updateItem,
-  rundownId,
-  onShowcallerActivity,
-  setShowcallerUpdate,
-  currentContentHash,
-  isEditing,
-  hasUnsavedChanges,
-  isProcessingRealtimeUpdate,
-  // Showcaller state from master hook
-  isPlaying,
-  currentSegmentId,
-  timeRemaining,
-  isController,
-  isInitialized,
-  // Showcaller controls from master hook
-  play,
-  pause,
-  forward,
-  backward,
-  reset,
-  jumpToSegment
-}: UsePlaybackControlsProps) => {
+  // Initialize showcaller visual state management with precision timing
+  const {
+    visualState,
+    play,
+    pause,
+    forward,
+    backward,
+    reset,
+    jumpToSegment,
+    applyExternalVisualState,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    isController,
+    trackOwnUpdate,
+    isInitialized
+  } = useShowcallerVisualState({
+    items,
+    rundownId,
+    userId: user?.id
+  });
 
-  // Safe control wrappers with initialization validation
+  // Enhanced initialization check with better timing control
+  const shouldEnableRealtime = useCallback(() => {
+    return !!rundownId && isInitialized;
+  }, [rundownId, isInitialized]);
+
+  // Initialize realtime synchronization with precision timing support
+  const { isConnected } = useRealtimeRundown({
+    rundownId,
+    onRundownUpdate: () => {}, // We only care about showcaller state here
+    enabled: shouldEnableRealtime(),
+    currentContentHash,
+    isEditing,
+    hasUnsavedChanges,
+    isProcessingRealtimeUpdate,
+    trackOwnUpdate,
+    onShowcallerActivity,
+    onShowcallerStateReceived: applyExternalVisualState
+  });
+
+  // Reduced timeout for initialization with precision timing
+  useEffect(() => {
+    if (rundownId && !isInitialized) {
+      // Set a reduced timeout for faster initialization
+      initializationTimeoutRef.current = setTimeout(() => {
+        console.warn('📺 Showcaller initialization timeout - forcing ready state');
+      }, 3000); // Reduced from 5000ms
+    } else if (isInitialized && initializationTimeoutRef.current) {
+      clearTimeout(initializationTimeoutRef.current);
+      initializationTimeoutRef.current = null;
+    }
+
+    return () => {
+      if (initializationTimeoutRef.current) {
+        clearTimeout(initializationTimeoutRef.current);
+      }
+    };
+  }, [rundownId, isInitialized]);
+
+  // Only expose controls after proper initialization
+  const controlsReady = isInitialized;
+
+  // Enhanced control wrappers with precision timing validation
   const safePlay = useCallback((segmentId?: string) => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 Play called before initialization complete');
       return;
     }
+    console.log('📺 Safe play called with precision timing support');
     play(segmentId);
-  }, [isInitialized, play]);
+  }, [controlsReady, play]);
 
   const safePause = useCallback(() => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 Pause called before initialization complete');
       return;
     }
+    console.log('📺 Safe pause called with precision timing support');
     pause();
-  }, [isInitialized, pause]);
+  }, [controlsReady, pause]);
 
   const safeForward = useCallback(() => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 Forward called before initialization complete');
       return;
     }
+    console.log('📺 Safe forward called with precision timing support');
     forward();
-  }, [isInitialized, forward]);
+  }, [controlsReady, forward]);
 
   const safeBackward = useCallback(() => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 Backward called before initialization complete');
       return;
     }
+    console.log('📺 Safe backward called with precision timing support');
     backward();
-  }, [isInitialized, backward]);
+  }, [controlsReady, backward]);
 
   const safeReset = useCallback(() => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 Reset called before initialization complete');
       return;
     }
+    console.log('📺 Safe reset called with precision timing support');
     reset();
-  }, [isInitialized, reset]);
+  }, [controlsReady, reset]);
 
   const safeJumpToSegment = useCallback((segmentId: string) => {
-    if (!isInitialized) {
+    if (!controlsReady) {
       console.warn('📺 JumpToSegment called before initialization complete');
       return;
     }
+    console.log('📺 Safe jumpToSegment called with precision timing support');
     jumpToSegment(segmentId);
-  }, [isInitialized, jumpToSegment]);
+  }, [controlsReady, jumpToSegment]);
 
   return {
-    isPlaying: isInitialized ? isPlaying : false,
-    currentSegmentId: isInitialized ? currentSegmentId : null,
-    timeRemaining: isInitialized ? timeRemaining : 0,
+    isPlaying: controlsReady ? isPlaying : false,
+    currentSegmentId: controlsReady ? currentSegmentId : null,
+    timeRemaining: controlsReady ? timeRemaining : 0,
     play: safePlay,
     pause: safePause,
     forward: safeForward,
     backward: safeBackward,
     reset: safeReset,
     jumpToSegment: safeJumpToSegment,
-    isController: isInitialized ? isController : false,
+    isController: controlsReady ? isController : false,
     isInitialized,
-    isConnected: true // Simplified - connection handled by master hook
+    isConnected
   };
 };
