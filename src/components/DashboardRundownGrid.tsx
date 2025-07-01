@@ -156,7 +156,7 @@ const DashboardRundownGrid = ({
 
   // Handle drag start for rundown cards
   const handleDragStart = (e: React.DragEvent, rundownId: string) => {
-    e.dataTransfer.setData('text/plain', rundownId);
+    e.dataTransfer.setData('text/rundown-id', rundownId);
     e.dataTransfer.effectAllowed = 'move';
   }
 
