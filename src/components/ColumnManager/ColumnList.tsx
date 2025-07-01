@@ -3,6 +3,7 @@ import { Eye, EyeOff, GripVertical, Trash2, Edit2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useRef } from 'react';
+import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 
 interface Column {
   id: string;
@@ -35,53 +36,49 @@ const ColumnList = ({
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const cleanupTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Cleanup function to reset all drag states
+  // Initialize auto-scroll hook
+  const { handleDragAutoScroll, stopAutoScroll } = useDragAutoScroll({
+    scrollContainerRef,
+    isActive: !!draggedColumnId
+  });
+
   const resetDragState = () => {
     setDraggedColumnId(null);
     setDropTargetIndex(null);
-    if (cleanupTimeoutRef.current) {
-      clearTimeout(cleanupTimeoutRef.current);
-    }
+    stopAutoScroll();
   };
 
   const handleDragStart = (e: React.DragEvent, columnId: string) => {
     setDraggedColumnId(columnId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', columnId);
-    
-    // Set a cleanup timeout as failsafe
-    cleanupTimeoutRef.current = setTimeout(() => {
-      console.warn('Drag cleanup timeout triggered');
-      resetDragState();
-    }, 10000);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleEnhancedDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
+    // Handle auto-scroll
+    handleDragAutoScroll(e);
+    
     if (draggedColumnId) {
-      // Simplified drop position calculation based on mouse position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // Insert before or after based on mouse position
       const targetIndex = mouseY < rowMiddle ? index : index + 1;
       setDropTargetIndex(targetIndex);
     }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Improved boundary detection - only clear if truly leaving the container
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
     
-    // Add buffer zone to prevent flickering
-    const buffer = 10;
+    const buffer = 15;
     if (x < rect.left - buffer || x > rect.right + buffer || 
         y < rect.top - buffer || y > rect.bottom + buffer) {
       setDropTargetIndex(null);
@@ -102,16 +99,13 @@ const ColumnList = ({
       return;
     }
     
-    // Use the drop target index if available, otherwise fall back to target index
     let dropIndex = dropTargetIndex !== null ? dropTargetIndex : targetIndex;
     
-    // Prevent dropping in the same position
     if (draggedIndex === dropIndex || (draggedIndex + 1 === dropIndex)) {
       resetDragState();
       return;
     }
     
-    // Adjust drop index if dragging from before to after
     if (draggedIndex < dropIndex) {
       dropIndex--;
     }
@@ -125,7 +119,6 @@ const ColumnList = ({
   };
 
   const handleDragEnd = () => {
-    // Always cleanup on drag end
     resetDragState();
   };
 
@@ -158,10 +151,13 @@ const ColumnList = ({
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Order & Visibility</h3>
-      <div className="space-y-1 max-h-64 overflow-y-auto" onDragLeave={handleDragLeave}>
+      <div 
+        ref={scrollContainerRef}
+        className="space-y-1 max-h-64 overflow-y-auto" 
+        onDragLeave={handleDragLeave}
+      >
         {columns.map((column, index) => (
           <React.Fragment key={column.id}>
-            {/* Drop indicator */}
             {dropTargetIndex === index && (
               <div className="h-0.5 bg-blue-500 mx-2 rounded-full" />
             )}
@@ -172,7 +168,7 @@ const ColumnList = ({
               }`}
               draggable
               onDragStart={(e) => handleDragStart(e, column.id)}
-              onDragOver={(e) => handleDragOver(e, index)}
+              onDragOver={(e) => handleEnhancedDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
             >
@@ -238,7 +234,6 @@ const ColumnList = ({
               </div>
             </div>
             
-            {/* Drop indicator at the end */}
             {dropTargetIndex === columns.length && index === columns.length - 1 && (
               <div className="h-0.5 bg-blue-500 mx-2 rounded-full" />
             )}
