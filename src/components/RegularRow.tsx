@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
@@ -30,6 +29,7 @@ interface RegularRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -132,6 +132,13 @@ const RegularRow = (props: RegularRowProps) => {
     props.onDragStart(e, index);
   };
 
+  // Enhanced drag end handler
+  const handleDragEnd = (e: React.DragEvent) => {
+    if (props.onDragEnd) {
+      props.onDragEnd(e);
+    }
+  };
+
   // Enhanced mouse down handler to detect text selection intent
   const handleMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -185,6 +192,7 @@ const RegularRow = (props: RegularRowProps) => {
         onDragStart={handleDragStart}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
+        onDragEnd={handleDragEnd}
         onMouseDown={handleMouseDown}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}

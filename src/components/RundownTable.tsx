@@ -34,6 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -73,6 +74,7 @@ const RundownTable = ({
   onDragOver,
   onDragLeave,
   onDrop,
+  onDragEnd,
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
@@ -165,6 +167,7 @@ const RundownTable = ({
                   onDrop={(e) => {
                     onDrop(e, index);
                   }}
+                  onDragEnd={onDragEnd}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}

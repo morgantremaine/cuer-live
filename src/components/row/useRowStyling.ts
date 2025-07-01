@@ -1,4 +1,5 @@
 
+
 interface UseRowStylingProps {
   isDragging: boolean;
   isDraggingMultiple?: boolean;
@@ -27,9 +28,11 @@ export const useRowStyling = ({
   
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
-      rowClass = 'opacity-70';
+      // Improved opacity for multiple selection drag - less faded
+      rowClass = 'opacity-80 transition-opacity duration-150';
     } else {
-      rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
+      // Improved opacity for single drag - less faded, smoother transition
+      rowClass = isHeader ? 'bg-muted opacity-60 transition-opacity duration-150' : 'opacity-60 transition-opacity duration-150';
     }
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold';

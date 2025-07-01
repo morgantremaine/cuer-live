@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 
 export const useDragAndDrop = (
@@ -30,6 +30,13 @@ export const useDragAndDrop = (
       }
     });
   };
+
+  // Comprehensive state clearing function
+  const clearDragState = useCallback(() => {
+    setDraggedItemIndex(null);
+    setIsDraggingMultiple(false);
+    setDropTargetIndex(null);
+  }, []);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     const item = items[index];
@@ -79,11 +86,11 @@ export const useDragAndDrop = (
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     
+    // Clear drop target immediately
     setDropTargetIndex(null);
     
     if (draggedItemIndex === null) {
-      setDraggedItemIndex(null);
-      setIsDraggingMultiple(false);
+      clearDragState();
       return;
     }
 
@@ -107,8 +114,7 @@ export const useDragAndDrop = (
     } else {
       // Handle single item drag (existing logic)
       if (draggedItemIndex === dropIndex) {
-        setDraggedItemIndex(null);
-        setIsDraggingMultiple(false);
+        clearDragState();
         return;
       }
 
@@ -126,9 +132,23 @@ export const useDragAndDrop = (
     }
     
     setItems(newItems);
-    setDraggedItemIndex(null);
-    setIsDraggingMultiple(false);
+    
+    // Clear drag state immediately after successful drop
+    clearDragState();
   };
+
+  // New drag end handler to ensure state always clears
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    // Clear all drag state
+    clearDragState();
+    
+    // Add a small timeout as fallback to ensure state is cleared
+    setTimeout(() => {
+      clearDragState();
+    }, 100);
+  }, [clearDragState]);
 
   const isDragging = draggedItemIndex !== null;
 
@@ -140,6 +160,8 @@ export const useDragAndDrop = (
     handleDragStart,
     handleDragOver,
     handleDragLeave,
-    handleDrop
+    handleDrop,
+    handleDragEnd,
+    clearDragState
   };
 };
