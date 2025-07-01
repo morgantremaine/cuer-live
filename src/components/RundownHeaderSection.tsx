@@ -94,7 +94,6 @@ const RundownHeaderSection = ({
       <RundownHeader
         currentTime={currentTime}
         timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
         totalRuntime={totalRuntime}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
@@ -112,8 +111,6 @@ const RundownHeaderSection = ({
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

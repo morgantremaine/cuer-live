@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -11,7 +12,6 @@ import { format } from 'date-fns';
 interface RundownHeaderProps {
   currentTime: Date;
   timezone: string;
-  onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
@@ -36,7 +36,6 @@ interface RundownHeaderProps {
 const RundownHeader = ({
   currentTime,
   timezone,
-  onTimezoneChange,
   totalRuntime,
   hasUnsavedChanges,
   isSaving,
@@ -262,7 +261,7 @@ const RundownHeader = ({
             </div>
             <TimezoneSelector
               currentTimezone={timezone}
-              onTimezoneChange={onTimezoneChange}
+              onTimezoneChange={() => {}}
             />
           </div>
           
@@ -340,7 +339,7 @@ const RundownHeader = ({
           <span className="text-lg font-mono">{format(currentTime, 'HH:mm:ss')}</span>
           <TimezoneSelector
             currentTimezone={timezone}
-            onTimezoneChange={onTimezoneChange}
+            onTimezoneChange={() => {}}
           />
           
           <div className="flex items-center space-x-2">

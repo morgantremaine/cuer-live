@@ -1,5 +1,3 @@
-
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -194,35 +192,6 @@ const RundownIndexContent = () => {
     return status;
   };
 
-  // Create wrapper for getColumnWidth that matches expected signature
-  const getColumnWidthWrapper = (columnId: string): string => {
-    // If getColumnWidth expects a column object, we need to find the column first
-    const column = userColumns.find(col => col.id === columnId);
-    if (column && typeof getColumnWidth === 'function') {
-      return getColumnWidth(column);
-    }
-    // Fallback to default width
-    return column?.width || '150px';
-  };
-
-  // Create wrapper for row selection that matches expected signature
-  const handleRowSelectWrapper = (id: string, isSelected: boolean) => {
-    // Convert the simple signature to the more complex one expected by handleRowSelection
-    const mockEvent = { shiftKey: false, ctrlKey: false, metaKey: false } as React.MouseEvent;
-    const itemIndex = items.findIndex(item => item.id === id);
-    handleRowSelection(id, itemIndex, mockEvent.shiftKey, mockEvent.ctrlKey || mockEvent.metaKey);
-  };
-
-  // Create wrapper for showColorPicker to convert object to string format expected by RundownContent
-  const showColorPickerWrapper = (() => {
-    if (!showColorPicker || typeof showColorPicker !== 'object') {
-      return null;
-    }
-    // Find the first item ID that has showColorPicker set to true
-    const activeColorPickerId = Object.keys(showColorPicker).find(key => showColorPicker[key] === true);
-    return activeColorPickerId || null;
-  })();
-
   // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
@@ -376,14 +345,14 @@ const RundownIndexContent = () => {
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={showColorPickerWrapper}
+        showColorPicker={showColorPicker}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
         draggedItemIndex={draggedItemIndex}
         isDraggingMultiple={isDraggingMultiple}
         dropTargetIndex={dropTargetIndex}
         currentSegmentId={currentSegmentId}
-        getColumnWidth={getColumnWidthWrapper}
+        getColumnWidth={getColumnWidth}
         updateColumnWidth={handleUpdateColumnWidthWrapper}
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
@@ -395,7 +364,7 @@ const RundownIndexContent = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={handleRowSelectWrapper}
+        onRowSelect={handleRowSelect}
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
@@ -446,4 +415,3 @@ const RundownIndexContent = () => {
 };
 
 export default RundownIndexContent;
-
