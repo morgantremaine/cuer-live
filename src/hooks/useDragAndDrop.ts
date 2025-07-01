@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 import { useDragStateSafety } from './useDragStateSafety';
@@ -176,6 +177,14 @@ export const useDragAndDrop = (
 
   const isDragging = draggedItemIndex !== null;
 
+  // Helper function to get drop indicator style
+  const getDropIndicatorStyle = (index: number) => {
+    if (dropTargetIndex === index) {
+      return 'border-t-4 border-blue-500'; // Thicker blue line above the target row
+    }
+    return '';
+  };
+
   // Debug logging for state changes
   console.log('🎯 Drag state:', { 
     draggedItemIndex, 
@@ -194,6 +203,7 @@ export const useDragAndDrop = (
     handleDragLeave,
     handleDrop,
     handleDragEnd,
-    clearDragState
+    clearDragState,
+    getDropIndicatorStyle
   };
 };

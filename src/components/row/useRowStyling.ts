@@ -36,13 +36,13 @@ export const useRowStyling = ({
   
   if (isDragging) {
     if (isDraggingMultiple && isSelected) {
-      // Improved opacity for multiple selection drag - better visibility
-      rowClass = 'opacity-70 transition-opacity duration-200 ring-2 ring-blue-400';
+      // Blue ring for multiple selection drag - consistent with selection styling
+      rowClass = 'opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1';
     } else {
-      // Improved opacity for single drag - better visibility with visual cue
+      // Blue ring for single drag - consistent with selection styling
       rowClass = isHeader 
-        ? 'bg-muted opacity-70 transition-opacity duration-200 ring-2 ring-gray-400' 
-        : 'opacity-70 transition-opacity duration-200 ring-2 ring-gray-400';
+        ? 'bg-muted opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1' 
+        : 'opacity-90 transition-all duration-200 ring-2 ring-blue-500 ring-offset-1';
     }
   } else if (isHeader) {
     rowClass = 'bg-muted border-l-4 border-border font-semibold';
