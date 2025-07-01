@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -107,12 +108,15 @@ export const useShowcallerConsolidatedTiming = ({
         isController: (updates.controllerId || prev.controllerId) === userId
       };
 
-      console.log('📺 Consolidated timing state update:', {
-        updates: Object.keys(updates),
-        isController: newState.isController,
-        timeRemaining: newState.timeRemaining,
-        isPlaying: newState.isPlaying
-      });
+      // Only log important state changes, not every update
+      if (updates.isPlaying !== undefined || updates.currentSegmentId !== undefined) {
+        console.log('📺 Consolidated timing state update:', {
+          updates: Object.keys(updates),
+          isController: newState.isController,
+          timeRemaining: newState.timeRemaining,
+          isPlaying: newState.isPlaying
+        });
+      }
 
       if (shouldSave && onSaveState) {
         if (saveTimeoutRef.current) {
@@ -166,13 +170,13 @@ export const useShowcallerConsolidatedTiming = ({
           lastDisplayedSecondsRef.current = remainingSeconds;
         }
 
-        console.log('📺 Timer update:', {
-          segment: currentSegment.name,
-          elapsedMs: Math.round(elapsedMs),
-          remainingMs: Math.round(remainingMs),
-          remainingSeconds,
-          millisecondsInSecond: Math.round(millisecondsInSecond)
-        });
+        // Only log every 5 seconds to reduce console spam
+        if (remainingSeconds % 5 === 0 && remainingSeconds !== prevState.timeRemaining) {
+          console.log('📺 Timer update (5s interval):', {
+            segment: currentSegment.name,
+            remainingSeconds
+          });
+        }
 
         // Check for segment advancement
         if (remainingMs <= 0) {
@@ -183,7 +187,6 @@ export const useShowcallerConsolidatedTiming = ({
           }
 
           if (isAdvancingRef.current) {
-            console.log('📺 Already advancing, skipping');
             return prevState;
           }
 
@@ -515,7 +518,7 @@ export const useShowcallerConsolidatedTiming = ({
 
   // Apply external state with proper synchronization
   const applyExternalState = useCallback((externalState: any) => {
-    console.log('📺 Applying external consolidated state:', externalState);
+    console.log('📺 Applying external consolidated state');
     
     stopConsolidatedTimer();
     lastDisplayedSecondsRef.current = 0; // Reset buffer on external state
@@ -553,12 +556,6 @@ export const useShowcallerConsolidatedTiming = ({
         
         // Initialize buffer with synced time
         lastDisplayedSecondsRef.current = syncedTimeRemaining;
-        
-        console.log('📺 Synchronized external timing:', {
-          elapsedMs: Math.round(elapsedMs),
-          remainingMs: Math.round(remainingMs),
-          syncedTimeRemaining
-        });
       }
     }
     

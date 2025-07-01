@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -50,7 +49,7 @@ export const useTeam = () => {
 
     console.log('Loading team data for user:', user.id);
     isLoadingRef.current = true;
-    loadedUserRef.current = user.id;
+    loadedUserRef.current = user.id; // Set this FIRST to prevent loops
 
     try {
       // Add a small delay to ensure auth state is fully established
@@ -89,9 +88,8 @@ export const useTeam = () => {
             setError('Failed to set up team');
           } else if (newTeamData) {
             console.log('Team created successfully, reloading...');
-            // Retry loading team data
+            // Schedule a single retry without resetting loadedUserRef
             setTimeout(() => {
-              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -120,9 +118,8 @@ export const useTeam = () => {
           } else if (acceptResult?.success) {
             console.log('Invitation accepted successfully');
             localStorage.removeItem('pendingInvitationToken');
-            // Reload team data after successful invitation acceptance
+            // Schedule a single retry without resetting loadedUserRef
             setTimeout(() => {
-              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -160,9 +157,8 @@ export const useTeam = () => {
             setError('Failed to create team');
           } else if (newTeamData) {
             console.log('Team created, reloading data...');
-            // Reload team data after team creation
+            // Schedule a single retry without resetting loadedUserRef
             setTimeout(() => {
-              loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
@@ -423,9 +419,11 @@ export const useTeam = () => {
         return { error: data.error };
       }
 
-      // Reload team data after successful invitation acceptance
-      loadedUserRef.current = null;
-      setTimeout(() => loadTeamData(), 100);
+      // Reload team data after successful invitation acceptance - but don't reset loadedUserRef
+      setTimeout(() => {
+        isLoadingRef.current = false;
+        loadTeamData();
+      }, 100);
       return { success: true };
     } catch (error) {
       return { error: 'Failed to accept invitation' };
@@ -436,7 +434,7 @@ export const useTeam = () => {
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current) {
       console.log('User changed, loading team data for:', user.id);
-      loadedUserRef.current = null; // Reset to allow new load
+      // DON'T reset loadedUserRef.current here - this was causing the infinite loop
       setIsLoading(true);
       // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);

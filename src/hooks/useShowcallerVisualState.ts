@@ -25,32 +25,27 @@ export const useShowcallerVisualState = ({
   rundownId,
   userId
 }: UseShowcallerVisualStateProps) => {
-  console.log('📺 Legacy useShowcallerVisualState - redirecting to consolidated timing');
-
-  // Use the consolidated timing system
+  // Use the consolidated timing system (only log once on initialization)
   const consolidatedTiming = useShowcallerConsolidatedTiming({
     items,
     rundownId,
     userId
   });
 
-  // Legacy compatibility functions
+  // Legacy compatibility functions (no logging needed)
   const getItemVisualStatus = useCallback((itemId: string) => {
     return consolidatedTiming.getItemStatus(itemId);
   }, [consolidatedTiming.getItemStatus]);
 
   const setItemVisualStatus = useCallback((itemId: string, status: string) => {
-    console.log('📺 Legacy setItemVisualStatus called - this is now handled by consolidated timing');
     // This is now handled internally by the consolidated timing system
   }, []);
 
   const clearAllVisualStatuses = useCallback(() => {
-    console.log('📺 Legacy clearAllVisualStatuses called - this is now handled by consolidated timing');
     // This is now handled internally by the consolidated timing system
   }, []);
 
   const trackOwnUpdate = useCallback((timestamp: string) => {
-    console.log('📺 Legacy trackOwnUpdate called:', timestamp);
     // This is now handled internally by the consolidated timing system
   }, []);
 
