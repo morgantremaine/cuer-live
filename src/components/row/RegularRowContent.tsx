@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RegularRowContentProps {
   item: RundownItem;
@@ -18,8 +18,6 @@ interface RegularRowContentProps {
   isDraggingMultiple?: boolean;
   isSelected?: boolean;
   currentSegmentId?: string | null;
-  searchState?: SearchState;
-  currentMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -37,8 +35,6 @@ const RegularRowContent = ({
   isDraggingMultiple = false,
   isSelected = false,
   currentSegmentId,
-  searchState,
-  currentMatch,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -86,8 +82,6 @@ const RegularRowContent = ({
               textColor={textColor}
               backgroundColor={backgroundColor}
               currentSegmentId={currentSegmentId}
-              searchState={searchState}
-              currentMatch={currentMatch}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

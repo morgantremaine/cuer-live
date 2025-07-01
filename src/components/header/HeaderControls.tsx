@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
 import { useAuth } from '@/hooks/useAuth';
-import SearchButton from '../search/SearchButton';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -20,7 +20,6 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  onSearchOpen?: () => void;
 }
 
 const HeaderControls = ({
@@ -29,8 +28,7 @@ const HeaderControls = ({
   onTimezoneChange,
   onUndo,
   canUndo,
-  lastAction,
-  onSearchOpen
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user, signOut } = useAuth();
@@ -69,10 +67,7 @@ const HeaderControls = ({
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
-      {onSearchOpen && (
-        <SearchButton onClick={onSearchOpen} />
-      )}
-      {/* Search functionality added here */}
+      {/* Search functionality removed */}
       {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">

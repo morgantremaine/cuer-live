@@ -1,3 +1,4 @@
+
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
@@ -5,8 +6,6 @@ import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import HighlightedText from './search/HighlightedText';
-import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface CellRendererProps {
   column: Column;
@@ -20,8 +19,6 @@ interface CellRendererProps {
   textColor?: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
-  searchState?: SearchState;
-  currentMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,8 +32,6 @@ const CellRenderer = ({
   textColor,
   backgroundColor,
   currentSegmentId,
-  searchState,
-  currentMatch,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -142,8 +137,6 @@ const CellRenderer = ({
         cellRefKey={column.key}
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
-        searchState={searchState}
-        currentMatch={currentMatch}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -170,10 +163,8 @@ const CellRenderer = ({
           cellRefKey={column.key}
           cellRefs={cellRefs}
           textColor={showcallerTextColor}
-          backgroundColor="transparent"
+          backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
           isDuration={column.key === 'duration'}
-          searchState={searchState}
-          currentMatch={currentMatch}
           onUpdateValue={(newValue) => {
             // Handle custom fields vs built-in fields
             if (column.isCustom) {
@@ -203,8 +194,6 @@ const CellRenderer = ({
       textColor={showcallerTextColor}
       backgroundColor={showcallerBackgroundColor}
       isDuration={column.key === 'duration'}
-      searchState={searchState}
-      currentMatch={currentMatch}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

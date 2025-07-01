@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import HighlightedText from './search/HighlightedText';
-import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -9,8 +7,6 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
-  searchState?: SearchState;
-  currentMatch?: SearchMatch | null;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -21,13 +17,10 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
-  searchState,
-  currentMatch,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
@@ -150,19 +143,8 @@ const ExpandableScriptCell = ({
     }
   };
 
-  const handleFocus = () => {
-    setIsEditing(true);
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-  };
-
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
-
-  // Determine if we should show highlighted text or editable textarea
-  const showHighlighted = !isEditing && searchState && searchState.query.trim().length > 0;
 
   return (
     <div className="flex items-start space-x-2 w-full">
@@ -178,78 +160,45 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        {showHighlighted ? (
-          // Show highlighted text when not editing and search is active
-          <div
-            className="w-full border-none bg-transparent focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm cursor-text"
-            style={{ 
-              color: textColor || undefined,
-              minHeight: isExpanded ? '120px' : '24px',
-              height: isExpanded ? 'auto' : '24px',
-              overflow: isExpanded ? 'hidden' : 'hidden',
-              whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
-              wordWrap: isExpanded ? 'break-word' : 'normal',
-              textOverflow: isExpanded ? 'unset' : 'ellipsis'
-            }}
-            onClick={() => {
-              setIsEditing(true);
-              setTimeout(() => {
-                textareaRef.current?.focus();
-              }, 0);
-            }}
-          >
-            <HighlightedText
-              text={value}
-              matches={searchState.matches}
-              currentMatch={currentMatch}
-              itemId={itemId}
-              columnKey={cellRefKey}
-            />
-          </div>
-        ) : (
-          // Show editable textarea
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-                textareaRef.current = el;
+        <textarea
+          ref={(el) => {
+            if (el) {
+              cellRefs.current[cellKey] = el;
+              textareaRef.current = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={value}
+          onChange={(e) => {
+            onUpdateValue(e.target.value);
+            // Trigger resize on content change
+            if (e.target) {
+              e.target.style.height = 'auto';
+              const scrollHeight = e.target.scrollHeight;
+              
+              if (isExpanded) {
+                e.target.style.height = Math.max(scrollHeight, 120) + 'px';
               } else {
-                delete cellRefs.current[cellKey];
+                // Keep collapsed height at 24px regardless of content
+                e.target.style.height = '24px';
               }
-            }}
-            value={value}
-            onChange={(e) => {
-              onUpdateValue(e.target.value);
-              // Trigger resize on content change
-              if (e.target) {
-                e.target.style.height = 'auto';
-                const scrollHeight = e.target.scrollHeight;
-                
-                if (isExpanded) {
-                  e.target.style.height = Math.max(scrollHeight, 120) + 'px';
-                } else {
-                  // Keep collapsed height at 24px regardless of content
-                  e.target.style.height = '24px';
-                }
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            className={`w-full border-none bg-transparent focus:bg-white dark:focus:bg-gray-800 focus:!text-gray-900 dark:focus:!text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: isExpanded ? '120px' : '24px',
-              height: isExpanded ? 'auto' : '24px',
-              overflow: isExpanded ? 'hidden' : 'hidden',
-              whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
-              wordWrap: isExpanded ? 'break-word' : 'normal',
-              textOverflow: isExpanded ? 'unset' : 'ellipsis'
-            }}
-          />
-        )}
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
+          style={{ 
+            color: textColor || undefined,
+            minHeight: isExpanded ? '120px' : '24px',
+            height: isExpanded ? 'auto' : '24px',
+            overflow: isExpanded ? 'hidden' : 'hidden',
+            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+            wordWrap: isExpanded ? 'break-word' : 'normal',
+            textOverflow: isExpanded ? 'unset' : 'ellipsis'
+          }}
+        />
       </div>
     </div>
   );

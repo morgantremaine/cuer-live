@@ -1,6 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import HighlightedText from '../search/HighlightedText';
-import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface TextAreaCellProps {
   value: string;
@@ -10,8 +8,6 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
-  searchState?: SearchState;
-  currentMatch?: SearchMatch | null;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -25,8 +21,6 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
-  searchState,
-  currentMatch,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -34,41 +28,132 @@ const TextAreaCell = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
-  const [isEditing, setIsEditing] = useState(false);
-  
-  // Function to calculate the height of the textarea based on content
-  const calculateTextHeight = (text: string) => {
-    if (measurementRef.current) {
-      measurementRef.current.textContent = text + '\n'; // Add a newline to ensure proper height calculation
-      return measurementRef.current.offsetHeight;
+  const [currentWidth, setCurrentWidth] = useState<number>(0);
+
+  // Function to calculate required height using a measurement div
+  const calculateHeight = () => {
+    if (!textareaRef.current || !measurementRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const measurementDiv = measurementRef.current;
+    
+    // Get the current width of the textarea
+    const textareaWidth = textarea.getBoundingClientRect().width;
+    
+    // Only recalculate if width changed or content changed
+    if (textareaWidth === currentWidth && calculatedHeight > 38) {
+      return;
     }
-    return 38; // Default height
+    
+    setCurrentWidth(textareaWidth);
+    
+    // Copy textarea styles to measurement div
+    const computedStyle = window.getComputedStyle(textarea);
+    measurementDiv.style.width = `${textareaWidth}px`;
+    measurementDiv.style.fontSize = computedStyle.fontSize;
+    measurementDiv.style.fontFamily = computedStyle.fontFamily;
+    measurementDiv.style.fontWeight = computedStyle.fontWeight;
+    measurementDiv.style.lineHeight = computedStyle.lineHeight;
+    measurementDiv.style.padding = computedStyle.padding;
+    measurementDiv.style.border = computedStyle.border;
+    measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    measurementDiv.style.wordWrap = 'break-word';
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    
+    // Set the content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
+    
+    // Get the natural height
+    const naturalHeight = measurementDiv.offsetHeight;
+    
+    // Calculate minimum height (single line)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+    
+    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    
+    // Use the larger of natural height or minimum height
+    const newHeight = Math.max(naturalHeight, minHeight);
+    
+    if (newHeight !== calculatedHeight) {
+      setCalculatedHeight(newHeight);
+    }
   };
 
-  // Update calculatedHeight when value changes
+  // Recalculate height when value changes
   useEffect(() => {
-    const newHeight = calculateTextHeight(value);
-    setCalculatedHeight(newHeight);
+    const timer = setTimeout(() => {
+      calculateHeight();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [value]);
+
+  // Recalculate height when textarea width changes (column resize)
+  useEffect(() => {
+    if (!textareaRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        if (newWidth !== currentWidth) {
+          const timer = setTimeout(() => {
+            calculateHeight();
+          }, 0);
+        }
+      }
+    });
+    
+    resizeObserver.observe(textareaRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [currentWidth]);
+
+  // Simple key navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // For Enter key and arrow keys, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      onKeyDown(e, itemId, cellRefKey);
+      return;
+    }
+    
+    // Allow other keys to work normally
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    onKeyDown(e, itemId, cellRefKey);
-  };
-
+  // Enhanced mouse down handler to prevent row dragging when selecting text
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Stop propagation to prevent row drag events
     e.stopPropagation();
   };
 
-  const handleFocus = () => {
-    setIsEditing(true);
+  // Enhanced focus handler to disable row dragging when editing
+  const handleFocus = (e: React.FocusEvent) => {
+    // Find the parent row and disable dragging while editing
+    const row = e.target.closest('tr');
+    if (row) {
+      row.setAttribute('draggable', 'false');
+    }
   };
 
-  const handleBlur = () => {
-    setIsEditing(false);
+  // Enhanced blur handler to re-enable row dragging
+  const handleBlur = (e: React.FocusEvent) => {
+    // Re-enable dragging when not editing
+    const row = e.target.closest('tr');
+    if (row) {
+      // Use a small delay to avoid conflicts with other mouse events
+      setTimeout(() => {
+        row.setAttribute('draggable', 'true');
+      }, 50);
+    }
   };
 
   // Create the proper cell ref key
@@ -76,11 +161,8 @@ const TextAreaCell = ({
 
   // Check if this is a header row based on itemId
   const isHeaderRow = itemId.includes('header');
-  const fontSize = 'text-sm';
+  const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
-
-  // Determine if we should show highlighted text or editable textarea
-  const showHighlighted = !isEditing && searchState && searchState.query.trim().length > 0;
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -89,75 +171,42 @@ const TextAreaCell = ({
         ref={measurementRef}
         className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
         style={{ 
-          fontSize: '14px',
+          fontSize: isHeaderRow ? '14px' : '14px',
           fontFamily: 'inherit',
           lineHeight: '1.3',
           zIndex: -1
         }}
       />
       
-      {showHighlighted ? (
-        // Show highlighted text when not editing and search is active
-        <div
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} cursor-text ${
-            isDuration ? 'font-mono' : ''
-          }`}
-          style={{ 
-            color: textColor || 'inherit',
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left',
-            overflow: 'hidden',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
-          }}
-          onClick={() => {
-            setIsEditing(true);
-            setTimeout(() => {
-              textareaRef.current?.focus();
-            }, 0);
-          }}
-        >
-          <HighlightedText
-            text={value}
-            matches={searchState.matches}
-            currentMatch={currentMatch}
-            itemId={itemId}
-            columnKey={cellRefKey}
-          />
-        </div>
-      ) : (
-        // Show editable textarea
-        <textarea
-          ref={(el) => {
-            textareaRef.current = el;
-            if (el) {
-              cellRefs.current[cellKey] = el;
-            } else {
-              delete cellRefs.current[cellKey];
-            }
-          }}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onClick={onCellClick}
-          onMouseDown={handleMouseDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          data-cell-id={cellKey}
-          data-cell-ref={cellKey}
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
-            isDuration ? 'font-mono' : ''
-          }`}
-          style={{ 
-            backgroundColor: 'transparent',
-            color: textColor || 'inherit',
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
-          }}
-        />
-      )}
+      <textarea
+        ref={(el) => {
+          textareaRef.current = el;
+          if (el) {
+            cellRefs.current[cellKey] = el;
+          } else {
+            delete cellRefs.current[cellKey];
+          }
+        }}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onClick={onCellClick}
+        onMouseDown={handleMouseDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        data-cell-id={cellKey}
+        data-cell-ref={cellKey}
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+          isDuration ? 'font-mono' : ''
+        }`}
+        style={{ 
+          backgroundColor: 'transparent',
+          color: textColor || 'inherit',
+          height: `${calculatedHeight}px`,
+          lineHeight: '1.3',
+          textAlign: isDuration ? 'center' : 'left'
+        }}
+      />
     </div>
   );
 };

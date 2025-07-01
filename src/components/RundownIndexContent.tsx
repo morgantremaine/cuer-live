@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -215,8 +214,8 @@ const RundownIndexContent = () => {
   const selectedRowsArray = Array.from(selectedRows);
   const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
 
-  // Convert timeRemaining to string for components that expect string
-  const timeRemainingString = typeof timeRemaining === 'number' ? timeRemaining.toString() : timeRemaining;
+  // Convert timeRemaining to number (assuming it's in seconds)
+  const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
   // Enhanced column management handlers that integrate with user preferences
   const handleAddColumnWrapper = (name: string) => {
@@ -380,7 +379,7 @@ const RundownIndexContent = () => {
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
-        timeRemaining={timeRemainingString}
+        timeRemaining={timeRemainingNumber}
         onPlay={play}
         onPause={pause}
         onForward={forward}

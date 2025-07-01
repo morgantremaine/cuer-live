@@ -32,8 +32,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     currentSegmentId,
     timeRemaining,
     autoScrollEnabled,
-    onToggleAutoScroll,
-    onSearchOpen
+    onToggleAutoScroll
   } = props;
 
   // Debug logging for prop passing
@@ -42,8 +41,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     hasToggleFunction: !!onToggleAutoScroll,
     toggleFunctionType: typeof onToggleAutoScroll,
     hasTimezoneHandler: !!onTimezoneChange,
-    currentTimezone: timezone,
-    hasSearchHandler: !!onSearchOpen
+    currentTimezone: timezone
   });
 
   return (
@@ -70,7 +68,6 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       timeRemaining={timeRemaining}
       autoScrollEnabled={autoScrollEnabled}
       onToggleAutoScroll={onToggleAutoScroll}
-      onSearchOpen={onSearchOpen}
     />
   );
 };

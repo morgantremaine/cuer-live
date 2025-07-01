@@ -1,8 +1,8 @@
+
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { SearchState, SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RundownTableProps {
   items: any[];
@@ -17,8 +17,6 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
-  searchState?: SearchState;
-  currentMatch?: SearchMatch | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -43,7 +41,6 @@ interface RundownTableProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  onSearchOpen?: () => void;
 }
 
 const RundownTable = ({
@@ -59,8 +56,6 @@ const RundownTable = ({
   currentSegmentId,
   hasClipboardData,
   selectedRowId,
-  searchState,
-  currentMatch,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -84,8 +79,7 @@ const RundownTable = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere,
-  onSearchOpen
+  onJumpToHere
 }: RundownTableProps) => {
 
   // Handler for drag over events on the table container - passes auto-scroll handling up
@@ -157,8 +151,6 @@ const RundownTable = ({
                   headerDuration={headerDuration}
                   hasClipboardData={hasClipboardData}
                   currentSegmentId={currentSegmentId}
-                  searchState={searchState}
-                  currentMatch={currentMatch}
                   isDragging={isDragging}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
@@ -180,7 +172,6 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                   onJumpToHere={handleJumpToHereDebug}
-                  onSearchOpen={onSearchOpen}
                   getColumnWidth={getColumnWidth}
                 />
                 

@@ -21,7 +21,7 @@ interface RundownHeaderSectionProps {
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
-  timeRemaining: string;
+  timeRemaining: number;
   onPlay: (selectedSegmentId?: string) => void;
   onPause: () => void;
   onForward: () => void;
@@ -45,7 +45,6 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  onSearchOpen?: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -88,8 +87,7 @@ const RundownHeaderSection = ({
   isProcessingRealtimeUpdate,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  onSearchOpen
+  onToggleAutoScroll
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -109,14 +107,13 @@ const RundownHeaderSection = ({
         onUndo={onUndo}
         canUndo={canUndo}
         lastAction={lastAction}
-        isConnected={isConnected || false}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate || false}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        autoScrollEnabled={autoScrollEnabled || false}
-        onToggleAutoScroll={onToggleAutoScroll || (() => {})}
-        onSearchOpen={onSearchOpen}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
@@ -125,7 +122,7 @@ const RundownHeaderSection = ({
         selectedRowId={selectedRowId}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
-        timeRemaining={parseInt(timeRemaining) || 0}
+        timeRemaining={timeRemaining}
         onPlay={onPlay}
         onPause={onPause}
         onForward={onForward}
@@ -138,8 +135,8 @@ const RundownHeaderSection = ({
         lastAction={lastAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
-        autoScrollEnabled={autoScrollEnabled || false}
-        onToggleAutoScroll={onToggleAutoScroll || (() => {})}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
       />
     </div>
   );
