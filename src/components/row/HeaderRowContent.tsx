@@ -65,17 +65,17 @@ const HeaderRowContent = ({
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Maintain column structure
-                backgroundColor,
-                overflow: 'visible' // Allow content to spill over
+                backgroundColor
               }}
             >
               <div 
                 className="px-3 py-3 text-2xl font-bold relative"
                 style={{ 
                   color: textColor,
-                  whiteSpace: 'nowrap', // Prevent text wrapping
-                  overflow: 'visible', // Allow text to spill over
-                  zIndex: 10 // Ensure text appears above other content
+                  whiteSpace: 'nowrap',
+                  overflow: 'visible',
+                  position: 'relative',
+                  zIndex: 10
                 }}
               >
                 <CellRenderer
