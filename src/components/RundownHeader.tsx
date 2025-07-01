@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,26 +8,35 @@ import PlaybackControls from './toolbar/PlaybackControls';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 
 interface RundownHeaderProps {
-  rundownTitle: string;
-  rundownStartTime: string;
-  timezone: string;
   currentTime: Date;
+  timezone: string;
+  onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
-  onTitleChange: (newTitle: string) => void;
-  onStartTimeChange: (newStartTime: string) => void;
-  onTimezoneChange: (newTimezone: string) => void;
-  selectedRowId: string | null;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  title: string;
+  onTitleChange: (title: string) => void;
+  rundownStartTime: string;
+  onRundownStartTimeChange: (startTime: string) => void;
+  items?: any[];
+  visibleColumns?: any[];
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
+  isConnected?: boolean;
+  isProcessingRealtimeUpdate?: boolean;
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
-  onPlay: (selectedSegmentId?: string) => void;
-  onPause: () => void;
-  onForward: () => void;
-  onBackward: () => void;
-  onReset: () => void;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  timingStatus: {
+  selectedRowId?: string | null;
+  onPlay?: (selectedSegmentId?: string) => void;
+  onPause?: () => void;
+  onForward?: () => void;
+  onBackward?: () => void;
+  onReset?: () => void;
+  timingStatus?: {
     isOnTime: boolean;
     isAhead: boolean;
     timeDifference: string;
@@ -35,25 +45,34 @@ interface RundownHeaderProps {
 }
 
 const RundownHeader = ({ 
-  rundownTitle, 
-  rundownStartTime, 
-  timezone, 
-  currentTime, 
-  totalRuntime,
-  onTitleChange,
-  onStartTimeChange,
+  currentTime,
+  timezone,
   onTimezoneChange,
-  selectedRowId,
+  totalRuntime,
+  hasUnsavedChanges,
+  isSaving,
+  title,
+  onTitleChange,
+  rundownStartTime,
+  onRundownStartTimeChange,
+  items = [],
+  visibleColumns = [],
+  onUndo,
+  canUndo,
+  lastAction,
+  isConnected,
+  isProcessingRealtimeUpdate,
   isPlaying,
   currentSegmentId,
   timeRemaining,
+  autoScrollEnabled,
+  onToggleAutoScroll,
+  selectedRowId,
   onPlay,
   onPause,
   onForward,
   onBackward,
   onReset,
-  autoScrollEnabled,
-  onToggleAutoScroll,
   timingStatus
 }: RundownHeaderProps) => {
   const [localTime, setLocalTime] = useState(new Date());
@@ -89,7 +108,7 @@ const RundownHeader = ({
               type="text"
               id="title"
               className="w-64 text-lg font-bold"
-              value={rundownTitle}
+              value={title}
               onChange={(e) => onTitleChange(e.target.value)}
             />
           </div>
@@ -105,7 +124,7 @@ const RundownHeader = ({
               className="w-24"
               placeholder="HH:mm:ss"
               value={rundownStartTime}
-              onChange={(e) => onStartTimeChange(e.target.value)}
+              onChange={(e) => onRundownStartTimeChange(e.target.value)}
             />
           </div>
 
