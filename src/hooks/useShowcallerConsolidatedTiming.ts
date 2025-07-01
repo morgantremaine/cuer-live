@@ -48,7 +48,8 @@ export const useShowcallerConsolidatedTiming = ({
   const initializationRef = useRef<boolean>(false);
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
-  const lastDisplayedSecondsRef = useRef<number>(0); // Add buffer for stable display
+  const lastDisplayedSecondsRef = useRef<number>(0); // Buffer for stable display
+  const lastLogTimeRef = useRef<number>(0); // For throttling logs
 
   // High-precision time utilities
   const getPreciseTime = useCallback((): number => {
@@ -108,7 +109,7 @@ export const useShowcallerConsolidatedTiming = ({
         isController: (updates.controllerId || prev.controllerId) === userId
       };
 
-      // Only log important state changes, not every update
+      // Only log important state changes
       if (updates.isPlaying !== undefined || updates.currentSegmentId !== undefined) {
         console.log('📺 Consolidated timing state update:', {
           updates: Object.keys(updates),
@@ -124,7 +125,7 @@ export const useShowcallerConsolidatedTiming = ({
         }
         saveTimeoutRef.current = setTimeout(() => {
           onSaveState(newState);
-        }, 100); // Quick save for critical updates
+        }, 100);
       }
 
       return newState;
@@ -133,8 +134,6 @@ export const useShowcallerConsolidatedTiming = ({
 
   // Single consolidated precision timer with stable second display
   const startConsolidatedTimer = useCallback(() => {
-    console.log('📺 Starting consolidated precision timer');
-    
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
@@ -171,18 +170,19 @@ export const useShowcallerConsolidatedTiming = ({
         }
 
         // Only log every 5 seconds to reduce console spam
-        if (remainingSeconds % 5 === 0 && remainingSeconds !== prevState.timeRemaining) {
+        const shouldLog = remainingSeconds % 5 === 0 && remainingSeconds !== prevState.timeRemaining;
+        if (shouldLog && currentTime - lastLogTimeRef.current > 4000) { // At least 4 seconds between logs
           console.log('📺 Timer update (5s interval):', {
             segment: currentSegment.name,
             remainingSeconds
           });
+          lastLogTimeRef.current = currentTime;
         }
 
         // Check for segment advancement
         if (remainingMs <= 0) {
           // Rate limiting
           if (currentTime - lastAdvancementTimeRef.current < 1500) {
-            console.log('📺 Rate limiting advancement');
             return { ...prevState, timeRemaining: 0 };
           }
 
@@ -198,8 +198,6 @@ export const useShowcallerConsolidatedTiming = ({
             const nextSegment = getNextSegment(prevState.currentSegmentId);
             
             if (nextSegment) {
-              console.log('📺 Advancing to next segment:', nextSegment.name);
-              
               const duration = timeToSeconds(nextSegment.duration || '00:00');
               const newStatuses = new Map(prevState.currentItemStatuses);
               newStatuses.set(prevState.currentSegmentId, 'completed');
@@ -229,8 +227,6 @@ export const useShowcallerConsolidatedTiming = ({
               
               return newState;
             } else {
-              console.log('📺 No more segments, stopping playback');
-              
               const newState = {
                 ...prevState,
                 isPlaying: false,
@@ -277,8 +273,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [items, getPreciseTime, timeToMilliseconds, timeToSeconds, getNextSegment, onSaveState]);
 
   const stopConsolidatedTimer = useCallback(() => {
-    console.log('📺 Stopping consolidated timer');
-    
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -289,8 +283,6 @@ export const useShowcallerConsolidatedTiming = ({
 
   // Control functions
   const play = useCallback((selectedSegmentId?: string) => {
-    console.log('📺 Consolidated play called:', { selectedSegmentId, userId });
-    
     const preciseStartTime = getPreciseTime();
     const newStatuses = new Map();
     
@@ -397,8 +389,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [items, state.currentSegmentId, userId, timeToSeconds, startConsolidatedTimer, getPreciseTime, onSaveState]);
 
   const pause = useCallback(() => {
-    console.log('📺 Consolidated pause called');
-    
     stopConsolidatedTimer();
     updateState({
       isPlaying: false,
@@ -408,8 +398,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [stopConsolidatedTimer, updateState, userId]);
 
   const forward = useCallback(() => {
-    console.log('📺 Consolidated forward called');
-    
     if (state.currentSegmentId) {
       const nextSegment = getNextSegment(state.currentSegmentId);
       if (nextSegment) {
@@ -436,8 +424,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [state, getNextSegment, timeToSeconds, userId, updateState, startConsolidatedTimer, getPreciseTime]);
 
   const backward = useCallback(() => {
-    console.log('📺 Consolidated backward called');
-    
     if (state.currentSegmentId) {
       const prevSegment = getPreviousSegment(state.currentSegmentId);
       if (prevSegment) {
@@ -464,8 +450,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [state, getPreviousSegment, timeToSeconds, userId, updateState, startConsolidatedTimer, getPreciseTime]);
 
   const reset = useCallback(() => {
-    console.log('📺 Consolidated reset called');
-    
     if (state.currentSegmentId) {
       const currentSegment = items.find(item => item.id === state.currentSegmentId);
       if (currentSegment) {
@@ -486,8 +470,6 @@ export const useShowcallerConsolidatedTiming = ({
   }, [state, items, timeToSeconds, userId, updateState, startConsolidatedTimer, getPreciseTime]);
 
   const jumpToSegment = useCallback((segmentId: string) => {
-    console.log('📺 Consolidated jumpToSegment called:', segmentId);
-    
     const targetSegment = items.find(item => item.id === segmentId);
     if (!targetSegment) return;
     
@@ -518,8 +500,6 @@ export const useShowcallerConsolidatedTiming = ({
 
   // Apply external state with proper synchronization
   const applyExternalState = useCallback((externalState: any) => {
-    console.log('📺 Applying external consolidated state');
-    
     stopConsolidatedTimer();
     lastDisplayedSecondsRef.current = 0; // Reset buffer on external state
     

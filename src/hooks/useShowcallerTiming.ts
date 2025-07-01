@@ -52,7 +52,6 @@ export const useShowcallerTiming = ({
     // Find current segment and validate it exists
     const currentSegmentIndex = items.findIndex(item => item.id === currentSegmentId);
     if (currentSegmentIndex === -1) {
-      console.warn('📺 Timing: Current segment not found in items');
       return {
         isOnTime: false,
         isAhead: false,
@@ -122,15 +121,18 @@ export const useShowcallerTiming = ({
     const absoluteDifference = Math.abs(differenceSeconds);
     const timeDifference = secondsToTime(absoluteDifference);
 
-    console.log('📺 Timing calculation:', {
-      currentSegment: currentSegment.name,
-      showcallerElapsed: showcallerElapsedSeconds,
-      realElapsed: realElapsedSeconds,
-      difference: differenceSeconds,
-      isOnTime,
-      isAhead,
-      timeDifference
-    });
+    // Only log timing calculations every 10 seconds to reduce console spam
+    if (showcallerElapsedSeconds % 10 === 0) {
+      console.log('📺 Timing calculation:', {
+        currentSegment: currentSegment.name,
+        showcallerElapsed: showcallerElapsedSeconds,
+        realElapsed: realElapsedSeconds,
+        difference: differenceSeconds,
+        isOnTime,
+        isAhead,
+        timeDifference
+      });
+    }
 
     return {
       isOnTime,
