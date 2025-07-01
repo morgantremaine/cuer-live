@@ -19,39 +19,55 @@ export const usePlaybackControls = (
   const { user } = useAuth();
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Use simplified showcaller visual state with master timing
-  const showcallerState = useShowcallerVisualState({
+  // Initialize showcaller visual state management with precision timing
+  const {
+    visualState,
+    play,
+    pause,
+    forward,
+    backward,
+    reset,
+    jumpToSegment,
+    applyExternalVisualState,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    isController,
+    trackOwnUpdate,
+    isInitialized
+  } = useShowcallerVisualState({
     items,
     rundownId,
     userId: user?.id
   });
 
-  // Simplified initialization check
+  // Enhanced initialization check with better timing control
   const shouldEnableRealtime = useCallback(() => {
-    return !!rundownId && showcallerState.isInitialized;
-  }, [rundownId, showcallerState.isInitialized]);
+    return !!rundownId && isInitialized;
+  }, [rundownId, isInitialized]);
 
-  // Initialize realtime synchronization
+  // Initialize realtime synchronization with precision timing support
   const { isConnected } = useRealtimeRundown({
     rundownId,
-    onRundownUpdate: () => {},
+    onRundownUpdate: () => {}, // We only care about showcaller state here
     enabled: shouldEnableRealtime(),
     currentContentHash,
     isEditing,
     hasUnsavedChanges,
     isProcessingRealtimeUpdate,
-    trackOwnUpdate: showcallerState.trackOwnUpdate,
+    trackOwnUpdate,
     onShowcallerActivity,
-    onShowcallerStateReceived: showcallerState.applyExternalVisualState
+    onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Simplified initialization timeout
+  // Reduced timeout for initialization with precision timing
   useEffect(() => {
-    if (rundownId && !showcallerState.isInitialized) {
+    if (rundownId && !isInitialized) {
+      // Set a reduced timeout for faster initialization
       initializationTimeoutRef.current = setTimeout(() => {
-        console.warn('📺 Showcaller initialization timeout');
-      }, 3000);
-    } else if (showcallerState.isInitialized && initializationTimeoutRef.current) {
+        console.warn('📺 Showcaller initialization timeout - forcing ready state');
+      }, 3000); // Reduced from 5000ms
+    } else if (isInitialized && initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
       initializationTimeoutRef.current = null;
     }
@@ -61,70 +77,78 @@ export const usePlaybackControls = (
         clearTimeout(initializationTimeoutRef.current);
       }
     };
-  }, [rundownId, showcallerState.isInitialized]);
+  }, [rundownId, isInitialized]);
 
-  // Control wrappers - simplified and safe
+  // Only expose controls after proper initialization
+  const controlsReady = isInitialized;
+
+  // Enhanced control wrappers with precision timing validation
   const safePlay = useCallback((segmentId?: string) => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 Play called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 Play called before initialization complete');
       return;
     }
-    console.log('📺 Safe play with master timing');
-    showcallerState.play(segmentId);
-  }, [showcallerState]);
+    console.log('📺 Safe play called with precision timing support');
+    play(segmentId);
+  }, [controlsReady, play]);
 
   const safePause = useCallback(() => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 Pause called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 Pause called before initialization complete');
       return;
     }
-    showcallerState.pause();
-  }, [showcallerState]);
+    console.log('📺 Safe pause called with precision timing support');
+    pause();
+  }, [controlsReady, pause]);
 
   const safeForward = useCallback(() => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 Forward called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 Forward called before initialization complete');
       return;
     }
-    showcallerState.forward();
-  }, [showcallerState]);
+    console.log('📺 Safe forward called with precision timing support');
+    forward();
+  }, [controlsReady, forward]);
 
   const safeBackward = useCallback(() => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 Backward called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 Backward called before initialization complete');
       return;
     }
-    showcallerState.backward();
-  }, [showcallerState]);
+    console.log('📺 Safe backward called with precision timing support');
+    backward();
+  }, [controlsReady, backward]);
 
   const safeReset = useCallback(() => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 Reset called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 Reset called before initialization complete');
       return;
     }
-    showcallerState.reset();
-  }, [showcallerState]);
+    console.log('📺 Safe reset called with precision timing support');
+    reset();
+  }, [controlsReady, reset]);
 
   const safeJumpToSegment = useCallback((segmentId: string) => {
-    if (!showcallerState.isInitialized) {
-      console.warn('📺 JumpToSegment called before initialization');
+    if (!controlsReady) {
+      console.warn('📺 JumpToSegment called before initialization complete');
       return;
     }
-    showcallerState.jumpToSegment(segmentId);
-  }, [showcallerState]);
+    console.log('📺 Safe jumpToSegment called with precision timing support');
+    jumpToSegment(segmentId);
+  }, [controlsReady, jumpToSegment]);
 
   return {
-    isPlaying: showcallerState.isPlaying,
-    currentSegmentId: showcallerState.currentSegmentId,
-    timeRemaining: showcallerState.timeRemaining, // From master timing
+    isPlaying: controlsReady ? isPlaying : false,
+    currentSegmentId: controlsReady ? currentSegmentId : null,
+    timeRemaining: controlsReady ? timeRemaining : 0,
     play: safePlay,
     pause: safePause,
     forward: safeForward,
     backward: safeBackward,
     reset: safeReset,
     jumpToSegment: safeJumpToSegment,
-    isController: showcallerState.isController,
-    isInitialized: showcallerState.isInitialized,
+    isController: controlsReady ? isController : false,
+    isInitialized,
     isConnected
   };
 };

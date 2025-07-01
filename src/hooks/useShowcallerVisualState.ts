@@ -1,206 +1,682 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { useShowcallerMasterTiming } from './useShowcallerMasterTiming';
+import { isFloated } from '@/utils/rundownCalculations';
+import { useShowcallerInitialState } from './useShowcallerInitialState';
+import { useShowcallerPrecisionTiming } from './useShowcallerPrecisionTiming';
+
+export interface ShowcallerVisualState {
+  currentItemStatuses: Map<string, string>; // item id -> status
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
+  playbackStartTime: number | null;
+  lastUpdate: string;
+  controllerId: string | null;
+}
 
 interface UseShowcallerVisualStateProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
-  rundownStartTime?: string; // Add proper start time prop
 }
 
 export const useShowcallerVisualState = ({
   items,
   rundownId,
-  userId,
-  rundownStartTime = '00:00:00' // Default fallback
+  userId
 }: UseShowcallerVisualStateProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSegmentId, setCurrentSegmentId] = useState<string | null>(null);
-  const [playbackStartTime, setPlaybackStartTime] = useState<number | null>(null);
-  const [isController, setIsController] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [visualState, setVisualState] = useState<any>({});
-  const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
-
-  const initializationRef = useRef(false);
-
-  // Use master timing with proper rundown start time
-  const { timeRemaining, timingStatus } = useShowcallerMasterTiming({
-    items,
-    rundownStartTime: rundownStartTime || '00:00:00',
-    isPlaying,
-    currentSegmentId,
-    playbackStartTime
+  const [visualState, setVisualState] = useState<ShowcallerVisualState>({
+    currentItemStatuses: new Map(),
+    isPlaying: false,
+    currentSegmentId: null,
+    timeRemaining: 0,
+    playbackStartTime: null,
+    lastUpdate: new Date().toISOString(),
+    controllerId: null
   });
 
-  // Initialize showcaller state
+  const [isInitialized, setIsInitialized] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const lastProcessedUpdateRef = useRef<string | null>(null);
+  const lastAdvancementTimeRef = useRef<number>(0);
+  const isAdvancingRef = useRef<boolean>(false);
+  const precisionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use precision timing utility
+  const {
+    timeToMilliseconds,
+    getPreciseTime,
+    calculatePreciseTimeRemaining,
+    calculatePrecisePlaybackStart,
+    resetDriftCompensation,
+    synchronizeWithExternalState
+  } = useShowcallerPrecisionTiming({ items });
+
+  // Legacy time conversion for compatibility
+  const timeToSeconds = useCallback((timeStr: string) => {
+    return Math.round(timeToMilliseconds(timeStr) / 1000);
+  }, [timeToMilliseconds]);
+
+  // Track our own updates to prevent feedback loops
+  const trackOwnUpdate = useCallback((timestamp: string) => {
+    ownUpdateTrackingRef.current.add(timestamp);
+    
+    // Clean up old tracked updates after 10 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(timestamp);
+    }, 10000);
+  }, []);
+
+  // Handle initial state loading with precision timing
+  const handleInitialStateLoaded = useCallback((loadedState: any) => {
+    console.log('📺 Applying loaded initial state with precision timing');
+    
+    // Convert plain object back to Map for statuses
+    const statusMap = new Map();
+    if (loadedState.currentItemStatuses) {
+      Object.entries(loadedState.currentItemStatuses).forEach(([id, status]) => {
+        statusMap.set(id, status as string);
+      });
+    }
+
+    // Use precision timing for synchronization
+    const synchronizedState = synchronizeWithExternalState({
+      ...loadedState,
+      currentItemStatuses: statusMap
+    });
+
+    setVisualState(synchronizedState);
+    setIsInitialized(true);
+
+    // If it was playing when saved, restart the precision timer
+    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      console.log('📺 Restarting precision timer from saved state');
+      setTimeout(() => startPrecisionTimer(), 50);
+    }
+  }, [synchronizeWithExternalState]);
+
+  // Initialize state loading
+  const { hasLoaded } = useShowcallerInitialState({
+    rundownId,
+    onStateLoaded: handleInitialStateLoaded,
+    trackOwnUpdate
+  });
+
+  // Mark as initialized when either state loads or no state exists
   useEffect(() => {
-    if (!initializationRef.current && rundownId) {
-      initializationRef.current = true;
-      setIsInitialized(true);
-      console.log('📺 Showcaller visual state initialized with master timing');
+    if (rundownId && !isInitialized) {
+      // If no saved state exists after loading attempt, still mark as initialized
+      const initTimer = setTimeout(() => {
+        if (!isInitialized) {
+          console.log('📺 No saved state found, initializing with default state');
+          setIsInitialized(true);
+        }
+      }, 2000);
+
+      return () => clearTimeout(initTimer);
     }
-  }, [rundownId]);
+  }, [rundownId, hasLoaded, isInitialized]);
 
-  // Control functions
-  const play = useCallback((selectedSegmentId?: string) => {
-    const targetSegmentId = selectedSegmentId || currentSegmentId;
-    if (!targetSegmentId) return;
+  // Save showcaller visual state to database with enhanced debouncing
+  const saveShowcallerVisualState = useCallback(async (state: ShowcallerVisualState) => {
+    if (!rundownId) return;
 
-    // Only allow play on regular segments, not headers
-    const targetSegment = items.find(item => item.id === targetSegmentId);
-    if (!targetSegment || targetSegment.type !== 'regular') {
-      console.warn('📺 Cannot play on header segments');
-      return;
-    }
-
-    console.log('📺 Play called with master timing:', { targetSegmentId });
-    
-    setCurrentSegmentId(targetSegmentId);
-    setPlaybackStartTime(Date.now());
-    setIsPlaying(true);
-    setIsController(true);
-    setLastUpdateTime(new Date().toISOString());
-  }, [currentSegmentId, items]);
-
-  const pause = useCallback(() => {
-    console.log('📺 Pause called');
-    setIsPlaying(false);
-    setLastUpdateTime(new Date().toISOString());
-  }, []);
-
-  const forward = useCallback(() => {
-    const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    let nextIndex = currentIndex + 1;
-    
-    // Skip to next regular (non-header) segment
-    while (nextIndex < items.length && items[nextIndex].type !== 'regular') {
-      nextIndex++;
-    }
-    
-    if (nextIndex < items.length) {
-      const nextSegment = items[nextIndex];
-      console.log('📺 Forward to:', nextSegment.id);
+    try {
+      const { supabase } = await import('@/lib/supabase');
       
-      setCurrentSegmentId(nextSegment.id);
-      setPlaybackStartTime(Date.now());
-      setLastUpdateTime(new Date().toISOString());
-    }
-  }, [items, currentSegmentId]);
-
-  const backward = useCallback(() => {
-    const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    let prevIndex = currentIndex - 1;
-    
-    // Skip to previous regular (non-header) segment
-    while (prevIndex >= 0 && items[prevIndex].type !== 'regular') {
-      prevIndex--;
-    }
-    
-    if (prevIndex >= 0) {
-      const prevSegment = items[prevIndex];
-      console.log('📺 Backward to:', prevSegment.id);
+      // Track this update as our own before saving
+      trackOwnUpdate(state.lastUpdate);
       
-      setCurrentSegmentId(prevSegment.id);
-      setPlaybackStartTime(Date.now());
-      setLastUpdateTime(new Date().toISOString());
+      // Convert Map to plain object for storage
+      const stateToSave = {
+        ...state,
+        currentItemStatuses: Object.fromEntries(state.currentItemStatuses)
+      };
+
+      const { error } = await supabase
+        .from('rundowns')
+        .update({
+          showcaller_state: stateToSave,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rundownId);
+
+      if (error) {
+        console.error('❌ Failed to save showcaller visual state:', error);
+      } else {
+        console.log('📺 Successfully saved showcaller visual state');
+      }
+    } catch (error) {
+      console.error('❌ Error saving showcaller visual state:', error);
     }
-  }, [items, currentSegmentId]);
+  }, [rundownId, trackOwnUpdate]);
 
-  const reset = useCallback(() => {
-    console.log('📺 Reset called');
-    setIsPlaying(false);
-    setCurrentSegmentId(null);
-    setPlaybackStartTime(null);
-    setLastUpdateTime(new Date().toISOString());
-  }, []);
-
-  const jumpToSegment = useCallback((segmentId: string) => {
-    // Only allow jumping to regular segments
-    const targetSegment = items.find(item => item.id === segmentId);
-    if (!targetSegment || targetSegment.type !== 'regular') {
-      console.warn('📺 Cannot jump to header segments');
-      return;
+  // Enhanced debounced save with longer delay and critical change detection
+  const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState, isCritical: boolean = false) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
 
-    console.log('📺 Jump to segment:', segmentId);
-    setCurrentSegmentId(segmentId);
-    setPlaybackStartTime(Date.now());
-    setLastUpdateTime(new Date().toISOString());
+    // Use shorter delay for critical changes (segment transitions), longer for routine updates
+    const delay = isCritical ? 50 : 2000;
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveShowcallerVisualState(state);
+    }, delay);
+  }, [saveShowcallerVisualState]);
+
+  // Update visual state without touching main rundown state
+  const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false, isCritical: boolean = false) => {
+    setVisualState(prev => {
+      const newState = {
+        ...prev,
+        ...updates,
+        lastUpdate: new Date().toISOString()
+      };
+
+      if (shouldSync) {
+        debouncedSaveVisualState(newState, isCritical);
+      }
+
+      return newState;
+    });
+  }, [debouncedSaveVisualState]);
+
+  // Navigation helpers - now skip floated items
+  const getNextSegment = useCallback((currentId: string) => {
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
+      }
+    }
+    return null;
   }, [items]);
 
-  // Visual status functions
-  const getItemVisualStatus = useCallback((itemId: string): 'upcoming' | 'current' | 'completed' => {
-    if (itemId === currentSegmentId) {
-      return 'current';
+  const getPreviousSegment = useCallback((currentId: string) => {
+    const currentIndex = items.findIndex(item => item.id === currentId);
+    
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
+      }
+    }
+    return null;
+  }, [items]);
+
+  // Enhanced jump to segment function with precision timing
+  const jumpToSegment = useCallback((segmentId: string) => {
+    console.log('📺 Visual jumpToSegment called with segmentId:', segmentId);
+    
+    const targetSegment = items.find(item => item.id === segmentId);
+    if (!targetSegment) {
+      console.error('📺 Target segment not found for jump:', segmentId);
+      return;
     }
     
-    const currentIndex = items.findIndex(item => item.id === currentSegmentId);
-    const itemIndex = items.findIndex(item => item.id === itemId);
+    const newStatuses = new Map();
     
-    if (currentIndex === -1 || itemIndex === -1) {
-      return 'upcoming';
+    // Mark segments before selected as completed, after as upcoming (skip floated items)
+    const selectedIndex = items.findIndex(item => item.id === segmentId);
+    items.forEach((item, index) => {
+      if (item.type === 'regular' && !isFloated(item)) {
+        if (index < selectedIndex) {
+          newStatuses.set(item.id, 'completed');
+        } else if (index === selectedIndex) {
+          newStatuses.set(item.id, 'current');
+        }
+      }
+    });
+    
+    const duration = timeToSeconds(targetSegment.duration || '00:00');
+    const preciseStartTime = getPreciseTime();
+    
+    updateVisualState({
+      currentSegmentId: segmentId,
+      timeRemaining: duration,
+      playbackStartTime: preciseStartTime,
+      currentItemStatuses: newStatuses,
+      controllerId: userId
+    }, true, true);
+    
+    console.log('📺 Visual jumpToSegment completed with precision timing');
+  }, [items, timeToSeconds, getPreciseTime, userId, updateVisualState]);
+
+  // High-precision timer management
+  const startPrecisionTimer = useCallback(() => {
+    // Stop any existing timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
     }
-    
-    return itemIndex < currentIndex ? 'completed' : 'upcoming';
-  }, [items, currentSegmentId]);
+    if (precisionTimerRef.current) {
+      clearTimeout(precisionTimerRef.current);
+    }
 
-  const setItemVisualStatus = useCallback((itemId: string, status: string) => {
-    // Implementation for setting visual status
-    console.log('📺 Set visual status:', { itemId, status });
-  }, []);
-
-  const clearAllVisualStatuses = useCallback(() => {
-    console.log('📺 Clear all visual statuses');
-  }, []);
-
-  const applyExternalVisualState = useCallback((externalState: any) => {
-    if (!externalState || externalState.lastUpdate === lastUpdateTime) {
+    // Safety check - don't start timer if no current segment
+    if (!visualState.currentSegmentId) {
+      console.warn('📺 Cannot start precision timer - no current segment');
       return;
     }
 
-    console.log('📺 Applying external visual state with master timing');
+    const isController = visualState.controllerId === userId;
     
-    setIsPlaying(externalState.isPlaying || false);
-    setCurrentSegmentId(externalState.currentSegmentId || null);
-    setPlaybackStartTime(externalState.playbackStartTime || null);
-    setIsController(false); // External state means we're not the controller
-    setLastUpdateTime(externalState.lastUpdate);
-  }, [lastUpdateTime]);
+    const updatePrecisionTimer = () => {
+      setVisualState(prevState => {
+        // Safety checks before processing timer tick
+        if (!prevState.currentSegmentId || !prevState.isPlaying || !prevState.playbackStartTime) {
+          return prevState;
+        }
 
-  const trackOwnUpdate = useCallback((timestamp: string) => {
-    setLastUpdateTime(timestamp);
+        // Calculate precise time remaining
+        const preciseRemainingMs = calculatePreciseTimeRemaining(
+          prevState.currentSegmentId,
+          prevState.playbackStartTime,
+          prevState.isPlaying
+        );
+
+        const remainingSeconds = Math.max(0, Math.ceil(preciseRemainingMs / 1000));
+
+        // CRITICAL FIX: Only advance when we have truly reached 0 milliseconds remaining
+        if (preciseRemainingMs <= 0) {
+          // Rate limiting: prevent rapid advancement
+          const now = getPreciseTime();
+          if (now - lastAdvancementTimeRef.current < 1500) {
+            console.log('📺 Rate limiting: skipping advancement too soon');
+            return { ...prevState, timeRemaining: 0 };
+          }
+
+          // Prevent concurrent advancement
+          if (isAdvancingRef.current) {
+            console.log('📺 Already advancing, skipping');
+            return prevState;
+          }
+
+          if (isController) {
+            isAdvancingRef.current = true;
+            lastAdvancementTimeRef.current = now;
+
+            // Move to next segment with precision timing
+            const nextSegment = getNextSegment(prevState.currentSegmentId);
+            
+            if (nextSegment) {
+              const duration = timeToSeconds(nextSegment.duration || '00:00');
+              const newStatuses = new Map(prevState.currentItemStatuses);
+              newStatuses.set(prevState.currentSegmentId, 'completed');
+              newStatuses.set(nextSegment.id, 'current');
+              
+              // Calculate precise playback start time for next segment
+              const preciseStartTime = calculatePrecisePlaybackStart(
+                prevState.currentSegmentId,
+                prevState.playbackStartTime,
+                now
+              );
+              
+              const newState = {
+                ...prevState,
+                currentSegmentId: nextSegment.id,
+                timeRemaining: duration,
+                playbackStartTime: preciseStartTime,
+                currentItemStatuses: newStatuses,
+                lastUpdate: new Date().toISOString()
+              };
+              
+              // Save immediately for segment transitions (critical change)
+              debouncedSaveVisualState(newState, true);
+              
+              // Reset advancement flag and restart precision timer
+              setTimeout(() => {
+                isAdvancingRef.current = false;
+                if (newState.isPlaying) {
+                  startPrecisionTimer();
+                }
+              }, 100);
+              
+              return newState;
+            } else {
+              // No more segments, stop playback
+              const newState = {
+                ...prevState,
+                isPlaying: false,
+                currentSegmentId: null,
+                timeRemaining: 0,
+                playbackStartTime: null,
+                controllerId: null,
+                lastUpdate: new Date().toISOString()
+              };
+              
+              debouncedSaveVisualState(newState, true);
+              isAdvancingRef.current = false;
+              resetDriftCompensation();
+              return newState;
+            }
+          } else {
+            return {
+              ...prevState,
+              timeRemaining: 0,
+              isPlaying: false
+            };
+          }
+        }
+        
+        const newState = {
+          ...prevState,
+          timeRemaining: remainingSeconds,
+          lastUpdate: new Date().toISOString()
+        };
+        
+        // Reduced sync frequency: only save every 60 seconds to reduce database load
+        if (isController && remainingSeconds > 0 && remainingSeconds % 60 === 0) {
+          debouncedSaveVisualState(newState, false);
+        }
+        
+        return newState;
+      });
+
+      // Schedule next precise update - aim for 100ms precision
+      precisionTimerRef.current = setTimeout(updatePrecisionTimer, 100);
+    };
+
+    // Start the precision timer loop
+    updatePrecisionTimer();
+  }, [
+    visualState.controllerId, 
+    visualState.currentSegmentId, 
+    userId, 
+    getNextSegment, 
+    timeToSeconds, 
+    debouncedSaveVisualState,
+    calculatePreciseTimeRemaining,
+    calculatePrecisePlaybackStart,
+    resetDriftCompensation,
+    getPreciseTime
+  ]);
+
+  const stopPrecisionTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (precisionTimerRef.current) {
+      clearTimeout(precisionTimerRef.current);
+      precisionTimerRef.current = null;
+    }
+    // Reset advancement flags
+    isAdvancingRef.current = false;
+  }, []);
+
+  // Enhanced control functions with precision timing
+  const play = useCallback((selectedSegmentId?: string) => {
+    console.log('📺 Visual play called with segmentId:', selectedSegmentId);
+    
+    const newStatuses = new Map();
+    const preciseStartTime = getPreciseTime();
+    
+    if (selectedSegmentId) {
+      // Mark segments before selected as completed, after as upcoming (skip floated items)
+      const selectedIndex = items.findIndex(item => item.id === selectedSegmentId);
+      items.forEach((item, index) => {
+        if (item.type === 'regular' && !isFloated(item)) {
+          if (index < selectedIndex) {
+            newStatuses.set(item.id, 'completed');
+          } else if (index === selectedIndex) {
+            newStatuses.set(item.id, 'current');
+          }
+        }
+      });
+      
+      const segment = items.find(item => item.id === selectedSegmentId);
+      const duration = segment ? timeToSeconds(segment.duration || '00:00') : 0;
+      
+      updateVisualState({
+        isPlaying: true,
+        currentSegmentId: selectedSegmentId,
+        timeRemaining: duration,
+        playbackStartTime: preciseStartTime,
+        controllerId: userId,
+        currentItemStatuses: newStatuses
+      }, true, true);
+    } else if (!visualState.currentSegmentId) {
+      // Find first non-floated regular item
+      const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      if (firstSegment) {
+        newStatuses.set(firstSegment.id, 'current');
+        const duration = timeToSeconds(firstSegment.duration || '00:00');
+        
+        updateVisualState({
+          isPlaying: true,
+          currentSegmentId: firstSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId,
+          currentItemStatuses: newStatuses
+        }, true, true);
+      }
+    } else {
+      // Resume current segment with updated start time
+      updateVisualState({
+        isPlaying: true,
+        playbackStartTime: preciseStartTime,
+        controllerId: userId
+      }, true, true);
+    }
+    
+    resetDriftCompensation(); // Reset drift tracking on new play
+    startPrecisionTimer();
+  }, [items, visualState.currentSegmentId, userId, timeToSeconds, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+
+  const pause = useCallback(() => {
+    console.log('📺 Visual pause called');
+    
+    stopPrecisionTimer();
+    updateVisualState({
+      isPlaying: false,
+      playbackStartTime: null,
+      controllerId: userId
+    }, true, true);
+  }, [stopPrecisionTimer, updateVisualState, userId]);
+
+  const forward = useCallback(() => {
+    console.log('📺 Visual forward called');
+    
+    if (visualState.currentSegmentId) {
+      const nextSegment = getNextSegment(visualState.currentSegmentId);
+      if (nextSegment) {
+        const newStatuses = new Map(visualState.currentItemStatuses);
+        newStatuses.set(visualState.currentSegmentId, 'completed');
+        newStatuses.set(nextSegment.id, 'current');
+        
+        const duration = timeToSeconds(nextSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
+        
+        updateVisualState({
+          currentSegmentId: nextSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId,
+          currentItemStatuses: newStatuses
+        }, true, true);
+        
+        if (visualState.isPlaying) {
+          resetDriftCompensation();
+          startPrecisionTimer();
+        }
+      }
+    }
+  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+
+  const backward = useCallback(() => {
+    console.log('📺 Visual backward called');
+    
+    if (visualState.currentSegmentId) {
+      const prevSegment = getPreviousSegment(visualState.currentSegmentId);
+      if (prevSegment) {
+        const newStatuses = new Map(visualState.currentItemStatuses);
+        newStatuses.set(visualState.currentSegmentId, 'upcoming');
+        newStatuses.set(prevSegment.id, 'current');
+        
+        const duration = timeToSeconds(prevSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
+        
+        updateVisualState({
+          currentSegmentId: prevSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId,
+          currentItemStatuses: newStatuses
+        }, true, true);
+        
+        if (visualState.isPlaying) {
+          resetDriftCompensation();
+          startPrecisionTimer();
+        }
+      }
+    }
+  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+
+  // Reset function with precision timing
+  const reset = useCallback(() => {
+    console.log('📺 Visual reset called');
+    
+    if (visualState.currentSegmentId) {
+      const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
+      if (currentSegment) {
+        const duration = timeToSeconds(currentSegment.duration || '00:00');
+        const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
+        
+        updateVisualState({
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          controllerId: userId
+        }, true, false);
+        
+        if (visualState.isPlaying) {
+          resetDriftCompensation();
+          startPrecisionTimer();
+        }
+      }
+    }
+  }, [visualState, items, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+
+  // Enhanced apply external visual state with precision synchronization
+  const applyExternalVisualState = useCallback((externalState: any) => {
+    // Skip if this is our own update
+    if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
+      console.log('⏭️ Skipping own showcaller update');
+      return;
+    }
+
+    // Skip duplicate updates
+    if (externalState.lastUpdate === lastProcessedUpdateRef.current) {
+      console.log('⏭️ Skipping duplicate showcaller update');
+      return;
+    }
+
+    lastProcessedUpdateRef.current = externalState.lastUpdate;
+    
+    console.log('📺 Applying external visual state from controller:', externalState.controllerId);
+    
+    stopPrecisionTimer();
+    
+    // Convert plain object back to Map
+    const statusMap = new Map();
+    if (externalState.currentItemStatuses) {
+      Object.entries(externalState.currentItemStatuses).forEach(([id, status]) => {
+        statusMap.set(id, status as string);
+      });
+    }
+    
+    // Use precision timing synchronization
+    const synchronizedState = synchronizeWithExternalState({
+      ...externalState,
+      currentItemStatuses: statusMap
+    });
+    
+    setVisualState(synchronizedState);
+    
+    if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
+      setTimeout(() => startPrecisionTimer(), 50);
+    }
+  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer]);
+
+  // Initialize current segment - skip floated items, but only after state is loaded
+  useEffect(() => {
+    if (isInitialized && !visualState.currentSegmentId && items.length > 0) {
+      const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      if (firstSegment) {
+        const duration = timeToSeconds(firstSegment.duration || '00:00');
+        setVisualState(prev => ({
+          ...prev,
+          currentSegmentId: firstSegment.id,
+          timeRemaining: duration
+        }));
+      }
+    }
+  }, [isInitialized, items.length, visualState.currentSegmentId, timeToSeconds]);
+
+  // Enhanced cleanup
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (precisionTimerRef.current) {
+        clearTimeout(precisionTimerRef.current);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      // Reset all refs
+      isAdvancingRef.current = false;
+      lastAdvancementTimeRef.current = 0;
+    };
   }, []);
 
   return {
-    visualState: {
-      isPlaying,
-      currentSegmentId,
-      timeRemaining,
-      timingStatus,
-      controllerId: isController ? userId : null,
-      lastUpdate: lastUpdateTime
-    },
-    isPlaying,
-    currentSegmentId,
-    timeRemaining, // From master timing
-    isController,
-    isInitialized,
-    
-    // Control functions
+    visualState,
+    getItemVisualStatus: useCallback((itemId: string) => {
+      return visualState.currentItemStatuses.get(itemId) || 'upcoming';
+    }, [visualState.currentItemStatuses]),
+    setItemVisualStatus: useCallback((itemId: string, status: string) => {
+      setVisualState(prev => {
+        const newStatuses = new Map(prev.currentItemStatuses);
+        if (status === 'upcoming' || status === '') {
+          newStatuses.delete(itemId);
+        } else {
+          newStatuses.set(itemId, status);
+        }
+        
+        return {
+          ...prev,
+          currentItemStatuses: newStatuses,
+          lastUpdate: new Date().toISOString()
+        };
+      });
+    }, []),
+    clearAllVisualStatuses: useCallback(() => {
+      setVisualState(prev => ({
+        ...prev,
+        currentItemStatuses: new Map(),
+        lastUpdate: new Date().toISOString()
+      }));
+    }, []),
     play,
     pause,
     forward,
     backward,
     reset,
     jumpToSegment,
-    
-    // Visual state functions
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
     applyExternalVisualState,
-    trackOwnUpdate
+    isPlaying: visualState.isPlaying,
+    currentSegmentId: visualState.currentSegmentId,
+    timeRemaining: visualState.timeRemaining,
+    isController: visualState.controllerId === userId,
+    trackOwnUpdate,
+    isInitialized
   };
 };
