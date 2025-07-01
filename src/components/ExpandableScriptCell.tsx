@@ -1,5 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import HighlightedText from './cells/HighlightedText';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -7,6 +10,8 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch | null;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -17,6 +22,8 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
+  searchMatches = [],
+  currentSearchMatch,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -146,6 +153,17 @@ const ExpandableScriptCell = ({
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
 
+  // Convert SearchMatch to HighlightMatch format
+  const highlightMatches = searchMatches.map(match => ({
+    startIndex: match.startIndex,
+    endIndex: match.endIndex
+  }));
+  
+  const currentHighlightMatch = currentSearchMatch ? {
+    startIndex: currentSearchMatch.startIndex,
+    endIndex: currentSearchMatch.endIndex
+  } : undefined;
+
   return (
     <div className="flex items-start space-x-2 w-full">
       <button
@@ -199,6 +217,22 @@ const ExpandableScriptCell = ({
             textOverflow: isExpanded ? 'unset' : 'ellipsis'
           }}
         />
+        {/* Show highlighted text overlay when collapsed and has search matches */}
+        {!isExpanded && highlightMatches.length > 0 && (
+          <div 
+            className="absolute inset-0 pointer-events-none px-2 py-1 text-sm overflow-hidden whitespace-nowrap"
+            style={{ 
+              color: textColor || undefined,
+              backgroundColor: 'transparent'
+            }}
+          >
+            <HighlightedText
+              text={value}
+              matches={highlightMatches}
+              currentMatch={currentHighlightMatch}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { Image, Upload, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import HighlightedText from './HighlightedText';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface ImageCellProps {
   value: string;
@@ -8,8 +12,10 @@ interface ImageCellProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch | null;
   onUpdateValue: (value: string) => void;
-  onCellClick?: (e: React.MouseEvent) => void;
+  onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
 
@@ -20,184 +26,134 @@ const ImageCell = ({
   cellRefs,
   textColor,
   backgroundColor,
+  searchMatches = [],
+  currentSearchMatch,
   onUpdateValue,
   onCellClick,
   onKeyDown
 }: ImageCellProps) => {
-  const [imageError, setImageError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [internalValue, setInternalValue] = useState(value || '');
+  const [dragActive, setDragActive] = useState(false);
+
+  // Convert SearchMatch to HighlightMatch format
+  const highlightMatches = searchMatches.map(match => ({
+    startIndex: match.startIndex,
+    endIndex: match.endIndex
+  }));
+  
+  const currentHighlightMatch = currentSearchMatch ? {
+    startIndex: currentSearchMatch.startIndex,
+    endIndex: currentSearchMatch.endIndex
+  } : undefined;
+
+  const handleFileUpload = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      onUpdateValue(result);
+    };
+    reader.readAsDataURL(file);
+  }, [onUpdateValue]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleFileUpload(imageFile);
+    }
+  }, [handleFileUpload]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  }, []);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileUpload(files[0]);
+    }
+  }, [handleFileUpload]);
+
   const cellKey = `${itemId}-${cellRefKey}`;
 
-  // Sync internal value when external value changes
-  useEffect(() => {
-    setInternalValue(value || '');
-  }, [value]);
-
-  // Helper function to convert Google Drive links to direct image URLs
-  const convertGoogleDriveUrl = (url: string): string => {
-    // Check for different Google Drive link formats
-    let fileId = null;
-    
-    // Format 1: https://drive.google.com/file/d/FILE_ID/view (with or without query params)
-    const viewMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/);
-    if (viewMatch) {
-      fileId = viewMatch[1];
-    }
-    
-    // Format 2: https://drive.google.com/file/d/FILE_ID (without /view)
-    if (!fileId) {
-      const fileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (fileMatch) {
-        fileId = fileMatch[1];
-      }
-    }
-    
-    // If we found a file ID, convert to direct image URL using thumbnail API
-    if (fileId) {
-      // Try the thumbnail API first (works better for images)
-      const convertedUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
-      return convertedUrl;
-    }
-    
-    return url;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setInternalValue(newValue);
-    
-    // CRITICAL: Immediately propagate the change
-    onUpdateValue(newValue);
-    
-    setImageError(false); // Reset error when URL changes
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setIsEditing(false);
-      (e.target as HTMLInputElement).blur();
-    }
-    onKeyDown(e, itemId, cellRefKey);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const handleImageLoad = () => {
-    setImageError(false);
-  };
-
-  const handleCellClick = (e: React.MouseEvent) => {
-    // Prevent event bubbling to row click handler
-    e.stopPropagation();
-    setIsEditing(true);
-    
-    // Call the parent onCellClick if provided
-    if (onCellClick) {
-      onCellClick(e);
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    setIsEditing(false);
-    
-    // Final update on blur to ensure consistency
-    const finalValue = e.target.value;
-    
-    // CRITICAL: Always call onUpdateValue on blur to ensure the final state is saved
-    onUpdateValue(finalValue);
-    
-    if (finalValue !== internalValue) {
-      setInternalValue(finalValue);
-    }
-  };
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    setIsEditing(true);
-  };
-
-  // Check if it looks like an image URL (ends with common image extensions or contains image domains)
-  const isLikelyImageUrl = internalValue && (
-    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
-    /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
-    internalValue.includes('images') ||
-    internalValue.includes('photos') ||
-    internalValue.includes('imgur') ||
-    internalValue.includes('unsplash') ||
-    internalValue.includes('drive.google.com') ||
-    internalValue.includes('gstatic.com') ||
-    internalValue.includes('amazonaws.com') ||
-    internalValue.includes('cloudinary.com')
-  );
-
-  // Get the display URL (convert Google Drive links if necessary)
-  const displayUrl = isLikelyImageUrl && internalValue ? convertGoogleDriveUrl(internalValue) : internalValue;
-
-  // Check if we have a valid image URL (non-empty and no error)
-  const isValidImageUrl = internalValue && internalValue.trim() && !imageError;
+  if (isEditing) {
+    return (
+      <div 
+        className="relative w-full h-full p-1" 
+        style={{ backgroundColor }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        <div className={`border-2 border-dashed rounded-lg p-2 text-center transition-colors ${
+          dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleInputChange}
+            className="hidden"
+            id={`file-${cellKey}`}
+          />
+          <label htmlFor={`file-${cellKey}`} className="cursor-pointer">
+            <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-600">Drop image or click to upload</p>
+          </label>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-1 right-1"
+          onClick={() => setIsEditing(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div 
-      className="relative w-full p-1 cursor-pointer"
-      style={{ 
-        backgroundColor,
-        minHeight: isValidImageUrl ? '72px' : '32px',
-        height: isValidImageUrl ? '72px' : 'auto'
+      className="w-full h-full p-1 cursor-pointer group"
+      style={{ backgroundColor }}
+      onClick={(e) => {
+        onCellClick(e);
+        setIsEditing(true);
       }}
-      onClick={handleCellClick}
     >
-      {isEditing ? (
-        <input
-          ref={(el) => {
-            if (el) {
-              cellRefs.current[cellKey] = el;
-            }
-          }}
-          type="text"
-          value={internalValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          onFocus={handleFocus}
-          onClick={(e) => {
-            // Prevent event bubbling when clicking on input
-            e.stopPropagation();
-          }}
-          className="w-full h-full bg-transparent border-none outline-none resize-none text-sm"
-          style={{ color: textColor }}
-          autoFocus={true}
-        />
+      {value ? (
+        <div className="relative h-full">
+          <img 
+            src={value} 
+            alt="Cell content" 
+            className="h-full w-full object-cover rounded"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded flex items-center justify-center">
+            <Image className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
       ) : (
-        <div 
-          className="w-full h-full cursor-pointer"
-          onClick={handleCellClick}
-        >
-          {isValidImageUrl && isLikelyImageUrl ? (
-            <img
-              src={displayUrl}
-              alt="Rundown image"
-              className="w-full h-full object-contain rounded"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              onClick={(e) => {
-                // Prevent event bubbling when clicking on image
-                e.stopPropagation();
-                handleCellClick(e);
-              }}
-              style={{ maxHeight: '68px' }}
-            />
-          ) : (
-            <div 
-              className="w-full h-8 flex items-center text-sm"
-              style={{ color: textColor || '#666' }}
-            >
-              {imageError ? 'Invalid image URL' : (internalValue || '')}
-            </div>
-          )}
+        <div className="h-full flex items-center justify-center border border-dashed border-gray-300 rounded">
+          <div className="text-center">
+            <Image className="h-6 w-6 mx-auto mb-1 text-gray-400" />
+            <p className="text-xs text-gray-500">
+              <HighlightedText
+                text="Add image"
+                matches={highlightMatches}
+                currentMatch={currentHighlightMatch}
+              />
+            </p>
+          </div>
         </div>
       )}
     </div>

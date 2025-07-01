@@ -6,6 +6,7 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -22,6 +23,8 @@ interface RegularRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -58,6 +61,8 @@ const RegularRow = (props: RegularRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
+    searchMatches = [],
+    currentSearchMatch,
     onToggleFloat,
     onColorSelect,
     onClearSelection,
@@ -199,6 +204,8 @@ const RegularRow = (props: RegularRowProps) => {
           isDraggingMultiple={isDraggingMultiple}
           isSelected={isSelected}
           currentSegmentId={currentSegmentId}
+          searchMatches={searchMatches}
+          currentSearchMatch={currentSearchMatch}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}

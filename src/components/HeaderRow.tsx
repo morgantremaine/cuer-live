@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -5,6 +6,7 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { SearchMatch } from '@/hooks/useRundownSearch';
 
 interface HeaderRowProps {
   item: RundownItem;
@@ -19,6 +21,8 @@ interface HeaderRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchMatches?: SearchMatch[];
+  currentSearchMatch?: SearchMatch | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -50,6 +54,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
+    searchMatches = [],
+    currentSearchMatch,
     onColorSelect,
     onClearSelection,
     onAddRow,
@@ -177,6 +183,8 @@ const HeaderRow = (props: HeaderRowProps) => {
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
           currentSegmentId={currentSegmentId}
+          searchMatches={searchMatches}
+          currentSearchMatch={currentSearchMatch}
           cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
