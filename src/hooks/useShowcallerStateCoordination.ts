@@ -18,156 +18,131 @@ export const useShowcallerStateCoordination = ({
   const initializationRef = useRef<boolean>(false);
   const lastSyncTimestampRef = useRef<string | null>(null);
 
-  // Visual state management with precision timing
-  const {
-    visualState,
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
-    play,
-    pause,
-    forward,
-    backward,
-    reset,
-    jumpToSegment,
-    applyExternalVisualState,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    isController,
-    trackOwnUpdate,
-    isInitialized
-  } = useShowcallerVisualState({
+  // Use simplified visual state with master timing
+  const showcallerState = useShowcallerVisualState({
     items,
     rundownId,
     userId
   });
 
-  // Enhanced external state handler with better coordination
+  // Enhanced external state handler
   const handleExternalVisualState = useCallback((externalState: any) => {
-    // Skip if we haven't initialized yet to prevent conflicts
-    if (!isInitialized) {
-      console.log('📺 Deferring external state - not initialized yet');
+    if (!showcallerState.isInitialized) {
+      console.log('📺 Deferring external state - not initialized');
       return;
     }
 
-    // Skip duplicate states
     if (externalState.lastUpdate === lastSyncTimestampRef.current) {
       return;
     }
 
     lastSyncTimestampRef.current = externalState.lastUpdate;
     
-    console.log('📺 Coordinating external showcaller state:', {
+    console.log('📺 Coordinating external state with master timing:', {
       fromController: externalState.controllerId,
-      currentController: visualState.controllerId,
-      isCurrentlyController: isController,
+      currentController: showcallerState.visualState.controllerId,
       timestamp: externalState.lastUpdate
     });
 
-    // Apply the external state
-    applyExternalVisualState(externalState);
-  }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController]);
+    showcallerState.applyExternalVisualState(externalState);
+  }, [showcallerState]);
 
   // Realtime synchronization
   const { isConnected, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
     rundownId,
     onExternalVisualStateReceived: handleExternalVisualState,
-    enabled: isInitialized
+    enabled: showcallerState.isInitialized
   });
 
-  // Enhanced control functions with better coordination
+  // Coordinated control functions with master timing
   const coordinatedPlay = useCallback((selectedSegmentId?: string) => {
-    console.log('📺 Coordinated play called:', { selectedSegmentId, userId, isController });
+    console.log('📺 Coordinated play with master timing:', { selectedSegmentId, userId });
     
-    // Track this as our own update
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    play(selectedSegmentId);
-  }, [play, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.play(selectedSegmentId);
+  }, [showcallerState, userId, trackOwnVisualUpdate]);
 
   const coordinatedPause = useCallback(() => {
-    console.log('📺 Coordinated pause called:', { userId, isController });
+    console.log('📺 Coordinated pause with master timing');
     
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    pause();
-  }, [pause, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.pause();
+  }, [showcallerState, trackOwnVisualUpdate]);
 
   const coordinatedForward = useCallback(() => {
-    console.log('📺 Coordinated forward called:', { userId, isController });
+    console.log('📺 Coordinated forward with master timing');
     
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    forward();
-  }, [forward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.forward();
+  }, [showcallerState, trackOwnVisualUpdate]);
 
   const coordinatedBackward = useCallback(() => {
-    console.log('📺 Coordinated backward called:', { userId, isController });
+    console.log('📺 Coordinated backward with master timing');
     
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    backward();
-  }, [backward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.backward();
+  }, [showcallerState, trackOwnVisualUpdate]);
 
   const coordinatedReset = useCallback(() => {
-    console.log('📺 Coordinated reset called:', { userId, isController });
+    console.log('📺 Coordinated reset with master timing');
     
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    reset();
-  }, [reset, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.reset();
+  }, [showcallerState, trackOwnVisualUpdate]);
 
   const coordinatedJumpToSegment = useCallback((segmentId: string) => {
-    console.log('📺 Coordinated jump to segment called:', { segmentId, userId, isController });
+    console.log('📺 Coordinated jump with master timing:', segmentId);
     
     const timestamp = new Date().toISOString();
-    trackOwnUpdate(timestamp);
+    showcallerState.trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
-    jumpToSegment(segmentId);
-  }, [jumpToSegment, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    showcallerState.jumpToSegment(segmentId);
+  }, [showcallerState, trackOwnVisualUpdate]);
 
   // Initialization coordination
   useEffect(() => {
-    if (isInitialized && !initializationRef.current) {
+    if (showcallerState.isInitialized && !initializationRef.current) {
       initializationRef.current = true;
-      console.log('📺 Showcaller state coordination initialized:', {
+      console.log('📺 Master timing coordination initialized:', {
         rundownId,
         userId,
-        currentSegmentId,
-        isPlaying,
         isConnected
       });
     }
-  }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isConnected]);
+  }, [showcallerState.isInitialized, rundownId, userId, isConnected]);
 
   return {
-    // State
-    visualState,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    isController,
-    isInitialized,
+    // State from master timing
+    visualState: showcallerState.visualState,
+    isPlaying: showcallerState.isPlaying,
+    currentSegmentId: showcallerState.currentSegmentId,
+    timeRemaining: showcallerState.timeRemaining, // From master timing
+    isController: showcallerState.isController,
+    isInitialized: showcallerState.isInitialized,
     isConnected,
     
     // Visual state management
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
+    getItemVisualStatus: showcallerState.getItemVisualStatus,
+    setItemVisualStatus: showcallerState.setItemVisualStatus,
+    clearAllVisualStatuses: showcallerState.clearAllVisualStatuses,
     
-    // Coordinated controls
+    // Coordinated controls with master timing
     play: coordinatedPlay,
     pause: coordinatedPause,
     forward: coordinatedForward,
@@ -176,7 +151,7 @@ export const useShowcallerStateCoordination = ({
     jumpToSegment: coordinatedJumpToSegment,
     
     // Tracking
-    trackOwnUpdate,
+    trackOwnUpdate: showcallerState.trackOwnUpdate,
     trackOwnVisualUpdate
   };
 };
