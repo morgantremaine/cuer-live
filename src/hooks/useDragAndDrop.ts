@@ -1,21 +1,22 @@
 
 import { useState } from 'react';
 import { RundownItem } from './useRundownItems';
+import { Column } from '@/types/columns';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
   selectedRows: Set<string>,
   scrollContainerRef?: React.RefObject<HTMLElement>,
-  saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
-  columns?: any[],
+  saveUndoState?: (items: RundownItem[], columns: Column[], title: string, action: string) => void,
+  columns?: Column[],
   title?: string
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
-  const renumberItems = (items: RundownItem[]) => {
+  const renumberItems = (items: RundownItem[]): RundownItem[] => {
     let headerIndex = 0;
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
@@ -43,11 +44,13 @@ export const useDragAndDrop = (
     e.dataTransfer.effectAllowed = 'move';
     
     // Store drag data
-    e.dataTransfer.setData('text/plain', JSON.stringify({
+    const dragData = {
       draggedIndex: index,
       isMultiple: isMultipleSelection,
       selectedIds: Array.from(selectedRows)
-    }));
+    };
+    
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
   };
 
   const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
@@ -90,7 +93,15 @@ export const useDragAndDrop = (
       return;
     }
 
-    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    let dragData: { draggedIndex: number; isMultiple: boolean; selectedIds: string[] };
+    try {
+      dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    } catch {
+      setDraggedItemIndex(null);
+      setIsDraggingMultiple(false);
+      return;
+    }
+
     const { isMultiple, selectedIds } = dragData;
 
     let newItems: RundownItem[];

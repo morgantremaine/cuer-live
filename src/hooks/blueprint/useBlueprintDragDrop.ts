@@ -5,7 +5,15 @@ import { BlueprintList } from '@/types/blueprint';
 export const useBlueprintDragDrop = (
   lists: BlueprintList[],
   setLists: (lists: BlueprintList[]) => void,
-  saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => void,
+  saveBlueprint: (
+    lists: BlueprintList[], 
+    silent?: boolean, 
+    showDateOverride?: string, 
+    notesOverride?: string, 
+    crewDataOverride?: any, 
+    cameraPlots?: any, 
+    componentOrder?: string[]
+  ) => void,
   getCurrentComponentOrder: () => string[]
 ) => {
   const [draggedListId, setDraggedListId] = useState<string | null>(null);
@@ -24,12 +32,17 @@ export const useBlueprintDragDrop = (
 
   const handleDragEnterContainer = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
-    setInsertionIndex(index);
+    if (draggedListId) {
+      setInsertionIndex(index);
+    }
   }, [draggedListId]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     // Only reset if we're leaving the main container
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+    const currentTarget = e.currentTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    
+    if (!currentTarget.contains(relatedTarget)) {
       setInsertionIndex(null);
     }
   }, []);

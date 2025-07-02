@@ -1,81 +1,75 @@
 
 import React from 'react';
 import { BlueprintList } from '@/types/blueprint';
-import { RundownItem } from '@/types/rundown';
-import BlueprintListCard from './BlueprintListCard';
+import { BlueprintListCard } from './BlueprintListCard';
+import { useBlueprintDragDrop } from '@/hooks/blueprint/useBlueprintDragDrop';
 
 interface BlueprintListsGridProps {
   lists: BlueprintList[];
-  rundownItems: RundownItem[];
-  draggedListId: string | null;
-  insertionIndex: number | null;
+  setLists: (lists: BlueprintList[]) => void;
+  saveBlueprint: (lists: BlueprintList[], silent?: boolean, showDateOverride?: string, notesOverride?: string, crewDataOverride?: any, cameraPlots?: any, componentOrder?: string[]) => void;
+  getCurrentComponentOrder: () => string[];
+  onEditList: (listId: string) => void;
   onDeleteList: (listId: string) => void;
-  onRenameList: (listId: string, newName: string) => void;
-  onUpdateCheckedItems: (listId: string, checkedItems: Record<string, boolean>) => void;
-  onToggleUnique?: (listId: string, showUnique: boolean) => void;
-  onDragStart: (e: React.DragEvent, listId: string) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragEnterContainer: (e: React.DragEvent, index: number) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
+  onToggleItem: (listId: string, itemId: string) => void;
+  onAddItem: (listId: string, text: string) => void;
+  onDeleteItem: (listId: string, itemId: string) => void;
+  onEditItem: (listId: string, itemId: string, newText: string) => void;
 }
 
-const BlueprintListsGrid = ({
+export const BlueprintListsGrid: React.FC<BlueprintListsGridProps> = ({
   lists,
-  rundownItems,
-  draggedListId,
-  insertionIndex,
+  setLists,
+  saveBlueprint,
+  getCurrentComponentOrder,
+  onEditList,
   onDeleteList,
-  onRenameList,
-  onUpdateCheckedItems,
-  onToggleUnique,
-  onDragStart,
-  onDragOver,
-  onDragEnterContainer,
-  onDragLeave,
-  onDrop,
-  onDragEnd
-}: BlueprintListsGridProps) => {
+  onToggleItem,
+  onAddItem,
+  onDeleteItem,
+  onEditItem
+}) => {
+  const {
+    draggedListId,
+    insertionIndex,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnterContainer,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd
+  } = useBlueprintDragDrop(lists, setLists, saveBlueprint, getCurrentComponentOrder);
+
   return (
     <div 
-      className="columns-1 lg:columns-2 gap-6 relative"
-      data-drop-container
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {lists.map((list, index) => (
-        <React.Fragment key={list.id}>
-          {/* Insertion line at the top */}
+        <div key={list.id}>
           {insertionIndex === index && (
-            <div className="h-1 bg-gray-400 rounded-full mb-4 break-inside-avoid animate-pulse" />
+            <div className="h-1 bg-blue-500 rounded mb-4 transition-all duration-200" />
           )}
-          
-          <div className="break-inside-avoid mb-6">
-            <BlueprintListCard
-              list={list}
-              index={index}
-              rundownItems={rundownItems}
-              onDelete={onDeleteList}
-              onRename={onRenameList}
-              onUpdateCheckedItems={onUpdateCheckedItems}
-              onToggleUnique={onToggleUnique}
-              isDragging={draggedListId === list.id}
-              onDragStart={onDragStart}
-              onDragEnterContainer={onDragEnterContainer}
-              onDragEnd={onDragEnd}
-            />
-          </div>
-        </React.Fragment>
+          <BlueprintListCard
+            list={list}
+            onEdit={() => onEditList(list.id)}
+            onDelete={() => onDeleteList(list.id)}
+            onToggleItem={onToggleItem}
+            onAddItem={onAddItem}
+            onDeleteItem={onDeleteItem}
+            onEditItem={onEditItem}
+            isDragging={draggedListId === list.id}
+            onDragStart={(e) => handleDragStart(e, list.id)}
+            onDragEnter={(e) => handleDragEnterContainer(e, index)}
+            onDragEnd={handleDragEnd}
+          />
+        </div>
       ))}
-      
-      {/* Final insertion line */}
       {insertionIndex === lists.length && (
-        <div className="h-1 bg-gray-400 rounded-full mt-4 break-inside-avoid animate-pulse" />
+        <div className="h-1 bg-blue-500 rounded mb-4 transition-all duration-200" />
       )}
     </div>
   );
 };
-
-export default BlueprintListsGrid;
