@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,12 +21,24 @@ export const useShowcallerRealtimeSync = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+  const lastShowcallerStateRef = useRef<any>(null);
   
   // Add processing state tracking
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
+
+  // Helper function to compare showcaller states
+  const hasShowcallerStateChanged = useCallback((newState: any, previousState: any) => {
+    if (!newState && !previousState) return false;
+    if (!newState || !previousState) return true;
+    
+    // Compare the key showcaller properties that indicate actual state changes
+    const keyProps = ['isPlaying', 'currentSegmentId', 'timeRemaining', 'controllerId'];
+    
+    return keyProps.some(prop => newState[prop] !== previousState[prop]);
+  }, []);
 
   // Simplified update handler for showcaller visual state only
   const handleShowcallerVisualUpdate = useCallback(async (payload: any) => {
@@ -48,23 +61,38 @@ export const useShowcallerRealtimeSync = ({
     }
 
     const showcallerVisualState = payload.new.showcaller_state;
+    const previousState = lastShowcallerStateRef.current;
     
     console.log('📺 Processing showcaller update:', {
       hasLastUpdate: !!showcallerVisualState.lastUpdate,
       lastUpdate: showcallerVisualState.lastUpdate,
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
-      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)
+      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate),
+      hasStateChanged: hasShowcallerStateChanged(showcallerVisualState, previousState)
     });
 
     // Skip if this update originated from this user
     if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
       console.log('📺 Skipping - own update detected');
+      // Update our reference but don't show the icon
+      lastShowcallerStateRef.current = showcallerVisualState;
       return;
     }
 
-    // Set processing state immediately
-    console.log('📺 Setting processing state to true');
+    // Check if the showcaller state has actually changed
+    if (!hasShowcallerStateChanged(showcallerVisualState, previousState)) {
+      console.log('📺 Skipping - showcaller state unchanged (likely content update)');
+      // Update our reference but don't show the icon
+      lastShowcallerStateRef.current = showcallerVisualState;
+      return;
+    }
+
+    // Update our reference to the new state
+    lastShowcallerStateRef.current = showcallerVisualState;
+
+    // Set processing state immediately for genuine showcaller changes
+    console.log('📺 Setting processing state to true - genuine showcaller change detected');
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
@@ -98,7 +126,7 @@ export const useShowcallerRealtimeSync = ({
       processingTimeoutRef.current = null;
     }, 50); // Minimal delay for processing
     
-  }, [rundownId, user?.id]);
+  }, [rundownId, user?.id, hasShowcallerStateChanged]);
 
   // Function to track our own visual updates - only tracks updates from current user
   const trackOwnVisualUpdate = useCallback((lastUpdate: string) => {
