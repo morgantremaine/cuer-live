@@ -101,6 +101,28 @@ const RundownContextMenu = memo(({
     }
   };
 
+  // Handle add row and clear selection
+  const handleAddRow = () => {
+    if (onAddRow) {
+      onAddRow();
+    }
+    // Clear selection after adding row
+    if (onClearSelection) {
+      onClearSelection();
+    }
+  };
+
+  // Handle add header and clear selection
+  const handleAddHeader = () => {
+    if (onAddHeader) {
+      onAddHeader();
+    }
+    // Clear selection after adding header
+    if (onClearSelection) {
+      onClearSelection();
+    }
+  };
+
   return (
     <>
       <ContextMenu>
@@ -110,7 +132,7 @@ const RundownContextMenu = memo(({
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
           {onAddRow && (
             <ContextMenuItem 
-              onClick={onAddRow} 
+              onClick={handleAddRow} 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -120,7 +142,7 @@ const RundownContextMenu = memo(({
           
           {onAddHeader && (
             <ContextMenuItem 
-              onClick={onAddHeader} 
+              onClick={handleAddHeader} 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Plus className="mr-2 h-4 w-4" />
