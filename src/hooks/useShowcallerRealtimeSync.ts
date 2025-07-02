@@ -51,6 +51,22 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
+    // Check timestamp freshness - ignore updates older than 5 minutes
+    if (showcallerVisualState.lastUpdate) {
+      const updateTime = new Date(showcallerVisualState.lastUpdate);
+      const now = new Date();
+      const timeDiffMinutes = (now.getTime() - updateTime.getTime()) / (1000 * 60);
+      
+      if (timeDiffMinutes > 5) {
+        console.log('📺 Skipping stale showcaller update:', {
+          lastUpdate: showcallerVisualState.lastUpdate,
+          ageMinutes: Math.round(timeDiffMinutes),
+          threshold: 5
+        });
+        return;
+      }
+    }
+    
     // Create a signature of the showcaller state to detect actual changes
     const stateSignature = JSON.stringify({
       lastUpdate: showcallerVisualState.lastUpdate,
