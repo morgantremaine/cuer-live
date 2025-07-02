@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,7 +20,6 @@ export const useShowcallerRealtimeSync = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-  const lastProcessedShowcallerStateRef = useRef<string | null>(null);
   
   // Add processing state tracking
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
@@ -51,70 +49,22 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
-    // Check timestamp freshness - ignore updates older than 5 minutes
-    if (showcallerVisualState.lastUpdate) {
-      const updateTime = new Date(showcallerVisualState.lastUpdate);
-      const now = new Date();
-      const timeDiffMinutes = (now.getTime() - updateTime.getTime()) / (1000 * 60);
-      
-      if (timeDiffMinutes > 5) {
-        console.log('📺 Skipping stale showcaller update:', {
-          lastUpdate: showcallerVisualState.lastUpdate,
-          ageMinutes: Math.round(timeDiffMinutes),
-          threshold: 5
-        });
-        return;
-      }
-    }
-    
-    // Create a signature of the showcaller state to detect actual changes
-    const stateSignature = JSON.stringify({
-      lastUpdate: showcallerVisualState.lastUpdate,
-      controllerId: showcallerVisualState.controllerId,
-      currentSegmentId: showcallerVisualState.currentSegmentId,
-      isPlaying: showcallerVisualState.isPlaying,
-      timeRemaining: showcallerVisualState.timeRemaining
-    });
-    
-    // Check if this is the same showcaller state we already processed
-    if (stateSignature === lastProcessedShowcallerStateRef.current) {
-      console.log('📺 Skipping - same showcaller state already processed');
-      return;
-    }
-    
-    // Check if this is our own update using controller ID primarily
-    const isOwnControllerUpdate = showcallerVisualState.controllerId === user?.id;
-    
-    // Also check if we have the specific timestamp tracked (for recent updates)
-    const isTrackedUpdate = showcallerVisualState.lastUpdate && 
-                           ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate);
-    
-    const isOwnUpdate = isOwnControllerUpdate || isTrackedUpdate;
-    
     console.log('📺 Processing showcaller update:', {
       hasLastUpdate: !!showcallerVisualState.lastUpdate,
       lastUpdate: showcallerVisualState.lastUpdate,
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
-      isOwnControllerUpdate,
-      isTrackedUpdate,
-      isOwnUpdate,
-      stateSignature: stateSignature.substring(0, 100) + '...'
+      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)
     });
 
-    // Skip if this update originated from this user - DO NOT set processing state
-    if (isOwnUpdate) {
-      console.log('📺 Skipping - own update detected (controller match or tracked timestamp)');
-      // Still update the last processed state to avoid re-processing
-      lastProcessedShowcallerStateRef.current = stateSignature;
+    // Skip if this update originated from this user
+    if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
+      console.log('📺 Skipping - own update detected');
       return;
     }
 
-    // Update the last processed state
-    lastProcessedShowcallerStateRef.current = stateSignature;
-
-    // Only set processing state for external updates
-    console.log('📺 External update detected - setting processing state to true');
+    // Set processing state immediately
+    console.log('📺 Setting processing state to true');
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
