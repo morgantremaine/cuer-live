@@ -54,16 +54,18 @@ export const BlueprintListsGrid: React.FC<BlueprintListsGridProps> = ({
           )}
           <BlueprintListCard
             list={list}
-            onEdit={() => onEditList(list.id)}
-            onDelete={() => onDeleteList(list.id)}
-            onToggleItem={onToggleItem}
-            onAddItem={onAddItem}
-            onDeleteItem={onDeleteItem}
-            onEditItem={onEditItem}
+            rundownItems={[]} // This should be passed from parent component
+            onRename={(listId, newName) => onEditList(listId)} // Map onEdit to onRename
+            onDelete={onDeleteList}
+            onUpdateCheckedItems={(listId, checkedItems) => {
+              // Handle checkbox updates - this should be implemented properly
+              console.log('Update checked items:', listId, checkedItems);
+            }}
             isDragging={draggedListId === list.id}
             onDragStart={(e) => handleDragStart(e, list.id)}
-            onDragEnter={(e) => handleDragEnterContainer(e, index)}
+            onDragEnterContainer={(e) => handleDragEnterContainer(e, index)}
             onDragEnd={handleDragEnd}
+            index={index}
           />
         </div>
       ))}
@@ -73,3 +75,5 @@ export const BlueprintListsGrid: React.FC<BlueprintListsGridProps> = ({
     </div>
   );
 };
+
+export default BlueprintListsGrid;
