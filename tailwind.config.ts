@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -84,11 +85,29 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'wifi-building': {
+					'0%': {
+						'clip-path': 'polygon(0 100%, 100% 100%, 100% 100%, 0 100%)'
+					},
+					'25%': {
+						'clip-path': 'polygon(0 100%, 100% 100%, 100% 85%, 0 85%)'
+					},
+					'50%': {
+						'clip-path': 'polygon(0 100%, 100% 100%, 100% 65%, 0 65%)'
+					},
+					'75%': {
+						'clip-path': 'polygon(0 100%, 100% 100%, 100% 40%, 0 40%)'
+					},
+					'100%': {
+						'clip-path': 'polygon(0 100%, 100% 100%, 100% 0%, 0 0%)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'wifi-building': 'wifi-building 1.5s ease-in-out infinite'
 			}
 		}
 	},
