@@ -68,6 +68,12 @@ const Dashboard = () => {
     }
   }, [user?.id, teamId]);
 
+  // Debug logging for rundowns
+  useEffect(() => {
+    console.log('Dashboard - Total rundowns loaded:', savedRundowns.length);
+    console.log('Dashboard - Rundowns:', savedRundowns.map(r => ({ id: r.id, title: r.title, archived: r.archived })));
+  }, [savedRundowns]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
@@ -233,33 +239,45 @@ const Dashboard = () => {
 
   // Filter rundowns based on selected folder and search query
   const getFilteredRundowns = () => {
-    let baseRundowns = savedRundowns;
+    let baseRundowns = [...savedRundowns]; // Create a copy to avoid mutation
+
+    console.log('Filtering rundowns - Total available:', baseRundowns.length);
+    console.log('Filter type:', folderType, 'Search query:', searchQuery);
 
     // If searching, filter by search query across all rundowns
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      baseRundowns = savedRundowns.filter(rundown => 
+      const filtered = baseRundowns.filter(rundown => 
         rundown.title.toLowerCase().includes(query)
       );
-      return baseRundowns;
+      console.log('Search filtered rundowns:', filtered.length);
+      return filtered;
     }
 
     // Otherwise, filter by folder type as before
+    let filtered;
     switch (folderType) {
       case 'all':
-        return baseRundowns.filter(r => !r.archived);
+        filtered = baseRundowns.filter(r => !r.archived);
+        break;
       case 'recent':
-        return baseRundowns.filter(r => {
+        filtered = baseRundowns.filter(r => {
           const daysDiff = (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24);
           return daysDiff <= 7 && !r.archived;
         });
+        break;
       case 'archived':
-        return baseRundowns.filter(r => r.archived);
+        filtered = baseRundowns.filter(r => r.archived);
+        break;
       case 'custom':
-        return baseRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+        filtered = baseRundowns.filter(r => r.folder_id === selectedFolder && !r.archived);
+        break;
       default:
-        return baseRundowns.filter(r => !r.archived);
+        filtered = baseRundowns.filter(r => !r.archived);
     }
+    
+    console.log('Folder filtered rundowns:', filtered.length);
+    return filtered;
   };
 
   // Get folder title for display
@@ -286,6 +304,12 @@ const Dashboard = () => {
 
   const filteredRundowns = getFilteredRundowns();
   const folderTitle = getFolderTitle();
+
+  // Debug logging for filtered results
+  useEffect(() => {
+    console.log('Filtered rundowns count:', filteredRundowns.length);
+    console.log('Filtered rundowns:', filteredRundowns.map(r => ({ id: r.id, title: r.title })));
+  }, [filteredRundowns]);
 
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
@@ -383,6 +407,12 @@ const Dashboard = () => {
                       Import CSV
                     </Button>
                   </CSVImportDialog>
+                </div>
+                
+                {/* Debug Info - Remove in production */}
+                <div className="bg-gray-800 p-4 rounded-lg text-white text-sm">
+                  <p>Debug Info: Total rundowns: {savedRundowns.length}, Filtered: {filteredRundowns.length}</p>
+                  <p>Filter: {folderType}, Search: "{searchQuery}"</p>
                 </div>
                 
                 {/* Rundowns Grid */}
