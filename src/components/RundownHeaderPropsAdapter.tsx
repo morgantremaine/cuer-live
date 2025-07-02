@@ -47,4 +47,3 @@ const RundownHeaderPropsAdapter = ({
 };
 
 export default RundownHeaderPropsAdapter;
-
