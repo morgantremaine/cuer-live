@@ -25,9 +25,13 @@ export const timeToSeconds = (timeStr: string): number => {
 
 // Pure function to convert seconds to time string
 export const secondsToTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  // Ensure we're working with a positive integer to prevent jumping
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = Math.floor(totalSeconds % 60); // Fixed: Added Math.floor to prevent jumping
+  
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 

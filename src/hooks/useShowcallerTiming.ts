@@ -28,6 +28,7 @@ export const useShowcallerTiming = ({
   const [currentTime, setCurrentTime] = useState(new Date());
   const lastTimingStateRef = useRef<TimingStatus | null>(null);
   const timingBufferRef = useRef<number>(0);
+  const stabilizedDifferenceRef = useRef<number>(0);
 
   // Update current time every 100ms when playing for better precision
   useEffect(() => {
@@ -35,7 +36,7 @@ export const useShowcallerTiming = ({
 
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 100); // Increased frequency from 1000ms to 100ms
+    }, 100);
 
     return () => clearInterval(interval);
   }, [isPlaying]);
@@ -43,7 +44,6 @@ export const useShowcallerTiming = ({
   // Immediate timing calculation on play start
   useEffect(() => {
     if (isPlaying && currentSegmentId) {
-      // Force immediate timing calculation
       setCurrentTime(new Date());
     }
   }, [isPlaying, currentSegmentId]);
@@ -124,18 +124,24 @@ export const useShowcallerTiming = ({
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     }
     
-    // Stabilize timing display to prevent flickering
-    const roundedDifference = Math.round(differenceSeconds);
+    // Enhanced stabilization to prevent second jumping
+    const rawDifference = Math.floor(differenceSeconds); // Floor to integer seconds
     
-    // Use buffer to prevent jumping between adjacent values
-    if (Math.abs(roundedDifference - timingBufferRef.current) <= 1 && lastTimingStateRef.current) {
-      // If the difference is within 1 second of the buffered value, maintain stability
-      if (Math.abs(differenceSeconds - timingBufferRef.current) < 0.5) {
-        differenceSeconds = timingBufferRef.current;
+    // Use enhanced buffering to prevent rapid changes
+    if (Math.abs(rawDifference - stabilizedDifferenceRef.current) <= 1) {
+      // If within 1 second of last stable value, maintain stability
+      const timeSinceLastChange = Math.abs(differenceSeconds - stabilizedDifferenceRef.current);
+      if (timeSinceLastChange < 0.3) { // 300ms threshold for stability
+        differenceSeconds = stabilizedDifferenceRef.current;
+      } else {
+        // Only change if we've been consistently different for a bit
+        stabilizedDifferenceRef.current = rawDifference;
+        differenceSeconds = rawDifference;
       }
     } else {
-      // Update buffer with new stable value
-      timingBufferRef.current = roundedDifference;
+      // Significant change, update immediately
+      stabilizedDifferenceRef.current = rawDifference;
+      differenceSeconds = rawDifference;
     }
     
     // TIMING LOGIC with consistent precision
@@ -143,7 +149,7 @@ export const useShowcallerTiming = ({
     const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
     
     const absoluteDifference = Math.abs(differenceSeconds);
-    const timeDifference = secondsToTime(Math.round(absoluteDifference));
+    const timeDifference = secondsToTime(absoluteDifference); // Now uses floored seconds
 
     const newStatus = {
       isOnTime,
