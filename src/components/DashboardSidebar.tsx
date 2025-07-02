@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,8 +78,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
   const [dropIndicatorIndex, setDropIndicatorIndex] = useState<number | null>(null);
 
-  // Calculate counts for system folders
-  const allCount = rundowns.length;
+  // Calculate counts for system folders - "All Rundowns" excludes archived
+  const allCount = rundowns.filter(r => !r.archived).length;
   const recentCount = rundowns.filter(r => {
     const daysDiff = (Date.now() - new Date(r.updated_at).getTime()) / (1000 * 60 * 60 * 24);
     return daysDiff <= 7 && !r.archived;
