@@ -22,8 +22,7 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   
-  // Realtime state - these won't interfere with core functionality
-  const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
+  // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
   // Typing session tracking
@@ -94,7 +93,10 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions, isSaving]),
     hasUnsavedChanges: state.hasUnsavedChanges,
-    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate
+    trackOwnUpdate: useCallback((timestamp: string) => {
+      // Track our own updates to prevent showing blue icon for our changes
+      console.log('📝 Tracking own update:', timestamp);
+    }, [])
   });
 
   // Stable realtime collaboration - unchanged
@@ -407,7 +409,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate,
+    isProcessingRealtimeUpdate: realtimeRundown.isProcessingContentUpdate, // NEW: Use content processing state
     
     // Calculations
     totalRuntime,

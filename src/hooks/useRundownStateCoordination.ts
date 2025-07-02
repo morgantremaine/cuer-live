@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -169,8 +168,9 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
-  // Combine processing states from both main realtime and showcaller
-  const combinedIsProcessingRealtimeUpdate = simplifiedState.isProcessingRealtimeUpdate || showcallerCoordination.isProcessingVisualUpdate;
+  // NEW: Keep processing states separate - NO combination
+  const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate; // Content updates only
+  const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
 
   return {
     coreState: {
@@ -184,12 +184,12 @@ export const useRundownStateCoordination = () => {
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
-      // State flags (NOW with combined processing state)
+      // State flags (NOW with separated processing states)
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
-      isProcessingRealtimeUpdate: combinedIsProcessingRealtimeUpdate,
+      isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerCoordination.currentSegmentId,

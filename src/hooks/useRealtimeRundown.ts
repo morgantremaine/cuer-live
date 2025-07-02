@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -25,7 +24,6 @@ interface UseRealtimeRundownProps {
   currentContentHash?: string;
   isEditing?: boolean;
   hasUnsavedChanges?: boolean;
-  isProcessingRealtimeUpdate?: boolean;
   trackOwnUpdate?: (timestamp: string) => void;
   onShowcallerActivity?: (active: boolean) => void;
   onShowcallerStateReceived?: (state: any) => void;
@@ -62,7 +60,6 @@ export const useRealtimeRundown = ({
   currentContentHash,
   isEditing = false,
   hasUnsavedChanges = false,
-  isProcessingRealtimeUpdate = false,
   trackOwnUpdate,
   onShowcallerActivity,
   onShowcallerStateReceived
@@ -77,6 +74,9 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
+  
+  // NEW: Separate state for content processing (blue Wi-Fi icon)
+  const [isProcessingContentUpdate, setIsProcessingContentUpdate] = useState(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -171,7 +171,6 @@ export const useRealtimeRundown = ({
       trackedUpdates: [],
       isEditing,
       hasUnsavedChanges,
-      isProcessing: isProcessingRealtimeUpdate,
       contentHash: currentContentHash,
       showcallerState: payload.new?.showcaller_state
     };
@@ -224,6 +223,13 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
+    // NEW: Set content processing state for blue Wi-Fi icon
+    console.log('🔄 Setting content processing state to true for external content update');
+    setIsProcessingContentUpdate(true);
+
+    // Clear any existing processing timeout to prevent race conditions
+    timeoutManagerRef.current.clear('content-processing');
+
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
@@ -236,9 +242,16 @@ export const useRealtimeRundown = ({
       } catch (error) {
         logger.error('Error processing realtime update:', error);
       }
+      
+      // Clear content processing state after a brief delay for visibility
+      timeoutManagerRef.current.set('content-processing', () => {
+        console.log('🔄 Clearing content processing state');
+        setIsProcessingContentUpdate(false);
+      }, 600); // 600ms delay to make the blue icon visible
+      
     }, 150);
     
-  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
+  }, [rundownId, user?.id, isEditing, hasUnsavedChanges, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
   useEffect(() => {
     // Clear any existing subscription
@@ -283,11 +296,13 @@ export const useRealtimeRundown = ({
       }
       // Clean up all timeouts when component unmounts
       timeoutManagerRef.current.clearAll();
+      setIsProcessingContentUpdate(false);
     };
   }, [rundownId, user, enabled, handleRealtimeUpdate]);
 
   return {
     isConnected,
+    isProcessingContentUpdate, // NEW: Expose content processing state
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };
