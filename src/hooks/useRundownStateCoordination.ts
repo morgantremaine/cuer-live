@@ -169,8 +169,8 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
-  // Combine processing states from both main realtime and showcaller
-  const combinedIsProcessingRealtimeUpdate = simplifiedState.isProcessingRealtimeUpdate || showcallerCoordination.isProcessingVisualUpdate;
+  // Use ONLY content processing state for the blue Wi-Fi icon, not showcaller processing
+  const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate;
 
   return {
     coreState: {
@@ -184,12 +184,12 @@ export const useRundownStateCoordination = () => {
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
-      // State flags (NOW with combined processing state)
+      // State flags (NOW using ONLY content processing state for the blue Wi-Fi icon)
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
-      isProcessingRealtimeUpdate: combinedIsProcessingRealtimeUpdate,
+      isProcessingRealtimeUpdate: contentProcessingState, // Only content updates, not showcaller
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerCoordination.currentSegmentId,

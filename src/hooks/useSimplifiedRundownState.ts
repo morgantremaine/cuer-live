@@ -1,453 +1,331 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { useRundownState } from './useRundownState';
-import { useSimpleAutoSave } from './useSimpleAutoSave';
-import { useStandaloneUndo } from './useStandaloneUndo';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
+import { useUndo } from './useUndo';
 import { useRealtimeRundown } from './useRealtimeRundown';
-import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
-import { useUserColumnPreferences } from './useUserColumnPreferences';
-import { supabase } from '@/lib/supabase';
-import { Column } from './useColumnsManager';
-import { createDefaultRundownItems } from '@/data/defaultRundownItems';
-import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
-import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { useAuth } from './useAuth';
+import { logger } from '@/utils/logger';
+
+interface UseSimplifiedRundownStateProps {
+  initialRundownId: string | null;
+}
 
 export const useSimplifiedRundownState = () => {
-  const params = useParams<{ id: string }>();
-  const rundownId = params.id === 'new' ? null : params.id || null;
+  const [rundownId, setRundownId] = useState<string | null>(null);
+  const [items, setItems] = useState<RundownItem[]>([]);
+  const [columns, setColumns] = useState<Column[]>([
+    { id: 'name', title: 'Name', width: '200px', visible: true },
+    { id: 'duration', title: 'Duration', width: '80px', visible: true },
+    { id: 'startTime', title: 'Start Time', width: '80px', visible: true },
+    { id: 'endTime', title: 'End Time', width: '80px', visible: true },
+    { id: 'talent', title: 'Talent', width: '150px', visible: true },
+    { id: 'script', title: 'Script', width: '300px', visible: false },
+    { id: 'notes', title: 'Notes', width: '300px', visible: false },
+    { id: 'gfx', title: 'GFX', width: '150px', visible: false },
+    { id: 'video', title: 'Video', width: '150px', visible: false },
+    { id: 'images', title: 'Images', width: '150px', visible: false },
+    { id: 'color', title: 'Color', width: '80px', visible: false },
+    { id: 'customFields', title: 'Custom Fields', width: '200px', visible: false },
+  ]);
+  const [visibleColumns, setVisibleColumns] = useState<Column[]>(columns.filter(col => col.visible));
+  const [rundownTitle, setRundownTitle] = useState<string>('');
+  const [rundownStartTime, setRundownStartTime] = useState<string>('00:00:00');
+  const [timezone, setTimezone] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
-  const [showcallerActivity, setShowcallerActivity] = useState(false);
+  // Auth hook
+  const { user } = useAuth();
   
-  // Realtime state - these won't interfere with core functionality
-  const [isProcessingRealtimeUpdate, setIsProcessingRealtimeUpdate] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  // Own update tracking
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
 
-  // Typing session tracking
-  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Initialize with default data (WITHOUT columns - they're now user-specific)
+  // Undo/Redo state
   const {
-    state,
-    actions,
-    helpers
-  } = useRundownState({
-    items: [],
-    columns: [], // Empty - will be managed separately
-    title: 'Untitled Rundown',
-    startTime: '09:00:00',
-    timezone: 'America/New_York'
+    state: undoState,
+    setState: setUndoState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    lastAction
+  } = useUndo<RundownItem[]>({
+    initialState: [],
+    onChange: () => {
+      setHasUnsavedChanges(true);
+    }
   });
 
-  // User-specific column preferences (separate from team sync)
-  const {
-    columns,
-    setColumns,
-    isLoading: isLoadingColumns,
-    isSaving: isSavingColumns
-  } = useUserColumnPreferences(rundownId);
+  // Function to save current state to undo stack
+  const saveUndoState = useCallback((action: string) => {
+    setUndoState(items, action);
+  }, [items, setUndoState]);
 
-  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive } = useSimpleAutoSave(
-    {
-      ...state,
-      columns: [] // Remove columns from team sync
-    }, 
-    rundownId, 
-    actions.markSaved
-  );
-
-  // Standalone undo system - unchanged
-  const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
-    onUndo: (items, _, title) => {
-      setUndoActive(true);
-      actions.setItems(items);
-      actions.setTitle(title);
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
       
+      // Simulate loading data (replace with actual data fetching)
       setTimeout(() => {
-        actions.markSaved();
-        actions.setItems([...items]);
-        setUndoActive(false);
-      }, 100);
-    },
-    setUndoActive
-  });
-
-  // Realtime rundown updates - EXCLUDES showcaller completely
-  const realtimeRundown = useRealtimeRundown({
-    rundownId,
-    onRundownUpdate: useCallback((updatedRundown) => {
-      // Only update if we're not currently saving to avoid conflicts
-      if (!isSaving) {
-        // Load state WITHOUT any showcaller data
-        actions.loadState({
-          items: updatedRundown.items || [],
-          columns: [],
-          title: updatedRundown.title || 'Untitled Rundown',
-          startTime: updatedRundown.start_time || '09:00:00',
-          timezone: updatedRundown.timezone || 'America/New_York'
-        });
-      }
-    }, [actions, isSaving]),
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isProcessingRealtimeUpdate: isProcessingRealtimeUpdate
-  });
-
-  // Stable realtime collaboration - unchanged
-  const stableRealtime = useStableRealtimeCollaboration({
-    rundownId,
-    onRemoteUpdate: useCallback(() => {
-      // This is just for notifications, doesn't change core functionality
-    }, []),
-    enabled: !!rundownId
-  });
-
-  // Update connection status based on realtime hooks
-  useEffect(() => {
-    setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
-  }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
-
-  // Enhanced updateItem function - NO showcaller interference
-  const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Check if this is a typing field
-    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
+        const initialItems: RundownItem[] = [
+          { id: uuidv4(), type: 'segment', name: 'Opening Segment', duration: '00:05', startTime: '00:00:00' },
+          { id: uuidv4(), type: 'item', name: 'Intro Music', duration: '00:05', startTime: '00:00:05' },
+          { id: uuidv4(), type: 'item', name: 'Host Welcome', duration: '00:10', startTime: '00:00:10' },
+          { id: uuidv4(), type: 'segment', name: 'Interview Segment', duration: '00:15', startTime: '00:00:20' },
+          { id: uuidv4(), type: 'item', name: 'Guest Intro', duration: '00:05', startTime: '00:00:25' },
+          { id: uuidv4(), type: 'item', name: 'Interview Questions', duration: '00:10', startTime: '00:00:30' },
+          { id: uuidv4(), type: 'segment', name: 'Closing Segment', duration: '00:05', startTime: '00:00:40' },
+          { id: uuidv4(), type: 'item', name: 'Thank You', duration: '00:05', startTime: '00:00:45' },
+        ];
+        
+        setItems(initialItems);
+        setUndoState(initialItems, 'Initial data load');
+        setIsLoading(false);
+      }, 500);
+    };
     
-    if (isTypingField) {
-      const sessionKey = `${id}-${field}`;
-      
-      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
-        typingSessionRef.current = {
-          fieldKey: sessionKey,
-          startTime: Date.now()
-        };
-      }
-      
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        typingSessionRef.current = null;
-      }, 1000);
-    } else if (field === 'duration') {
-      saveUndoState(state.items, [], state.title, 'Edit duration');
-    }
-    
-    if (field.startsWith('customFields.')) {
-      const customFieldKey = field.replace('customFields.', '');
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        const currentCustomFields = item.customFields || {};
-        actions.updateItem(id, {
-          customFields: {
-            ...currentCustomFields,
-            [customFieldKey]: value
-          }
-        });
-      }
-    } else {
-      let updateField = field;
-      if (field === 'segmentName') updateField = 'name';
-      
-      actions.updateItem(id, { [updateField]: value });
-    }
-  }, [actions.updateItem, state.items, state.title, saveUndoState]);
+    loadInitialData();
+  }, [setUndoState]);
 
-  // Update current time every second
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
+  // Realtime collaboration with content processing state
+  const realtimeHook = useRealtimeRundown({
+    rundownId,
+    onRundownUpdate: handleRealtimeUpdate,
+    enabled: true,
+    currentContentHash: JSON.stringify({
+      items: items || [],
+      title: rundownTitle || '',
+      start_time: rundownStartTime || '',
+      timezone: timezone || ''
+    }),
+    isEditing: false,
+    hasUnsavedChanges,
+    isProcessingRealtimeUpdate: false,
+    trackOwnUpdate: (timestamp: string) => {
+      ownUpdateTrackingRef.current.add(timestamp);
+      setTimeout(() => {
+        ownUpdateTrackingRef.current.delete(timestamp);
+      }, 10000);
+    }
+  });
+
+  // Handle realtime updates
+  const handleRealtimeUpdate = useCallback((updatedRundown: any) => {
+    if (updatedRundown) {
+      setItems(updatedRundown.items || []);
+      setRundownTitle(updatedRundown.title || '');
+      setRundownStartTime(updatedRundown.start_time || '00:00:00');
+      setTimezone(updatedRundown.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setHasUnsavedChanges(false);
+    }
   }, []);
 
-  // Load rundown data if we have an ID (content only, columns loaded separately)
+  // Update visible columns
   useEffect(() => {
-    const loadRundown = async () => {
-      if (!rundownId || isInitialized) return;
-
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('*')
-          .eq('id', rundownId)
-          .single();
-
-        if (error) {
-          console.error('Error loading rundown:', error);
-        } else if (data) {
-          const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
-            ? data.items 
-            : createDefaultRundownItems();
-
-          // Load content only (columns loaded separately by useUserColumnPreferences)
-          actions.loadState({
-            items: itemsToLoad,
-            columns: [],
-            title: data.title || 'Untitled Rundown',
-            startTime: data.start_time || '09:00:00',
-            timezone: data.timezone || 'America/New_York'
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load rundown:', error);
-        actions.loadState({
-          items: createDefaultRundownItems(),
-          columns: [],
-          title: 'Untitled Rundown',
-          startTime: '09:00:00',
-          timezone: 'America/New_York'
-        });
-      } finally {
-        setIsLoading(false);
-        setIsInitialized(true);
-      }
-    };
-
-    loadRundown();
-  }, [rundownId, isInitialized, actions]);
-
-  useEffect(() => {
-    if (!rundownId && !isInitialized) {
-      actions.loadState({
-        items: createDefaultRundownItems(),
-        columns: [],
-        title: 'Untitled Rundown',
-        startTime: '09:00:00',
-        timezone: 'America/New_York'
-      });
-      setIsLoading(false);
-      setIsInitialized(true);
-    }
-  }, [rundownId, isInitialized, actions]);
-
-  // Calculate all derived values using pure functions - unchanged
-  const calculatedItems = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) {
-      return [];
-    }
-    
-    const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    return calculated;
-  }, [state.items, state.startTime]);
-
-  const totalRuntime = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) return '00:00:00';
-    return calculateTotalRuntime(state.items);
-  }, [state.items]);
-
-  // Enhanced actions with undo state saving (content only)
-  const enhancedActions = {
-    ...actions,
-    ...helpers,
-    
-    updateItem: enhancedUpdateItem,
-
-    toggleFloatRow: useCallback((id: string) => {
-      saveUndoState(state.items, [], state.title, 'Toggle float');
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        actions.updateItem(id, { isFloating: !item.isFloating });
-      }
-    }, [actions.updateItem, state.items, state.title, saveUndoState]),
-
-    deleteRow: useCallback((id: string) => {
-      saveUndoState(state.items, [], state.title, 'Delete row');
-      actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.title, saveUndoState]),
-
-    addRow: useCallback(() => {
-      saveUndoState(state.items, [], state.title, 'Add segment');
-      helpers.addRow();
-    }, [helpers.addRow, state.items, state.title, saveUndoState]),
-
-    addHeader: useCallback(() => {
-      saveUndoState(state.items, [], state.title, 'Add header');
-      helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState]),
-
-    setTitle: useCallback((newTitle: string) => {
-      if (state.title !== newTitle) {
-        saveUndoState(state.items, [], state.title, 'Change title');
-        actions.setTitle(newTitle);
-      }
-    }, [actions.setTitle, state.items, state.title, saveUndoState])
-  };
-
-  // Get visible columns from user preferences
-  const visibleColumns = useMemo(() => {
-    if (!columns || !Array.isArray(columns)) {
-      return [];
-    }
-    
-    const visible = columns.filter(col => col.isVisible !== false);
-    return visible;
+    setVisibleColumns(columns.filter(col => col.visible));
   }, [columns]);
 
-  const getHeaderDuration = useCallback((index: number) => {
-    if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
-    return calculateHeaderDuration(state.items, index);
-  }, [state.items]);
-
-  const getRowNumber = useCallback((index: number) => {
-    if (index < 0 || index >= calculatedItems.length) return '';
-    return calculatedItems[index].calculatedRowNumber;
-  }, [calculatedItems]);
-
-  const handleRowSelection = useCallback((itemId: string) => {
-    setSelectedRowId(prev => {
-      const newSelection = prev === itemId ? null : itemId;
-      return newSelection;
+  // Function to add a new item
+  const addItem = useCallback((newItem: RundownItem, insertIndex?: number) => {
+    const newItemWithId = { ...newItem, id: uuidv4() };
+    
+    setItems(prevItems => {
+      const newItems = insertIndex !== undefined
+        ? [...prevItems.slice(0, insertIndex), newItemWithId, ...prevItems.slice(insertIndex)]
+        : [...prevItems, newItemWithId];
+      
+      saveUndoState('Add item');
+      setHasUnsavedChanges(true);
+      return newItems;
     });
-  }, [selectedRowId]);
+  }, [saveUndoState]);
 
-  const clearRowSelection = useCallback(() => {
-    setSelectedRowId(null);
-  }, []);
+  // Function to update an item
+  const updateItem = useCallback((id: string, field: string, value: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      );
+      
+      saveUndoState(`Update ${field}`);
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+  }, [saveUndoState]);
 
-  // Fixed addRowAtIndex that properly inserts at specified index
+  // Function to delete an item
+  const deleteRow = useCallback((id: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => item.id !== id);
+      
+      saveUndoState('Delete item');
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+		setSelectedRowId(null);
+  }, [saveUndoState]);
+
+  // Function to toggle float state
+  const toggleFloat = useCallback((id: string) => {
+    setItems(prevItems => {
+      const newItems = prevItems.map(item =>
+        item.id === id ? { ...item, isFloating: !item.isFloating } : item
+      );
+      
+      saveUndoState('Toggle float');
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+  }, [saveUndoState]);
+
+  // Function to delete multiple items
+  const deleteMultipleItems = useCallback((ids: string[]) => {
+    setItems(prevItems => {
+      const newItems = prevItems.filter(item => !ids.includes(item.id));
+      
+      saveUndoState('Delete multiple items');
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+		setSelectedRowId(null);
+  }, [saveUndoState]);
+
+  // Function to add a new row
+  const addRow = useCallback(() => {
+    const newItem: RundownItem = {
+      id: uuidv4(),
+      type: 'item',
+      name: 'New Item',
+      duration: '00:00',
+      startTime: '00:00:00'
+    };
+    
+    setItems(prevItems => [...prevItems, newItem]);
+    saveUndoState('Add row');
+    setHasUnsavedChanges(true);
+  }, [saveUndoState]);
+
+  // Function to add a new row at a specific index
   const addRowAtIndex = useCallback((insertIndex: number) => {
-    saveUndoState(state.items, [], state.title, 'Add segment');
-    
-    const newItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular' as const,
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-      startTime: '00:00:00',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-      endTime: '00:30:00',
-      elapsedTime: '00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
+    const newItem: RundownItem = {
+      id: uuidv4(),
+      type: 'item',
+      name: 'New Item',
+      duration: '00:00',
+      startTime: '00:00:00'
     };
-
-    const newItems = [...state.items];
-    const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, newItem);
     
-    actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    setItems(prevItems => {
+      const newItems = [...prevItems.slice(0, insertIndex), newItem, ...prevItems.slice(insertIndex)];
+      saveUndoState('Add row at index');
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+  }, [saveUndoState]);
 
-  // Fixed addHeaderAtIndex that properly inserts at specified index
+  // Function to add a new header
+  const addHeader = useCallback(() => {
+    const newHeader: RundownItem = {
+      id: uuidv4(),
+      type: 'segment',
+      name: 'New Segment',
+      duration: '00:00',
+      startTime: '00:00:00'
+    };
+    
+    setItems(prevItems => [...prevItems, newHeader]);
+    saveUndoState('Add header');
+    setHasUnsavedChanges(true);
+  }, [saveUndoState]);
+
+  // Function to add a new header at a specific index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
-    saveUndoState(state.items, [], state.title, 'Add header');
-    
-    const newHeader = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header' as const,
-      rowNumber: 'A',
-      name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
-      startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
-      endTime: '',
-      elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
+    const newHeader: RundownItem = {
+      id: uuidv4(),
+      type: 'segment',
+      name: 'New Segment',
+      duration: '00:00',
+      startTime: '00:00:00'
     };
-
-    const newItems = [...state.items];
-    const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, newHeader);
     
-    actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    setItems(prevItems => {
+      const newItems = [...prevItems.slice(0, insertIndex), newHeader, ...prevItems.slice(insertIndex)];
+      saveUndoState('Add header at index');
+      setHasUnsavedChanges(true);
+      return newItems;
+    });
+  }, [saveUndoState]);
 
-  // Clean up timeouts on unmount - unchanged
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
+  // Function to add a new column
+  const addColumn = useCallback((column: Column) => {
+    setColumns(prevColumns => [...prevColumns, column]);
   }, []);
+
+  // Function to update column width
+  const updateColumnWidth = useCallback((columnId: string, width: string) => {
+    setColumns(prevColumns => {
+      return prevColumns.map(column =>
+        column.id === columnId ? { ...column, width } : column
+      );
+    });
+  }, []);
+
+	const handleRowSelection = useCallback((itemId: string | null) => {
+		setSelectedRowId(itemId);
+	}, []);
+
+	const clearRowSelection = useCallback(() => {
+		setSelectedRowId(null);
+	}, []);
 
   return {
-    // Core state with calculated values
-    items: calculatedItems,
-    setItems: actions.setItems,
-    columns,
-    setColumns,
-    visibleColumns,
-    rundownTitle: state.title,
-    rundownStartTime: state.startTime,
-    timezone: state.timezone,
-    
-    selectedRowId,
-    handleRowSelection,
-    clearRowSelection,
-    
-    currentTime,
     rundownId,
-    isLoading: isLoading || isLoadingColumns,
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving: isSaving || isSavingColumns,
-    showcallerActivity,
+    items,
+    columns,
+    visibleColumns,
+    rundownTitle,
+    rundownStartTime,
+    timezone,
+    currentTime,
+    isLoading,
+    hasUnsavedChanges,
+    isSaving,
+		selectedRowId,
     
-    // Realtime connection status
-    isConnected,
-    isProcessingRealtimeUpdate,
-    
-    // Calculations
-    totalRuntime,
-    getRowNumber,
-    getHeaderDuration: (id: string) => {
-      const itemIndex = state.items.findIndex(item => item.id === id);
-      return getHeaderDuration(itemIndex);
-    },
-    
-    updateItem: enhancedActions.updateItem,
-    deleteItem: enhancedActions.deleteRow,
-    deleteRow: enhancedActions.deleteRow,
-    toggleFloat: enhancedActions.toggleFloatRow,
-    deleteMultipleItems: actions.deleteMultipleItems,
-    addItem: actions.addItem,
-    setTitle: enhancedActions.setTitle,
-    setStartTime: actions.setStartTime,
-    setTimezone: actions.setTimezone,
-    
-    addRow: enhancedActions.addRow,
-    addHeader: enhancedActions.addHeader,
+    addItem,
+    updateItem,
+    deleteRow,
+    toggleFloat,
+    deleteMultipleItems,
+    addRow,
+    addHeader,
+    addColumn,
+    updateColumnWidth,
+    setItems,
+    setColumns,
+    setTitle,
+    setStartTime,
+    setTimezone,
+		handleRowSelection,
+		clearRowSelection,
     addRowAtIndex,
     addHeaderAtIndex,
     
-    addColumn: (column: Column) => {
-      saveUndoState(state.items, [], state.title, 'Add column');
-      setColumns([...columns, column]);
-    },
-    
-    updateColumnWidth: (columnId: string, width: string) => {
-      const newColumns = columns.map(col =>
-        col.id === columnId ? { ...col, width } : col
-      );
-      setColumns(newColumns);
-    },
-
-    // Undo functionality - properly expose these including saveUndoState
-    saveUndoState,
+    // Undo/Redo functions
     undo,
+    redo,
     canUndo,
-    lastAction
+    canRedo,
+    lastAction,
+    saveUndoState,
+    
+    // Connection state - now includes content processing state
+    isConnected: realtimeHook.isConnected,
+    isProcessingRealtimeUpdate: realtimeHook.isProcessingContentUpdate, // Use content processing state
   };
 };

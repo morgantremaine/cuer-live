@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -78,6 +77,9 @@ export const useRealtimeRundown = ({
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
   
+  // Add content processing state tracking
+  const [isProcessingContentUpdate, setIsProcessingContentUpdate] = useState(false);
+  
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
   onShowcallerActivityRef.current = onShowcallerActivity;
@@ -156,7 +158,7 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // Enhanced update handler with better showcaller detection
+  // Enhanced update handler with content processing state
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -224,6 +226,13 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
+    // This is a content update - show processing indicator
+    console.log('🔄 Content update detected from external user - showing processing indicator');
+    setIsProcessingContentUpdate(true);
+
+    // Clear any existing processing timeout
+    timeoutManagerRef.current.clear('content-processing');
+
     // Debounce rapid updates to prevent conflicts using centralized timeout manager
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
@@ -237,6 +246,12 @@ export const useRealtimeRundown = ({
         logger.error('Error processing realtime update:', error);
       }
     }, 150);
+
+    // Clear content processing state after a visible delay
+    timeoutManagerRef.current.set('content-processing', () => {
+      console.log('🔄 Clearing content processing indicator');
+      setIsProcessingContentUpdate(false);
+    }, 800); // Visible delay for content processing
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, isProcessingRealtimeUpdate, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
@@ -288,6 +303,7 @@ export const useRealtimeRundown = ({
 
   return {
     isConnected,
+    isProcessingContentUpdate,
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };
