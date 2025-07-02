@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import RundownContent from './RundownContent';
 import { useOptimizedRundownState } from '@/hooks/useOptimizedRundownState';
@@ -108,8 +109,13 @@ const RundownGrid = React.memo(() => {
     }
   };
 
-  // Fix the getRowStatus function to match expected signature
-  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
+  // Fix the getRowStatus function to match expected signature (index: number) => string
+  const getRowStatus = (index: number): 'upcoming' | 'current' | 'completed' => {
+    const item = state.items[index];
+    if (!item) {
+      return 'upcoming';
+    }
+    
     if (item.type === 'header') {
       return 'upcoming';
     }
@@ -174,3 +180,4 @@ const RundownGrid = React.memo(() => {
 RundownGrid.displayName = 'RundownGrid';
 
 export default RundownGrid;
+
