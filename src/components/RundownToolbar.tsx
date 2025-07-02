@@ -79,6 +79,9 @@ const RundownToolbar = ({
     setShowFindReplace(false);
   };
 
+  // Only show find/replace if we have the update function
+  const showFindReplaceButton = !!onUpdateItem;
+
   const commonProps = {
     onAddRow,
     onAddHeader,
@@ -101,7 +104,7 @@ const RundownToolbar = ({
     rundownData,
     autoScrollEnabled,
     onToggleAutoScroll,
-    onOpenFindReplace: handleOpenFindReplace
+    onOpenFindReplace: showFindReplaceButton ? handleOpenFindReplace : undefined
   };
 
   return (
@@ -111,7 +114,7 @@ const RundownToolbar = ({
       {!isMobile && !isTablet && <DesktopToolbar {...commonProps} />}
       
       {/* Find and Replace Dialog */}
-      {onUpdateItem && (
+      {showFindReplaceButton && (
         <FindReplaceDialog
           isOpen={showFindReplace}
           onClose={handleCloseFindReplace}
