@@ -56,7 +56,7 @@ const HeaderRowContent = ({
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName' || column.key === 'name') {
-          // Show the header name - this is the editable field for headers
+          // Show the header name with duration appended - this is the editable field for headers
           return (
             <td
               key={column.id}
@@ -72,7 +72,9 @@ const HeaderRowContent = ({
                 className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-10" 
                 style={{ 
                   color: textColor,
-                  minWidth: 'max-content'
+                  minWidth: 'max-content',
+                  position: 'relative',
+                  zIndex: 10
                 }}
               >
                 <CellRenderer
@@ -87,15 +89,18 @@ const HeaderRowContent = ({
                   onKeyDown={onKeyDown}
                   width={columnWidth}
                 />
+                <span className="text-sm font-medium ml-2" style={{ color: textColor }}>
+                  ({headerDuration})
+                </span>
               </div>
             </td>
           );
         } else if (column.key === 'duration') {
-          // Show the calculated header duration in parentheses - remove overflow hidden to prevent truncation
+          // Don't show duration in duration column for headers since it's now part of the header name
           return (
             <td
               key={column.id}
-              className="align-middle border border-border px-3 py-3 min-h-[56px]"
+              className="align-middle border border-border min-h-[56px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -103,9 +108,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap" style={{ color: textColor }}>
-                ({headerDuration})
-              </div>
+              <div className="px-3 py-3"></div>
             </td>
           );
         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
