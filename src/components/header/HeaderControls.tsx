@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, LogOut, HelpCircle, Search } from 'lucide-react';
+import { User, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,10 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
-import FindReplaceContextMenu from './FindReplaceContextMenu';
 import { useAuth } from '@/hooks/useAuth';
-import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
 
 interface HeaderControlsProps {
   currentTime: Date;
@@ -23,12 +20,6 @@ interface HeaderControlsProps {
   onUndo: () => void;
   canUndo: boolean;
   lastAction: string | null;
-  // Find & Replace props
-  items?: RundownItem[];
-  columns?: Column[];
-  onUpdateItem?: (id: string, field: string, value: string) => void;
-  onHighlightItem?: (itemId: string) => void;
-  onScrollToItem?: (itemId: string) => void;
 }
 
 const HeaderControls = ({
@@ -37,15 +28,9 @@ const HeaderControls = ({
   onTimezoneChange,
   onUndo,
   canUndo,
-  lastAction,
-  items = [],
-  columns = [],
-  onUpdateItem,
-  onHighlightItem,
-  onScrollToItem
+  lastAction
 }: HeaderControlsProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showFindReplace, setShowFindReplace] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -71,6 +56,7 @@ const HeaderControls = ({
 
   const handleTimezoneChange = (newTimezone: string) => {
     console.log('🌍 HeaderControls: Timezone change requested:', { from: timezone, to: newTimezone });
+    // Call the parent handler directly - this should trigger the enhanced setter
     onTimezoneChange(newTimezone);
   };
 
@@ -81,30 +67,8 @@ const HeaderControls = ({
         currentTimezone={timezone}
         onTimezoneChange={handleTimezoneChange}
       />
-      
-      {/* Find & Replace Button */}
-      <div className="relative">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowFindReplace(!showFindReplace)}
-          className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1"
-          title="Find & Replace"
-        >
-          <Search className="h-4 w-4 text-gray-900 dark:text-white" />
-        </Button>
-        
-        <FindReplaceContextMenu
-          isOpen={showFindReplace}
-          onClose={() => setShowFindReplace(false)}
-          items={items}
-          columns={columns}
-          onUpdateItem={onUpdateItem}
-          onHighlightItem={onHighlightItem}
-          onScrollToItem={onScrollToItem}
-        />
-      </div>
-
+      {/* Search functionality removed */}
+      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <DropdownMenu>
@@ -149,7 +113,6 @@ const HeaderControls = ({
           Sign In
         </Button>
       )}
-      
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 

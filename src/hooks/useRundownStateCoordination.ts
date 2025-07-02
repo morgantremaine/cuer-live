@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -9,7 +8,6 @@ import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
-import { useRundownSearch } from './useRundownSearch';
 
 export const useRundownStateCoordination = () => {
   // Get user ID from auth
@@ -178,14 +176,6 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
-  const {
-    highlightedItemId,
-    scrollContainerRef,
-    handleHighlightItem,
-    handleScrollToItem,
-    clearHighlight
-  } = useRundownSearch();
-
   return {
     coreState: {
       // Core data (performance optimized but same interface)
@@ -245,7 +235,7 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Playbook controls
+      // Showcaller visual controls (completely separate from main state)
       play: showcallerVisual.play,
       pause: showcallerVisual.pause,
       forward: showcallerVisual.forward,
@@ -257,13 +247,6 @@ export const useRundownStateCoordination = () => {
       undo: simplifiedState.undo,
       canUndo: simplifiedState.canUndo,
       lastAction: simplifiedState.lastAction,
-
-      // Search functionality
-      highlightedItemId,
-      scrollContainerRef,
-      handleHighlightItem,
-      handleScrollToItem,
-      clearHighlight,
       
       // Additional functionality
       calculateEndTime,
