@@ -21,6 +21,9 @@ interface RundownRowProps {
   headerDuration?: string;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  searchTerm?: string;
+  hasSearchMatch?: boolean;
+  isCurrentSearchResult?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -43,59 +46,49 @@ interface RundownRowProps {
   getColumnWidth: (column: Column) => string;
 }
 
-const RundownRow = (props: RundownRowProps) => {
-  // Only use multi-selection state for determining if selected
+const RundownRow = React.memo((props: RundownRowProps) => {
   const isActuallySelected = props.isSelected || false;
 
-  // Debug wrapper for onJumpToHere
   const handleJumpToHereDebug = (segmentId: string) => {
-    console.log('🎯 RundownRow: onJumpToHere called with segmentId:', segmentId);
-    console.log('🎯 RundownRow: onJumpToHere function exists:', !!props.onJumpToHere);
     if (props.onJumpToHere) {
-      console.log('🎯 RundownRow: Calling parent onJumpToHere');
       props.onJumpToHere(segmentId);
-    } else {
-      console.log('🎯 RundownRow: onJumpToHere is undefined!');
     }
+  };
+
+  const commonProps = {
+    ...props,
+    isSelected: isActuallySelected,
+    selectedRowsCount: props.selectedRowsCount || 1,
+    selectedRows: props.selectedRows,
+    hasClipboardData: props.hasClipboardData,
+    currentSegmentId: props.currentSegmentId,
+    onPasteRows: props.onPasteRows,
+    onClearSelection: props.onClearSelection,
+    onAddRow: props.onAddRow,
+    onAddHeader: props.onAddHeader,
   };
 
   if (isHeaderItem(props.item)) {
     return (
       <HeaderRow 
-        {...props} 
-        isSelected={isActuallySelected}
+        {...commonProps}
         headerDuration={props.headerDuration || ''}
-        selectedRowsCount={props.selectedRowsCount || 1}
-        selectedRows={props.selectedRows}
-        hasClipboardData={props.hasClipboardData}
-        currentSegmentId={props.currentSegmentId}
-        onPasteRows={props.onPasteRows}
-        onClearSelection={props.onClearSelection}
-        onAddRow={props.onAddRow}
-        onAddHeader={props.onAddHeader}
-        // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
+        // Headers don't need jump functionality
       />
     );
   }
 
   return (
     <RegularRow 
-      {...props} 
-      isSelected={isActuallySelected}
+      {...commonProps}
       isCurrentlyPlaying={props.isCurrentlyPlaying}
       isDraggingMultiple={props.isDraggingMultiple}
-      selectedRowsCount={props.selectedRowsCount || 1}
-      selectedRows={props.selectedRows}
-      hasClipboardData={props.hasClipboardData}
-      currentSegmentId={props.currentSegmentId}
       onToggleFloat={props.onToggleFloat || (() => {})}
-      onPasteRows={props.onPasteRows}
-      onClearSelection={props.onClearSelection}
-      onAddRow={props.onAddRow}
-      onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHereDebug}
     />
   );
-};
+});
+
+RundownRow.displayName = 'RundownRow';
 
 export default RundownRow;
