@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ConnectionStatusBadgeProps {
@@ -19,7 +19,7 @@ const ConnectionStatusBadge = ({
   const getStatusConfig = () => {
     if (isProcessing) {
       return {
-        icon: Loader2,
+        icon: Wifi,
         color: 'text-blue-500',
         bgColor: 'bg-blue-500/10',
         label: 'Syncing...',
@@ -56,12 +56,7 @@ const ConnectionStatusBadge = ({
       )}
       title={title}
     >
-      <Icon 
-        className={cn(
-          'h-3 w-3', 
-          isProcessing && 'animate-spin'
-        )} 
-      />
+      <Icon className="h-3 w-3" />
       {showLabel && (
         <span className="hidden sm:inline">{label}</span>
       )}

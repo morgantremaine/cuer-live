@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -30,6 +30,9 @@ export const useStableRealtimeCollaboration = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const lastProcessedTimestamp = useRef<string | null>(null);
   const lastSaveTimestamp = useRef<string | null>(null);
+  
+  // Add state for processing status
+  const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   
   // Keep refs updated but NEVER trigger effects
   currentRundownIdRef.current = rundownId;
@@ -153,6 +156,9 @@ export const useStableRealtimeCollaboration = ({
 
     lastProcessedTimestamp.current = updateTimestamp;
     
+    // Set processing state to show blue wifi icon
+    setIsProcessingUpdate(true);
+    
     // Trigger remote update callback immediately
     try {
       onRemoteUpdateRef.current();
@@ -167,8 +173,18 @@ export const useStableRealtimeCollaboration = ({
           onReloadCurrentRundownRef.current?.();
         } catch (error) {
           console.error('Error in onReloadCurrentRundown callback:', error);
+        } finally {
+          // Reset processing state after update is complete
+          setTimeout(() => {
+            setIsProcessingUpdate(false);
+          }, 1000); // Show blue for 1 second
         }
       }, 100);
+    } else {
+      // If no reload function, just reset processing state after a delay
+      setTimeout(() => {
+        setIsProcessingUpdate(false);
+      }, 1000);
     }
   }, [isShowcallerOnlyUpdate]);
 
@@ -220,6 +236,7 @@ export const useStableRealtimeCollaboration = ({
 
   return {
     isConnected: isConnectedRef.current,
+    isProcessingUpdate,
     trackOwnUpdate
   };
 };
