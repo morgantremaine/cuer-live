@@ -6,7 +6,8 @@ export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
   selectedRows: Set<string>,
-  scrollContainerRef?: React.RefObject<HTMLElement>
+  scrollContainerRef?: React.RefObject<HTMLElement>,
+  saveUndoState?: (items: RundownItem[], action: string) => void
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -34,6 +35,14 @@ export const useDragAndDrop = (
   const handleDragStart = (e: React.DragEvent, index: number) => {
     const item = items[index];
     const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
+    
+    // Save undo state before drag operation
+    if (saveUndoState) {
+      const actionDescription = isMultipleSelection 
+        ? `Reorder ${selectedRows.size} items`
+        : `Reorder "${item.name || 'item'}"`;
+      saveUndoState(items, actionDescription);
+    }
     
     setDraggedItemIndex(index);
     setIsDraggingMultiple(isMultipleSelection);

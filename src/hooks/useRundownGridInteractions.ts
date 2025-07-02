@@ -1,97 +1,126 @@
 
-import { useRundownInteractionHandlers } from './useRundownInteractionHandlers';
+import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useDragAndDrop } from './useDragAndDrop';
+import { useMultiRowSelection } from './useMultiRowSelection';
+import { useRundownClipboard } from './useRundownClipboard';
 
-export const useRundownGridInteractions = (
-  items: RundownItem[],
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
-  updateItem: (id: string, field: string, value: string) => void,
-  addRow: () => void,
-  addHeader: () => void,
-  deleteRow: (id: string) => void,
-  toggleFloatRow: (id: string) => void,
-  deleteMultipleRows: (ids: string[]) => void,
-  addMultipleRows: (items: RundownItem[], calculateEndTime: (startTime: string, duration: string) => string) => void,
-  handleDeleteColumn: (columnId: string) => void,
-  calculateEndTime: (startTime: string, duration: string) => string,
-  selectColor: (id: string, color: string) => void,
-  markAsChanged: () => void,
-  setRundownTitle: (title: string) => void,
-  addRowAtIndex: (insertIndex: number) => void,
-  addHeaderAtIndex: (insertIndex: number) => void
-) => {
+interface UseRundownGridInteractionsProps {
+  items: RundownItem[];
+  setItems: (items: RundownItem[]) => void;
+  deleteRow: (id: string) => void;
+  deleteMultipleRows: (ids: string[]) => void;
+  addRow: () => void;
+  addHeader: () => void;
+  scrollContainerRef?: React.RefObject<HTMLElement>;
+  saveUndoState?: (items: RundownItem[], action: string) => void;
+}
+
+export const useRundownGridInteractions = ({
+  items,
+  setItems,
+  deleteRow,
+  deleteMultipleRows,
+  addRow,
+  addHeader,
+  scrollContainerRef,
+  saveUndoState
+}: UseRundownGridInteractionsProps) => {
+  // Multi-row selection
   const {
     selectedRows,
-    toggleRowSelection,
-    clearSelection,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
-    handleDeleteSelectedRows,
-    handlePasteRows,
-    handleDeleteColumnWithCleanup,
-    handleCopySelectedRows,
     handleRowSelection,
-    handleTitleChange
-  } = useRundownInteractionHandlers(
-    items,
-    setItems,
-    updateItem,
-    addRow,
-    addHeader,
-    deleteRow,
-    toggleFloatRow,
-    deleteMultipleRows,
-    addMultipleRows,
-    handleDeleteColumn,
-    calculateEndTime,
-    selectColor,
-    markAsChanged,
-    setRundownTitle,
-    addRowAtIndex,
-    addHeaderAtIndex
-  );
+    clearSelection
+  } = useMultiRowSelection(items);
 
-  return {
-    selectedRows,
-    toggleRowSelection,
-    clearSelection,
+  // Drag and drop with undo support
+  const {
     draggedItemIndex,
     isDraggingMultiple,
     dropTargetIndex,
+    isDragging,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop
+  } = useDragAndDrop(items, setItems, selectedRows, scrollContainerRef, saveUndoState);
+
+  // Clipboard operations
+  const {
+    handleCopySelectedRows,
+    handlePasteRows,
+    hasClipboardData
+  } = useRundownClipboard(items, setItems, selectedRows, saveUndoState);
+
+  // Handle delete selected rows with undo
+  const handleDeleteSelectedRows = () => {
+    if (selectedRows.size === 0) return;
+    
+    if (saveUndoState) {
+      saveUndoState(items, `Delete ${selectedRows.size} rows`);
+    }
+    
+    const selectedIds = Array.from(selectedRows);
+    deleteMultipleRows(selectedIds);
+    clearSelection();
+  };
+
+  // Handle add row with undo
+  const handleAddRow = () => {
+    if (saveUndoState) {
+      saveUndoState(items, 'Add row');
+    }
+    addRow();
+  };
+
+  // Handle add header with undo
+  const handleAddHeader = () => {
+    if (saveUndoState) {
+      saveUndoState(items, 'Add header');
+    }
+    addHeader();
+  };
+
+  return useMemo(() => ({
+    // Selection state
+    selectedRows,
+    
+    // Drag and drop state
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    isDragging,
+    
+    // Event handlers
+    handleRowSelection,
+    clearSelection,
     handleDragStart,
     handleDragOver,
     handleDragLeave,
     handleDrop,
-    clipboardItems,
-    copyItems,
-    hasClipboardData,
-    handleUpdateItem,
-    handleAddRow,
-    handleAddHeader,
-    handleDeleteRow,
-    handleToggleFloat,
-    handleColorSelect,
+    handleCopySelectedRows,
     handleDeleteSelectedRows,
     handlePasteRows,
-    handleDeleteColumnWithCleanup,
-    handleCopySelectedRows,
+    handleAddRow,
+    handleAddHeader,
+    hasClipboardData
+  }), [
+    selectedRows,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    isDragging,
     handleRowSelection,
-    handleTitleChange,
-    addRowAtIndex,
-    addHeaderAtIndex
-  };
+    clearSelection,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleCopySelectedRows,
+    handleDeleteSelectedRows,
+    handlePasteRows,
+    handleAddRow,
+    handleAddHeader,
+    hasClipboardData
+  ]);
 };
