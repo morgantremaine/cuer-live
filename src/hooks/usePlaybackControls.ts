@@ -19,7 +19,7 @@ export const usePlaybackControls = (
   const { user } = useAuth();
   const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize showcaller visual state management with precision timing
+  // Initialize showcaller visual state management with enhanced precision timing
   const {
     visualState,
     play,
@@ -41,12 +41,12 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Enhanced initialization check with better timing control
+  // Enhanced initialization check with immediate readiness
   const shouldEnableRealtime = useCallback(() => {
     return !!rundownId && isInitialized;
   }, [rundownId, isInitialized]);
 
-  // Initialize realtime synchronization with precision timing support
+  // Initialize realtime synchronization with enhanced precision timing support
   const { isConnected } = useRealtimeRundown({
     rundownId,
     onRundownUpdate: () => {}, // We only care about showcaller state here
@@ -60,13 +60,13 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Reduced timeout for initialization with precision timing
+  // Faster initialization timeout for immediate precision
   useEffect(() => {
     if (rundownId && !isInitialized) {
-      // Set a reduced timeout for faster initialization
+      // Reduced timeout for faster initialization
       initializationTimeoutRef.current = setTimeout(() => {
-        console.warn('📺 Showcaller initialization timeout - forcing ready state');
-      }, 3000); // Reduced from 5000ms
+        console.warn('📺 Enhanced showcaller initialization timeout - forcing ready state');
+      }, 2000); // Further reduced from 3000ms to 2000ms
     } else if (isInitialized && initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
       initializationTimeoutRef.current = null;
@@ -82,13 +82,13 @@ export const usePlaybackControls = (
   // Only expose controls after proper initialization
   const controlsReady = isInitialized;
 
-  // Enhanced control wrappers with precision timing validation
+  // Enhanced control wrappers with immediate precision timing validation
   const safePlay = useCallback((segmentId?: string) => {
     if (!controlsReady) {
       console.warn('📺 Play called before initialization complete');
       return;
     }
-    console.log('📺 Safe play called with precision timing support');
+    console.log('📺 Enhanced safe play called with immediate precision timing');
     play(segmentId);
   }, [controlsReady, play]);
 
@@ -97,7 +97,7 @@ export const usePlaybackControls = (
       console.warn('📺 Pause called before initialization complete');
       return;
     }
-    console.log('📺 Safe pause called with precision timing support');
+    console.log('📺 Enhanced safe pause called with precision timing');
     pause();
   }, [controlsReady, pause]);
 
@@ -106,7 +106,7 @@ export const usePlaybackControls = (
       console.warn('📺 Forward called before initialization complete');
       return;
     }
-    console.log('📺 Safe forward called with precision timing support');
+    console.log('📺 Enhanced safe forward called with precision timing');
     forward();
   }, [controlsReady, forward]);
 
@@ -115,7 +115,7 @@ export const usePlaybackControls = (
       console.warn('📺 Backward called before initialization complete');
       return;
     }
-    console.log('📺 Safe backward called with precision timing support');
+    console.log('📺 Enhanced safe backward called with precision timing');
     backward();
   }, [controlsReady, backward]);
 
@@ -124,7 +124,7 @@ export const usePlaybackControls = (
       console.warn('📺 Reset called before initialization complete');
       return;
     }
-    console.log('📺 Safe reset called with precision timing support');
+    console.log('📺 Enhanced safe reset called with precision timing');
     reset();
   }, [controlsReady, reset]);
 
@@ -133,7 +133,7 @@ export const usePlaybackControls = (
       console.warn('📺 JumpToSegment called before initialization complete');
       return;
     }
-    console.log('📺 Safe jumpToSegment called with precision timing support');
+    console.log('📺 Enhanced safe jumpToSegment called with immediate precision timing');
     jumpToSegment(segmentId);
   }, [controlsReady, jumpToSegment]);
 

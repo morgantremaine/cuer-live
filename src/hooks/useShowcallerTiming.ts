@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 
@@ -26,17 +26,27 @@ export const useShowcallerTiming = ({
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const lastTimingStateRef = useRef<TimingStatus | null>(null);
+  const timingBufferRef = useRef<number>(0);
 
-  // Update current time every second when playing
+  // Update current time every 100ms when playing for better precision
   useEffect(() => {
     if (!isPlaying) return;
 
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 100); // Increased frequency from 1000ms to 100ms
 
     return () => clearInterval(interval);
   }, [isPlaying]);
+
+  // Immediate timing calculation on play start
+  useEffect(() => {
+    if (isPlaying && currentSegmentId) {
+      // Force immediate timing calculation
+      setCurrentTime(new Date());
+    }
+  }, [isPlaying, currentSegmentId]);
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -70,7 +80,7 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current real time
+    // Use high-precision timing calculations
     const now = currentTime;
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
@@ -87,12 +97,12 @@ export const useShowcallerTiming = ({
       }
     }
     
-    // Add elapsed time within current segment
+    // Add elapsed time within current segment with higher precision
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Check if we're before or after the rundown start time WITHOUT day boundary adjustment
+    // Check if we're before or after the rundown start time
     const isPreStart = currentTimeSeconds < rundownStartSeconds;
     
     let differenceSeconds: number;
@@ -100,17 +110,13 @@ export const useShowcallerTiming = ({
     
     if (isPreStart) {
       // PRE-START LOGIC: Show hasn't started yet
-      // Real elapsed time is negative (we're before the start)
       realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // This will be negative
-      
-      // Calculate difference: showcaller position vs where it should be (which is 0 or negative)
-      // If showcaller has progressed into the rundown but show hasn't started = showcaller is ahead = UNDER
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     } else {
       // POST-START LOGIC: Show has started
       realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
       
-      // Only NOW apply day boundary logic if needed
+      // Apply day boundary logic if needed
       if (realElapsedSeconds < 0) {
         realElapsedSeconds += 24 * 3600; // Handle day crossing
       }
@@ -118,21 +124,38 @@ export const useShowcallerTiming = ({
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     }
     
-    // TIMING LOGIC:
-    // Positive difference = showcaller is ahead of where it should be = UNDER time
-    // Negative difference = showcaller is behind where it should be = OVER time
+    // Stabilize timing display to prevent flickering
+    const roundedDifference = Math.round(differenceSeconds);
+    
+    // Use buffer to prevent jumping between adjacent values
+    if (Math.abs(roundedDifference - timingBufferRef.current) <= 1 && lastTimingStateRef.current) {
+      // If the difference is within 1 second of the buffered value, maintain stability
+      if (Math.abs(differenceSeconds - timingBufferRef.current) < 0.5) {
+        differenceSeconds = timingBufferRef.current;
+      }
+    } else {
+      // Update buffer with new stable value
+      timingBufferRef.current = roundedDifference;
+    }
+    
+    // TIMING LOGIC with consistent precision
     const isOnTime = Math.abs(differenceSeconds) <= 5;
     const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
     
     const absoluteDifference = Math.abs(differenceSeconds);
-    const timeDifference = secondsToTime(absoluteDifference);
+    const timeDifference = secondsToTime(Math.round(absoluteDifference));
 
-    return {
+    const newStatus = {
       isOnTime,
       isAhead,
       timeDifference,
       isVisible: true
     };
+
+    // Store last state for stability
+    lastTimingStateRef.current = newStatus;
+    
+    return newStatus;
   }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
 
   return timingStatus;

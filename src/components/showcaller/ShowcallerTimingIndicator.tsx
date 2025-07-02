@@ -36,9 +36,9 @@ const ShowcallerTimingIndicator = ({
   }
 
   return (
-    <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border animate-fade-in ${statusColor} ${bgColor} border-current/20`}>
+    <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-all duration-200 ${statusColor} ${bgColor} border-current/20`}>
       <Clock className="h-4 w-4" />
-      <span className="text-lg font-mono font-bold">
+      <span className="text-lg font-mono font-bold tabular-nums">
         {statusText}
       </span>
     </div>
