@@ -12,13 +12,13 @@ export const useCameraPlotStateCoordination = ({
   resetSelection,
   stopDrawingWalls
 }: StateCoordinationProps) => {
-  const handleSetActiveScene = (sceneId: string): void => {
+  const handleSetActiveScene = (sceneId: string) => {
     setActiveScene(sceneId);
     resetSelection();
     stopDrawingWalls();
   };
 
-  const handleSetSelectedTool = (tool: string): void => {
+  const handleSetSelectedTool = (tool: string) => {
     setSelectedTool(tool);
     if (tool !== 'wall') {
       stopDrawingWalls();
