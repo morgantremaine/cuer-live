@@ -60,38 +60,40 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px] relative overflow-visible"
+              className="align-middle border border-border min-h-[56px] relative"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
                 maxWidth: columnWidth, // Ensure exact width matching
-                backgroundColor 
+                backgroundColor,
+                overflow: 'visible'
               }}
             >
               <div 
-                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-10 flex items-center" 
+                className="absolute inset-0 flex items-center whitespace-nowrap" 
                 style={{ 
                   color: textColor,
-                  minWidth: 'max-content',
-                  position: 'relative',
-                  zIndex: 10
+                  zIndex: 10,
+                  left: '12px', // px-3 equivalent
+                  right: 'auto',
+                  width: 'max-content'
                 }}
               >
-                <div className="inline-block">
+                <div className="text-2xl font-bold inline">
                   <CellRenderer
                     column={column}
                     item={item}
                     cellRefs={cellRefs}
                     textColor={textColor}
-                    backgroundColor={backgroundColor}
+                    backgroundColor="transparent"
                     currentSegmentId={currentSegmentId}
                     onUpdateItem={onUpdateItem}
                     onCellClick={onCellClick}
                     onKeyDown={onKeyDown}
-                    width={columnWidth}
+                    width="auto"
                   />
                 </div>
-                <span className="text-sm font-medium ml-2 inline-block" style={{ color: textColor }}>
+                <span className="text-sm font-medium ml-2 inline" style={{ color: textColor }}>
                   ({headerDuration})
                 </span>
               </div>
