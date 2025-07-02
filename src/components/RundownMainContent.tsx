@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeaderPropsAdapter from './RundownHeaderPropsAdapter';
 import RundownContent from './RundownContent';
@@ -98,7 +99,7 @@ const RundownMainContent = (props: RundownMainContentProps) => {
         lastAction={props.lastAction}
         isConnected={props.isConnected}
         isProcessingRealtimeUpdate={props.isProcessingRealtimeUpdate}
-        isProcessingShowcallerUpdate={props.isProcessingShowcallerUpdate} // Add this line
+        isProcessingShowcallerUpdate={props.isProcessingShowcallerUpdate}
         autoScrollEnabled={props.autoScrollEnabled}
         onToggleAutoScroll={props.toggleAutoScroll}
       />

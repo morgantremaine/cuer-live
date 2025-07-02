@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import RundownLayoutWrapper from './RundownLayoutWrapper';
@@ -28,7 +29,7 @@ const RundownIndexContent = () => {
       isSaving={coreState.isSaving}
       isConnected={coreState.isConnected}
       isProcessingRealtimeUpdate={coreState.isProcessingRealtimeUpdate}
-      isProcessingShowcallerUpdate={coreState.isProcessingShowcallerUpdate} // Add this line
+      isProcessingShowcallerUpdate={coreState.isProcessingShowcallerUpdate}
       
       // Showcaller state
       currentSegmentId={coreState.currentSegmentId}
@@ -36,12 +37,12 @@ const RundownIndexContent = () => {
       timeRemaining={coreState.timeRemaining}
       isController={coreState.isController}
       
-      // Selection state
+      // Selection state - fix the function signature
       selectedRowId={coreState.selectedRowId}
       handleRowSelection={coreState.handleRowSelection}
       clearRowSelection={coreState.clearRowSelection}
       
-      // Calculations
+      // Calculations - fix the function signatures
       totalRuntime={coreState.totalRuntime}
       getRowNumber={coreState.getRowNumber}
       getHeaderDuration={coreState.getHeaderDuration}
