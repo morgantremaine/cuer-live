@@ -1,52 +1,50 @@
-
 import React from 'react';
-import RundownContent from './RundownContent';
-import { useOptimizedRundownState } from '@/hooks/useOptimizedRundownState';
-import { useRundownGridInteractions } from '@/hooks/useRundownGridInteractions';
-import { useRundownUIState } from '@/hooks/useRundownUIState';
+import RundownTable from './RundownTable';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/utils/logger';
 
 const RundownGrid = React.memo(() => {
-  const state = useOptimizedRundownState();
+  const { user } = useAuth();
+  const userId = user?.id;
 
-  // Grid interactions
-  const interactions = useRundownGridInteractions(
-    state.items,
-    (updater) => {
-      if (typeof updater === 'function') {
-        state.setItems(updater(state.items));
-      } else {
-        state.setItems(updater);
-      }
-    },
-    state.updateItem,
-    state.addRow,
-    state.addHeader,
-    state.deleteRow,
-    state.toggleFloatRow,
-    state.deleteMultipleItems,
-    state.addMultipleRows,
-    (columnId: string) => {
-      const newColumns = state.columns.filter(col => col.id !== columnId);
-      state.setColumns(newColumns);
-    },
-    state.calculateEndTime,
-    (id: string, color: string) => {
-      state.updateItem(id, 'color', color);
-    },
-    () => {}, // markAsChanged handled internally
-    state.setTitle,
-    state.addRow, // addRowAtIndex fallback
-    state.addHeader // addHeaderAtIndex fallback
-  );
+  const {
+    coreState,
+    interactions,
+    uiState
+  } = useRundownStateCoordination();
 
-  // UI state
-  const uiState = useRundownUIState(
-    state.items,
-    state.visibleColumns,
-    state.updateItem,
-    state.setColumns,
-    state.columns
-  );
+  const {
+    items,
+    visibleColumns,
+    currentTime,
+    selectedRowId,
+    handleRowSelection,
+    clearRowSelection,
+    rundownId
+  } = coreState;
+
+  // Use coordinated showcaller state for better synchronization
+  const {
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    isController,
+    isInitialized,
+    isConnected,
+    getItemVisualStatus,
+    play,
+    pause,
+    forward,
+    backward,
+    reset,
+    jumpToSegment
+  } = useShowcallerStateCoordination({
+    items,
+    rundownId,
+    userId
+  });
 
   const {
     selectedRows,
@@ -63,7 +61,7 @@ const RundownGrid = React.memo(() => {
     clearSelection,
     handleAddRow,
     handleAddHeader,
-    handleRowSelection,
+    handleRowSelection: handleMultiRowSelection,
     hasClipboardData
   } = interactions;
 
@@ -74,110 +72,153 @@ const RundownGrid = React.memo(() => {
     getColumnWidth,
     updateColumnWidth,
     handleCellClick,
-    handleKeyDown
+    handleKeyDown,
+    cellRefs
   } = uiState;
 
-  // Enhanced row selection
+  // Create wrapper for cell click to match signature
+  const handleCellClickWrapper = (itemId: string, field: string) => {
+    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+    handleCellClick(itemId, field, mockEvent);
+  };
+
+  // Create wrapper for key down to match signature
+  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    const itemIndex = items.findIndex(item => item.id === itemId);
+    handleKeyDown(e, itemId, field, itemIndex);
+  };
+
+  // Create a wrapper function that matches the expected signature
+  const handleColorSelect = (id: string, color: string) => {
+    selectColor(id, color);
+  };
+
+  // Enhanced row status that uses showcaller visual state
+  const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
+    if (item.type === 'header') {
+      return 'upcoming'; // Headers don't have visual status
+    }
+    
+    const visualStatus = getItemVisualStatus(item.id);
+    if (visualStatus === 'current' || visualStatus === 'completed') {
+      return visualStatus as 'current' | 'completed';
+    }
+    
+    return 'upcoming';
+  };
+
+  // Enhanced row selection that properly handles both single and multi-selection
   const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     if (isShiftClick || isCtrlClick) {
-      handleRowSelection(itemId, index, isShiftClick, isCtrlClick);
-      if (state.selectedRowId !== null) {
-        state.clearRowSelection();
+      handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
+      if (selectedRowId !== null) {
+        clearRowSelection();
       }
     } else {
-      state.handleRowSelection(itemId);
+      handleRowSelection(itemId);
       if (selectedRows.size > 0) {
         clearSelection();
       }
     }
   };
 
-  // Enhanced jump to here handler
+  // Enhanced jump to here handler with better coordination
   const handleJumpToHere = (segmentId: string) => {
-    if (state.isPlaying) {
-      state.play(segmentId);
-    } else {
-      state.jumpToSegment(segmentId);
+    logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
+    logger.log('🎯 Target segment ID:', segmentId);
+    logger.log('🎯 Current segment ID:', currentSegmentId);
+    logger.log('🎯 Is currently playing:', isPlaying);
+    logger.log('🎯 Is controller:', isController);
+    logger.log('🎯 Is initialized:', isInitialized);
+    logger.log('🎯 Is connected:', isConnected);
+    
+    // Find the target segment
+    const targetSegment = items.find(item => item.id === segmentId);
+    if (!targetSegment) {
+      logger.error('🎯 Target segment not found:', segmentId);
+      return;
     }
     
+    logger.log('🎯 Target segment found:', { 
+      id: targetSegment.id, 
+      name: targetSegment.name, 
+      type: targetSegment.type 
+    });
+    
+    // Use coordinated jump function
+    if (isPlaying) {
+      logger.log('🎯 Showcaller is playing - jumping and continuing playback');
+      play(segmentId);
+    } else {
+      logger.log('🎯 Showcaller is paused - jumping but staying paused');
+      jumpToSegment(segmentId);
+    }
+    
+    // Clear selections
     if (selectedRows.size > 0) {
       clearSelection();
     }
-    if (state.selectedRowId !== null) {
-      state.clearRowSelection();
-    }
-  };
-
-  // Fix the getRowStatus function to match expected signature (item: RundownItem, currentTime: Date) => string
-  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
-    if (item.type === 'header') {
-      return 'upcoming';
+    if (selectedRowId !== null) {
+      clearRowSelection();
     }
     
-    if (item.id === state.currentSegmentId) {
-      return 'current';
-    }
-    
-    return 'upcoming';
+    logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
   };
 
-  // Fix the getRowNumber function to match expected signature (index: number) => string
-  const getRowNumber = (index: number): string => {
-    return (index + 1).toString();
+  // Create wrapper functions for drag operations
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    handleDragStart(e, index);
   };
 
-  // Fix the calculateHeaderDuration function to match expected signature (index: number) => string
-  const calculateHeaderDuration = (index: number): string => {
-    // Get the item at this index to find its ID
-    const item = state.items[index];
-    if (!item || item.type !== 'header') {
-      return '';
-    }
-    return state.getHeaderDuration(item.id);
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    handleDragOver(e, targetIndex);
+  };
+
+  const handleDragLeaveWrapper = (e: React.DragEvent) => {
+    handleDragLeave(e);
+  };
+
+  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
+    handleDrop(e, targetIndex);
   };
 
   return (
-    <RundownContent
-      items={state.items}
-      visibleColumns={state.visibleColumns}
-      currentTime={state.currentTime}
+    <RundownTable
+      items={items}
+      visibleColumns={visibleColumns}
+      currentTime={currentTime}
       showColorPicker={showColorPicker}
+      cellRefs={cellRefs}
       selectedRows={selectedRows}
       draggedItemIndex={draggedItemIndex}
       isDraggingMultiple={isDraggingMultiple}
       dropTargetIndex={dropTargetIndex}
-      currentSegmentId={state.currentSegmentId}
+      currentSegmentId={currentSegmentId}
       hasClipboardData={hasClipboardData()}
-      selectedRowId={state.selectedRowId}
+      selectedRowId={selectedRowId}
       getColumnWidth={getColumnWidth}
-      updateColumnWidth={updateColumnWidth}
-      getRowNumber={getRowNumber}
+      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+      getRowNumber={coreState.getRowNumber}
       getRowStatus={getRowStatus}
-      calculateHeaderDuration={calculateHeaderDuration}
-      onUpdateItem={state.updateItem}
-      onCellClick={(itemId: string, field: string) => {
-        const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
-        handleCellClick(itemId, field, mockEvent);
-      }}
-      onKeyDown={(e: React.KeyboardEvent, itemId: string, field: string) => {
-        const itemIndex = state.items.findIndex(item => item.id === itemId);
-        handleKeyDown(e, itemId, field, itemIndex);
-      }}
+      getHeaderDuration={coreState.calculateHeaderDuration}
+      onUpdateItem={coreState.updateItem}
+      onCellClick={handleCellClickWrapper}
+      onKeyDown={handleKeyDownWrapper}
       onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={selectColor}
-      onDeleteRow={state.deleteRow}
-      onToggleFloat={state.toggleFloatRow}
+      onColorSelect={handleColorSelect}
+      onDeleteRow={coreState.deleteRow}
+      onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragStart={handleDragStartWrapper}
+      onDragOver={handleDragOverWrapper}
+      onDragLeave={handleDragLeaveWrapper}
+      onDrop={handleDropWrapper}
       onCopySelectedRows={handleCopySelectedRows}
       onDeleteSelectedRows={handleDeleteSelectedRows}
       onPasteRows={handlePasteRows}
       onClearSelection={() => {
         clearSelection();
-        state.clearRowSelection();
+        clearRowSelection();
       }}
       onAddRow={handleAddRow}
       onAddHeader={handleAddHeader}

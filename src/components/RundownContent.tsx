@@ -1,17 +1,19 @@
 
-import React, { useRef, useEffect } from 'react';
-import VirtualizedRundownTable from './VirtualizedRundownTable';
+import React from 'react';
+import RundownTable from './RundownTable';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
-import { useOptimizedCellRefs } from '@/hooks/useOptimizedCellRefs';
+import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
+import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 
 interface RundownContentProps {
   items: RundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
@@ -19,9 +21,7 @@ interface RundownContentProps {
   currentSegmentId: string | null;
   hasClipboardData?: boolean;
   selectedRowId?: string | null;
-  searchTerm?: string;
-  searchResults?: { itemId: string; fieldKey: string; matchText: string }[];
-  currentSearchIndex?: number;
+  isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
@@ -55,6 +55,7 @@ const RundownContent = ({
   visibleColumns,
   currentTime,
   showColorPicker,
+  cellRefs,
   selectedRows,
   draggedItemIndex,
   isDraggingMultiple,
@@ -62,10 +63,8 @@ const RundownContent = ({
   currentSegmentId,
   hasClipboardData = false,
   selectedRowId = null,
-  searchTerm,
-  searchResults,
-  currentSearchIndex,
-  autoScrollEnabled,
+  isPlaying = false,
+  autoScrollEnabled = false,
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
@@ -93,44 +92,35 @@ const RundownContent = ({
   onJumpToHere
 }: RundownContentProps) => {
 
-  // Use optimized cell refs to prevent memory leaks
-  const { getCellRef, clearUnusedRefs, getAllRefs } = useOptimizedCellRefs();
-  
-  // Create a ref object with the correct type
-  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
-  
-  // Update cellRefs.current with the actual refs
-  useEffect(() => {
-    cellRefs.current = getAllRefs();
-  }, [getAllRefs]);
+  // Initialize autoscroll functionality
+  const { scrollContainerRef } = useRundownAutoscroll({
+    currentSegmentId,
+    isPlaying,
+    autoScrollEnabled,
+    items
+  });
 
-  // Cleanup unused refs periodically
-  useEffect(() => {
-    const activeKeys = items.flatMap(item => 
-      visibleColumns.map(col => `${item.id}-${col.key}`)
-    );
-    clearUnusedRefs(activeKeys);
-  }, [items, visibleColumns, clearUnusedRefs]);
+  // Initialize drag auto-scroll functionality
+  const isDragging = draggedItemIndex !== null;
+  const { handleDragAutoScroll } = useDragAutoScroll({
+    scrollContainerRef,
+    isActive: isDragging
+  });
 
-  // Scroll to current search result
-  const listRef = useRef<any>(null);
-  useEffect(() => {
-    if (searchResults && currentSearchIndex !== undefined && listRef.current) {
-      const currentResult = searchResults[currentSearchIndex];
-      if (currentResult) {
-        const itemIndex = items.findIndex(item => item.id === currentResult.itemId);
-        if (itemIndex !== -1) {
-          listRef.current.scrollToItem(itemIndex, 'center');
-        }
-      }
-    }
-  }, [searchResults, currentSearchIndex, items]);
+  // Enhanced drag over handler that includes auto-scroll
+  const handleEnhancedDragOver = (e: React.DragEvent, index?: number) => {
+    // Handle auto-scroll first
+    handleDragAutoScroll(e);
+    // Then handle regular drag over logic
+    onDragOver(e, index);
+  };
 
   return (
     <div className="relative bg-background h-full">
-      <ScrollArea className="w-full h-full bg-background">
+      {/* Scrollable Content with Header Inside */}
+      <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div className="min-w-max bg-background">
-          {/* Sticky Header */}
+          {/* Sticky Header - Inside ScrollArea */}
           <div className="sticky top-0 z-20 bg-background border-b border-border">
             <table className="w-full border-collapse">
               <RundownTableHeader 
@@ -141,9 +131,8 @@ const RundownContent = ({
             </table>
           </div>
 
-          {/* Virtualized Table Content */}
-          <VirtualizedRundownTable
-            ref={listRef}
+          {/* Table Content */}
+          <RundownTable
             items={items}
             visibleColumns={visibleColumns}
             currentTime={currentTime}
@@ -156,11 +145,8 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
-            searchTerm={searchTerm}
-            searchResults={searchResults}
-            currentSearchIndex={currentSearchIndex}
             getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
+            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}
             getRowStatus={(item) => getRowStatus(item, currentTime)}
             getHeaderDuration={calculateHeaderDuration}
@@ -173,7 +159,7 @@ const RundownContent = ({
             onToggleFloat={onToggleFloat}
             onRowSelect={onRowSelect}
             onDragStart={onDragStart}
-            onDragOver={onDragOver}
+            onDragOver={handleEnhancedDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             onCopySelectedRows={onCopySelectedRows}
