@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns-tz';
-import { Timezone } from 'date-fns-tz/types';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,7 +14,6 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DateTime } from 'luxon';
 import {
   Command,
   CommandEmpty,
@@ -24,9 +23,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
-import {
-  PopoverClose,
-} from "@/components/ui/popover"
 
 interface CellRendererProps {
   item: any;
@@ -75,10 +71,16 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
   const [open, setOpen] = React.useState(false)
 
   useEffect(() => {
-    cellRefs.current[cellKey] = ref as HTMLElement;
+    if (ref && typeof ref === 'object' && 'current' in ref) {
+      cellRefs.current[cellKey] = ref.current as HTMLElement;
+    }
   }, [cellKey, cellRefs, ref]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange(e.target.value);
   };
 
@@ -171,7 +173,7 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
               )}
             >
               {date ? (
-                format(date, "PPP", { timeZone: timezone as Timezone })
+                format(date, "PPP", { timeZone: timezone })
               ) : (
                 <span>Pick a date</span>
               )}
@@ -202,7 +204,7 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
         <select
           {...commonProps}
           value={value || ''}
-          onChange={handleChange}
+          onChange={handleSelectChange}
         >
           {column.options && column.options.map((option: any) => (
             <option key={option.value} value={option.value}>{option.label}</option>
@@ -277,7 +279,7 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
             disabled
           />
         ) : column.type === 'date' ? (
-          value ? format(new Date(value), "PPP", { timeZone: timezone as Timezone }) : ''
+          value ? format(new Date(value), "PPP", { timeZone: timezone }) : ''
         ) : column.type === 'duration' ? (
           value || '00:00'
         ) : column.type === 'start-time' ? (
@@ -296,3 +298,4 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
 
 CellRenderer.displayName = 'CellRenderer';
 export default CellRenderer;
+

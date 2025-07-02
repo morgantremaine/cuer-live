@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownHeader from './RundownHeader';
 
@@ -31,7 +32,7 @@ const RundownHeaderPropsAdapter = ({
   return (
     <RundownHeader
       title={rundownTitle}
-      startTime={rundownStartTime}
+      start_time={rundownStartTime}
       timezone={timezone}
       currentTime={currentTime}
       onTitleChange={setTitle}
@@ -46,3 +47,4 @@ const RundownHeaderPropsAdapter = ({
 };
 
 export default RundownHeaderPropsAdapter;
+
