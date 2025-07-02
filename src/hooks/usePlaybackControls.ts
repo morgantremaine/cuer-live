@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
@@ -54,7 +53,6 @@ export const usePlaybackControls = (
     currentContentHash,
     isEditing,
     hasUnsavedChanges,
-    isProcessingRealtimeUpdate,
     trackOwnUpdate,
     onShowcallerActivity,
     onShowcallerStateReceived: applyExternalVisualState
