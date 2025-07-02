@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -46,7 +47,7 @@ export const useShowcallerStateManager = ({
     setShowcallerUpdate
   });
 
-  // Helper function to convert time string to seconds
+  // Helper function to convert time string to seconds - ensure integer results
   const timeToSeconds = useCallback((timeStr: string) => {
     if (!timeStr) return 0;
     const parts = timeStr.split(':').map(Number);
@@ -145,13 +146,13 @@ export const useShowcallerStateManager = ({
       updateShowcallerState({
         currentSegmentId: segmentId,
         timeRemaining: duration,
-        playbackStartTime: Date.now(),
+        playbackStartTime: Date.now(), // Use consistent Date.now()
         controllerId: userId
       }, true);
     }
   }, [items, clearCurrentStatusSilent, updateItemSilent, timeToSeconds, updateShowcallerState, userId]);
 
-  // Enhanced timer with consistent 1-second updates
+  // Single authoritative timer with consistent 1-second precision
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -161,7 +162,7 @@ export const useShowcallerStateManager = ({
     
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
-        // Ensure we're working with integer seconds
+        // Ensure we're working with integer seconds only
         const currentTimeRemaining = Math.floor(prevState.timeRemaining);
         
         if (currentTimeRemaining <= 0) {
@@ -177,7 +178,7 @@ export const useShowcallerStateManager = ({
                 ...prevState,
                 currentSegmentId: nextSegment.id,
                 timeRemaining: duration,
-                playbackStartTime: Date.now(),
+                playbackStartTime: Date.now(), // Use consistent Date.now()
                 lastUpdate: new Date().toISOString()
               };
               
@@ -206,6 +207,7 @@ export const useShowcallerStateManager = ({
           }
         }
         
+        // Consistent integer countdown
         const newTimeRemaining = Math.max(0, currentTimeRemaining - 1);
         const newState = {
           ...prevState,
@@ -220,7 +222,7 @@ export const useShowcallerStateManager = ({
         
         return newState;
       });
-    }, 1000); // Consistent 1-second intervals
+    }, 1000); // Exactly 1 second intervals
   }, [showcallerState.controllerId, userId, updateItemSilent, getNextSegment, timeToSeconds, debouncedSaveShowcallerState]);
 
   const stopTimer = useCallback(() => {
@@ -260,7 +262,7 @@ export const useShowcallerStateManager = ({
     
     updateShowcallerState({ 
       isPlaying: true,
-      playbackStartTime: Date.now(),
+      playbackStartTime: Date.now(), // Use consistent Date.now()
       controllerId: userId
     }, true);
     
@@ -293,7 +295,7 @@ export const useShowcallerStateManager = ({
         updateShowcallerState({
           currentSegmentId: nextSegment.id,
           timeRemaining: duration,
-          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null, // Use consistent Date.now()
           controllerId: userId
         }, true);
         
@@ -318,7 +320,7 @@ export const useShowcallerStateManager = ({
         updateShowcallerState({
           currentSegmentId: prevSegment.id,
           timeRemaining: duration,
-          playbackStartTime: showcallerState.isPlaying ? Date.now() : null,
+          playbackStartTime: showcallerState.isPlaying ? Date.now() : null, // Use consistent Date.now()
           controllerId: userId
         }, true);
         
@@ -355,7 +357,7 @@ export const useShowcallerStateManager = ({
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
         const segmentDuration = timeToSeconds(segment.duration || '00:00');
-        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000);
+        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000); // Use consistent Date.now()
         const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
         
         synchronizedState = {

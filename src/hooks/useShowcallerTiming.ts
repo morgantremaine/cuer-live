@@ -25,20 +25,8 @@ export const useShowcallerTiming = ({
   currentSegmentId,
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const stableDisplayRef = useRef<string>('00:00:00');
   const lastCalculationRef = useRef<number>(0);
-
-  // Update current time every second when playing
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isPlaying]);
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -72,8 +60,8 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current real time in seconds
-    const now = currentTime;
+    // Get current real time in seconds - use consistent Date.now() approach
+    const now = new Date(Date.now());
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
@@ -105,7 +93,7 @@ export const useShowcallerTiming = ({
     // Calculate the difference (showcaller position vs real time)
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    // Only update display if the difference has changed significantly
+    // Only update display if the difference has changed significantly (prevent flickering)
     const flooredDifference = Math.floor(Math.abs(differenceSeconds));
     if (Math.abs(flooredDifference - lastCalculationRef.current) >= 1) {
       lastCalculationRef.current = flooredDifference;
@@ -122,7 +110,7 @@ export const useShowcallerTiming = ({
       timeDifference: stableDisplayRef.current,
       isVisible: true
     };
-  }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
+  }, [items, rundownStartTime, isPlaying, currentSegmentId, timeRemaining]);
 
   return timingStatus;
 };
