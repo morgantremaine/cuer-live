@@ -50,22 +50,29 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
-    // IMPORTANT: Check if this is our own update BEFORE setting processing state
-    const isOwnUpdate = showcallerVisualState.controllerId === user?.id && 
-                       showcallerVisualState.lastUpdate && 
-                       ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate);
+    // IMPROVED: Check if this is our own update using controller ID primarily
+    // If the controller is the current user, it's likely their own update
+    const isOwnControllerUpdate = showcallerVisualState.controllerId === user?.id;
+    
+    // Also check if we have the specific timestamp tracked (for recent updates)
+    const isTrackedUpdate = showcallerVisualState.lastUpdate && 
+                           ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate);
+    
+    const isOwnUpdate = isOwnControllerUpdate || isTrackedUpdate;
     
     console.log('📺 Processing showcaller update:', {
       hasLastUpdate: !!showcallerVisualState.lastUpdate,
       lastUpdate: showcallerVisualState.lastUpdate,
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
+      isOwnControllerUpdate,
+      isTrackedUpdate,
       isOwnUpdate
     });
 
     // Skip if this update originated from this user - DO NOT set processing state
     if (isOwnUpdate) {
-      console.log('📺 Skipping - own update detected, no processing state needed');
+      console.log('📺 Skipping - own update detected (controller match or tracked timestamp)');
       return;
     }
 
