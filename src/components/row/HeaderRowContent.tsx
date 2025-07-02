@@ -56,7 +56,7 @@ const HeaderRowContent = ({
         
         // Special handling for headers - only show specific fields
         if (column.key === 'segmentName' || column.key === 'name') {
-          // Show the header name with duration appended - custom implementation for headers
+          // Show the header name with duration appended - simple flowing layout
           const headerName = item.name || '';
           return (
             <td
@@ -71,39 +71,42 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="py-3 pl-3 pr-0 flex items-center whitespace-nowrap"
+                className="px-3 py-3 whitespace-nowrap"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
-                  width: 'max-content',
-                  minWidth: 'max-content'
+                  display: 'inline-block',
+                  minWidth: '100%'
                 }}
               >
-                <input
-                  ref={(el) => {
-                    if (el) {
-                      cellRefs.current[`${item.id}-${column.key}`] = el;
-                    }
-                  }}
-                  type="text"
-                  value={headerName}
-                  onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
-                  onClick={() => onCellClick(item.id, column.key)}
-                  onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-                  className="text-2xl font-bold bg-transparent border-none outline-none resize-none p-0 m-0"
-                  style={{ 
-                    color: textColor,
-                    fontFamily: 'inherit',
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    lineHeight: '1.2',
-                    width: `${Math.max(headerName.length * 0.6, 8)}ch`,
-                    minWidth: '8ch'
-                  }}
-                  placeholder="Header Title"
-                />
+                <span className="text-2xl font-bold inline-block" style={{ color: textColor }}>
+                  <input
+                    ref={(el) => {
+                      if (el) {
+                        cellRefs.current[`${item.id}-${column.key}`] = el;
+                      }
+                    }}
+                    type="text"
+                    value={headerName}
+                    onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
+                    onClick={() => onCellClick(item.id, column.key)}
+                    onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+                    className="bg-transparent border-none outline-none p-0 m-0 text-2xl font-bold"
+                    style={{ 
+                      color: textColor,
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
+                      fontWeight: 'inherit',
+                      lineHeight: 'inherit',
+                      width: 'auto',
+                      minWidth: '200px'
+                    }}
+                    placeholder="Header Title"
+                    size={Math.max(headerName.length + 5, 15)}
+                  />
+                </span>
                 <span 
-                  className="text-sm font-medium ml-2" 
+                  className="text-sm font-medium ml-2 inline-block" 
                   style={{ color: textColor }}
                 >
                   ({headerDuration})
