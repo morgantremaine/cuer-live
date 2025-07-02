@@ -1,8 +1,8 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
+import { useShowcallerVisualState } from './useShowcallerVisualState';
+import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -45,10 +45,17 @@ export const useRundownStateCoordination = () => {
   };
 
   // Completely separate showcaller visual state management
-  const showcallerCoordination = useShowcallerStateCoordination({
+  const showcallerVisual = useShowcallerVisualState({
     items: simplifiedState.items,
     rundownId: simplifiedState.rundownId,
     userId: userId
+  });
+
+  // Separate realtime sync for showcaller visual state only  
+  const showcallerSync = useShowcallerRealtimeSync({
+    rundownId: simplifiedState.rundownId,
+    onExternalVisualStateReceived: showcallerVisual.applyExternalVisualState,
+    enabled: !!simplifiedState.rundownId
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -169,9 +176,6 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
-  // Use ONLY content processing state for the blue Wi-Fi icon, not showcaller processing
-  const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate;
-
   return {
     coreState: {
       // Core data (performance optimized but same interface)
@@ -184,22 +188,22 @@ export const useRundownStateCoordination = () => {
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
-      // State flags (NOW using ONLY content processing state for the blue Wi-Fi icon)
+      // State flags (NO showcaller interference)
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
-      isProcessingRealtimeUpdate: contentProcessingState, // Only content updates, not showcaller
+      isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
+      isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
       
       // Showcaller visual state from completely separate system
-      currentSegmentId: showcallerCoordination.currentSegmentId,
-      isPlaying: showcallerCoordination.isPlaying,
-      timeRemaining: showcallerCoordination.timeRemaining,
-      isController: showcallerCoordination.isController,
+      currentSegmentId: showcallerVisual.currentSegmentId,
+      isPlaying: showcallerVisual.isPlaying,
+      timeRemaining: showcallerVisual.timeRemaining,
+      isController: showcallerVisual.isController,
       showcallerActivity: false, // No longer interferes with main state
       
       // Visual status overlay function (doesn't touch main state)
-      getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
+      getItemVisualStatus: showcallerVisual.getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -232,12 +236,12 @@ export const useRundownStateCoordination = () => {
       setColumns: simplifiedState.setColumns,
       
       // Showcaller visual controls (completely separate from main state)
-      play: showcallerCoordination.play,
-      pause: showcallerCoordination.pause,
-      forward: showcallerCoordination.forward,
-      backward: showcallerCoordination.backward,
-      reset: showcallerCoordination.reset,
-      jumpToSegment: showcallerCoordination.jumpToSegment,
+      play: showcallerVisual.play,
+      pause: showcallerVisual.pause,
+      forward: showcallerVisual.forward,
+      backward: showcallerVisual.backward,
+      reset: showcallerVisual.reset,
+      jumpToSegment: showcallerVisual.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,

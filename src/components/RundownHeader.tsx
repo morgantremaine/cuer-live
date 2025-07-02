@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff } from 'lucide-react';
+import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -8,7 +8,6 @@ import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
-import AnimatedWifiIcon from './AnimatedWifiIcon';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -150,7 +149,7 @@ const RundownHeader = ({
   // Helper function to render connection status icon
   const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
-      return <AnimatedWifiIcon className="text-blue-500" isAnimating={true} />;
+      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;
     } else {
