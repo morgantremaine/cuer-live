@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,22 +50,27 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
+    // IMPORTANT: Check if this is our own update BEFORE setting processing state
+    const isOwnUpdate = showcallerVisualState.controllerId === user?.id && 
+                       showcallerVisualState.lastUpdate && 
+                       ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate);
+    
     console.log('📺 Processing showcaller update:', {
       hasLastUpdate: !!showcallerVisualState.lastUpdate,
       lastUpdate: showcallerVisualState.lastUpdate,
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
-      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)
+      isOwnUpdate
     });
 
-    // Skip if this update originated from this user
-    if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
-      console.log('📺 Skipping - own update detected');
+    // Skip if this update originated from this user - DO NOT set processing state
+    if (isOwnUpdate) {
+      console.log('📺 Skipping - own update detected, no processing state needed');
       return;
     }
 
-    // Set processing state immediately
-    console.log('📺 Setting processing state to true');
+    // Only set processing state for external updates
+    console.log('📺 External update detected - setting processing state to true');
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
