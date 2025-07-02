@@ -23,7 +23,6 @@ export const useSharedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [calculatedTimeRemaining, setCalculatedTimeRemaining] = useState(0);
 
   // Enhanced refs for better real-time handling
   const lastUpdateTimestamp = useRef<string | null>(null);
@@ -31,7 +30,6 @@ export const useSharedRundownState = () => {
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
-  const countdownInterval = useRef<NodeJS.Timeout | null>(null);
   const realtimeSubscription = useRef<any>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
@@ -56,57 +54,6 @@ export const useSharedRundownState = () => {
       }
     };
   }, []);
-
-  // Enhanced real-time countdown with proper cleanup
-  useEffect(() => {
-    // Clear existing timer
-    if (countdownInterval.current) {
-      clearInterval(countdownInterval.current);
-      countdownInterval.current = null;
-    }
-
-    if (!rundownData?.showcallerState?.isPlaying || !rundownData.showcallerState.currentSegmentId) {
-      return;
-    }
-
-    countdownInterval.current = setInterval(() => {
-      if (!mountedRef.current) {
-        if (countdownInterval.current) {
-          clearInterval(countdownInterval.current);
-          countdownInterval.current = null;
-        }
-        return;
-      }
-      
-      const showcallerState = rundownData.showcallerState;
-      const currentItem = rundownData.items.find(item => item.id === showcallerState.currentSegmentId);
-      
-      if (currentItem && currentItem.duration && showcallerState.playbackStartTime) {
-        // Parse duration (e.g., "02:30" or "02:30:00") and calculate remaining time
-        const durationParts = currentItem.duration.split(':').map(Number);
-        let totalSeconds = 0;
-        
-        if (durationParts.length === 2) {
-          totalSeconds = durationParts[0] * 60 + durationParts[1];
-        } else if (durationParts.length === 3) {
-          totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-        }
-        
-        // Calculate elapsed time since playback started
-        const elapsed = Math.floor((Date.now() - showcallerState.playbackStartTime) / 1000);
-        const remaining = Math.max(0, totalSeconds - elapsed);
-        
-        setCalculatedTimeRemaining(remaining);
-      }
-    }, 1000);
-
-    return () => {
-      if (countdownInterval.current) {
-        clearInterval(countdownInterval.current);
-        countdownInterval.current = null;
-      }
-    };
-  }, [rundownData?.showcallerState?.isPlaying, rundownData?.showcallerState?.currentSegmentId, rundownData?.showcallerState?.playbackStartTime, rundownData?.items]);
 
   // Optimized load function with better showcaller change detection
   const loadRundownData = useCallback(async (forceReload = false) => {
@@ -311,10 +258,6 @@ export const useSharedRundownState = () => {
         clearInterval(timeUpdateInterval.current);
         timeUpdateInterval.current = null;
       }
-      if (countdownInterval.current) {
-        clearInterval(countdownInterval.current);
-        countdownInterval.current = null;
-      }
       if (realtimeSubscription.current) {
         supabase.removeChannel(realtimeSubscription.current);
         realtimeSubscription.current = null;
@@ -328,12 +271,15 @@ export const useSharedRundownState = () => {
       item.type !== 'header' && item.status === 'current'
     )?.id || null;
 
+  // Use showcaller state timeRemaining directly (no independent calculation)
+  const timeRemaining = rundownData?.showcallerState?.timeRemaining || 0;
+
   return {
     rundownData,
     currentTime,
     currentSegmentId,
     loading,
     error,
-    timeRemaining: calculatedTimeRemaining
+    timeRemaining
   };
 };
