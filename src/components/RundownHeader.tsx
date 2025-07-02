@@ -1,15 +1,13 @@
-
-import React, { useState } from 'react';
-import { Clock, Save, Loader2, CheckCircle, AlertCircle, Wifi, WifiOff, Play, Pause, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useRef } from 'react';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
+import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import TimezoneSelector from './TimezoneSelector';
-import { formatTime } from '@/utils/timeUtils';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import HeaderLogo from './header/HeaderLogo';
+import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
+import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -29,9 +27,9 @@ interface RundownHeaderProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  isPlaying?: boolean;
-  currentSegmentId?: string | null;
-  timeRemaining?: number;
+  isPlaying: boolean;
+  currentSegmentId: string | null;
+  timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
 }
@@ -47,215 +45,339 @@ const RundownHeader = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
-  items = [],
-  visibleColumns = [],
   onUndo,
   canUndo,
   lastAction,
-  isConnected = true,
-  isProcessingRealtimeUpdate = false,
-  isPlaying = false,
+  isConnected,
+  isProcessingRealtimeUpdate,
+  isPlaying,
   currentSegmentId,
-  timeRemaining = 0,
-  autoScrollEnabled = false,
-  onToggleAutoScroll
+  timeRemaining,
+  autoScrollEnabled,
+  onToggleAutoScroll,
+  items = []
 }: RundownHeaderProps) => {
+  const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState(title);
-  const isMobile = useIsMobile();
+  const timeInputRef = useRef<HTMLInputElement>(null);
 
-  const handleTitleSave = () => {
-    onTitleChange(titleValue);
+  // Get showcaller timing status
+  const timingStatus = useShowcallerTiming({
+    items,
+    rundownStartTime,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining
+  });
+
+  // Format time in the selected timezone
+  const formatTimeInTimezone = (time: Date, tz: string) => {
+    try {
+      return formatInTimeZone(time, tz, 'HH:mm:ss');
+    } catch {
+      // Fallback to local time if timezone is invalid
+      return format(time, 'HH:mm:ss');
+    }
+  };
+
+  const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Allow natural typing - only restrict clearly invalid characters
+    // Allow digits, colons, and common separators
+    if (!/^[0-9:]*$/.test(value)) {
+      return;
+    }
+    
+    // Update the value directly without aggressive formatting
+    onRundownStartTimeChange(value);
+  };
+
+  const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Only format and validate on blur
+    let formattedTime = value;
+    
+    // Remove any non-digit, non-colon characters
+    formattedTime = formattedTime.replace(/[^0-9:]/g, '');
+    
+    // Split by colon and pad/validate each part
+    const parts = formattedTime.split(':');
+    
+    if (parts.length >= 1) {
+      // Hours
+      let hours = parts[0] || '00';
+      if (hours.length === 1) hours = '0' + hours;
+      if (parseInt(hours) > 23) hours = '23';
+      
+      // Minutes
+      let minutes = parts[1] || '00';
+      if (minutes.length === 1) minutes = '0' + minutes;
+      if (parseInt(minutes) > 59) minutes = '59';
+      
+      // Seconds
+      let seconds = parts[2] || '00';
+      if (seconds.length === 1) seconds = '0' + seconds;
+      if (parseInt(seconds) > 59) seconds = '59';
+      
+      formattedTime = `${hours}:${minutes}:${seconds}`;
+    } else {
+      // If no valid format, default to current time or 00:00:00
+      formattedTime = rundownStartTime || '00:00:00';
+    }
+    
+    onRundownStartTimeChange(formattedTime);
+  };
+
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleSubmit = () => {
     setIsEditingTitle(false);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+  const handleTitleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleTitleSave();
+      setIsEditingTitle(false);
     } else if (e.key === 'Escape') {
-      setTitleValue(title);
       setIsEditingTitle(false);
     }
   };
 
-  const getSaveStatus = () => {
-    if (isSaving) {
-      return (
-        <div className="flex items-center gap-2 text-green-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Saving...</span>
-        </div>
-      );
-    }
-    
-    if (hasUnsavedChanges) {
-      return (
-        <div className="flex items-center gap-2 text-yellow-500">
-          <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">Unsaved changes</span>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex items-center gap-2 text-green-500">
-        <CheckCircle className="h-4 w-4" />
-        <span className="text-sm">Saved</span>
-      </div>
-    );
-  };
-
-  const getConnectionStatus = () => {
+  // Helper function to render connection status icon
+  const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
-      return (
-        <div className="flex items-center gap-2 text-blue-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Syncing...</span>
-        </div>
-      );
+      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+    } else if (isConnected) {
+      return <Wifi className="h-4 w-4 text-green-500" />;
+    } else {
+      return <WifiOff className="h-4 w-4 text-red-500" />;
     }
-    
-    if (!isConnected) {
-      return (
-        <div className="flex items-center gap-2 text-red-500">
-          <WifiOff className="h-4 w-4" />
-          <span className="text-sm">Offline</span>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex items-center gap-2 text-green-500">
-        <Wifi className="h-4 w-4" />
-        <span className="text-sm">Connected</span>
-      </div>
-    );
   };
 
-  return (
-    <div className="bg-background border-b border-border px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
-        {/* Left section - Title and save status */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+  if (isMobile) {
+    return (
+      <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Title */}
+        <div className="mb-3">
+          <div className="flex-1 min-w-0">
             {isEditingTitle ? (
               <Input
-                value={titleValue}
-                onChange={(e) => setTitleValue(e.target.value)}
-                onBlur={handleTitleSave}
-                onKeyDown={handleTitleKeyDown}
-                className="text-lg font-semibold bg-transparent border-none p-0 h-auto focus-visible:ring-0"
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+                placeholder="Untitled Rundown"
                 autoFocus
               />
             ) : (
-              <h1 
-                className="text-lg font-semibold cursor-pointer hover:text-muted-foreground transition-colors truncate"
-                onClick={() => setIsEditingTitle(true)}
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
               >
-                {title}
-              </h1>
+                {title || "Untitled Rundown"}
+              </span>
             )}
           </div>
-          
-          {!isMobile && (
-            <div className="flex items-center gap-4">
-              {getSaveStatus()}
-              {getConnectionStatus()}
-            </div>
-          )}
         </div>
-
-        {/* Right section - Time and controls */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          {/* Undo button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                  className={cn(
-                    "flex items-center gap-2",
-                    canUndo ? "text-blue-600 hover:text-blue-700" : "text-muted-foreground"
-                  )}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {!isMobile && <span>Undo</span>}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {canUndo ? `Undo: ${lastAction}` : 'Nothing to undo'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Auto-scroll toggle */}
-          {onToggleAutoScroll && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={autoScrollEnabled ? "default" : "outline"}
-                    size="sm"
-                    onClick={onToggleAutoScroll}
-                    className="flex items-center gap-2"
-                  >
-                    {isPlaying ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                    {!isMobile && <span>Auto-scroll</span>}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {autoScrollEnabled ? 'Disable auto-scroll' : 'Enable auto-scroll'}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
-          {/* Start time */}
+        
+        {/* Bottom row - Compact info */}
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Start:</span>
-            <Input
-              type="time"
-              value={rundownStartTime}
-              onChange={(e) => onRundownStartTimeChange(e.target.value)}
-              className="w-24 h-8 text-sm"
-              step="1"
+            <Clock className="h-4 w-4" />
+            <span>{formatTimeInTimezone(currentTime, timezone)}</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <ShowcallerTimingIndicator
+              {...timingStatus}
             />
-          </div>
-
-          {/* Current time */}
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-mono">
-              {formatTime(currentTime)}
-            </span>
-          </div>
-
-          {/* Timezone selector */}
-          <TimezoneSelector
-            value={timezone}
-            onChange={onTimezoneChange}
-          />
-
-          {/* Total runtime */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Total:</span>
-            <Badge variant="outline" className="font-mono">
-              {totalRuntime}
-            </Badge>
+            <span>Runtime: {totalRuntime}</span>
+            {isConnected !== undefined && (
+              <div className="flex items-center">
+                {renderConnectionIcon()}
+              </div>
+            )}
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Mobile status indicators */}
-      {isMobile && (
-        <div className="flex items-center justify-between gap-4 mt-2 pt-2 border-t border-border">
-          {getSaveStatus()}
-          {getConnectionStatus()}
+  if (isTablet) {
+    return (
+      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Top row - Logo, Title, and connection status */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-4 flex-1 min-w-0">
+            <HeaderLogo />
+            <div className="flex-1 min-w-0 flex items-center">
+              {isEditingTitle ? (
+                <textarea
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  onBlur={handleTitleSubmit}
+                  onKeyDown={handleTitleKeyPress}
+                  className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                  placeholder="Untitled Rundown"
+                  rows={1}
+                  style={{ 
+                    minHeight: 'auto',
+                    lineHeight: '1.25'
+                  }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = target.scrollHeight + 'px';
+                  }}
+                  autoFocus
+                />
+              ) : (
+                <span 
+                  onClick={handleTitleEdit}
+                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+                >
+                  {title || "Untitled Rundown"}
+                </span>
+              )}
+            </div>
+            
+            {hasUnsavedChanges && (
+              <div className="flex-shrink-0 flex items-center">
+                <span className="text-sm text-orange-500 dark:text-orange-400">
+                  {isSaving ? 'Saving...' : 'Unsaved changes'}
+                </span>
+              </div>
+            )}
+            
+            <ShowcallerTimingIndicator
+              {...timingStatus}
+            />
+          </div>
+          
+          {isConnected !== undefined && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {renderConnectionIcon()}
+            </div>
+          )}
         </div>
-      )}
+        
+        {/* Bottom row - Time info */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
+            </div>
+            <TimezoneSelector
+              currentTimezone={timezone}
+              onTimezoneChange={onTimezoneChange}
+            />
+          </div>
+          
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <span>Start:</span>
+              <input
+                ref={timeInputRef}
+                type="text"
+                value={rundownStartTime}
+                onChange={handleTimeInputChange}
+                onBlur={handleTimeInputBlur}
+                placeholder="HH:MM:SS"
+                className="w-20 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+            <span>Runtime: {totalRuntime}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop layout - with properly centered title and timing indicator
+  return (
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center space-x-4 flex-1 min-w-0">
+          <HeaderLogo />
+          <div className="flex-1 min-w-0 flex items-center">
+            {isEditingTitle ? (
+              <textarea
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:outline-none w-full resize-none overflow-hidden text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 leading-tight"
+                placeholder="Untitled Rundown"
+                rows={1}
+                style={{ 
+                  minHeight: 'auto',
+                  lineHeight: '1.25'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+                autoFocus
+              />
+            ) : (
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+              >
+                {title || "Untitled Rundown"}
+              </span>
+            )}
+          </div>
+          
+          {hasUnsavedChanges && (
+            <div className="flex-shrink-0 flex items-center">
+              <span className="text-sm text-orange-500 dark:text-orange-400">
+                {isSaving ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            </div>
+          )}
+          
+          <ShowcallerTimingIndicator
+            {...timingStatus}
+          />
+        </div>
+        
+        <div className="flex items-center space-x-4 flex-shrink-0">
+          <span className="text-lg font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
+          <TimezoneSelector
+            currentTimezone={timezone}
+            onTimezoneChange={onTimezoneChange}
+          />
+          
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
+            <input
+              ref={timeInputRef}
+              type="text"
+              value={rundownStartTime}
+              onChange={handleTimeInputChange}
+              onBlur={handleTimeInputBlur}
+              placeholder="HH:MM:SS"
+              className="w-24 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+            />
+          </div>
+          
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Runtime: {totalRuntime}
+          </span>
+          
+          {isConnected !== undefined && (
+            <div className="flex items-center space-x-2">
+              {renderConnectionIcon()}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
