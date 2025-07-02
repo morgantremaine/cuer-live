@@ -11,23 +11,23 @@ export const timeToSeconds = (timeStr: string): number => {
   if (parts.some(isNaN)) return 0;
   
   if (parts.length === 2) {
-    return parts[0] * 60 + parts[1];
+    return Math.floor(parts[0] * 60 + parts[1]); // Floor to prevent fractional seconds
   } else if (parts.length === 3) {
-    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]); // Floor to prevent fractional seconds
   }
   
   return 0;
 };
 
 export const secondsToTime = (seconds: number): string => {
-  if (typeof seconds !== 'number' || seconds < 0) return '00:00:00';
+  if (typeof seconds !== 'number' || isNaN(seconds)) return '00:00:00';
   
   // Ensure we're working with a positive integer to prevent jumping
-  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const totalSeconds = Math.max(0, Math.floor(Math.abs(seconds)));
   
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const secs = Math.floor(totalSeconds % 60); // Fixed: Added Math.floor to prevent jumping
+  const secs = Math.floor(totalSeconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };

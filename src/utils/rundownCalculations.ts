@@ -9,28 +9,28 @@ export interface CalculatedRundownItem extends RundownItem {
   calculatedRowNumber: string;
 }
 
-// Pure function to convert time string to seconds
+// Pure function to convert time string to seconds - always returns integers
 export const timeToSeconds = (timeStr: string): number => {
   if (!timeStr) return 0;
   const parts = timeStr.split(':').map(Number);
   if (parts.length === 2) {
     const [minutes, seconds] = parts;
-    return minutes * 60 + seconds;
+    return Math.floor(minutes * 60 + seconds); // Floor to prevent fractional seconds
   } else if (parts.length === 3) {
     const [hours, minutes, seconds] = parts;
-    return hours * 3600 + minutes * 60 + seconds;
+    return Math.floor(hours * 3600 + minutes * 60 + seconds); // Floor to prevent fractional seconds
   }
   return 0;
 };
 
-// Pure function to convert seconds to time string
+// Pure function to convert seconds to time string - always works with integers
 export const secondsToTime = (seconds: number): string => {
   // Ensure we're working with a positive integer to prevent jumping
-  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const totalSeconds = Math.max(0, Math.floor(Math.abs(seconds)));
   
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const secs = Math.floor(totalSeconds % 60); // Fixed: Added Math.floor to prevent jumping
+  const secs = Math.floor(totalSeconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };

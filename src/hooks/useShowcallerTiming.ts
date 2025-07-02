@@ -26,9 +26,9 @@ export const useShowcallerTiming = ({
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const lastTimingStateRef = useRef<TimingStatus | null>(null);
-  const timingBufferRef = useRef<number>(0);
-  const stabilizedDifferenceRef = useRef<number>(0);
+  const lastCalculatedDifferenceRef = useRef<number>(0);
+  const stableTimeDifferenceRef = useRef<string>('00:00:00');
+  const lastUpdateTimeRef = useRef<number>(0);
 
   // Update current time every 100ms when playing for better precision
   useEffect(() => {
@@ -80,11 +80,11 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Use high-precision timing calculations
+    // Get current time in seconds (floored to whole seconds)
     const now = currentTime;
     const currentTimeString = now.toTimeString().slice(0, 8);
-    const currentTimeSeconds = timeToSeconds(currentTimeString);
-    const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    const currentTimeSeconds = Math.floor(timeToSeconds(currentTimeString));
+    const rundownStartSeconds = Math.floor(timeToSeconds(rundownStartTime));
 
     // Calculate where the showcaller currently is (total elapsed time in showcaller)
     let showcallerElapsedSeconds = 0;
@@ -93,13 +93,13 @@ export const useShowcallerTiming = ({
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
+        showcallerElapsedSeconds += Math.floor(timeToSeconds(item.duration || '00:00'));
       }
     }
     
-    // Add elapsed time within current segment with higher precision
-    const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
-    const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
+    // Add elapsed time within current segment (use integer timeRemaining)
+    const currentSegmentDuration = Math.floor(timeToSeconds(currentSegment.duration || '00:00'));
+    const elapsedInCurrentSegment = currentSegmentDuration - Math.floor(timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
     // Check if we're before or after the rundown start time
@@ -124,42 +124,40 @@ export const useShowcallerTiming = ({
       differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     }
     
-    // Enhanced stabilization to prevent second jumping
-    const rawDifference = Math.floor(differenceSeconds); // Floor to integer seconds
+    // Floor the difference to prevent jumping between fractional seconds
+    const flooredDifference = Math.floor(differenceSeconds);
     
-    // Use enhanced buffering to prevent rapid changes
-    if (Math.abs(rawDifference - stabilizedDifferenceRef.current) <= 1) {
-      // If within 1 second of last stable value, maintain stability
-      const timeSinceLastChange = Math.abs(differenceSeconds - stabilizedDifferenceRef.current);
-      if (timeSinceLastChange < 0.3) { // 300ms threshold for stability
-        differenceSeconds = stabilizedDifferenceRef.current;
-      } else {
-        // Only change if we've been consistently different for a bit
-        stabilizedDifferenceRef.current = rawDifference;
-        differenceSeconds = rawDifference;
-      }
+    // Only update if the difference has changed by at least 1 full second
+    // AND we haven't updated in the last 800ms (prevents rapid changes)
+    const now_ms = Date.now();
+    const timeSinceLastUpdate = now_ms - lastUpdateTimeRef.current;
+    
+    let finalDifferenceSeconds: number;
+    
+    if (Math.abs(flooredDifference - lastCalculatedDifferenceRef.current) >= 1 && timeSinceLastUpdate >= 800) {
+      // Significant change and enough time has passed
+      lastCalculatedDifferenceRef.current = flooredDifference;
+      lastUpdateTimeRef.current = now_ms;
+      finalDifferenceSeconds = flooredDifference;
+      
+      // Update stable display
+      const absoluteDifference = Math.abs(finalDifferenceSeconds);
+      stableTimeDifferenceRef.current = secondsToTime(absoluteDifference);
     } else {
-      // Significant change, update immediately
-      stabilizedDifferenceRef.current = rawDifference;
-      differenceSeconds = rawDifference;
+      // Use the last calculated difference to maintain stability
+      finalDifferenceSeconds = lastCalculatedDifferenceRef.current;
     }
     
     // TIMING LOGIC with consistent precision
-    const isOnTime = Math.abs(differenceSeconds) <= 5;
-    const isAhead = differenceSeconds > 5; // Showcaller ahead of schedule = under time
-    
-    const absoluteDifference = Math.abs(differenceSeconds);
-    const timeDifference = secondsToTime(absoluteDifference); // Now uses floored seconds
+    const isOnTime = Math.abs(finalDifferenceSeconds) <= 5;
+    const isAhead = finalDifferenceSeconds > 5; // Showcaller ahead of schedule = under time
 
     const newStatus = {
       isOnTime,
       isAhead,
-      timeDifference,
+      timeDifference: stableTimeDifferenceRef.current,
       isVisible: true
     };
-
-    // Store last state for stability
-    lastTimingStateRef.current = newStatus;
     
     return newStatus;
   }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
