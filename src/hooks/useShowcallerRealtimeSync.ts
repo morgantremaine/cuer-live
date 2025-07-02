@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,9 +17,9 @@ export const useShowcallerRealtimeSync = ({
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
   const onExternalVisualStateReceivedRef = useRef(onExternalVisualStateReceived);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-  const lastProcessedStateRef = useRef<string>('');
   
   // Add processing state tracking
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
@@ -28,37 +27,12 @@ export const useShowcallerRealtimeSync = ({
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
 
-  // Function to create a signature from showcaller state
-  const createStateSignature = useCallback((showcallerState: any) => {
-    if (!showcallerState) return '';
-    
-    // Create a signature from the meaningful parts of the showcaller state
-    // Exclude lastUpdate timestamp to focus on actual state changes
-    const { lastUpdate, ...meaningfulState } = showcallerState;
-    return JSON.stringify(meaningfulState);
-  }, []);
-
-  // Check if showcaller state is fresh (within last 5 minutes - much more generous)
-  const isStateFresh = useCallback((showcallerState: any) => {
-    if (!showcallerState?.lastUpdate) {
-      // If no timestamp, consider it fresh (could be a new state)
-      return true;
-    }
-    
-    const updateTime = new Date(showcallerState.lastUpdate).getTime();
-    const now = Date.now();
-    const fiveMinutesAgo = now - (5 * 60 * 1000); // 5 minutes instead of 30 seconds
-    
-    return updateTime > fiveMinutesAgo;
-  }, []);
-
   // Simplified update handler for showcaller visual state only
   const handleShowcallerVisualUpdate = useCallback(async (payload: any) => {
     console.log('🔄 Raw showcaller update received:', {
       hasShowcallerState: !!payload.new?.showcaller_state,
       rundownId: payload.new?.id,
-      targetRundown: rundownId,
-      updateType: payload.eventType || 'UPDATE'
+      targetRundown: rundownId
     });
 
     // Skip if not for the current rundown
@@ -75,40 +49,22 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
-    // Check if this is from the current user
-    if (showcallerVisualState.controllerId === user?.id) {
-      console.log('📺 Skipping - update from current user');
-      return;
-    }
-
-    // Check if the state is fresh (more generous 5-minute window)
-    if (!isStateFresh(showcallerVisualState)) {
-      console.log('📺 Skipping - stale showcaller state (older than 5 minutes)');
-      return;
-    }
-
-    // Create a signature of the current state
-    const currentStateSignature = createStateSignature(showcallerVisualState);
-    
-    // Check if this is actually a new state or just a re-broadcast
-    if (currentStateSignature === lastProcessedStateRef.current) {
-      console.log('📺 Skipping - same showcaller state as last processed');
-      return;
-    }
-
-    console.log('📺 Processing fresh external showcaller update:', {
+    console.log('📺 Processing showcaller update:', {
       hasLastUpdate: !!showcallerVisualState.lastUpdate,
       lastUpdate: showcallerVisualState.lastUpdate,
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
-      isGenuineExternalUpdate: true
+      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)
     });
 
-    // Update the last processed state
-    lastProcessedStateRef.current = currentStateSignature;
+    // Skip if this update originated from this user
+    if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
+      console.log('📺 Skipping - own update detected');
+      return;
+    }
 
     // Set processing state immediately
-    console.log('📺 Setting processing state to true for genuine external update');
+    console.log('📺 Setting processing state to true');
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
@@ -142,16 +98,19 @@ export const useShowcallerRealtimeSync = ({
       processingTimeoutRef.current = null;
     }, 50); // Minimal delay for processing
     
-  }, [rundownId, user?.id, isStateFresh, createStateSignature]);
+  }, [rundownId, user?.id]);
 
-  // Function to track our own visual updates - this should be called when we make showcaller changes
-  const trackOwnVisualUpdate = useCallback((showcallerState: any) => {
-    if (!showcallerState) return;
+  // Function to track our own visual updates - only tracks updates from current user
+  const trackOwnVisualUpdate = useCallback((lastUpdate: string) => {
+    console.log('📺 Tracking own visual update:', lastUpdate);
+    ownUpdateTrackingRef.current.add(lastUpdate);
     
-    console.log('📺 Tracking own showcaller state change');
-    const stateSignature = createStateSignature(showcallerState);
-    lastProcessedStateRef.current = stateSignature;
-  }, [createStateSignature]);
+    // Clean up old tracked updates after 5 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(lastUpdate);
+      console.log('📺 Cleaned up tracked update:', lastUpdate);
+    }, 5000);
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
