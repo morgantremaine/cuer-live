@@ -22,6 +22,8 @@ interface RundownContentProps {
   searchTerm?: string;
   searchResults?: { itemId: string; fieldKey: string; matchText: string }[];
   currentSearchIndex?: number;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -63,6 +65,8 @@ const RundownContent = ({
   searchTerm,
   searchResults,
   currentSearchIndex,
+  autoScrollEnabled,
+  onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -92,12 +96,13 @@ const RundownContent = ({
   // Use optimized cell refs to prevent memory leaks
   const { getCellRef, clearUnusedRefs, getAllRefs } = useOptimizedCellRefs();
   
-  // Create a ref object that mimics the old interface
-  const cellRefs = useRef({
-    get current() {
-      return getAllRefs();
-    }
-  });
+  // Create a ref object with the correct type
+  const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  
+  // Update cellRefs.current with the actual refs
+  useEffect(() => {
+    cellRefs.current = getAllRefs();
+  }, [getAllRefs]);
 
   // Cleanup unused refs periodically
   useEffect(() => {

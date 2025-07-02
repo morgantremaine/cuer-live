@@ -7,6 +7,8 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 interface RundownMainContentProps extends RundownContainerProps {
   currentSegmentName: string;
   totalDuration: string;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
 }
 
 const RundownMainContent = ({

@@ -134,6 +134,7 @@ export const useOptimizedRundownState = () => {
     setTitle: coreState.setTitle,
     setStartTime: coreState.setStartTime,
     setTimezone: coreState.setTimezone,
+    setItems: coreState.setItems, // Add the missing setItems method
     
     // Column management
     addColumn: coreState.addColumn,

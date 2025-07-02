@@ -51,7 +51,7 @@ const ROW_HEIGHT = 56; // Fixed row height for virtualization
 
 interface RowData {
   items: RundownItem[];
-  props: Omit<VirtualizedRundownTableProps, 'items'>;
+  props: VirtualizedRundownTableProps;
 }
 
 const VirtualizedRow = React.memo(({ index, style, data }: { index: number; style: React.CSSProperties; data: RowData }) => {
@@ -130,7 +130,7 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
           />
           
           {/* Drop indicator after last row */}
-          {props.dropTargetIndex === props.items.length && index === props.items.length - 1 && (
+          {props.dropTargetIndex === items.length && index === items.length - 1 && (
             <tr>
               <td colSpan={props.visibleColumns.length + 1} className="p-0">
                 <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
@@ -146,7 +146,9 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
 VirtualizedRow.displayName = 'VirtualizedRow';
 
 const VirtualizedRundownTable = forwardRef<List, VirtualizedRundownTableProps>(
-  ({ items, ...props }, ref) => {
+  (props, ref) => {
+    const { items } = props;
+    
     const rowData = useMemo((): RowData => ({
       items,
       props

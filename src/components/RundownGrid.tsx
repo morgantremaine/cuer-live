@@ -135,7 +135,7 @@ const RundownGrid = React.memo(() => {
       selectedRowId={state.selectedRowId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
-      getRowNumber={state.getRowNumber}
+      getRowNumber={(index: number) => (index + 1).toString()} // Fixed to use index instead of id
       getRowStatus={getRowStatus}
       calculateHeaderDuration={state.getHeaderDuration}
       onUpdateItem={state.updateItem}
