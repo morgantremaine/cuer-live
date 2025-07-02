@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import TabletToolbar from './toolbar/TabletToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
+import FindReplaceDialog from './FindReplaceDialog';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownToolbarProps {
@@ -35,6 +36,9 @@ interface RundownToolbarProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  // Find and replace functionality
+  items?: any[];
+  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
 const RundownToolbar = ({
@@ -58,9 +62,22 @@ const RundownToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  items = [],
+  onUpdateItem
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
+  
+  // Find and replace state
+  const [showFindReplace, setShowFindReplace] = useState(false);
+
+  const handleOpenFindReplace = () => {
+    setShowFindReplace(true);
+  };
+
+  const handleCloseFindReplace = () => {
+    setShowFindReplace(false);
+  };
 
   const commonProps = {
     onAddRow,
@@ -83,18 +100,27 @@ const RundownToolbar = ({
     rundownTitle,
     rundownData,
     autoScrollEnabled,
-    onToggleAutoScroll
+    onToggleAutoScroll,
+    onOpenFindReplace: handleOpenFindReplace
   };
 
-  if (isMobile) {
-    return <MobileToolbar {...commonProps} />;
-  }
-
-  if (isTablet) {
-    return <TabletToolbar {...commonProps} />;
-  }
-
-  return <DesktopToolbar {...commonProps} />;
+  return (
+    <>
+      {isMobile && <MobileToolbar {...commonProps} />}
+      {isTablet && <TabletToolbar {...commonProps} />}
+      {!isMobile && !isTablet && <DesktopToolbar {...commonProps} />}
+      
+      {/* Find and Replace Dialog */}
+      {onUpdateItem && (
+        <FindReplaceDialog
+          isOpen={showFindReplace}
+          onClose={handleCloseFindReplace}
+          items={items}
+          onUpdateItem={onUpdateItem}
+        />
+      )}
+    </>
+  );
 };
 
 export default RundownToolbar;

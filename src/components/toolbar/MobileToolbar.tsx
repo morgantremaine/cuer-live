@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -33,6 +32,7 @@ interface MobileToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onOpenFindReplace?: () => void;
 }
 
 const MobileToolbar = ({
@@ -56,58 +56,48 @@ const MobileToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  onOpenFindReplace
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      {/* Single row - Actions dropdown and theme toggle */}
-      <div className="flex items-center justify-between gap-2">
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
-              <span className="text-sm">Actions</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
-            className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
-            sideOffset={4}
-          >
-            <div className="space-y-2">
-              <MainActionButtons
-                onAddRow={onAddRow}
-                onAddHeader={onAddHeader}
-                onShowColumnManager={onShowColumnManager}
-                onUndo={onUndo}
-                canUndo={canUndo}
-                lastAction={lastAction}
-                rundownId={rundownId}
-                onOpenTeleprompter={onOpenTeleprompter}
-                selectedRowId={selectedRowId}
-                isMobile={true}
-                rundownTitle={rundownTitle}
-                rundownData={rundownData}
-                autoScrollEnabled={autoScrollEnabled}
-                onToggleAutoScroll={onToggleAutoScroll}
-                // Pass playback controls for mobile
-                isPlaying={isPlaying}
-                currentSegmentId={currentSegmentId}
-                timeRemaining={timeRemaining}
-                onPlay={onPlay}
-                onPause={onPause}
-                onForward={onForward}
-                onBackward={onBackward}
-                onReset={onReset}
-              />
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <ThemeToggle />
-      </div>
+    <div className="flex items-center justify-center p-4 bg-card border-b border-border">
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <MoreHorizontal className="h-4 w-4" />
+            <span>Actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="center" className="w-80 p-4">
+          <MainActionButtons
+            onAddRow={onAddRow}
+            onAddHeader={onAddHeader}
+            onShowColumnManager={onShowColumnManager}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            lastAction={lastAction}
+            rundownId={rundownId}
+            onOpenTeleprompter={onOpenTeleprompter}
+            selectedRowId={selectedRowId}
+            isMobile={true}
+            rundownTitle={rundownTitle}
+            rundownData={rundownData}
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={onToggleAutoScroll}
+            onOpenFindReplace={onOpenFindReplace}
+            isPlaying={isPlaying}
+            currentSegmentId={currentSegmentId}
+            timeRemaining={timeRemaining}
+            onPlay={onPlay}
+            onPause={onPause}
+            onForward={onForward}
+            onBackward={onBackward}
+            onReset={onReset}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

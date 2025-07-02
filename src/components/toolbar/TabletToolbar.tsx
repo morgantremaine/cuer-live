@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import ThemeToggle from '../ThemeToggle';
+
+import React from 'react';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import { Switch } from '@/components/ui/switch';
+import { MapPin } from 'lucide-react';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface TabletToolbarProps {
@@ -33,6 +28,7 @@ interface TabletToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onOpenFindReplace?: () => void;
 }
 
 const TabletToolbar = ({
@@ -56,63 +52,63 @@ const TabletToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  onOpenFindReplace
 }: TabletToolbarProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const handleToggleAutoScroll = (checked: boolean) => {
+    if (onToggleAutoScroll) {
+      onToggleAutoScroll();
+    }
+  };
 
   return (
-    <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      {/* Single row - Actions dropdown, playback controls, and theme toggle */}
-      <div className="flex items-center justify-between gap-2">
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
-              <span className="text-sm">Actions</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
-            className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
-            sideOffset={4}
-          >
-            <div className="space-y-2">
-              <MainActionButtons
-                onAddRow={onAddRow}
-                onAddHeader={onAddHeader}
-                onShowColumnManager={onShowColumnManager}
-                onUndo={onUndo}
-                canUndo={canUndo}
-                lastAction={lastAction}
-                rundownId={rundownId}
-                onOpenTeleprompter={onOpenTeleprompter}
-                selectedRowId={selectedRowId}
-                isMobile={true}
-                rundownTitle={rundownTitle}
-                rundownData={rundownData}
-              />
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <div className="flex justify-center flex-1">
-          <PlaybackControls
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            currentSegmentId={currentSegmentId}
-            timeRemaining={timeRemaining}
-            onPlay={onPlay}
-            onPause={onPause}
-            onForward={onForward}
-            onBackward={onBackward}
-            onReset={onReset}
-            size="sm"
+    <div className="flex flex-col space-y-3 p-4 bg-card border-b border-border">
+      {/* Top row - Main action buttons */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <MainActionButtons
+            onAddRow={onAddRow}
+            onAddHeader={onAddHeader}
+            onShowColumnManager={onShowColumnManager}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            lastAction={lastAction}
+            rundownId={rundownId}
+            onOpenTeleprompter={onOpenTeleprompter}
+            rundownTitle={rundownTitle}
+            rundownData={rundownData}
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={onToggleAutoScroll}
+            onOpenFindReplace={onOpenFindReplace}
           />
         </div>
-
-        <ThemeToggle />
+        
+        {/* Auto-scroll toggle */}
+        {onToggleAutoScroll && (
+          <div className="flex items-center space-x-2">
+            <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+            <span className="text-sm text-muted-foreground">Auto-scroll</span>
+            <Switch
+              checked={autoScrollEnabled}
+              onCheckedChange={handleToggleAutoScroll}
+            />
+          </div>
+        )}
+      </div>
+      
+      {/* Bottom row - Playback controls */}
+      <div className="flex justify-center">
+        <PlaybackControls
+          selectedRowId={selectedRowId}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
+          onPlay={onPlay}
+          onPause={onPause}
+          onForward={onForward}
+          onBackward={onBackward}
+          onReset={onReset}
+        />
       </div>
     </div>
   );
