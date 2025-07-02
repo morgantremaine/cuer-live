@@ -128,7 +128,12 @@ const RundownGrid = React.memo(() => {
 
   // Fix the calculateHeaderDuration function to match expected signature (index: number) => string
   const calculateHeaderDuration = (index: number): string => {
-    return state.getHeaderDuration(index);
+    // Get the item at this index to find its ID
+    const item = state.items[index];
+    if (!item || item.type !== 'header') {
+      return '';
+    }
+    return state.getHeaderDuration(item.id);
   };
 
   return (
