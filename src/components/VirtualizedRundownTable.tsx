@@ -47,12 +47,28 @@ interface VirtualizedRundownTableProps {
   onJumpToHere?: (segmentId: string) => void;
 }
 
-const ROW_HEIGHT = 56; // Fixed row height for virtualization
+const ROW_HEIGHT = 56;
 
 interface RowData {
   items: RundownItem[];
   props: VirtualizedRundownTableProps;
 }
+
+// Custom wrapper component for the virtualized list content
+const VirtualizedTableBody = forwardRef<HTMLDivElement, { 
+  children: React.ReactNode;
+  style: React.CSSProperties;
+}>((props, ref) => (
+  <div ref={ref} style={props.style}>
+    <table className="w-full border-collapse table-fixed">
+      <tbody>
+        {props.children}
+      </tbody>
+    </table>
+  </div>
+));
+
+VirtualizedTableBody.displayName = 'VirtualizedTableBody';
 
 const VirtualizedRow = React.memo(({ index, style, data }: { index: number; style: React.CSSProperties; data: RowData }) => {
   const { items, props } = data;
@@ -79,11 +95,10 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
     <div style={style} className="w-full">
       {/* Drop indicator above */}
       {props.dropTargetIndex === index && (
-        <div className="h-0.5 bg-gray-400 w-full relative z-50 -mb-0.5"></div>
+        <div className="h-0.5 bg-gray-400 w-full relative z-50 mb-1"></div>
       )}
       
-      {/* Single table wrapper to prevent spacing issues */}
-      <table className="w-full border-collapse border border-border table-fixed">
+      <table className="w-full border-collapse table-fixed">
         <tbody>
           <RundownRow
             item={item}
@@ -130,7 +145,7 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
       
       {/* Drop indicator after last row */}
       {props.dropTargetIndex === items.length && index === items.length - 1 && (
-        <div className="h-0.5 bg-gray-400 w-full relative z-50 -mt-0.5"></div>
+        <div className="h-0.5 bg-gray-400 w-full relative z-50 mt-1"></div>
       )}
     </div>
   );
@@ -148,7 +163,7 @@ const VirtualizedRundownTable = forwardRef<List, VirtualizedRundownTableProps>(
     }), [items, props]);
 
     const itemCount = items.length;
-    const height = Math.min(800, itemCount * ROW_HEIGHT); // Max height of 800px
+    const height = Math.min(800, itemCount * ROW_HEIGHT);
 
     return (
       <div className="relative w-full bg-background">
