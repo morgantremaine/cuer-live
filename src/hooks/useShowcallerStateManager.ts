@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -54,15 +53,15 @@ export const useShowcallerStateManager = ({
     
     if (parts.length === 2) {
       const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
+      return Math.floor(minutes * 60 + seconds);
     } else if (parts.length === 3) {
       const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
+      return Math.floor(hours * 3600 + minutes * 60 + seconds);
     }
     return 0;
   }, []);
 
-  // Save showcaller state to database (separate from main rundown save)
+  // Save showcaller state to database
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
     if (!rundownId) return;
 
@@ -85,7 +84,7 @@ export const useShowcallerStateManager = ({
     }
   }, [rundownId]);
 
-  // Debounced save to prevent rapid database updates
+  // Debounced save
   const debouncedSaveShowcallerState = useCallback((state: ShowcallerState) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -93,10 +92,10 @@ export const useShowcallerStateManager = ({
 
     saveTimeoutRef.current = setTimeout(() => {
       saveShowcallerState(state);
-    }, 500); // 500ms debounce for showcaller state saves
+    }, 500);
   }, [saveShowcallerState]);
 
-  // Update showcaller state internally and optionally sync
+  // Update showcaller state
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
       ...showcallerState,
@@ -152,7 +151,7 @@ export const useShowcallerStateManager = ({
     }
   }, [items, clearCurrentStatusSilent, updateItemSilent, timeToSeconds, updateShowcallerState, userId]);
 
-  // Timer management
+  // Enhanced timer with consistent 1-second updates
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -162,7 +161,10 @@ export const useShowcallerStateManager = ({
     
     timerRef.current = setInterval(() => {
       setShowcallerState(prevState => {
-        if (prevState.timeRemaining <= 1) {
+        // Ensure we're working with integer seconds
+        const currentTimeRemaining = Math.floor(prevState.timeRemaining);
+        
+        if (currentTimeRemaining <= 0) {
           if (isController && prevState.currentSegmentId) {
             updateItemSilent(prevState.currentSegmentId, 'status', 'completed');
             const nextSegment = getNextSegment(prevState.currentSegmentId);
@@ -204,20 +206,21 @@ export const useShowcallerStateManager = ({
           }
         }
         
+        const newTimeRemaining = Math.max(0, currentTimeRemaining - 1);
         const newState = {
           ...prevState,
-          timeRemaining: prevState.timeRemaining - 1,
+          timeRemaining: newTimeRemaining,
           lastUpdate: new Date().toISOString()
         };
         
         // Sync every 10 seconds to reduce database load
-        if (isController && prevState.timeRemaining % 10 === 0) {
+        if (isController && currentTimeRemaining % 10 === 0) {
           debouncedSaveShowcallerState(newState);
         }
         
         return newState;
       });
-    }, 1000);
+    }, 1000); // Consistent 1-second intervals
   }, [showcallerState.controllerId, userId, updateItemSilent, getNextSegment, timeToSeconds, debouncedSaveShowcallerState]);
 
   const stopTimer = useCallback(() => {
@@ -326,7 +329,7 @@ export const useShowcallerStateManager = ({
     }
   }, [showcallerState, getPreviousSegment, updateItemSilent, timeToSeconds, userId, updateShowcallerState, startTimer]);
 
-  // Apply external showcaller state
+  // Apply external showcaller state with proper time synchronization
   const applyShowcallerState = useCallback((externalState: ShowcallerState) => {
     if (lastSyncedStateRef.current === externalState.lastUpdate) {
       return;

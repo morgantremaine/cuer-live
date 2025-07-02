@@ -26,27 +26,19 @@ export const useShowcallerTiming = ({
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const lastCalculatedDifferenceRef = useRef<number>(0);
-  const stableTimeDifferenceRef = useRef<string>('00:00:00');
-  const lastUpdateTimeRef = useRef<number>(0);
+  const stableDisplayRef = useRef<string>('00:00:00');
+  const lastCalculationRef = useRef<number>(0);
 
-  // Update current time every 100ms when playing for better precision
+  // Update current time every second when playing
   useEffect(() => {
     if (!isPlaying) return;
 
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 100);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [isPlaying]);
-
-  // Immediate timing calculation on play start
-  useEffect(() => {
-    if (isPlaying && currentSegmentId) {
-      setCurrentTime(new Date());
-    }
-  }, [isPlaying, currentSegmentId]);
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -80,86 +72,56 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current time in seconds (floored to whole seconds)
+    // Get current real time in seconds
     const now = currentTime;
     const currentTimeString = now.toTimeString().slice(0, 8);
-    const currentTimeSeconds = Math.floor(timeToSeconds(currentTimeString));
-    const rundownStartSeconds = Math.floor(timeToSeconds(rundownStartTime));
+    const currentTimeSeconds = timeToSeconds(currentTimeString);
+    const rundownStartSeconds = timeToSeconds(rundownStartTime);
 
-    // Calculate where the showcaller currently is (total elapsed time in showcaller)
+    // Calculate showcaller position: sum of all completed segments + elapsed in current segment
     let showcallerElapsedSeconds = 0;
     
     // Add up durations of all completed segments
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        showcallerElapsedSeconds += Math.floor(timeToSeconds(item.duration || '00:00'));
+        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
       }
     }
     
-    // Add elapsed time within current segment (use integer timeRemaining)
-    const currentSegmentDuration = Math.floor(timeToSeconds(currentSegment.duration || '00:00'));
-    const elapsedInCurrentSegment = currentSegmentDuration - Math.floor(timeRemaining);
+    // Add elapsed time in current segment (use timeRemaining from state manager)
+    const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
+    const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Check if we're before or after the rundown start time
-    const isPreStart = currentTimeSeconds < rundownStartSeconds;
+    // Calculate real elapsed time since rundown start
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    let differenceSeconds: number;
-    let realElapsedSeconds: number;
-    
-    if (isPreStart) {
-      // PRE-START LOGIC: Show hasn't started yet
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds; // This will be negative
-      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
-    } else {
-      // POST-START LOGIC: Show has started
-      realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-      
-      // Apply day boundary logic if needed
-      if (realElapsedSeconds < 0) {
-        realElapsedSeconds += 24 * 3600; // Handle day crossing
-      }
-      
-      differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
+    // Handle day boundary crossing
+    if (realElapsedSeconds < 0) {
+      realElapsedSeconds += 24 * 3600;
     }
     
-    // Floor the difference to prevent jumping between fractional seconds
-    const flooredDifference = Math.floor(differenceSeconds);
+    // Calculate the difference (showcaller position vs real time)
+    const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    // Only update if the difference has changed by at least 1 full second
-    // AND we haven't updated in the last 800ms (prevents rapid changes)
-    const now_ms = Date.now();
-    const timeSinceLastUpdate = now_ms - lastUpdateTimeRef.current;
-    
-    let finalDifferenceSeconds: number;
-    
-    if (Math.abs(flooredDifference - lastCalculatedDifferenceRef.current) >= 1 && timeSinceLastUpdate >= 800) {
-      // Significant change and enough time has passed
-      lastCalculatedDifferenceRef.current = flooredDifference;
-      lastUpdateTimeRef.current = now_ms;
-      finalDifferenceSeconds = flooredDifference;
-      
-      // Update stable display
-      const absoluteDifference = Math.abs(finalDifferenceSeconds);
-      stableTimeDifferenceRef.current = secondsToTime(absoluteDifference);
-    } else {
-      // Use the last calculated difference to maintain stability
-      finalDifferenceSeconds = lastCalculatedDifferenceRef.current;
+    // Only update display if the difference has changed significantly
+    const flooredDifference = Math.floor(Math.abs(differenceSeconds));
+    if (Math.abs(flooredDifference - lastCalculationRef.current) >= 1) {
+      lastCalculationRef.current = flooredDifference;
+      stableDisplayRef.current = secondsToTime(flooredDifference);
     }
     
-    // TIMING LOGIC with consistent precision
-    const isOnTime = Math.abs(finalDifferenceSeconds) <= 5;
-    const isAhead = finalDifferenceSeconds > 5; // Showcaller ahead of schedule = under time
+    // Determine timing status
+    const isOnTime = Math.abs(differenceSeconds) <= 5;
+    const isAhead = differenceSeconds > 5; // Showcaller ahead of real time
 
-    const newStatus = {
+    return {
       isOnTime,
       isAhead,
-      timeDifference: stableTimeDifferenceRef.current,
+      timeDifference: stableDisplayRef.current,
       isVisible: true
     };
-    
-    return newStatus;
   }, [items, rundownStartTime, isPlaying, currentSegmentId, currentTime, timeRemaining]);
 
   return timingStatus;
