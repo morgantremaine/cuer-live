@@ -90,23 +90,11 @@ const RundownRow = ({
   const commonProps = {
     item,
     index,
-    visibleColumns,
-    currentTime,
-    showColorPicker,
     cellRefs,
-    isSelected,
-    isDragged,
-    isDraggingMultiple,
-    isDropTarget,
-    currentSegmentId,
+    showColorPicker,
     hasClipboardData,
     selectedRowId,
-    isHighlighted,
-    getColumnWidth,
-    updateColumnWidth,
-    getRowNumber,
-    getRowStatus,
-    getHeaderDuration,
+    currentSegmentId,
     onUpdateItem,
     onCellClick,
     onKeyDown,
@@ -126,14 +114,37 @@ const RundownRow = ({
     onAddRow,
     onAddHeader,
     onJumpToHere,
+    getColumnWidth,
     ...props
   };
 
   if (item.type === 'header') {
-    return <HeaderRow {...commonProps} />;
+    return (
+      <HeaderRow
+        {...commonProps}
+        rowNumber={getRowNumber(index)}
+        columns={visibleColumns}
+        headerDuration={getHeaderDuration(index)}
+        selectedRowsCount={isSelected ? 1 : 0}
+        isSelected={isSelected}
+        isDragging={isDragged}
+      />
+    );
   }
 
-  return <RegularRow {...commonProps} />;
+  return (
+    <RegularRow
+      {...commonProps}
+      rowNumber={getRowNumber(index)}
+      status={getRowStatus(item)}
+      columns={visibleColumns}
+      selectedRowsCount={isSelected ? 1 : 0}
+      isSelected={isSelected}
+      isCurrentlyPlaying={currentSegmentId === item.id}
+      isDraggingMultiple={isDraggingMultiple}
+      isDragging={isDragged}
+    />
+  );
 };
 
 export default RundownRow;
