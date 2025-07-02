@@ -1,4 +1,3 @@
-
 import React from 'react';
 import RundownTable from './RundownTable';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -23,8 +22,7 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    rundownId,
-    saveUndoState
+    rundownId
   } = coreState;
 
   // Use coordinated showcaller state for better synchronization
@@ -167,9 +165,9 @@ const RundownGrid = React.memo(() => {
     logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
   };
 
-  // Create wrapper functions for drag operations with undo support
+  // Create wrapper functions for drag operations
   const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    handleDragStart(e, index, saveUndoState);
+    handleDragStart(e, index);
   };
 
   const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
