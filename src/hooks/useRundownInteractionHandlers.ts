@@ -1,4 +1,3 @@
-
 import { useMultiRowSelection } from './useMultiRowSelection';
 import { useDragAndDrop } from './useDragAndDrop';
 import { useClipboard } from './useClipboard';
@@ -26,16 +25,7 @@ export const useRundownInteractionHandlers = (
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Create a wrapper for setItems that ensures undo state is saved
-  const setItemsWithUndo = (newItems: RundownItem[]) => {
-    setItems(() => {
-      // Mark as changed to trigger undo state saving
-      markAsChanged();
-      return newItems;
-    });
-  };
-
-  // Drag and drop - use the wrapper function
+  // Drag and drop
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -44,7 +34,7 @@ export const useRundownInteractionHandlers = (
     handleDragOver,
     handleDragLeave,
     handleDrop 
-  } = useDragAndDrop(items, setItemsWithUndo, selectedRows);
+  } = useDragAndDrop(items, setItems, selectedRows);
 
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
