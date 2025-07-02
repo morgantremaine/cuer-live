@@ -21,6 +21,7 @@ export const useShowcallerRealtimeSync = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+  const lastProcessedShowcallerStateRef = useRef<string | null>(null);
   
   // Add processing state tracking
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
@@ -50,8 +51,22 @@ export const useShowcallerRealtimeSync = ({
 
     const showcallerVisualState = payload.new.showcaller_state;
     
-    // IMPROVED: Check if this is our own update using controller ID primarily
-    // If the controller is the current user, it's likely their own update
+    // Create a signature of the showcaller state to detect actual changes
+    const stateSignature = JSON.stringify({
+      lastUpdate: showcallerVisualState.lastUpdate,
+      controllerId: showcallerVisualState.controllerId,
+      currentSegmentId: showcallerVisualState.currentSegmentId,
+      isPlaying: showcallerVisualState.isPlaying,
+      timeRemaining: showcallerVisualState.timeRemaining
+    });
+    
+    // Check if this is the same showcaller state we already processed
+    if (stateSignature === lastProcessedShowcallerStateRef.current) {
+      console.log('📺 Skipping - same showcaller state already processed');
+      return;
+    }
+    
+    // Check if this is our own update using controller ID primarily
     const isOwnControllerUpdate = showcallerVisualState.controllerId === user?.id;
     
     // Also check if we have the specific timestamp tracked (for recent updates)
@@ -67,14 +82,20 @@ export const useShowcallerRealtimeSync = ({
       currentUserId: user?.id,
       isOwnControllerUpdate,
       isTrackedUpdate,
-      isOwnUpdate
+      isOwnUpdate,
+      stateSignature: stateSignature.substring(0, 100) + '...'
     });
 
     // Skip if this update originated from this user - DO NOT set processing state
     if (isOwnUpdate) {
       console.log('📺 Skipping - own update detected (controller match or tracked timestamp)');
+      // Still update the last processed state to avoid re-processing
+      lastProcessedShowcallerStateRef.current = stateSignature;
       return;
     }
+
+    // Update the last processed state
+    lastProcessedShowcallerStateRef.current = stateSignature;
 
     // Only set processing state for external updates
     console.log('📺 External update detected - setting processing state to true');
