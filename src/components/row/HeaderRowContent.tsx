@@ -69,7 +69,7 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-10" 
+                className="px-3 py-3 text-2xl font-bold whitespace-nowrap relative z-10 flex items-center" 
                 style={{ 
                   color: textColor,
                   minWidth: 'max-content',
@@ -77,19 +77,21 @@ const HeaderRowContent = ({
                   zIndex: 10
                 }}
               >
-                <CellRenderer
-                  column={column}
-                  item={item}
-                  cellRefs={cellRefs}
-                  textColor={textColor}
-                  backgroundColor={backgroundColor}
-                  currentSegmentId={currentSegmentId}
-                  onUpdateItem={onUpdateItem}
-                  onCellClick={onCellClick}
-                  onKeyDown={onKeyDown}
-                  width={columnWidth}
-                />
-                <span className="text-sm font-medium ml-2" style={{ color: textColor }}>
+                <div className="inline-block">
+                  <CellRenderer
+                    column={column}
+                    item={item}
+                    cellRefs={cellRefs}
+                    textColor={textColor}
+                    backgroundColor={backgroundColor}
+                    currentSegmentId={currentSegmentId}
+                    onUpdateItem={onUpdateItem}
+                    onCellClick={onCellClick}
+                    onKeyDown={onKeyDown}
+                    width={columnWidth}
+                  />
+                </div>
+                <span className="text-sm font-medium ml-2 inline-block" style={{ color: textColor }}>
                   ({headerDuration})
                 </span>
               </div>
