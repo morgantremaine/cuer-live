@@ -43,10 +43,14 @@ const FindReplaceDialog = ({ isOpen, onClose, items, onUpdateItem }: FindReplace
     { key: 'images', label: 'Images' }
   ];
 
-  const handleFieldToggle = (fieldKey: string, checked: boolean) => {
+  const handleCaseSensitiveChange = (checked: boolean | "indeterminate") => {
+    setCaseSensitive(checked === true);
+  };
+
+  const handleFieldToggle = (fieldKey: string, checked: boolean | "indeterminate") => {
     setSelectedFields(prev => ({
       ...prev,
-      [fieldKey]: checked
+      [fieldKey]: checked === true
     }));
   };
 
@@ -133,7 +137,7 @@ const FindReplaceDialog = ({ isOpen, onClose, items, onUpdateItem }: FindReplace
             <Checkbox
               id="case-sensitive"
               checked={caseSensitive}
-              onCheckedChange={setCaseSensitive}
+              onCheckedChange={handleCaseSensitiveChange}
             />
             <Label htmlFor="case-sensitive">Case sensitive</Label>
           </div>
@@ -146,7 +150,7 @@ const FindReplaceDialog = ({ isOpen, onClose, items, onUpdateItem }: FindReplace
                   <Checkbox
                     id={field.key}
                     checked={selectedFields[field.key]}
-                    onCheckedChange={(checked) => handleFieldToggle(field.key, !!checked)}
+                    onCheckedChange={(checked) => handleFieldToggle(field.key, checked)}
                   />
                   <Label htmlFor={field.key} className="text-sm">
                     {field.label}
