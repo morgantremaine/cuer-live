@@ -4,7 +4,7 @@ import { RundownItem } from './useRundownItems';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
-  setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void,
+  setItems: (items: RundownItem[]) => void,
   selectedRows: Set<string>,
   scrollContainerRef?: React.RefObject<HTMLElement>
 ) => {
@@ -125,9 +125,7 @@ export const useDragAndDrop = (
       newItems = renumberItems(newItems);
     }
     
-    // Use the setItems updater function to trigger undo state saving
-    setItems(() => newItems);
-    
+    setItems(newItems);
     setDraggedItemIndex(null);
     setIsDraggingMultiple(false);
   };

@@ -107,45 +107,39 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Create a wrapper that handles updater functions for setItems
-  const setItemsWrapper = (updater: (prev: any[]) => any[]) => {
-    if (typeof updater === 'function') {
-      // Extract just the core RundownItem properties for the updater
-      const coreItems = performanceOptimization.calculatedItems.map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        elapsedTime: item.elapsedTime,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        talent: item.talent,
-        script: item.script,
-        notes: item.notes,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        color: item.color,
-        customFields: item.customFields,
-        rowNumber: item.rowNumber,
-        segmentName: item.segmentName
-      }));
-      
-      const newItems = updater(coreItems);
-      simplifiedState.setItems(newItems);
-    } else {
-      // Direct array passed
-      simplifiedState.setItems(updater);
-    }
-  };
-
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
-    // Use performance-optimized calculated items
+    // Use performance-optimized calculated items, but still pass the original updateItem function
     performanceOptimization.calculatedItems,
-    setItemsWrapper, // Use the wrapper that handles updater functions
+    (updater) => {
+      if (typeof updater === 'function') {
+        // Extract just the core RundownItem properties for the updater
+        const coreItems = performanceOptimization.calculatedItems.map(item => ({
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          duration: item.duration,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          elapsedTime: item.elapsedTime,
+          isFloating: item.isFloating,
+          isFloated: item.isFloated,
+          talent: item.talent,
+          script: item.script,
+          notes: item.notes,
+          gfx: item.gfx,
+          video: item.video,
+          images: item.images,
+          color: item.color,
+          customFields: item.customFields,
+          rowNumber: item.rowNumber,
+          segmentName: item.segmentName
+        }));
+        simplifiedState.setItems(updater(coreItems));
+      } else {
+        simplifiedState.setItems(updater);
+      }
+    },
     simplifiedState.updateItem,
     simplifiedState.addRow,
     simplifiedState.addHeader,
