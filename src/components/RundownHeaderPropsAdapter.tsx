@@ -1,73 +1,46 @@
-
 import React from 'react';
 import RundownHeader from './RundownHeader';
-import { RundownContainerProps } from '@/types/rundownContainer';
-import { logger } from '@/utils/logger';
 
 interface RundownHeaderPropsAdapterProps {
-  props: RundownContainerProps;
+  rundownTitle: string;
+  rundownStartTime: string;
+  timezone: string;
+  currentTime: Date;
+  setTitle: (title: string) => void;
+  setStartTime: (startTime: string) => void;
+  setTimezone: (timezone: string) => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  lastAction: string | null;
+  findReplaceState?: any;
 }
 
-const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) => {
-  const {
-    currentTime,
-    timezone,
-    onTimezoneChange,
-    totalRuntime,
-    rundownTitle,
-    onTitleChange,
-    rundownStartTime,
-    onRundownStartTimeChange,
-    rundownId,
-    hasUnsavedChanges,
-    isSaving,
-    onUndo,
-    canUndo,
-    lastAction,
-    items,
-    visibleColumns,
-    isConnected,
-    isProcessingRealtimeUpdate,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    autoScrollEnabled,
-    onToggleAutoScroll
-  } = props;
-
-  // Debug logging for prop passing
-  logger.log('🔄 RundownHeaderPropsAdapter: Received props:', {
-    autoScrollEnabled,
-    hasToggleFunction: !!onToggleAutoScroll,
-    toggleFunctionType: typeof onToggleAutoScroll,
-    hasTimezoneHandler: !!onTimezoneChange,
-    currentTimezone: timezone
-  });
-
+const RundownHeaderPropsAdapter = ({ 
+  rundownTitle, 
+  rundownStartTime, 
+  timezone, 
+  currentTime, 
+  setTitle, 
+  setStartTime, 
+  setTimezone,
+  onUndo,
+  canUndo,
+  lastAction,
+  findReplaceState
+}: RundownHeaderPropsAdapterProps) => {
   return (
     <RundownHeader
-      currentTime={currentTime}
-      timezone={timezone}
-      onTimezoneChange={onTimezoneChange}
-      totalRuntime={totalRuntime}
-      hasUnsavedChanges={hasUnsavedChanges}
-      isSaving={isSaving}
       title={rundownTitle}
-      onTitleChange={onTitleChange}
-      rundownStartTime={rundownStartTime}
-      onRundownStartTimeChange={onRundownStartTimeChange}
-      items={items}
-      visibleColumns={visibleColumns}
+      startTime={rundownStartTime}
+      timezone={timezone}
+      currentTime={currentTime}
+      onTitleChange={setTitle}
+      onStartTimeChange={setStartTime}
+      onTimezoneChange={setTimezone}
       onUndo={onUndo}
       canUndo={canUndo}
       lastAction={lastAction}
-      isConnected={isConnected}
-      isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-      isPlaying={isPlaying}
-      currentSegmentId={currentSegmentId}
-      timeRemaining={timeRemaining}
-      autoScrollEnabled={autoScrollEnabled}
-      onToggleAutoScroll={onToggleAutoScroll}
+      findReplaceState={findReplaceState}
     />
   );
 };
