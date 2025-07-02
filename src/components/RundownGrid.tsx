@@ -109,13 +109,8 @@ const RundownGrid = React.memo(() => {
     }
   };
 
-  // Fix the getRowStatus function to match expected signature (index: number) => string
-  const getRowStatus = (index: number): 'upcoming' | 'current' | 'completed' => {
-    const item = state.items[index];
-    if (!item) {
-      return 'upcoming';
-    }
-    
+  // Fix the getRowStatus function to match expected signature (item: RundownItem, currentTime: Date) => string
+  const getRowStatus = (item: any, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
     if (item.type === 'header') {
       return 'upcoming';
     }
@@ -125,6 +120,11 @@ const RundownGrid = React.memo(() => {
     }
     
     return 'upcoming';
+  };
+
+  // Fix the getRowNumber function to match expected signature (index: number) => string
+  const getRowNumber = (index: number): string => {
+    return (index + 1).toString();
   };
 
   return (
@@ -142,7 +142,7 @@ const RundownGrid = React.memo(() => {
       selectedRowId={state.selectedRowId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
-      getRowNumber={(index: number) => (index + 1).toString()}
+      getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       calculateHeaderDuration={state.getHeaderDuration}
       onUpdateItem={state.updateItem}
