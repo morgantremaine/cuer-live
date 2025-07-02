@@ -77,17 +77,14 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
 
   return (
     <div style={style} className="w-full">
-      <table className="w-full border-collapse border border-border">
+      {/* Drop indicator above */}
+      {props.dropTargetIndex === index && (
+        <div className="h-0.5 bg-gray-400 w-full relative z-50 -mb-0.5"></div>
+      )}
+      
+      {/* Single table wrapper to prevent spacing issues */}
+      <table className="w-full border-collapse border border-border table-fixed">
         <tbody>
-          {/* Drop indicator above */}
-          {props.dropTargetIndex === index && (
-            <tr>
-              <td colSpan={props.visibleColumns.length + 1} className="p-0">
-                <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
-              </td>
-            </tr>
-          )}
-          
           <RundownRow
             item={item}
             index={index}
@@ -128,17 +125,13 @@ const VirtualizedRow = React.memo(({ index, style, data }: { index: number; styl
             onJumpToHere={props.onJumpToHere}
             getColumnWidth={props.getColumnWidth}
           />
-          
-          {/* Drop indicator after last row */}
-          {props.dropTargetIndex === items.length && index === items.length - 1 && (
-            <tr>
-              <td colSpan={props.visibleColumns.length + 1} className="p-0">
-                <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
+      
+      {/* Drop indicator after last row */}
+      {props.dropTargetIndex === items.length && index === items.length - 1 && (
+        <div className="h-0.5 bg-gray-400 w-full relative z-50 -mt-0.5"></div>
+      )}
     </div>
   );
 });
