@@ -31,13 +31,14 @@ const ADView = () => {
   const measureRowRef = useRef<HTMLDivElement>(null);
   const [maxNextSegments, setMaxNextSegments] = useState(3); // Default fallback
 
-  // Check if showcaller is playing
-  const isShowcallerPlaying = !!rundownData?.showcallerState?.playbackStartTime;
+  // Check if showcaller is playing and get timing data
+  const isShowcallerPlaying = rundownData?.showcallerState?.isPlaying || false;
+  const showcallerState = rundownData?.showcallerState;
 
-  // Use the same timing hook as the main rundown
+  // Use the same timing hook as the main rundown for consistent calculations
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
-    rundownStartTime: rundownData?.startTime || '',
+    rundownStartTime: rundownData?.startTime || '09:00:00',
     isPlaying: isShowcallerPlaying,
     currentSegmentId: currentSegmentId || '',
     timeRemaining: timeRemaining || 0
