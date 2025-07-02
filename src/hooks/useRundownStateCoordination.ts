@@ -162,8 +162,8 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
-    // Pass undo-related parameters
-    simplifiedState.saveState,
+    // Pass undo-related parameters - use the correct property name
+    simplifiedState.saveUndoState || simplifiedState.undo?.saveState,
     simplifiedState.columns,
     simplifiedState.rundownTitle
   );
