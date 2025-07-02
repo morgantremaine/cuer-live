@@ -16,7 +16,7 @@ export const useShowcallerStateCoordination = ({
   userId
 }: UseShowcallerStateCoordinationProps) => {
   const initializationRef = useRef<boolean>(false);
-  const lastSyncTimestampRef = useRef<string | null>(null);
+  const lastProcessedTimestampRef = useRef<string | null>(null);
 
   // Visual state management with precision timing
   const {
@@ -43,34 +43,49 @@ export const useShowcallerStateCoordination = ({
     userId
   });
 
-  // Enhanced external state handler with better coordination
+  // Enhanced external state handler with better logic
   const handleExternalVisualState = useCallback((externalState: any) => {
+    console.log('📺 handleExternalVisualState called with:', {
+      hasLastUpdate: !!externalState.lastUpdate,
+      lastUpdate: externalState.lastUpdate,
+      lastProcessed: lastProcessedTimestampRef.current,
+      fromController: externalState.controllerId,
+      currentUserId: userId,
+      isInitialized
+    });
+
     // Skip if we haven't initialized yet to prevent conflicts
     if (!isInitialized) {
       console.log('📺 Deferring external state - not initialized yet');
       return;
     }
 
-    // Skip duplicate states
-    if (externalState.lastUpdate === lastSyncTimestampRef.current) {
+    // Only skip if this is the exact same timestamp we just processed
+    if (externalState.lastUpdate && externalState.lastUpdate === lastProcessedTimestampRef.current) {
+      console.log('📺 Skipping - exact same timestamp as last processed');
       return;
     }
 
-    lastSyncTimestampRef.current = externalState.lastUpdate;
-    
-    console.log('📺 Coordinating external showcaller state:', {
-      fromController: externalState.controllerId,
-      currentController: visualState.controllerId,
-      isCurrentlyController: isController,
-      timestamp: externalState.lastUpdate
-    });
+    // Allow the update through if it has a valid timestamp
+    if (externalState.lastUpdate) {
+      lastProcessedTimestampRef.current = externalState.lastUpdate;
+      
+      console.log('📺 Coordinating external showcaller state:', {
+        fromController: externalState.controllerId,
+        currentController: visualState.controllerId,
+        isCurrentlyController: isController,
+        timestamp: externalState.lastUpdate
+      });
 
-    // Apply the external state
-    applyExternalVisualState(externalState);
-  }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController]);
+      // Apply the external state
+      applyExternalVisualState(externalState);
+    } else {
+      console.log('📺 Skipping external state - no timestamp');
+    }
+  }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController, userId]);
 
-  // Realtime synchronization
-  const { isConnected, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
+  // Realtime synchronization with processing state
+  const { isConnected, isProcessingVisualUpdate, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
     rundownId,
     onExternalVisualStateReceived: handleExternalVisualState,
     enabled: isInitialized
@@ -161,6 +176,7 @@ export const useShowcallerStateCoordination = ({
     isController,
     isInitialized,
     isConnected,
+    isProcessingVisualUpdate,
     
     // Visual state management
     getItemVisualStatus,

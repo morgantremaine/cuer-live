@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
@@ -16,38 +16,56 @@ export const useShowcallerRealtimeSync = ({
 }: UseShowcallerRealtimeSyncProps) => {
   const { user } = useAuth();
   const subscriptionRef = useRef<any>(null);
-  const lastProcessedUpdateRef = useRef<string | null>(null);
   const onExternalVisualStateReceivedRef = useRef(onExternalVisualStateReceived);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+  
+  // Add processing state tracking
+  const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
 
   // Simplified update handler for showcaller visual state only
   const handleShowcallerVisualUpdate = useCallback(async (payload: any) => {
+    console.log('🔄 Raw showcaller update received:', {
+      hasShowcallerState: !!payload.new?.showcaller_state,
+      rundownId: payload.new?.id,
+      targetRundown: rundownId
+    });
+
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
+      console.log('📺 Skipping update - not for current rundown');
       return;
     }
 
     // Only process showcaller_state updates, ignore main rundown content
     if (!payload.new?.showcaller_state) {
+      console.log('📺 Skipping update - no showcaller_state');
       return;
     }
 
     const showcallerVisualState = payload.new.showcaller_state;
     
-    // Prevent processing duplicate updates
-    if (showcallerVisualState.lastUpdate && showcallerVisualState.lastUpdate === lastProcessedUpdateRef.current) {
+    console.log('📺 Processing showcaller update:', {
+      hasLastUpdate: !!showcallerVisualState.lastUpdate,
+      lastUpdate: showcallerVisualState.lastUpdate,
+      controllerId: showcallerVisualState.controllerId,
+      currentUserId: user?.id,
+      isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)
+    });
+
+    // Skip if this update originated from this user
+    if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
+      console.log('📺 Skipping - own update detected');
       return;
     }
 
-    // Skip if this update originated from this user
-    if (showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
-      return;
-    }
+    // Set processing state immediately
+    console.log('📺 Setting processing state to true');
+    setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
     if (processingTimeoutRef.current) {
@@ -55,34 +73,42 @@ export const useShowcallerRealtimeSync = ({
       processingTimeoutRef.current = null;
     }
 
-    // Simplified processing without excessive debouncing
+    // Process the update with minimal delay
     processingTimeoutRef.current = setTimeout(() => {
       // Check if component is still mounted
       if (!isMountedRef.current) {
         return;
       }
       
-      lastProcessedUpdateRef.current = showcallerVisualState.lastUpdate;
-      
       try {
-        logger.log('📺 Received external showcaller visual state');
+        console.log('📺 Processing external showcaller visual state');
         onExternalVisualStateReceivedRef.current(showcallerVisualState);
       } catch (error) {
         logger.error('Error processing showcaller visual update:', error);
       }
       
+      // Clear processing state after a visible delay
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          console.log('📺 Clearing processing state');
+          setIsProcessingVisualUpdate(false);
+        }
+      }, 600); // Slightly longer to make it more visible
+      
       processingTimeoutRef.current = null;
-    }, 100); // Reduced debounce time for better responsiveness
+    }, 50); // Minimal delay for processing
     
-  }, [rundownId]);
+  }, [rundownId, user?.id]);
 
-  // Function to track our own visual updates
+  // Function to track our own visual updates - only tracks updates from current user
   const trackOwnVisualUpdate = useCallback((lastUpdate: string) => {
+    console.log('📺 Tracking own visual update:', lastUpdate);
     ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Clean up old tracked updates after 5 seconds
     setTimeout(() => {
       ownUpdateTrackingRef.current.delete(lastUpdate);
+      console.log('📺 Cleaned up tracked update:', lastUpdate);
     }, 5000);
   }, []);
 
@@ -128,11 +154,13 @@ export const useShowcallerRealtimeSync = ({
         clearTimeout(processingTimeoutRef.current);
         processingTimeoutRef.current = null;
       }
+      setIsProcessingVisualUpdate(false);
     };
   }, [rundownId, user, enabled, handleShowcallerVisualUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current,
+    isProcessingVisualUpdate,
     trackOwnVisualUpdate
   };
 };
