@@ -26,7 +26,16 @@ export const useRundownInteractionHandlers = (
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Drag and drop - fix the function call to match expected signature
+  // Create a wrapper for setItems that ensures undo state is saved
+  const setItemsWithUndo = (newItems: RundownItem[]) => {
+    setItems(() => {
+      // Mark as changed to trigger undo state saving
+      markAsChanged();
+      return newItems;
+    });
+  };
+
+  // Drag and drop - use the wrapper function
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -35,12 +44,12 @@ export const useRundownInteractionHandlers = (
     handleDragOver,
     handleDragLeave,
     handleDrop 
-  } = useDragAndDrop(items, (newItems: RundownItem[]) => setItems(() => newItems), selectedRows);
+  } = useDragAndDrop(items, setItemsWithUndo, selectedRows);
 
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
-  // Grid handlers - fix the function call to match expected signature
+  // Grid handlers
   const {
     handleUpdateItem,
     handleAddRow,
