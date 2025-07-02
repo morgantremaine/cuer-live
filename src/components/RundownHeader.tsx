@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -159,26 +158,6 @@ const RundownHeader = ({
     }
   };
 
-  // Helper function to get save status text and color
-  const getSaveStatus = () => {
-    if (isSaving) {
-      return {
-        text: 'Saving...',
-        color: 'text-blue-500 dark:text-blue-400'
-      };
-    } else if (hasUnsavedChanges) {
-      return {
-        text: 'Unsaved changes',
-        color: 'text-yellow-500 dark:text-yellow-400'
-      };
-    } else {
-      return {
-        text: 'Saved',
-        color: 'text-green-500 dark:text-green-400'
-      };
-    }
-  };
-
   if (isMobile) {
     return (
       <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -230,8 +209,6 @@ const RundownHeader = ({
   }
 
   if (isTablet) {
-    const saveStatus = getSaveStatus();
-    
     return (
       <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Logo, Title, and connection status */}
@@ -269,11 +246,13 @@ const RundownHeader = ({
               )}
             </div>
             
-            <div className="flex-shrink-0 flex items-center">
-              <span className={`text-sm ${saveStatus.color}`}>
-                {saveStatus.text}
-              </span>
-            </div>
+            {hasUnsavedChanges && (
+              <div className="flex-shrink-0 flex items-center">
+                <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
+                  {isSaving ? 'Saving...' : 'Unsaved changes'}
+                </span>
+              </div>
+            )}
             
             <ShowcallerTimingIndicator
               {...timingStatus}
@@ -320,8 +299,6 @@ const RundownHeader = ({
   }
 
   // Desktop layout - with properly centered title and timing indicator
-  const saveStatus = getSaveStatus();
-  
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
@@ -358,11 +335,13 @@ const RundownHeader = ({
             )}
           </div>
           
-          <div className="flex-shrink-0 flex items-center">
-            <span className={`text-sm ${saveStatus.color}`}>
-              {saveStatus.text}
-            </span>
-          </div>
+          {hasUnsavedChanges && (
+            <div className="flex-shrink-0 flex items-center">
+              <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
+                {isSaving ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            </div>
+          )}
           
           <ShowcallerTimingIndicator
             {...timingStatus}
