@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { BlueprintList } from '@/types/blueprint';
-import { BlueprintListCard } from './BlueprintListCard';
+import BlueprintListCard from './BlueprintListCard';
 import { useBlueprintDragDrop } from '@/hooks/blueprint/useBlueprintDragDrop';
 
 interface BlueprintListsGridProps {
