@@ -271,8 +271,36 @@ export const useSharedRundownState = () => {
       item.type !== 'header' && item.status === 'current'
     )?.id || null;
 
-  // Use showcaller state timeRemaining directly (no independent calculation to avoid drift)
-  const timeRemaining = rundownData?.showcallerState?.timeRemaining || 0;
+  // Calculate live time remaining based on showcaller state
+  const timeRemaining = (() => {
+    if (!rundownData?.showcallerState?.isPlaying || !rundownData?.showcallerState?.playbackStartTime || !currentSegmentId) {
+      return rundownData?.showcallerState?.timeRemaining || 0;
+    }
+
+    // Find current segment duration
+    const currentSegment = rundownData.items.find(item => item.id === currentSegmentId);
+    if (!currentSegment?.duration) {
+      return rundownData?.showcallerState?.timeRemaining || 0;
+    }
+
+    // Calculate time remaining based on playback start time
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        return Math.floor(parts[0] * 60 + parts[1]);
+      } else if (parts.length === 3) {
+        return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]);
+      }
+      return 0;
+    };
+
+    const segmentDuration = timeToSeconds(currentSegment.duration);
+    const elapsedTime = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
+    const remaining = Math.max(0, segmentDuration - elapsedTime);
+    
+    return remaining;
+  })();
 
   return {
     rundownData,
