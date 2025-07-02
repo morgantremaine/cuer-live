@@ -107,65 +107,11 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Create a proper setItems wrapper that triggers undo state saving
-  const setItemsWithUndo = (updater: (prev: any[]) => any[]) => {
-    if (typeof updater === 'function') {
-      // Extract just the core RundownItem properties for the updater
-      const coreItems = performanceOptimization.calculatedItems.map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        elapsedTime: item.elapsedTime,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        talent: item.talent,
-        script: item.script,
-        notes: item.notes,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        color: item.color,
-        customFields: item.customFields,
-        rowNumber: item.rowNumber,
-        segmentName: item.segmentName
-      }));
-      
-      const newItems = updater(coreItems);
-      
-      // Save undo state before making the change
-      if (simplifiedState.saveUndoState) {
-        simplifiedState.saveUndoState(
-          simplifiedState.items,
-          simplifiedState.columns,
-          simplifiedState.rundownTitle,
-          'Reorder rows'
-        );
-      }
-      
-      // Update the items
-      simplifiedState.setItems(newItems);
-    } else {
-      // Direct array passed
-      if (simplifiedState.saveUndoState) {
-        simplifiedState.saveUndoState(
-          simplifiedState.items,
-          simplifiedState.columns,
-          simplifiedState.rundownTitle,
-          'Update items'
-        );
-      }
-      simplifiedState.setItems(updater);
-    }
-  };
-
   // UI interactions that depend on the core state (NO showcaller interference)
   const interactions = useRundownGridInteractions(
     // Use performance-optimized calculated items
     performanceOptimization.calculatedItems,
-    setItemsWithUndo, // Use the undo-aware setItems wrapper
+    simplifiedState.setItems, // Use the original setItems which handles undo internally
     simplifiedState.updateItem,
     simplifiedState.addRow,
     simplifiedState.addHeader,
