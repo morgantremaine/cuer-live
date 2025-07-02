@@ -444,7 +444,8 @@ export const useSimplifiedRundownState = () => {
       setColumns(newColumns);
     },
 
-    // Undo functionality - properly expose these
+    // Undo functionality - properly expose these including saveUndoState
+    saveUndoState,
     undo,
     canUndo,
     lastAction

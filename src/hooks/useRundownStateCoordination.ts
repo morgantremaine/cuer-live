@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -162,8 +161,8 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
-    // Pass undo-related parameters - use the correct property name
-    simplifiedState.saveUndoState || simplifiedState.undo?.saveState,
+    // Pass undo-related parameters - use the correct property name now available
+    simplifiedState.saveUndoState,
     simplifiedState.columns,
     simplifiedState.rundownTitle
   );
