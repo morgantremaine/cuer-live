@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
@@ -147,10 +146,10 @@ const RundownHeader = ({
     }
   };
 
-  // Enhanced connection status icon with proper blue state for team sync
+  // Helper function to render connection status icon
   const renderConnectionIcon = () => {
     if (isProcessingRealtimeUpdate) {
-      return <Wifi className="h-4 w-4 text-blue-500" />;
+      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;
     } else {

@@ -1,64 +1,153 @@
 
 import React from 'react';
+import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
+import RealtimeStatusIndicator from './RealtimeStatusIndicator';
+import { RundownContainerProps } from '@/types/rundownContainer';
+import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownMainPropsAdapterProps {
-  items: any[];
-  columns: any[];
-  visibleColumns: any[];
-  rundownTitle: string;
-  rundownStartTime: string;
-  timezone: string;
-  currentTime: Date;
-  rundownId: string | null;
-  isLoading: boolean;
-  hasUnsavedChanges: boolean;
-  isSaving: boolean;
-  isConnected: boolean;
-  isProcessingRealtimeUpdate: boolean;
-  isProcessingShowcallerUpdate?: boolean;
-  currentSegmentId: string | null;
-  isPlaying: boolean;
-  timeRemaining: number;
-  isController: boolean;
-  selectedRowId: string | null;
-  handleRowSelection: (id: string | null) => void;
-  clearRowSelection: () => void;
-  totalRuntime: string;
-  getRowNumber: (id: string) => number;
-  getHeaderDuration: (headerId: string) => string;
-  calculateHeaderDuration: (headerId: string) => string;
-  updateItem: (id: string, field: string, value: any) => void;
-  deleteRow: (id: string) => void;
-  toggleFloatRow: (id: string) => void;
-  deleteMultipleItems: (ids: string[]) => void;
-  addItem: (item: any) => void;
-  setTitle: (title: string) => void;
-  setStartTime: (startTime: string) => void;
-  setTimezone: (timezone: string) => void;
-  addRow: () => void;
-  addHeader: () => void;
-  addRowAtIndex: (index: number) => void;
-  addHeaderAtIndex: (index: number) => void;
-  addColumn: (column: any) => void;
-  updateColumnWidth: (columnId: string, width: number) => void;
-  setColumns: (columns: any[]) => void;
-  play: (segmentId?: string) => void;
-  pause: () => void;
-  forward: () => void;
-  backward: () => void;
-  reset: () => void;
-  jumpToSegment: (segmentId?: string) => void;
-  undo: () => void;
-  canUndo: boolean;
-  lastAction: string | null;
-  autoScrollEnabled: boolean;
-  toggleAutoScroll: () => void;
-  [key: string]: any;
+  props: RundownContainerProps;
 }
 
-const RundownMainPropsAdapter = (props: RundownMainPropsAdapterProps) => {
-  return <RundownMainContent {...props} />;
+const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
+  const {
+    currentTime,
+    timezone,
+    onTimezoneChange,
+    totalRuntime,
+    onAddRow,
+    onAddHeader,
+    showColumnManager,
+    setShowColumnManager,
+    selectedCount,
+    hasClipboardData,
+    onCopySelectedRows,
+    onPasteRows,
+    onDeleteSelectedRows,
+    onClearSelection,
+    selectedRowId,
+    isPlaying,
+    currentSegmentId,
+    timeRemaining,
+    onPlay,
+    onPause,
+    onForward,
+    onBackward,
+    onReset,
+    hasUnsavedChanges,
+    isSaving,
+    rundownTitle,
+    onTitleChange,
+    rundownStartTime,
+    onRundownStartTimeChange,
+    rundownId,
+    onOpenTeleprompter,
+    items,
+    visibleColumns,
+    onUndo,
+    canUndo,
+    lastAction,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    cellRefs,
+    columns,
+    showColorPicker,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    calculateHeaderDuration,
+    onUpdateItem,
+    onCellClick,
+    onKeyDown,
+    onToggleColorPicker,
+    onColorSelect,
+    onDeleteRow,
+    onToggleFloat,
+    onRowSelect,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    handleAddColumn,
+    handleReorderColumns,
+    handleDeleteColumnWithCleanup,
+    handleRenameColumn,
+    handleToggleColumnVisibility,
+    handleLoadLayout,
+    autoScrollEnabled,
+    onToggleAutoScroll
+  } = props;
+
+  // Create rundown data for CSV export
+  const rundownData: CSVExportData = {
+    items: items || [],
+    visibleColumns: visibleColumns || []
+  };
+
+  // Calculate current segment name for RundownMainContent
+  const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Toolbar Section */}
+      <RundownHeaderSection
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+        onShowColumnManager={() => setShowColumnManager(true)}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        onReset={onReset}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        items={items}
+        visibleColumns={visibleColumns}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        rundownData={rundownData}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <RundownMainContent
+          {...props}
+          currentSegmentName={currentSegmentName}
+          totalDuration={totalRuntime}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default RundownMainPropsAdapter;

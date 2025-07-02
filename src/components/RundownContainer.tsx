@@ -1,9 +1,15 @@
 
 import React from 'react';
-import RundownIndexContent from './RundownIndexContent';
+import RundownLayoutWrapper from './RundownLayoutWrapper';
+import RundownMainPropsAdapter from './RundownMainPropsAdapter';
+import { RundownContainerProps } from '@/types/rundownContainer';
 
-const RundownContainer = () => {
-  return <RundownIndexContent />;
+const RundownContainer = (props: RundownContainerProps) => {
+  return (
+    <RundownLayoutWrapper>
+      <RundownMainPropsAdapter props={props} />
+    </RundownLayoutWrapper>
+  );
 };
 
 export default RundownContainer;

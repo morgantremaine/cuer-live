@@ -1,5 +1,4 @@
-
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
@@ -22,9 +21,6 @@ export const useShowcallerRealtimeSync = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-  
-  // Add state for processing status
-  const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
@@ -59,9 +55,6 @@ export const useShowcallerRealtimeSync = ({
       processingTimeoutRef.current = null;
     }
 
-    // Set processing state to show blue wifi icon
-    setIsProcessingVisualUpdate(true);
-
     // Simplified processing without excessive debouncing
     processingTimeoutRef.current = setTimeout(() => {
       // Check if component is still mounted
@@ -76,13 +69,6 @@ export const useShowcallerRealtimeSync = ({
         onExternalVisualStateReceivedRef.current(showcallerVisualState);
       } catch (error) {
         logger.error('Error processing showcaller visual update:', error);
-      } finally {
-        // Reset processing state after update is complete
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            setIsProcessingVisualUpdate(false);
-          }
-        }, 1000); // Show blue for 1 second
       }
       
       processingTimeoutRef.current = null;
@@ -147,7 +133,6 @@ export const useShowcallerRealtimeSync = ({
 
   return {
     isConnected: !!subscriptionRef.current,
-    isProcessingVisualUpdate,
     trackOwnVisualUpdate
   };
 };

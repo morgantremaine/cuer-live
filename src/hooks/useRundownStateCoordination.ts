@@ -1,4 +1,3 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -195,7 +194,6 @@ export const useRundownStateCoordination = () => {
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerSync.isConnected,
       isProcessingRealtimeUpdate: simplifiedState.isProcessingRealtimeUpdate,
-      isProcessingShowcallerUpdate: showcallerSync.isProcessingVisualUpdate, // Add this line
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerVisual.currentSegmentId,

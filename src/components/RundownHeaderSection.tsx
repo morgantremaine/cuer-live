@@ -42,7 +42,6 @@ interface RundownHeaderSectionProps {
   lastAction: string | null;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
-  isProcessingShowcallerUpdate?: boolean;
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
@@ -86,14 +85,10 @@ const RundownHeaderSection = ({
   lastAction,
   isConnected,
   isProcessingRealtimeUpdate,
-  isProcessingShowcallerUpdate,
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll
 }: RundownHeaderSectionProps) => {
-  // Combine both processing states to show blue wifi when either is processing
-  const isProcessingAnyUpdate = isProcessingRealtimeUpdate || isProcessingShowcallerUpdate;
-
   return (
     <div>
       <RundownHeader
@@ -113,7 +108,7 @@ const RundownHeaderSection = ({
         canUndo={canUndo}
         lastAction={lastAction}
         isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingAnyUpdate}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
