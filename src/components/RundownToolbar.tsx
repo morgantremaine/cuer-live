@@ -1,10 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import MobileToolbar from './toolbar/MobileToolbar';
 import TabletToolbar from './toolbar/TabletToolbar';
 import DesktopToolbar from './toolbar/DesktopToolbar';
-import FindReplaceDialog from './FindReplaceDialog';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownToolbarProps {
@@ -36,9 +35,6 @@ interface RundownToolbarProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  // Find and replace functionality
-  items?: any[];
-  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
 const RundownToolbar = ({
@@ -62,28 +58,9 @@ const RundownToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  items = [],
-  onUpdateItem
+  onToggleAutoScroll
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
-  
-  // Find and replace state
-  const [showFindReplace, setShowFindReplace] = useState(false);
-
-  const handleOpenFindReplace = () => {
-    setShowFindReplace(true);
-  };
-
-  const handleCloseFindReplace = () => {
-    setShowFindReplace(false);
-  };
-
-  // Debug logging
-  console.log('RundownToolbar - onUpdateItem:', !!onUpdateItem, 'items length:', items.length);
-
-  // Always show find/replace button for now to debug
-  const showFindReplaceButton = true; // Changed from !!onUpdateItem to always show
 
   const commonProps = {
     onAddRow,
@@ -106,27 +83,18 @@ const RundownToolbar = ({
     rundownTitle,
     rundownData,
     autoScrollEnabled,
-    onToggleAutoScroll,
-    onOpenFindReplace: showFindReplaceButton ? handleOpenFindReplace : undefined
+    onToggleAutoScroll
   };
 
-  return (
-    <>
-      {isMobile && <MobileToolbar {...commonProps} />}
-      {isTablet && <TabletToolbar {...commonProps} />}
-      {!isMobile && !isTablet && <DesktopToolbar {...commonProps} />}
-      
-      {/* Find and Replace Dialog */}
-      {showFindReplaceButton && (
-        <FindReplaceDialog
-          isOpen={showFindReplace}
-          onClose={handleCloseFindReplace}
-          items={items}
-          onUpdateItem={onUpdateItem || ((id, field, value) => console.log('Mock update:', id, field, value))}
-        />
-      )}
-    </>
-  );
+  if (isMobile) {
+    return <MobileToolbar {...commonProps} />;
+  }
+
+  if (isTablet) {
+    return <TabletToolbar {...commonProps} />;
+  }
+
+  return <DesktopToolbar {...commonProps} />;
 };
 
 export default RundownToolbar;

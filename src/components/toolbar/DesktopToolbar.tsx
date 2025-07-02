@@ -1,9 +1,8 @@
 
 import React from 'react';
+import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
-import { Switch } from '@/components/ui/switch';
-import { MapPin } from 'lucide-react';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface DesktopToolbarProps {
@@ -28,7 +27,6 @@ interface DesktopToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  onOpenFindReplace?: () => void;
 }
 
 const DesktopToolbar = ({
@@ -52,19 +50,11 @@ const DesktopToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  onOpenFindReplace
+  onToggleAutoScroll
 }: DesktopToolbarProps) => {
-  const handleToggleAutoScroll = (checked: boolean) => {
-    if (onToggleAutoScroll) {
-      onToggleAutoScroll();
-    }
-  };
-
   return (
-    <div className="flex items-center justify-between p-4 bg-card border-b border-border">
-      {/* Left side - Main action buttons */}
-      <div className="flex items-center space-x-2">
+    <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+      <div className="flex space-x-1">
         <MainActionButtons
           onAddRow={onAddRow}
           onAddHeader={onAddHeader}
@@ -74,40 +64,34 @@ const DesktopToolbar = ({
           lastAction={lastAction}
           rundownId={rundownId}
           onOpenTeleprompter={onOpenTeleprompter}
+          selectedRowId={selectedRowId}
+          isMobile={false}
           rundownTitle={rundownTitle}
           rundownData={rundownData}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
-          onOpenFindReplace={onOpenFindReplace}
         />
       </div>
-      
-      {/* Center - Playback controls */}
-      <div className="flex items-center">
-        <PlaybackControls
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          onReset={onReset}
-        />
-      </div>
-      
-      {/* Right side - Auto-scroll toggle */}
-      {onToggleAutoScroll && (
-        <div className="flex items-center space-x-2">
-          <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-          <span className="text-sm text-muted-foreground">Auto-scroll</span>
-          <Switch
-            checked={autoScrollEnabled}
-            onCheckedChange={handleToggleAutoScroll}
+
+      <div className="flex items-center space-x-1">
+        {/* Playback Controls */}
+        <div className="flex items-center space-x-1 px-2 border-r border-gray-300 dark:border-gray-600">
+          <PlaybackControls
+            selectedRowId={selectedRowId}
+            isPlaying={isPlaying}
+            currentSegmentId={currentSegmentId}
+            timeRemaining={timeRemaining}
+            onPlay={onPlay}
+            onPause={onPause}
+            onForward={onForward}
+            onBackward={onBackward}
+            onReset={onReset}
+            size="sm"
+            autoScrollEnabled={autoScrollEnabled}
+            onToggleAutoScroll={onToggleAutoScroll}
           />
         </div>
-      )}
+
+        <ThemeToggle />
+      </div>
     </div>
   );
 };

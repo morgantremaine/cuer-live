@@ -6,7 +6,6 @@ import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import { ToolsMenu } from './ToolsMenu';
 import PlaybackControls from './PlaybackControls';
-import FindReplaceButton from './FindReplaceButton';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MainActionButtonsProps {
@@ -24,7 +23,6 @@ interface MainActionButtonsProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  onOpenFindReplace?: () => void;
   // Playback controls props for mobile
   isPlaying?: boolean;
   currentSegmentId?: string | null;
@@ -51,7 +49,6 @@ const MainActionButtons = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
-  onOpenFindReplace,
   isPlaying,
   currentSegmentId,
   timeRemaining,
@@ -68,9 +65,6 @@ const MainActionButtons = ({
   };
 
   const buttonSize = 'sm';
-  
-  // Debug logging
-  console.log('MainActionButtons - onOpenFindReplace:', !!onOpenFindReplace);
   
   if (isMobile) {
     // Mobile layout - stacked buttons in dropdown
@@ -103,13 +97,8 @@ const MainActionButtons = ({
           </Button>
         </div>
 
-        {/* Find & Replace and Tools row */}
+        {/* Tools and Share menus */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <FindReplaceButton 
-            onClick={onOpenFindReplace || (() => console.log('Find & Replace clicked but no handler'))}
-            size={buttonSize}
-            className="w-full justify-start"
-          />
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
@@ -117,18 +106,16 @@ const MainActionButtons = ({
               className="w-full justify-start"
             />
           </div>
+          {rundownId && (
+            <div className="w-full">
+              <ShareRundownMenu 
+                rundownId={rundownId} 
+                rundownTitle={rundownTitle}
+                rundownData={rundownData}
+              />
+            </div>
+          )}
         </div>
-
-        {/* Share menu */}
-        {rundownId && (
-          <div className="w-full">
-            <ShareRundownMenu 
-              rundownId={rundownId} 
-              rundownTitle={rundownTitle}
-              rundownData={rundownData}
-            />
-          </div>
-        )}
 
         {/* Playback controls - only in mobile view */}
         {isPlaying !== undefined && onPlay && onPause && onForward && onBackward && onReset && (
@@ -197,11 +184,6 @@ const MainActionButtons = ({
         <Settings className="h-4 w-4" />
         <span>Manage Columns</span>
       </Button>
-      
-      <FindReplaceButton 
-        onClick={onOpenFindReplace || (() => console.log('Find & Replace clicked but no handler'))}
-        size={buttonSize}
-      />
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} />
       
