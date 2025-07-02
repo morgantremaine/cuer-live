@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import RundownContent from './RundownContent';
 import { useOptimizedRundownState } from '@/hooks/useOptimizedRundownState';
@@ -127,6 +126,11 @@ const RundownGrid = React.memo(() => {
     return (index + 1).toString();
   };
 
+  // Fix the calculateHeaderDuration function to match expected signature (index: number) => string
+  const calculateHeaderDuration = (index: number): string => {
+    return state.getHeaderDuration(index);
+  };
+
   return (
     <RundownContent
       items={state.items}
@@ -144,7 +148,7 @@ const RundownGrid = React.memo(() => {
       updateColumnWidth={updateColumnWidth}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
-      calculateHeaderDuration={state.getHeaderDuration}
+      calculateHeaderDuration={calculateHeaderDuration}
       onUpdateItem={state.updateItem}
       onCellClick={(itemId: string, field: string) => {
         const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
@@ -180,4 +184,3 @@ const RundownGrid = React.memo(() => {
 RundownGrid.displayName = 'RundownGrid';
 
 export default RundownGrid;
-
