@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContent from './RundownContent';
 import { useOptimizedRundownState } from '@/hooks/useOptimizedRundownState';
@@ -135,7 +136,7 @@ const RundownGrid = React.memo(() => {
       selectedRowId={state.selectedRowId}
       getColumnWidth={getColumnWidth}
       updateColumnWidth={updateColumnWidth}
-      getRowNumber={(index: number) => (index + 1).toString()} // Fixed to use index instead of id
+      getRowNumber={(index: number) => (index + 1).toString()}
       getRowStatus={getRowStatus}
       calculateHeaderDuration={state.getHeaderDuration}
       onUpdateItem={state.updateItem}
