@@ -2,100 +2,138 @@
 import React from 'react';
 import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
-import { RundownItem, isHeaderItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownRowProps {
   item: RundownItem;
   index: number;
-  rowNumber: string;
-  status: 'upcoming' | 'current' | 'completed';
+  visibleColumns: Column[];
+  currentTime: Date;
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
-  columns: Column[];
-  isSelected?: boolean;
-  isCurrentlyPlaying?: boolean;
-  isDraggingMultiple?: boolean;
-  selectedRowsCount?: number;
-  selectedRows?: Set<string>;
-  headerDuration?: string;
+  isSelected: boolean;
+  isDragged: boolean;
+  isDraggingMultiple: boolean;
+  isDropTarget: boolean;
+  currentSegmentId: string | null;
   hasClipboardData?: boolean;
-  currentSegmentId?: string | null;
+  selectedRowId?: string | null;
+  isHighlighted?: boolean;
+  getColumnWidth: (column: Column) => string;
+  updateColumnWidth: (columnId: string, width: number) => void;
+  getRowNumber: (index: number) => string;
+  getRowStatus: (item: RundownItem) => 'upcoming' | 'current' | 'completed';
+  getHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;
-  onColorSelect: (itemId: string, color: string) => void;
+  onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
-  onToggleFloat?: (id: string) => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onToggleFloat: (id: string) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, index?: number) => void;
+  onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
-  onPasteRows?: () => void;
-  onClearSelection?: () => void;
-  onAddRow?: () => void;
-  onAddHeader?: () => void;
+  onPasteRows: () => void;
+  onClearSelection: () => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  isDragging: boolean;
-  getColumnWidth: (column: Column) => string;
 }
 
-const RundownRow = (props: RundownRowProps) => {
-  // Only use multi-selection state for determining if selected
-  const isActuallySelected = props.isSelected || false;
-
-  // Debug wrapper for onJumpToHere
-  const handleJumpToHereDebug = (segmentId: string) => {
-    console.log('🎯 RundownRow: onJumpToHere called with segmentId:', segmentId);
-    console.log('🎯 RundownRow: onJumpToHere function exists:', !!props.onJumpToHere);
-    if (props.onJumpToHere) {
-      console.log('🎯 RundownRow: Calling parent onJumpToHere');
-      props.onJumpToHere(segmentId);
-    } else {
-      console.log('🎯 RundownRow: onJumpToHere is undefined!');
-    }
+const RundownRow = ({
+  item,
+  index,
+  visibleColumns,
+  currentTime,
+  showColorPicker,
+  cellRefs,
+  isSelected,
+  isDragged,
+  isDraggingMultiple,
+  isDropTarget,
+  currentSegmentId,
+  hasClipboardData = false,
+  selectedRowId = null,
+  isHighlighted = false,
+  getColumnWidth,
+  updateColumnWidth,
+  getRowNumber,
+  getRowStatus,
+  getHeaderDuration,
+  onUpdateItem,
+  onCellClick,
+  onKeyDown,
+  onToggleColorPicker,
+  onColorSelect,
+  onDeleteRow,
+  onToggleFloat,
+  onRowSelect,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onCopySelectedRows,
+  onDeleteSelectedRows,
+  onPasteRows,
+  onClearSelection,
+  onAddRow,
+  onAddHeader,
+  onJumpToHere,
+  ...props
+}: RundownRowProps) => {
+  const commonProps = {
+    item,
+    index,
+    visibleColumns,
+    currentTime,
+    showColorPicker,
+    cellRefs,
+    isSelected,
+    isDragged,
+    isDraggingMultiple,
+    isDropTarget,
+    currentSegmentId,
+    hasClipboardData,
+    selectedRowId,
+    isHighlighted,
+    getColumnWidth,
+    updateColumnWidth,
+    getRowNumber,
+    getRowStatus,
+    getHeaderDuration,
+    onUpdateItem,
+    onCellClick,
+    onKeyDown,
+    onToggleColorPicker,
+    onColorSelect,
+    onDeleteRow,
+    onToggleFloat,
+    onRowSelect,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onCopySelectedRows,
+    onDeleteSelectedRows,
+    onPasteRows,
+    onClearSelection,
+    onAddRow,
+    onAddHeader,
+    onJumpToHere,
+    ...props
   };
 
-  if (isHeaderItem(props.item)) {
-    return (
-      <HeaderRow 
-        {...props} 
-        isSelected={isActuallySelected}
-        headerDuration={props.headerDuration || ''}
-        selectedRowsCount={props.selectedRowsCount || 1}
-        selectedRows={props.selectedRows}
-        hasClipboardData={props.hasClipboardData}
-        currentSegmentId={props.currentSegmentId}
-        onPasteRows={props.onPasteRows}
-        onClearSelection={props.onClearSelection}
-        onAddRow={props.onAddRow}
-        onAddHeader={props.onAddHeader}
-        // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
-      />
-    );
+  if (item.type === 'header') {
+    return <HeaderRow {...commonProps} />;
   }
 
-  return (
-    <RegularRow 
-      {...props} 
-      isSelected={isActuallySelected}
-      isCurrentlyPlaying={props.isCurrentlyPlaying}
-      isDraggingMultiple={props.isDraggingMultiple}
-      selectedRowsCount={props.selectedRowsCount || 1}
-      selectedRows={props.selectedRows}
-      hasClipboardData={props.hasClipboardData}
-      currentSegmentId={props.currentSegmentId}
-      onToggleFloat={props.onToggleFloat || (() => {})}
-      onPasteRows={props.onPasteRows}
-      onClearSelection={props.onClearSelection}
-      onAddRow={props.onAddRow}
-      onAddHeader={props.onAddHeader}
-      onJumpToHere={handleJumpToHereDebug}
-    />
-  );
+  return <RegularRow {...commonProps} />;
 };
 
 export default RundownRow;

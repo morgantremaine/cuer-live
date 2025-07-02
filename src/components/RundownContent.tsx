@@ -24,6 +24,8 @@ interface RundownContentProps {
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  highlightedItemId?: string | null;
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -66,6 +68,8 @@ const RundownContent = ({
   isPlaying = false,
   autoScrollEnabled = false,
   onToggleAutoScroll,
+  highlightedItemId,
+  scrollContainerRef: externalScrollRef,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -93,12 +97,15 @@ const RundownContent = ({
 }: RundownContentProps) => {
 
   // Initialize autoscroll functionality
-  const { scrollContainerRef } = useRundownAutoscroll({
+  const { scrollContainerRef: internalScrollRef } = useRundownAutoscroll({
     currentSegmentId,
     isPlaying,
     autoScrollEnabled,
     items
   });
+
+  // Use external ref if provided, otherwise use internal ref
+  const scrollContainerRef = externalScrollRef || internalScrollRef;
 
   // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
@@ -145,6 +152,7 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
+            highlightedItemId={highlightedItemId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
             getRowNumber={getRowNumber}

@@ -11,7 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import TimezoneSelector from '../TimezoneSelector';
 import AuthModal from '../AuthModal';
-import FindReplaceDialog from '../FindReplaceDialog';
+import FindReplaceContextMenu from './FindReplaceContextMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -71,7 +71,6 @@ const HeaderControls = ({
 
   const handleTimezoneChange = (newTimezone: string) => {
     console.log('🌍 HeaderControls: Timezone change requested:', { from: timezone, to: newTimezone });
-    // Call the parent handler directly - this should trigger the enhanced setter
     onTimezoneChange(newTimezone);
   };
 
@@ -84,18 +83,28 @@ const HeaderControls = ({
       />
       
       {/* Find & Replace Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowFindReplace(true)}
-        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1"
-        title="Find & Replace"
-      >
-        <Search className="h-4 w-4 text-gray-900 dark:text-white" />
-      </Button>
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowFindReplace(!showFindReplace)}
+          className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1"
+          title="Find & Replace"
+        >
+          <Search className="h-4 w-4 text-gray-900 dark:text-white" />
+        </Button>
+        
+        <FindReplaceContextMenu
+          isOpen={showFindReplace}
+          onClose={() => setShowFindReplace(false)}
+          items={items}
+          columns={columns}
+          onUpdateItem={onUpdateItem}
+          onHighlightItem={onHighlightItem}
+          onScrollToItem={onScrollToItem}
+        />
+      </div>
 
-      {/* Search functionality removed */}
-      {/* Undo button intentionally removed from header - functionality remains in toolbar */}
       {user ? (
         <div className="flex items-center space-x-2 relative">
           <DropdownMenu>
@@ -144,16 +153,6 @@ const HeaderControls = ({
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
-      />
-      
-      <FindReplaceDialog
-        isOpen={showFindReplace}
-        onClose={() => setShowFindReplace(false)}
-        items={items}
-        columns={columns}
-        onUpdateItem={onUpdateItem}
-        onHighlightItem={onHighlightItem}
-        onScrollToItem={onScrollToItem}
       />
     </div>
   );
