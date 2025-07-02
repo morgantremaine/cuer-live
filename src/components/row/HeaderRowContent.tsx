@@ -71,14 +71,12 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="absolute inset-0 flex items-center whitespace-nowrap" 
+                className="py-3 pl-3 pr-0 flex items-center whitespace-nowrap"
                 style={{ 
+                  position: 'relative',
                   zIndex: 10,
-                  left: '12px',
-                  right: 'auto',
                   width: 'max-content',
-                  top: 0,
-                  bottom: 0
+                  minWidth: 'max-content'
                 }}
               >
                 <input
@@ -92,18 +90,20 @@ const HeaderRowContent = ({
                   onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
                   onClick={() => onCellClick(item.id, column.key)}
                   onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-                  className="text-2xl font-bold bg-transparent border-none outline-none resize-none p-0 m-0 w-auto min-w-0"
+                  className="text-2xl font-bold bg-transparent border-none outline-none resize-none p-0 m-0"
                   style={{ 
                     color: textColor,
                     fontFamily: 'inherit',
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    width: `${Math.max(headerName.length * 0.6, 8)}ch`,
+                    minWidth: '8ch'
                   }}
                   placeholder="Header Title"
                 />
                 <span 
-                  className="text-sm font-medium ml-2 flex-shrink-0" 
+                  className="text-sm font-medium ml-2" 
                   style={{ color: textColor }}
                 >
                   ({headerDuration})
