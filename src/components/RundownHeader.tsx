@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff } from 'lucide-react';
@@ -250,7 +251,7 @@ const RundownHeader = ({
             {hasUnsavedChanges && (
               <div className="flex-shrink-0 flex items-center">
                 <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
-                  {isSaving ? 'Saved' : 'Save Pending'}
+                  {isSaving ? 'Saved' : 'Autosave Queued'}
                 </span>
               </div>
             )}
@@ -339,7 +340,7 @@ const RundownHeader = ({
           {hasUnsavedChanges && (
             <div className="flex-shrink-0 flex items-center">
               <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
-                {isSaving ? 'Saved' : 'Save Pending'}
+                {isSaving ? 'Saved' : 'Autosave Queued'}
               </span>
             </div>
           )}
@@ -385,3 +386,4 @@ const RundownHeader = ({
 };
 
 export default RundownHeader;
+
