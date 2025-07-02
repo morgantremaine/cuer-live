@@ -9,15 +9,21 @@ interface AnimatedWifiIconProps {
 }
 
 const AnimatedWifiIcon = ({ className, isAnimating = false }: AnimatedWifiIconProps) => {
+  if (isAnimating) {
+    return (
+      <div className={cn('relative inline-flex items-center justify-center', className)}>
+        <Wifi 
+          className="h-4 w-4 animate-pulse"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-3 h-3 border border-current rounded-full animate-ping opacity-25" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('relative', className)}>
-      <Wifi 
-        className={cn(
-          'h-3 w-3',
-          isAnimating && 'animate-wifi-building'
-        )}
-      />
-    </div>
+    <Wifi className={cn('h-4 w-4', className)} />
   );
 };
 
