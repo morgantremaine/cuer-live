@@ -108,6 +108,7 @@ export const useRundownStateCoordination = () => {
   };
 
   // UI interactions that depend on the core state (NO showcaller interference)
+  // Now passing undo-related parameters
   const interactions = useRundownGridInteractions(
     // Use performance-optimized calculated items, but still pass the original updateItem function
     performanceOptimization.calculatedItems,
@@ -160,7 +161,11 @@ export const useRundownStateCoordination = () => {
     },
     simplifiedState.setTitle,
     addRowAtIndex,
-    addHeaderAtIndex
+    addHeaderAtIndex,
+    // Pass undo-related parameters
+    simplifiedState.saveState,
+    simplifiedState.columns,
+    simplifiedState.rundownTitle
   );
 
   // Get UI state with enhanced navigation - use performance-optimized data

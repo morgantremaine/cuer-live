@@ -18,7 +18,10 @@ export const useRundownGridInteractions = (
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void,
   addRowAtIndex: (insertIndex: number) => void,
-  addHeaderAtIndex: (insertIndex: number) => void
+  addHeaderAtIndex: (insertIndex: number) => void,
+  saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
+  columns?: any[],
+  title?: string
 ) => {
   const {
     selectedRows,
@@ -62,7 +65,10 @@ export const useRundownGridInteractions = (
     markAsChanged,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex
+    addHeaderAtIndex,
+    saveUndoState,
+    columns,
+    title
   );
 
   return {

@@ -6,7 +6,10 @@ export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
   selectedRows: Set<string>,
-  scrollContainerRef?: React.RefObject<HTMLElement>
+  scrollContainerRef?: React.RefObject<HTMLElement>,
+  saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
+  columns?: any[],
+  title?: string
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -92,6 +95,7 @@ export const useDragAndDrop = (
 
     let newItems: RundownItem[];
     let hasHeaderMoved = false;
+    let actionDescription = '';
 
     if (isMultiple && selectedIds.length > 1) {
       // Handle multiple item drag
@@ -104,6 +108,8 @@ export const useDragAndDrop = (
       // Insert selected items at the drop position
       newItems = [...nonSelectedItems];
       newItems.splice(dropIndex, 0, ...selectedItems);
+      
+      actionDescription = `Reorder ${selectedItems.length} rows`;
     } else {
       // Handle single item drag (existing logic)
       if (draggedItemIndex === dropIndex) {
@@ -118,11 +124,18 @@ export const useDragAndDrop = (
       newItems = [...items];
       newItems.splice(draggedItemIndex, 1);
       newItems.splice(dropIndex, 0, draggedItem);
+      
+      actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
     }
     
     // If any headers were moved, renumber all headers
     if (hasHeaderMoved) {
       newItems = renumberItems(newItems);
+    }
+    
+    // Save undo state BEFORE updating items
+    if (saveUndoState && columns && title) {
+      saveUndoState(items, columns, title, actionDescription);
     }
     
     setItems(newItems);
