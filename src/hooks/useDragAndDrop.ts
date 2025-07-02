@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { RundownItem } from './useRundownItems';
+import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
@@ -90,14 +90,23 @@ export const useDragAndDrop = (
       return;
     }
 
-    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    // Fixed: Add proper type checking for drag data
+    let dragData;
+    try {
+      const dragDataString = e.dataTransfer.getData('text/plain');
+      dragData = dragDataString ? JSON.parse(dragDataString) : { isMultiple: false, selectedIds: [] };
+    } catch (error) {
+      console.warn('Failed to parse drag data:', error);
+      dragData = { isMultiple: false, selectedIds: [] };
+    }
+
     const { isMultiple, selectedIds } = dragData;
 
     let newItems: RundownItem[];
     let hasHeaderMoved = false;
     let actionDescription = '';
 
-    if (isMultiple && selectedIds.length > 1) {
+    if (isMultiple && selectedIds && selectedIds.length > 1) {
       // Handle multiple item drag
       const selectedItems = items.filter(item => selectedIds.includes(item.id));
       const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));

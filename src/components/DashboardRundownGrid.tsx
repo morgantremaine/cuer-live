@@ -215,7 +215,6 @@ const DashboardRundownGrid = ({
                 draggable
                 onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
-                {/* Activity Status Indicator */}
                 <div className={`absolute top-0 left-0 w-full h-1 ${activity.color} opacity-50`} />
                 
                 <CardHeader className="pb-2">
@@ -234,7 +233,7 @@ const DashboardRundownGrid = ({
                       </CardDescription>
                     </div>
                     
-                    {/* Three-dot menu */}
+                    {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -326,7 +325,6 @@ const DashboardRundownGrid = ({
               draggable
               onDragStart={(e) => handleDragStart(e, rundown.id)}
             >
-              {/* Activity Status Indicator */}
               <div className={`absolute top-0 left-0 w-full h-1 ${activity.color}`} />
               
               <CardHeader className="pb-3">
@@ -341,7 +339,6 @@ const DashboardRundownGrid = ({
                       </CardTitle>
                     </div>
                     
-                    {/* Creator and Date Info */}
                     <CardDescription className="text-gray-400 flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
@@ -354,7 +351,7 @@ const DashboardRundownGrid = ({
                     </CardDescription>
                   </div>
                   
-                  {/* Three-dot menu */}
+                  {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
