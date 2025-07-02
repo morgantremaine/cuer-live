@@ -86,20 +86,13 @@ const RundownHeader = ({
 
       {/* Bottom Section */}
       <HeaderBottomSection
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        title={title}
-        onTitleChange={onTitleChange}
+        totalRuntime={totalRuntime}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
-        totalRuntime={totalRuntime}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        items={items}
         isPlaying={isPlaying}
         currentSegmentId={currentSegmentId}
         timeRemaining={timeRemaining}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
       />
     </div>
   );
