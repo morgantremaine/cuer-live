@@ -43,7 +43,7 @@ export const useShowcallerStateCoordination = ({
     userId
   });
 
-  // Enhanced external state handler with better coordination
+  // Enhanced external state handler with improved coordination
   const handleExternalVisualState = useCallback((externalState: any) => {
     // Skip if we haven't initialized yet to prevent conflicts
     if (!isInitialized) {
@@ -51,22 +51,22 @@ export const useShowcallerStateCoordination = ({
       return;
     }
 
-    // Skip duplicate states
-    if (externalState.lastUpdate === lastSyncTimestampRef.current) {
-      return;
+    // Allow all external state through - remove overly restrictive duplicate detection
+    if (externalState.lastUpdate !== lastSyncTimestampRef.current) {
+      lastSyncTimestampRef.current = externalState.lastUpdate;
+      
+      console.log('📺 Coordinating external showcaller state:', {
+        fromController: externalState.controllerId,
+        currentController: visualState.controllerId,
+        isCurrentlyController: isController,
+        timestamp: externalState.lastUpdate
+      });
+
+      // Apply the external state
+      applyExternalVisualState(externalState);
+    } else {
+      console.log('📺 Skipping duplicate external state');
     }
-
-    lastSyncTimestampRef.current = externalState.lastUpdate;
-    
-    console.log('📺 Coordinating external showcaller state:', {
-      fromController: externalState.controllerId,
-      currentController: visualState.controllerId,
-      isCurrentlyController: isController,
-      timestamp: externalState.lastUpdate
-    });
-
-    // Apply the external state
-    applyExternalVisualState(externalState);
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController]);
 
   // Realtime synchronization with processing state
