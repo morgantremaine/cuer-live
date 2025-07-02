@@ -1,45 +1,33 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { format } from 'date-fns-tz';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command"
+import React from 'react';
+import TextAreaCell from './cells/TextAreaCell';
+import TimeDisplayCell from './cells/TimeDisplayCell';
+import ImageCell from './cells/ImageCell';
+import ExpandableScriptCell from './ExpandableScriptCell';
+import { RundownItem } from '@/hooks/useRundownItems';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface CellRendererProps {
-  column: any;
-  item: any;
+  column: Column;
+  item: RundownItem & {
+    calculatedStartTime?: string;
+    calculatedEndTime?: string;
+    calculatedElapsedTime?: string;
+    calculatedRowNumber?: string;
+  };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   backgroundColor?: string;
   currentSegmentId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-  width: string;
+  onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  width?: string;
 }
 
-const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
-  item,
+const CellRenderer = ({
   column,
+  item,
   cellRefs,
   textColor,
   backgroundColor,
@@ -48,198 +36,180 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
   onCellClick,
   onKeyDown,
   width
-}, ref) => {
-  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
-  const [date, setDate] = React.useState<Date | undefined>(() => {
-    if (column.type === 'date') {
-      const value = item[column.key];
-      return value ? new Date(value) : undefined;
+}: CellRendererProps) => {
+  // Get the current value for this cell
+  const getCellValue = () => {
+    if (column.isCustom) {
+      return item.customFields?.[column.key] || '';
     }
-    return undefined;
-  });
-  const [open, setOpen] = React.useState(false)
+    
+    switch (column.key) {
+      case 'segmentName':
+        // For segment name column, always use item.name (the actual segment description)
+        return item.name || '';
+      case 'name':
+        // Also handle 'name' key directly
+        return item.name || '';
+      case 'duration':
+        return item.duration || '';
+      case 'startTime':
+        return item.calculatedStartTime || item.startTime || '';
+      case 'endTime':
+        return item.calculatedEndTime || item.endTime || '';
+      case 'elapsedTime':
+        return item.calculatedElapsedTime || item.elapsedTime || '';
+      case 'talent':
+        return item.talent || '';
+      case 'script':
+        return item.script || '';
+      case 'notes':
+        return item.notes || '';
+      case 'gfx':
+        return item.gfx || '';
+      case 'video':
+        return item.video || '';
+      case 'images':
+        // Explicitly handle images column
+        return item.images || '';
+      default:
+        return (item as any)[column.key] || '';
+    }
+  };
 
+  const value = getCellValue();
+
+  // Determine if this is a read-only field
+  const isReadOnly = !column.isEditable || 
+    column.key === 'startTime' || 
+    column.key === 'endTime' || 
+    column.key === 'elapsedTime';
+
+  // Check if this is the current segment and segment name column for showcaller highlighting
+  const isCurrentSegmentName = currentSegmentId === item.id && 
+    (column.key === 'segmentName' || column.key === 'name');
+
+  // Override colors for showcaller highlighting
+  const showcallerBackgroundColor = isCurrentSegmentName ? '#3b82f6' : backgroundColor; // bright blue
+  const showcallerTextColor = isCurrentSegmentName ? '#ffffff' : textColor; // white text
+
+  // Use TimeDisplayCell for calculated time fields
+  if (isReadOnly && (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime')) {
+    return (
+      <TimeDisplayCell 
+        value={value} 
+        backgroundColor={showcallerBackgroundColor} 
+        textColor={showcallerTextColor}
+      />
+    );
+  }
+
+  // Create cell key for referencing
   const cellKey = `${item.id}-${column.key}`;
-  const value = item[column.key];
 
-  useEffect(() => {
-    if (ref && typeof ref === 'object' && 'current' in ref && ref.current) {
-      // Only assign if the ref is actually an input or textarea element
-      const element = ref.current;
-      if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-        cellRefs.current[cellKey] = element;
-      }
-    }
-  }, [cellKey, cellRefs, ref]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    onUpdateItem(item.id, column.key, e.target.value);
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onUpdateItem(item.id, column.key, e.target.value);
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    onUpdateItem(item.id, column.key, checked.toString());
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    setDate(date);
-    if (date) {
-      const formattedDate = date.toISOString();
-      onUpdateItem(item.id, column.key, formattedDate);
-    } else {
-      onUpdateItem(item.id, column.key, '');
-    }
-    setOpen(false);
-  };
-
-  const handleCellClick = () => {
-    onCellClick(item.id, column.key);
-  };
-
-  const commonProps = {
-    'data-cell-key': cellKey,
-    'data-item-id': item.id,
-    'data-field': column.key,
-    className: 'px-2 py-1 whitespace-nowrap overflow-hidden text-ellipsis focus:outline-none',
-    onClick: handleCellClick,
-    onKeyDown,
-    ref: ref as any,
-    style: { color: textColor }
-  };
-
-  // For editing mode - show input controls
-  if (column.type === 'text' || column.type === 'segmentName' || column.type === 'name') {
+  // Use ImageCell for images column - check both column.key and column.id
+  if (column.key === 'images' || column.id === 'images') {
     return (
-      <Input
-        {...commonProps}
-        type="text"
-        value={value || ''}
-        onChange={handleChange}
+      <ImageCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={showcallerTextColor}
+        backgroundColor={showcallerBackgroundColor}
+        onUpdateValue={(newValue) => {
+          // Always use 'images' as the field name for the images column
+          onUpdateItem(item.id, 'images', newValue);
+        }}
+        onCellClick={(e) => {
+          onCellClick(item.id, column.key);
+        }}
+        onKeyDown={onKeyDown}
       />
     );
-  } else if (column.type === 'textarea' || column.type === 'script' || column.type === 'notes') {
+  }
+
+  // Use ExpandableScriptCell for script and notes fields (both built-in columns)
+  if (column.key === 'script' || column.key === 'notes') {
     return (
-      <Textarea
-        {...commonProps}
-        value={value || ''}
-        onChange={handleChange}
+      <ExpandableScriptCell
+        value={value}
+        itemId={item.id}
+        cellRefKey={column.key}
+        cellRefs={cellRefs}
+        textColor={showcallerTextColor}
+        onUpdateValue={(newValue) => {
+          onUpdateItem(item.id, column.key, newValue);
+        }}
+        onKeyDown={onKeyDown}
       />
     );
-  } else if (column.type === 'number') {
+  }
+
+  // For showcaller highlighting on segment name, wrap the entire cell content
+  if (isCurrentSegmentName) {
     return (
-      <Input
-        {...commonProps}
-        type="number"
-        value={value || ''}
-        onChange={handleChange}
-      />
-    );
-  } else if (column.type === 'checkbox') {
-    return (
-      <Checkbox
-        checked={!!value}
-        onCheckedChange={handleCheckboxChange}
-      />
-    );
-  } else if (column.type === 'date') {
-    return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant={"ghost"}
-            className={cn(
-              "pl-3.5 pr-2 text-left font-normal text-black dark:text-white",
-              !date && "text-muted-foreground",
-            )}
-          >
-            {date ? (
-              format(date, "PPP", { timeZone: 'UTC' })
-            ) : (
-              <span>Pick a date</span>
-            )}
-            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start" side="bottom">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateChange}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    )
-  } else if (column.type === 'time' || column.type === 'duration' || column.type === 'startTime' || column.type === 'endTime' || column.type === 'elapsedTime') {
-    return (
-      <Input
-        {...commonProps}
-        type="time"
-        value={value || ''}
-        onChange={handleChange}
-      />
-    );
-  } else if (column.type === 'select') {
-    return (
-      <select
-        {...commonProps}
-        value={value || ''}
-        onChange={handleSelectChange}
+      <div 
+        className="absolute inset-0 flex items-center px-3 py-1"
+        style={{ 
+          backgroundColor: showcallerBackgroundColor,
+          color: showcallerTextColor,
+          minHeight: '100%',
+          height: '100%'
+        }}
       >
-        {column.options && column.options.map((option: any) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-    );
-  } else if (column.type === 'color') {
-    return (
-      <div>
-        <button onClick={() => setIsColorPickerOpen(!isColorPickerOpen)}>
-          {value || 'Pick a color'}
-        </button>
-        {isColorPickerOpen && (
-          <div>
-            <button onClick={() => {
-              onUpdateItem(item.id, column.key, 'red');
-              setIsColorPickerOpen(false);
-            }}>Red</button>
-            <button onClick={() => {
-              onUpdateItem(item.id, column.key, 'blue');
-              setIsColorPickerOpen(false);
-            }}>Blue</button>
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    // Display mode - show formatted values
-    return (
-      <div {...commonProps}>
-        {column.type === 'checkbox' ? (
-          <Checkbox
-            checked={!!value}
-            disabled
-          />
-        ) : column.type === 'date' ? (
-          value ? format(new Date(value), "PPP", { timeZone: 'UTC' }) : ''
-        ) : column.type === 'duration' ? (
-          value || '00:00'
-        ) : column.type === 'startTime' ? (
-          value || '00:00'
-        ) : column.type === 'endTime' ? (
-          value || '00:00'
-        ) : column.type === 'elapsedTime' ? (
-          value || '00:00'
-        ) : (
-          value
-        )}
+        <TextAreaCell
+          value={value}
+          itemId={item.id}
+          cellRefKey={column.key}
+          cellRefs={cellRefs}
+          textColor={showcallerTextColor}
+          backgroundColor="transparent" // Make the TextAreaCell background transparent since we're handling it in the wrapper
+          isDuration={column.key === 'duration'}
+          onUpdateValue={(newValue) => {
+            // Handle custom fields vs built-in fields
+            if (column.isCustom) {
+              const field = `customFields.${column.key}`;
+              onUpdateItem(item.id, field, newValue);
+            } else {
+              // For segmentName column, always update the 'name' field
+              // For name column, also update the 'name' field
+              const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
+              onUpdateItem(item.id, field, newValue);
+            }
+          }}
+          onCellClick={(e) => onCellClick(item.id, column.key)}
+          onKeyDown={onKeyDown}
+        />
       </div>
     );
   }
-});
 
-CellRenderer.displayName = 'CellRenderer';
+  // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
+  return (
+    <TextAreaCell
+      value={value}
+      itemId={item.id}
+      cellRefKey={column.key}
+      cellRefs={cellRefs}
+      textColor={showcallerTextColor}
+      backgroundColor={showcallerBackgroundColor}
+      isDuration={column.key === 'duration'}
+      onUpdateValue={(newValue) => {
+        // Handle custom fields vs built-in fields
+        if (column.isCustom) {
+          const field = `customFields.${column.key}`;
+          onUpdateItem(item.id, field, newValue);
+        } else {
+          // For segmentName column, always update the 'name' field
+          // For name column, also update the 'name' field
+          const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
+          onUpdateItem(item.id, field, newValue);
+        }
+      }}
+      onCellClick={(e) => onCellClick(item.id, column.key)}
+      onKeyDown={onKeyDown}
+    />
+  );
+};
+
 export default CellRenderer;

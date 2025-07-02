@@ -43,10 +43,6 @@ const RegularRowContent = ({
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
-  const handleKeyDown = (e: React.KeyboardEvent, columnKey: string) => {
-    onKeyDown(e, item.id, columnKey);
-  };
-
   return (
     <>
       {/* Row number column - must match the header structure exactly */}
@@ -88,7 +84,7 @@ const RegularRowContent = ({
               currentSegmentId={currentSegmentId}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
-              onKeyDown={(e) => handleKeyDown(e, column.key)}
+              onKeyDown={onKeyDown}
               width={columnWidth}
             />
           </td>
@@ -99,4 +95,3 @@ const RegularRowContent = ({
 };
 
 export default RegularRowContent;
-

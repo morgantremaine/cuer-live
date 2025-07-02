@@ -35,12 +35,6 @@ const HeaderRowContent = ({
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For header rows, we need to determine which field this is for
-    // Since this is in the context of a specific column, we'll need to pass the field
-    onKeyDown(e, item.id, 'name'); // Default to 'name' field for headers
-  };
-
   return (
     <>
       {/* Row number column - must match the header structure exactly */}
@@ -90,7 +84,7 @@ const HeaderRowContent = ({
                   currentSegmentId={currentSegmentId}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={onKeyDown}
                   width={columnWidth}
                 />
               </div>
@@ -153,4 +147,3 @@ const HeaderRowContent = ({
 };
 
 export default HeaderRowContent;
-

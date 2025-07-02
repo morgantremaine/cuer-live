@@ -1,11 +1,9 @@
-
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
-import { useRundownFindReplace } from './useRundownFindReplace';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
@@ -25,12 +23,6 @@ export const useRundownStateCoordination = () => {
     columns: simplifiedState.columns,
     startTime: simplifiedState.rundownStartTime
   });
-
-  // Find and Replace functionality
-  const findReplace = useRundownFindReplace(
-    performanceOptimization.calculatedItems,
-    simplifiedState.updateItem
-  );
 
   // Autoscroll state with localStorage persistence
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
@@ -83,11 +75,7 @@ export const useRundownStateCoordination = () => {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
   // Add the missing addMultipleRows function
@@ -119,10 +107,13 @@ export const useRundownStateCoordination = () => {
   };
 
   // UI interactions that depend on the core state (NO showcaller interference)
+  // Now passing undo-related parameters
   const interactions = useRundownGridInteractions(
+    // Use performance-optimized calculated items, but still pass the original updateItem function
     performanceOptimization.calculatedItems,
     (updater) => {
       if (typeof updater === 'function') {
+        // Extract just the core RundownItem properties for the updater
         const coreItems = performanceOptimization.calculatedItems.map(item => ({
           id: item.id,
           type: item.type,
@@ -164,16 +155,19 @@ export const useRundownStateCoordination = () => {
     (id: string, color: string) => {
       simplifiedState.updateItem(id, 'color', color);
     },
-    () => {},
+    () => {
+      // markAsChanged - handled internally by simplified state
+    },
     simplifiedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
+    // Pass undo-related parameters - use the correct property name now available
     simplifiedState.saveUndoState,
     simplifiedState.columns,
     simplifiedState.rundownTitle
   );
 
-  // Get UI state with enhanced navigation
+  // Get UI state with enhanced navigation - use performance-optimized data
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
     performanceOptimization.visibleColumns,
@@ -181,22 +175,6 @@ export const useRundownStateCoordination = () => {
     simplifiedState.setColumns,
     simplifiedState.columns
   );
-
-  // Keyboard shortcut for find and replace
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        findReplace.setIsOpen(true);
-      }
-      if (e.key === 'Escape' && findReplace.isOpen) {
-        findReplace.close();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [findReplace.isOpen, findReplace.setIsOpen, findReplace.close]);
 
   return {
     coreState: {
@@ -222,7 +200,7 @@ export const useRundownStateCoordination = () => {
       isPlaying: showcallerVisual.isPlaying,
       timeRemaining: showcallerVisual.timeRemaining,
       isController: showcallerVisual.isController,
-      showcallerActivity: false,
+      showcallerActivity: false, // No longer interferes with main state
       
       // Visual status overlay function (doesn't touch main state)
       getItemVisualStatus: showcallerVisual.getItemVisualStatus,
@@ -272,32 +250,14 @@ export const useRundownStateCoordination = () => {
       
       // Additional functionality
       calculateEndTime,
-      markAsChanged: () => {},
+      markAsChanged: () => {
+        // Handled internally by simplified state
+      },
       addMultipleRows,
       
-      // Autoscroll state
+      // Autoscroll state with enhanced debugging
       autoScrollEnabled,
-      toggleAutoScroll,
-
-      // Find & Replace functionality
-      findReplaceState: {
-        isOpen: findReplace.isOpen,
-        searchTerm: findReplace.searchTerm,
-        replaceTerm: findReplace.replaceTerm,
-        caseSensitive: findReplace.caseSensitive,
-        totalMatches: findReplace.totalMatches,
-        currentMatchIndex: findReplace.currentMatchIndex,
-        hasMatches: findReplace.hasMatches,
-        onSearchChange: findReplace.setSearchTerm,
-        onReplaceChange: findReplace.setReplaceTerm,
-        onCaseSensitiveChange: findReplace.setCaseSensitive,
-        onNext: findReplace.goToNext,
-        onPrevious: findReplace.goToPrevious,
-        onReplaceCurrent: findReplace.replaceCurrent,
-        onReplaceAll: findReplace.replaceAll,
-        onClose: findReplace.close,
-        onToggle: () => findReplace.setIsOpen(!findReplace.isOpen)
-      }
+      toggleAutoScroll
     },
     interactions,
     uiState
