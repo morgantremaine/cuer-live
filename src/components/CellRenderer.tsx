@@ -63,8 +63,12 @@ const CellRenderer = React.forwardRef<HTMLElement, CellRendererProps>(({
   const value = item[column.key];
 
   useEffect(() => {
-    if (ref && typeof ref === 'object' && 'current' in ref) {
-      cellRefs.current[cellKey] = ref.current as HTMLElement;
+    if (ref && typeof ref === 'object' && 'current' in ref && ref.current) {
+      // Only assign if the ref is actually an input or textarea element
+      const element = ref.current;
+      if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+        cellRefs.current[cellKey] = element;
+      }
     }
   }, [cellKey, cellRefs, ref]);
 

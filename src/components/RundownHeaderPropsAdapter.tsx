@@ -32,7 +32,7 @@ const RundownHeaderPropsAdapter = ({
   return (
     <RundownHeader
       title={rundownTitle}
-      start_time={rundownStartTime}
+      startTime={rundownStartTime}
       timezone={timezone}
       currentTime={currentTime}
       onTitleChange={setTitle}
