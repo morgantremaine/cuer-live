@@ -79,8 +79,11 @@ const RundownToolbar = ({
     setShowFindReplace(false);
   };
 
-  // Only show find/replace if we have the update function
-  const showFindReplaceButton = !!onUpdateItem;
+  // Debug logging
+  console.log('RundownToolbar - onUpdateItem:', !!onUpdateItem, 'items length:', items.length);
+
+  // Always show find/replace button for now to debug
+  const showFindReplaceButton = true; // Changed from !!onUpdateItem to always show
 
   const commonProps = {
     onAddRow,
@@ -119,7 +122,7 @@ const RundownToolbar = ({
           isOpen={showFindReplace}
           onClose={handleCloseFindReplace}
           items={items}
-          onUpdateItem={onUpdateItem}
+          onUpdateItem={onUpdateItem || ((id, field, value) => console.log('Mock update:', id, field, value))}
         />
       )}
     </>

@@ -69,6 +69,9 @@ const MainActionButtons = ({
 
   const buttonSize = 'sm';
   
+  // Debug logging
+  console.log('MainActionButtons - onOpenFindReplace:', !!onOpenFindReplace);
+  
   if (isMobile) {
     // Mobile layout - stacked buttons in dropdown
     return (
@@ -102,13 +105,11 @@ const MainActionButtons = ({
 
         {/* Find & Replace and Tools row */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          {onOpenFindReplace && (
-            <FindReplaceButton 
-              onClick={onOpenFindReplace}
-              size={buttonSize}
-              className="w-full justify-start"
-            />
-          )}
+          <FindReplaceButton 
+            onClick={onOpenFindReplace || (() => console.log('Find & Replace clicked but no handler'))}
+            size={buttonSize}
+            className="w-full justify-start"
+          />
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
@@ -197,12 +198,10 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
-      {onOpenFindReplace && (
-        <FindReplaceButton 
-          onClick={onOpenFindReplace}
-          size={buttonSize}
-        />
-      )}
+      <FindReplaceButton 
+        onClick={onOpenFindReplace || (() => console.log('Find & Replace clicked but no handler'))}
+        size={buttonSize}
+      />
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} />
       
