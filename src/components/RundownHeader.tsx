@@ -247,7 +247,7 @@ const RundownHeader = ({
             
             {hasUnsavedChanges && (
               <div className="flex-shrink-0 flex items-center">
-                <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
                   {isSaving ? 'Saving...' : 'Unsaved changes'}
                 </span>
               </div>
@@ -336,7 +336,7 @@ const RundownHeader = ({
           
           {hasUnsavedChanges && (
             <div className="flex-shrink-0 flex items-center">
-              <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'}`}>
+              <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
                 {isSaving ? 'Saving...' : 'Unsaved changes'}
               </span>
             </div>
