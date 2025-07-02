@@ -22,6 +22,7 @@ export const useShowcallerRealtimeSync = ({
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
   const lastShowcallerStateRef = useRef<any>(null);
+  const isInitializedRef = useRef(false);
   
   // Add processing state tracking
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
@@ -69,7 +70,8 @@ export const useShowcallerRealtimeSync = ({
       controllerId: showcallerVisualState.controllerId,
       currentUserId: user?.id,
       isOwnUpdate: showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate),
-      hasStateChanged: hasShowcallerStateChanged(showcallerVisualState, previousState)
+      hasStateChanged: hasShowcallerStateChanged(showcallerVisualState, previousState),
+      isInitialized: isInitializedRef.current
     });
 
     // Skip if this update originated from this user
@@ -77,6 +79,14 @@ export const useShowcallerRealtimeSync = ({
       console.log('📺 Skipping - own update detected');
       // Update our reference but don't show the icon
       lastShowcallerStateRef.current = showcallerVisualState;
+      return;
+    }
+
+    // If this is the initial load (not initialized yet), just store the state without showing the icon
+    if (!isInitializedRef.current) {
+      console.log('📺 Initial load - storing state without showing icon');
+      lastShowcallerStateRef.current = showcallerVisualState;
+      isInitializedRef.current = true;
       return;
     }
 
