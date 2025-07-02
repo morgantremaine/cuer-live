@@ -39,7 +39,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-3 text-base font-mono font-semibold align-middle border border-border min-h-[56px]"
+        className="px-3 py-3 text-lg font-mono font-semibold align-middle border border-border min-h-[56px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -71,15 +71,15 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-3 whitespace-nowrap"
+                className="px-3 py-3 whitespace-nowrap flex items-center"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
-                  display: 'inline-block',
+                  display: 'flex',
                   minWidth: '100%'
                 }}
               >
-                <span className="text-2xl font-bold inline-block" style={{ color: textColor }}>
+                <span className="text-xl font-bold inline-block" style={{ color: textColor }}>
                   <input
                     ref={(el) => {
                       if (el) {
@@ -91,7 +91,7 @@ const HeaderRowContent = ({
                     onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
                     onClick={() => onCellClick(item.id, column.key)}
                     onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-                    className="bg-transparent border-none outline-none p-0 m-0 text-2xl font-bold"
+                    className="bg-transparent border-none outline-none p-0 m-0 text-xl font-bold"
                     style={{ 
                       color: textColor,
                       fontFamily: 'inherit',
@@ -106,7 +106,7 @@ const HeaderRowContent = ({
                   />
                 </span>
                 <span 
-                  className="text-sm font-medium ml-2 inline-block" 
+                  className="text-base font-medium ml-2 inline-block" 
                   style={{ color: textColor }}
                 >
                   ({headerDuration})
