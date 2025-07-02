@@ -38,15 +38,18 @@ export const useShowcallerRealtimeSync = ({
     return JSON.stringify(meaningfulState);
   }, []);
 
-  // Check if showcaller state is fresh (within last 30 seconds)
+  // Check if showcaller state is fresh (within last 5 minutes - much more generous)
   const isStateFresh = useCallback((showcallerState: any) => {
-    if (!showcallerState?.lastUpdate) return false;
+    if (!showcallerState?.lastUpdate) {
+      // If no timestamp, consider it fresh (could be a new state)
+      return true;
+    }
     
     const updateTime = new Date(showcallerState.lastUpdate).getTime();
     const now = Date.now();
-    const thirtySecondsAgo = now - (30 * 1000);
+    const fiveMinutesAgo = now - (5 * 60 * 1000); // 5 minutes instead of 30 seconds
     
-    return updateTime > thirtySecondsAgo;
+    return updateTime > fiveMinutesAgo;
   }, []);
 
   // Simplified update handler for showcaller visual state only
@@ -78,9 +81,9 @@ export const useShowcallerRealtimeSync = ({
       return;
     }
 
-    // Check if the state is fresh (within last 30 seconds)
+    // Check if the state is fresh (more generous 5-minute window)
     if (!isStateFresh(showcallerVisualState)) {
-      console.log('📺 Skipping - stale showcaller state (older than 30 seconds)');
+      console.log('📺 Skipping - stale showcaller state (older than 5 minutes)');
       return;
     }
 
