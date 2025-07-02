@@ -1,6 +1,6 @@
 
 import React from 'react';
-import RundownTable from './RundownTable';
+import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -23,6 +23,7 @@ interface RundownContentProps {
   selectedRowId?: string | null;
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
+  startTime?: string;
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -50,7 +51,7 @@ interface RundownContentProps {
   onJumpToHere?: (segmentId: string) => void;
 }
 
-const RundownContent = ({
+const RundownContent = React.memo<RundownContentProps>(({
   items,
   visibleColumns,
   currentTime,
@@ -65,6 +66,7 @@ const RundownContent = ({
   selectedRowId = null,
   isPlaying = false,
   autoScrollEnabled = false,
+  startTime = '00:00:00',
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
@@ -90,7 +92,7 @@ const RundownContent = ({
   onAddRow,
   onAddHeader,
   onJumpToHere
-}: RundownContentProps) => {
+}) => {
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
@@ -108,12 +110,12 @@ const RundownContent = ({
   });
 
   // Enhanced drag over handler that includes auto-scroll
-  const handleEnhancedDragOver = (e: React.DragEvent, index?: number) => {
+  const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
     // Handle auto-scroll first
     handleDragAutoScroll(e);
     // Then handle regular drag over logic
     onDragOver(e, index);
-  };
+  }, [handleDragAutoScroll, onDragOver]);
 
   return (
     <div className="relative bg-background h-full">
@@ -131,8 +133,8 @@ const RundownContent = ({
             </table>
           </div>
 
-          {/* Table Content */}
-          <RundownTable
+          {/* Optimized Table Content */}
+          <OptimizedRundownTableWrapper
             items={items}
             visibleColumns={visibleColumns}
             currentTime={currentTime}
@@ -145,11 +147,9 @@ const RundownContent = ({
             currentSegmentId={currentSegmentId}
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
+            startTime={startTime}
             getColumnWidth={getColumnWidth}
-            updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-            getRowNumber={getRowNumber}
-            getRowStatus={(item) => getRowStatus(item, currentTime)}
-            getHeaderDuration={calculateHeaderDuration}
+            updateColumnWidth={updateColumnWidth}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
@@ -176,6 +176,8 @@ const RundownContent = ({
       </ScrollArea>
     </div>
   );
-};
+});
+
+RundownContent.displayName = 'RundownContent';
 
 export default RundownContent;

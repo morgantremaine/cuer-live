@@ -1,0 +1,117 @@
+
+import { useMemo } from 'react';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
+
+interface MemoizedCalculations {
+  itemsWithStatus: Array<RundownItem & { 
+    calculatedStatus: 'upcoming' | 'current' | 'completed';
+    calculatedRowNumber: string;
+  }>;
+  visibleItemsOnly: RundownItem[];
+  headerDurations: Map<string, string>;
+  totalCalculatedRuntime: string;
+}
+
+export const useRundownMemoization = (
+  items: RundownItem[],
+  visibleColumns: Column[],
+  currentSegmentId: string | null,
+  startTime: string
+): MemoizedCalculations => {
+  
+  // Memoize expensive calculations that rarely change
+  const memoizedCalculations = useMemo(() => {
+    const timeToSeconds = (timeStr: string): number => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      return 0;
+    };
+
+    const secondsToTime = (seconds: number): string => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Calculate items with enhanced data only once
+    const itemsWithStatus = items.map((item, index) => {
+      // Calculate row number
+      let calculatedRowNumber = '';
+      if (item.type === 'header') {
+        let headerCount = 0;
+        for (let i = 0; i <= index; i++) {
+          if (items[i]?.type === 'header') headerCount++;
+        }
+        calculatedRowNumber = String.fromCharCode(64 + headerCount); // A, B, C...
+      } else {
+        let currentSegment = 'A';
+        let itemCount = 0;
+        for (let i = 0; i <= index; i++) {
+          const currentItem = items[i];
+          if (currentItem?.type === 'header') {
+            let headerCount = 0;
+            for (let j = 0; j <= i; j++) {
+              if (items[j]?.type === 'header') headerCount++;
+            }
+            currentSegment = String.fromCharCode(64 + headerCount);
+            itemCount = 0;
+          } else if (currentItem?.type === 'regular') {
+            itemCount++;
+          }
+        }
+        calculatedRowNumber = `${currentSegment}${itemCount}`;
+      }
+
+      // Calculate status
+      let calculatedStatus: 'upcoming' | 'current' | 'completed' = 'upcoming';
+      if (item.id === currentSegmentId) {
+        calculatedStatus = 'current';
+      }
+      // Add more sophisticated status logic here if needed
+
+      return {
+        ...item,
+        calculatedStatus,
+        calculatedRowNumber
+      };
+    });
+
+    // Calculate header durations
+    const headerDurations = new Map<string, string>();
+    items.forEach((item, index) => {
+      if (item.type === 'header') {
+        let totalSeconds = 0;
+        for (let i = index + 1; i < items.length; i++) {
+          const nextItem = items[i];
+          if (nextItem.type === 'header') break;
+          if (!nextItem.isFloating && !nextItem.isFloated) {
+            totalSeconds += timeToSeconds(nextItem.duration || '00:00');
+          }
+        }
+        headerDurations.set(item.id, secondsToTime(totalSeconds));
+      }
+    });
+
+    // Calculate total runtime
+    const totalRuntimeSeconds = items
+      .filter(item => !item.isFloating && !item.isFloated)
+      .reduce((acc, item) => acc + timeToSeconds(item.duration || '00:00'), 0);
+    
+    const totalCalculatedRuntime = secondsToTime(totalRuntimeSeconds);
+
+    // Filter visible items (could be used for further optimization)
+    const visibleItemsOnly = items; // For now, keep all items
+
+    return {
+      itemsWithStatus,
+      visibleItemsOnly,
+      headerDurations,
+      totalCalculatedRuntime
+    };
+  }, [items, currentSegmentId, startTime]);
+
+  return memoizedCalculations;
+};

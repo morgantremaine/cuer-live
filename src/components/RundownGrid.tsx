@@ -1,8 +1,9 @@
 import React from 'react';
-import RundownTable from './RundownTable';
+import RundownContent from './RundownContent';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
 import { useAuth } from '@/hooks/useAuth';
+import { useStableCallbacks } from '@/hooks/useStableCallbacks';
 import { logger } from '@/utils/logger';
 
 const RundownGrid = React.memo(() => {
@@ -22,7 +23,8 @@ const RundownGrid = React.memo(() => {
     selectedRowId,
     handleRowSelection,
     clearRowSelection,
-    rundownId
+    rundownId,
+    rundownStartTime
   } = coreState;
 
   // Use coordinated showcaller state for better synchronization
@@ -76,25 +78,64 @@ const RundownGrid = React.memo(() => {
     cellRefs
   } = uiState;
 
-  // Create wrapper for cell click to match signature
-  const handleCellClickWrapper = (itemId: string, field: string) => {
-    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
-    handleCellClick(itemId, field, mockEvent);
-  };
-
-  // Create wrapper for key down to match signature
-  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
-    const itemIndex = items.findIndex(item => item.id === itemId);
-    handleKeyDown(e, itemId, field, itemIndex);
-  };
-
-  // Create a wrapper function that matches the expected signature
-  const handleColorSelect = (id: string, color: string) => {
-    selectColor(id, color);
-  };
+  // Create stable callbacks to prevent unnecessary re-renders
+  const stableCallbacks = useStableCallbacks({
+    handleCellClick: (itemId: string, field: string) => {
+      const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+      uiState.handleCellClick(itemId, field, mockEvent);
+    },
+    handleKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => {
+      const itemIndex = items.findIndex(item => item.id === itemId);
+      uiState.handleKeyDown(e, itemId, field, itemIndex);
+    },
+    handleColorSelect: (id: string, color: string) => {
+      uiState.selectColor(id, color);
+    },
+    handleEnhancedRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+      if (isShiftClick || isCtrlClick) {
+        interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick);
+        if (selectedRowId !== null) {
+          clearRowSelection();
+        }
+      } else {
+        handleRowSelection(itemId);
+        if (interactions.selectedRows.size > 0) {
+          interactions.clearSelection();
+        }
+      }
+    },
+    handleJumpToHere: (segmentId: string) => {
+      logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
+      logger.log('🎯 Target segment ID:', segmentId);
+      
+      const targetSegment = items.find(item => item.id === segmentId);
+      if (!targetSegment) {
+        logger.error('🎯 Target segment not found:', segmentId);
+        return;
+      }
+      
+      if (isPlaying) {
+        logger.log('🎯 Showcaller is playing - jumping and continuing playback');
+        play(segmentId);
+      } else {
+        logger.log('🎯 Showcaller is paused - jumping but staying paused');
+        jumpToSegment(segmentId);
+      }
+      
+      // Clear selections
+      if (interactions.selectedRows.size > 0) {
+        interactions.clearSelection();
+      }
+      if (selectedRowId !== null) {
+        clearRowSelection();
+      }
+      
+      logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
+    }
+  });
 
   // Enhanced row status that uses showcaller visual state
-  const getRowStatus = (item: any): 'upcoming' | 'current' | 'completed' => {
+  const getRowStatus = React.useCallback((item: any): 'upcoming' | 'current' | 'completed' => {
     if (item.type === 'header') {
       return 'upcoming'; // Headers don't have visual status
     }
@@ -105,124 +146,53 @@ const RundownGrid = React.memo(() => {
     }
     
     return 'upcoming';
-  };
-
-  // Enhanced row selection that properly handles both single and multi-selection
-  const handleEnhancedRowSelection = (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    if (isShiftClick || isCtrlClick) {
-      handleMultiRowSelection(itemId, index, isShiftClick, isCtrlClick);
-      if (selectedRowId !== null) {
-        clearRowSelection();
-      }
-    } else {
-      handleRowSelection(itemId);
-      if (selectedRows.size > 0) {
-        clearSelection();
-      }
-    }
-  };
-
-  // Enhanced jump to here handler with better coordination
-  const handleJumpToHere = (segmentId: string) => {
-    logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
-    logger.log('🎯 Target segment ID:', segmentId);
-    logger.log('🎯 Current segment ID:', currentSegmentId);
-    logger.log('🎯 Is currently playing:', isPlaying);
-    logger.log('🎯 Is controller:', isController);
-    logger.log('🎯 Is initialized:', isInitialized);
-    logger.log('🎯 Is connected:', isConnected);
-    
-    // Find the target segment
-    const targetSegment = items.find(item => item.id === segmentId);
-    if (!targetSegment) {
-      logger.error('🎯 Target segment not found:', segmentId);
-      return;
-    }
-    
-    logger.log('🎯 Target segment found:', { 
-      id: targetSegment.id, 
-      name: targetSegment.name, 
-      type: targetSegment.type 
-    });
-    
-    // Use coordinated jump function
-    if (isPlaying) {
-      logger.log('🎯 Showcaller is playing - jumping and continuing playback');
-      play(segmentId);
-    } else {
-      logger.log('🎯 Showcaller is paused - jumping but staying paused');
-      jumpToSegment(segmentId);
-    }
-    
-    // Clear selections
-    if (selectedRows.size > 0) {
-      clearSelection();
-    }
-    if (selectedRowId !== null) {
-      clearRowSelection();
-    }
-    
-    logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
-  };
-
-  // Create wrapper functions for drag operations
-  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
-    handleDragStart(e, index);
-  };
-
-  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
-    handleDragOver(e, targetIndex);
-  };
-
-  const handleDragLeaveWrapper = (e: React.DragEvent) => {
-    handleDragLeave(e);
-  };
-
-  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
-    handleDrop(e, targetIndex);
-  };
+  }, [getItemVisualStatus]);
 
   return (
-    <RundownTable
+    <RundownContent
       items={items}
       visibleColumns={visibleColumns}
       currentTime={currentTime}
-      showColorPicker={showColorPicker}
-      cellRefs={cellRefs}
-      selectedRows={selectedRows}
-      draggedItemIndex={draggedItemIndex}
-      isDraggingMultiple={isDraggingMultiple}
-      dropTargetIndex={dropTargetIndex}
+      showColorPicker={uiState.showColorPicker}
+      cellRefs={uiState.cellRefs}
+      selectedRows={interactions.selectedRows}
+      draggedItemIndex={interactions.draggedItemIndex}
+      isDraggingMultiple={interactions.isDraggingMultiple}
+      dropTargetIndex={interactions.dropTargetIndex}
       currentSegmentId={currentSegmentId}
-      hasClipboardData={hasClipboardData()}
+      hasClipboardData={interactions.hasClipboardData()}
       selectedRowId={selectedRowId}
-      getColumnWidth={getColumnWidth}
-      updateColumnWidth={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+      isPlaying={isPlaying}
+      autoScrollEnabled={coreState.autoScrollEnabled}
+      startTime={rundownStartTime}
+      onToggleAutoScroll={coreState.toggleAutoScroll}
+      getColumnWidth={uiState.getColumnWidth}
+      updateColumnWidth={uiState.updateColumnWidth}
       getRowNumber={coreState.getRowNumber}
       getRowStatus={getRowStatus}
-      getHeaderDuration={coreState.calculateHeaderDuration}
+      calculateHeaderDuration={coreState.calculateHeaderDuration}
       onUpdateItem={coreState.updateItem}
-      onCellClick={handleCellClickWrapper}
-      onKeyDown={handleKeyDownWrapper}
-      onToggleColorPicker={handleToggleColorPicker}
-      onColorSelect={handleColorSelect}
+      onCellClick={stableCallbacks.handleCellClick}
+      onKeyDown={stableCallbacks.handleKeyDown}
+      onToggleColorPicker={uiState.handleToggleColorPicker}
+      onColorSelect={stableCallbacks.handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={handleEnhancedRowSelection}
-      onDragStart={handleDragStartWrapper}
-      onDragOver={handleDragOverWrapper}
-      onDragLeave={handleDragLeaveWrapper}
-      onDrop={handleDropWrapper}
-      onCopySelectedRows={handleCopySelectedRows}
-      onDeleteSelectedRows={handleDeleteSelectedRows}
-      onPasteRows={handlePasteRows}
+      onRowSelect={stableCallbacks.handleEnhancedRowSelection}
+      onDragStart={interactions.handleDragStart}
+      onDragOver={interactions.handleDragOver}
+      onDragLeave={interactions.handleDragLeave}
+      onDrop={interactions.handleDrop}
+      onCopySelectedRows={interactions.handleCopySelectedRows}
+      onDeleteSelectedRows={interactions.handleDeleteSelectedRows}
+      onPasteRows={interactions.handlePasteRows}
       onClearSelection={() => {
-        clearSelection();
+        interactions.clearSelection();
         clearRowSelection();
       }}
-      onAddRow={handleAddRow}
-      onAddHeader={handleAddHeader}
-      onJumpToHere={handleJumpToHere}
+      onAddRow={interactions.handleAddRow}
+      onAddHeader={interactions.handleAddHeader}
+      onJumpToHere={stableCallbacks.handleJumpToHere}
     />
   );
 });
