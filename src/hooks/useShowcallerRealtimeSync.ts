@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
+
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
@@ -21,6 +22,9 @@ export const useShowcallerRealtimeSync = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
+  
+  // Add processing state tracking
+  const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
@@ -49,6 +53,9 @@ export const useShowcallerRealtimeSync = ({
       return;
     }
 
+    // Set processing state
+    setIsProcessingVisualUpdate(true);
+
     // Clear any existing processing timeout to prevent race conditions
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
@@ -71,8 +78,13 @@ export const useShowcallerRealtimeSync = ({
         logger.error('Error processing showcaller visual update:', error);
       }
       
+      // Clear processing state after a brief delay to make it visible
+      setTimeout(() => {
+        setIsProcessingVisualUpdate(false);
+      }, 500);
+      
       processingTimeoutRef.current = null;
-    }, 100); // Reduced debounce time for better responsiveness
+    }, 100);
     
   }, [rundownId]);
 
@@ -128,11 +140,13 @@ export const useShowcallerRealtimeSync = ({
         clearTimeout(processingTimeoutRef.current);
         processingTimeoutRef.current = null;
       }
+      setIsProcessingVisualUpdate(false);
     };
   }, [rundownId, user, enabled, handleShowcallerVisualUpdate]);
 
   return {
     isConnected: !!subscriptionRef.current,
+    isProcessingVisualUpdate,
     trackOwnVisualUpdate
   };
 };

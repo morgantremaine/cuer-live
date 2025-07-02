@@ -69,8 +69,8 @@ export const useShowcallerStateCoordination = ({
     applyExternalVisualState(externalState);
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController]);
 
-  // Realtime synchronization
-  const { isConnected, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
+  // Realtime synchronization with processing state
+  const { isConnected, isProcessingVisualUpdate, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
     rundownId,
     onExternalVisualStateReceived: handleExternalVisualState,
     enabled: isInitialized
@@ -161,6 +161,7 @@ export const useShowcallerStateCoordination = ({
     isController,
     isInitialized,
     isConnected,
+    isProcessingVisualUpdate,
     
     // Visual state management
     getItemVisualStatus,
