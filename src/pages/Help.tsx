@@ -162,7 +162,7 @@ const Help = () => {
                 <li><strong>Play/Pause Controls:</strong> Use the playback controls in the rundown toolbar to start and stop the show timer</li>
                 <li><strong>Live Timing:</strong> Shows countdown for current segment and tracks overall show progress</li>
                 <li><strong>Visual Indicators:</strong> Current segment is highlighted, with upcoming and completed segments clearly marked</li>
-                <li><strong>Easy Autoscroll:</strong> Toggle the autoscroll feature with one click to automatically follow the current segment</li>
+                <li><strong>Easy Autoscroll:</strong> Toggle the autoscroll feature with one click to automatically follow the current segment whether the showcaller function is running or not.</li>
               </ul>
               
               <div className="mt-6">
