@@ -96,45 +96,41 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-6 whitespace-nowrap flex items-center"
+                className="px-3 py-6 flex items-center gap-2"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
-                  display: 'flex',
                   minWidth: '100%'
                 }}
               >
-                <span className="text-lg font-bold" style={{ color: textColor }}>
-                  <input
-                    ref={(el) => {
-                      if (el) {
-                        cellRefs.current[`${item.id}-name`] = el;
-                      }
-                    }}
-                    type="text"
-                    value={headerName}
-                    onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
-                    onClick={() => onCellClick(item.id, 'name')}
-                    onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                    className="bg-transparent border-none outline-none text-lg font-bold"
-                    style={{ 
-                      color: textColor,
-                      fontFamily: 'inherit',
-                      fontSize: 'inherit',
-                      fontWeight: 'inherit',
-                      lineHeight: 'inherit',
-                      width: 'fit-content',
-                      padding: 0,
-                      margin: 0
-                    }}
-                    size={headerName.length || 1}
-                  />
-                  <span 
-                    className="text-base font-medium" 
-                    style={{ color: textColor }}
-                  >
-                    ({headerDuration})
-                  </span>
+                <input
+                  ref={(el) => {
+                    if (el) {
+                      cellRefs.current[`${item.id}-name`] = el;
+                    }
+                  }}
+                  type="text"
+                  value={headerName}
+                  onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
+                  onClick={() => onCellClick(item.id, 'name')}
+                  onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+                  className="bg-transparent border-none outline-none text-lg font-bold flex-1 min-w-0"
+                  style={{ 
+                    color: textColor,
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 'inherit',
+                    lineHeight: 'inherit',
+                    padding: 0,
+                    margin: 0
+                  }}
+                  placeholder="Header Name"
+                />
+                <span 
+                  className="text-base font-medium flex-shrink-0" 
+                  style={{ color: textColor }}
+                >
+                  ({headerDuration})
                 </span>
               </div>
             </td>
