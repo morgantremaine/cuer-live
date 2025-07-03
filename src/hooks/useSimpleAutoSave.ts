@@ -20,11 +20,18 @@ export const useSimpleAutoSave = (
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
+  const isDragActiveRef = useRef(false); // New: Track drag state
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
   };
+
+  // Function to set drag state
+  const setDragActive = useCallback((active: boolean) => {
+    console.log('💾 Setting drag active state:', active);
+    isDragActiveRef.current = active;
+  }, []);
 
   // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
@@ -91,11 +98,18 @@ export const useSimpleAutoSave = (
   }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Simple blocking conditions - no showcaller interference possible
+    // Enhanced blocking conditions - now includes drag state
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
-        pendingSaveRef.current) {
+        pendingSaveRef.current ||
+        isDragActiveRef.current) { // New: Block during drag operations
+      
+      // Log when drag is blocking save
+      if (isDragActiveRef.current && state.hasUnsavedChanges) {
+        console.log('💾 Autosave blocked - drag operation in progress');
+      }
+      
       return;
     }
 
@@ -124,12 +138,19 @@ export const useSimpleAutoSave = (
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check before saving
+      // Final check before saving - now includes drag state
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current ||
-          pendingSaveRef.current) {
-        console.log('🚫 Save cancelled - blocking condition active');
+          pendingSaveRef.current ||
+          isDragActiveRef.current) { // New: Final drag check
+        console.log('🚫 Save cancelled - blocking condition active', {
+          isSaving,
+          undoActive: undoActiveRef.current,
+          userTyping: userTypingRef.current,
+          pendingSave: pendingSaveRef.current,
+          dragActive: isDragActiveRef.current
+        });
         return;
       }
       
@@ -241,6 +262,7 @@ export const useSimpleAutoSave = (
     isSaving,
     setUndoActive,
     setTrackOwnUpdate,
-    setUserTyping
+    setUserTyping,
+    setDragActive // New: Export drag state setter
   };
 };

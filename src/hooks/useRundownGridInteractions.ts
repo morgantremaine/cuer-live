@@ -21,7 +21,8 @@ export const useRundownGridInteractions = (
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
-  title?: string
+  title?: string,
+  setDragActive?: (active: boolean) => void // New: Optional drag state setter
 ) => {
   const {
     selectedRows,
@@ -70,7 +71,8 @@ export const useRundownGridInteractions = (
     addHeaderAtIndex,
     saveUndoState,
     columns,
-    title
+    title,
+    setDragActive // New: Pass drag state setter
   );
 
   return {

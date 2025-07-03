@@ -9,7 +9,8 @@ export const useDragAndDrop = (
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
-  title?: string
+  title?: string,
+  setDragActive?: (active: boolean) => void // New: Optional drag state callback
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -27,12 +28,17 @@ export const useDragAndDrop = (
     setDropTargetIndex(null);
     isDragActiveRef.current = false;
     
+    // Notify autosave that drag is no longer active
+    if (setDragActive) {
+      setDragActive(false);
+    }
+    
     // Clear any pending timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
     }
-  }, []);
+  }, [setDragActive]);
 
   // Auto-cleanup timeout to prevent stuck states
   const setDragTimeout = useCallback(() => {
@@ -94,6 +100,11 @@ export const useDragAndDrop = (
     setIsDraggingMultiple(isMultipleSelection);
     setDragTimeout();
     
+    // Notify autosave that drag is active
+    if (setDragActive) {
+      setDragActive(true);
+    }
+    
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({
       draggedIndex: index,
@@ -102,7 +113,7 @@ export const useDragAndDrop = (
     }));
 
     console.log('✅ Drag started - multiple:', isMultipleSelection);
-  }, [items, selectedRows, resetDragState, setDragTimeout]);
+  }, [items, selectedRows, resetDragState, setDragTimeout, setDragActive]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();

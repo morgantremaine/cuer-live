@@ -24,12 +24,13 @@ export const useRundownInteractionHandlers = (
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
-  title?: string
+  title?: string,
+  setDragActive?: (active: boolean) => void // New: Optional drag state setter
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Enhanced drag and drop with better error handling
+  // Enhanced drag and drop with better error handling and autosave coordination
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -51,7 +52,8 @@ export const useRundownInteractionHandlers = (
     undefined,
     saveUndoState,
     columns,
-    title
+    title,
+    setDragActive // New: Pass drag state setter
   );
 
   // Clipboard functionality
