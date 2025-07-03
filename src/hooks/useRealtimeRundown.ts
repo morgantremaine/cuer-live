@@ -231,8 +231,15 @@ export const useRealtimeRundown = ({
       return; // Don't trigger content sync for showcaller-only updates
     }
 
-    // NEW: Set content processing state for blue Wi-Fi icon
-    console.log('🔄 Setting content processing state to true for external content update');
+    // Additional check: Skip if content hashes match (no actual content change)
+    if (contentHashMatch) {
+      console.log('⏭️ Skipping update - content hash matches (no real content change)');
+      lastProcessedUpdateRef.current = updateData.timestamp;
+      return;
+    }
+
+    // Only now set content processing state - we've confirmed this is a legitimate content update
+    console.log('🔄 Setting content processing state to true for legitimate external content update');
     setIsProcessingContentUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
