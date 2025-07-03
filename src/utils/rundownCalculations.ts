@@ -174,6 +174,12 @@ export const calculateHeaderDuration = (items: RundownItem[], headerIndex: numbe
   return secondsToTime(totalSeconds);
 };
 
+// Enhanced version that works with original items array for proper duration calculation
+export const calculateHeaderDurationFromOriginalItems = (allItems: RundownItem[], headerId: string): string => {
+  const headerIndex = allItems.findIndex(item => item.id === headerId);
+  return calculateHeaderDuration(allItems, headerIndex);
+};
+
 // Pure function to get row status
 export const getRowStatus = (item: CalculatedRundownItem, currentTime: Date): 'upcoming' | 'current' | 'completed' => {
   if (!item.calculatedStartTime || !item.calculatedEndTime) return 'upcoming';
