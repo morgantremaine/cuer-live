@@ -241,8 +241,15 @@ export const useDragAndDrop = (
 
         hasHeaderMoved = draggedItem.type === 'header';
 
+        console.log('🔍 DEBUG: Before manipulation');
+        console.log('🔍 Original items:', items.map((item, idx) => `${idx}: ${item.name}`));
+        console.log('🔍 draggedItemIndex:', draggedItemIndex, 'dropIndex:', dropIndex);
+
         newItems = [...items];
+        console.log('🔍 After copying items:', newItems.map((item, idx) => `${idx}: ${item.name}`));
+        
         newItems.splice(draggedItemIndex, 1);
+        console.log('🔍 After removing dragged item:', newItems.map((item, idx) => `${idx}: ${item.name}`));
         
         // When moving down, we need to account for the item being removed first
         // When moving up, the drop index is already correct
@@ -251,8 +258,10 @@ export const useDragAndDrop = (
           // Moving down: subtract 1 because we remove the item first
           adjustedDropIndex = dropIndex - 1;
         }
-        // When draggedItemIndex >= dropIndex (moving up), use dropIndex as-is
+        console.log('🔍 adjustedDropIndex:', adjustedDropIndex);
+        
         newItems.splice(adjustedDropIndex, 0, draggedItem);
+        console.log('🔍 After inserting item:', newItems.map((item, idx) => `${idx}: ${item.name}`));
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
       }
