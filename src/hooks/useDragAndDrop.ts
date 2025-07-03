@@ -255,8 +255,14 @@ export const useDragAndDrop = (
         // When moving up, the drop index is already correct
         let adjustedDropIndex = dropIndex;
         if (draggedItemIndex < dropIndex) {
-          // Moving down: subtract 1 because we remove the item first
-          adjustedDropIndex = dropIndex - 1;
+          // Moving down: only subtract 1 if moving by more than 1 position
+          // If moving down by exactly 1 position, the target index is still correct after removal
+          if (dropIndex - draggedItemIndex > 1) {
+            adjustedDropIndex = dropIndex - 1;
+          } else {
+            // Moving down by exactly 1: after removal, target position stays the same
+            adjustedDropIndex = draggedItemIndex;
+          }
         }
         console.log('🔍 adjustedDropIndex:', adjustedDropIndex);
         
