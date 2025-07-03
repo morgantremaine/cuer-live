@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle } from 'lucide-react';
+import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -101,6 +102,55 @@ const Help = () => {
                 <li><strong>Auto-save:</strong> Changes are saved automatically to prevent data loss</li>
                 <li><strong>Layout Independence:</strong> Team members can customize their own view with different column arrangements, widths, and visibility settings without affecting other users' experience of the same rundown</li>
               </ul>
+            </div>
+          </section>
+
+          {/* Connection Status */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Wifi className="h-6 w-6 mr-2 text-green-600" />
+              Connection Status Icons
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>The wifi icon in your rundown header shows the current connection and sync status:</p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <Wifi className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Connected (Green Wifi)</h3>
+                    <p className="text-sm">You're connected to the server and can collaborate with your team in real-time.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <LoaderCircle className="h-5 w-5 text-green-500 animate-spin flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Saving Changes (Green Spinning Circle)</h3>
+                    <p className="text-sm">Your changes are being saved to the server. This appears when you make edits.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <AnimatedWifiIcon className="text-blue-500 flex-shrink-0" isAnimating={true} />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Receiving Team Updates (Blue Animated Wifi)</h3>
+                    <p className="text-sm">Changes from a teammate are being applied to your rundown. This ensures everyone stays in sync.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <WifiOff className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Disconnected (Gray Wifi Off)</h3>
+                    <p className="text-sm">Connection to the server has been lost. Your changes will be saved when reconnected.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> The connection status helps you understand when your changes are being saved and when you're receiving updates from teammates, ensuring smooth collaboration.</p>
+              </div>
             </div>
           </section>
 
