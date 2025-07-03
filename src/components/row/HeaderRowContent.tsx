@@ -39,7 +39,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-6 text-lg font-mono font-semibold align-middle border border-border min-h-[96px]"
+        className="px-3 py-6 text-2xl font-mono font-semibold align-middle border border-border min-h-[96px]"
         style={{ 
           backgroundColor,
           width: '64px',
