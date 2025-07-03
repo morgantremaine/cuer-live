@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff } from 'lucide-react';
+import { Clock, Wifi, WifiOff, LoaderCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -149,7 +149,9 @@ const RundownHeader = ({
 
   // Helper function to render connection status icon
   const renderConnectionIcon = () => {
-    if (isProcessingRealtimeUpdate) {
+    if (isSaving) {
+      return <LoaderCircle className="h-4 w-4 text-green-500 animate-spin" />;
+    } else if (isProcessingRealtimeUpdate) {
       return <AnimatedWifiIcon className="text-blue-500" isAnimating={true} />;
     } else if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;
