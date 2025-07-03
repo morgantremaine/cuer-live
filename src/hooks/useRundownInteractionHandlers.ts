@@ -45,10 +45,9 @@ export const useRundownInteractionHandlers = (
   } = useDragAndDrop(
     items, 
     (newItems: RundownItem[]) => {
-      console.log('🔄 Setting items from drag and drop');
       setItems(() => newItems);
       markAsChanged();
-    }, 
+    },
     selectedRows,
     undefined,
     saveUndoState,
@@ -73,6 +72,7 @@ export const useRundownInteractionHandlers = (
     handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
+    handleCopyHeaderGroup,
     handleRowSelection,
     handleTitleChange
   } = useRundownGridHandlers({
@@ -97,7 +97,8 @@ export const useRundownInteractionHandlers = (
     items,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex
+    addHeaderAtIndex,
+    getHeaderGroupItemIds
   });
 
   return {
@@ -126,6 +127,7 @@ export const useRundownInteractionHandlers = (
     handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
+    handleCopyHeaderGroup,
     handleRowSelection,
     handleTitleChange
   };

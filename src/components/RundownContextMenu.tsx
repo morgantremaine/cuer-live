@@ -19,6 +19,7 @@ interface RundownContextMenuProps {
   showColorPicker?: string | null;
   itemId: string;
   itemType?: 'regular' | 'header';
+  isHeaderCollapsed?: boolean;
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
@@ -41,6 +42,7 @@ const RundownContextMenu = memo(({
   showColorPicker,
   itemId,
   itemType = 'regular',
+  isHeaderCollapsed = false,
   onCopy,
   onDelete,
   onToggleFloat,
@@ -171,7 +173,12 @@ const RundownContextMenu = memo(({
             className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Copy className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Copy ${selectedCount} rows` : 'Copy row'}
+            {isMultipleSelection 
+              ? `Copy ${selectedCount} rows` 
+              : (itemType === 'header' && isHeaderCollapsed) 
+                ? 'Copy Group'
+                : 'Copy row'
+            }
           </ContextMenuItem>
           
           {hasClipboardData && onPaste && (
