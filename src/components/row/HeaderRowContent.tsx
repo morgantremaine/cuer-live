@@ -105,8 +105,8 @@ const HeaderRowContent = ({
                   />
                 </span>
                 <span 
-                  className="text-base font-medium ml-0.5 inline-block" 
-                  style={{ color: textColor }}
+                  className="text-base font-medium inline-block" 
+                  style={{ color: textColor, marginLeft: '4px' }}
                 >
                   ({headerDuration})
                 </span>
