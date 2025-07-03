@@ -45,7 +45,7 @@ export const useRundownInteractionHandlers = (
     items, 
     (newItems: RundownItem[]) => {
       console.log('🔄 Setting items from drag and drop');
-      setItems(() => newItems);
+      setItems(() => newItems); // Correct function updater syntax
       markAsChanged();
     }, 
     selectedRows,

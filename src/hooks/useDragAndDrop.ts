@@ -262,15 +262,16 @@ export const useDragAndDrop = (
       dragEndTimeoutRef.current = undefined;
     }
     
-    // Only reset if we're still in drag state and no drop has occurred
-    // Use a very small timeout to handle edge cases where drop fires slightly after dragend
+    // Only reset if we're still in drag state - check the ref directly
+    // Use a minimal timeout to handle edge cases where drop fires slightly after dragend
     dragEndTimeoutRef.current = setTimeout(() => {
-      if (isDragActiveRef.current && draggedItemIndex !== null) {
+      // More precise check: only reset if BOTH conditions are true
+      if (isDragActiveRef.current && !dragTimeoutRef.current) {
         console.log('🔄 Drag end - resetting state (no drop occurred)');
         resetDragState();
       }
-    }, 10); // Minimal delay
-  }, [resetDragState, draggedItemIndex]);
+    }, 5); // Very minimal delay
+  }, [resetDragState]);
 
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
 
