@@ -113,20 +113,9 @@ export const useDragAndDrop = (
     setDragTimeout();
     
     e.dataTransfer.effectAllowed = 'move';
-    
-    // Set both formats for compatibility
-    const dragInfo = {
-      draggedIndex: index,
-      isMultiple: isMultipleSelection,
-      selectedIds: draggedIds,
-      isHeaderGroup: item.type === 'header' && draggedIds.length > 1,
-      headerGroupIds: item.type === 'header' && draggedIds.length > 1 ? draggedIds : undefined
-    };
-    
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
-    e.dataTransfer.setData('application/json', JSON.stringify(dragInfo));
+    e.dataTransfer.setData('text/plain', JSON.stringify(draggedIds));
 
-    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds, 'isHeaderGroup:', dragInfo.isHeaderGroup);
+    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds);
   }, [items, selectedRows, resetDragState, setDragTimeout, getHeaderGroupItemIds, isHeaderCollapsed]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
@@ -172,60 +161,33 @@ export const useDragAndDrop = (
     }
 
     try {
-      let dragData;
+      const dragDataString = e.dataTransfer.getData('text/plain');
+      let draggedIds: string[] = [];
+      
       try {
-        const dragDataString = e.dataTransfer.getData('text/plain');
-        const jsonData = e.dataTransfer.getData('application/json');
-        
-        // Try JSON first (newer format), then fall back to text/plain
-        if (jsonData) {
-          dragData = JSON.parse(jsonData);
-        } else if (dragDataString) {
-          dragData = JSON.parse(dragDataString);
-        } else {
-          dragData = { isMultiple: false, selectedIds: [], isHeaderGroup: false };
-        }
+        draggedIds = JSON.parse(dragDataString);
       } catch (error) {
-        console.warn('Failed to parse drag data:', error);
-        dragData = { isMultiple: false, selectedIds: [], isHeaderGroup: false };
+        console.warn('Failed to parse drag data, using fallback');
+        draggedIds = [];
       }
 
-      const { isMultiple, selectedIds, isHeaderGroup, headerGroupIds } = dragData;
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
 
-      // Handle header group dragging (collapsed headers)
-      if (isHeaderGroup && headerGroupIds && headerGroupIds.length > 1) {
-        console.log('🔗 Processing header group drag with IDs:', headerGroupIds);
+      if (draggedIds.length > 1) {
+        // Multiple items (including collapsed header groups)
+        const draggedItems = items.filter(item => draggedIds.includes(item.id));
+        const remainingItems = items.filter(item => !draggedIds.includes(item.id));
         
-        // Get all items in the group in their original order
-        const groupItems = headerGroupIds
-          .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean) as RundownItem[];
-          
-        const nonGroupItems = items.filter(item => !headerGroupIds.includes(item.id));
+        hasHeaderMoved = draggedItems.some(item => item.type === 'header');
         
-        hasHeaderMoved = groupItems.some(item => item.type === 'header');
+        newItems = [...remainingItems];
+        newItems.splice(dropIndex, 0, ...draggedItems);
         
-        // Insert the entire group at the drop position
-        newItems = [...nonGroupItems];
-        newItems.splice(dropIndex, 0, ...groupItems);
-        
-        actionDescription = `Reorder header group (${groupItems.length} items)`;
-        
-      } else if (isMultiple && selectedIds && selectedIds.length > 1) {
-        // Regular multi-selection
-        const selectedItems = items.filter(item => selectedIds.includes(item.id));
-        const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
-        
-        hasHeaderMoved = selectedItems.some(item => item.type === 'header');
-        
-        newItems = [...nonSelectedItems];
-        newItems.splice(dropIndex, 0, ...selectedItems);
-        
-        actionDescription = `Reorder ${selectedItems.length} rows`;
+        actionDescription = `Reorder ${draggedItems.length} items`;
       } else {
+        // Single item
         if (draggedItemIndex === dropIndex) {
           console.log('🔄 Same position drop, ignoring');
           resetDragState();
@@ -243,7 +205,10 @@ export const useDragAndDrop = (
 
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
-        newItems.splice(dropIndex, 0, draggedItem);
+        
+        // Adjust drop index if necessary
+        const adjustedDropIndex = draggedItemIndex < dropIndex ? dropIndex - 1 : dropIndex;
+        newItems.splice(adjustedDropIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
       }
