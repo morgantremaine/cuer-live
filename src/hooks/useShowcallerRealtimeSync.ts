@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,8 +82,8 @@ export const useShowcallerRealtimeSync = ({
       }
     }
 
-    // Set processing state immediately
-    console.log('📺 Setting processing state to true');
+    // Only set processing state AFTER all validation checks pass
+    console.log('📺 Setting processing state to true - legitimate external update');
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
