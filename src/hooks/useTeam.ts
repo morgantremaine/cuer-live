@@ -434,39 +434,67 @@ export const useTeam = () => {
 
   // Load team data when user changes, with better handling
   useEffect(() => {
-    // Prevent multiple rapid calls for the same user
-    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
-      console.log('User changed, loading team data for:', user.id);
-      loadedUserRef.current = user.id; // Set immediately to prevent multiple calls
-      isLoadingRef.current = true; // Prevent concurrent loads
-      setIsLoading(true);
-      
-      // Add a small delay to ensure auth state is stable
-      const timeoutId = setTimeout(() => {
-        if (loadedUserRef.current === user.id) { // Double-check user hasn't changed
-          loadTeamData();
-        } else {
-          isLoadingRef.current = false;
-          setIsLoading(false);
-        }
-      }, 100);
-      
-      return () => {
-        clearTimeout(timeoutId);
+    // Add more aggressive protection against rapid re-renders
+    const currentUserId = user?.id;
+    const currentEmail = user?.email;
+    
+    console.log('🔍 useTeam useEffect triggered:', { 
+      currentUserId, 
+      currentEmail,
+      loadedUser: loadedUserRef.current, 
+      isLoading: isLoadingRef.current,
+      userObjectHash: user ? Object.keys(user).length : 'null'
+    });
+    
+    // Skip if no user, already processing, or same user already loaded
+    if (!currentUserId) {
+      if (loadedUserRef.current !== null) {
+        console.log('No user, resetting team state');
+        setTeam(null);
+        setTeamMembers([]);
+        setPendingInvitations([]);
+        setUserRole(null);
+        setIsLoading(false);
+        setError(null);
+        loadedUserRef.current = null;
         isLoadingRef.current = false;
-      };
-    } else if (!user?.id && loadedUserRef.current !== null) {
-      console.log('No user, resetting team state');
-      setTeam(null);
-      setTeamMembers([]);
-      setPendingInvitations([]);
-      setUserRole(null);
-      setIsLoading(false);
-      setError(null);
-      loadedUserRef.current = null;
-      isLoadingRef.current = false;
+      }
+      return;
     }
-  }, [user?.id]);
+    
+    // Prevent duplicate loads for the same user
+    if (currentUserId === loadedUserRef.current || isLoadingRef.current) {
+      console.log('⏭️ Skipping duplicate load:', { currentUserId, loadedUser: loadedUserRef.current, isLoading: isLoadingRef.current });
+      return;
+    }
+    
+    console.log('User changed, loading team data for:', currentUserId);
+    
+    // Immediately mark as loaded and loading to prevent race conditions
+    loadedUserRef.current = currentUserId;
+    isLoadingRef.current = true;
+    setIsLoading(true);
+    
+    // Use a longer delay and cleanup to prevent rapid successive calls
+    const timeoutId = setTimeout(() => {
+      // Double-check the user hasn't changed during the delay
+      if (loadedUserRef.current === currentUserId) {
+        loadTeamData();
+      } else {
+        console.log('User changed during timeout, skipping load');
+        isLoadingRef.current = false;
+        setIsLoading(false);
+      }
+    }, 200); // Increased delay
+    
+    return () => {
+      clearTimeout(timeoutId);
+      // Only reset loading ref if we're still the current operation
+      if (loadedUserRef.current === currentUserId) {
+        isLoadingRef.current = false;
+      }
+    };
+  }, [user?.id, user?.email]); // Add email to dependencies to see if that's changing
 
   return {
     team,
