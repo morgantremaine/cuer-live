@@ -103,36 +103,46 @@ const HeaderRowContent = ({
                   minWidth: '100%'
                 }}
               >
-                <input
-                  ref={(el) => {
-                    if (el) {
-                      cellRefs.current[`${item.id}-name`] = el;
-                    }
-                  }}
-                  type="text"
-                  value={headerName}
-                  onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
-                  onClick={() => onCellClick(item.id, 'name')}
-                  onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                  className="bg-transparent border-none outline-none text-lg font-bold"
-                  style={{ 
-                    color: textColor,
-                    fontFamily: 'inherit',
-                    fontSize: 'inherit',
-                    fontWeight: 'inherit',
-                    lineHeight: 'inherit',
-                    padding: 0,
-                    margin: 0,
-                    width: `${Math.max(headerName.length * 0.6 + 2, 8)}ch`,
-                    marginRight: '8px'
-                  }}
-                  placeholder="Header Name"
-                />
-                <span 
-                  className="text-base font-medium whitespace-nowrap" 
-                  style={{ color: textColor }}
-                >
-                  ({headerDuration})
+                <span className="inline-flex items-center">
+                  <input
+                    ref={(el) => {
+                      if (el) {
+                        cellRefs.current[`${item.id}-name`] = el;
+                        // Auto-resize the input based on content
+                        const minWidth = Math.max(headerName.length || 1, 1);
+                        el.style.width = `${minWidth}ch`;
+                      }
+                    }}
+                    type="text"
+                    value={headerName}
+                    onChange={(e) => {
+                      onUpdateItem(item.id, 'name', e.target.value);
+                      // Auto-resize on change
+                      const minWidth = Math.max(e.target.value.length || 1, 1);
+                      e.target.style.width = `${minWidth}ch`;
+                    }}
+                    onClick={() => onCellClick(item.id, 'name')}
+                    onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+                    className="bg-transparent border-none outline-none text-lg font-bold"
+                    style={{ 
+                      color: textColor,
+                      fontFamily: 'inherit',
+                      fontSize: 'inherit',
+                      fontWeight: 'inherit',
+                      lineHeight: 'inherit',
+                      padding: 0,
+                      margin: 0,
+                      width: `${Math.max(headerName.length || 1, 1)}ch`,
+                      minWidth: '1ch'
+                    }}
+                    placeholder="Header Name"
+                  />
+                  <span 
+                    className="text-base font-medium whitespace-nowrap ml-2" 
+                    style={{ color: textColor }}
+                  >
+                    ({headerDuration})
+                  </span>
                 </span>
               </div>
             </td>
