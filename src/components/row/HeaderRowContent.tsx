@@ -108,18 +108,20 @@ const HeaderRowContent = ({
                     ref={(el) => {
                       if (el) {
                         cellRefs.current[`${item.id}-name`] = el;
-                        // Auto-resize the input based on content
-                        const minWidth = Math.max(headerName.length || 1, 1);
-                        el.style.width = `${minWidth}ch`;
+                        // Auto-resize with buffer for cross-browser compatibility
+                        const contentLength = headerName.length || 1;
+                        const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                        el.style.width = `${bufferWidth}ch`;
                       }
                     }}
                     type="text"
                     value={headerName}
                     onChange={(e) => {
                       onUpdateItem(item.id, 'name', e.target.value);
-                      // Auto-resize on change
-                      const minWidth = Math.max(e.target.value.length || 1, 1);
-                      e.target.style.width = `${minWidth}ch`;
+                      // Auto-resize on change with buffer
+                      const contentLength = e.target.value.length || 1;
+                      const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                      e.target.style.width = `${bufferWidth}ch`;
                     }}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
@@ -132,8 +134,8 @@ const HeaderRowContent = ({
                       lineHeight: 'inherit',
                       padding: 0,
                       margin: 0,
-                      width: `${Math.max(headerName.length || 1, 1)}ch`,
-                      minWidth: '1ch'
+                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
+                      minWidth: '4ch'
                     }}
                     placeholder="Header Name"
                   />
