@@ -1,4 +1,3 @@
-
 import { useMemo, useCallback } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
@@ -112,12 +111,13 @@ export const useCleanRundownState = () => {
     currentTime: coreState.currentTime,
     rundownId: coreState.rundownId,
     
-    // State flags
+    // State flags - properly separate content and showcaller processing
     isLoading: coreState.isLoading,
     hasUnsavedChanges: coreState.hasUnsavedChanges,
     isSaving: coreState.isSaving,
     isConnected: coreState.isConnected || showcallerSync.isConnected,
-    isProcessingRealtimeUpdate: coreState.isProcessingRealtimeUpdate,
+    isProcessingRealtimeUpdate: coreState.isProcessingRealtimeUpdate, // Only content updates
+    isProcessingShowcallerUpdate: showcallerSync.isProcessingVisualUpdate, // Only showcaller updates
     
     // Showcaller state (visual only)
     currentSegmentId: showcallerVisual.currentSegmentId,

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
+import { normalizeTimestamp, TimeoutManager } from '@/utils/realtimeUtils';
 
 interface RealtimeUpdate {
   timestamp: string;
@@ -29,41 +30,6 @@ interface UseRealtimeRundownProps {
   onShowcallerStateReceived?: (state: any) => void;
 }
 
-// Utility function to normalize timestamps for consistent comparison
-const normalizeTimestamp = (timestamp: string): string => {
-  try {
-    // Convert to Date and back to ISO string to ensure consistent format
-    return new Date(timestamp).toISOString();
-  } catch (error) {
-    // If parsing fails, return original timestamp
-    return timestamp;
-  }
-};
-
-// Centralized timeout management to prevent memory leaks
-class TimeoutManager {
-  private timeouts: Map<string, NodeJS.Timeout> = new Map();
-  
-  set(id: string, callback: () => void, delay: number): void {
-    this.clear(id);
-    const timeout = setTimeout(callback, delay);
-    this.timeouts.set(id, timeout);
-  }
-  
-  clear(id: string): void {
-    const timeout = this.timeouts.get(id);
-    if (timeout) {
-      clearTimeout(timeout);
-      this.timeouts.delete(id);
-    }
-  }
-  
-  clearAll(): void {
-    this.timeouts.forEach(timeout => clearTimeout(timeout));
-    this.timeouts.clear();
-  }
-}
-
 export const useRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
@@ -86,7 +52,7 @@ export const useRealtimeRundown = ({
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
   
-  // NEW: Separate state for content processing (blue Wi-Fi icon)
+  // Content processing state (blue Wi-Fi icon)
   const [isProcessingContentUpdate, setIsProcessingContentUpdate] = useState(false);
   
   // Keep callback refs updated
@@ -100,7 +66,6 @@ export const useRealtimeRundown = ({
     if (onShowcallerActivityRef.current) {
       onShowcallerActivityRef.current(true);
       
-      // Use centralized timeout manager
       timeoutManagerRef.current.set('activity', () => {
         if (onShowcallerActivityRef.current) {
           onShowcallerActivityRef.current(false);
@@ -114,22 +79,18 @@ export const useRealtimeRundown = ({
     const newData = payload.new;
     const oldData = payload.old;
     
-    // If no old data, can't determine if showcaller-only
     if (!oldData || !newData) {
       return false;
     }
 
-    // Check if only showcaller_state changed
     const fieldsToCheck = ['title', 'items', 'start_time', 'timezone', 'updated_at'];
     let hasContentChanges = false;
     
     for (const field of fieldsToCheck) {
       if (field === 'updated_at') {
-        // Skip updated_at as it always changes
         continue;
       }
       
-      // Deep comparison for items array
       if (field === 'items') {
         const oldItemsStr = JSON.stringify(oldData.items || []);
         const newItemsStr = JSON.stringify(newData.items || []);
@@ -138,7 +99,6 @@ export const useRealtimeRundown = ({
           break;
         }
       } else {
-        // Simple comparison for other fields
         if (oldData[field] !== newData[field]) {
           hasContentChanges = true;
           break;
@@ -146,7 +106,6 @@ export const useRealtimeRundown = ({
       }
     }
     
-    // If no content changes but showcaller_state changed, it's showcaller-only
     const showcallerStateChanged = JSON.stringify(oldData.showcaller_state || {}) !== JSON.stringify(newData.showcaller_state || {});
     
     return !hasContentChanges && showcallerStateChanged;
@@ -156,11 +115,6 @@ export const useRealtimeRundown = ({
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     const normalizedTimestamp = normalizeTimestamp(timestamp);
     ownUpdateTrackingRef.current.add(normalizedTimestamp);
-    
-    console.log('📝 Tracking own update (normalized):', {
-      original: timestamp,
-      normalized: normalizedTimestamp
-    });
     
     // Clean up old tracked updates after 10 seconds
     timeoutManagerRef.current.set(`cleanup-${normalizedTimestamp}`, () => {
@@ -184,7 +138,7 @@ export const useRealtimeRundown = ({
     const normalizedTimestamp = normalizeTimestamp(rawTimestamp);
 
     const updateData: RealtimeUpdate = {
-      timestamp: normalizedTimestamp, // Use normalized timestamp
+      timestamp: normalizedTimestamp,
       rundownId: payload.new?.id,
       currentRundownId: rundownId!,
       currentUserId: user?.id || '',
@@ -203,10 +157,6 @@ export const useRealtimeRundown = ({
     // Skip if this update originated from this user (using normalized timestamp)
     const isOwnUpdate = ownUpdateTrackingRef.current.has(normalizedTimestamp);
     if (isOwnUpdate) {
-      console.log('⏭️ Skipping own update processing - timestamp match confirmed:', {
-        received: normalizedTimestamp,
-        tracked: Array.from(ownUpdateTrackingRef.current)
-      });
       return;
     }
 
@@ -222,31 +172,18 @@ export const useRealtimeRundown = ({
     };
     const newContentHash = JSON.stringify(contentForHash);
     const contentHashMatch = currentContentHash === newContentHash;
-    
-    console.log('🔍 Content analysis:', {
-      isShowcallerOnly,
-      contentHashMatch,
-      ownUpdate: isOwnUpdate,
-      timestamp: normalizedTimestamp,
-      hasContentChange: !contentHashMatch && !isShowcallerOnly,
-      rawTimestamp,
-      normalizedTimestamp
-    });
 
     // CRITICAL: If it's showcaller-only, handle it specially but NEVER set content processing state
     if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update - NO content processing state change');
-      
       // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
         onShowcallerActivityRef.current(true);
         
-        // Use centralized timeout manager for showcaller activity
         timeoutManagerRef.current.set('showcaller-activity', () => {
           if (onShowcallerActivityRef.current) {
             onShowcallerActivityRef.current(false);
           }
-        }, 12000); // 12 seconds for showcaller activity
+        }, 12000);
       }
       
       // Pass showcaller state to the callback if available
@@ -255,18 +192,16 @@ export const useRealtimeRundown = ({
       }
       
       lastProcessedUpdateRef.current = updateData.timestamp;
-      return; // EARLY RETURN - No content processing for showcaller updates
+      return;
     }
 
     // Additional check: Skip if content hashes match (no actual content change)
     if (contentHashMatch) {
-      console.log('⏭️ Skipping update - content hash matches (no real content change)');
       lastProcessedUpdateRef.current = updateData.timestamp;
       return;
     }
 
     // Only set content processing state for REAL CONTENT CHANGES from OTHER USERS
-    console.log('🔄 Setting content processing state for LEGITIMATE EXTERNAL CONTENT UPDATE');
     setIsProcessingContentUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
@@ -287,9 +222,8 @@ export const useRealtimeRundown = ({
       
       // Clear content processing state after a brief delay for visibility
       timeoutManagerRef.current.set('content-processing', () => {
-        console.log('🔄 Clearing content processing state');
         setIsProcessingContentUpdate(false);
-      }, 600); // 600ms delay to make the blue icon visible
+      }, 600);
       
     }, 150);
     
@@ -336,7 +270,6 @@ export const useRealtimeRundown = ({
         subscriptionRef.current = null;
         setIsConnected(false);
       }
-      // Clean up all timeouts when component unmounts
       timeoutManagerRef.current.clearAll();
       setIsProcessingContentUpdate(false);
     };
@@ -344,7 +277,7 @@ export const useRealtimeRundown = ({
 
   return {
     isConnected,
-    isProcessingContentUpdate, // NEW: Expose content processing state
+    isProcessingContentUpdate,
     trackOwnUpdate: trackOwnUpdateLocal
   };
 };
