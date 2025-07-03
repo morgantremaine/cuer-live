@@ -114,6 +114,13 @@ export const useDragAndDrop = (
     
     e.dataTransfer.effectAllowed = 'move';
     
+    // Check if enhanced handler already set drag data
+    const existingData = e.dataTransfer.getData('text/plain');
+    if (existingData) {
+      console.log('✅ Enhanced drag data already exists, not overwriting:', existingData);
+      return; // Don't overwrite the enhanced data
+    }
+    
     // Store drag info with header group detection
     const dragInfo = {
       draggedIds,

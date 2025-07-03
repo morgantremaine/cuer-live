@@ -123,11 +123,12 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     
     console.log('✅ Enhanced drag started with info:', dragInfo);
     
-    // DON'T call the original handler - we're completely replacing its functionality
-    // if (onDragStart) {
-    //   onDragStart(e, originalIndex);
-    // }
-  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds]);
+    // Now call the original handler to set drag state, but it won't overwrite our data
+    // because we've already set it in dataTransfer
+    if (onDragStart) {
+      onDragStart(e, originalIndex);
+    }
+  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
 
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
