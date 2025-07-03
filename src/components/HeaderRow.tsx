@@ -95,12 +95,17 @@ const HeaderRow = (props: HeaderRowProps) => {
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
-    // Check for text selection or input focus
+    // More comprehensive checks for text interaction
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     const hasTextSelection = window.getSelection()?.toString().length > 0;
-    const isContentEditable = target.contentEditable === 'true';
+    const isContentEditable = target.contentEditable === 'true' || target.isContentEditable;
+    const isInsideInput = target.closest('input, textarea, [contenteditable="true"]');
+    const isFocusedInput = document.activeElement && 
+      (document.activeElement.tagName === 'INPUT' || 
+       document.activeElement.tagName === 'TEXTAREA' ||
+       document.activeElement.contentEditable === 'true');
     
-    if (isTextInput || hasTextSelection || isContentEditable) {
+    if (isTextInput || hasTextSelection || isContentEditable || isInsideInput || isFocusedInput) {
       console.log('🚫 HeaderRow: Preventing drag - text interaction detected');
       e.preventDefault();
       e.stopPropagation();

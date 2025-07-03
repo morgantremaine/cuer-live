@@ -10,7 +10,7 @@ export const useDragAndDrop = (
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
   title?: string,
-  setDragActive?: (active: boolean) => void // New: Optional drag state callback
+  setDragActive?: (active: boolean) => void
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -19,6 +19,7 @@ export const useDragAndDrop = (
   // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
+  const dragEndTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Centralized state reset function
   const resetDragState = useCallback(() => {
@@ -33,10 +34,15 @@ export const useDragAndDrop = (
       setDragActive(false);
     }
     
-    // Clear any pending timeout
+    // Clear any pending timeouts
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
+    }
+    
+    if (dragEndTimeoutRef.current) {
+      clearTimeout(dragEndTimeoutRef.current);
+      dragEndTimeoutRef.current = undefined;
     }
   }, [setDragActive]);
 
@@ -46,11 +52,11 @@ export const useDragAndDrop = (
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 10-second timeout to force reset if drag gets stuck
+    // Set a 5-second timeout to force reset if drag gets stuck
     dragTimeoutRef.current = setTimeout(() => {
       console.warn('⚠️ Drag operation timed out, forcing reset');
       resetDragState();
-    }, 10000);
+    }, 5000);
   }, [resetDragState]);
 
   // Cleanup on unmount
@@ -58,6 +64,9 @@ export const useDragAndDrop = (
     return () => {
       if (dragTimeoutRef.current) {
         clearTimeout(dragTimeoutRef.current);
+      }
+      if (dragEndTimeoutRef.current) {
+        clearTimeout(dragEndTimeoutRef.current);
       }
     };
   }, []);
@@ -84,8 +93,11 @@ export const useDragAndDrop = (
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     console.log('🚀 Drag start - index:', index);
     
-    // Reset any existing state first
-    resetDragState();
+    // Force reset any existing state first
+    if (isDragActiveRef.current) {
+      console.log('🔄 Force resetting existing drag state');
+      resetDragState();
+    }
     
     const item = items[index];
     if (!item) {
@@ -216,17 +228,30 @@ export const useDragAndDrop = (
       console.log('✅ Updating items with new order');
       setItems(newItems);
       
+      // Reset state immediately after successful drop
+      resetDragState();
+      
     } catch (error) {
       console.error('❌ Error during drop operation:', error);
-    } finally {
-      // Always reset state after drop attempt
       resetDragState();
     }
   }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('🏁 Drag end triggered');
-    resetDragState();
+    
+    // Use a small timeout to allow drop to fire first if it's going to
+    if (dragEndTimeoutRef.current) {
+      clearTimeout(dragEndTimeoutRef.current);
+    }
+    
+    dragEndTimeoutRef.current = setTimeout(() => {
+      // Only reset if we're still in drag state (drop hasn't fired)
+      if (isDragActiveRef.current) {
+        console.log('🔄 Drag end - resetting state (no drop fired)');
+        resetDragState();
+      }
+    }, 50); // Small delay to allow drop to fire
   }, [resetDragState]);
 
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
