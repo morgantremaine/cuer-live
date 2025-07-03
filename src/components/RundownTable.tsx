@@ -34,7 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -101,13 +101,13 @@ const RundownTable = ({
       onDrop(e, targetIndex);
     } catch (error) {
       console.error('❌ RundownTable: Drop error:', error);
-      // Force reset drag state on error
-      onDragEnd(e);
+      // Force reset drag state on error using stable handler
+      stableOnDragEnd(e);
     }
   };
 
-  // Enhanced drag end handler with logging and stability
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
+  // Stable fallback onDragEnd handler to prevent undefined errors during re-renders
+  const stableOnDragEnd = useCallback((e: React.DragEvent) => {
     console.log('🏁 RundownTable: Drag end triggered');
     // Use try-catch to prevent function invalidation errors
     try {
@@ -180,7 +180,7 @@ const RundownTable = ({
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
                   onDrop={(e) => handleRowDrop(e, index)}
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={stableOnDragEnd}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}
