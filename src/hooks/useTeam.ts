@@ -432,69 +432,43 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes, with better handling
+  // Load team data when user changes - with aggressive loop prevention
   useEffect(() => {
-    // Add more aggressive protection against rapid re-renders
     const currentUserId = user?.id;
-    const currentEmail = user?.email;
     
-    console.log('🔍 useTeam useEffect triggered:', { 
-      currentUserId, 
-      currentEmail,
-      loadedUser: loadedUserRef.current, 
-      isLoading: isLoadingRef.current,
-      userObjectHash: user ? Object.keys(user).length : 'null'
-    });
-    
-    // Skip if no user, already processing, or same user already loaded
+    // Prevent infinite loops - only depend on user ID, not entire user object
     if (!currentUserId) {
-      if (loadedUserRef.current !== null) {
-        console.log('No user, resetting team state');
-        setTeam(null);
-        setTeamMembers([]);
-        setPendingInvitations([]);
-        setUserRole(null);
-        setIsLoading(false);
-        setError(null);
-        loadedUserRef.current = null;
-        isLoadingRef.current = false;
-      }
       return;
     }
     
-    // Prevent duplicate loads for the same user
+    // Skip if already loaded this user or currently loading
     if (currentUserId === loadedUserRef.current || isLoadingRef.current) {
-      console.log('⏭️ Skipping duplicate load:', { currentUserId, loadedUser: loadedUserRef.current, isLoading: isLoadingRef.current });
       return;
     }
     
     console.log('User changed, loading team data for:', currentUserId);
     
-    // Immediately mark as loaded and loading to prevent race conditions
+    // Mark immediately to prevent race conditions
     loadedUserRef.current = currentUserId;
     isLoadingRef.current = true;
     setIsLoading(true);
     
-    // Use a longer delay and cleanup to prevent rapid successive calls
+    // Single timeout with proper cleanup
     const timeoutId = setTimeout(() => {
-      // Double-check the user hasn't changed during the delay
       if (loadedUserRef.current === currentUserId) {
-        loadTeamData();
-      } else {
-        console.log('User changed during timeout, skipping load');
-        isLoadingRef.current = false;
-        setIsLoading(false);
+        loadTeamData().finally(() => {
+          isLoadingRef.current = false;
+        });
       }
-    }, 200); // Increased delay
+    }, 100);
     
     return () => {
       clearTimeout(timeoutId);
-      // Only reset loading ref if we're still the current operation
-      if (loadedUserRef.current === currentUserId) {
+      if (isLoadingRef.current) {
         isLoadingRef.current = false;
       }
     };
-  }, [user?.id, user?.email]); // Add email to dependencies to see if that's changing
+  }, [user?.id]); // Only depend on user ID to prevent object recreation issues
 
   return {
     team,
