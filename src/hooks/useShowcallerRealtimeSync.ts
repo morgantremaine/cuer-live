@@ -69,6 +69,18 @@ export const useShowcallerRealtimeSync = ({
       return;
     }
 
+    // Skip stale showcaller state (older than 10 minutes) to prevent false team sync indicators
+    if (showcallerVisualState.lastUpdate) {
+      const updateTime = new Date(showcallerVisualState.lastUpdate).getTime();
+      const now = Date.now();
+      const ageInMinutes = (now - updateTime) / (1000 * 60);
+      
+      if (ageInMinutes > 10) {
+        console.log('📺 Skipping - stale showcaller state (age:', Math.round(ageInMinutes), 'minutes)');
+        return;
+      }
+    }
+
     // Set processing state immediately
     console.log('📺 Setting processing state to true');
     setIsProcessingVisualUpdate(true);
