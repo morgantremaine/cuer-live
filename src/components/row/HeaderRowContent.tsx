@@ -138,7 +138,7 @@ const HeaderRowContent = ({
                     placeholder="Header Name"
                   />
                   <span 
-                    className="text-base font-medium whitespace-nowrap ml-2" 
+                    className="text-base font-medium whitespace-nowrap ml-4" 
                     style={{ color: textColor }}
                   >
                     ({headerDuration})
