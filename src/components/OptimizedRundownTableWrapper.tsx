@@ -84,7 +84,7 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     return visibleItems.findIndex(item => item.id === originalItem.id);
   }, [items, visibleItems]);
 
-  // Enhanced drag start that maps visible to original indexes
+  // Enhanced drag start that maps visible to original indexes AND handles header groups
   const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
     console.log('🚀 Enhanced drag start - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex);
@@ -94,10 +94,35 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       return;
     }
     
+    const item = items[originalIndex];
+    console.log('🎯 Dragging item:', item?.name, 'type:', item?.type, 'collapsed:', isHeaderCollapsed(item.id));
+    
+    // Check if this is a collapsed header and get all its items
+    let draggedIds: string[] = [];
+    if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
+      draggedIds = getHeaderGroupItemIds(item.id);
+      console.log('🔗 Dragging collapsed header group with IDs:', draggedIds);
+    } else {
+      draggedIds = [item.id];
+    }
+    
+    // Store the enhanced drag info
+    const dragInfo = {
+      draggedIds,
+      isHeaderGroup: item?.type === 'header' && draggedIds.length > 1,
+      originalIndex
+    };
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
+    
+    console.log('✅ Enhanced drag started with info:', dragInfo);
+    
+    // Still call the original handler for other processing
     if (onDragStart) {
       onDragStart(e, originalIndex);
     }
-  }, [getOriginalIndex, onDragStart]);
+  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
 
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
