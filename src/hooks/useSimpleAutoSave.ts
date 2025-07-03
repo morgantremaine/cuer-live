@@ -219,7 +219,7 @@ export const useSimpleAutoSave = (
          // Add a small delay before hiding the "Saved" indicator to make it more visible
          setTimeout(() => {
            setIsSaving(false);
-         }, 800); // Show "Saved" for 800ms after save completes
+         }, 2000); // Show "Saved" for 2 seconds after save completes
          pendingSaveRef.current = false;
        }
     }, debounceTime);
