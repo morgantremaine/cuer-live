@@ -207,12 +207,24 @@ export const useDragAndDrop = (
         // Calculate the correct insertion point
         let adjustedDropIndex = dropIndex;
         
-        // If we're dropping after items that were removed, adjust the index
-        const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
-          draggedIds.includes(item.id)
-        ).length;
-        
-        adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+        // For header groups, we need to be more precise about positioning
+        if (isHeaderGroup) {
+          // Find how many dragged items appear before the drop index
+          const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+          
+          console.log('🔗 Header group drop - original dropIndex:', dropIndex, 'adjusted:', adjustedDropIndex, 'removed before:', removedItemsBeforeDropIndex);
+        } else {
+          // For regular multi-selection, use existing logic
+          const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+        }
         
         // Ensure we don't go out of bounds
         adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
