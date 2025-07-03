@@ -134,7 +134,7 @@ const RundownTable = ({
               <React.Fragment key={item.id}>
                 {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
-                  <tr>
+                  <tr key={`drop-indicator-${index}`}>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
@@ -182,7 +182,7 @@ const RundownTable = ({
                 
                 {/* Drop indicator AFTER the last row */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr>
+                  <tr key={`drop-indicator-end`}>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
