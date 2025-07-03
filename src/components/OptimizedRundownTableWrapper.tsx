@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownMemoization } from '@/hooks/useRundownMemoization';
@@ -54,9 +53,6 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   onDragLeave,
   onDrop,
   onDragEnd,
-  onRowSelect,
-  draggedItemIndex,
-  dropTargetIndex,
   ...restProps
 }) => {
   // Use header collapse functionality
@@ -74,55 +70,92 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     totalCalculatedRuntime
   } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime);
 
-  // SIMPLIFIED: Work with visible items directly, no complex index mapping
-  // All drag operations now work with visible item indexes and the drag handler
-  // will map them back to original indexes when needed
-
-  // Enhanced row select that maps visible to original indexes
-  const handleRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    // Find the original index of this item
-    const originalIndex = items.findIndex(item => item.id === itemId);
-    
-    console.log('🎯 Row select - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex, 'itemId:', itemId);
-    
-    if (originalIndex !== -1 && onRowSelect) {
-      onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick);
-    }
-  }, [items, onRowSelect]);
-
-  // Enhanced drag start that provides header group functionality
-  const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
-    // Find the original index of the dragged item
+  // Map visible item indexes to original item indexes
+  const getOriginalIndex = React.useCallback((visibleIndex: number): number => {
+    if (visibleIndex < 0 || visibleIndex >= visibleItems.length) return -1;
     const visibleItem = visibleItems[visibleIndex];
-    const originalIndex = items.findIndex(item => item.id === visibleItem.id);
+    return items.findIndex(item => item.id === visibleItem.id);
+  }, [items, visibleItems]);
+
+  // Map original item indexes to visible item indexes (for drop indicator)
+  const getVisibleIndex = React.useCallback((originalIndex: number): number => {
+    if (originalIndex < 0 || originalIndex >= items.length) return -1;
+    const originalItem = items[originalIndex];
+    return visibleItems.findIndex(item => item.id === originalItem.id);
+  }, [items, visibleItems]);
+
+  // Enhanced drag start that maps visible to original indexes AND handles header groups
+  const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
+    const originalIndex = getOriginalIndex(visibleIndex);
+    console.log('🚀 Enhanced drag start - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex);
     
-    console.log('🚀 Enhanced drag start - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex, 'item:', visibleItem.name);
+    if (originalIndex === -1) {
+      console.error('❌ Could not map visible index to original index');
+      return;
+    }
     
-    if (originalIndex !== -1) {
-      // Let the main drag handler process this with the original index
+    const item = items[originalIndex];
+    console.log('🎯 Dragging item:', item?.name, 'type:', item?.type, 'collapsed:', isHeaderCollapsed(item.id));
+    
+    // Check if this is a collapsed header and get all its items
+    let draggedIds: string[] = [];
+    let isHeaderGroup = false;
+    
+    if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
+      // Collapsed header group
+      draggedIds = getHeaderGroupItemIds(item.id);
+      isHeaderGroup = true;
+      console.log('🔗 Dragging collapsed header group with IDs:', draggedIds);
+    } else if (restProps.selectedRows && restProps.selectedRows.size > 1 && restProps.selectedRows.has(item.id)) {
+      // Multiple selection
+      draggedIds = Array.from(restProps.selectedRows);
+      isHeaderGroup = false;
+      console.log('🔗 Dragging multiple selected items with IDs:', draggedIds);
+    } else {
+      // Single item
+      draggedIds = [item.id];
+      isHeaderGroup = false;
+    }
+    
+    // Store the enhanced drag info
+    const dragInfo = {
+      draggedIds,
+      isHeaderGroup,
+      originalIndex,
+      enhancedHandlerUsed: true // Flag to prevent original handler from overwriting
+    };
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
+    
+    console.log('✅ Enhanced drag started with info:', dragInfo);
+    
+    // Now call the original handler to set drag state, but it won't overwrite our data
+    // because we've already set it in dataTransfer
+    if (onDragStart) {
       onDragStart(e, originalIndex);
     }
-  }, [visibleItems, items, onDragStart]);
+  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
 
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
-    // Find the original index for the drop target
-    const visibleItem = visibleItems[visibleIndex];
-    const originalIndex = items.findIndex(item => item.id === visibleItem.id);
-    
+    const originalIndex = getOriginalIndex(visibleIndex);
     console.log('🎯 Enhanced drop - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex);
     
-    if (originalIndex !== -1 && onDrop) {
+    if (originalIndex === -1) {
+      console.error('❌ Could not map visible index to original index for drop');
+      return;
+    }
+    
+    if (onDrop) {
       onDrop(e, originalIndex);
     }
-  }, [visibleItems, items, onDrop]);
+  }, [getOriginalIndex, onDrop]);
 
   // Enhanced drag over that maps visible to original indexes
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, visibleIndex?: number) => {
     if (visibleIndex !== undefined) {
-      const visibleItem = visibleItems[visibleIndex];
-      const originalIndex = items.findIndex(item => item.id === visibleItem.id);
-      
+      const originalIndex = getOriginalIndex(visibleIndex);
       if (originalIndex !== -1 && onDragOver) {
         onDragOver(e, originalIndex);
       }
@@ -131,12 +164,13 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
         onDragOver(e);
       }
     }
-  }, [visibleItems, items, onDragOver]);
+  }, [getOriginalIndex, onDragOver]);
 
   // Create optimized getRowNumber function
   const getRowNumber = React.useCallback((index: number) => {
     if (index < 0 || index >= visibleItems.length) return '';
     const visibleItem = visibleItems[index];
+    // Find the corresponding item in itemsWithStatus
     const enhancedItem = itemsWithStatus.find(item => item.id === visibleItem.id);
     return enhancedItem?.calculatedRowNumber || '';
   }, [visibleItems, itemsWithStatus]);
@@ -147,40 +181,12 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     return enhancedItem?.calculatedStatus || 'upcoming';
   }, [itemsWithStatus]);
 
-  // Create optimized getHeaderDuration function
+  // Create optimized getHeaderDuration function - use ORIGINAL items for calculation
   const getHeaderDuration = React.useCallback((index: number) => {
     if (index < 0 || index >= visibleItems.length) return '00:00:00';
     const visibleItem = visibleItems[index];
     return headerDurations.get(visibleItem.id) || '00:00:00';
   }, [visibleItems, headerDurations]);
-
-  // Map drop target index from original space to visible space for display
-  const visibleDropTargetIndex = React.useMemo(() => {
-    if (dropTargetIndex === null) return null;
-    
-    // If dropping at the end
-    if (dropTargetIndex >= items.length) {
-      return visibleItems.length;
-    }
-    
-    // Find which visible item corresponds to the original drop target
-    const targetItem = items[dropTargetIndex];
-    if (!targetItem) return null;
-    
-    const visibleIndex = visibleItems.findIndex(item => item.id === targetItem.id);
-    return visibleIndex !== -1 ? visibleIndex : null;
-  }, [dropTargetIndex, items, visibleItems]);
-
-  // Map dragged item index from original space to visible space for display
-  const visibleDraggedItemIndex = React.useMemo(() => {
-    if (draggedItemIndex === null) return null;
-    
-    const draggedItem = items[draggedItemIndex];
-    if (!draggedItem) return null;
-    
-    const visibleIndex = visibleItems.findIndex(item => item.id === draggedItem.id);
-    return visibleIndex !== -1 ? visibleIndex : null;
-  }, [draggedItemIndex, items, visibleItems]);
 
   return (
     <RundownTable
@@ -198,9 +204,9 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       onDragOver={handleEnhancedDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragEnd}
-      onRowSelect={handleRowSelect}
-      dropTargetIndex={visibleDropTargetIndex}
-      draggedItemIndex={visibleDraggedItemIndex}
+      // Map dropTargetIndex from original space to visible space
+      dropTargetIndex={restProps.dropTargetIndex !== null ? getVisibleIndex(restProps.dropTargetIndex) : null}
+      draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}
     />
   );
 });
