@@ -24,7 +24,6 @@ interface UseRundownGridHandlersProps {
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
-  getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
 export const useRundownGridHandlers = ({
@@ -49,8 +48,7 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex,
-  getHeaderGroupItemIds
+  addHeaderAtIndex
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -168,19 +166,6 @@ export const useRundownGridHandlers = ({
     copyItems(selectedItems);
   }, [items, selectedRows, copyItems]);
 
-  const handleCopyHeaderGroup = useCallback((headerId: string) => {
-    console.log('🔗 Copying header group for:', headerId);
-    if (getHeaderGroupItemIds) {
-      const headerGroupIds = getHeaderGroupItemIds(headerId);
-      console.log('🔗 Header group IDs:', headerGroupIds);
-      const headerGroupItems = items.filter(item => headerGroupIds.includes(item.id));
-      console.log('🔗 Header group items found:', headerGroupItems.length, headerGroupItems.map(i => i.id));
-      copyItems(headerGroupItems);
-    } else {
-      console.log('🔗 getHeaderGroupItemIds not available');
-    }
-  }, [items, copyItems, getHeaderGroupItemIds]);
-
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
   }, [toggleRowSelection, items]);
@@ -200,7 +185,6 @@ export const useRundownGridHandlers = ({
     handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
-    handleCopyHeaderGroup,
     handleRowSelection,
     handleTitleChange
   };

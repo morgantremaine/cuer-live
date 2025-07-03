@@ -35,7 +35,6 @@ interface RundownRowProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
-  onCopyHeaderGroup?: (headerId: string) => void;
   onDeleteSelectedRows: () => void;
   onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
@@ -51,6 +50,17 @@ const RundownRow = (props: RundownRowProps) => {
   // Only use multi-selection state for determining if selected
   const isActuallySelected = props.isSelected || false;
 
+  // Debug wrapper for onJumpToHere
+  const handleJumpToHereDebug = (segmentId: string) => {
+    console.log('🎯 RundownRow: onJumpToHere called with segmentId:', segmentId);
+    console.log('🎯 RundownRow: onJumpToHere function exists:', !!props.onJumpToHere);
+    if (props.onJumpToHere) {
+      console.log('🎯 RundownRow: Calling parent onJumpToHere');
+      props.onJumpToHere(segmentId);
+    } else {
+      console.log('🎯 RundownRow: onJumpToHere is undefined!');
+    }
+  };
 
   if (isHeaderItem(props.item)) {
     return (
@@ -68,7 +78,6 @@ const RundownRow = (props: RundownRowProps) => {
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
-        onCopyHeaderGroup={props.onCopyHeaderGroup}
         onDragEnd={props.onDragEnd}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
@@ -90,7 +99,7 @@ const RundownRow = (props: RundownRowProps) => {
       onClearSelection={props.onClearSelection}
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
-      onJumpToHere={props.onJumpToHere}
+      onJumpToHere={handleJumpToHereDebug}
       onDragEnd={props.onDragEnd}
     />
   );

@@ -30,7 +30,6 @@ interface HeaderRowProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
-  onCopyHeaderGroup?: (headerId: string) => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
@@ -91,11 +90,9 @@ const HeaderRow = (props: HeaderRowProps) => {
     onDeleteRow: props.onDeleteRow,
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
-    onCopyHeaderGroup: props.onCopyHeaderGroup,
     onToggleColorPicker: props.onToggleColorPicker,
     selectedRows,
-    onPasteRows: props.onPasteRows,
-    isCollapsed
+    onPasteRows: props.onPasteRows
   });
 
   // Enhanced drag start handler with better text selection detection
@@ -131,8 +128,6 @@ const HeaderRow = (props: HeaderRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
-      itemType="header"
-      isHeaderCollapsed={isCollapsed}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={() => {}}

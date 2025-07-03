@@ -184,7 +184,6 @@ const RundownGrid = React.memo(() => {
       onDragLeave={interactions.handleDragLeave}
       onDrop={interactions.handleDrop}
       onCopySelectedRows={interactions.handleCopySelectedRows}
-      onCopyHeaderGroup={interactions.handleCopyHeaderGroup}
       onDeleteSelectedRows={interactions.handleDeleteSelectedRows}
       onPasteRows={interactions.handlePasteRows}
       onClearSelection={() => {
