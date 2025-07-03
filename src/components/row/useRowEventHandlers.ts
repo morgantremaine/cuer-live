@@ -62,10 +62,13 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenuCopy = () => {
+    console.log('🔄 handleContextMenuCopy called for item:', item.id, 'type:', item.type, 'collapsed:', isCollapsed);
     // If this is a collapsed header and we have a header group copy handler, use it
     if (item.type === 'header' && isCollapsed && onCopyHeaderGroup) {
+      console.log('🔗 Using header group copy for:', item.id);
       onCopyHeaderGroup(item.id);
     } else {
+      console.log('🔄 Using regular copy for:', item.id);
       onCopySelectedRows();
     }
   };
