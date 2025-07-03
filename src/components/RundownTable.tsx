@@ -41,6 +41,8 @@ interface RundownTableProps {
   onClearSelection: () => void;
   onAddRow: () => void;
   onAddHeader: () => void;
+  onToggleHeaderCollapse?: (headerId: string) => void;
+  isHeaderCollapsed?: (headerId: string) => boolean;
   onJumpToHere?: (segmentId: string) => void;
 }
 
@@ -81,6 +83,8 @@ const RundownTable = ({
   onClearSelection,
   onAddRow,
   onAddHeader,
+  onToggleHeaderCollapse,
+  isHeaderCollapsed,
   onJumpToHere
 }: RundownTableProps) => {
 
@@ -154,6 +158,7 @@ const RundownTable = ({
                   hasClipboardData={hasClipboardData}
                   currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
+                  isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
@@ -168,6 +173,7 @@ const RundownTable = ({
                   onDragEnd={handleDragEnd}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
+                  onToggleCollapse={onToggleHeaderCollapse}
                   onPasteRows={onPasteRows}
                   onClearSelection={onClearSelection}
                   onAddRow={onAddRow}

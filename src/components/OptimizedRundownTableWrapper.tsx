@@ -2,6 +2,7 @@
 import React, { memo } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownMemoization } from '@/hooks/useRundownMemoization';
+import { useHeaderCollapse } from '@/hooks/useHeaderCollapse';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -50,12 +51,20 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   currentSegmentId,
   ...restProps
 }) => {
+  // Use header collapse functionality
+  const {
+    visibleItems,
+    toggleHeaderCollapse,
+    isHeaderCollapsed,
+    getHeaderGroupItemIds
+  } = useHeaderCollapse(items);
+
   // Use memoized calculations to avoid expensive recalculations
   const {
     itemsWithStatus,
     headerDurations,
     totalCalculatedRuntime
-  } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime);
+  } = useRundownMemoization(visibleItems, visibleColumns, currentSegmentId, startTime);
 
   // Create optimized getRowNumber function
   const getRowNumber = React.useCallback((index: number) => {
@@ -71,20 +80,22 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
 
   // Create optimized getHeaderDuration function
   const getHeaderDuration = React.useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return '00:00:00';
-    const item = items[index];
+    if (index < 0 || index >= visibleItems.length) return '00:00:00';
+    const item = visibleItems[index];
     return headerDurations.get(item.id) || '00:00:00';
-  }, [items, headerDurations]);
+  }, [visibleItems, headerDurations]);
 
   return (
     <RundownTable
       {...restProps}
-      items={items}
+      items={visibleItems}
       visibleColumns={visibleColumns}
       currentSegmentId={currentSegmentId}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       getHeaderDuration={getHeaderDuration}
+      onToggleHeaderCollapse={toggleHeaderCollapse}
+      isHeaderCollapsed={isHeaderCollapsed}
     />
   );
 });

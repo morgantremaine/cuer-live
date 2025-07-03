@@ -20,6 +20,7 @@ interface HeaderRowProps {
   showColorPicker: string | null;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  isCollapsed?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -32,6 +33,7 @@ interface HeaderRowProps {
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
+  onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
@@ -52,10 +54,12 @@ const HeaderRow = (props: HeaderRowProps) => {
     showColorPicker,
     hasClipboardData = false,
     currentSegmentId,
+    isCollapsed = false,
     onColorSelect,
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onToggleCollapse,
     onDragStart,
     onDragOver,
     onDrop,
@@ -162,9 +166,11 @@ const HeaderRow = (props: HeaderRowProps) => {
           backgroundColor={backgroundColor}
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
+          isCollapsed={isCollapsed}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
+          onToggleCollapse={onToggleCollapse}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>

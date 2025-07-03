@@ -59,7 +59,7 @@ export const useCleanRundownState = () => {
     coreState.setItems(itemsToAdd);
   }, [coreState.setItems]);
 
-  // Grid interactions
+  // Grid interactions (header collapse will be handled in OptimizedRundownTableWrapper)
   const interactions = useRundownGridInteractions(
     coreState.items,
     (updater) => {

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -13,9 +14,11 @@ interface HeaderRowContentProps {
   backgroundColor?: string;
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
+  isCollapsed?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onToggleCollapse?: (headerId: string) => void;
   getColumnWidth: (column: Column) => string;
 }
 
@@ -27,13 +30,23 @@ const HeaderRowContent = ({
   backgroundColor,
   currentSegmentId,
   cellRefs,
+  isCollapsed = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
+  onToggleCollapse,
   getColumnWidth
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+
+  // Handle collapse toggle
+  const handleToggleCollapse = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleCollapse) {
+      onToggleCollapse(item.id);
+    }
+  };
 
   return (
     <>
@@ -47,7 +60,20 @@ const HeaderRowContent = ({
           maxWidth: '64px' // Ensure exact width matching
         }}
       >
-        <span style={{ color: textColor }}>{rowNumber}</span>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={handleToggleCollapse}
+            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+            title={isCollapsed ? 'Expand header' : 'Collapse header'}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+          <span style={{ color: textColor }}>{rowNumber}</span>
+        </div>
       </td>
       {/* Dynamic columns */}
       {columns.map((column, columnIndex) => {

@@ -9,7 +9,9 @@ export const useDragAndDrop = (
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
-  title?: string
+  title?: string,
+  getHeaderGroupItemIds?: (headerId: string) => string[],
+  isHeaderCollapsed?: (headerId: string) => boolean
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
@@ -87,7 +89,23 @@ export const useDragAndDrop = (
       return;
     }
 
-    const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
+    let draggedIds: string[] = [];
+    let isMultipleSelection = false;
+    
+    // Check if it's a collapsed header group
+    if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
+      // Drag the entire header group
+      draggedIds = getHeaderGroupItemIds(item.id);
+      isMultipleSelection = draggedIds.length > 1;
+    } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
+      // Multiple selection
+      draggedIds = Array.from(selectedRows);
+      isMultipleSelection = true;
+    } else {
+      // Single item
+      draggedIds = [item.id];
+      isMultipleSelection = false;
+    }
     
     isDragActiveRef.current = true;
     setDraggedItemIndex(index);
@@ -98,11 +116,12 @@ export const useDragAndDrop = (
     e.dataTransfer.setData('text/plain', JSON.stringify({
       draggedIndex: index,
       isMultiple: isMultipleSelection,
-      selectedIds: Array.from(selectedRows)
+      selectedIds: draggedIds,
+      isHeaderGroup: item.type === 'header' && draggedIds.length > 1
     }));
 
-    console.log('✅ Drag started - multiple:', isMultipleSelection);
-  }, [items, selectedRows, resetDragState, setDragTimeout]);
+    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds);
+  }, [items, selectedRows, resetDragState, setDragTimeout, getHeaderGroupItemIds, isHeaderCollapsed]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
@@ -156,13 +175,23 @@ export const useDragAndDrop = (
         dragData = { isMultiple: false, selectedIds: [] };
       }
 
-      const { isMultiple, selectedIds } = dragData;
+      const { isMultiple, selectedIds, isHeaderGroup } = dragData;
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
 
       if (isMultiple && selectedIds && selectedIds.length > 1) {
-        const selectedItems = items.filter(item => selectedIds.includes(item.id));
+        // Preserve order for header groups, use original order for multi-selection
+        let selectedItems: RundownItem[];
+        
+        if (isHeaderGroup) {
+          // For header groups, maintain the exact order from original items
+          selectedItems = items.filter(item => selectedIds.includes(item.id));
+        } else {
+          // For multi-selection, use the original order as well
+          selectedItems = items.filter(item => selectedIds.includes(item.id));
+        }
+        
         const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
         
         hasHeaderMoved = selectedItems.some(item => item.type === 'header');
@@ -170,7 +199,9 @@ export const useDragAndDrop = (
         newItems = [...nonSelectedItems];
         newItems.splice(dropIndex, 0, ...selectedItems);
         
-        actionDescription = `Reorder ${selectedItems.length} rows`;
+        actionDescription = isHeaderGroup 
+          ? `Reorder header group (${selectedItems.length} items)`
+          : `Reorder ${selectedItems.length} rows`;
       } else {
         if (draggedItemIndex === dropIndex) {
           console.log('🔄 Same position drop, ignoring');

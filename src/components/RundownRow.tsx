@@ -21,6 +21,7 @@ interface RundownRowProps {
   headerDuration?: string;
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
+  isCollapsed?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,6 +36,7 @@ interface RundownRowProps {
   onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
+  onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onAddRow?: () => void;
@@ -70,6 +72,8 @@ const RundownRow = (props: RundownRowProps) => {
         selectedRows={props.selectedRows}
         hasClipboardData={props.hasClipboardData}
         currentSegmentId={props.currentSegmentId}
+        isCollapsed={props.isCollapsed}
+        onToggleCollapse={props.onToggleCollapse}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
