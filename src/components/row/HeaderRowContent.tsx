@@ -91,17 +91,18 @@ const HeaderRowContent = ({
                     onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
                     onClick={() => onCellClick(item.id, column.key)}
                     onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-                    className="bg-transparent border-none outline-none p-0 m-0 text-xl font-bold"
+                    className="bg-transparent border-none outline-none text-xl font-bold"
                     style={{ 
                       color: textColor,
                       fontFamily: 'inherit',
                       fontSize: 'inherit',
                       fontWeight: 'inherit',
                       lineHeight: 'inherit',
-                      width: 'auto',
-                      minWidth: '200px'
+                      width: 'fit-content',
+                      padding: 0,
+                      margin: 0
                     }}
-                    size={Math.max(headerName.length + 5, 15)}
+                    size={headerName.length || 1}
                   />
                   <span 
                     className="text-base font-medium" 
