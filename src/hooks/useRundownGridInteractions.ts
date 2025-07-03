@@ -51,6 +51,7 @@ export const useRundownGridInteractions = (
     handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
+    handleCopyHeaderGroup,
     handleRowSelection,
     handleTitleChange
   } = useRundownInteractionHandlers(
@@ -103,6 +104,7 @@ export const useRundownGridInteractions = (
     handlePasteRows,
     handleDeleteColumnWithCleanup,
     handleCopySelectedRows,
+    handleCopyHeaderGroup,
     handleRowSelection,
     handleTitleChange,
     addRowAtIndex,

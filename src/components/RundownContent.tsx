@@ -44,6 +44,7 @@ interface RundownContentProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
+  onCopyHeaderGroup?: (headerId: string) => void;
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
@@ -88,6 +89,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onDrop,
   onDragEnd,
   onCopySelectedRows,
+  onCopyHeaderGroup,
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
@@ -166,6 +168,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             onDrop={onDrop}
             onDragEnd={onDragEnd}
             onCopySelectedRows={onCopySelectedRows}
+            onCopyHeaderGroup={onCopyHeaderGroup}
             onDeleteSelectedRows={onDeleteSelectedRows}
             onPasteRows={onPasteRows || (() => {})}
             onClearSelection={onClearSelection || (() => {})}
