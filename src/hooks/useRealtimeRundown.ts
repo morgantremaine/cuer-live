@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -29,6 +28,17 @@ interface UseRealtimeRundownProps {
   onShowcallerActivity?: (active: boolean) => void;
   onShowcallerStateReceived?: (state: any) => void;
 }
+
+// Utility function to normalize timestamps for consistent comparison
+const normalizeTimestamp = (timestamp: string): string => {
+  try {
+    // Convert to Date and back to ISO string to ensure consistent format
+    return new Date(timestamp).toISOString();
+  } catch (error) {
+    // If parsing fails, return original timestamp
+    return timestamp;
+  }
+};
 
 // Centralized timeout management to prevent memory leaks
 class TimeoutManager {
@@ -142,13 +152,19 @@ export const useRealtimeRundown = ({
     return !hasContentChanges && showcallerStateChanged;
   }, []);
 
-  // Function to track our own updates
+  // Function to track our own updates with normalized timestamps
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
-    ownUpdateTrackingRef.current.add(timestamp);
+    const normalizedTimestamp = normalizeTimestamp(timestamp);
+    ownUpdateTrackingRef.current.add(normalizedTimestamp);
+    
+    console.log('📝 Tracking own update (normalized):', {
+      original: timestamp,
+      normalized: normalizedTimestamp
+    });
     
     // Clean up old tracked updates after 10 seconds
-    timeoutManagerRef.current.set(`cleanup-${timestamp}`, () => {
-      ownUpdateTrackingRef.current.delete(timestamp);
+    timeoutManagerRef.current.set(`cleanup-${normalizedTimestamp}`, () => {
+      ownUpdateTrackingRef.current.delete(normalizedTimestamp);
     }, 10000);
     
     // Also track via parent if available
@@ -164,8 +180,11 @@ export const useRealtimeRundown = ({
       return;
     }
 
+    const rawTimestamp = payload.new?.updated_at || new Date().toISOString();
+    const normalizedTimestamp = normalizeTimestamp(rawTimestamp);
+
     const updateData: RealtimeUpdate = {
-      timestamp: payload.new?.updated_at || new Date().toISOString(),
+      timestamp: normalizedTimestamp, // Use normalized timestamp
       rundownId: payload.new?.id,
       currentRundownId: rundownId!,
       currentUserId: user?.id || '',
@@ -176,14 +195,18 @@ export const useRealtimeRundown = ({
       showcallerState: payload.new?.showcaller_state
     };
 
-    // Prevent processing duplicate updates based on timestamp
+    // Prevent processing duplicate updates based on normalized timestamp
     if (updateData.timestamp === lastProcessedUpdateRef.current) {
       return;
     }
 
-    // Skip if this update originated from this user
-    if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
-      console.log('⏭️ Skipping own update processing');
+    // Skip if this update originated from this user (using normalized timestamp)
+    const isOwnUpdate = ownUpdateTrackingRef.current.has(normalizedTimestamp);
+    if (isOwnUpdate) {
+      console.log('⏭️ Skipping own update processing - timestamp match confirmed:', {
+        received: normalizedTimestamp,
+        tracked: Array.from(ownUpdateTrackingRef.current)
+      });
       return;
     }
 
@@ -203,9 +226,11 @@ export const useRealtimeRundown = ({
     console.log('🔍 Content analysis:', {
       isShowcallerOnly,
       contentHashMatch,
-      ownUpdate: ownUpdateTrackingRef.current.has(updateData.timestamp),
-      timestamp: updateData.timestamp,
-      hasContentChange: !contentHashMatch && !isShowcallerOnly
+      ownUpdate: isOwnUpdate,
+      timestamp: normalizedTimestamp,
+      hasContentChange: !contentHashMatch && !isShowcallerOnly,
+      rawTimestamp,
+      normalizedTimestamp
     });
 
     // CRITICAL: If it's showcaller-only, handle it specially but NEVER set content processing state
