@@ -256,21 +256,21 @@ export const useDragAndDrop = (
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('🏁 Drag end triggered');
     
-    // Clear any existing timeout first
+    // Clear any existing dragEnd timeout first
     if (dragEndTimeoutRef.current) {
       clearTimeout(dragEndTimeoutRef.current);
       dragEndTimeoutRef.current = undefined;
     }
     
-    // Only reset if we're still in drag state - check the ref directly
-    // Use a minimal timeout to handle edge cases where drop fires slightly after dragend
+    // Only reset if we're still in drag state after a very brief delay
+    // This handles the case where dragEnd fires but no drop occurred
     dragEndTimeoutRef.current = setTimeout(() => {
-      // More precise check: only reset if BOTH conditions are true
-      if (isDragActiveRef.current && !dragTimeoutRef.current) {
+      // Only reset if isDragActiveRef is still true (meaning no drop occurred)
+      if (isDragActiveRef.current) {
         console.log('🔄 Drag end - resetting state (no drop occurred)');
         resetDragState();
       }
-    }, 5); // Very minimal delay
+    }, 50); // Small delay to allow drop to fire first
   }, [resetDragState]);
 
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
