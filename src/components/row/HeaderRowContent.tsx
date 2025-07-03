@@ -96,7 +96,7 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-6 flex items-center gap-2"
+                className="px-3 py-6 flex items-center"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
@@ -114,7 +114,7 @@ const HeaderRowContent = ({
                   onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
                   onClick={() => onCellClick(item.id, 'name')}
                   onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                  className="bg-transparent border-none outline-none text-lg font-bold flex-1 min-w-0"
+                  className="bg-transparent border-none outline-none text-lg font-bold"
                   style={{ 
                     color: textColor,
                     fontFamily: 'inherit',
@@ -122,12 +122,14 @@ const HeaderRowContent = ({
                     fontWeight: 'inherit',
                     lineHeight: 'inherit',
                     padding: 0,
-                    margin: 0
+                    margin: 0,
+                    marginRight: '12px',
+                    minWidth: 'fit-content'
                   }}
                   placeholder="Header Name"
                 />
                 <span 
-                  className="text-base font-medium flex-shrink-0" 
+                  className="text-base font-medium whitespace-nowrap" 
                   style={{ color: textColor }}
                 >
                   ({headerDuration})
