@@ -143,6 +143,19 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     }
   }, [getOriginalIndex, onDrop]);
 
+  // Enhanced row select that maps visible to original indexes
+  const handleEnhancedRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    const originalIndex = getOriginalIndex(visibleIndex);
+    
+    if (originalIndex === -1) {
+      return;
+    }
+    
+    if (restProps.onRowSelect) {
+      restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick);
+    }
+  }, [getOriginalIndex, restProps.onRowSelect]);
+
   // Enhanced drag over that maps visible to original indexes
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, visibleIndex?: number) => {
     if (visibleIndex !== undefined) {
@@ -190,6 +203,7 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       getHeaderDuration={getHeaderDuration}
       onToggleHeaderCollapse={toggleHeaderCollapse}
       isHeaderCollapsed={isHeaderCollapsed}
+      onRowSelect={handleEnhancedRowSelect}
       onDragStart={handleEnhancedDragStart}
       onDrop={handleEnhancedDrop}
       onDragOver={handleEnhancedDragOver}
