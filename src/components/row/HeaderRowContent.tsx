@@ -101,12 +101,11 @@ const HeaderRowContent = ({
                       width: 'auto',
                       minWidth: '200px'
                     }}
-                    placeholder="Header Title"
                     size={Math.max(headerName.length + 5, 15)}
                   />
                 </span>
                 <span 
-                  className="text-base font-medium ml-2 inline-block" 
+                  className="text-base font-medium ml-1 inline-block" 
                   style={{ color: textColor }}
                 >
                   ({headerDuration})
