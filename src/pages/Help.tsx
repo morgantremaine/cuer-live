@@ -112,7 +112,7 @@ const Help = () => {
               Connection Status Icons
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <p>The wifi icon in your rundown header shows the current connection and sync status:</p>
+              <p>The wifi icon in your rundown header shows the current connection and sync status, helping you understand when your changes are being saved and when you're receiving updates from teammates for smooth collaboration:</p>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
@@ -146,10 +146,6 @@ const Help = () => {
                     <p className="text-sm">Connection to the server has been lost. Your changes will be saved when reconnected.</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> The connection status helps you understand when your changes are being saved and when you're receiving updates from teammates, ensuring smooth collaboration.</p>
               </div>
             </div>
           </section>
