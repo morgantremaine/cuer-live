@@ -141,6 +141,13 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     }
   }, [onDrop]);
 
+  // Enhanced drag over handler 
+  const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
+    if (onDragOver) {
+      onDragOver(e, index);
+    }
+  }, [onDragOver]);
+
   return (
     <RundownTable
       {...restProps}
@@ -154,7 +161,7 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       isHeaderCollapsed={isHeaderCollapsed}
       onDragStart={handleEnhancedDragStart}
       onDrop={handleEnhancedDrop}
-      onDragOver={onDragOver}
+      onDragOver={handleEnhancedDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragEnd}
     />
