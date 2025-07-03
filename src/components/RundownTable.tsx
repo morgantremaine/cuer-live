@@ -114,7 +114,13 @@ const RundownTable = ({
       if (onDragEnd && typeof onDragEnd === 'function') {
         onDragEnd(e);
       } else {
-        console.warn('⚠️ onDragEnd is not a function:', typeof onDragEnd);
+        console.warn('⚠️ onDragEnd is not a function, resetting drag state manually:', typeof onDragEnd);
+        // Force reset any stuck drag states manually if the function is missing
+        document.querySelectorAll('[draggable="true"]').forEach(el => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.opacity = '';
+          htmlEl.style.transform = '';
+        });
       }
     } catch (error) {
       console.error('❌ Error in onDragEnd:', error);
