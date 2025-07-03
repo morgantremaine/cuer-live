@@ -123,8 +123,8 @@ const HeaderRowContent = ({
                     lineHeight: 'inherit',
                     padding: 0,
                     margin: 0,
-                    marginRight: '12px',
-                    minWidth: 'fit-content'
+                    width: `${Math.max(headerName.length * 0.6 + 2, 8)}ch`,
+                    marginRight: '8px'
                   }}
                   placeholder="Header Name"
                 />
