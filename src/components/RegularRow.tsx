@@ -30,7 +30,7 @@ interface RegularRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -129,7 +129,7 @@ const RegularRow = (props: RegularRowProps) => {
     onDragStart(e, index);
   };
 
-  // Enhanced drag end handler with logging and stability
+  // Safe drag end handler that checks if the function exists
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 RegularRow: Drag end for index', index);
     // Use try-catch to prevent function invalidation errors
@@ -138,6 +138,12 @@ const RegularRow = (props: RegularRowProps) => {
         onDragEnd(e);
       } else {
         console.warn('⚠️ RegularRow onDragEnd is not a function:', typeof onDragEnd);
+        // Force reset any stuck drag states manually if the function is missing
+        document.querySelectorAll('[draggable="true"]').forEach(el => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.opacity = '';
+          htmlEl.style.transform = '';
+        });
       }
     } catch (error) {
       console.error('❌ Error in RegularRow onDragEnd:', error);
