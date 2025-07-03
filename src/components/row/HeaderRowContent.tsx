@@ -79,7 +79,7 @@ const HeaderRowContent = ({
                   minWidth: '100%'
                 }}
               >
-                <span className="text-xl font-bold" style={{ color: textColor }}>
+                <span className="text-lg font-bold" style={{ color: textColor }}>
                   <input
                     ref={(el) => {
                       if (el) {
@@ -91,7 +91,7 @@ const HeaderRowContent = ({
                     onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
                     onClick={() => onCellClick(item.id, column.key)}
                     onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
-                    className="bg-transparent border-none outline-none text-xl font-bold"
+                    className="bg-transparent border-none outline-none text-lg font-bold"
                     style={{ 
                       color: textColor,
                       fontFamily: 'inherit',
