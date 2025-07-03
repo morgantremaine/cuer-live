@@ -142,7 +142,6 @@ export const useDragAndDrop = (
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // Simple logic: before middle = insert before this row, after middle = insert after this row
       const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
       
       // Only update if different to avoid unnecessary re-renders
@@ -205,32 +204,28 @@ export const useDragAndDrop = (
         
         hasHeaderMoved = draggedItems.some(item => item.type === 'header');
         
-        // Calculate insertion point for multi-item drag
-        // dropIndex is already the correct insertion point from dragOver
-        let insertIndex = dropIndex;
+        // Calculate the correct insertion point
+        let adjustedDropIndex = dropIndex;
         
-        // Count how many dragged items are before the insertion point
-        const draggedItemIndices = draggedIds
-          .map((id: string) => items.findIndex(item => item.id === id))
-          .filter(index => index !== -1);
+        // If we're dropping after items that were removed, adjust the index
+        const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+          draggedIds.includes(item.id)
+        ).length;
         
-        const removedItemsBeforeInsert = draggedItemIndices.filter(index => index < insertIndex).length;
+        adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
         
-        // Adjust insertion point by removing items that will be taken out before it
-        insertIndex = Math.max(0, insertIndex - removedItemsBeforeInsert);
+        // Ensure we don't go out of bounds
+        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
         
-        // Ensure we don't exceed bounds after filtering
-        insertIndex = Math.min(insertIndex, remainingItems.length);
-        
-        // Insert all items at the calculated position
+        // Insert all items at the adjusted drop position
         newItems = [...remainingItems];
-        newItems.splice(insertIndex, 0, ...draggedItems);
+        newItems.splice(adjustedDropIndex, 0, ...draggedItems);
         
         actionDescription = isHeaderGroup ? 
           `Reorder header group (${draggedItems.length} items)` : 
           `Reorder ${draggedItems.length} items`;
       } else {
-        // Single item drag
+        // Single item
         if (draggedItemIndex === dropIndex) {
           console.log('🔄 Same position drop, ignoring');
           resetDragState();
@@ -249,19 +244,9 @@ export const useDragAndDrop = (
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
         
-        // dropIndex is already the correct insertion point from dragOver
-        let insertIndex = dropIndex;
-        
-        // If the dragged item was before the insertion point, adjust down by 1
-        // because we removed it from the array
-        if (draggedItemIndex < insertIndex) {
-          insertIndex = insertIndex - 1;
-        }
-        
-        // Ensure we don't exceed array bounds
-        insertIndex = Math.max(0, Math.min(insertIndex, newItems.length));
-        
-        newItems.splice(insertIndex, 0, draggedItem);
+        // Adjust drop index if necessary
+        const adjustedDropIndex = draggedItemIndex < dropIndex ? dropIndex - 1 : dropIndex;
+        newItems.splice(adjustedDropIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
       }

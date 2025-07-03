@@ -117,34 +117,10 @@ const RundownTable = ({
   };
 
   return (
-    <div 
-      className="relative w-full bg-background"
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        // Check if we're dragging over the empty space at the bottom
-        const rect = e.currentTarget.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const containerBottom = rect.bottom;
-        
-        // If mouse is in the bottom area and we have items, set drop target to end
-        if (mouseY > containerBottom - 50 && items.length > 0) {
-          // Call the original drag over handler with the end index
-          if (onDragOver) {
-            onDragOver(e, items.length);
-          }
-        }
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        // Handle drop at the end of the list
-        if (onDrop) {
-          onDrop(e, items.length);
-        }
-      }}
-    >
+    <div className="relative w-full bg-background">
       <table className="w-full border-collapse border border-border">
-        <tbody className="bg-background">{items.map((item, index) => {
+        <tbody className="bg-background">
+          {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
@@ -219,24 +195,6 @@ const RundownTable = ({
           })}
         </tbody>
       </table>
-      
-      {/* Empty drop zone at the bottom for end-of-list drops */}
-      <div 
-        className="h-8 w-full"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          if (onDragOver) {
-            onDragOver(e, items.length);
-          }
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          if (onDrop) {
-            onDrop(e, items.length);
-          }
-        }}
-      />
       
       {items.length === 0 && (
         <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">

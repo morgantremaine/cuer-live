@@ -36,13 +36,12 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
       } else if (currentGroup) {
         // Add item to current group
         currentGroup.items.push(item);
-        // Update end index as we add items
-        currentGroup.endIndex = index;
       }
     });
 
     // Don't forget the last group
     if (currentGroup) {
+      currentGroup.endIndex = items.length - 1;
       groups.push(currentGroup);
     }
 
@@ -94,18 +93,8 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
     const group = headerGroups.find(g => g.header.id === headerId);
     if (!group) return [];
     
-    // Return only the header and its direct children (items between this header and next header)
-    const result = [group.header];
-    
-    // Add all items that are after this header but before the next header
-    for (let i = group.headerIndex + 1; i <= group.endIndex; i++) {
-      if (i < items.length && !isHeaderItem(items[i])) {
-        result.push(items[i]);
-      }
-    }
-    
-    return result;
-  }, [headerGroups, items]);
+    return [group.header, ...group.items];
+  }, [headerGroups]);
 
   // Get all item IDs in a header group (for drag operations)
   const getHeaderGroupItemIds = useCallback((headerId: string): string[] => {
