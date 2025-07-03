@@ -213,15 +213,12 @@ export const useSimpleAutoSave = (
             onSaved();
           }
         }
-       } catch (error) {
-         console.error('❌ Save error:', error);
-       } finally {
-         // Add a small delay before hiding the "Saved" indicator to make it more visible
-         setTimeout(() => {
-           setIsSaving(false);
-         }, 2000); // Show "Saved" for 2 seconds after save completes
-         pendingSaveRef.current = false;
-       }
+      } catch (error) {
+        console.error('❌ Save error:', error);
+      } finally {
+        setIsSaving(false);
+        pendingSaveRef.current = false;
+      }
     }, debounceTime);
 
     return () => {
