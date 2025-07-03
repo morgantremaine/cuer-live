@@ -434,13 +434,28 @@ export const useTeam = () => {
 
   // Load team data when user changes, with better handling
   useEffect(() => {
-    if (user?.id && user.id !== loadedUserRef.current) {
+    // Prevent multiple rapid calls for the same user
+    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
       console.log('User changed, loading team data for:', user.id);
       loadedUserRef.current = user.id; // Set immediately to prevent multiple calls
+      isLoadingRef.current = true; // Prevent concurrent loads
       setIsLoading(true);
+      
       // Add a small delay to ensure auth state is stable
-      setTimeout(() => loadTeamData(), 100);
-    } else if (!user?.id) {
+      const timeoutId = setTimeout(() => {
+        if (loadedUserRef.current === user.id) { // Double-check user hasn't changed
+          loadTeamData();
+        } else {
+          isLoadingRef.current = false;
+          setIsLoading(false);
+        }
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        isLoadingRef.current = false;
+      };
+    } else if (!user?.id && loadedUserRef.current !== null) {
       console.log('No user, resetting team state');
       setTeam(null);
       setTeamMembers([]);
@@ -449,6 +464,7 @@ export const useTeam = () => {
       setIsLoading(false);
       setError(null);
       loadedUserRef.current = null;
+      isLoadingRef.current = false;
     }
   }, [user?.id]);
 
