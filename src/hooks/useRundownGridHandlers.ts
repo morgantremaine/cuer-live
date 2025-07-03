@@ -169,10 +169,15 @@ export const useRundownGridHandlers = ({
   }, [items, selectedRows, copyItems]);
 
   const handleCopyHeaderGroup = useCallback((headerId: string) => {
+    console.log('🔗 Copying header group for:', headerId);
     if (getHeaderGroupItemIds) {
       const headerGroupIds = getHeaderGroupItemIds(headerId);
+      console.log('🔗 Header group IDs:', headerGroupIds);
       const headerGroupItems = items.filter(item => headerGroupIds.includes(item.id));
+      console.log('🔗 Header group items found:', headerGroupItems.length, headerGroupItems.map(i => i.id));
       copyItems(headerGroupItems);
+    } else {
+      console.log('🔗 getHeaderGroupItemIds not available');
     }
   }, [items, copyItems, getHeaderGroupItemIds]);
 
