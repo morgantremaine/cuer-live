@@ -22,6 +22,7 @@ import ADView from "./pages/ADView";
 import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
 import CameraPlotEditor from "./pages/CameraPlotEditor";
+import LandingPage from "./components/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -38,10 +39,10 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Redirect root to appropriate page based on auth state */}
+      {/* Landing page for non-authenticated users */}
       <Route 
         path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+        element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
       />
       
       {/* Public routes */}
