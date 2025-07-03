@@ -35,7 +35,6 @@ interface OptimizedRundownTableWrapperProps {
   onDrop: (e: React.DragEvent, index: number) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
-  onCopyHeaderGroup?: (headerId: string) => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
   onClearSelection: () => void;
@@ -54,7 +53,6 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   onDragLeave,
   onDrop,
   onDragEnd,
-  onCopyHeaderGroup,
   ...restProps
 }) => {
   // Use header collapse functionality
@@ -197,7 +195,6 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       onDragOver={handleEnhancedDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragEnd}
-      onCopyHeaderGroup={onCopyHeaderGroup}
       // Map dropTargetIndex from original space to visible space
       dropTargetIndex={restProps.dropTargetIndex !== null ? getVisibleIndex(restProps.dropTargetIndex) : null}
       draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}

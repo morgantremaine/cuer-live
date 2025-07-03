@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface UseRowEventHandlersProps {
-  item: { id: string; type?: string };
+  item: { id: string };
   index: number;
   isSelected?: boolean;
   selectedRowsCount?: number;
@@ -10,14 +10,12 @@ interface UseRowEventHandlersProps {
   onDeleteRow: (id: string) => void;
   onDeleteSelectedRows: () => void;
   onCopySelectedRows: () => void;
-  onCopyHeaderGroup?: (headerId: string) => void;
   onToggleColorPicker: (itemId: string) => void;
   onToggleFloat?: (id: string) => void;
   selectedRows?: Set<string>;
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  isCollapsed?: boolean;
 }
 
 export const useRowEventHandlers = ({
@@ -29,14 +27,12 @@ export const useRowEventHandlers = ({
   onDeleteRow,
   onDeleteSelectedRows,
   onCopySelectedRows,
-  onCopyHeaderGroup,
   onToggleColorPicker,
   onToggleFloat,
   selectedRows,
   onPasteRows,
   onClearSelection,
-  onJumpToHere,
-  isCollapsed = false
+  onJumpToHere
 }: UseRowEventHandlersProps) => {
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -62,15 +58,7 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenuCopy = () => {
-    console.log('🔄 handleContextMenuCopy called for item:', item.id, 'type:', item.type, 'collapsed:', isCollapsed);
-    // If this is a collapsed header and we have a header group copy handler, use it
-    if (item.type === 'header' && isCollapsed && onCopyHeaderGroup) {
-      console.log('🔗 Using header group copy for:', item.id);
-      onCopyHeaderGroup(item.id);
-    } else {
-      console.log('🔄 Using regular copy for:', item.id);
-      onCopySelectedRows();
-    }
+    onCopySelectedRows();
   };
 
   const handleContextMenuDelete = () => {
