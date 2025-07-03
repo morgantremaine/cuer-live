@@ -113,9 +113,17 @@ export const useDragAndDrop = (
     setDragTimeout();
     
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify(draggedIds));
+    
+    // Store drag info with header group detection
+    const dragInfo = {
+      draggedIds,
+      isHeaderGroup: item.type === 'header' && isMultipleSelection,
+      originalIndex: index
+    };
+    
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
 
-    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds);
+    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds, 'isHeaderGroup:', dragInfo.isHeaderGroup);
   }, [items, selectedRows, resetDragState, setDragTimeout, getHeaderGroupItemIds, isHeaderCollapsed]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
@@ -162,30 +170,38 @@ export const useDragAndDrop = (
 
     try {
       const dragDataString = e.dataTransfer.getData('text/plain');
-      let draggedIds: string[] = [];
+      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1 };
       
       try {
-        draggedIds = JSON.parse(dragDataString);
+        dragInfo = JSON.parse(dragDataString);
       } catch (error) {
         console.warn('Failed to parse drag data, using fallback');
-        draggedIds = [];
       }
 
+      const { draggedIds, isHeaderGroup } = dragInfo;
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
 
       if (draggedIds.length > 1) {
-        // Multiple items (including collapsed header groups)
-        const draggedItems = items.filter(item => draggedIds.includes(item.id));
+        console.log('🔗 Processing multi-item drag:', isHeaderGroup ? 'header group' : 'selection', 'IDs:', draggedIds);
+        
+        // Get all dragged items in their original order
+        const draggedItems = draggedIds
+          .map((id: string) => items.find(item => item.id === id))
+          .filter(Boolean) as RundownItem[];
+          
         const remainingItems = items.filter(item => !draggedIds.includes(item.id));
         
         hasHeaderMoved = draggedItems.some(item => item.type === 'header');
         
+        // Insert all items at the drop position
         newItems = [...remainingItems];
         newItems.splice(dropIndex, 0, ...draggedItems);
         
-        actionDescription = `Reorder ${draggedItems.length} items`;
+        actionDescription = isHeaderGroup ? 
+          `Reorder header group (${draggedItems.length} items)` : 
+          `Reorder ${draggedItems.length} items`;
       } else {
         // Single item
         if (draggedItemIndex === dropIndex) {

@@ -77,6 +77,13 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     return items.findIndex(item => item.id === visibleItem.id);
   }, [items, visibleItems]);
 
+  // Map original item indexes to visible item indexes (for drop indicator)
+  const getVisibleIndex = React.useCallback((originalIndex: number): number => {
+    if (originalIndex < 0 || originalIndex >= items.length) return -1;
+    const originalItem = items[originalIndex];
+    return visibleItems.findIndex(item => item.id === originalItem.id);
+  }, [items, visibleItems]);
+
   // Enhanced drag start that maps visible to original indexes
   const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
@@ -159,6 +166,9 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       onDragOver={handleEnhancedDragOver}
       onDragLeave={onDragLeave}
       onDragEnd={onDragEnd}
+      // Map dropTargetIndex from original space to visible space
+      dropTargetIndex={restProps.dropTargetIndex !== null ? getVisibleIndex(restProps.dropTargetIndex) : null}
+      draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}
     />
   );
 });
