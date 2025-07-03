@@ -246,13 +246,13 @@ const RundownHeader = ({
               )}
             </div>
             
-            {hasUnsavedChanges && (
+            {/* {hasUnsavedChanges && (
               <div className="flex-shrink-0 flex items-center">
                 <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
                   {isSaving ? 'Saved' : 'Drafting'}
                 </span>
               </div>
-            )}
+            )} */}
             
             <ShowcallerTimingIndicator
               {...timingStatus}
@@ -335,13 +335,13 @@ const RundownHeader = ({
             )}
           </div>
           
-          {hasUnsavedChanges && (
+          {/* {hasUnsavedChanges && (
             <div className="flex-shrink-0 flex items-center">
               <span className={`text-sm ${isSaving ? 'text-green-500 dark:text-green-400' : 'text-blue-500 dark:text-blue-400'}`}>
                 {isSaving ? 'Saved' : 'Drafting'}
               </span>
             </div>
-          )}
+          )} */}
           
           <ShowcallerTimingIndicator
             {...timingStatus}
