@@ -94,8 +94,18 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
     const group = headerGroups.find(g => g.header.id === headerId);
     if (!group) return [];
     
-    return [group.header, ...group.items];
-  }, [headerGroups]);
+    // Return only the header and its direct children (items between this header and next header)
+    const result = [group.header];
+    
+    // Add all items that are after this header but before the next header
+    for (let i = group.headerIndex + 1; i <= group.endIndex; i++) {
+      if (i < items.length && !isHeaderItem(items[i])) {
+        result.push(items[i]);
+      }
+    }
+    
+    return result;
+  }, [headerGroups, items]);
 
   // Get all item IDs in a header group (for drag operations)
   const getHeaderGroupItemIds = useCallback((headerId: string): string[] => {

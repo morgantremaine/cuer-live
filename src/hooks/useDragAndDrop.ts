@@ -227,7 +227,7 @@ export const useDragAndDrop = (
           `Reorder header group (${draggedItems.length} items)` : 
           `Reorder ${draggedItems.length} items`;
       } else {
-        // Single item
+        // Single item drag
         if (draggedItemIndex === dropIndex) {
           console.log('🔄 Same position drop, ignoring');
           resetDragState();
@@ -246,15 +246,18 @@ export const useDragAndDrop = (
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
         
-        // Calculate correct drop position for single item
-        let adjustedDropIndex = dropIndex;
+        // For single items, use simple insertion logic
+        let insertIndex = dropIndex;
+        
+        // If we're moving from before to after, adjust index down by 1
         if (draggedItemIndex < dropIndex) {
-          // Moving forward, subtract 1 because we removed the item
-          adjustedDropIndex = dropIndex - 1;
+          insertIndex = dropIndex - 1;
         }
-        // Ensure we don't go out of bounds
-        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, newItems.length));
-        newItems.splice(adjustedDropIndex, 0, draggedItem);
+        
+        // Ensure we don't exceed array bounds
+        insertIndex = Math.max(0, Math.min(insertIndex, newItems.length));
+        
+        newItems.splice(insertIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
       }
