@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -36,6 +37,7 @@ export interface RundownContainerProps {
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onAddRow: () => void;
   onAddHeader: () => void;
   selectedCount: number;
