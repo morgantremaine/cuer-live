@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
@@ -14,6 +14,47 @@ export const useDragAndDrop = (
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  
+  // Ref to track if we're currently in a drag operation
+  const isDragActiveRef = useRef(false);
+  const dragTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Centralized state reset function
+  const resetDragState = useCallback(() => {
+    console.log('🔄 Resetting drag state');
+    setDraggedItemIndex(null);
+    setIsDraggingMultiple(false);
+    setDropTargetIndex(null);
+    isDragActiveRef.current = false;
+    
+    // Clear any pending timeout
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = undefined;
+    }
+  }, []);
+
+  // Auto-cleanup timeout to prevent stuck states
+  const setDragTimeout = useCallback(() => {
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+    
+    // Set a 10-second timeout to force reset if drag gets stuck
+    dragTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ Drag operation timed out, forcing reset');
+      resetDragState();
+    }, 10000);
+  }, [resetDragState]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const renumberItems = (items: RundownItem[]) => {
     let headerIndex = 0;
@@ -34,71 +75,78 @@ export const useDragAndDrop = (
     });
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    console.log('🚀 Drag start - index:', index);
+    
+    // Reset any existing state first
+    resetDragState();
+    
     const item = items[index];
+    if (!item) {
+      console.error('❌ No item found at index:', index);
+      return;
+    }
+
     const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
     
+    isDragActiveRef.current = true;
     setDraggedItemIndex(index);
     setIsDraggingMultiple(isMultipleSelection);
-    e.dataTransfer.effectAllowed = 'move';
+    setDragTimeout();
     
-    // Store drag data
+    e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({
       draggedIndex: index,
       isMultiple: isMultipleSelection,
       selectedIds: Array.from(selectedRows)
     }));
-  };
 
-  const handleDragOver = (e: React.DragEvent, targetIndex?: number) => {
+    console.log('✅ Drag started - multiple:', isMultipleSelection);
+  }, [items, selectedRows, resetDragState, setDragTimeout]);
+
+  const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (targetIndex !== undefined && draggedItemIndex !== null) {
-      // Calculate the drop position based on mouse position relative to row
+    if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // If mouse is in the top half, insert before this row
-      // If mouse is in the bottom half, insert after this row
       const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
       
-      setDropTargetIndex(insertIndex);
+      // Only update if different to avoid unnecessary re-renders
+      if (insertIndex !== dropTargetIndex) {
+        setDropTargetIndex(insertIndex);
+      }
     }
-  };
+  }, [draggedItemIndex, dropTargetIndex]);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    // Only clear drop target if we're leaving the table area
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
     
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+    const buffer = 10;
+    if (x < rect.left - buffer || x > rect.right + buffer || 
+        y < rect.top - buffer || y > rect.bottom + buffer) {
       setDropTargetIndex(null);
     }
-  };
+  }, []);
 
-  const resetDragState = () => {
-    setDraggedItemIndex(null);
-    setIsDraggingMultiple(false);
-    setDropTargetIndex(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('🎯 Drag drop triggered', { draggedItemIndex, dropIndex });
+    console.log('🎯 Drop triggered - draggedIndex:', draggedItemIndex, 'dropIndex:', dropIndex);
     
-    if (draggedItemIndex === null) {
-      console.warn('⚠️ No dragged item index, resetting state');
+    if (!isDragActiveRef.current || draggedItemIndex === null) {
+      console.warn('⚠️ Drop ignored - no active drag or null draggedIndex');
       resetDragState();
       return;
     }
 
     try {
-      // Fixed: Add proper type checking for drag data
       let dragData;
       try {
         const dragDataString = e.dataTransfer.getData('text/plain');
@@ -109,26 +157,21 @@ export const useDragAndDrop = (
       }
 
       const { isMultiple, selectedIds } = dragData;
-
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
 
       if (isMultiple && selectedIds && selectedIds.length > 1) {
-        // Handle multiple item drag
         const selectedItems = items.filter(item => selectedIds.includes(item.id));
         const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
         
-        // Check if any selected items are headers
         hasHeaderMoved = selectedItems.some(item => item.type === 'header');
         
-        // Insert selected items at the drop position
         newItems = [...nonSelectedItems];
         newItems.splice(dropIndex, 0, ...selectedItems);
         
         actionDescription = `Reorder ${selectedItems.length} rows`;
       } else {
-        // Handle single item drag (existing logic)
         if (draggedItemIndex === dropIndex) {
           console.log('🔄 Same position drop, ignoring');
           resetDragState();
@@ -151,12 +194,10 @@ export const useDragAndDrop = (
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
       }
       
-      // If any headers were moved, renumber all headers
       if (hasHeaderMoved) {
         newItems = renumberItems(newItems);
       }
       
-      // Save undo state BEFORE updating items
       if (saveUndoState && columns && title) {
         saveUndoState(items, columns, title, actionDescription);
       }
@@ -167,17 +208,17 @@ export const useDragAndDrop = (
     } catch (error) {
       console.error('❌ Error during drop operation:', error);
     } finally {
-      // Always reset state regardless of success/failure
+      // Always reset state after drop attempt
       resetDragState();
     }
-  };
+  }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);
 
-  const handleDragEnd = (e: React.DragEvent) => {
-    console.log('🏁 Drag ended, resetting state');
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    console.log('🏁 Drag end triggered');
     resetDragState();
-  };
+  }, [resetDragState]);
 
-  const isDragging = draggedItemIndex !== null;
+  const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
 
   return {
     draggedItemIndex,

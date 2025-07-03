@@ -29,7 +29,7 @@ export const useRundownInteractionHandlers = (
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Drag and drop - now with undo support
+  // Enhanced drag and drop with better error handling
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -42,7 +42,11 @@ export const useRundownInteractionHandlers = (
     resetDragState
   } = useDragAndDrop(
     items, 
-    (newItems: RundownItem[]) => setItems(() => newItems), 
+    (newItems: RundownItem[]) => {
+      console.log('🔄 Setting items from drag and drop');
+      setItems(() => newItems);
+      markAsChanged();
+    }, 
     selectedRows,
     undefined,
     saveUndoState,
@@ -53,7 +57,7 @@ export const useRundownInteractionHandlers = (
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
 
-  // Grid handlers - fix the function call to match expected signature
+  // Grid handlers
   const {
     handleUpdateItem,
     handleAddRow,

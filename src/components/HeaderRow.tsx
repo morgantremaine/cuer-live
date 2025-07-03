@@ -1,3 +1,4 @@
+
 import React from 'react';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
@@ -26,7 +27,7 @@ interface HeaderRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -55,6 +56,10 @@ const HeaderRow = (props: HeaderRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
     isDragging
   } = props;
 
@@ -86,55 +91,30 @@ const HeaderRow = (props: HeaderRowProps) => {
     onPasteRows: props.onPasteRows
   });
 
-  const handleContextMenuFloat = () => {
-    // Headers don't float, but we'll keep the interface consistent
-  };
-
-  // Enhanced drag start handler that prevents dragging when selecting text
+  // Enhanced drag start handler with better text selection detection
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
-    // Check if the target is an input, textarea, or if there's an active text selection
+    // Check for text selection or input focus
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     const hasTextSelection = window.getSelection()?.toString().length > 0;
+    const isContentEditable = target.contentEditable === 'true';
     
-    // If user is selecting text or interacting with text inputs, prevent dragging
-    if (isTextInput || hasTextSelection) {
+    if (isTextInput || hasTextSelection || isContentEditable) {
+      console.log('🚫 HeaderRow: Preventing drag - text interaction detected');
       e.preventDefault();
       e.stopPropagation();
       return;
     }
     
-    // Check if the mouse is down on a text input (even if target isn't the input itself)
-    const textInputs = document.querySelectorAll('input, textarea');
-    for (const input of textInputs) {
-      if (input === document.activeElement) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-    }
-    
-    props.onDragStart(e, index);
+    console.log('🚀 HeaderRow: Starting drag for index', index);
+    onDragStart(e, index);
   };
 
-  // Enhanced mouse down handler to detect text selection intent
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    
-    // If clicking on text input, disable draggable temporarily
-    if (isTextInput) {
-      const row = e.currentTarget as HTMLElement;
-      row.setAttribute('draggable', 'false');
-      
-      // Re-enable draggable after a short delay to allow text selection
-      setTimeout(() => {
-        if (row) {
-          row.setAttribute('draggable', 'true');
-        }
-      }, 100);
-    }
+  // Enhanced drag end handler with logging
+  const handleDragEnd = (e: React.DragEvent) => {
+    console.log('🏁 HeaderRow: Drag end for index', index);
+    onDragEnd(e);
   };
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
@@ -149,7 +129,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       itemId={item.id}
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
-      onToggleFloat={handleContextMenuFloat}
+      onToggleFloat={() => {}}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
       onPaste={handleContextMenuPaste}
@@ -159,16 +139,18 @@ const HeaderRow = (props: HeaderRowProps) => {
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
-        style={{
-          backgroundColor
-        }}
+        style={{ backgroundColor }}
         data-item-id={item.id}
         draggable
         onDragStart={handleDragStart}
-        onDragOver={props.onDragOver}
-        onDrop={(e) => props.onDrop(e, index)}
-        onDragEnd={props.onDragEnd}
-        onMouseDown={handleMouseDown}
+        onDragOver={onDragOver}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🎯 HeaderRow: Drop at index', index);
+          onDrop(e, index);
+        }}
+        onDragEnd={handleDragEnd}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
       >

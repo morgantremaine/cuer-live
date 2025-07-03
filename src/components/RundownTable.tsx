@@ -34,6 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -73,6 +74,7 @@ const RundownTable = ({
   onDragOver,
   onDragLeave,
   onDrop,
+  onDragEnd,
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
@@ -82,36 +84,36 @@ const RundownTable = ({
   onJumpToHere
 }: RundownTableProps) => {
 
-  // Handler for drag over events on the table container - passes auto-scroll handling up
-  const handleTableDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onDragOver(e);
-  };
-
-  // Enhanced row drag over handler that calculates drop target index and handles auto-scroll
+  // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Call the parent handler with target index - this will handle both auto-scroll and drop target calculation
     onDragOver(e, targetIndex);
   };
 
-  // Debug wrapper for onJumpToHere
-  const handleJumpToHereDebug = (segmentId: string) => {
-    console.log('🎯 RundownTable: onJumpToHere called with segmentId:', segmentId);
-    console.log('🎯 RundownTable: onJumpToHere function exists:', !!onJumpToHere);
-    if (onJumpToHere) {
-      console.log('🎯 RundownTable: Calling parent onJumpToHere');
-      onJumpToHere(segmentId);
-    } else {
-      console.log('🎯 RundownTable: onJumpToHere is undefined!');
+  // Enhanced drop handler with better error handling
+  const handleRowDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🎯 RundownTable: Drop triggered at index', targetIndex);
+    
+    try {
+      onDrop(e, targetIndex);
+    } catch (error) {
+      console.error('❌ RundownTable: Drop error:', error);
+      // Force reset drag state on error
+      onDragEnd(e);
     }
   };
 
+  // Enhanced drag end handler with logging
+  const handleDragEnd = (e: React.DragEvent) => {
+    console.log('🏁 RundownTable: Drag end triggered');
+    onDragEnd(e);
+  };
+
   return (
-    <div className="relative w-full bg-background" onDragOver={handleTableDragOver}>
+    <div className="relative w-full bg-background">
       <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {
@@ -126,11 +128,11 @@ const RundownTable = ({
 
             return (
               <React.Fragment key={item.id}>
-                {/* Show drop indicator line ABOVE this row if it's the drop target */}
+                {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
@@ -162,24 +164,23 @@ const RundownTable = ({
                   onRowSelect={onRowSelect}
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
-                  onDrop={(e) => {
-                    onDrop(e, index);
-                  }}
+                  onDrop={(e) => handleRowDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}
                   onClearSelection={onClearSelection}
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
-                  onJumpToHere={handleJumpToHereDebug}
+                  onJumpToHere={onJumpToHere}
                   getColumnWidth={getColumnWidth}
                 />
                 
-                {/* Show drop indicator line AFTER the last row if it's the drop target */}
+                {/* Drop indicator AFTER the last row */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-gray-400 w-full relative z-50"></div>
+                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
