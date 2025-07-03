@@ -204,9 +204,22 @@ export const useDragAndDrop = (
         
         hasHeaderMoved = draggedItems.some(item => item.type === 'header');
         
-        // Insert all items at the drop position
+        // Calculate the correct insertion point
+        let adjustedDropIndex = dropIndex;
+        
+        // If we're dropping after items that were removed, adjust the index
+        const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+          draggedIds.includes(item.id)
+        ).length;
+        
+        adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+        
+        // Ensure we don't go out of bounds
+        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
+        
+        // Insert all items at the adjusted drop position
         newItems = [...remainingItems];
-        newItems.splice(dropIndex, 0, ...draggedItems);
+        newItems.splice(adjustedDropIndex, 0, ...draggedItems);
         
         actionDescription = isHeaderGroup ? 
           `Reorder header group (${draggedItems.length} items)` : 

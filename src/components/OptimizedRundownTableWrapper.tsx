@@ -102,10 +102,17 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     let isHeaderGroup = false;
     
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
+      // Collapsed header group
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = true;
       console.log('🔗 Dragging collapsed header group with IDs:', draggedIds);
+    } else if (restProps.selectedRows && restProps.selectedRows.size > 1 && restProps.selectedRows.has(item.id)) {
+      // Multiple selection
+      draggedIds = Array.from(restProps.selectedRows);
+      isHeaderGroup = false;
+      console.log('🔗 Dragging multiple selected items with IDs:', draggedIds);
     } else {
+      // Single item
       draggedIds = [item.id];
       isHeaderGroup = false;
     }
