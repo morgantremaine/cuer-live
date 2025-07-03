@@ -49,6 +49,7 @@ export const transformCSVData = (
         switch (mapping.rundownColumn) {
           case 'name':
           case 'segmentName': // Add segmentName case to handle both
+          case 'title': // Add title case for CSVs that use "Title" instead of "Name"
             const nameValue = String(value || '').trim();
             if (nameValue) {
               item.name = nameValue;
@@ -75,6 +76,7 @@ export const transformCSVData = (
             item.script = String(value || '');
             break;
           case 'notes':
+          case 'description': // Handle description as notes
             item.notes = String(value || '');
             break;
           case 'talent':

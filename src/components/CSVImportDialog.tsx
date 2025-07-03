@@ -82,10 +82,42 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
           return;
         }
 
-        const headers = results.data[0] as string[];
-        const rows = results.data.slice(1) as any[][];
+        // Smart header detection - find the row that looks like column headers
+        let headerRowIndex = 0;
+        let headers: string[] = [];
+        let rows: any[][] = [];
         
-        console.log('Parsed CSV data:', { headers, rows });
+        // Look for a row that contains typical rundown column names
+        const rundownKeywords = ['cue', 'start', 'time', 'end', 'duration', 'title', 'name', 'script', 'description', 'segment'];
+        
+        for (let i = 0; i < Math.min(10, results.data.length); i++) {
+          const row = results.data[i] as string[];
+          if (!row || row.length === 0) continue;
+          
+          // Count how many cells in this row contain rundown-related keywords
+          const keywordMatches = row.filter(cell => {
+            if (!cell || typeof cell !== 'string') return false;
+            const cellLower = cell.toLowerCase().trim();
+            return rundownKeywords.some(keyword => cellLower.includes(keyword));
+          }).length;
+          
+          // If this row has at least 3 keyword matches, it's likely our header row
+          if (keywordMatches >= 3) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+        
+        headers = results.data[headerRowIndex] as string[];
+        rows = results.data.slice(headerRowIndex + 1).filter((row: unknown) => {
+          // Filter out empty rows and metadata rows
+          if (!row || !Array.isArray(row) || row.length === 0) return false;
+          // If all cells are empty or contain only metadata-like content, skip
+          const nonEmptyCells = row.filter(cell => cell && String(cell).trim() !== '');
+          return nonEmptyCells.length > 0;
+        }) as any[][];
+        
+        console.log('Smart parsed CSV data:', { headerRowIndex, headers, rows });
         setCsvData({ headers, rows });
         setStep('layout');
       },
