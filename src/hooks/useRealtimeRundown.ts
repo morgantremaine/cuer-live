@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
@@ -156,7 +157,7 @@ export const useRealtimeRundown = ({
     }
   }, []);
 
-  // Enhanced update handler with better showcaller detection
+  // Enhanced update handler - COMPLETELY IGNORE SHOWCALLER UPDATES FOR CONTENT PROCESSING
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -182,7 +183,7 @@ export const useRealtimeRundown = ({
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
-      console.log('⏭️ Skipping own update processing for blue WiFi');
+      console.log('⏭️ Skipping own update processing');
       return;
     }
 
@@ -203,12 +204,13 @@ export const useRealtimeRundown = ({
       isShowcallerOnly,
       contentHashMatch,
       ownUpdate: ownUpdateTrackingRef.current.has(updateData.timestamp),
-      timestamp: updateData.timestamp
+      timestamp: updateData.timestamp,
+      hasContentChange: !contentHashMatch && !isShowcallerOnly
     });
 
-    // If it's showcaller-only, handle it specially
+    // CRITICAL: If it's showcaller-only, handle it specially but NEVER set content processing state
     if (isShowcallerOnly) {
-      logger.log('📺 Received external showcaller visual state');
+      console.log('📺 Processing showcaller-only update - NO content processing state change');
       
       // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
@@ -228,7 +230,7 @@ export const useRealtimeRundown = ({
       }
       
       lastProcessedUpdateRef.current = updateData.timestamp;
-      return; // Don't trigger content sync for showcaller-only updates
+      return; // EARLY RETURN - No content processing for showcaller updates
     }
 
     // Additional check: Skip if content hashes match (no actual content change)
@@ -238,8 +240,8 @@ export const useRealtimeRundown = ({
       return;
     }
 
-    // Only now set content processing state - we've confirmed this is a legitimate content update
-    console.log('🔄 Setting content processing state to true for legitimate external content update');
+    // Only set content processing state for REAL CONTENT CHANGES from OTHER USERS
+    console.log('🔄 Setting content processing state for LEGITIMATE EXTERNAL CONTENT UPDATE');
     setIsProcessingContentUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
