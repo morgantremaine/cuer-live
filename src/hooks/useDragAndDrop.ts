@@ -21,20 +21,11 @@ export const useDragAndDrop = (
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
   const dragEndTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Centralized state reset function
+  // Centralized state reset function with better timeout clearing
   const resetDragState = useCallback(() => {
     console.log('🔄 Resetting drag state');
-    setDraggedItemIndex(null);
-    setIsDraggingMultiple(false);
-    setDropTargetIndex(null);
-    isDragActiveRef.current = false;
     
-    // Notify autosave that drag is no longer active
-    if (setDragActive) {
-      setDragActive(false);
-    }
-    
-    // Clear any pending timeouts
+    // Clear timeouts FIRST to prevent them from firing
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
@@ -44,19 +35,35 @@ export const useDragAndDrop = (
       clearTimeout(dragEndTimeoutRef.current);
       dragEndTimeoutRef.current = undefined;
     }
+    
+    // Then reset all state
+    setDraggedItemIndex(null);
+    setIsDraggingMultiple(false);
+    setDropTargetIndex(null);
+    isDragActiveRef.current = false;
+    
+    // Notify autosave that drag is no longer active
+    if (setDragActive) {
+      setDragActive(false);
+    }
   }, [setDragActive]);
 
   // Auto-cleanup timeout to prevent stuck states
   const setDragTimeout = useCallback(() => {
+    // Clear any existing timeout first
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = undefined;
     }
     
-    // Set a 5-second timeout to force reset if drag gets stuck
+    // Set a 3-second timeout to force reset if drag gets stuck
     dragTimeoutRef.current = setTimeout(() => {
       console.warn('⚠️ Drag operation timed out, forcing reset');
-      resetDragState();
-    }, 5000);
+      // Only reset if we're actually still dragging
+      if (isDragActiveRef.current) {
+        resetDragState();
+      }
+    }, 3000);
   }, [resetDragState]);
 
   // Cleanup on unmount
@@ -94,7 +101,7 @@ export const useDragAndDrop = (
     console.log('🚀 Drag start - index:', index);
     
     // Force reset any existing state first
-    if (isDragActiveRef.current) {
+    if (isDragActiveRef.current || dragTimeoutRef.current) {
       console.log('🔄 Force resetting existing drag state');
       resetDragState();
     }
@@ -107,9 +114,12 @@ export const useDragAndDrop = (
 
     const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
     
+    // Set state in the correct order
     isDragActiveRef.current = true;
     setDraggedItemIndex(index);
     setIsDraggingMultiple(isMultipleSelection);
+    
+    // Set timeout after state is established
     setDragTimeout();
     
     // Notify autosave that drag is active
@@ -162,6 +172,12 @@ export const useDragAndDrop = (
     e.stopPropagation();
     
     console.log('🎯 Drop triggered - draggedIndex:', draggedItemIndex, 'dropIndex:', dropIndex);
+    
+    // Immediately clear the timeout to prevent it from firing
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = undefined;
+    }
     
     if (!isDragActiveRef.current || draggedItemIndex === null) {
       console.warn('⚠️ Drop ignored - no active drag or null draggedIndex');
