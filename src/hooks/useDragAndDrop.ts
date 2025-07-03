@@ -214,17 +214,9 @@ export const useDragAndDrop = (
   }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
-    console.log('🏁 Drag end triggered - draggedItemIndex:', draggedItemIndex, 'isDragActive:', isDragActiveRef.current);
-    
-    // Force clear any browser drag feedback
-    try {
-      e.dataTransfer.clearData();
-    } catch (error) {
-      // Some browsers don't allow clearing in dragend
-    }
-    
+    console.log('🏁 Drag end triggered');
     resetDragState();
-  }, [resetDragState, draggedItemIndex]);
+  }, [resetDragState]);
 
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
 

@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -34,7 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -101,31 +101,16 @@ const RundownTable = ({
       onDrop(e, targetIndex);
     } catch (error) {
       console.error('❌ RundownTable: Drop error:', error);
-      // Force reset drag state on error using stable handler
-      stableOnDragEnd(e);
+      // Force reset drag state on error
+      onDragEnd(e);
     }
   };
 
-  // Stable fallback onDragEnd handler to prevent undefined errors during re-renders
-  const stableOnDragEnd = useCallback((e: React.DragEvent) => {
+  // Enhanced drag end handler with logging
+  const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 RundownTable: Drag end triggered');
-    // Use try-catch to prevent function invalidation errors
-    try {
-      if (onDragEnd && typeof onDragEnd === 'function') {
-        onDragEnd(e);
-      } else {
-        console.warn('⚠️ onDragEnd is not a function, resetting drag state manually:', typeof onDragEnd);
-        // Force reset any stuck drag states manually if the function is missing
-        document.querySelectorAll('[draggable="true"]').forEach(el => {
-          const htmlEl = el as HTMLElement;
-          htmlEl.style.opacity = '';
-          htmlEl.style.transform = '';
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error in onDragEnd:', error);
-    }
-  }, [onDragEnd]);
+    onDragEnd(e);
+  };
 
   return (
     <div className="relative w-full bg-background">
@@ -180,7 +165,7 @@ const RundownTable = ({
                   onDragStart={onDragStart}
                   onDragOver={(e) => handleRowDragOver(e, index)}
                   onDrop={(e) => handleRowDrop(e, index)}
-                  onDragEnd={stableOnDragEnd}
+                  onDragEnd={handleDragEnd}
                   onCopySelectedRows={onCopySelectedRows}
                   onDeleteSelectedRows={onDeleteSelectedRows}
                   onPasteRows={onPasteRows}

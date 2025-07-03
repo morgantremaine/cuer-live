@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
@@ -91,7 +90,6 @@ const RundownIndexContent = () => {
     handleDragOver,
     handleDragLeave,
     handleDrop,
-    handleDragEnd,
     hasClipboardData,
     handleCopySelectedRows,
     handlePasteRows,
@@ -332,10 +330,6 @@ const RundownIndexContent = () => {
     handleDrop(e, targetIndex);
   };
 
-  const handleDragEndWrapper = (e: React.DragEvent) => {
-    handleDragEnd(e);
-  };
-
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
@@ -375,7 +369,6 @@ const RundownIndexContent = () => {
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
-        onDragEnd={handleDragEndWrapper}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
