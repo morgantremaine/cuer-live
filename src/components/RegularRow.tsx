@@ -116,12 +116,12 @@ const RegularRow = (props: RegularRowProps) => {
     // More comprehensive checks for text interaction
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     const hasTextSelection = window.getSelection()?.toString().length > 0;
-    const isContentEditable = target.contentEditable === 'true' || target.isContentEditable;
+    const isContentEditable = (target as HTMLElement).contentEditable === 'true' || (target as HTMLElement).isContentEditable;
     const isInsideInput = target.closest('input, textarea, [contenteditable="true"]');
     const isFocusedInput = document.activeElement && 
       (document.activeElement.tagName === 'INPUT' || 
        document.activeElement.tagName === 'TEXTAREA' ||
-       document.activeElement.contentEditable === 'true');
+       (document.activeElement as HTMLElement).contentEditable === 'true');
     
     if (isTextInput || hasTextSelection || isContentEditable || isInsideInput || isFocusedInput) {
       console.log('🚫 RegularRow: Preventing drag - text interaction detected');
