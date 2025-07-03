@@ -79,7 +79,7 @@ const HeaderRowContent = ({
                   minWidth: '100%'
                 }}
               >
-                <span className="text-xl font-bold inline-block" style={{ color: textColor }}>
+                <span className="text-xl font-bold" style={{ color: textColor }}>
                   <input
                     ref={(el) => {
                       if (el) {
@@ -103,12 +103,12 @@ const HeaderRowContent = ({
                     }}
                     size={Math.max(headerName.length + 5, 15)}
                   />
-                </span>
-                <span 
-                  className="text-base font-medium inline-block" 
-                  style={{ color: textColor, marginLeft: '4px' }}
-                >
-                  ({headerDuration})
+                  <span 
+                    className="text-base font-medium" 
+                    style={{ color: textColor }}
+                  >
+                    ({headerDuration})
+                  </span>
                 </span>
               </div>
             </td>
