@@ -99,20 +99,17 @@ const RundownTable = ({
   const handleRowDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('🎯 RundownTable: Drop triggered at index', targetIndex);
     
     try {
       onDrop(e, targetIndex);
     } catch (error) {
-      console.error('❌ RundownTable: Drop error:', error);
       // Force reset drag state on error
       onDragEnd?.(e);
     }
   };
 
-  // Enhanced drag end handler with logging
+  // Enhanced drag end handler
   const handleDragEnd = (e: React.DragEvent) => {
-    console.log('🏁 RundownTable: Drag end triggered');
     onDragEnd?.(e);
   };
 

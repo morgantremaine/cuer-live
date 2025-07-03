@@ -119,19 +119,16 @@ const RegularRow = (props: RegularRowProps) => {
     const isContentEditable = target.contentEditable === 'true';
     
     if (isTextInput || hasTextSelection || isContentEditable) {
-      console.log('🚫 RegularRow: Preventing drag - text interaction detected');
       e.preventDefault();
       e.stopPropagation();
       return;
     }
     
-    console.log('🚀 RegularRow: Starting drag for index', index);
     onDragStart(e, index);
   };
 
-  // Enhanced drag end handler with logging
+  // Enhanced drag end handler
   const handleDragEnd = (e: React.DragEvent) => {
-    console.log('🏁 RegularRow: Drag end for index', index);
     onDragEnd(e);
   };
 
@@ -168,7 +165,6 @@ const RegularRow = (props: RegularRowProps) => {
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('🎯 RegularRow: Drop at index', index);
           onDrop(e, index);
         }}
         onDragEnd={handleDragEnd}

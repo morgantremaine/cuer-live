@@ -87,15 +87,12 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   // Enhanced drag start that maps visible to original indexes AND handles header groups
   const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
-    console.log('🚀 Enhanced drag start - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex);
     
     if (originalIndex === -1) {
-      console.error('❌ Could not map visible index to original index');
       return;
     }
     
     const item = items[originalIndex];
-    console.log('🎯 Dragging item:', item?.name, 'type:', item?.type, 'collapsed:', isHeaderCollapsed(item.id));
     
     // Check if this is a collapsed header and get all its items
     let draggedIds: string[] = [];
@@ -105,12 +102,10 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       // Collapsed header group
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = true;
-      console.log('🔗 Dragging collapsed header group with IDs:', draggedIds);
     } else if (restProps.selectedRows && restProps.selectedRows.size > 1 && restProps.selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(restProps.selectedRows);
       isHeaderGroup = false;
-      console.log('🔗 Dragging multiple selected items with IDs:', draggedIds);
     } else {
       // Single item
       draggedIds = [item.id];
@@ -128,8 +123,6 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
     
-    console.log('✅ Enhanced drag started with info:', dragInfo);
-    
     // Now call the original handler to set drag state, but it won't overwrite our data
     // because we've already set it in dataTransfer
     if (onDragStart) {
@@ -140,10 +133,8 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
-    console.log('🎯 Enhanced drop - visibleIndex:', visibleIndex, 'originalIndex:', originalIndex);
     
     if (originalIndex === -1) {
-      console.error('❌ Could not map visible index to original index for drop');
       return;
     }
     

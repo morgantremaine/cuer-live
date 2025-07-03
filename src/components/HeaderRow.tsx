@@ -105,19 +105,16 @@ const HeaderRow = (props: HeaderRowProps) => {
     const isContentEditable = target.contentEditable === 'true';
     
     if (isTextInput || hasTextSelection || isContentEditable) {
-      console.log('🚫 HeaderRow: Preventing drag - text interaction detected');
       e.preventDefault();
       e.stopPropagation();
       return;
     }
     
-    console.log('🚀 HeaderRow: Starting drag for index', index);
     onDragStart(e, index);
   };
 
-  // Enhanced drag end handler with logging
+  // Enhanced drag end handler
   const handleDragEnd = (e: React.DragEvent) => {
-    console.log('🏁 HeaderRow: Drag end for index', index);
     onDragEnd(e);
   };
 
@@ -151,7 +148,6 @@ const HeaderRow = (props: HeaderRowProps) => {
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('🎯 HeaderRow: Drop at index', index);
           onDrop(e, index);
         }}
         onDragEnd={handleDragEnd}
