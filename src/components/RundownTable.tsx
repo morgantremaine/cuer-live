@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -106,11 +106,20 @@ const RundownTable = ({
     }
   };
 
-  // Enhanced drag end handler with logging
-  const handleDragEnd = (e: React.DragEvent) => {
+  // Enhanced drag end handler with logging and stability
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('🏁 RundownTable: Drag end triggered');
-    onDragEnd(e);
-  };
+    // Use try-catch to prevent function invalidation errors
+    try {
+      if (onDragEnd && typeof onDragEnd === 'function') {
+        onDragEnd(e);
+      } else {
+        console.warn('⚠️ onDragEnd is not a function:', typeof onDragEnd);
+      }
+    } catch (error) {
+      console.error('❌ Error in onDragEnd:', error);
+    }
+  }, [onDragEnd]);
 
   return (
     <div className="relative w-full bg-background">

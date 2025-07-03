@@ -129,10 +129,19 @@ const RegularRow = (props: RegularRowProps) => {
     onDragStart(e, index);
   };
 
-  // Enhanced drag end handler with logging
+  // Enhanced drag end handler with logging and stability
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 RegularRow: Drag end for index', index);
-    onDragEnd(e);
+    // Use try-catch to prevent function invalidation errors
+    try {
+      if (onDragEnd && typeof onDragEnd === 'function') {
+        onDragEnd(e);
+      } else {
+        console.warn('⚠️ RegularRow onDragEnd is not a function:', typeof onDragEnd);
+      }
+    } catch (error) {
+      console.error('❌ Error in RegularRow onDragEnd:', error);
+    }
   };
 
   const backgroundColor = backgroundColorOverride || 

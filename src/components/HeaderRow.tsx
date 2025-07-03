@@ -111,10 +111,19 @@ const HeaderRow = (props: HeaderRowProps) => {
     onDragStart(e, index);
   };
 
-  // Enhanced drag end handler with logging
+  // Enhanced drag end handler with logging and stability
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 HeaderRow: Drag end for index', index);
-    onDragEnd(e);
+    // Use try-catch to prevent function invalidation errors
+    try {
+      if (onDragEnd && typeof onDragEnd === 'function') {
+        onDragEnd(e);
+      } else {
+        console.warn('⚠️ HeaderRow onDragEnd is not a function:', typeof onDragEnd);
+      }
+    } catch (error) {
+      console.error('❌ Error in HeaderRow onDragEnd:', error);
+    }
   };
 
   const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
