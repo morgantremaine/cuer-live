@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
+
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
@@ -8,17 +9,17 @@ export const useDragAndDrop = (
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
-  title?: string,
-  setDragActive?: (active: boolean) => void
+  title?: string
 ) => {
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   
-  // Simple ref to track if we're dragging
+  // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
+  const dragTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Simple state reset function
+  // Centralized state reset function
   const resetDragState = useCallback(() => {
     console.log('🔄 Resetting drag state');
     setDraggedItemIndex(null);
@@ -26,11 +27,34 @@ export const useDragAndDrop = (
     setDropTargetIndex(null);
     isDragActiveRef.current = false;
     
-    // Notify autosave that drag is no longer active
-    if (setDragActive) {
-      setDragActive(false);
+    // Clear any pending timeout
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = undefined;
     }
-  }, [setDragActive]);
+  }, []);
+
+  // Auto-cleanup timeout to prevent stuck states
+  const setDragTimeout = useCallback(() => {
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+    
+    // Set a 10-second timeout to force reset if drag gets stuck
+    dragTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ Drag operation timed out, forcing reset');
+      resetDragState();
+    }, 10000);
+  }, [resetDragState]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const renumberItems = (items: RundownItem[]) => {
     let headerIndex = 0;
@@ -54,6 +78,9 @@ export const useDragAndDrop = (
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     console.log('🚀 Drag start - index:', index);
     
+    // Reset any existing state first
+    resetDragState();
+    
     const item = items[index];
     if (!item) {
       console.error('❌ No item found at index:', index);
@@ -62,15 +89,10 @@ export const useDragAndDrop = (
 
     const isMultipleSelection = selectedRows.size > 1 && selectedRows.has(item.id);
     
-    // Set state
     isDragActiveRef.current = true;
     setDraggedItemIndex(index);
     setIsDraggingMultiple(isMultipleSelection);
-    
-    // Notify autosave that drag is active
-    if (setDragActive) {
-      setDragActive(true);
-    }
+    setDragTimeout();
     
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -80,7 +102,7 @@ export const useDragAndDrop = (
     }));
 
     console.log('✅ Drag started - multiple:', isMultipleSelection);
-  }, [items, selectedRows, setDragActive]);
+  }, [items, selectedRows, resetDragState, setDragTimeout]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
@@ -183,23 +205,17 @@ export const useDragAndDrop = (
       console.log('✅ Updating items with new order');
       setItems(newItems);
       
-      // Reset state immediately after successful drop
-      resetDragState();
-      
     } catch (error) {
       console.error('❌ Error during drop operation:', error);
+    } finally {
+      // Always reset state after drop attempt
       resetDragState();
     }
   }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     console.log('🏁 Drag end triggered');
-    
-    // Simple approach: if we're still marked as dragging, reset
-    if (isDragActiveRef.current) {
-      console.log('🔄 Drag end - resetting state (no drop occurred)');
-      resetDragState();
-    }
+    resetDragState();
   }, [resetDragState]);
 
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;

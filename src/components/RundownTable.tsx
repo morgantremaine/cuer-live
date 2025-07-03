@@ -34,7 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: (e: React.DragEvent) => void; // Made optional
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -102,18 +102,14 @@ const RundownTable = ({
     } catch (error) {
       console.error('❌ RundownTable: Drop error:', error);
       // Force reset drag state on error
-      if (onDragEnd) {
-        onDragEnd(e);
-      }
+      onDragEnd(e);
     }
   };
 
   // Enhanced drag end handler with logging
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 RundownTable: Drag end triggered');
-    if (onDragEnd) {
-      onDragEnd(e);
-    }
+    onDragEnd(e);
   };
 
   return (
@@ -134,7 +130,7 @@ const RundownTable = ({
               <React.Fragment key={item.id}>
                 {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
-                  <tr key={`drop-indicator-${index}`}>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
@@ -182,7 +178,7 @@ const RundownTable = ({
                 
                 {/* Drop indicator AFTER the last row */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr key={`drop-indicator-end`}>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
