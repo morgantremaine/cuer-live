@@ -182,6 +182,7 @@ export const useRealtimeRundown = ({
 
     // Skip if this update originated from this user
     if (ownUpdateTrackingRef.current.has(updateData.timestamp)) {
+      console.log('⏭️ Skipping own update processing for blue WiFi');
       return;
     }
 
