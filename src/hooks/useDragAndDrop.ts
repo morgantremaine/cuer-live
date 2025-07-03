@@ -170,7 +170,7 @@ export const useDragAndDrop = (
 
     try {
       const dragDataString = e.dataTransfer.getData('text/plain');
-      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1 };
+      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1, enhancedHandlerUsed: false };
       
       try {
         dragInfo = JSON.parse(dragDataString);
@@ -178,10 +178,12 @@ export const useDragAndDrop = (
         console.warn('Failed to parse drag data, using fallback');
       }
 
-      const { draggedIds, isHeaderGroup } = dragInfo;
+      const { draggedIds, isHeaderGroup, enhancedHandlerUsed } = dragInfo;
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
+
+      console.log('📋 Processing drop with drag info:', dragInfo);
 
       if (draggedIds.length > 1) {
         console.log('🔗 Processing multi-item drag:', isHeaderGroup ? 'header group' : 'selection', 'IDs:', draggedIds);

@@ -99,18 +99,23 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     
     // Check if this is a collapsed header and get all its items
     let draggedIds: string[] = [];
+    let isHeaderGroup = false;
+    
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
+      isHeaderGroup = true;
       console.log('🔗 Dragging collapsed header group with IDs:', draggedIds);
     } else {
       draggedIds = [item.id];
+      isHeaderGroup = false;
     }
     
     // Store the enhanced drag info
     const dragInfo = {
       draggedIds,
-      isHeaderGroup: item?.type === 'header' && draggedIds.length > 1,
-      originalIndex
+      isHeaderGroup,
+      originalIndex,
+      enhancedHandlerUsed: true // Flag to prevent original handler from overwriting
     };
     
     e.dataTransfer.effectAllowed = 'move';
@@ -118,11 +123,11 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
     
     console.log('✅ Enhanced drag started with info:', dragInfo);
     
-    // Still call the original handler for other processing
-    if (onDragStart) {
-      onDragStart(e, originalIndex);
-    }
-  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
+    // DON'T call the original handler - we're completely replacing its functionality
+    // if (onDragStart) {
+    //   onDragStart(e, originalIndex);
+    // }
+  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds]);
 
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
