@@ -436,7 +436,7 @@ export const useTeam = () => {
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current) {
       console.log('User changed, loading team data for:', user.id);
-      loadedUserRef.current = null; // Reset to allow new load
+      loadedUserRef.current = user.id; // Set immediately to prevent multiple calls
       setIsLoading(true);
       // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);
