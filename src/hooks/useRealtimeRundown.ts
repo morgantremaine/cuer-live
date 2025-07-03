@@ -198,6 +198,13 @@ export const useRealtimeRundown = ({
     };
     const newContentHash = JSON.stringify(contentForHash);
     const contentHashMatch = currentContentHash === newContentHash;
+    
+    console.log('🔍 Content analysis:', {
+      isShowcallerOnly,
+      contentHashMatch,
+      ownUpdate: ownUpdateTrackingRef.current.has(updateData.timestamp),
+      timestamp: updateData.timestamp
+    });
 
     // If it's showcaller-only, handle it specially
     if (isShowcallerOnly) {
