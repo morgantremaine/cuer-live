@@ -39,7 +39,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-3 text-lg font-mono font-semibold align-middle border border-border min-h-[56px]"
+        className="px-3 py-4 text-lg font-mono font-semibold align-middle border border-border min-h-[72px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -61,7 +61,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px] relative"
+              className="align-middle border border-border min-h-[72px] relative"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -71,7 +71,7 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-3 whitespace-nowrap flex items-center"
+                className="px-3 py-4 whitespace-nowrap flex items-center"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
@@ -119,7 +119,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px]"
+              className="align-middle border border-border min-h-[72px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -127,7 +127,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-3"></div>
+              <div className="px-3 py-4"></div>
             </td>
           );
         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
@@ -135,7 +135,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px]"
+              className="align-middle border border-border min-h-[72px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -143,7 +143,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-3"></div>
+              <div className="px-3 py-4"></div>
             </td>
           );
         } else {
@@ -151,7 +151,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border border-border min-h-[56px]"
+              className="align-middle border border-border min-h-[72px]"
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
@@ -159,7 +159,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-3"></div>
+              <div className="px-3 py-4"></div>
             </td>
           );
         }
