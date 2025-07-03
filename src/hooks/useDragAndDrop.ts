@@ -244,8 +244,14 @@ export const useDragAndDrop = (
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
         
-        // Adjust drop index if necessary
-        const adjustedDropIndex = draggedItemIndex < dropIndex ? dropIndex - 1 : dropIndex;
+        // When moving down, we need to account for the item being removed first
+        // When moving up, the drop index is already correct
+        let adjustedDropIndex = dropIndex;
+        if (draggedItemIndex < dropIndex) {
+          // Moving down: subtract 1 because we remove the item first
+          adjustedDropIndex = dropIndex - 1;
+        }
+        // When draggedItemIndex >= dropIndex (moving up), use dropIndex as-is
         newItems.splice(adjustedDropIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
