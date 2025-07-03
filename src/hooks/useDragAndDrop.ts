@@ -17,7 +17,6 @@ export const useDragAndDrop = (
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   
-  // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -29,20 +28,18 @@ export const useDragAndDrop = (
     setDropTargetIndex(null);
     isDragActiveRef.current = false;
     
-    // Clear any pending timeout
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
     }
   }, []);
 
-  // Auto-cleanup timeout to prevent stuck states
+  // Auto-cleanup timeout
   const setDragTimeout = useCallback(() => {
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 10-second timeout to force reset if drag gets stuck
     dragTimeoutRef.current = setTimeout(() => {
       console.warn('⚠️ Drag operation timed out, forcing reset');
       resetDragState();
@@ -80,7 +77,6 @@ export const useDragAndDrop = (
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     console.log('🚀 Drag start - index:', index);
     
-    // Reset any existing state first
     resetDragState();
     
     const item = items[index];
@@ -94,17 +90,19 @@ export const useDragAndDrop = (
     
     // Check if it's a collapsed header group
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
-      // Drag the entire header group
       draggedIds = getHeaderGroupItemIds(item.id);
       isMultipleSelection = draggedIds.length > 1;
+      console.log('🔗 Dragging collapsed header group:', draggedIds);
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(selectedRows);
       isMultipleSelection = true;
+      console.log('🔗 Dragging multiple selected items:', draggedIds);
     } else {
       // Single item
       draggedIds = [item.id];
       isMultipleSelection = false;
+      console.log('🎯 Dragging single item:', item.id);
     }
     
     isDragActiveRef.current = true;
@@ -114,14 +112,6 @@ export const useDragAndDrop = (
     
     e.dataTransfer.effectAllowed = 'move';
     
-    // Check if enhanced handler already set drag data
-    const existingData = e.dataTransfer.getData('text/plain');
-    if (existingData) {
-      console.log('✅ Enhanced drag data already exists, not overwriting:', existingData);
-      return; // Don't overwrite the enhanced data
-    }
-    
-    // Store drag info with header group detection
     const dragInfo = {
       draggedIds,
       isHeaderGroup: item.type === 'header' && isMultipleSelection,
@@ -129,8 +119,7 @@ export const useDragAndDrop = (
     };
     
     e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
-
-    console.log('✅ Drag started - multiple:', isMultipleSelection, 'ids:', draggedIds, 'isHeaderGroup:', dragInfo.isHeaderGroup);
+    console.log('✅ Drag started with info:', dragInfo);
   }, [items, selectedRows, resetDragState, setDragTimeout, getHeaderGroupItemIds, isHeaderCollapsed]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
@@ -138,19 +127,30 @@ export const useDragAndDrop = (
     e.dataTransfer.dropEffect = 'move';
     
     if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
+      // Calculate precise drop position based on mouse position
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      // Simple logic: before middle = insert before this row, after middle = insert after this row
-      const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
+      // Determine if we're dropping before or after this row
+      let insertIndex: number;
+      if (mouseY < rowMiddle) {
+        // Drop BEFORE this row
+        insertIndex = targetIndex;
+      } else {
+        // Drop AFTER this row
+        insertIndex = targetIndex + 1;
+      }
       
-      // Only update if different to avoid unnecessary re-renders
+      // Clamp to valid range
+      insertIndex = Math.max(0, Math.min(insertIndex, items.length));
+      
       if (insertIndex !== dropTargetIndex) {
+        console.log('🎯 Drop target updated:', insertIndex, 'at row', targetIndex, 'mouse:', mouseY < rowMiddle ? 'before' : 'after');
         setDropTargetIndex(insertIndex);
       }
     }
-  }, [draggedItemIndex, dropTargetIndex]);
+  }, [draggedItemIndex, dropTargetIndex, items.length]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -171,14 +171,14 @@ export const useDragAndDrop = (
     console.log('🎯 Drop triggered - draggedIndex:', draggedItemIndex, 'dropIndex:', dropIndex);
     
     if (!isDragActiveRef.current || draggedItemIndex === null) {
-      console.warn('⚠️ Drop ignored - no active drag or null draggedIndex');
+      console.warn('⚠️ Drop ignored - no active drag');
       resetDragState();
       return;
     }
 
     try {
       const dragDataString = e.dataTransfer.getData('text/plain');
-      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1, enhancedHandlerUsed: false };
+      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1 };
       
       try {
         dragInfo = JSON.parse(dragDataString);
@@ -186,15 +186,15 @@ export const useDragAndDrop = (
         console.warn('Failed to parse drag data, using fallback');
       }
 
-      const { draggedIds, isHeaderGroup, enhancedHandlerUsed } = dragInfo;
+      const { draggedIds, isHeaderGroup } = dragInfo;
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
 
-      console.log('📋 Processing drop with drag info:', dragInfo);
+      console.log('📋 Processing drop with drag info:', dragInfo, 'dropIndex:', dropIndex);
 
       if (draggedIds.length > 1) {
-        console.log('🔗 Processing multi-item drag:', isHeaderGroup ? 'header group' : 'selection', 'IDs:', draggedIds);
+        console.log('🔗 Processing multi-item drag');
         
         // Get all dragged items in their original order
         const draggedItems = draggedIds
@@ -205,21 +205,17 @@ export const useDragAndDrop = (
         
         hasHeaderMoved = draggedItems.some(item => item.type === 'header');
         
-        // Calculate insertion point for multi-item drag
-        // dropIndex is already the correct insertion point from dragOver
+        // Calculate proper insertion point
         let insertIndex = dropIndex;
         
         // Count how many dragged items are before the insertion point
-        const draggedItemIndices = draggedIds
+        const draggedIndices = draggedIds
           .map((id: string) => items.findIndex(item => item.id === id))
-          .filter(index => index !== -1);
+          .filter(index => index !== -1)
+          .sort((a, b) => a - b);
         
-        const removedItemsBeforeInsert = draggedItemIndices.filter(index => index < insertIndex).length;
-        
-        // Adjust insertion point by removing items that will be taken out before it
+        const removedItemsBeforeInsert = draggedIndices.filter(index => index < insertIndex).length;
         insertIndex = Math.max(0, insertIndex - removedItemsBeforeInsert);
-        
-        // Ensure we don't exceed bounds after filtering
         insertIndex = Math.min(insertIndex, remainingItems.length);
         
         // Insert all items at the calculated position
@@ -229,14 +225,10 @@ export const useDragAndDrop = (
         actionDescription = isHeaderGroup ? 
           `Reorder header group (${draggedItems.length} items)` : 
           `Reorder ${draggedItems.length} items`;
+          
+        console.log('✅ Multi-item drop completed, insertIndex:', insertIndex);
       } else {
-        // Single item drag
-        if (draggedItemIndex === dropIndex) {
-          console.log('🔄 Same position drop, ignoring');
-          resetDragState();
-          return;
-        }
-
+        // Single item drag - SIMPLIFIED LOGIC
         const draggedItem = items[draggedItemIndex];
         if (!draggedItem) {
           console.error('❌ Dragged item not found');
@@ -246,24 +238,24 @@ export const useDragAndDrop = (
 
         hasHeaderMoved = draggedItem.type === 'header';
 
+        // Simple approach: remove item, then insert at target position
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
         
-        // dropIndex is already the correct insertion point from dragOver
+        // Calculate insertion index after removal
         let insertIndex = dropIndex;
-        
-        // If the dragged item was before the insertion point, adjust down by 1
-        // because we removed it from the array
-        if (draggedItemIndex < insertIndex) {
-          insertIndex = insertIndex - 1;
+        if (draggedItemIndex < dropIndex) {
+          insertIndex = dropIndex - 1;
         }
         
-        // Ensure we don't exceed array bounds
+        // Ensure valid bounds
         insertIndex = Math.max(0, Math.min(insertIndex, newItems.length));
         
         newItems.splice(insertIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
+        
+        console.log('✅ Single-item drop completed, originalIndex:', draggedItemIndex, 'finalIndex:', insertIndex);
       }
       
       if (hasHeaderMoved) {
@@ -280,7 +272,6 @@ export const useDragAndDrop = (
     } catch (error) {
       console.error('❌ Error during drop operation:', error);
     } finally {
-      // Always reset state after drop attempt
       resetDragState();
     }
   }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);

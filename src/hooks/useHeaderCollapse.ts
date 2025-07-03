@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
@@ -12,16 +13,15 @@ export interface HeaderGroup {
 export const useHeaderCollapse = (items: RundownItem[]) => {
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
 
-  // Group items by their headers
+  // Group items by their headers with proper boundary detection
   const headerGroups = useMemo((): HeaderGroup[] => {
     const groups: HeaderGroup[] = [];
     let currentGroup: HeaderGroup | null = null;
 
     items.forEach((item, index) => {
       if (isHeaderItem(item)) {
-        // Save previous group if exists
+        // Finalize previous group if it exists
         if (currentGroup) {
-          currentGroup.endIndex = index - 1;
           groups.push(currentGroup);
         }
         
@@ -31,12 +31,11 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
           items: [],
           headerIndex: index,
           startIndex: index,
-          endIndex: index
+          endIndex: index // Will be updated as we add items
         };
       } else if (currentGroup) {
-        // Add item to current group
+        // Add item to current group and update end index
         currentGroup.items.push(item);
-        // Update end index as we add items
         currentGroup.endIndex = index;
       }
     });
@@ -45,6 +44,13 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
     if (currentGroup) {
       groups.push(currentGroup);
     }
+
+    console.log('📊 Header groups calculated:', groups.map(g => ({
+      header: g.header.name,
+      startIndex: g.startIndex,
+      endIndex: g.endIndex,
+      itemCount: g.items.length
+    })));
 
     return groups;
   }, [items]);
@@ -80,6 +86,7 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
       } else {
         newSet.add(headerId);
       }
+      console.log('🔄 Toggled header collapse:', headerId, 'collapsed:', newSet.has(headerId));
       return newSet;
     });
   }, []);
@@ -89,23 +96,20 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
     return collapsedHeaders.has(headerId);
   }, [collapsedHeaders]);
 
-  // Get items that should move together with a header when dragging
+  // Get items that should move together with a header when dragging (FIXED)
   const getHeaderGroupItems = useCallback((headerId: string): RundownItem[] => {
     const group = headerGroups.find(g => g.header.id === headerId);
-    if (!group) return [];
-    
-    // Return only the header and its direct children (items between this header and next header)
-    const result = [group.header];
-    
-    // Add all items that are after this header but before the next header
-    for (let i = group.headerIndex + 1; i <= group.endIndex; i++) {
-      if (i < items.length && !isHeaderItem(items[i])) {
-        result.push(items[i]);
-      }
+    if (!group) {
+      console.warn('❌ No header group found for ID:', headerId);
+      return [];
     }
     
+    // Return header and ALL items in its group (not just collapsed items)
+    const result = [group.header, ...group.items];
+    
+    console.log('🔗 Header group items for', group.header.name, ':', result.map(item => item.name));
     return result;
-  }, [headerGroups, items]);
+  }, [headerGroups]);
 
   // Get all item IDs in a header group (for drag operations)
   const getHeaderGroupItemIds = useCallback((headerId: string): string[] => {

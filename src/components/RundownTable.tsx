@@ -105,7 +105,6 @@ const RundownTable = ({
       onDrop(e, targetIndex);
     } catch (error) {
       console.error('❌ RundownTable: Drop error:', error);
-      // Force reset drag state on error
       onDragEnd?.(e);
     }
   };
@@ -116,35 +115,40 @@ const RundownTable = ({
     onDragEnd?.(e);
   };
 
+  // Enhanced container drag over for end-of-list drops
+  const handleContainerDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseY = e.clientY;
+    const containerBottom = rect.bottom;
+    
+    // If mouse is in the bottom 50px area, set drop target to end
+    if (mouseY > containerBottom - 50 && items.length > 0) {
+      console.log('🎯 Container drag over - setting end drop target');
+      onDragOver(e, items.length);
+    }
+  };
+
+  // Enhanced container drop for end-of-list drops
+  const handleContainerDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🎯 RundownTable: Container drop triggered - dropping at end');
+    onDrop(e, items.length);
+  };
+
   return (
     <div 
       className="relative w-full bg-background"
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        // Check if we're dragging over the empty space at the bottom
-        const rect = e.currentTarget.getBoundingClientRect();
-        const mouseY = e.clientY;
-        const containerBottom = rect.bottom;
-        
-        // If mouse is in the bottom area and we have items, set drop target to end
-        if (mouseY > containerBottom - 50 && items.length > 0) {
-          // Call the original drag over handler with the end index
-          if (onDragOver) {
-            onDragOver(e, items.length);
-          }
-        }
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        // Handle drop at the end of the list
-        if (onDrop) {
-          onDrop(e, items.length);
-        }
-      }}
+      onDragOver={handleContainerDragOver}
+      onDrop={handleContainerDrop}
     >
       <table className="w-full border-collapse border border-border">
-        <tbody className="bg-background">{items.map((item, index) => {
+        <tbody className="bg-background">
+          {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
             const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
@@ -160,7 +164,7 @@ const RundownTable = ({
                 {dropTargetIndex === index && (
                   <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
+                      <div className="h-1 bg-blue-500 w-full relative z-50 shadow-lg"></div>
                     </td>
                   </tr>
                 )}
@@ -205,38 +209,39 @@ const RundownTable = ({
                   onJumpToHere={onJumpToHere}
                   getColumnWidth={getColumnWidth}
                 />
-                
-                {/* Drop indicator AFTER the last row */}
-                {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr>
-                    <td colSpan={visibleColumns.length + 1} className="p-0">
-                      <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
-                    </td>
-                  </tr>
-                )}
               </React.Fragment>
             );
           })}
+          
+          {/* Drop indicator AFTER the last row (for end-of-list drops) */}
+          {dropTargetIndex === items.length && (
+            <tr>
+              <td colSpan={visibleColumns.length + 1} className="p-0">
+                <div className="h-1 bg-blue-500 w-full relative z-50 shadow-lg"></div>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
       
-      {/* Empty drop zone at the bottom for end-of-list drops */}
+      {/* Enhanced empty drop zone at the bottom */}
       <div 
-        className="h-8 w-full"
+        className="h-12 w-full border-t border-dashed border-gray-300 flex items-center justify-center text-gray-500 text-sm"
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
-          if (onDragOver) {
-            onDragOver(e, items.length);
-          }
+          console.log('🎯 Bottom zone drag over');
+          onDragOver(e, items.length);
         }}
         onDrop={(e) => {
           e.preventDefault();
-          if (onDrop) {
-            onDrop(e, items.length);
-          }
+          e.stopPropagation();
+          console.log('🎯 Bottom zone drop');
+          onDrop(e, items.length);
         }}
-      />
+      >
+        {items.length > 0 ? 'Drop here to add to end' : 'Drop here to start your rundown'}
+      </div>
       
       {items.length === 0 && (
         <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">

@@ -31,7 +31,7 @@ export const useRundownInteractionHandlers = (
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Enhanced drag and drop with better error handling
+  // Enhanced drag and drop with header group support
   const { 
     draggedItemIndex, 
     isDraggingMultiple,
@@ -54,8 +54,8 @@ export const useRundownInteractionHandlers = (
     saveUndoState,
     columns,
     title,
-    getHeaderGroupItemIds,
-    isHeaderCollapsed
+    getHeaderGroupItemIds,  // Pass through header group functions
+    isHeaderCollapsed       // Pass through header collapse check
   );
 
   // Clipboard functionality
