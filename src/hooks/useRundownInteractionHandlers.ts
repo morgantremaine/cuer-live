@@ -37,7 +37,9 @@ export const useRundownInteractionHandlers = (
     handleDragStart, 
     handleDragOver,
     handleDragLeave,
-    handleDrop 
+    handleDrop,
+    handleDragEnd,
+    resetDragState
   } = useDragAndDrop(
     items, 
     (newItems: RundownItem[]) => setItems(() => newItems), 
@@ -101,6 +103,8 @@ export const useRundownInteractionHandlers = (
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    handleDragEnd,
+    resetDragState,
     clipboardItems,
     copyItems,
     hasClipboardData,

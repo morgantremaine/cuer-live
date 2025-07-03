@@ -79,77 +79,102 @@ export const useDragAndDrop = (
     }
   };
 
+  const resetDragState = () => {
+    setDraggedItemIndex(null);
+    setIsDraggingMultiple(false);
+    setDropTargetIndex(null);
+  };
+
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     
-    setDropTargetIndex(null);
+    console.log('🎯 Drag drop triggered', { draggedItemIndex, dropIndex });
     
     if (draggedItemIndex === null) {
-      setDraggedItemIndex(null);
-      setIsDraggingMultiple(false);
+      console.warn('⚠️ No dragged item index, resetting state');
+      resetDragState();
       return;
     }
 
-    // Fixed: Add proper type checking for drag data
-    let dragData;
     try {
-      const dragDataString = e.dataTransfer.getData('text/plain');
-      dragData = dragDataString ? JSON.parse(dragDataString) : { isMultiple: false, selectedIds: [] };
-    } catch (error) {
-      console.warn('Failed to parse drag data:', error);
-      dragData = { isMultiple: false, selectedIds: [] };
-    }
-
-    const { isMultiple, selectedIds } = dragData;
-
-    let newItems: RundownItem[];
-    let hasHeaderMoved = false;
-    let actionDescription = '';
-
-    if (isMultiple && selectedIds && selectedIds.length > 1) {
-      // Handle multiple item drag
-      const selectedItems = items.filter(item => selectedIds.includes(item.id));
-      const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
-      
-      // Check if any selected items are headers
-      hasHeaderMoved = selectedItems.some(item => item.type === 'header');
-      
-      // Insert selected items at the drop position
-      newItems = [...nonSelectedItems];
-      newItems.splice(dropIndex, 0, ...selectedItems);
-      
-      actionDescription = `Reorder ${selectedItems.length} rows`;
-    } else {
-      // Handle single item drag (existing logic)
-      if (draggedItemIndex === dropIndex) {
-        setDraggedItemIndex(null);
-        setIsDraggingMultiple(false);
-        return;
+      // Fixed: Add proper type checking for drag data
+      let dragData;
+      try {
+        const dragDataString = e.dataTransfer.getData('text/plain');
+        dragData = dragDataString ? JSON.parse(dragDataString) : { isMultiple: false, selectedIds: [] };
+      } catch (error) {
+        console.warn('Failed to parse drag data:', error);
+        dragData = { isMultiple: false, selectedIds: [] };
       }
 
-      const draggedItem = items[draggedItemIndex];
-      hasHeaderMoved = draggedItem.type === 'header';
+      const { isMultiple, selectedIds } = dragData;
 
-      newItems = [...items];
-      newItems.splice(draggedItemIndex, 1);
-      newItems.splice(dropIndex, 0, draggedItem);
+      let newItems: RundownItem[];
+      let hasHeaderMoved = false;
+      let actionDescription = '';
+
+      if (isMultiple && selectedIds && selectedIds.length > 1) {
+        // Handle multiple item drag
+        const selectedItems = items.filter(item => selectedIds.includes(item.id));
+        const nonSelectedItems = items.filter(item => !selectedIds.includes(item.id));
+        
+        // Check if any selected items are headers
+        hasHeaderMoved = selectedItems.some(item => item.type === 'header');
+        
+        // Insert selected items at the drop position
+        newItems = [...nonSelectedItems];
+        newItems.splice(dropIndex, 0, ...selectedItems);
+        
+        actionDescription = `Reorder ${selectedItems.length} rows`;
+      } else {
+        // Handle single item drag (existing logic)
+        if (draggedItemIndex === dropIndex) {
+          console.log('🔄 Same position drop, ignoring');
+          resetDragState();
+          return;
+        }
+
+        const draggedItem = items[draggedItemIndex];
+        if (!draggedItem) {
+          console.error('❌ Dragged item not found');
+          resetDragState();
+          return;
+        }
+
+        hasHeaderMoved = draggedItem.type === 'header';
+
+        newItems = [...items];
+        newItems.splice(draggedItemIndex, 1);
+        newItems.splice(dropIndex, 0, draggedItem);
+        
+        actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
+      }
       
-      actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
+      // If any headers were moved, renumber all headers
+      if (hasHeaderMoved) {
+        newItems = renumberItems(newItems);
+      }
+      
+      // Save undo state BEFORE updating items
+      if (saveUndoState && columns && title) {
+        saveUndoState(items, columns, title, actionDescription);
+      }
+      
+      console.log('✅ Updating items with new order');
+      setItems(newItems);
+      
+    } catch (error) {
+      console.error('❌ Error during drop operation:', error);
+    } finally {
+      // Always reset state regardless of success/failure
+      resetDragState();
     }
-    
-    // If any headers were moved, renumber all headers
-    if (hasHeaderMoved) {
-      newItems = renumberItems(newItems);
-    }
-    
-    // Save undo state BEFORE updating items
-    if (saveUndoState && columns && title) {
-      saveUndoState(items, columns, title, actionDescription);
-    }
-    
-    setItems(newItems);
-    setDraggedItemIndex(null);
-    setIsDraggingMultiple(false);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    console.log('🏁 Drag ended, resetting state');
+    resetDragState();
   };
 
   const isDragging = draggedItemIndex !== null;
@@ -162,6 +187,8 @@ export const useDragAndDrop = (
     handleDragStart,
     handleDragOver,
     handleDragLeave,
-    handleDrop
+    handleDrop,
+    handleDragEnd,
+    resetDragState
   };
 };

@@ -30,6 +30,7 @@ interface RegularRowProps {
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -185,6 +186,7 @@ const RegularRow = (props: RegularRowProps) => {
         onDragStart={handleDragStart}
         onDragOver={props.onDragOver}
         onDrop={(e) => props.onDrop(e, index)}
+        onDragEnd={props.onDragEnd}
         onMouseDown={handleMouseDown}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
