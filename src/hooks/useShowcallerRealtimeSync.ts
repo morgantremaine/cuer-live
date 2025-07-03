@@ -58,8 +58,14 @@ export const useShowcallerRealtimeSync = ({
     });
 
     // Skip if this update originated from this user
-    if (showcallerVisualState.controllerId === user?.id && showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
-      console.log('📺 Skipping - own update detected');
+    if (showcallerVisualState.controllerId === user?.id) {
+      console.log('📺 Skipping - own update detected (same controller)');
+      return;
+    }
+
+    // Additional check: skip if we have this update tracked as our own
+    if (showcallerVisualState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerVisualState.lastUpdate)) {
+      console.log('📺 Skipping - own update detected (tracked timestamp)');
       return;
     }
 

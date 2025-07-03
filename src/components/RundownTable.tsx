@@ -34,7 +34,7 @@ interface RundownTableProps {
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -102,14 +102,14 @@ const RundownTable = ({
     } catch (error) {
       console.error('❌ RundownTable: Drop error:', error);
       // Force reset drag state on error
-      onDragEnd(e);
+      onDragEnd?.(e);
     }
   };
 
   // Enhanced drag end handler with logging
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 RundownTable: Drag end triggered');
-    onDragEnd(e);
+    onDragEnd?.(e);
   };
 
   return (
