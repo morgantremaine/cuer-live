@@ -207,11 +207,13 @@ export const useDragAndDrop = (
         // Calculate the correct insertion point
         let adjustedDropIndex = dropIndex;
         
-        // If we're dropping after items that were removed, adjust the index
-        const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
-          draggedIds.includes(item.id)
-        ).length;
+        // Count how many dragged items are before the drop index
+        const draggedItemIndices = draggedIds
+          .map((id: string) => items.findIndex(item => item.id === id))
+          .filter(index => index !== -1)
+          .sort((a, b) => a - b);
         
+        const removedItemsBeforeDropIndex = draggedItemIndices.filter(index => index < dropIndex).length;
         adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
         
         // Ensure we don't go out of bounds
@@ -244,8 +246,14 @@ export const useDragAndDrop = (
         newItems = [...items];
         newItems.splice(draggedItemIndex, 1);
         
-        // Adjust drop index if necessary
-        const adjustedDropIndex = draggedItemIndex < dropIndex ? dropIndex - 1 : dropIndex;
+        // Calculate correct drop position for single item
+        let adjustedDropIndex = dropIndex;
+        if (draggedItemIndex < dropIndex) {
+          // Moving forward, subtract 1 because we removed the item
+          adjustedDropIndex = dropIndex - 1;
+        }
+        // Ensure we don't go out of bounds
+        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, newItems.length));
         newItems.splice(adjustedDropIndex, 0, draggedItem);
         
         actionDescription = `Reorder "${draggedItem.name || 'row'}"`;

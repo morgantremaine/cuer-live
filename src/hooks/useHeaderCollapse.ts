@@ -36,12 +36,13 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
       } else if (currentGroup) {
         // Add item to current group
         currentGroup.items.push(item);
+        // Update end index as we add items
+        currentGroup.endIndex = index;
       }
     });
 
     // Don't forget the last group
     if (currentGroup) {
-      currentGroup.endIndex = items.length - 1;
       groups.push(currentGroup);
     }
 
