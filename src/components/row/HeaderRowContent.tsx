@@ -50,13 +50,12 @@ const HeaderRowContent = ({
         <span style={{ color: textColor }}>{rowNumber}</span>
       </td>
       {/* Dynamic columns */}
-      {columns.map((column) => {
+      {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
         const widthValue = parseInt(columnWidth.replace('px', ''));
         
-        // Special handling for headers - only show specific fields
-        if (column.key === 'segmentName' || column.key === 'name') {
-          // Show the header name with duration appended - simple flowing layout
+        // Always show header name and duration in the first column (after row number)
+        if (columnIndex === 0) {
           const headerName = item.name || '';
           return (
             <td
@@ -83,14 +82,14 @@ const HeaderRowContent = ({
                   <input
                     ref={(el) => {
                       if (el) {
-                        cellRefs.current[`${item.id}-${column.key}`] = el;
+                        cellRefs.current[`${item.id}-name`] = el;
                       }
                     }}
                     type="text"
                     value={headerName}
                     onChange={(e) => onUpdateItem(item.id, 'name', e.target.value)}
-                    onClick={() => onCellClick(item.id, column.key)}
-                    onKeyDown={(e) => onKeyDown(e, item.id, column.key)}
+                    onClick={() => onCellClick(item.id, 'name')}
+                    onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
                     className="bg-transparent border-none outline-none text-lg font-bold"
                     style={{ 
                       color: textColor,
@@ -147,7 +146,7 @@ const HeaderRowContent = ({
             </td>
           );
         } else {
-          // For other columns, show empty cell for headers
+          // For other columns (including segmentName), show empty cell for headers
           return (
             <td
               key={column.id}
