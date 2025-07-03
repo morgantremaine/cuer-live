@@ -51,7 +51,7 @@ export const useSimplifiedRundownState = () => {
   } = useUserColumnPreferences(rundownId);
 
   // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -95,9 +95,16 @@ export const useSimplifiedRundownState = () => {
     hasUnsavedChanges: state.hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp: string) => {
       // Track our own updates to prevent showing blue icon for our changes
-      console.log('📝 Tracking own update:', timestamp);
+      console.log('📝 Tracking own update in realtime:', timestamp);
     }, [])
   });
+
+  // Connect autosave tracking to realtime tracking
+  useEffect(() => {
+    if (realtimeRundown.trackOwnUpdate) {
+      setTrackOwnUpdate(realtimeRundown.trackOwnUpdate);
+    }
+  }, [realtimeRundown.trackOwnUpdate, setTrackOwnUpdate]);
 
   // Stable realtime collaboration - unchanged
   const stableRealtime = useStableRealtimeCollaboration({
