@@ -181,11 +181,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         } else {
           lastSavedRef.current = currentSignature;
         }
-      } catch (error) {
-        console.error('Failed to save column preferences:', error);
-      } finally {
-        setIsSaving(false);
-      }
+       } catch (error) {
+         console.error('Failed to save column preferences:', error);
+       } finally {
+         // Add a delay before hiding the "Saved" indicator to match main autosave behavior
+         setTimeout(() => {
+           setIsSaving(false);
+         }, 2000); // Show "Saved" for 2 seconds after save completes
+       }
     }, saveDelay);
   }, [user?.id, rundownId]);
 
