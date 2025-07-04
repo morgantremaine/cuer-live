@@ -68,7 +68,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white overflow-hidden relative">
+    <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center">
@@ -115,7 +115,7 @@ const LandingPage = () => {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto">
               The world's most
               <br />
-              <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-600 to-slate-600 bg-clip-text text-transparent">
                 intuitive rundown maker
               </span>
             </h1>
