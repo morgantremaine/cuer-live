@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useRealtimeRundown } from './useRealtimeRundown';
+import { useDirectShowcallerRealtime } from './useDirectShowcallerRealtime';
 import { useAuth } from './useAuth';
 
 export const usePlaybackControls = (
@@ -40,23 +40,22 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Enhanced initialization check with immediate readiness
-  const shouldEnableRealtime = useCallback(() => {
-    return !!rundownId && isInitialized;
-  }, [rundownId, isInitialized]);
-
-  // Initialize realtime synchronization with enhanced precision timing support
-  const { isConnected } = useRealtimeRundown({
+  // Direct showcaller realtime - connects immediately, no initialization wait
+  const { isConnected, trackOwnUpdate: directTrackOwnUpdate } = useDirectShowcallerRealtime({
     rundownId,
-    onRundownUpdate: () => {}, // We only care about showcaller state here
-    enabled: shouldEnableRealtime(),
-    currentContentHash,
-    isEditing,
-    hasUnsavedChanges,
-    trackOwnUpdate,
-    onShowcallerActivity,
-    onShowcallerStateReceived: applyExternalVisualState
+    onShowcallerStateReceived: applyExternalVisualState,
+    onShowcallerActivity
   });
+
+  // Create a combined tracking function
+  const combinedTrackOwnUpdate = useCallback((timestamp: string) => {
+    if (trackOwnUpdate) {
+      trackOwnUpdate(timestamp);
+    }
+    if (directTrackOwnUpdate) {
+      directTrackOwnUpdate(timestamp);
+    }
+  }, [trackOwnUpdate, directTrackOwnUpdate]);
 
   // Standard initialization timeout - mobile detection was causing issues
   useEffect(() => {
@@ -80,7 +79,7 @@ export const usePlaybackControls = (
   // Only expose controls after proper initialization
   const controlsReady = isInitialized;
 
-  // Enhanced control wrappers with immediate precision timing validation
+  // Enhanced control wrappers that also update tracking
   const safePlay = useCallback((segmentId?: string) => {
     if (!controlsReady) {
       console.warn('📺 Play called before initialization complete');
@@ -88,7 +87,10 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe play called with immediate precision timing');
     play(segmentId);
-  }, [controlsReady, play]);
+    // Track this action in both systems
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, play, combinedTrackOwnUpdate]);
 
   const safePause = useCallback(() => {
     if (!controlsReady) {
@@ -97,7 +99,9 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe pause called with precision timing');
     pause();
-  }, [controlsReady, pause]);
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, pause, combinedTrackOwnUpdate]);
 
   const safeForward = useCallback(() => {
     if (!controlsReady) {
@@ -106,7 +110,9 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe forward called with precision timing');
     forward();
-  }, [controlsReady, forward]);
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, forward, combinedTrackOwnUpdate]);
 
   const safeBackward = useCallback(() => {
     if (!controlsReady) {
@@ -115,7 +121,9 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe backward called with precision timing');
     backward();
-  }, [controlsReady, backward]);
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, backward, combinedTrackOwnUpdate]);
 
   const safeReset = useCallback(() => {
     if (!controlsReady) {
@@ -124,7 +132,9 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe reset called with precision timing');
     reset();
-  }, [controlsReady, reset]);
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, reset, combinedTrackOwnUpdate]);
 
   const safeJumpToSegment = useCallback((segmentId: string) => {
     if (!controlsReady) {
@@ -133,7 +143,9 @@ export const usePlaybackControls = (
     }
     console.log('📺 Enhanced safe jumpToSegment called with immediate precision timing');
     jumpToSegment(segmentId);
-  }, [controlsReady, jumpToSegment]);
+    const timestamp = new Date().toISOString();
+    combinedTrackOwnUpdate(timestamp);
+  }, [controlsReady, jumpToSegment, combinedTrackOwnUpdate]);
 
   return {
     isPlaying: controlsReady ? isPlaying : false,
