@@ -38,31 +38,20 @@ export const useRundownMemoization = (
 
     // Calculate items with enhanced data only once
     const itemsWithStatus = items.map((item, index) => {
-      // Calculate row number
+      // Calculate row number - new simple numbering system
       let calculatedRowNumber = '';
       if (item.type === 'header') {
-        let headerCount = 0;
-        for (let i = 0; i <= index; i++) {
-          if (items[i]?.type === 'header') headerCount++;
-        }
-        calculatedRowNumber = String.fromCharCode(64 + headerCount); // A, B, C...
+        // Headers don't have row numbers
+        calculatedRowNumber = '';
       } else {
-        let currentSegment = 'A';
-        let itemCount = 0;
+        // Regular items get sequential numbers, ignoring headers
+        let regularItemCount = 0;
         for (let i = 0; i <= index; i++) {
-          const currentItem = items[i];
-          if (currentItem?.type === 'header') {
-            let headerCount = 0;
-            for (let j = 0; j <= i; j++) {
-              if (items[j]?.type === 'header') headerCount++;
-            }
-            currentSegment = String.fromCharCode(64 + headerCount);
-            itemCount = 0;
-          } else if (currentItem?.type === 'regular') {
-            itemCount++;
+          if (items[i]?.type !== 'header') {
+            regularItemCount++;
           }
         }
-        calculatedRowNumber = `${currentSegment}${itemCount}`;
+        calculatedRowNumber = regularItemCount.toString();
       }
 
       // Calculate status
