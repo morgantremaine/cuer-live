@@ -112,7 +112,7 @@ const LandingPage = () => {
               Professional Broadcast Tool
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-lg">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl">
               The world's most
               <br />
               <span className="text-blue-500">
@@ -120,7 +120,7 @@ const LandingPage = () => {
               </span>
             </h1>
             
-            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl">
               Create stunning run of show documents with your entire team on Cuer Live. 
               Plan, cue, and direct events with precision, all from a web browser.
             </p>
