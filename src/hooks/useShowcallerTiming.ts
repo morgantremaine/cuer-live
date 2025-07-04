@@ -85,9 +85,18 @@ export const useShowcallerTiming = ({
     // Calculate real elapsed time since rundown start
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    // Handle day boundary crossing
-    if (realElapsedSeconds < 0) {
+    // Handle day boundary crossing only if the difference is reasonable (< 2 hours negative)
+    // This prevents false 24-hour adjustments when there are larger time discrepancies
+    if (realElapsedSeconds < 0 && realElapsedSeconds > -7200) { // Only if within 2 hours before start
       realElapsedSeconds += 24 * 3600;
+    } else if (realElapsedSeconds < -7200) {
+      // Large negative difference - likely a timing error, show as unavailable
+      return {
+        isOnTime: false,
+        isAhead: false,
+        timeDifference: '00:00:00',
+        isVisible: false
+      };
     }
     
     // Calculate the difference (showcaller position vs real time)
