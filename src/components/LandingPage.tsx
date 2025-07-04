@@ -260,23 +260,6 @@ const LandingPage = () => {
         
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <img 
-            src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
-            alt="Teleprompter Full Screen"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Full-Screen Teleprompter</h3>
-            <p className="text-xl text-slate-400">
-              Professional teleprompter mode with speed controls, formatting options, and realtime sync for back-and-forth editing and script writing.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* AD View Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <img 
             src="/lovable-uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
             alt="AD View Dashboard"
             className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
@@ -300,12 +283,37 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Blueprint Mode, Rich Notes & Documentation, and Team Management */}
+      {/* Teleprompter Section */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        {/* Blueprint Mode */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Full-Screen Teleprompter</h3>
+            <p className="text-xl text-slate-400">
+              Professional teleprompter mode with speed controls, formatting options, and realtime sync for back-and-forth editing and script writing.
+            </p>
+          </div>
+          <img 
+            src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
+            alt="Teleprompter Full Screen"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+        </div>
+      </div>
+
+      {/* Blueprint Planning & Pre-Production */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Complete planning tools for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">seamless pre-production</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            From initial planning to live execution, Blueprint mode provides all the organizational tools your team needs for successful productions.
+          </p>
+        </div>
+        {/* Smart Lists & Organization */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Blueprint Mode</h3>
+            <h3 className="text-3xl font-bold text-white">Smart Lists & Organization</h3>
             <p className="text-xl text-slate-400">
               Organize your show elements with smart checklists. Track talent, graphics, and show blocks with intuitive filtering and organization tools.
             </p>
@@ -325,6 +333,31 @@ const LandingPage = () => {
             alt="Blueprint Planning Interface"
             className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
           />
+        </div>
+
+        {/* Camera Plot Editor */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <img 
+            src="/lovable-uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
+            alt="Camera Plot Editor"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Camera Plot Editor</h3>
+            <p className="text-xl text-slate-400">
+              Visual camera plotting with drag-and-drop elements. Plan your camera positions, set layouts, and coordinate shots with precision for professional broadcast environments.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Drag-and-drop positioning</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Multi-scene planning</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Rich Notes & Documentation */}
