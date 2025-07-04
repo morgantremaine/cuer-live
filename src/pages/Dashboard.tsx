@@ -358,7 +358,7 @@ const Dashboard = () => {
 
         {/* Main Content - Hidden on mobile when sidebar is expanded */}
         {showMainContent && (
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 bg-zinc-950 p-6 overflow-auto">
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
               <div className="px-4 py-6 sm:px-0 space-y-6">
                 {/* Breadcrumb - Hide when searching */}

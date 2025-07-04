@@ -244,7 +244,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
+      <div className="w-12 bg-neutral-800 border-r border-gray-700 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
@@ -276,7 +276,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
+    <div className="w-64 bg-neutral-800 border-r border-gray-700 flex flex-col">
       {/* Header with Search */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <div className="flex-1 mr-2">
@@ -340,9 +340,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   
                   if (isDragOver) {
                     containerClasses += "bg-gray-700 text-white";
-                  } else if (isSelected) {
-                    containerClasses += "bg-blue-600 text-white";
-                  } else {
+                   } else if (isSelected) {
+                     containerClasses += "bg-zinc-900 text-white";
+                   } else {
                     containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
                   }
                   
@@ -431,9 +431,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   containerClasses += "opacity-50";
                 } else if (isDragOver) {
                   containerClasses += "bg-gray-700 text-white";
-                } else if (isSelected) {
-                  containerClasses += "bg-blue-600 text-white";
-                } else {
+                 } else if (isSelected) {
+                   containerClasses += "bg-zinc-900 text-white";
+                 } else {
                   containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
                 }
                 

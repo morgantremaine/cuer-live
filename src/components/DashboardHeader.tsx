@@ -25,7 +25,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   };
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700">
+    <header className="bg-neutral-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
