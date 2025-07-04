@@ -180,15 +180,8 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* How It Works Section - Full color element only */}
+      {/* Live Show Control - Simple image only */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <img 
-          src="/lovable-uploads/92eec16b-6c52-47b1-ba64-6d63eb0f2779.png" 
-          alt="Create & Collaborate, Go Live, Share & Display"
-          className="w-full h-auto"
-        />
-
-        {/* Live Show Control - Simple image only */}
         <div className="text-center space-y-6 mb-16">
           <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
           <p className="text-xl text-slate-400">
