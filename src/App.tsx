@@ -23,6 +23,7 @@ import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
 import CameraPlotEditor from "./pages/CameraPlotEditor";
 import LandingPage from "./components/LandingPage";
+import Changelog from "./pages/Changelog";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const AppRoutes = () => {
       <Route path="/ad-view/:id" element={<ADView />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />
       <Route path="/help" element={<Help />} />
+      <Route path="/changelog" element={<Changelog />} />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />

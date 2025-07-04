@@ -557,7 +557,19 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       <div className="p-4 border-t border-gray-700">
         <div className="text-center text-xs text-gray-500">
           <div>© {new Date().getFullYear()} Cuer Live</div>
-          <div className="mt-1">Version 1.1.0</div>
+          <div className="mt-1">Version 1.1.1</div>
+          <div className="mt-2">
+            <a 
+              href="/changelog" 
+              className="text-blue-400 hover:text-blue-300 underline"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/changelog';
+              }}
+            >
+              View Changelog
+            </a>
+          </div>
         </div>
       </div>
     </div>
