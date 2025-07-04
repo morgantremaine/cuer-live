@@ -81,8 +81,4 @@ export interface RundownContainerProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  
-  // Numbering system functionality
-  numberingSystem?: 'sequential' | 'letter_number';
-  onNumberingSystemChange?: (system: 'sequential' | 'letter_number') => void;
 }

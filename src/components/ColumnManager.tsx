@@ -19,27 +19,23 @@ interface Column {
 
 interface ColumnManagerProps {
   columns: Column[];
-  numberingSystem?: 'sequential' | 'letter_number';
   onAddColumn: (name: string) => void;
   onReorderColumns: (columns: Column[]) => void;
   onDeleteColumn: (columnId: string) => void;
   onToggleColumnVisibility: (columnId: string) => void;
   onLoadLayout: (columns: Column[]) => void;
   onRenameColumn?: (columnId: string, newName: string) => void;
-  onNumberingSystemChange?: (system: 'sequential' | 'letter_number') => void;
   onClose: () => void;
 }
 
 const ColumnManager = ({ 
   columns, 
-  numberingSystem = 'sequential',
   onAddColumn, 
   onReorderColumns, 
   onDeleteColumn, 
   onToggleColumnVisibility,
   onLoadLayout,
   onRenameColumn,
-  onNumberingSystemChange,
   onClose 
 }: ColumnManagerProps) => {
   const { 
@@ -109,43 +105,6 @@ const ColumnManager = ({
             onLoadLayout={handleLoadLayout}
             canEditLayout={canEditLayout}
           />
-
-          {/* Numbering System Toggle */}
-          {onNumberingSystemChange && (
-            <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                Row Numbering System
-              </h3>
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="numbering-system"
-                    value="sequential"
-                    checked={numberingSystem === 'sequential'}
-                    onChange={() => onNumberingSystemChange('sequential')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Sequential Numbers (1, 2, 3...)
-                  </span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="numbering-system"
-                    value="letter_number"
-                    checked={numberingSystem === 'letter_number'}
-                    onChange={() => onNumberingSystemChange('letter_number')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Letter + Number (A, A1, A2, B, B1...)
-                  </span>
-                </label>
-              </div>
-            </div>
-          )}
 
           <ColumnEditor onAddColumn={onAddColumn} />
 

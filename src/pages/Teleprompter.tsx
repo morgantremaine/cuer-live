@@ -19,7 +19,6 @@ const Teleprompter = () => {
   const [rundownData, setRundownData] = useState<{
     title: string;
     items: RundownItem[];
-    numbering_system?: 'sequential' | 'letter_number';
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +76,10 @@ const Teleprompter = () => {
     setError(null);
 
     try {
-      // Access rundown with authentication and numbering system
+      // Access rundown with authentication
       const { data, error: queryError } = await supabase
         .from('rundowns')
-        .select('id, title, items, columns, numbering_system, created_at, updated_at')
+        .select('id, title, items, columns, created_at, updated_at')
         .eq('id', rundownId)
         .single();
 
@@ -91,8 +90,7 @@ const Teleprompter = () => {
       } else if (data) {
         const loadedData = {
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
-          numbering_system: data.numbering_system || 'sequential'
+          items: data.items || []
         };
         
         // Check for and restore any backed up changes
@@ -332,50 +330,27 @@ const Teleprompter = () => {
     };
   }, [rundownId, loading, user, isPollingPaused, saveState.isSaving]);
 
-  const getRowNumber = (index: number, numberingSystem: 'sequential' | 'letter_number' = 'sequential') => {
+  const getRowNumber = (index: number) => {
     if (!rundownData?.items || index < 0 || index >= rundownData.items.length) {
       return '';
     }
     
     const currentItem = rundownData.items[index];
     
-    if (numberingSystem === 'sequential') {
-      // Headers don't have row numbers in sequential system
-      if (currentItem?.type === 'header') {
-        return '';
-      }
-      
-      // For regular items, count sequentially ignoring headers
-      let regularItemCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (rundownData.items[i]?.type !== 'header') {
-          regularItemCount++;
-        }
-      }
-      
-      return regularItemCount.toString();
-    } else {
-      // Letter-number system: original logic
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let letterIndex = 0;
-      let numberIndex = 0;
-      
-      for (let i = 0; i <= index; i++) {
-        if (rundownData?.items[i]?.type === 'header') {
-          letterIndex++;
-          numberIndex = 0;
-        } else {
-          numberIndex++;
-        }
-      }
-      
-      if (currentItem?.type === 'header') {
-        return letters[letterIndex - 1] || 'A';
-      } else {
-        const letter = letters[letterIndex - 1] || 'A';
-        return `${letter}${numberIndex}`;
+    // Headers don't have row numbers
+    if (currentItem?.type === 'header') {
+      return '';
+    }
+    
+    // For regular items, count sequentially ignoring headers
+    let regularItemCount = 0;
+    for (let i = 0; i <= index; i++) {
+      if (rundownData.items[i]?.type !== 'header') {
+        regularItemCount++;
       }
     }
+    
+    return regularItemCount.toString();
   };
 
   // Handle beforeunload to warn about unsaved changes
@@ -469,7 +444,7 @@ const Teleprompter = () => {
         fontSize={fontSize}
         isUppercase={isUppercase}
         isBold={isBold}
-        getRowNumber={(index) => getRowNumber(index, rundownData?.numbering_system || 'sequential')}
+        getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
         canEdit={!isFullscreen}
       />
