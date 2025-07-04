@@ -80,6 +80,28 @@ const ImageCell = ({
     return url;
   };
 
+  // Helper function to extract Figma project name from URL
+  const getFigmaProjectName = (url: string): string => {
+    try {
+      // Figma URL pattern: https://www.figma.com/design/{file-id}/{file-name}?query-params
+      const urlPath = new URL(url).pathname;
+      const pathParts = urlPath.split('/');
+      
+      // Find the file name part (usually after /design/{file-id}/)
+      if (pathParts.length >= 4 && pathParts[1] === 'design') {
+        const fileName = pathParts[3];
+        // Decode URL encoding and replace dashes/underscores with spaces
+        return decodeURIComponent(fileName)
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize first letter of each word
+      }
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Figma Design';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInternalValue(newValue);
@@ -226,7 +248,7 @@ const ImageCell = ({
                 <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-xs">
                   F
                 </div>
-                <span className="text-sm font-medium">Figma Design</span>
+                <span className="text-sm font-medium">{getFigmaProjectName(internalValue)}</span>
               </div>
               <button
                 onClick={(e) => {
