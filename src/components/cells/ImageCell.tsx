@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { renderTextWithLinks } from '@/utils/linkUtils';
 
 interface ImageCellProps {
   value: string;
@@ -267,7 +266,7 @@ const ImageCell = ({
               className="w-full h-8 flex items-center text-sm"
               style={{ color: textColor || '#666' }}
             >
-              {imageError ? 'Invalid image URL' : renderTextWithLinks(internalValue || '', '', { color: textColor || '#666' })}
+              {imageError ? 'Invalid image URL' : (internalValue || '')}
             </div>
           )}
         </div>
