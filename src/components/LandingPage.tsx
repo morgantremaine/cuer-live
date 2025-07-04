@@ -97,7 +97,7 @@ const LandingPage = () => {
           {/* Background Image */}
           <div className="absolute inset-0 rounded-2xl overflow-hidden">
             <img 
-              src="/lovable-uploads/ec07a93f-2c7f-4b6b-81c6-d378252567f1.png" 
+              src="/lovable-uploads/3adf9603-b10b-40e1-8747-aa37d927b8e6.png" 
               alt="Professional Broadcast Control Room"
               className="w-full h-full object-cover"
             />
