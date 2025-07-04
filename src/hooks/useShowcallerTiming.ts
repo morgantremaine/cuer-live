@@ -85,18 +85,17 @@ export const useShowcallerTiming = ({
     // Calculate real elapsed time since rundown start
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    // Handle day boundary crossing only if the difference is reasonable (< 2 hours negative)
-    // This prevents false 24-hour adjustments when there are larger time discrepancies
-    if (realElapsedSeconds < 0 && realElapsedSeconds > -7200) { // Only if within 2 hours before start
-      realElapsedSeconds += 24 * 3600;
-    } else if (realElapsedSeconds < -7200) {
-      // Large negative difference - likely a timing error, show as unavailable
-      return {
-        isOnTime: false,
-        isAhead: false,
-        timeDifference: '00:00:00',
-        isVisible: false
-      };
+    // Handle day boundary crossing more intelligently
+    if (realElapsedSeconds < 0) {
+      // Check if this could be a day boundary crossing vs rundown not started yet
+      const absTimeDiff = Math.abs(realElapsedSeconds);
+      
+      // If we're more than 12 hours behind, likely crossed midnight (day boundary)
+      // If we're less than 12 hours behind, rundown probably hasn't started yet
+      if (absTimeDiff > 12 * 3600) {
+        realElapsedSeconds += 24 * 3600;
+      }
+      // For times less than 12 hours behind, keep the negative value (rundown not started)
     }
     
     // Calculate the difference (showcaller position vs real time)
