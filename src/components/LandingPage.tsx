@@ -68,110 +68,77 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden relative">
-      {/* Animated Matrix-style background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 animate-pulse"></div>
-        <div className="absolute top-0 left-0 w-full h-full">
-          {[...Array(20)].map((_, i) => (
-            <div 
-              key={i}
-              className="absolute w-px bg-gradient-to-b from-transparent via-cyan-400/30 to-transparent"
-              style={{
-                left: `${i * 5}%`,
-                height: '100%',
-                animation: `slide-down ${2 + i * 0.1}s linear infinite`,
-                animationDelay: `${i * 0.2}s`
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-
+    <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
-      <nav className="relative z-50 flex items-center justify-between p-6 backdrop-blur-sm bg-black/20 border-b border-cyan-500/20">
+      <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center">
-          <CuerLogo className="h-8 w-auto filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+          <CuerLogo className="h-8 w-auto" />
         </div>
         <div className="flex items-center space-x-4">
-          <Link to="/help" className="text-cyan-400 hover:text-cyan-300 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]">
+          <Link to="/help" className="text-slate-300 hover:text-white transition-colors">
             Help
           </Link>
           {user ? (
-            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 transition-all duration-300">
+            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
               Dashboard
             </Button>
           ) : (
-            <Button onClick={() => navigate('/login')} variant="outline" className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 transition-all duration-300">
+            <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
               Sign In
             </Button>
           )}
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="relative z-10 w-full pb-12">
-        {/* Main Hero */}
-        <div className="relative mb-16 w-full min-h-screen flex items-center justify-center">
-          {/* Holographic backdrop */}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5"></div>
+      {/* Hero Section with Full-Width Background */}
+      <div className="relative z-10 w-full pb-24">
+        {/* Hero Content with Background Image */}
+        <div className="relative mb-16 w-full">
+          {/* Background Image */}
+          <div className="absolute inset-0 w-full">
+            <img 
+              src="/lovable-uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
+              alt="Professional Broadcast Control Room"
+              className="w-full h-full object-cover"
+            />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/60"></div>
+          </div>
           
-          {/* Hero Content */}
-          <div className="relative z-10 text-center space-y-12 px-8 max-w-6xl mx-auto">
-            {/* Glitch badge */}
-            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 backdrop-blur-sm">
-              <Zap className="w-5 h-5 mr-3 text-cyan-400 animate-pulse" />
-              <span className="text-cyan-300 font-mono tracking-wider">NEXT-GEN BROADCAST TECH</span>
-            </div>
+          {/* Hero Text Content */}
+          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto">
+            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50">
+              <Zap className="w-4 h-4 mr-2" />
+              Professional Broadcast Tool
+            </Badge>
             
-            {/* Main title with hero image background */}
-            <div className="space-y-6 relative">
-              {/* Background image */}
-              <div className="absolute inset-0 -z-10">
-                <img 
-                  src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
-                  alt="Background"
-                  className="w-full h-full object-cover opacity-20 rounded-3xl"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent rounded-3xl"></div>
-              </div>
-              
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight tracking-tight relative z-10">
-                <span className="block bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">
-                  THE FUTURE OF
-                </span>
-                <span className="block text-6xl md:text-8xl lg:text-9xl bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.8)]">
-                  RUNDOWNS
-                </span>
-              </h1>
-              
-              <div className="relative z-10">
-                <p className="text-xl md:text-2xl text-cyan-100 leading-relaxed max-w-4xl mx-auto font-light tracking-wide">
-                  Next-generation show production platform. Cuer Live transforms your broadcast workflow with 
-                  <span className="text-cyan-400 font-semibold"> AI-powered precision</span>, 
-                  <span className="text-purple-400 font-semibold"> real-time collaboration</span>, and 
-                  <span className="text-pink-400 font-semibold"> professional control</span>.
-                </p>
-              </div>
-            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl">
+              The world's most
+              <br />
+              <span className="text-blue-500">
+                intuitive rundown maker
+              </span>
+            </h1>
+            
+            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl">
+              Create stunning run of show documents with your entire team on Cuer Live. 
+              Plan, cue, and direct events with precision, all from a web browser.
+            </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 onClick={handleGetStarted}
                 size="lg" 
-                className="relative group bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xl px-12 py-6 h-auto font-bold tracking-wide transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto"
               >
-                <span className="relative z-10">Get Started</span>
-                <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md blur-xl"></div>
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => navigate('/help')}
-                className="border-2 border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400 text-xl px-12 py-6 h-auto font-bold tracking-wide transition-all duration-300 hover:scale-105 backdrop-blur-sm"
+                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto"
               >
                 Explore Features
               </Button>
@@ -179,167 +146,108 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Hero Interface Preview */}
-        <div className="relative max-w-7xl mx-auto mb-20">
-          <div className="relative group">
-            {/* Responsive glowing border effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 scale-[1.02]"></div>
-            <div className="relative">
-              <img 
-                src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
-                alt="Cuer Live Professional Rundown Interface"
-                className="w-full h-auto rounded-2xl border border-cyan-500/30 shadow-2xl"
-              />
-              {/* Holographic overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/10 to-transparent rounded-2xl pointer-events-none"></div>
-            </div>
-          </div>
+        {/* Hero Rundown Interface - Much Larger */}
+        <div className="relative max-w-6xl mx-auto mb-16">
+          <img 
+            src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
+            alt="Cuer Live Professional Rundown Interface"
+            className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30"
+          />
         </div>
 
-        {/* System Status Indicators */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-24">
+        {/* Quick Features List */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {testimonialFeatures.slice(0, 4).map((feature, index) => (
-            <div key={index} className="relative group">
-              <div className="flex items-center space-x-3 text-cyan-100 bg-black/40 backdrop-blur-sm p-6 rounded-xl border border-cyan-500/20 hover:border-cyan-400/40 transition-all duration-300">
-                <div className="relative">
-                  <CheckCircle className="h-6 w-6 text-cyan-400 animate-pulse" />
-                  <div className="absolute inset-0 h-6 w-6 text-cyan-400 animate-ping opacity-20">
-                    <CheckCircle className="h-6 w-6" />
-                  </div>
-                </div>
-                <span className="text-sm font-mono tracking-wide uppercase">{feature}</span>
-              </div>
+            <div key={index} className="flex items-center space-x-3 text-slate-300 bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">
+              <CheckCircle className="h-5 w-5 text-blue-400 flex-shrink-0" />
+              <span className="text-sm font-medium">{feature}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Core Systems Grid */}
+      {/* Features Grid */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-20">
-          <div className="inline-block mb-6">
-            <span className="text-cyan-400 font-mono text-sm tracking-[0.2em] uppercase">Core Features</span>
-          </div>
-          <h2 className="text-5xl md:text-6xl font-black mb-6">
-            <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              POWERFUL FEATURES
-            </span>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">
+            Everything you need for 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent"> professional broadcasts</span>
           </h2>
-          <p className="text-xl text-cyan-100/80 max-w-4xl mx-auto leading-relaxed">
-            Professional-grade tools designed for modern broadcast workflows. Each feature built for reliability and performance.
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            From pre-production planning to live show execution, Cuer Live provides all the tools your team needs.
           </p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="relative group">
-              {/* Animated border */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl opacity-20 group-hover:opacity-40 transition duration-300 blur"></div>
-              
-              <div className="relative bg-black/60 backdrop-blur-sm border border-cyan-500/20 rounded-xl p-8 hover:border-cyan-400/40 transition-all duration-300 group">
-                <div className="flex items-start space-x-6 mb-6">
-                  <div className="relative">
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 group-hover:scale-110 transition-transform duration-300">
-                      <feature.icon className={`h-8 w-8 ${feature.color} drop-shadow-[0_0_8px_currentColor]`} />
-                    </div>
-                    {/* Pulse ring */}
-                    <div className="absolute inset-0 rounded-xl border border-cyan-400/30 animate-ping opacity-20 group-hover:opacity-40"></div>
+            <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 transition-transform`}>
+                    <feature.icon className={`h-6 w-6 ${feature.color}`} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">{feature.title}</h3>
-                    <div className="w-12 h-0.5 bg-gradient-to-r from-cyan-400 to-transparent mb-4"></div>
-                  </div>
+                  <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
                 </div>
-                <p className="text-cyan-100/70 leading-relaxed font-light">{feature.description}</p>
-                
-              </div>
-            </div>
+                <p className="text-slate-300 leading-relaxed">{feature.description}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
 
-      {/* Live Show Controls */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
-        <div className="text-center mb-20">
-          <div className="inline-block mb-6">
-            <span className="text-purple-400 font-mono text-sm tracking-[0.2em] uppercase">Live Production</span>
-          </div>
-          <h3 className="text-4xl md:text-5xl font-black text-white mb-6">
-            <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              LIVE SHOW CONTROLS
-            </span>
-          </h3>
-          <p className="text-xl text-cyan-100/80 max-w-3xl mx-auto leading-relaxed">
-            Professional live show interface with precision timing and real-time status monitoring for broadcast operations.
+      {/* Live Show Control - Simple image only */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center space-y-6 mb-16">
+          <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
+          <p className="text-xl text-slate-400">
+            Professional timing controls and real-time status tracking for your entire production team.
           </p>
+          <img 
+            src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
+            alt="Live Show Controls"
+            className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
-        
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-          <div className="relative">
-            <img 
-              src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
-              alt="Live Show Controls"
-              className="w-full max-w-5xl mx-auto h-auto rounded-2xl border border-purple-500/30 shadow-2xl"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent rounded-2xl pointer-events-none"></div>
-          </div>
-        </div>
+
       </div>
 
-      {/* AI Assistant */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
-        <div className="text-center mb-20">
-          <div className="inline-block mb-6">
-            <span className="text-pink-400 font-mono text-sm tracking-[0.2em] uppercase">AI Assistant</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-black mb-6">
-            <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              INTELLIGENT ASSISTANCE
-            </span>
+      {/* AI Assistant Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">
+            Smart AI assistance for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">perfect rundowns</span>
           </h2>
-          <p className="text-xl text-cyan-100/80 max-w-4xl mx-auto leading-relaxed">
-            Advanced AI assistant that helps analyze, optimize, and enhance your broadcast workflow with intelligent insights.
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Get intelligent insights and suggestions from our AI assistant to optimize your rundown and catch potential issues before they happen.
           </p>
         </div>
         
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <div className="space-y-6">
-              <h3 className="text-3xl font-bold text-white tracking-tight">CUER AI ASSISTANT</h3>
-              <p className="text-xl text-cyan-100/70 leading-relaxed">
-                Intelligent analysis and recommendations help streamline your workflow and optimize show production.
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              {[
-                "Real-time workflow analysis",
-                "Intelligent content suggestions",
-                "Automated timing optimization"
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-4 text-cyan-100">
-                  <div className="relative">
-                    <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 w-3 h-3 bg-pink-400 rounded-full animate-ping opacity-40"></div>
-                  </div>
-                  <span className="text-lg tracking-wide">{feature}</span>
-                </div>
-              ))}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Cuer AI Assistant</h3>
+            <p className="text-xl text-slate-400">
+              Your intelligent production companion analyzes your rundown in real-time, offering suggestions and identifying potential issues to keep your show running smoothly.
+            </p>
+            <div className="grid grid-cols-1 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time rundown analysis and optimization</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Proactive issue detection and suggestions</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Intelligent timing and content recommendations</span>
+              </div>
             </div>
           </div>
-          
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
-            <div className="relative">
-              <img 
-                src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
-                alt="Cuer AI Assistant Interface"
-                className="w-full h-auto rounded-2xl border border-pink-500/30 shadow-2xl"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent rounded-2xl pointer-events-none"></div>
-            </div>
-          </div>
+          <img 
+            src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
+            alt="Cuer AI Assistant Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
       </div>
 
