@@ -273,7 +273,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/a8f26352-6c2f-4e9f-91b5-6db3581e2d48.png" 
+              src="/lovable-uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
               alt="Shared Rundown View"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
