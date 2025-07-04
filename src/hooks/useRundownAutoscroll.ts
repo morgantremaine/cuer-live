@@ -36,11 +36,29 @@ export const useRundownAutoscroll = ({
       );
 
       if (targetElement) {
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: isMobileOrTablet ? 'start' : 'center',
-          inline: 'nearest'
-        });
+        if (isMobileOrTablet) {
+          // On mobile/tablet, calculate header height and scroll with offset
+          const headerElement = scrollContainerRef.current.querySelector('.sticky');
+          const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 0;
+          const targetRect = targetElement.getBoundingClientRect();
+          const containerRect = scrollContainerRef.current.getBoundingClientRect();
+          const scrollTop = scrollContainerRef.current.scrollTop;
+          
+          // Calculate target position with header offset
+          const targetPosition = scrollTop + (targetRect.top - containerRect.top) - headerHeight - 8; // 8px padding
+          
+          scrollContainerRef.current.scrollTo({
+            top: Math.max(0, targetPosition),
+            behavior: 'smooth'
+          });
+        } else {
+          // Desktop behavior - center the element
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
