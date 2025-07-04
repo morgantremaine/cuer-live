@@ -234,6 +234,15 @@ export const useRealtimeRundown = ({
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
   useEffect(() => {
+    console.log('🔧 useRealtimeRundown dependency check:', {
+      rundownId: !!rundownId,
+      rundownIdValue: rundownId,
+      user: !!user,
+      userValue: user?.id,
+      enabled,
+      hasAllRequirements: !!rundownId && !!user && enabled
+    });
+    
     // Clear any existing subscription
     if (subscriptionRef.current) {
       console.log('🔄 Clearing existing realtime subscription');
