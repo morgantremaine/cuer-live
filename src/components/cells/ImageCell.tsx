@@ -63,6 +63,22 @@ const ImageCell = ({
     return url;
   };
 
+  // Helper function to convert Dropbox links to direct image URLs
+  const convertDropboxUrl = (url: string): string => {
+    // Check if it's a Dropbox sharing link
+    if (url.includes('dropbox.com') && url.includes('dl=0')) {
+      // Convert from sharing link to direct download by changing dl=0 to dl=1
+      return url.replace('dl=0', 'dl=1');
+    }
+    
+    // Check for Dropbox scl format and convert to direct link
+    if (url.includes('dropbox.com/scl/')) {
+      return url.replace('dl=0', 'dl=1');
+    }
+    
+    return url;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInternalValue(newValue);
@@ -129,13 +145,23 @@ const ImageCell = ({
     internalValue.includes('imgur') ||
     internalValue.includes('unsplash') ||
     internalValue.includes('drive.google.com') ||
+    internalValue.includes('dropbox.com') ||
     internalValue.includes('gstatic.com') ||
     internalValue.includes('amazonaws.com') ||
     internalValue.includes('cloudinary.com')
   );
 
-  // Get the display URL (convert Google Drive links if necessary)
-  const displayUrl = isLikelyImageUrl && internalValue ? convertGoogleDriveUrl(internalValue) : internalValue;
+  // Get the display URL (convert Google Drive or Dropbox links if necessary)
+  const getDisplayUrl = (url: string): string => {
+    if (url.includes('drive.google.com')) {
+      return convertGoogleDriveUrl(url);
+    } else if (url.includes('dropbox.com')) {
+      return convertDropboxUrl(url);
+    }
+    return url;
+  };
+
+  const displayUrl = isLikelyImageUrl && internalValue ? getDisplayUrl(internalValue) : internalValue;
 
   // Check if we have a valid image URL (non-empty and no error)
   const isValidImageUrl = internalValue && internalValue.trim() && !imageError;
