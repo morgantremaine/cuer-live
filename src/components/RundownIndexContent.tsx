@@ -360,6 +360,7 @@ const RundownIndexContent = () => {
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
+        totalRuntime={totalRuntime}
         numberingSystem={currentNumberingSystem}
         onNumberingSystemChange={handleNumberingSystemChange}
         showColumnManager={showColumnManager}
