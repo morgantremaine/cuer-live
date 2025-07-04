@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -244,12 +243,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
+      <div className="w-12 bg-black border-r border-neutral-800 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-gray-800"
+          className="text-neutral-400 hover:text-white hover:bg-neutral-800"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -262,8 +261,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => onFolderSelect(folder.id, folder.type)}
-                className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
-                  isSelected ? 'bg-blue-600 text-white' : ''
+                className={`text-neutral-400 hover:text-white hover:bg-neutral-800 ${
+                  isSelected ? 'bg-white text-black' : ''
                 }`}
               >
                 <folder.icon className="h-4 w-4" />
@@ -276,24 +275,24 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
+    <div className="w-64 bg-black border-r border-neutral-800 flex flex-col">
       {/* Header with Search */}
-      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+      <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex-1 mr-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-500" />
             <Input
               placeholder="Search rundowns..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
+              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500 pl-9 pr-8 h-8 text-sm"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={clearSearch}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 text-neutral-500 hover:text-white hover:bg-neutral-800"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -304,7 +303,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-gray-800"
+          className="text-neutral-400 hover:text-white hover:bg-neutral-800"
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -320,30 +319,28 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               onClick={() => toggleFolderExpansion('system')}
             >
               {expandedFolders.has('system') ? (
-                <ChevronDown className="h-3 w-3 text-gray-400 mr-1" />
+                <ChevronDown className="h-3 w-3 text-neutral-500 mr-1" />
               ) : (
-                <ChevronRight className="h-3 w-3 text-gray-400 mr-1" />
+                <ChevronRight className="h-3 w-3 text-neutral-500 mr-1" />
               )}
-              <span className="text-xs text-gray-400 uppercase tracking-wide">System</span>
+              <span className="text-xs text-neutral-500 uppercase tracking-wide">System</span>
             </div>
             
             {expandedFolders.has('system') && (
               <div className="space-y-1">
                 {systemFolders.map((folder) => {
                   const isSelected = folderType === folder.type;
-                  // For "All Rundowns" (id: null), check against 'all-rundowns'
                   const dragId = folder.id === null ? 'all-rundowns' : folder.id;
                   const isDragOver = dragOverFolder === dragId;
                   
-                  // Priority: drag-over > selected > default hover
                   let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
                   
                   if (isDragOver) {
-                    containerClasses += "bg-gray-700 text-white";
+                    containerClasses += "bg-neutral-800 text-white";
                   } else if (isSelected) {
-                    containerClasses += "bg-blue-600 text-white";
+                    containerClasses += "bg-white text-black";
                   } else {
-                    containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                    containerClasses += "text-neutral-400 hover:bg-neutral-900 hover:text-white";
                   }
                   
                   return (
@@ -359,7 +356,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         <folder.icon className="h-4 w-4 mr-2" />
                         <span className="text-sm">{folder.name}</span>
                       </div>
-                      <span className="text-xs text-gray-400">{folder.count}</span>
+                      <span className="text-xs text-neutral-500">{folder.count}</span>
                     </div>
                   );
                 })}
@@ -367,21 +364,21 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             )}
           </div>
 
-          {/* Custom Folders - Changed header from "Custom" to "Folders" */}
+          {/* Custom Folders */}
           <div>
             <div className="flex items-center justify-between px-2 py-1 mb-2">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Folders</span>
+              <span className="text-xs text-neutral-500 uppercase tracking-wide">Folders</span>
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-800"
+                    className="h-5 w-5 text-neutral-500 hover:text-white hover:bg-neutral-800"
                   >
                     <FolderPlus className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-gray-800 border-gray-700">
+                <DialogContent className="bg-neutral-900 border-neutral-700">
                   <DialogHeader>
                     <DialogTitle className="text-white">Create New Folder</DialogTitle>
                   </DialogHeader>
@@ -390,7 +387,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                       placeholder="Folder name"
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-neutral-800 border-neutral-600 text-white"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleCreateFolder();
@@ -401,13 +398,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                       <Button
                         variant="outline"
                         onClick={() => setShowCreateDialog(false)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        className="border-neutral-600 text-neutral-400 hover:bg-neutral-800"
                       >
                         Cancel
                       </Button>
                       <Button
                         onClick={handleCreateFolder}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-white text-black hover:bg-neutral-200"
                         disabled={!newFolderName.trim()}
                       >
                         Create
@@ -424,24 +421,23 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 const isDragOver = dragOverFolder === folder.id;
                 const isDragging = draggedFolderId === folder.id;
                 
-                // Priority: drag-over > selected > default hover
                 let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors relative ";
                 
                 if (isDragging) {
                   containerClasses += "opacity-50";
                 } else if (isDragOver) {
-                  containerClasses += "bg-gray-700 text-white";
+                  containerClasses += "bg-neutral-800 text-white";
                 } else if (isSelected) {
-                  containerClasses += "bg-blue-600 text-white";
+                  containerClasses += "bg-white text-black";
                 } else {
-                  containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                  containerClasses += "text-neutral-400 hover:bg-neutral-900 hover:text-white";
                 }
                 
                 return (
                   <div key={folder.id}>
                     {/* Drop indicator line */}
                     {dropIndicatorIndex === index && (
-                      <div className="h-0.5 bg-gray-400 mx-2 mb-1 rounded"></div>
+                      <div className="h-0.5 bg-neutral-500 mx-2 mb-1 rounded"></div>
                     )}
                     
                     <div
@@ -462,7 +458,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                           <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
-                            className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
+                            className="bg-neutral-800 border-neutral-600 text-white text-sm h-6 px-1"
                             onBlur={() => handleEditFolder(folder)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
@@ -479,26 +475,26 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         )}
                       </div>
                       <div className="flex items-center space-x-1">
-                        <span className="text-xs text-gray-400">{getFolderCount(folder.id)}</span>
+                        <span className="text-xs text-neutral-500">{getFolderCount(folder.id)}</span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                              className="h-6 w-6 text-neutral-500 hover:text-white hover:bg-neutral-800"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                          <DropdownMenuContent className="bg-neutral-900 border-neutral-700">
                             <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingFolder(folder.id);
                                 setEditName(folder.name);
                               }}
-                              className="text-gray-300 hover:text-white hover:bg-gray-700"
+                              className="text-neutral-400 hover:text-white hover:bg-neutral-800"
                             >
                               <Edit2 className="h-4 w-4 mr-2" />
                               Rename
@@ -520,7 +516,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                     
                     {/* Drop indicator line at the end */}
                     {dropIndicatorIndex === folders.length && index === folders.length - 1 && (
-                      <div className="h-0.5 bg-gray-400 mx-2 mt-1 rounded"></div>
+                      <div className="h-0.5 bg-neutral-500 mx-2 mt-1 rounded"></div>
                     )}
                   </div>
                 );
@@ -542,7 +538,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       {/* Search Results Message */}
       {searchQuery && (
         <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center text-gray-400">
+          <div className="text-center text-neutral-500">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">
               Searching for "{searchQuery}"

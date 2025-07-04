@@ -166,7 +166,7 @@ const DashboardRundownGrid = ({
         {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 bg-gray-800 rounded-lg animate-pulse" />
+            <div key={i} className="h-64 bg-neutral-800 rounded-lg animate-pulse" />
           ))}
         </div>
       </div>
@@ -178,17 +178,17 @@ const DashboardRundownGrid = ({
       <div className="space-y-6">
         {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
         <div className="text-center py-12">
-          <h3 className="text-xl font-semibold text-gray-300 mb-4">
+          <h3 className="text-xl font-semibold text-neutral-300 mb-4">
             {isArchived ? 'No archived rundowns' : 'No rundowns yet'}
           </h3>
-          <p className="text-gray-400 mb-6">
+          <p className="text-neutral-500 mb-6">
             {isArchived 
               ? 'You haven\'t archived any rundowns yet.' 
               : 'Create your first rundown to get started with organizing your content.'
             }
           </p>
           {!isArchived && onCreateNew && (
-            <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700 text-white border-0">
+            <Button onClick={onCreateNew} className="bg-white text-black hover:bg-neutral-200 border-0">
               <Plus className="h-4 w-4 mr-2" />
               Create New Rundown
             </Button>
@@ -211,7 +211,7 @@ const DashboardRundownGrid = ({
             return (
               <Card 
                 key={rundown.id} 
-                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
+                className="bg-neutral-800 border-neutral-700 hover:bg-neutral-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
                 draggable
                 onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
@@ -221,34 +221,33 @@ const DashboardRundownGrid = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0 pr-2">
                       <CardTitle 
-                        className="text-white text-base cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words"
+                        className="text-white text-base cursor-pointer hover:text-neutral-300 transition-colors leading-tight break-words"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
                       </CardTitle>
-                      <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
+                      <CardDescription className="text-neutral-500 flex items-center gap-2 text-xs mt-1">
                         <span>{getOwnerInfo(rundown)}</span>
                         <span>•</span>
                         <span>{formatDate(rundown.updated_at)}</span>
                       </CardDescription>
                     </div>
                     
-                    {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          className="text-neutral-500 hover:text-white hover:bg-neutral-700 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         >
                           <MoreVertical className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
+                      <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700 z-50">
                         {onUnarchive && (
                           <DropdownMenuItem 
                             onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
-                            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                            className="text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
                           >
                             <RotateCcw className="h-4 w-4 mr-2" />
                             Unarchive
@@ -266,15 +265,15 @@ const DashboardRundownGrid = ({
                                 Delete
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-gray-800 border-gray-700">
+                            <AlertDialogContent className="bg-neutral-900 border-neutral-700">
                               <AlertDialogHeader>
                                 <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
-                                <AlertDialogDescription className="text-gray-400">
+                                <AlertDialogDescription className="text-neutral-500">
                                   Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                                <AlertDialogCancel className="bg-neutral-800 border-neutral-600 text-neutral-400 hover:bg-neutral-700">
                                   Cancel
                                 </AlertDialogCancel>
                                 <AlertDialogAction 
@@ -294,7 +293,7 @@ const DashboardRundownGrid = ({
                 
                 <CardContent className="pt-0 space-y-3">
                   {/* Compact Stats */}
-                  <div className="flex justify-between text-xs text-gray-400">
+                  <div className="flex justify-between text-xs text-neutral-500">
                     <span>{preview.segmentCount} segments</span>
                     <span>{preview.itemCount} items</span>
                     <span>{preview.totalDuration}</span>
@@ -306,7 +305,7 @@ const DashboardRundownGrid = ({
                       variant="default"
                       size="sm"
                       onClick={() => onOpen(rundown.id)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
+                      className="flex-1 bg-white text-black hover:bg-neutral-200 border-0 text-xs"
                     >
                       <Play className="h-3 w-3 mr-1" />
                       Open
@@ -321,7 +320,7 @@ const DashboardRundownGrid = ({
           return (
             <Card 
               key={rundown.id} 
-              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
+              className="bg-neutral-800 border-neutral-700 hover:bg-neutral-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20 group relative overflow-hidden cursor-move"
               draggable
               onDragStart={(e) => handleDragStart(e, rundown.id)}
             >
@@ -332,14 +331,14 @@ const DashboardRundownGrid = ({
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-start gap-2 mb-1">
                       <CardTitle 
-                        className="text-white text-lg cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words flex-1"
+                        className="text-white text-lg cursor-pointer hover:text-neutral-300 transition-colors leading-tight break-words flex-1"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
                       </CardTitle>
                     </div>
                     
-                    <CardDescription className="text-gray-400 flex items-center gap-3 text-xs">
+                    <CardDescription className="text-neutral-500 flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
                         <span>by {getOwnerInfo(rundown)}</span>
@@ -351,22 +350,21 @@ const DashboardRundownGrid = ({
                     </CardDescription>
                   </div>
                   
-                  {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        className="text-neutral-500 hover:text-white hover:bg-neutral-700 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
+                    <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700 z-50">
                       {onDuplicate && (
                         <DropdownMenuItem 
                           onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
-                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                          className="text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
                         >
                           <Copy className="h-4 w-4 mr-2" />
                           Duplicate
@@ -376,7 +374,7 @@ const DashboardRundownGrid = ({
                       {onArchive && (
                         <DropdownMenuItem 
                           onClick={(e) => onArchive(rundown.id, rundown.title, e)}
-                          className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                          className="text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer"
                         >
                           <Archive className="h-4 w-4 mr-2" />
                           Archive
@@ -394,15 +392,15 @@ const DashboardRundownGrid = ({
                               Delete
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-gray-800 border-gray-700">
+                          <AlertDialogContent className="bg-neutral-900 border-neutral-700">
                             <AlertDialogHeader>
                               <AlertDialogTitle className="text-white">Delete Rundown</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-400">
+                              <AlertDialogDescription className="text-neutral-500">
                                 Are you sure you want to delete "{rundown.title}"? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600">
+                              <AlertDialogCancel className="bg-neutral-800 border-neutral-600 text-neutral-400 hover:bg-neutral-700">
                                 Cancel
                               </AlertDialogCancel>
                               <AlertDialogAction 
@@ -423,38 +421,38 @@ const DashboardRundownGrid = ({
               <CardContent className="pt-0 space-y-4">
                 {/* Stats Row */}
                 <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="bg-gray-700/50 rounded-lg p-2">
-                    <div className="text-blue-400 text-sm font-medium">{preview.segmentCount}</div>
-                    <div className="text-gray-400 text-xs">Segments</div>
+                  <div className="bg-neutral-700/50 rounded-lg p-2">
+                    <div className="text-white text-sm font-medium">{preview.segmentCount}</div>
+                    <div className="text-neutral-500 text-xs">Segments</div>
                   </div>
-                  <div className="bg-gray-700/50 rounded-lg p-2">
-                    <div className="text-green-400 text-sm font-medium">{preview.itemCount}</div>
-                    <div className="text-gray-400 text-xs">Items</div>
+                  <div className="bg-neutral-700/50 rounded-lg p-2">
+                    <div className="text-white text-sm font-medium">{preview.itemCount}</div>
+                    <div className="text-neutral-500 text-xs">Items</div>
                   </div>
-                  <div className="bg-gray-700/50 rounded-lg p-2">
-                    <div className="text-purple-400 text-sm font-medium flex items-center justify-center gap-1">
+                  <div className="bg-neutral-700/50 rounded-lg p-2">
+                    <div className="text-white text-sm font-medium flex items-center justify-center gap-1">
                       <Clock className="h-3 w-3" />
                       {preview.totalDuration}
                     </div>
-                    <div className="text-gray-400 text-xs">Duration</div>
+                    <div className="text-neutral-500 text-xs">Duration</div>
                   </div>
                 </div>
 
                 {/* Content Preview - Condensed */}
                 {preview.firstItems.length > 0 && (
-                  <div className="bg-gray-700/30 rounded-lg p-2">
-                    <div className="text-gray-300 text-xs font-medium mb-1 flex items-center gap-1">
+                  <div className="bg-neutral-700/30 rounded-lg p-2">
+                    <div className="text-neutral-300 text-xs font-medium mb-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
                       Headers Preview
                     </div>
                     <div className="space-y-0.5">
                       {preview.firstItems.map((item, index) => (
-                        <div key={index} className="text-gray-400 text-xs truncate">
+                        <div key={index} className="text-neutral-500 text-xs truncate">
                           • {item}
                         </div>
                       ))}
                       {preview.segmentCount > 2 && (
-                        <div className="text-gray-500 text-xs">
+                        <div className="text-neutral-600 text-xs">
                           +{preview.segmentCount - 2} more headers...
                         </div>
                       )}
@@ -468,7 +466,7 @@ const DashboardRundownGrid = ({
                     variant="default"
                     size="sm"
                     onClick={() => onOpen(rundown.id)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
+                    className="flex-1 bg-white text-black hover:bg-neutral-200 border-0 transition-all hover:scale-105"
                   >
                     <Play className="h-3 w-3 mr-1" />
                     Open
@@ -477,7 +475,7 @@ const DashboardRundownGrid = ({
                     variant="default"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
+                    className="flex-1 bg-neutral-700 text-white hover:bg-neutral-600 border-0 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint
@@ -486,7 +484,7 @@ const DashboardRundownGrid = ({
                 
                 {/* Activity Status Label */}
                 <div className="text-center">
-                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${activity.color} bg-opacity-20 text-gray-300`}>
+                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${activity.color} bg-opacity-20 text-neutral-400`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${activity.color}`} />
                     {activity.label}
                   </span>
