@@ -22,6 +22,42 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.1.7 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.1.7</h2>
+              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">🖼️ Enhanced Image Column Support</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Expanded File Support:</strong> The images column now supports additional file types and services:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>Dropbox Integration:</strong> Direct support for Dropbox shared links - automatically converts sharing links to display images directly in the rundown</li>
+                      <li><strong>Figma File Support:</strong> Smart detection and preview of Figma design files with clickable external link to open in Figma</li>
+                      <li><strong>Auto Project Names:</strong> Figma files automatically extract and display the project name from the URL</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src="/lovable-uploads/f74a55ba-a0ab-4dfb-923d-6899ae03bf2b.png" 
+                        alt="Figma file integration showing project name and external link"
+                        className="w-full max-w-md mx-auto rounded border border-slate-600"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Example of Figma file integration with project name display
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.1.3 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
