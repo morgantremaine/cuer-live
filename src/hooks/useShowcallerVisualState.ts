@@ -387,7 +387,7 @@ export const useShowcallerVisualState = ({
   }, [
     visualState.controllerId, 
     visualState.currentSegmentId, 
-    userId, 
+    userId,
     getNextSegment, 
     timeToSeconds, 
     debouncedSaveVisualState,

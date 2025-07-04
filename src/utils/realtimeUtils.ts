@@ -35,3 +35,31 @@ export class TimeoutManager {
     this.timeouts.clear();
   }
 }
+
+// Mobile-specific realtime connection optimization
+export const getMobileOptimizedDelays = () => {
+  // Check if we're on a mobile/tablet device
+  const isMobileOrTablet = typeof window !== 'undefined' && (
+    window.innerWidth < 1024 || 
+    'ontouchstart' in window || 
+    navigator.maxTouchPoints > 0
+  );
+  
+  if (isMobileOrTablet) {
+    return {
+      processingDelay: 100,        // Faster processing for mobile
+      activityTimeout: 6000,       // Shorter activity timeout
+      contentProcessingDelay: 400,  // Shorter content processing visibility
+      heartbeatInterval: 25000,    // More frequent heartbeat
+      reconnectDelay: 1000         // Faster reconnection
+    };
+  }
+  
+  return {
+    processingDelay: 150,          // Standard delays for desktop
+    activityTimeout: 8000,
+    contentProcessingDelay: 600,
+    heartbeatInterval: 30000,
+    reconnectDelay: 2000
+  };
+};
