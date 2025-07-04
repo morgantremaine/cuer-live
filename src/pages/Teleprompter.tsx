@@ -262,9 +262,11 @@ const Teleprompter = () => {
             ${itemsWithScript.map((item, index) => {
               const rowNumber = getRowNumber(item.originalIndex);
               const isHeader = item.type === 'header';
+              
+              // For headers, show both the row number and the header name
               const title = isHeader 
-                ? `[${formatText((item.segmentName || item.name)?.toUpperCase() || 'HEADER')}]`
-                : `[${formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}]`;
+                ? `${rowNumber} - ${formatText((item.name || item.segmentName || 'HEADER').toUpperCase())}`
+                : `${rowNumber} - ${formatText((item.segmentName || item.name || 'UNTITLED').toUpperCase())}`;
               
               const scriptContent = processScriptForPrint(item.script || '');
               
@@ -273,7 +275,7 @@ const Teleprompter = () => {
               
               return `
                 <div class="script-segment ${isHeader ? 'header-segment' : ''} ${needsSpacing ? 'page-break' : ''}">
-                  <div class="segment-header">${title}</div>
+                  <div class="segment-header">[${title}]</div>
                   ${scriptContent ? `<div class="segment-content">${scriptContent.split('\n').map(line => {
                     const trimmedLine = line.trim();
                     return trimmedLine ? `<p>${trimmedLine}</p>` : '';
