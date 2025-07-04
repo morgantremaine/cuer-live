@@ -221,20 +221,23 @@ const ImageCell = ({
               style={{ maxHeight: '68px' }}
             />
           ) : isFigmaFile ? (
-            <div 
-              className="w-full h-16 flex items-center justify-center bg-gray-100 rounded border border-gray-300 hover:bg-gray-200 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(internalValue, '_blank');
-              }}
-            >
+            <div className="w-full h-16 flex items-center justify-between bg-gray-100 rounded border border-gray-300 p-2">
               <div className="flex items-center space-x-2 text-gray-700">
-                <div className="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-xs">
                   F
                 </div>
                 <span className="text-sm font-medium">Figma Design</span>
-                <ExternalLink className="h-4 w-4" />
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(internalValue, '_blank');
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-300 transition-colors"
+                title="Open in Figma"
+              >
+                <ExternalLink className="h-4 w-4 text-gray-600" />
+              </button>
             </div>
           ) : (
             <div 
