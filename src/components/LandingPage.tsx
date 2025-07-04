@@ -68,7 +68,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-700 to-slate-600 text-white overflow-hidden relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-500 via-slate-700 to-slate-900 text-white overflow-hidden relative">
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center">
