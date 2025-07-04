@@ -55,15 +55,11 @@ export const isFloated = (item: RundownItem): boolean => {
   return item.isFloating || item.isFloated || false;
 };
 
-// Helper function to renumber headers sequentially
-const renumberHeaders = (items: RundownItem[]): RundownItem[] => {
-  let headerIndex = 0;
-  
+// Helper function to remove row numbers from headers
+const clearHeaderNumbers = (items: RundownItem[]): RundownItem[] => {
   return items.map(item => {
     if (isHeaderItem(item)) {
-      const letter = generateHeaderLabel(headerIndex);
-      headerIndex++;
-      return { ...item, rowNumber: letter, segmentName: letter };
+      return { ...item, rowNumber: '' };
     }
     return item;
   });
@@ -74,17 +70,13 @@ export const calculateItemsWithTiming = (
   items: RundownItem[],
   rundownStartTime: string
 ): CalculatedRundownItem[] => {
-  // First, ensure all headers have correct row numbers
-  const itemsWithCorrectHeaders = renumberHeaders(items);
+  // Clear header row numbers
+  const itemsWithClearedHeaders = clearHeaderNumbers(items);
   
   let currentTime = rundownStartTime;
-  
-  // Check if there are regular rows before the first header
-  const hasRowsBeforeFirstHeader = checkRowsBeforeFirstHeader(itemsWithCorrectHeaders);
-  
-  let headerIndex = hasRowsBeforeFirstHeader ? 1 : 0; // Start at B (1) if there are rows before first header
+  let regularRowCount = 0;
 
-  return itemsWithCorrectHeaders.map((item, index) => {
+  return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
     let calculatedEndTime = currentTime;
     let calculatedRowNumber = '';
@@ -93,9 +85,8 @@ export const calculateItemsWithTiming = (
       // Headers get the current timeline position and don't advance time
       calculatedStartTime = currentTime;
       calculatedEndTime = currentTime;
-      // Use the corrected rowNumber from renumberHeaders
-      calculatedRowNumber = item.rowNumber || generateHeaderLabel(headerIndex);
-      headerIndex++;
+      // Headers don't have row numbers
+      calculatedRowNumber = '';
     } else {
       // Regular items
       calculatedStartTime = currentTime;
@@ -111,25 +102,9 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // Calculate row number for regular items
-      let currentSegment = 'A';
-      let itemCountInSegment = 0;
-
-      // Find current segment - adjusted for optional first header
-      let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start counting from A or B
-      
-      for (let i = 0; i <= index; i++) {
-        const currentItem = itemsWithCorrectHeaders[i];
-        if (isHeaderItem(currentItem)) {
-          currentSegment = currentItem.rowNumber || generateHeaderLabel(segmentHeaderCount);
-          segmentHeaderCount++;
-          itemCountInSegment = 0;
-        } else {
-          itemCountInSegment++;
-        }
-      }
-
-      calculatedRowNumber = `${currentSegment}${itemCountInSegment}`;
+      // Sequential numbering for regular items
+      regularRowCount++;
+      calculatedRowNumber = regularRowCount.toString();
     }
 
     const calculatedElapsedTime = calculateElapsedTime(calculatedStartTime, rundownStartTime);

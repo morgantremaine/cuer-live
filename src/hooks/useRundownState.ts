@@ -78,17 +78,17 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       } else {
         items = [...state.items, item];
       }
-      return markChanged({ items: renumberHeaders(items) });
+      return markChanged({ items: clearHeaderNumbers(items) });
     }
 
     case 'DELETE_ITEM': {
       const items = state.items.filter(item => item.id !== action.payload);
-      return markChanged({ items: renumberHeaders(items) });
+      return markChanged({ items: clearHeaderNumbers(items) });
     }
 
     case 'DELETE_MULTIPLE_ITEMS': {
       const items = state.items.filter(item => !action.payload.includes(item.id));
-      return markChanged({ items: renumberHeaders(items) });
+      return markChanged({ items: clearHeaderNumbers(items) });
     }
 
     case 'REORDER_ITEMS': {
@@ -96,7 +96,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       const items = [...state.items];
       const movedItems = items.splice(fromIndex, count);
       items.splice(toIndex, 0, ...movedItems);
-      return markChanged({ items: renumberHeaders(items) });
+      return markChanged({ items: clearHeaderNumbers(items) });
     }
 
     case 'SET_COLUMNS':
@@ -142,16 +142,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
   }
 }
 
-// Helper function to renumber headers sequentially
-function renumberHeaders(items: RundownItem[]): RundownItem[] {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let headerIndex = 0;
-  
+// Helper function to clear header row numbers
+function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
   return items.map(item => {
     if (isHeaderItem(item)) {
-      const letter = letters[headerIndex] || 'A';
-      headerIndex++;
-      return { ...item, rowNumber: letter, segmentName: letter };
+      return { ...item, rowNumber: '' };
     }
     return item;
   });
@@ -212,29 +207,18 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
       };
     });
 
-    // Calculate row numbers
+    // Calculate row numbers - headers get empty, regular items get sequential numbers
+    let regularRowCount = 0;
     const itemsWithRowNumbers = itemsWithCalculatedTimes.map((item, index) => {
       if (isHeaderItem(item)) {
-        return item; // Headers already have their rowNumber set
+        return { ...item, rowNumber: '' }; // Headers don't have numbers
       }
 
-      // Find current segment for regular items
-      let currentSegment = 'A';
-      let itemCountInSegment = 0;
-
-      for (let i = 0; i <= index; i++) {
-        const currentItem = itemsWithCalculatedTimes[i];
-        if (isHeaderItem(currentItem)) {
-          currentSegment = currentItem.rowNumber || 'A';
-          itemCountInSegment = 0;
-        } else {
-          itemCountInSegment++;
-        }
-      }
-
+      // Sequential numbering for regular items
+      regularRowCount++;
       return {
         ...item,
-        rowNumber: `${currentSegment}${itemCountInSegment}`
+        rowNumber: regularRowCount.toString()
       };
     });
 

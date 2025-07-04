@@ -13,41 +13,20 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   const item = items[index];
   if (!item) return '';
   
-  // For headers, count how many headers we've seen so far
+  // Headers don't have row numbers
   if (item.type === 'header') {
-    let headerCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (items[i] && items[i].type === 'header') {
-        headerCount++;
-      }
-    }
-    // First header is always A (index 0)
-    const headerIndex = headerCount - 1;
-    return generateHeaderLabel(headerIndex);
+    return '';
   }
   
-  // For regular items, find which segment they belong to and count within that segment
-  let currentSegmentLetter = 'A';
-  let itemCountInSegment = 0;
-  let segmentHeaderCount = 0;
-  
-  // Go through items up to current index to find current segment
+  // For regular items, just count sequentially, ignoring headers
+  let regularRowCount = 0;
   for (let i = 0; i <= index; i++) {
-    const currentItem = items[i];
-    if (!currentItem) continue;
-    
-    if (currentItem.type === 'header') {
-      // Update which segment we're in
-      currentSegmentLetter = generateHeaderLabel(segmentHeaderCount);
-      segmentHeaderCount++;
-      itemCountInSegment = 0; // Reset count for new segment
-    } else {
-      // This is a regular item
-      itemCountInSegment++;
+    if (items[i] && items[i].type !== 'header') {
+      regularRowCount++;
     }
   }
   
-  return `${currentSegmentLetter}${itemCountInSegment}`;
+  return regularRowCount.toString();
 };
 
 // Helper function to convert time string to seconds
