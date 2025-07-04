@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
-import { normalizeTimestamp, TimeoutManager } from '@/utils/realtimeUtils';
+import { normalizeTimestamp, TimeoutManager, getMobileOptimizedDelays } from '@/utils/realtimeUtils';
 
 interface RealtimeUpdate {
   timestamp: string;
@@ -64,13 +64,14 @@ export const useRealtimeRundown = ({
   // Signal activity with centralized timeout management
   const signalActivity = useCallback(() => {
     if (onShowcallerActivityRef.current) {
+      const delays = getMobileOptimizedDelays();
       onShowcallerActivityRef.current(true);
       
       timeoutManagerRef.current.set('activity', () => {
         if (onShowcallerActivityRef.current) {
           onShowcallerActivityRef.current(false);
         }
-      }, 8000);
+      }, delays.activityTimeout);
     }
   }, []);
 
@@ -134,6 +135,9 @@ export const useRealtimeRundown = ({
       return;
     }
 
+    // Get mobile-optimized delays for better performance on mobile/tablet
+    const delays = getMobileOptimizedDelays();
+
     const rawTimestamp = payload.new?.updated_at || new Date().toISOString();
     const normalizedTimestamp = normalizeTimestamp(rawTimestamp);
 
@@ -175,7 +179,7 @@ export const useRealtimeRundown = ({
 
     // CRITICAL: If it's showcaller-only, handle it specially but NEVER set content processing state
     if (isShowcallerOnly) {
-      // Signal showcaller activity with extended timeout
+      // Signal showcaller activity with mobile-optimized timeout
       if (onShowcallerActivityRef.current) {
         onShowcallerActivityRef.current(true);
         
@@ -183,7 +187,7 @@ export const useRealtimeRundown = ({
           if (onShowcallerActivityRef.current) {
             onShowcallerActivityRef.current(false);
           }
-        }, 12000);
+        }, delays.activityTimeout * 1.5); // Slightly longer for showcaller
       }
       
       // Pass showcaller state to the callback if available
@@ -207,7 +211,7 @@ export const useRealtimeRundown = ({
     // Clear any existing processing timeout to prevent race conditions
     timeoutManagerRef.current.clear('content-processing');
 
-    // Standard debounced updates for reliable performance
+    // Mobile-optimized debounced updates for better performance
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
       
@@ -220,12 +224,12 @@ export const useRealtimeRundown = ({
         logger.error('Error processing realtime update:', error);
       }
       
-      // Clear content processing state after a brief delay for visibility
+      // Clear content processing state with mobile-optimized delay
       timeoutManagerRef.current.set('content-processing', () => {
         setIsProcessingContentUpdate(false);
-      }, 600);
+      }, delays.contentProcessingDelay);
       
-    }, 150);
+    }, delays.processingDelay);
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
