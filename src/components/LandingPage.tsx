@@ -90,54 +90,60 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section with Background */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-24">
-        <div className="text-center space-y-8 mb-16">
-          <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50">
-            <Zap className="w-4 h-4 mr-2" />
-            Professional Broadcast Tool
-          </Badge>
-          
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto">
-            The world's most
-            <br />
-            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">
-              intuitive rundown maker
-            </span>
-          </h1>
-          
-          <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">
-            Create stunning run of show documents with your entire team on Cuer Live. 
-            Plan, cue, and direct events with precision, all from a web browser.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={handleGetStarted}
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto"
-            >
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => navigate('/help')}
-              className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto"
-            >
-              Explore Features
-            </Button>
+        {/* Hero Content with Background Image */}
+        <div className="relative mb-16">
+          {/* Background Image */}
+          <div className="absolute inset-0 rounded-2xl overflow-hidden">
+            <img 
+              src="/lovable-uploads/ec07a93f-2c7f-4b6b-81c6-d378252567f1.png" 
+              alt="Professional Broadcast Control Room"
+              className="w-full h-full object-cover"
+            />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/60"></div>
           </div>
-        </div>
+          
+          {/* Hero Text Content */}
+          <div className="relative z-10 text-center space-y-8 py-24 px-8">
+            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50">
+              <Zap className="w-4 h-4 mr-2" />
+              Professional Broadcast Tool
+            </Badge>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto">
+              The world's most
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">
+                intuitive rundown maker
+              </span>
+            </h1>
+            
+            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">
+              Create stunning run of show documents with your entire team on Cuer Live. 
+              Plan, cue, and direct events with precision, all from a web browser.
+            </p>
 
-        {/* Broadcast Control Room Image */}
-        <div className="relative max-w-6xl mx-auto mb-16">
-          <img 
-            src="/lovable-uploads/ec07a93f-2c7f-4b6b-81c6-d378252567f1.png" 
-            alt="Professional Broadcast Control Room"
-            className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30"
-          />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={handleGetStarted}
+                size="lg" 
+                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto"
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => navigate('/help')}
+                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto"
+              >
+                Explore Features
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Hero Rundown Interface - Much Larger */}
