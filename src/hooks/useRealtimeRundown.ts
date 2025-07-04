@@ -4,9 +4,6 @@ import { RundownItem } from '@/types/rundown';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
 import { normalizeTimestamp, TimeoutManager, getMobileOptimizedDelays } from '@/utils/realtimeUtils';
-import { useMobileRealtimeOptimization } from './useMobileRealtimeOptimization';
-import { useMobilePollingFallback } from './useMobilePollingFallback';
-import { useResponsiveLayout } from './use-mobile';
 
 interface RealtimeUpdate {
   timestamp: string;
@@ -45,7 +42,6 @@ export const useRealtimeRundown = ({
   onShowcallerStateReceived
 }: UseRealtimeRundownProps) => {
   const { user } = useAuth();
-  const { isMobileOrTablet } = useResponsiveLayout();
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
@@ -55,32 +51,9 @@ export const useRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const timeoutManagerRef = useRef(new TimeoutManager());
   const [isConnected, setIsConnected] = useState(false);
-  const [mobileConnectionStatus, setMobileConnectionStatus] = useState(false);
   
   // Content processing state (blue Wi-Fi icon)
   const [isProcessingContentUpdate, setIsProcessingContentUpdate] = useState(false);
-
-  // Mobile-specific realtime optimization
-  const { isMobileOptimized } = useMobileRealtimeOptimization({
-    rundownId,
-    onConnectionChange: (connected) => {
-      setMobileConnectionStatus(connected);
-    },
-    enabled: enabled && isMobileOrTablet
-  });
-
-  // Mobile polling fallback for when realtime connection is unstable
-  const effectiveConnection = isMobileOrTablet ? (isConnected || mobileConnectionStatus) : isConnected;
-  
-  const { isPollingActive } = useMobilePollingFallback({
-    rundownId,
-    onDataReceived: (data) => {
-      console.log('📱 Mobile polling received update');
-      handleRealtimeUpdate({ new: data, old: null });
-    },
-    enabled: enabled && isMobileOrTablet,
-    isRealtimeConnected: effectiveConnection
-  });
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -263,6 +236,7 @@ export const useRealtimeRundown = ({
   useEffect(() => {
     // Clear any existing subscription
     if (subscriptionRef.current) {
+      console.log('🔄 Clearing existing realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
       setIsConnected(false);
@@ -270,8 +244,11 @@ export const useRealtimeRundown = ({
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
+      console.log('⏸️ Realtime disabled:', { rundownId: !!rundownId, user: !!user, enabled });
       return;
     }
+    
+    console.log('🚀 Setting up realtime subscription for rundown:', rundownId);
     
     const channel = supabase
       .channel(`rundown-realtime-${rundownId}`)
@@ -283,19 +260,36 @@ export const useRealtimeRundown = ({
           table: 'rundowns',
           filter: `id=eq.${rundownId}`
         },
-        handleRealtimeUpdate
+        (payload) => {
+          console.log('📡 Realtime update received:', {
+            id: payload.new?.id,
+            timestamp: payload.new?.updated_at,
+            showcallerOnly: payload.new?.showcaller_state !== payload.old?.showcaller_state
+          });
+          handleRealtimeUpdate(payload);
+        }
       )
       .subscribe((status) => {
+        console.log('🔗 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
+          console.log('✅ Realtime connected successfully');
+        } else if (status === 'CHANNEL_ERROR') {
+          setIsConnected(false);
+          console.error('❌ Realtime channel error');
+        } else if (status === 'TIMED_OUT') {
+          setIsConnected(false);
+          console.error('⏰ Realtime connection timed out');
         } else {
           setIsConnected(false);
+          console.log('🔄 Realtime status:', status);
         }
       });
 
     subscriptionRef.current = channel;
 
     return () => {
+      console.log('🧹 Cleaning up realtime subscription');
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
@@ -307,7 +301,7 @@ export const useRealtimeRundown = ({
   }, [rundownId, user, enabled, handleRealtimeUpdate]);
 
   return {
-    isConnected: isMobileOrTablet ? (isConnected || mobileConnectionStatus) : isConnected,
+    isConnected,
     isProcessingContentUpdate,
     trackOwnUpdate: trackOwnUpdateLocal
   };
