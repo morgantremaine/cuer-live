@@ -244,12 +244,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-neutral-900 border-r border-gray-700 flex flex-col items-center py-4">
+      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-neutral-800"
+          className="text-gray-400 hover:text-white hover:bg-gray-800"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -262,8 +262,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => onFolderSelect(folder.id, folder.type)}
-                className={`text-gray-400 hover:text-white hover:bg-neutral-800 ${
-                  isSelected ? 'bg-zinc-900 text-white' : ''
+                className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
+                  isSelected ? 'bg-blue-600 text-white' : ''
                 }`}
               >
                 <folder.icon className="h-4 w-4" />
@@ -276,7 +276,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-neutral-900 border-r border-gray-700 flex flex-col">
+    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
       {/* Header with Search */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <div className="flex-1 mr-2">
@@ -304,7 +304,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-neutral-800"
+          className="text-gray-400 hover:text-white hover:bg-gray-800"
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -340,10 +340,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   
                   if (isDragOver) {
                     containerClasses += "bg-gray-700 text-white";
-                   } else if (isSelected) {
-                     containerClasses += "bg-zinc-900 text-white";
-                   } else {
-                    containerClasses += "text-gray-300 hover:bg-neutral-800 hover:text-white";
+                  } else if (isSelected) {
+                    containerClasses += "bg-blue-600 text-white";
+                  } else {
+                    containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
                   }
                   
                   return (
@@ -376,7 +376,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-neutral-800"
+                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-800"
                   >
                     <FolderPlus className="h-3 w-3" />
                   </Button>
@@ -431,10 +431,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   containerClasses += "opacity-50";
                 } else if (isDragOver) {
                   containerClasses += "bg-gray-700 text-white";
-                 } else if (isSelected) {
-                   containerClasses += "bg-zinc-900 text-white";
-                 } else {
-                  containerClasses += "text-gray-300 hover:bg-neutral-800 hover:text-white";
+                } else if (isSelected) {
+                  containerClasses += "bg-blue-600 text-white";
+                } else {
+                  containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
                 }
                 
                 return (

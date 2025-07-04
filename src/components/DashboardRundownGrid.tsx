@@ -211,7 +211,7 @@ const DashboardRundownGrid = ({
             return (
               <Card 
                 key={rundown.id} 
-                className="bg-slate-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
+                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
                 draggable
                 onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
@@ -306,7 +306,7 @@ const DashboardRundownGrid = ({
                       variant="default"
                       size="sm"
                       onClick={() => onOpen(rundown.id)}
-                      className="flex-1 bg-slate-700 hover:bg-slate-600 text-white border-0 text-xs"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
                     >
                       <Play className="h-3 w-3 mr-1" />
                       Open
@@ -321,7 +321,7 @@ const DashboardRundownGrid = ({
           return (
             <Card 
               key={rundown.id} 
-              className="bg-slate-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
               draggable
               onDragStart={(e) => handleDragStart(e, rundown.id)}
             >
@@ -468,7 +468,7 @@ const DashboardRundownGrid = ({
                     variant="default"
                     size="sm"
                     onClick={() => onOpen(rundown.id)}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white border-0 transition-all hover:scale-105"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <Play className="h-3 w-3 mr-1" />
                     Open
@@ -477,7 +477,7 @@ const DashboardRundownGrid = ({
                     variant="default"
                     size="sm"
                     onClick={() => navigate(`/blueprint/${rundown.id}`)}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white border-0 transition-all hover:scale-105"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint

@@ -25,7 +25,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   };
 
   return (
-    <header className="bg-neutral-900 border-b border-gray-700">
+    <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
@@ -34,7 +34,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="text-gray-300 hover:text-white hover:bg-neutral-800"
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -47,7 +47,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-neutral-800">
+                <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-transparent">
                   <User className="h-4 w-4 mr-2" />
                   {userEmail}
                 </Button>
