@@ -180,17 +180,35 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Blueprint and Notes Section */}
+      {/* How It Works Section - Moved here to replace Blueprint section */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">
-            Plan, organize, and <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">execute perfectly</span>
-          </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            From blueprint planning to detailed notes, manage every aspect of your production workflow.
-          </p>
+          <h2 className="text-4xl font-bold mb-4 text-white">How it works</h2>
+          <p className="text-xl text-slate-400">Simple, powerful, professional</p>
         </div>
         
+        <div className="flex justify-center mb-16">
+          <img 
+            src="/lovable-uploads/ef6cf2a6-c012-42e8-8c8f-4a7e0570f2b0.png" 
+            alt="Create & Collaborate, Go Live, Share & Display"
+            className="w-full max-w-5xl h-auto rounded-2xl shadow-lg border border-slate-600/30"
+          />
+        </div>
+
+        {/* Live Show Control Section */}
+        <div className="max-w-4xl mx-auto text-center space-y-6 mb-16">
+          <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
+          <p className="text-xl text-slate-400">
+            Professional timing controls and real-time status tracking for your entire production team.
+          </p>
+          <img 
+            src="/lovable-uploads/d9f4de83-01f9-42bf-bdd4-50bf447f1e9c.png" 
+            alt="Live Show Controls"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+        </div>
+
+        {/* Blueprint and Notes in alternating format */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Blueprint Mode</h3>
@@ -215,7 +233,7 @@ const LandingPage = () => {
           />
         </div>
         
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <img 
             src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
             alt="Notes and Documentation"
@@ -238,49 +256,30 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* How It Works Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">How it works</h2>
-          <p className="text-xl text-slate-400">Simple, powerful, professional</p>
-        </div>
-        
-        {/* Use the provided screenshot */}
-        <div className="flex justify-center mb-16">
-          <img 
-            src="/lovable-uploads/ef6cf2a6-c012-42e8-8c8f-4a7e0570f2b0.png" 
-            alt="Create & Collaborate, Go Live, Share & Display"
-            className="w-full max-w-5xl h-auto rounded-2xl shadow-lg border border-slate-600/30"
-          />
-        </div>
-
-        {/* Vertical Layout - Live Show Control and Team Management */}
-        <div className="space-y-16 max-w-4xl mx-auto">
-          <div className="text-center space-y-6">
-            <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
-            <p className="text-xl text-slate-400">
-              Professional timing controls and real-time status tracking for your entire production team.
-            </p>
-            <img 
-              src="/lovable-uploads/651b8c21-2107-47df-8c45-9fb537043baa.png" 
-              alt="Live Show Controls"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-            />
-          </div>
-          
-          <div className="text-center space-y-6">
+        {/* Team Management in alternating format */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Team Management</h3>
             <p className="text-xl text-slate-400">
               Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
             </p>
-            <img 
-              src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-              alt="Team Management Interface"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-            />
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Role-based permissions</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time collaboration</span>
+              </div>
+            </div>
           </div>
+          <img 
+            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+            alt="Team Management Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
       </div>
 
