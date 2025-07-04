@@ -331,26 +331,26 @@ const Teleprompter = () => {
   }, [rundownId, loading, user, isPollingPaused, saveState.isSaving]);
 
   const getRowNumber = (index: number) => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let letterIndex = 0;
-    let numberIndex = 0;
+    if (!rundownData?.items || index < 0 || index >= rundownData.items.length) {
+      return '';
+    }
     
+    const currentItem = rundownData.items[index];
+    
+    // Headers don't have row numbers
+    if (currentItem?.type === 'header') {
+      return '';
+    }
+    
+    // For regular items, count sequentially ignoring headers
+    let regularItemCount = 0;
     for (let i = 0; i <= index; i++) {
-      if (rundownData?.items[i]?.type === 'header') {
-        letterIndex++;
-        numberIndex = 0;
-      } else {
-        numberIndex++;
+      if (rundownData.items[i]?.type !== 'header') {
+        regularItemCount++;
       }
     }
     
-    const currentItem = rundownData?.items[index];
-    if (currentItem?.type === 'header') {
-      return letters[letterIndex - 1] || 'A';
-    } else {
-      const letter = letters[letterIndex - 1] || 'A';
-      return `${letter}${numberIndex}`;
-    }
+    return regularItemCount.toString();
   };
 
   // Handle beforeunload to warn about unsaved changes
