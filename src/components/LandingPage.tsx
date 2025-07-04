@@ -194,79 +194,6 @@ const LandingPage = () => {
           />
         </div>
 
-        {/* Blueprint and Notes in alternating format */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Blueprint Mode</h3>
-            <p className="text-xl text-slate-400">
-              Organize your show elements with smart checklists. Track talent, graphics, and show blocks with intuitive filtering and organization tools.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Smart filtering and organization</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Checklist management</span>
-              </div>
-            </div>
-          </div>
-          <img 
-            src="/lovable-uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
-            alt="Blueprint Planning Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <img 
-            src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-            alt="Notes and Documentation"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
-            <p className="text-xl text-slate-400">
-              Capture and organize show notes with rich text formatting, search functionality, and collaborative editing for your entire team.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Rich text formatting</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Searchable documentation</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Team Management in alternating format */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Team Management</h3>
-            <p className="text-xl text-slate-400">
-              Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Role-based permissions</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time collaboration</span>
-              </div>
-            </div>
-          </div>
-          <img 
-            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-            alt="Team Management Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
-        </div>
       </div>
 
       {/* AI Assistant Section */}
@@ -343,6 +270,84 @@ const LandingPage = () => {
               Professional teleprompter mode with speed controls, formatting options, and remote control capabilities for talent and operators.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Blueprint Mode, Rich Notes & Documentation, and Team Management */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        {/* Blueprint Mode */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Blueprint Mode</h3>
+            <p className="text-xl text-slate-400">
+              Organize your show elements with smart checklists. Track talent, graphics, and show blocks with intuitive filtering and organization tools.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Smart filtering and organization</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Checklist management</span>
+              </div>
+            </div>
+          </div>
+          <img 
+            src="/lovable-uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
+            alt="Blueprint Planning Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+        </div>
+        
+        {/* Rich Notes & Documentation */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <img 
+            src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+            alt="Notes and Documentation"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
+            <p className="text-xl text-slate-400">
+              Capture and organize show notes with rich text formatting, search functionality, and collaborative editing for your entire team.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Rich text formatting</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Searchable documentation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Team Management */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Team Management</h3>
+            <p className="text-xl text-slate-400">
+              Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Role-based permissions</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time collaboration</span>
+              </div>
+            </div>
+          </div>
+          <img 
+            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+            alt="Team Management Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
       </div>
 
