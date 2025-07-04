@@ -72,7 +72,7 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center">
-          <CuerLogo className="h-8 w-8" />
+          <CuerLogo className="h-10 w-10" />
         </div>
         <div className="flex items-center space-x-4">
           <Link to="/help" className="text-gray-300 hover:text-white transition-colors">
@@ -148,8 +148,8 @@ const LandingPage = () => {
           {/* Right Content - Actual Rundown Interface */}
           <div className="relative">
             <img 
-              src="/lovable-uploads/eee4cab2-b77f-407a-abd0-caaf1ac3e21d.png" 
-              alt="Cuer Live Interface"
+              src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
+              alt="Cuer Live Professional Rundown Interface"
               className="w-full h-auto rounded-2xl shadow-2xl border border-white/10"
             />
           </div>
@@ -183,6 +183,36 @@ const LandingPage = () => {
             </Card>
           ))}
         </div>
+
+        {/* Feature Screenshots Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-center">AD View Dashboard</h3>
+            <img 
+              src="/lovable-uploads/21a2f897-627c-4b9b-8b38-6ab94db53eaf.png" 
+              alt="AD View with Live Timing"
+              className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-center">Context Menus & Tools</h3>
+            <img 
+              src="/lovable-uploads/f9e16d29-2a8c-45a2-b0f9-a6a946892aa1.png" 
+              alt="Rundown Context Menu"
+              className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-center">Teleprompter Mode</h3>
+            <img 
+              src="/lovable-uploads/a0d5e756-b48f-4c7b-9402-e2c299897c40.png" 
+              alt="Teleprompter Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+            />
+          </div>
+        </div>
       </div>
 
       {/* How It Works Section */}
@@ -193,12 +223,76 @@ const LandingPage = () => {
         </div>
         
         {/* Use the provided screenshot */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-16">
           <img 
             src="/lovable-uploads/ef6cf2a6-c012-42e8-8c8f-4a7e0570f2b0.png" 
-            alt="How Cuer Live Works - Create & Collaborate, Go Live, Share & Display"
+            alt="Create & Collaborate, Go Live, Share & Display"
             className="w-full max-w-5xl h-auto rounded-2xl shadow-lg"
           />
+        </div>
+
+        {/* Additional Screenshots */}
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold">Live Show Control</h3>
+            <p className="text-xl text-gray-400">
+              Professional timing controls and real-time status tracking for your entire production team.
+            </p>
+            <img 
+              src="/lovable-uploads/676dece7-bf11-4ace-bedd-a8104c9dd530.png" 
+              alt="Live Show Controls"
+              className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+            />
+          </div>
+          
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold">Team Management</h3>
+            <p className="text-xl text-gray-400">
+              Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
+            </p>
+            <img 
+              src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+              alt="Team Management Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Features Showcase */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">
+            Every view you need for <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">professional production</span>
+          </h2>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold">Shared Public Views</h3>
+            <p className="text-xl text-gray-400">
+              Create read-only links for stakeholders, clients, and external viewers. Perfect for control rooms and public displays.
+            </p>
+          </div>
+          <img 
+            src="/lovable-uploads/a8f26352-6c2f-4e9f-91b5-6db3581e2d48.png" 
+            alt="Shared Rundown View"
+            className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+          />
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <img 
+            src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
+            alt="Teleprompter Full Screen"
+            className="w-full h-auto rounded-lg shadow-lg border border-white/10"
+          />
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold">Full-Screen Teleprompter</h3>
+            <p className="text-xl text-gray-400">
+              Professional teleprompter mode with speed controls, formatting options, and remote control capabilities for talent and operators.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -222,7 +316,6 @@ const LandingPage = () => {
           </Button>
         </div>
       </div>
-
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
