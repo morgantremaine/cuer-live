@@ -68,13 +68,10 @@ const clearHeaderNumbers = (items: RundownItem[]): RundownItem[] => {
 // Pure function to calculate all items with timing and row numbers
 export const calculateItemsWithTiming = (
   items: RundownItem[],
-  rundownStartTime: string,
-  numberingSystem: 'sequential' | 'letter_number' = 'sequential'
+  rundownStartTime: string
 ): CalculatedRundownItem[] => {
-  // Clear header row numbers for sequential system
-  const itemsWithClearedHeaders = numberingSystem === 'sequential' ? 
-    clearHeaderNumbers(items) : 
-    items;
+  // Clear header row numbers
+  const itemsWithClearedHeaders = clearHeaderNumbers(items);
   
   let currentTime = rundownStartTime;
   let regularRowCount = 0;
@@ -88,21 +85,8 @@ export const calculateItemsWithTiming = (
       // Headers get the current timeline position and don't advance time
       calculatedStartTime = currentTime;
       calculatedEndTime = currentTime;
-      
-      if (numberingSystem === 'sequential') {
-        // Headers don't have row numbers in sequential system
-        calculatedRowNumber = '';
-      } else {
-        // Headers get letters in letter_number system
-        let headerCount = 0;
-        for (let i = 0; i <= index; i++) {
-          if (isHeaderItem(itemsWithClearedHeaders[i])) {
-            headerCount++;
-          }
-        }
-        const headerIndex = headerCount - 1;
-        calculatedRowNumber = generateHeaderLabel(headerIndex);
-      }
+      // Headers don't have row numbers
+      calculatedRowNumber = '';
     } else {
       // Regular items
       calculatedStartTime = currentTime;
@@ -118,29 +102,9 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      if (numberingSystem === 'sequential') {
-        // Sequential numbering for regular items
-        regularRowCount++;
-        calculatedRowNumber = regularRowCount.toString();
-      } else {
-        // Letter-number system for regular items
-        let currentSegment = 'A';
-        let itemCountInSegment = 0;
-        let segmentHeaderCount = 0;
-        
-        for (let i = 0; i <= index; i++) {
-          const currentItem = itemsWithClearedHeaders[i];
-          if (isHeaderItem(currentItem)) {
-            currentSegment = generateHeaderLabel(segmentHeaderCount);
-            segmentHeaderCount++;
-            itemCountInSegment = 0;
-          } else {
-            itemCountInSegment++;
-          }
-        }
-
-        calculatedRowNumber = `${currentSegment}${itemCountInSegment}`;
-      }
+      // Sequential numbering for regular items
+      regularRowCount++;
+      calculatedRowNumber = regularRowCount.toString();
     }
 
     const calculatedElapsedTime = calculateElapsedTime(calculatedStartTime, rundownStartTime);

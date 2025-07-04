@@ -7,8 +7,6 @@ import { RundownContainerProps } from '@/types/rundownContainer';
 interface RundownMainContentProps extends RundownContainerProps {
   currentSegmentName: string;
   totalDuration: string;
-  numberingSystem?: 'sequential' | 'letter_number';
-  onNumberingSystemChange?: (system: 'sequential' | 'letter_number') => void;
 }
 
 const RundownMainContent = ({
@@ -24,8 +22,6 @@ const RundownMainContent = ({
   handleLoadLayout,
   currentSegmentName,
   totalDuration,
-  numberingSystem = 'sequential',
-  onNumberingSystemChange,
   autoScrollEnabled,
   onToggleAutoScroll,
   ...contentProps
@@ -43,7 +39,6 @@ const RundownMainContent = ({
       {showColumnManager && (
         <ColumnManager
           columns={columns}
-          numberingSystem={numberingSystem}
           onClose={() => setShowColumnManager(false)}
           onAddColumn={handleAddColumn}
           onReorderColumns={handleReorderColumns}
@@ -51,7 +46,6 @@ const RundownMainContent = ({
           onRenameColumn={handleRenameColumn}
           onToggleColumnVisibility={handleToggleColumnVisibility}
           onLoadLayout={handleLoadLayout}
-          onNumberingSystemChange={onNumberingSystemChange}
         />
       )}
     </>
