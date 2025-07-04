@@ -139,7 +139,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden touch-pan-y">
+      <div className="flex-1 overflow-hidden">
         <RundownMainContent
           {...props}
           currentSegmentName={currentSegmentName}
