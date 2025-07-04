@@ -30,7 +30,7 @@ const Help = () => {
       
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Help & User Guide</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">Learn how to use Cuer effectively for your broadcast productions</p>
         </div>
 
@@ -161,7 +161,7 @@ const Help = () => {
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li><strong>Play/Pause Controls:</strong> Use the playback controls in the rundown toolbar to start and stop the show timer</li>
                 <li><strong>Live Timing:</strong> Shows countdown for current segment and tracks overall show progress</li>
-                <li><strong>Visual Indicators:</strong> Current segment is highlighted, with upcoming and completed segments clearly marked</li>
+                <li><strong>Visual Indicators:</strong> Current segment is highlighted in blue and marked with an arrow next to the row number.</li>
                 <li><strong>Easy Autoscroll:</strong> Toggle the autoscroll feature with one click to automatically follow the current segment whether the showcaller function is running or not.</li>
               </ul>
               
