@@ -37,18 +37,24 @@ export const useRundownAutoscroll = ({
 
       if (targetElement) {
         if (isMobileOrTablet) {
-          // On mobile/tablet, calculate header height and scroll with offset
-          const headerElement = scrollContainerRef.current.querySelector('.sticky');
-          const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 0;
-          const targetRect = targetElement.getBoundingClientRect();
+          // On mobile/tablet, ensure header stays visible by scrolling to a position
+          // that keeps the header in view
           const containerRect = scrollContainerRef.current.getBoundingClientRect();
-          const scrollTop = scrollContainerRef.current.scrollTop;
+          const targetRect = targetElement.getBoundingClientRect();
+          const currentScrollTop = scrollContainerRef.current.scrollTop;
           
-          // Calculate target position with header offset
-          const targetPosition = scrollTop + (targetRect.top - containerRect.top) - headerHeight - 8; // 8px padding
+          // Calculate the target's position relative to the container's content
+          const targetOffsetTop = currentScrollTop + (targetRect.top - containerRect.top);
+          
+          // Find the header and calculate safe scroll position
+          const headerElement = scrollContainerRef.current.querySelector('.sticky');
+          const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 80; // fallback to 80px
+          
+          // Scroll to position that keeps header visible with some padding
+          const safeScrollTop = Math.max(0, targetOffsetTop - headerHeight - 16); // 16px padding
           
           scrollContainerRef.current.scrollTo({
-            top: Math.max(0, targetPosition),
+            top: safeScrollTop,
             behavior: 'smooth'
           });
         } else {
