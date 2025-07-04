@@ -48,7 +48,6 @@ export const useTeam = () => {
       return;
     }
 
-    console.log('Loading team data for user:', user.id);
     isLoadingRef.current = true;
     loadedUserRef.current = user.id;
 
@@ -435,13 +434,11 @@ export const useTeam = () => {
   // Load team data when user changes, with better handling
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current) {
-      console.log('User changed, loading team data for:', user.id);
       loadedUserRef.current = null; // Reset to allow new load
       setIsLoading(true);
       // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
-      console.log('No user, resetting team state');
       setTeam(null);
       setTeamMembers([]);
       setPendingInvitations([]);

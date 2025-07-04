@@ -310,14 +310,7 @@ const RundownIndexContent = () => {
     timezone: timezone,
     items: items,
     columns: userColumns,
-    totalRuntime: totalRuntime,
-    
-    // Debug: Log totalRuntime being passed to header
-    _debug: console.log('🔍 RundownIndexContent Runtime Debug:', {
-      totalRuntime,
-      hasRuntime: !!totalRuntime,
-      runtimeValue: totalRuntime
-    })
+    totalRuntime: totalRuntime
   };
 
   // Create wrapper functions that match the expected signatures for drag operations

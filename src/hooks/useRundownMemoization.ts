@@ -90,26 +90,10 @@ export const useRundownMemoization = (
       .reduce((acc, item) => {
         const duration = item.duration || '00:00';
         const seconds = timeToSeconds(duration);
-        console.log('🔍 Runtime Item Debug:', {
-          itemId: item.id,
-          itemType: item.type,
-          duration,
-          seconds,
-          isFloating: item.isFloating,
-          isFloated: item.isFloated
-        });
         return acc + seconds;
       }, 0);
     
     const totalCalculatedRuntime = secondsToTime(totalRuntimeSeconds);
-    
-    // Debug: Log runtime calculation
-    console.log('🔍 Runtime Debug:', {
-      totalRuntimeSeconds,
-      totalCalculatedRuntime,
-      itemsCount: items.length,
-      nonFloatedItems: items.filter(item => !item.isFloating && !item.isFloated).length
-    });
 
     // Filter visible items (could be used for further optimization)
     const visibleItemsOnly = items; // For now, keep all items
