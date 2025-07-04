@@ -47,7 +47,7 @@ const RegularRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
+        className="px-2 py-1 text-sm font-mono align-middle w-16 min-w-16"
         style={{ backgroundColor }}
       >
         <div className="flex items-center space-x-1">
@@ -68,7 +68,7 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className={`align-middle border border-border ${isCurrentSegmentName ? 'relative' : ''}`}
+            className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
