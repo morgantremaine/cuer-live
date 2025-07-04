@@ -70,7 +70,7 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up">
+      <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up bg-transparent">
         <div className="flex items-center">
           <CuerLogo className="h-8 w-auto" />
         </div>
