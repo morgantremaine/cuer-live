@@ -25,7 +25,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   };
 
   return (
-    <header className="bg-black border-b border-neutral-800">
+    <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
@@ -34,7 +34,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="text-neutral-400 hover:text-white hover:bg-neutral-800"
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -47,28 +47,28 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-neutral-400 hover:text-white hover:bg-transparent">
+                <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-transparent">
                   <User className="h-4 w-4 mr-2" />
                   {userEmail}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700 z-50">
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                 <DropdownMenuItem 
                   onClick={() => navigate('/account')}
-                  className="text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   Account Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={handleHelpClick}
-                  className="text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   <HelpCircle className="h-4 w-4 mr-2" />
                   Help
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={onSignOut}
-                  className="text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
