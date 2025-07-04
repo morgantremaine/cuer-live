@@ -318,7 +318,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
+              src="/lovable-uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
               alt="Teleprompter Full Screen"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
