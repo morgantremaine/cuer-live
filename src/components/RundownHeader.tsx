@@ -197,6 +197,7 @@ const RundownHeader = ({
           <div className="flex items-center gap-2">
             <ShowcallerTimingIndicator
               {...timingStatus}
+              size="compact"
             />
             <span>Runtime: {totalRuntime}</span>
             {isConnected !== undefined && (
@@ -212,9 +213,9 @@ const RundownHeader = ({
 
   if (isTablet) {
     return (
-      <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Logo, Title, and connection status */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
             <div className="flex-1 min-w-0 flex items-center">
@@ -270,7 +271,7 @@ const RundownHeader = ({
         
         {/* Bottom row - Time info */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
             </div>
@@ -280,7 +281,7 @@ const RundownHeader = ({
             />
           </div>
           
-          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span>Start:</span>
               <input

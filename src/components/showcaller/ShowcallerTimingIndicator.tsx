@@ -7,13 +7,15 @@ interface ShowcallerTimingIndicatorProps {
   isAhead: boolean;
   timeDifference: string;
   isVisible: boolean;
+  size?: 'default' | 'compact';
 }
 
 const ShowcallerTimingIndicator = ({
   isOnTime,
   isAhead,
   timeDifference,
-  isVisible
+  isVisible,
+  size = 'default'
 }: ShowcallerTimingIndicatorProps) => {
   if (!isVisible) return null;
 
@@ -35,10 +37,18 @@ const ShowcallerTimingIndicator = ({
     bgColor = 'bg-red-50 dark:bg-red-900/20';
   }
 
+  const isCompact = size === 'compact';
+
   return (
-    <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-all duration-200 ${statusColor} ${bgColor} border-current/20`}>
-      <Clock className="h-4 w-4" />
-      <span className="text-lg font-mono font-bold tabular-nums">
+    <div className={`flex items-center transition-all duration-200 ${statusColor} ${bgColor} border-current/20 ${
+      isCompact 
+        ? 'space-x-1 px-2 py-0.5 rounded border text-xs' 
+        : 'space-x-2 px-3 py-1.5 rounded-lg border'
+    }`}>
+      <Clock className={isCompact ? "h-3 w-3" : "h-4 w-4"} />
+      <span className={`font-mono font-bold tabular-nums ${
+        isCompact ? 'text-xs' : 'text-lg'
+      }`}>
         {statusText}
       </span>
     </div>
