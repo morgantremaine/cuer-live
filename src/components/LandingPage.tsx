@@ -131,6 +131,15 @@ const LandingPage = () => {
           </div>
         </div>
 
+        {/* Broadcast Control Room Image */}
+        <div className="relative max-w-6xl mx-auto mb-16">
+          <img 
+            src="/lovable-uploads/ec07a93f-2c7f-4b6b-81c6-d378252567f1.png" 
+            alt="Professional Broadcast Control Room"
+            className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30"
+          />
+        </div>
+
         {/* Hero Rundown Interface - Much Larger */}
         <div className="relative max-w-6xl mx-auto mb-16">
           <img 
