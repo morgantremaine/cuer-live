@@ -273,6 +273,33 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* AD View Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          <img 
+            src="/lovable-uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
+            alt="AD View Dashboard"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">AD View Dashboard</h3>
+            <p className="text-xl text-slate-400">
+              Dedicated Assistant Director view with live timing, script tracking, and comprehensive show control for professional broadcast environments.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Live timing and status tracking</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Current script panel</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Blueprint Mode, Rich Notes & Documentation, and Team Management */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         {/* Blueprint Mode */}
