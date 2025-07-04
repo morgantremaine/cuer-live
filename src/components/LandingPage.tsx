@@ -88,21 +88,6 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(15)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-cyan-400 rounded-full opacity-60"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `float ${3 + Math.random() * 2}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          />
-        ))}
-      </div>
 
       {/* Navigation */}
       <nav className="relative z-50 flex items-center justify-between p-6 backdrop-blur-sm bg-black/20 border-b border-cyan-500/20">
@@ -140,23 +125,33 @@ const LandingPage = () => {
               <span className="text-cyan-300 font-mono tracking-wider">NEXT-GEN BROADCAST TECH</span>
             </div>
             
-            {/* Main title with electric effect */}
-            <div className="space-y-6">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight tracking-tight">
+            {/* Main title with hero image background */}
+            <div className="space-y-6 relative">
+              {/* Background image */}
+              <div className="absolute inset-0 -z-10">
+                <img 
+                  src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
+                  alt="Background"
+                  className="w-full h-full object-cover opacity-20 rounded-3xl"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent rounded-3xl"></div>
+              </div>
+              
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-tight tracking-tight relative z-10">
                 <span className="block bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                   THE FUTURE OF
                 </span>
-                <span className="block text-6xl md:text-8xl lg:text-9xl bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_30px_rgba(34,211,238,0.8)]">
+                <span className="block text-6xl md:text-8xl lg:text-9xl bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(34,211,238,0.8)]">
                   RUNDOWNS
                 </span>
               </h1>
               
-              <div className="relative">
+              <div className="relative z-10">
                 <p className="text-xl md:text-2xl text-cyan-100 leading-relaxed max-w-4xl mx-auto font-light tracking-wide">
-                  Enter the new era of show production. Cuer Live transforms your broadcast workflow with 
-                  <span className="text-cyan-400 font-semibold glow-text"> AI-powered precision</span>, 
-                  <span className="text-purple-400 font-semibold glow-text"> real-time collaboration</span>, and 
-                  <span className="text-pink-400 font-semibold glow-text"> unmatched control</span>.
+                  Next-generation show production platform. Cuer Live transforms your broadcast workflow with 
+                  <span className="text-cyan-400 font-semibold"> AI-powered precision</span>, 
+                  <span className="text-purple-400 font-semibold"> real-time collaboration</span>, and 
+                  <span className="text-pink-400 font-semibold"> professional control</span>.
                 </p>
               </div>
             </div>
@@ -168,7 +163,7 @@ const LandingPage = () => {
                 size="lg" 
                 className="relative group bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xl px-12 py-6 h-auto font-bold tracking-wide transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]"
               >
-                <span className="relative z-10">INITIALIZE SYSTEM</span>
+                <span className="relative z-10">Get Started</span>
                 <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md blur-xl"></div>
               </Button>
@@ -178,7 +173,7 @@ const LandingPage = () => {
                 onClick={() => navigate('/help')}
                 className="border-2 border-cyan-500/50 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400 text-xl px-12 py-6 h-auto font-bold tracking-wide transition-all duration-300 hover:scale-105 backdrop-blur-sm"
               >
-                SCAN FEATURES
+                Explore Features
               </Button>
             </div>
           </div>
@@ -187,8 +182,8 @@ const LandingPage = () => {
         {/* Hero Interface Preview */}
         <div className="relative max-w-7xl mx-auto mb-20">
           <div className="relative group">
-            {/* Glowing border effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            {/* Responsive glowing border effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 scale-[1.02]"></div>
             <div className="relative">
               <img 
                 src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
@@ -223,15 +218,15 @@ const LandingPage = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-20">
           <div className="inline-block mb-6">
-            <span className="text-cyan-400 font-mono text-sm tracking-[0.2em] uppercase">System Modules</span>
+            <span className="text-cyan-400 font-mono text-sm tracking-[0.2em] uppercase">Core Features</span>
           </div>
           <h2 className="text-5xl md:text-6xl font-black mb-6">
             <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              CORE SYSTEMS
+              POWERFUL FEATURES
             </span>
           </h2>
           <p className="text-xl text-cyan-100/80 max-w-4xl mx-auto leading-relaxed">
-            Advanced modules engineered for mission-critical broadcast operations. Each system optimized for peak performance.
+            Professional-grade tools designed for modern broadcast workflows. Each feature built for reliability and performance.
           </p>
         </div>
         
@@ -257,30 +252,25 @@ const LandingPage = () => {
                 </div>
                 <p className="text-cyan-100/70 leading-relaxed font-light">{feature.description}</p>
                 
-                {/* Status indicator */}
-                <div className="flex items-center mt-6 text-xs font-mono text-cyan-400">
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full mr-2 animate-pulse"></div>
-                  SYSTEM ONLINE
-                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Live Mission Control */}
+      {/* Live Show Controls */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
         <div className="text-center mb-20">
           <div className="inline-block mb-6">
-            <span className="text-purple-400 font-mono text-sm tracking-[0.2em] uppercase">Mission Control</span>
+            <span className="text-purple-400 font-mono text-sm tracking-[0.2em] uppercase">Live Production</span>
           </div>
           <h3 className="text-4xl md:text-5xl font-black text-white mb-6">
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              LIVE COMMAND CENTER
+              LIVE SHOW CONTROLS
             </span>
           </h3>
           <p className="text-xl text-cyan-100/80 max-w-3xl mx-auto leading-relaxed">
-            Advanced mission control interface with precision timing and real-time status monitoring for critical broadcast operations.
+            Professional live show interface with precision timing and real-time status monitoring for broadcast operations.
           </p>
         </div>
         
@@ -297,43 +287,43 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* AI Neural Network */}
+      {/* AI Assistant */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
         <div className="text-center mb-20">
           <div className="inline-block mb-6">
-            <span className="text-pink-400 font-mono text-sm tracking-[0.2em] uppercase">Neural Network</span>
+            <span className="text-pink-400 font-mono text-sm tracking-[0.2em] uppercase">AI Assistant</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-black mb-6">
             <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              AI COMMAND INTERFACE
+              INTELLIGENT ASSISTANCE
             </span>
           </h2>
           <p className="text-xl text-cyan-100/80 max-w-4xl mx-auto leading-relaxed">
-            Next-generation artificial intelligence continuously monitors, analyzes, and optimizes your broadcast workflow in real-time.
+            Advanced AI assistant that helps analyze, optimize, and enhance your broadcast workflow with intelligent insights.
           </p>
         </div>
         
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <div className="space-y-6">
-              <h3 className="text-3xl font-bold text-white tracking-tight">CUER AI NEURAL CORE</h3>
+              <h3 className="text-3xl font-bold text-white tracking-tight">CUER AI ASSISTANT</h3>
               <p className="text-xl text-cyan-100/70 leading-relaxed">
-                Advanced machine learning algorithms provide real-time analysis, predictive insights, and automated optimization for mission-critical broadcast operations.
+                Intelligent analysis and recommendations help streamline your workflow and optimize show production.
               </p>
             </div>
             
             <div className="space-y-4">
               {[
-                "Real-time neural analysis & optimization",
-                "Predictive issue detection algorithms",
-                "Intelligent timing recommendation engine"
+                "Real-time workflow analysis",
+                "Intelligent content suggestions",
+                "Automated timing optimization"
               ].map((feature, index) => (
                 <div key={index} className="flex items-center space-x-4 text-cyan-100">
                   <div className="relative">
                     <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
                     <div className="absolute inset-0 w-3 h-3 bg-pink-400 rounded-full animate-ping opacity-40"></div>
                   </div>
-                  <span className="text-lg font-mono tracking-wide">{feature}</span>
+                  <span className="text-lg tracking-wide">{feature}</span>
                 </div>
               ))}
             </div>
