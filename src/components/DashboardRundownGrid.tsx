@@ -211,11 +211,11 @@ const DashboardRundownGrid = ({
             return (
               <Card 
                 key={rundown.id} 
-                className="bg-slate-800/60 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move glow-box"
+                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
                 draggable
                 onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
-                <div className={`absolute top-0 left-0 w-full h-1 ${activity.color} opacity-70`} />
+                <div className={`absolute top-0 left-0 w-full h-1 ${activity.color} opacity-50`} />
                 
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
@@ -321,7 +321,7 @@ const DashboardRundownGrid = ({
           return (
             <Card 
               key={rundown.id} 
-              className="bg-slate-800/60 backdrop-blur-xl border-slate-700/50 hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move glow-box"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
               draggable
               onDragStart={(e) => handleDragStart(e, rundown.id)}
             >

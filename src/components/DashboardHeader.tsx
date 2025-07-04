@@ -25,7 +25,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   };
 
   return (
-    <header className="bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 relative z-20">
+    <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
@@ -34,12 +34,12 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all"
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <div className="flex items-center floating-element">
+            <div className="flex items-center">
               <CuerLogo isDark={true} />
             </div>
           </div>
@@ -47,28 +47,28 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-slate-300 hover:text-slate-100 hover:bg-slate-700/50 transition-all">
+                <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-transparent">
                   <User className="h-4 w-4 mr-2" />
                   {userEmail}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-slate-800/90 backdrop-blur-xl border-slate-700/50 z-50">
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                 <DropdownMenuItem 
                   onClick={() => navigate('/account')}
-                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer transition-all"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   Account Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={handleHelpClick}
-                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer transition-all"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   <HelpCircle className="h-4 w-4 mr-2" />
                   Help
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={onSignOut}
-                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 cursor-pointer transition-all"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign Out
