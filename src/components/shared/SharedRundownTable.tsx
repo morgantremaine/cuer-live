@@ -1,9 +1,9 @@
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
-import { Play } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -22,6 +22,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   rundownStartTime = '09:00:00',
   isDark = false
 }, ref) => {
+  // State for managing expanded script/notes cells
+  const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -117,7 +119,70 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return '150px';
   };
 
-  // Helper function to render cell content
+  // Helper function to toggle expanded state of a cell
+  const toggleCellExpanded = (itemId: string, columnKey: string) => {
+    const cellKey = `${itemId}-${columnKey}`;
+    setExpandedCells(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cellKey)) {
+        newSet.delete(cellKey);
+      } else {
+        newSet.add(cellKey);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to check if a cell is expanded
+  const isCellExpanded = (itemId: string, columnKey: string): boolean => {
+    const cellKey = `${itemId}-${columnKey}`;
+    return expandedCells.has(cellKey);
+  };
+
+  // Helper function to render expandable cell content for script and notes
+  const renderExpandableCell = (value: string, itemId: string, columnKey: string) => {
+    const isExpanded = isCellExpanded(itemId, columnKey);
+    const hasContent = value && value.trim();
+    
+    if (!hasContent) {
+      return <span className="text-gray-400 text-xs">No content</span>;
+    }
+
+    return (
+      <div className="w-full">
+        <div className="flex items-start gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleCellExpanded(itemId, columnKey);
+            }}
+            className={`flex-shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors print:hidden ${
+              isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+            }`}
+            title={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+          </button>
+          
+          <div className="flex-1 min-w-0">
+            {isExpanded ? (
+              <div className="whitespace-pre-wrap break-words text-sm">
+                {value}
+              </div>
+            ) : (
+              <div className="truncate text-sm" title={value}>
+                {value}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
   const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
     // Get the raw value first
     let value;
@@ -150,6 +215,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           />
         </div>
       );
+    }
+    
+    // Use expandable cell for script and notes columns
+    if (column.key === 'script' || column.key === 'notes') {
+      return renderExpandableCell(value, item.id, column.key);
     }
     
     return value;
