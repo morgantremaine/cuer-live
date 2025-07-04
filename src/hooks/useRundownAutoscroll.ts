@@ -1,6 +1,5 @@
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useResponsiveLayout } from '@/hooks/use-mobile';
 
 interface UseRundownAutoscrollProps {
   currentSegmentId: string | null;
@@ -17,7 +16,6 @@ export const useRundownAutoscroll = ({
 }: UseRundownAutoscrollProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastScrolledSegmentRef = useRef<string | null>(null);
-  const { isMobileOrTablet } = useResponsiveLayout();
 
   const scrollToCurrentSegment = useCallback(() => {
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
@@ -36,39 +34,17 @@ export const useRundownAutoscroll = ({
       );
 
       if (targetElement) {
-        if (isMobileOrTablet) {
-          // On mobile/tablet, first scroll to start, then adjust to show header
-          targetElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-            inline: 'nearest'
-          });
-          
-          // After scrolling, adjust to show header by scrolling back up slightly
-          setTimeout(() => {
-            if (scrollContainerRef.current) {
-              const currentScrollTop = scrollContainerRef.current.scrollTop;
-              // Scroll back up by approximately header height to reveal it
-              scrollContainerRef.current.scrollTo({
-                top: Math.max(0, currentScrollTop - 100), // 100px should be enough for header
-                behavior: 'smooth'
-              });
-            }
-          }, 100); // Small delay to let first scroll complete
-        } else {
-          // Desktop behavior - center the element
-          targetElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest'
-          });
-        }
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
     }
-  }, [currentSegmentId, autoScrollEnabled, isMobileOrTablet]);
+  }, [currentSegmentId, autoScrollEnabled]);
 
   // Scroll when current segment changes - now works regardless of playing state
   useEffect(() => {

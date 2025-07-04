@@ -70,37 +70,8 @@
   * {
     @apply border-border;
   }
-  
-  html, body {
+  body {
     @apply bg-background text-foreground;
-    height: 100%;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  #root {
-    height: 100%;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  /* Prevent mobile browser scrolling/bouncing */
-  @media (max-width: 1024px) {
-    html, body {
-      touch-action: manipulation;
-      overscroll-behavior: none;
-      -webkit-overflow-scrolling: auto;
-    }
-    
-    body {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-    }
   }
 }
 
