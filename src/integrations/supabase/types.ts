@@ -198,6 +198,7 @@ export type Database = {
           id: string
           items: Json
           logo_url: string | null
+          numbering_system: string | null
           showcaller_state: Json | null
           start_time: string | null
           team_id: string
@@ -218,6 +219,7 @@ export type Database = {
           id?: string
           items: Json
           logo_url?: string | null
+          numbering_system?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id: string
@@ -238,6 +240,7 @@ export type Database = {
           id?: string
           items?: Json
           logo_url?: string | null
+          numbering_system?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id?: string

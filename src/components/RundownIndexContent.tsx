@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -6,6 +6,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { supabase } from '@/integrations/supabase/client';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -302,7 +303,7 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Prepare rundown data for Cuer AI
+  // Prepare rundown data for Cuer AI - moved before usage
   const rundownData = {
     id: rundownId,
     title: rundownTitle,
@@ -311,14 +312,27 @@ const RundownIndexContent = () => {
     items: items,
     columns: userColumns,
     totalRuntime: totalRuntime,
-    
-    // Debug: Log totalRuntime being passed to header
-    _debug: console.log('🔍 RundownIndexContent Runtime Debug:', {
-      totalRuntime,
-      hasRuntime: !!totalRuntime,
-      runtimeValue: totalRuntime
-    })
+    numbering_system: 'sequential' // Default fallback
   };
+
+  // Handle numbering system changes
+  const handleNumberingSystemChange = useCallback(async (system: 'sequential' | 'letter_number') => {
+    if (rundownId) {
+      try {
+        await supabase
+          .from('rundowns')
+          .update({ numbering_system: system })
+          .eq('id', rundownId);
+        
+        console.log('Updated numbering system to:', system);
+      } catch (error) {
+        console.error('Error updating numbering system:', error);
+      }
+    }
+  }, [rundownId]);
+
+  // Get current numbering system
+  const currentNumberingSystem = 'sequential'; // Default until loaded from DB
 
   // Create wrapper functions that match the expected signatures for drag operations
   const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
@@ -346,7 +360,8 @@ const RundownIndexContent = () => {
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
-        totalRuntime={totalRuntime}
+        numberingSystem={currentNumberingSystem}
+        onNumberingSystemChange={handleNumberingSystemChange}
         showColumnManager={showColumnManager}
         setShowColumnManager={setShowColumnManager}
         items={items}
