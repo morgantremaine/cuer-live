@@ -385,6 +385,9 @@ export const useShowcallerVisualState = ({
     // Start the precision timer loop
     updatePrecisionTimer();
   }, [
+    visualState.controllerId, 
+    visualState.currentSegmentId, 
+    userId,
     getNextSegment, 
     timeToSeconds, 
     debouncedSaveVisualState,
