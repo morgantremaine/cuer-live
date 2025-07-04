@@ -115,7 +115,7 @@ const LandingPage = () => {
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto">
               The world's most
               <br />
-              <span className="text-blue-600">
+              <span className="text-blue-500">
                 intuitive rundown maker
               </span>
             </h1>
