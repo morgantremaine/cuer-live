@@ -244,7 +244,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-black border-r border-border flex flex-col items-center py-4">
+      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
@@ -276,9 +276,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-black border-r border-border flex flex-col">
+    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
       {/* Header with Search */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <div className="flex-1 mr-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -286,7 +286,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               placeholder="Search rundowns..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="bg-muted border-border text-foreground placeholder:text-muted-foreground pl-9 pr-8 h-8 text-sm"
+              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
             />
             {searchQuery && (
               <Button

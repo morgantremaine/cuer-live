@@ -211,7 +211,7 @@ const DashboardRundownGrid = ({
             return (
               <Card 
                 key={rundown.id} 
-                className="bg-card border-border hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
+                className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-move"
                 draggable
                 onDragStart={(e) => handleDragStart(e, rundown.id)}
               >
@@ -221,12 +221,12 @@ const DashboardRundownGrid = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0 pr-2">
                       <CardTitle 
-                        className="text-card-foreground text-base cursor-pointer hover:text-primary transition-colors leading-tight break-words"
+                        className="text-white text-base cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground flex items-center gap-2 text-xs mt-1">
+                      <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
                         <span>{getOwnerInfo(rundown)}</span>
                         <span>•</span>
                         <span>{formatDate(rundown.updated_at)}</span>
@@ -244,7 +244,7 @@ const DashboardRundownGrid = ({
                           <MoreVertical className="h-3 w-3" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border z-50">
+                      <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                         {onUnarchive && (
                           <DropdownMenuItem 
                             onClick={(e) => onUnarchive(rundown.id, rundown.title, rundown.items, e)}
@@ -321,7 +321,7 @@ const DashboardRundownGrid = ({
           return (
             <Card 
               key={rundown.id} 
-              className="bg-card border-border hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 group relative overflow-hidden cursor-move"
+              className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 group relative overflow-hidden cursor-move"
               draggable
               onDragStart={(e) => handleDragStart(e, rundown.id)}
             >
@@ -332,14 +332,14 @@ const DashboardRundownGrid = ({
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-start gap-2 mb-1">
                       <CardTitle 
-                        className="text-card-foreground text-lg cursor-pointer hover:text-primary transition-colors leading-tight break-words flex-1"
+                        className="text-white text-lg cursor-pointer hover:text-blue-300 transition-colors leading-tight break-words flex-1"
                         onClick={() => onOpen(rundown.id)}
                       >
                         {rundown.title}
                       </CardTitle>
                     </div>
                     
-                    <CardDescription className="text-muted-foreground flex items-center gap-3 text-xs">
+                    <CardDescription className="text-gray-400 flex items-center gap-3 text-xs">
                       <div className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
                         <span>by {getOwnerInfo(rundown)}</span>
@@ -362,7 +362,7 @@ const DashboardRundownGrid = ({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-border z-50">
+                    <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
                       {onDuplicate && (
                         <DropdownMenuItem 
                           onClick={(e) => onDuplicate(rundown.id, rundown.title, rundown.items, e)}
@@ -423,15 +423,15 @@ const DashboardRundownGrid = ({
               <CardContent className="pt-0 space-y-4">
                 {/* Stats Row */}
                 <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-blue-400 text-sm font-medium">{preview.segmentCount}</div>
                     <div className="text-gray-400 text-xs">Segments</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-green-400 text-sm font-medium">{preview.itemCount}</div>
                     <div className="text-gray-400 text-xs">Items</div>
                   </div>
-                  <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-purple-400 text-sm font-medium flex items-center justify-center gap-1">
                       <Clock className="h-3 w-3" />
                       {preview.totalDuration}
@@ -442,7 +442,7 @@ const DashboardRundownGrid = ({
 
                 {/* Content Preview - Condensed */}
                 {preview.firstItems.length > 0 && (
-                  <div className="bg-muted/30 rounded-lg p-2">
+                  <div className="bg-gray-700/30 rounded-lg p-2">
                     <div className="text-gray-300 text-xs font-medium mb-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" />
                       Headers Preview
