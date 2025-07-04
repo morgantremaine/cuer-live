@@ -37,26 +37,24 @@ export const useRundownAutoscroll = ({
 
       if (targetElement) {
         if (isMobileOrTablet) {
-          // On mobile/tablet, ensure header stays visible by scrolling to a position
-          // that keeps the header in view
-          const containerRect = scrollContainerRef.current.getBoundingClientRect();
-          const targetRect = targetElement.getBoundingClientRect();
-          const currentScrollTop = scrollContainerRef.current.scrollTop;
-          
-          // Calculate the target's position relative to the container's content
-          const targetOffsetTop = currentScrollTop + (targetRect.top - containerRect.top);
-          
-          // Find the header and calculate safe scroll position
-          const headerElement = scrollContainerRef.current.querySelector('.sticky');
-          const headerHeight = headerElement ? headerElement.getBoundingClientRect().height : 80; // fallback to 80px
-          
-          // Scroll to position that keeps header visible with some padding
-          const safeScrollTop = Math.max(0, targetOffsetTop - headerHeight - 16); // 16px padding
-          
-          scrollContainerRef.current.scrollTo({
-            top: safeScrollTop,
-            behavior: 'smooth'
+          // On mobile/tablet, first scroll to start, then adjust to show header
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
           });
+          
+          // After scrolling, adjust to show header by scrolling back up slightly
+          setTimeout(() => {
+            if (scrollContainerRef.current) {
+              const currentScrollTop = scrollContainerRef.current.scrollTop;
+              // Scroll back up by approximately header height to reveal it
+              scrollContainerRef.current.scrollTo({
+                top: Math.max(0, currentScrollTop - 100), // 100px should be enough for header
+                behavior: 'smooth'
+              });
+            }
+          }, 100); // Small delay to let first scroll complete
         } else {
           // Desktop behavior - center the element
           targetElement.scrollIntoView({
