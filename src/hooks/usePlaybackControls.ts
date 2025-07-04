@@ -58,13 +58,16 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Faster initialization timeout for immediate precision
+  // Mobile-friendly initialization timeout
   useEffect(() => {
     if (rundownId && !isInitialized) {
-      // Reduced timeout for faster initialization
+      // Longer timeout for mobile devices with slower connections
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const timeoutDuration = isMobile ? 5000 : 3000; // 5s for mobile, 3s for desktop
+      
       initializationTimeoutRef.current = setTimeout(() => {
         console.warn('📺 Enhanced showcaller initialization timeout - forcing ready state');
-      }, 2000); // Further reduced from 3000ms to 2000ms
+      }, timeoutDuration);
     } else if (isInitialized && initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
       initializationTimeoutRef.current = null;
