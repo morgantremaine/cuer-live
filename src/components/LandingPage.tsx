@@ -188,28 +188,16 @@ const LandingPage = () => {
           className="w-full h-auto"
         />
 
-        {/* Live Show Control in alternating format */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
-            <p className="text-xl text-slate-400">
-              Professional timing controls and real-time status tracking for your entire production team.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time timing controls</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Status tracking for entire team</span>
-              </div>
-            </div>
-          </div>
+        {/* Live Show Control - Simple image only */}
+        <div className="text-center space-y-6 mb-16">
+          <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
+          <p className="text-xl text-slate-400">
+            Professional timing controls and real-time status tracking for your entire production team.
+          </p>
           <img 
-            src="/lovable-uploads/f781bf0d-20b8-472c-a811-7f489eea1594.png" 
+            src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
             alt="Live Show Controls"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+            className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30"
           />
         </div>
 
