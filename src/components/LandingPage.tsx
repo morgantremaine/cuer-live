@@ -72,7 +72,7 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up">
         <div className="flex items-center">
-          <CuerLogo className="h-8 w-auto floating-element" />
+          <CuerLogo className="h-8 w-auto" />
         </div>
         <div className="flex items-center space-x-4">
           <Link to="/help" className="text-slate-300 hover:text-white transition-all duration-300 hover:drop-shadow-lg">
