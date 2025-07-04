@@ -91,13 +91,13 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section with Full-Width Background */}
-      <div className="relative z-10 w-full pt-12 pb-24">
+      <div className="relative z-10 w-full pb-24">
         {/* Hero Content with Background Image */}
         <div className="relative mb-16 w-full">
           {/* Background Image */}
           <div className="absolute inset-0 w-full">
             <img 
-              src="/lovable-uploads/3adf9603-b10b-40e1-8747-aa37d927b8e6.png" 
+              src="/lovable-uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
               alt="Professional Broadcast Control Room"
               className="w-full h-full object-cover"
             />
