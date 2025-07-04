@@ -90,12 +90,12 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section with Background */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-24">
+      {/* Hero Section with Full-Width Background */}
+      <div className="relative z-10 w-full pt-12 pb-24">
         {/* Hero Content with Background Image */}
-        <div className="relative mb-16">
+        <div className="relative mb-16 w-full">
           {/* Background Image */}
-          <div className="absolute inset-0 rounded-2xl overflow-hidden">
+          <div className="absolute inset-0 w-full">
             <img 
               src="/lovable-uploads/3adf9603-b10b-40e1-8747-aa37d927b8e6.png" 
               alt="Professional Broadcast Control Room"
@@ -106,7 +106,7 @@ const LandingPage = () => {
           </div>
           
           {/* Hero Text Content */}
-          <div className="relative z-10 text-center space-y-8 py-24 px-8">
+          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto">
             <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50">
               <Zap className="w-4 h-4 mr-2" />
               Professional Broadcast Tool
