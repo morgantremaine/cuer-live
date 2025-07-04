@@ -71,9 +71,8 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-hidden">
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <CuerLogo className="h-8 w-8" />
-          <span className="text-2xl font-bold">Cuer Live</span>
         </div>
         <div className="flex items-center space-x-4">
           <Link to="/help" className="text-gray-300 hover:text-white transition-colors">
@@ -122,7 +121,7 @@ const LandingPage = () => {
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto"
               >
-                Get Started Free
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
@@ -146,63 +145,13 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Right Content - Mock Interface */}
+          {/* Right Content - Actual Rundown Interface */}
           <div className="relative">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-white/10 p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                  </div>
-                  <span className="text-gray-400 text-sm ml-4">Cuer Live - Live Broadcast Rundown</span>
-                </div>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-200 border-green-400/30">
-                  <Radio className="w-3 h-3 mr-1" />
-                  LIVE
-                </Badge>
-              </div>
-              
-              {/* Mock Rundown Table */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-4 gap-2 text-xs text-gray-400 uppercase tracking-wider pb-2 border-b border-gray-600">
-                  <span>Segment</span>
-                  <span>Talent</span>
-                  <span>Duration</span>
-                  <span>Status</span>
-                </div>
-                
-                {[
-                  { name: "Show Open", talent: "Host", duration: "01:00", status: "complete", color: "bg-green-500/20" },
-                  { name: "Welcome", talent: "Host", duration: "02:00", status: "live", color: "bg-blue-500/30" },
-                  { name: "Interview Segment", talent: "Host + Guest", duration: "15:00", status: "upcoming", color: "bg-gray-500/20" },
-                  { name: "Commercial Break", talent: "-", duration: "03:00", status: "upcoming", color: "bg-gray-500/20" },
-                  { name: "Closing", talent: "Host", duration: "01:30", status: "upcoming", color: "bg-gray-500/20" }
-                ].map((item, index) => (
-                  <div key={index} className={`grid grid-cols-4 gap-2 p-3 rounded-lg ${item.color} text-sm`}>
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-gray-300">{item.talent}</span>
-                    <span className="text-gray-300">{item.duration}</span>
-                    <Badge variant="secondary" className={`justify-self-start text-xs ${
-                      item.status === 'live' ? 'bg-blue-500/20 text-blue-200' :
-                      item.status === 'complete' ? 'bg-green-500/20 text-green-200' :
-                      'bg-gray-500/20 text-gray-300'
-                    }`}>
-                      {item.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Mock Timer */}
-              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-400/30 rounded-lg">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-300">Show Elapsed</span>
-                  <span className="text-2xl font-mono font-bold text-blue-400">03:15</span>
-                </div>
-              </div>
-            </div>
+            <img 
+              src="/lovable-uploads/eee4cab2-b77f-407a-abd0-caaf1ac3e21d.png" 
+              alt="Cuer Live Interface"
+              className="w-full h-auto rounded-2xl shadow-2xl border border-white/10"
+            />
           </div>
         </div>
       </div>
@@ -243,38 +192,13 @@ const LandingPage = () => {
           <p className="text-xl text-gray-400">Simple, powerful, professional</p>
         </div>
         
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              step: "01",
-              title: "Create & Collaborate",
-              description: "Build your rundown with your team in real-time. Add segments, scripts, timing, and visual elements.",
-              icon: FileText
-            },
-            {
-              step: "02", 
-              title: "Go Live",
-              description: "Use the showcaller to track timing during your show. All views sync automatically for your entire team.",
-              icon: Radio
-            },
-            {
-              step: "03",
-              title: "Share & Display", 
-              description: "Create public links for stakeholders, use AD view for control rooms, or teleprompter mode for talent.",
-              icon: Monitor
-            }
-          ].map((step, index) => (
-            <div key={index} className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/20 border border-blue-400/30">
-                <step.icon className="h-8 w-8 text-blue-400" />
-              </div>
-              <div className="space-y-3">
-                <div className="text-6xl font-bold text-gray-700">{step.step}</div>
-                <h3 className="text-2xl font-semibold">{step.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{step.description}</p>
-              </div>
-            </div>
-          ))}
+        {/* Use the provided screenshot */}
+        <div className="flex justify-center">
+          <img 
+            src="/lovable-uploads/ef6cf2a6-c012-42e8-8c8f-4a7e0570f2b0.png" 
+            alt="How Cuer Live Works - Create & Collaborate, Go Live, Share & Display"
+            className="w-full max-w-5xl h-auto rounded-2xl shadow-lg"
+          />
         </div>
       </div>
 
@@ -293,7 +217,7 @@ const LandingPage = () => {
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-12 py-4 h-auto"
           >
-            Get Started Free
+            Get Started
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
