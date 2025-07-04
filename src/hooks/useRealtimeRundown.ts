@@ -175,19 +175,15 @@ export const useRealtimeRundown = ({
 
     // CRITICAL: If it's showcaller-only, handle it specially but NEVER set content processing state
     if (isShowcallerOnly) {
-      // Signal showcaller activity with mobile-friendly extended timeout
+      // Signal showcaller activity with extended timeout
       if (onShowcallerActivityRef.current) {
         onShowcallerActivityRef.current(true);
-        
-        // Longer timeout for mobile devices to account for connection delays
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const activityTimeout = isMobile ? 15000 : 12000;
         
         timeoutManagerRef.current.set('showcaller-activity', () => {
           if (onShowcallerActivityRef.current) {
             onShowcallerActivityRef.current(false);
           }
-        }, activityTimeout);
+        }, 12000);
       }
       
       // Pass showcaller state to the callback if available
@@ -211,10 +207,7 @@ export const useRealtimeRundown = ({
     // Clear any existing processing timeout to prevent race conditions
     timeoutManagerRef.current.clear('content-processing');
 
-    // Mobile-friendly debounced updates with longer processing delays
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const processingDelay = isMobile ? 300 : 150; // Longer delay for mobile
-    
+    // Standard debounced updates for reliable performance
     timeoutManagerRef.current.set('processing', () => {
       lastProcessedUpdateRef.current = updateData.timestamp;
       
@@ -232,7 +225,7 @@ export const useRealtimeRundown = ({
         setIsProcessingContentUpdate(false);
       }, 600);
       
-    }, processingDelay);
+    }, 150);
     
   }, [rundownId, user?.id, isEditing, hasUnsavedChanges, currentContentHash, signalActivity, isShowcallerOnlyUpdate]);
 
