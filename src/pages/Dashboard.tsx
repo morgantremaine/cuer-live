@@ -295,14 +295,14 @@ const Dashboard = () => {
 
   if (shouldShowLoadingSkeleton) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <DashboardHeader 
           userEmail={user?.email}
           onSignOut={handleSignOut}
         />
         
         <div className="flex flex-1">
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
+          <div className="w-80 bg-black border-r border-border p-4">
             <div className="space-y-4">
               <Skeleton className="h-8 w-full bg-gray-700" />
               <Skeleton className="h-6 w-3/4 bg-gray-700" />
@@ -333,7 +333,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Full-width Header */}
       <DashboardHeader 
         userEmail={user?.email}
