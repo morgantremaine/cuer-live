@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 interface ImageCellProps {
   value: string;
@@ -136,7 +137,7 @@ const ImageCell = ({
     setIsEditing(true);
   };
 
-  // Check if it looks like an image URL (ends with common image extensions or contains image domains)
+  // Check if it looks like an image URL or supported design file
   const isLikelyImageUrl = internalValue && (
     /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
     /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
@@ -150,6 +151,9 @@ const ImageCell = ({
     internalValue.includes('amazonaws.com') ||
     internalValue.includes('cloudinary.com')
   );
+
+  // Check if it's a Figma design file
+  const isFigmaFile = internalValue && internalValue.includes('figma.com');
 
   // Get the display URL (convert Google Drive or Dropbox links if necessary)
   const getDisplayUrl = (url: string): string => {
@@ -216,6 +220,22 @@ const ImageCell = ({
               }}
               style={{ maxHeight: '68px' }}
             />
+          ) : isFigmaFile ? (
+            <div 
+              className="w-full h-16 flex items-center justify-center bg-gray-100 rounded border border-gray-300 hover:bg-gray-200 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(internalValue, '_blank');
+              }}
+            >
+              <div className="flex items-center space-x-2 text-gray-700">
+                <div className="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-sm">
+                  F
+                </div>
+                <span className="text-sm font-medium">Figma Design</span>
+                <ExternalLink className="h-4 w-4" />
+              </div>
+            </div>
           ) : (
             <div 
               className="w-full h-8 flex items-center text-sm"
