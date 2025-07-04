@@ -145,7 +145,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     const hasContent = value && value.trim();
     
     if (!hasContent) {
-      return <span className="text-gray-400 text-xs">No content</span>;
+      return null;
     }
 
     return (
