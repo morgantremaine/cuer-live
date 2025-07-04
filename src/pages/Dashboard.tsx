@@ -295,19 +295,19 @@ const Dashboard = () => {
 
   if (shouldShowLoadingSkeleton) {
     return (
-      <div className="min-h-screen bg-slate-800 flex flex-col">
+      <div className="min-h-screen bg-gray-900 flex flex-col">
         <DashboardHeader 
           userEmail={user?.email}
           onSignOut={handleSignOut}
         />
         
         <div className="flex flex-1">
-          <div className="w-80 bg-slate-900 border-r border-slate-700 p-4">
+          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
             <div className="space-y-4">
-              <Skeleton className="h-8 w-full bg-slate-700" />
-              <Skeleton className="h-6 w-3/4 bg-slate-700" />
-              <Skeleton className="h-6 w-1/2 bg-slate-700" />
-              <Skeleton className="h-6 w-2/3 bg-slate-700" />
+              <Skeleton className="h-8 w-full bg-gray-700" />
+              <Skeleton className="h-6 w-3/4 bg-gray-700" />
+              <Skeleton className="h-6 w-1/2 bg-gray-700" />
+              <Skeleton className="h-6 w-2/3 bg-gray-700" />
             </div>
           </div>
           
@@ -315,13 +315,13 @@ const Dashboard = () => {
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
               <div className="px-4 py-6 sm:px-0 space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-40 bg-slate-700" />
-                  <Skeleton className="h-12 w-32 bg-slate-700" />
+                  <Skeleton className="h-12 w-40 bg-gray-700" />
+                  <Skeleton className="h-12 w-32 bg-gray-700" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full bg-slate-700" />
+                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
                   ))}
                 </div>
               </div>
@@ -333,7 +333,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-800 flex flex-col">
+    <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Full-width Header */}
       <DashboardHeader 
         userEmail={user?.email}
@@ -377,7 +377,7 @@ const Dashboard = () => {
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="bg-slate-600 hover:bg-slate-500 text-white hover:text-white border-slate-500"
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-700 border-gray-300"
                     >
                       <Plus className="h-5 w-5 mr-2" />
                       Import CSV
