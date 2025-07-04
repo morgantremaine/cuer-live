@@ -187,7 +187,7 @@ const LandingPage = () => {
             <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group glow-box fade-up">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 pulse-glow`}>
+                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
                     <feature.icon className={`h-6 w-6 ${feature.color}`} />
                   </div>
                   <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors">{feature.title}</h3>
@@ -274,19 +274,23 @@ const LandingPage = () => {
               Create read-only links for stakeholders, clients, and external viewers. Perfect for control rooms and public displays.
             </p>
           </div>
-          <img 
-            src="/lovable-uploads/a8f26352-6c2f-4e9f-91b5-6db3581e2d48.png" 
-            alt="Shared Rundown View"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/a8f26352-6c2f-4e9f-91b5-6db3581e2d48.png" 
+              alt="Shared Rundown View"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
         
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <img 
-            src="/lovable-uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
-            alt="AD View Dashboard"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
+              alt="AD View Dashboard"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">AD View Dashboard</h3>
             <p className="text-xl text-slate-400">
@@ -315,11 +319,13 @@ const LandingPage = () => {
               Professional teleprompter mode with speed controls, formatting options, and realtime sync for back-and-forth editing and script writing.
             </p>
           </div>
-          <img 
-            src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
-            alt="Teleprompter Full Screen"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/9f875f50-34f7-4b20-b8b3-b56ba3bccbe8.png" 
+              alt="Teleprompter Full Screen"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -351,20 +357,24 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <img 
-            src="/lovable-uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
-            alt="Blueprint Planning Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
+              alt="Blueprint Planning Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
 
         {/* Camera Plot Editor */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <img 
-            src="/lovable-uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
-            alt="Camera Plot Editor"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
+              alt="Camera Plot Editor"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Camera Plot Editor</h3>
             <p className="text-xl text-slate-400">
@@ -401,20 +411,24 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <img 
-            src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-            alt="Notes and Documentation"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+              alt="Notes and Documentation"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
 
         {/* Team Management */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <img 
-            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-            alt="Team Management Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+              alt="Team Management Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Team Management</h3>
             <p className="text-xl text-slate-400">
