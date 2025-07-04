@@ -75,9 +75,6 @@ const LandingPage = () => {
           <CuerLogo className="h-8 w-auto" />
         </div>
         <div className="flex items-center space-x-4">
-          <Link to="/help" className="text-slate-300 hover:text-white transition-all duration-300 hover:drop-shadow-lg">
-            Help
-          </Link>
           {user ? (
             <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
               Dashboard
