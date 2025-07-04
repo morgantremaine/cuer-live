@@ -295,19 +295,25 @@ const Dashboard = () => {
 
   if (shouldShowLoadingSkeleton) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 flex flex-col relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl floating-element"></div>
+          <div className="absolute top-1/2 -left-40 w-80 h-80 bg-slate-500/5 rounded-full blur-3xl floating-element" style={{ animationDelay: '2s' }}></div>
+        </div>
+        
         <DashboardHeader 
           userEmail={user?.email}
           onSignOut={handleSignOut}
         />
         
-        <div className="flex flex-1">
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
+        <div className="flex flex-1 relative z-10">
+          <div className="w-80 bg-slate-800/60 backdrop-blur-xl border-r border-slate-700/50 p-4">
             <div className="space-y-4">
-              <Skeleton className="h-8 w-full bg-gray-700" />
-              <Skeleton className="h-6 w-3/4 bg-gray-700" />
-              <Skeleton className="h-6 w-1/2 bg-gray-700" />
-              <Skeleton className="h-6 w-2/3 bg-gray-700" />
+              <Skeleton className="h-8 w-full bg-slate-700/50" />
+              <Skeleton className="h-6 w-3/4 bg-slate-700/50" />
+              <Skeleton className="h-6 w-1/2 bg-slate-700/50" />
+              <Skeleton className="h-6 w-2/3 bg-slate-700/50" />
             </div>
           </div>
           
@@ -315,13 +321,13 @@ const Dashboard = () => {
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
               <div className="px-4 py-6 sm:px-0 space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-40 bg-gray-700" />
-                  <Skeleton className="h-12 w-32 bg-gray-700" />
+                  <Skeleton className="h-12 w-40 bg-slate-700/50" />
+                  <Skeleton className="h-12 w-32 bg-slate-700/50" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
+                    <Skeleton key={i} className="h-32 w-full bg-slate-700/50 rounded-xl" />
                   ))}
                 </div>
               </div>
@@ -333,15 +339,24 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 flex flex-col relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl floating-element"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-slate-500/5 rounded-full blur-3xl floating-element" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl floating-element" style={{ animationDelay: '4s' }}></div>
+      </div>
+      
       {/* Full-width Header */}
-      <DashboardHeader 
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
-      />
+      <div className="relative z-10">
+        <DashboardHeader 
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+        />
+      </div>
       
       {/* Content area with sidebar and main content */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative z-10">
         {/* Sidebar */}
         <DashboardSidebar
           selectedFolder={selectedFolder}
@@ -363,21 +378,23 @@ const Dashboard = () => {
               <div className="px-4 py-6 sm:px-0 space-y-6">
                 {/* Breadcrumb - Hide when searching */}
                 {!searchQuery && (
-                  <DashboardFolderBreadcrumb
-                    selectedFolder={selectedFolder}
-                    folderType={folderType}
-                    customFolders={folders}
-                  />
+                  <div className="fade-up">
+                    <DashboardFolderBreadcrumb
+                      selectedFolder={selectedFolder}
+                      folderType={folderType}
+                      customFolders={folders}
+                    />
+                  </div>
                 )}
                 
                 {/* Create New and Import Buttons */}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 fade-up">
                   <CreateNewButton onClick={handleCreateNew} />
                   <CSVImportDialog onImport={handleCSVImport}>
                     <Button 
                       size="lg" 
                       variant="outline"
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-700 border-gray-300"
+                      className="bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 hover:text-white border-slate-600/50 backdrop-blur-sm transition-all"
                     >
                       <Plus className="h-5 w-5 mr-2" />
                       Import CSV
@@ -386,20 +403,22 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Rundowns Grid */}
-                <DashboardRundownGrid 
-                  title={folderTitle}
-                  rundowns={filteredRundowns}
-                  loading={loading && savedRundowns.length > 0}
-                  onOpen={handleOpenRundown}
-                  onDelete={handleDeleteRundown}
-                  onArchive={handleArchiveRundown}
-                  onUnarchive={handleUnarchiveRundown}
-                  onDuplicate={handleDuplicateRundown}
-                  isArchived={folderType === 'archived'}
-                  showEmptyState={true}
-                  currentUserId={user?.id}
-                  teamMembers={teamMembers}
-                />
+                <div className="fade-up">
+                  <DashboardRundownGrid 
+                    title={folderTitle}
+                    rundowns={filteredRundowns}
+                    loading={loading && savedRundowns.length > 0}
+                    onOpen={handleOpenRundown}
+                    onDelete={handleDeleteRundown}
+                    onArchive={handleArchiveRundown}
+                    onUnarchive={handleUnarchiveRundown}
+                    onDuplicate={handleDuplicateRundown}
+                    isArchived={folderType === 'archived'}
+                    showEmptyState={true}
+                    currentUserId={user?.id}
+                    teamMembers={teamMembers}
+                  />
+                </div>
               </div>
             </div>
           </main>
