@@ -21,15 +21,48 @@ const Changelog: React.FC = () => {
           <h1 className="text-4xl font-bold text-white">Changelog</h1>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.1.3 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.1.3</h2>
+              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">🔧 New Features</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Collapsible Headers:</strong> Added collapsible headers for easy viewing and quick resorting of rundown sections. 
+                      Headers can now be collapsed to provide a cleaner overview of your rundown structure and make it easier to navigate between different sections.
+                    </p>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src="/lovable-uploads/dba61719-2706-476b-9077-2cb0ef9fd170.png" 
+                        alt="Collapsible headers feature showing rundown sections"
+                        className="w-full max-w-md mx-auto rounded border border-slate-600"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Example of collapsible rundown headers in action
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon placeholder */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-8">
             <div className="text-center text-gray-400">
-              <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
+              <h2 className="text-2xl font-semibold mb-4">More Updates Coming Soon</h2>
               <p className="text-lg mb-4">
-                We'll publish our latest updates and improvements here.
+                We're continuously working on new features and improvements.
               </p>
               <p className="text-sm opacity-75">
-                Check back soon for the latest changelog entries.
+                Check back regularly for the latest updates and enhancements.
               </p>
             </div>
           </div>
