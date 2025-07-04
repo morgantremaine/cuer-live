@@ -180,15 +180,13 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* How It Works Section - Updated */}
+      {/* How It Works Section - Full color element only */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="flex justify-center mb-16">
-          <img 
-            src="/lovable-uploads/f24e2bc5-3dc2-4493-9dad-16ca9fc91bd8.png" 
-            alt="Create & Collaborate, Go Live, Share & Display"
-            className="w-full max-w-5xl h-auto rounded-2xl shadow-lg border border-slate-600/30"
-          />
-        </div>
+        <img 
+          src="/lovable-uploads/92eec16b-6c52-47b1-ba64-6d63eb0f2779.png" 
+          alt="Create & Collaborate, Go Live, Share & Display"
+          className="w-full h-auto"
+        />
 
         {/* Live Show Control in alternating format */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
