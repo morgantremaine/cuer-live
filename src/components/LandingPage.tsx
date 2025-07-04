@@ -362,11 +362,6 @@ const LandingPage = () => {
         
         {/* Rich Notes & Documentation */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <img 
-            src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-            alt="Notes and Documentation"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
             <p className="text-xl text-slate-400">
@@ -383,10 +378,20 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
+          <img 
+            src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+            alt="Notes and Documentation"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
 
         {/* Team Management */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <img 
+            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+            alt="Team Management Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Team Management</h3>
             <p className="text-xl text-slate-400">
@@ -403,11 +408,6 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <img 
-            src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-            alt="Team Management Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
         </div>
       </div>
 
