@@ -446,6 +446,13 @@ const LandingPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Copyright Footer */}
+      <footer className="relative z-10 text-center py-8 border-t border-slate-800/50">
+        <p className="text-slate-400 text-sm">
+          © {new Date().getFullYear()} Cuer Live. All rights reserved.
+        </p>
+      </footer>
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
