@@ -58,13 +58,13 @@ export const usePlaybackControls = (
     onShowcallerStateReceived: applyExternalVisualState
   });
 
-  // Standard initialization timeout - mobile detection was causing issues
+  // Faster initialization timeout for immediate precision
   useEffect(() => {
     if (rundownId && !isInitialized) {
-      // Standard timeout for all devices
+      // Reduced timeout for faster initialization
       initializationTimeoutRef.current = setTimeout(() => {
         console.warn('📺 Enhanced showcaller initialization timeout - forcing ready state');
-      }, 3000);
+      }, 2000); // Further reduced from 3000ms to 2000ms
     } else if (isInitialized && initializationTimeoutRef.current) {
       clearTimeout(initializationTimeoutRef.current);
       initializationTimeoutRef.current = null;

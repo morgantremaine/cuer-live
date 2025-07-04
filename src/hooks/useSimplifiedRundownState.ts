@@ -80,7 +80,6 @@ export const useSimplifiedRundownState = () => {
   const realtimeRundown = useRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
-      console.log('📊 Simplified state received realtime update:', updatedRundown);
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         // Load state WITHOUT any showcaller data
@@ -93,7 +92,6 @@ export const useSimplifiedRundownState = () => {
         });
       }
     }, [actions, isSaving]),
-    enabled: !!rundownId,  // Enable as soon as we have a rundown ID
     hasUnsavedChanges: state.hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp: string) => {
       // Track our own updates to prevent showing blue icon for our changes
