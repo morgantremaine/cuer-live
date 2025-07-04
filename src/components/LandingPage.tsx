@@ -70,20 +70,20 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
+      <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up">
         <div className="flex items-center">
-          <CuerLogo className="h-8 w-auto" />
+          <CuerLogo className="h-8 w-auto floating-element" />
         </div>
         <div className="flex items-center space-x-4">
-          <Link to="/help" className="text-slate-300 hover:text-white transition-colors">
+          <Link to="/help" className="text-slate-300 hover:text-white transition-all duration-300 hover:drop-shadow-lg">
             Help
           </Link>
           {user ? (
-            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
+            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
               Dashboard
             </Button>
           ) : (
-            <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
+            <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
               Sign In
             </Button>
           )}
@@ -107,38 +107,39 @@ const LandingPage = () => {
           
           {/* Hero Text Content */}
           <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto">
-            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50">
+            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 fade-up pulse-glow">
               <Zap className="w-4 h-4 mr-2" />
               Professional Broadcast Tool
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl fade-up">
               The world's most
               <br />
-              <span className="text-blue-500">
+              <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                 intuitive rundown maker
               </span>
             </h1>
             
-            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl">
+            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
               Create stunning run of show documents with your entire team on Cuer Live. 
               Plan, cue, and direct events with precision, all from a web browser.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
               <Button 
                 onClick={handleGetStarted}
                 size="lg" 
-                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto glow-box relative overflow-hidden group"
               >
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <span className="relative z-10">Get Started</span>
+                <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 shimmer"></div>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => navigate('/help')}
-                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto"
+                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
               >
                 Explore Features
               </Button>
@@ -147,19 +148,22 @@ const LandingPage = () => {
         </div>
 
         {/* Hero Rundown Interface - Much Larger */}
-        <div className="relative max-w-6xl mx-auto mb-16">
-          <img 
-            src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
-            alt="Cuer Live Professional Rundown Interface"
-            className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30"
-          />
+        <div className="relative max-w-6xl mx-auto mb-16 fade-up">
+          <div className="relative group">
+            <img 
+              src="/lovable-uploads/6ab67d89-df00-4400-85fc-59eb71afc52a.png" 
+              alt="Cuer Live Professional Rundown Interface"
+              className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          </div>
         </div>
 
         {/* Quick Features List */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {testimonialFeatures.slice(0, 4).map((feature, index) => (
-            <div key={index} className="flex items-center space-x-3 text-slate-300 bg-slate-800/30 p-4 rounded-lg border border-slate-700/30">
-              <CheckCircle className="h-5 w-5 text-blue-400 flex-shrink-0" />
+            <div key={index} className="flex items-center space-x-3 text-slate-300 bg-slate-800/30 p-4 rounded-lg border border-slate-700/30 fade-up glow-box hover:bg-slate-800/50 transition-all duration-300">
+              <CheckCircle className="h-5 w-5 text-blue-400 flex-shrink-0 floating-element" />
               <span className="text-sm font-medium">{feature}</span>
             </div>
           ))}
@@ -180,13 +184,13 @@ const LandingPage = () => {
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group">
+            <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group glow-box fade-up">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4 mb-4">
-                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 transition-transform`}>
+                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 pulse-glow`}>
                     <feature.icon className={`h-6 w-6 ${feature.color}`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors">{feature.title}</h3>
                 </div>
                 <p className="text-slate-300 leading-relaxed">{feature.description}</p>
               </CardContent>
@@ -202,11 +206,13 @@ const LandingPage = () => {
           <p className="text-xl text-slate-400">
             Professional timing controls and real-time status tracking for your entire production team.
           </p>
-          <img 
-            src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
-            alt="Live Show Controls"
-            className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
+              alt="Live Show Controls"
+              className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
 
       </div>
@@ -243,11 +249,13 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <img 
-            src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
-            alt="Cuer AI Assistant Interface"
-            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
-          />
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
+              alt="Cuer AI Assistant Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -455,9 +463,10 @@ const LandingPage = () => {
       </footer>
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-slate-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl floating-element"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-slate-500/10 rounded-full blur-3xl floating-element" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl floating-element" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute top-1/4 left-1/3 w-60 h-60 bg-purple-500/5 rounded-full blur-2xl pulse-glow"></div>
       </div>
     </div>
   );

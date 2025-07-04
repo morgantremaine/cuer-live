@@ -30,6 +30,12 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* Subtle glow and animation variables */
+    --glow-primary: 217 91% 60%;
+    --glow-secondary: 262 83% 58%;
+    --animation-glow: 0 0 20px hsl(var(--glow-primary) / 0.3);
+    --animation-glow-hover: 0 0 30px hsl(var(--glow-primary) / 0.5);
   }
 
   .dark {
@@ -140,4 +146,72 @@
 
 .scrollbar-hide::-webkit-scrollbar-corner {
   display: none;
+}
+
+/* Subtle animations and glow effects */
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.glow-box {
+  box-shadow: var(--animation-glow);
+  transition: all 0.3s ease;
+}
+
+.glow-box:hover {
+  box-shadow: var(--animation-glow-hover);
+  transform: translateY(-2px);
+}
+
+.fade-up {
+  animation: fadeUp 0.8s ease-out forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.fade-up:nth-child(1) { animation-delay: 0.1s; }
+.fade-up:nth-child(2) { animation-delay: 0.2s; }
+.fade-up:nth-child(3) { animation-delay: 0.3s; }
+.fade-up:nth-child(4) { animation-delay: 0.4s; }
+.fade-up:nth-child(5) { animation-delay: 0.5s; }
+.fade-up:nth-child(6) { animation-delay: 0.6s; }
+
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--glow-primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(var(--glow-primary) / 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
