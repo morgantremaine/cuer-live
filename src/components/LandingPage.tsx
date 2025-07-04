@@ -113,7 +113,7 @@ const LandingPage = () => {
               The world's most
               <br />
               <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                intuitive rundown maker
+                intuitive rundown platform
               </span>
             </h1>
             
