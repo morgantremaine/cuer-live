@@ -19,26 +19,68 @@ export const useRundownCalculations = (items: RundownItem[]) => {
     return 0;
   }, []);
 
-  const getRowNumber = useCallback((index: number) => {
+  const getRowNumber = useCallback((index: number, numberingSystem: 'sequential' | 'letter_number' = 'sequential') => {
     if (index < 0 || index >= items.length) return '';
     
     const item = items[index];
     if (!item) return '';
     
-    // Headers don't have row numbers
-    if (isHeaderItem(item)) {
-      return '';
-    }
-    
-    // For regular items, just count sequentially, ignoring headers
-    let regularRowCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (items[i] && !isHeaderItem(items[i])) {
-        regularRowCount++;
+    if (numberingSystem === 'sequential') {
+      // Sequential numbering: headers get no numbers
+      if (isHeaderItem(item)) {
+        return '';
       }
+      
+      // For regular items, count sequentially ignoring headers
+      let regularRowCount = 0;
+      for (let i = 0; i <= index; i++) {
+        if (items[i] && !isHeaderItem(items[i])) {
+          regularRowCount++;
+        }
+      }
+      
+      return regularRowCount.toString();
+    } else {
+      // Letter-number system: original logic
+      // Check if there are regular rows before the first header
+      const hasRowsBeforeFirstHeader = checkRowsBeforeFirstHeader(items);
+      
+      // For headers, count how many headers we've seen so far
+      if (isHeaderItem(item)) {
+        let headerCount = 0;
+        for (let i = 0; i <= index; i++) {
+          if (items[i] && isHeaderItem(items[i])) {
+            headerCount++;
+          }
+        }
+        // Adjust header numbering based on whether there are rows before first header
+        const headerIndex = hasRowsBeforeFirstHeader ? headerCount : headerCount - 1;
+        return generateHeaderLabel(headerIndex);
+      }
+      
+      // For regular items, find which segment they belong to and count within that segment
+      let currentSegmentLetter = 'A';
+      let itemCountInSegment = 0;
+      let segmentHeaderCount = hasRowsBeforeFirstHeader ? 1 : 0; // Start from A or B
+      
+      // Go through items up to current index
+      for (let i = 0; i <= index; i++) {
+        const currentItem = items[i];
+        if (!currentItem) continue;
+        
+        if (isHeaderItem(currentItem)) {
+          // Update which segment we're in
+          currentSegmentLetter = generateHeaderLabel(segmentHeaderCount);
+          segmentHeaderCount++;
+          itemCountInSegment = 0; // Reset count for new segment
+        } else {
+          // This is a regular item
+          itemCountInSegment++;
+        }
+      }
+      
+      return `${currentSegmentLetter}${itemCountInSegment}`;
     }
-    
-    return regularRowCount.toString();
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {

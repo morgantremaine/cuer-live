@@ -7,26 +7,64 @@ export const getVisibleColumns = (columns: any[]) => {
   return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
 };
 
-export const getRowNumber = (index: number, items: RundownItem[]) => {
+export const getRowNumber = (index: number, items: RundownItem[], numberingSystem: 'sequential' | 'letter_number' = 'sequential') => {
   if (index < 0 || index >= items.length) return '';
   
   const item = items[index];
   if (!item) return '';
   
-  // Headers don't have row numbers
-  if (item.type === 'header') {
-    return '';
-  }
-  
-  // For regular items, just count sequentially, ignoring headers
-  let regularRowCount = 0;
-  for (let i = 0; i <= index; i++) {
-    if (items[i] && items[i].type !== 'header') {
-      regularRowCount++;
+  if (numberingSystem === 'sequential') {
+    // Sequential numbering system: headers get no numbers, regular items get 1,2,3...
+    if (item.type === 'header') {
+      return '';
     }
+    
+    // For regular items, count sequentially ignoring headers
+    let regularRowCount = 0;
+    for (let i = 0; i <= index; i++) {
+      if (items[i] && items[i].type !== 'header') {
+        regularRowCount++;
+      }
+    }
+    
+    return regularRowCount.toString();
+  } else {
+    // Letter-number system: headers get letters (A,B,C...), regular items get A1,A2,B1,B2...
+    if (item.type === 'header') {
+      let headerCount = 0;
+      for (let i = 0; i <= index; i++) {
+        if (items[i] && items[i].type === 'header') {
+          headerCount++;
+        }
+      }
+      // First header is always A (index 0)
+      const headerIndex = headerCount - 1;
+      return generateHeaderLabel(headerIndex);
+    }
+    
+    // For regular items, find which segment they belong to and count within that segment
+    let currentSegmentLetter = 'A';
+    let itemCountInSegment = 0;
+    let segmentHeaderCount = 0;
+    
+    // Go through items up to current index to find current segment
+    for (let i = 0; i <= index; i++) {
+      const currentItem = items[i];
+      if (!currentItem) continue;
+      
+      if (currentItem.type === 'header') {
+        // Update which segment we're in
+        currentSegmentLetter = generateHeaderLabel(segmentHeaderCount);
+        segmentHeaderCount++;
+        itemCountInSegment = 0; // Reset count for new segment
+      } else {
+        // This is a regular item
+        itemCountInSegment++;
+      }
+    }
+    
+    return `${currentSegmentLetter}${itemCountInSegment}`;
   }
-  
-  return regularRowCount.toString();
 };
 
 // Helper function to convert time string to seconds

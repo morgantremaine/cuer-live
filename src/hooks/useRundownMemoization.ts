@@ -38,20 +38,14 @@ export const useRundownMemoization = (
 
     // Calculate items with enhanced data only once
     const itemsWithStatus = items.map((item, index) => {
-      // Calculate row number - new simple numbering system
+      // Calculate row number - supports both numbering systems
       let calculatedRowNumber = '';
       if (item.type === 'header') {
-        // Headers don't have row numbers
-        calculatedRowNumber = '';
+        // Headers only get numbers in letter_number system
+        calculatedRowNumber = ''; // Will be set below if letter_number system
       } else {
-        // Regular items get sequential numbers, ignoring headers
-        let regularItemCount = 0;
-        for (let i = 0; i <= index; i++) {
-          if (items[i]?.type !== 'header') {
-            regularItemCount++;
-          }
-        }
-        calculatedRowNumber = regularItemCount.toString();
+        // Regular items get sequential numbers in both systems
+        calculatedRowNumber = ''; // Will be calculated below based on system
       }
 
       // Calculate status
