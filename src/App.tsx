@@ -7,7 +7,7 @@ import { AuthProvider } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { toast, ToastContainer } from 'sonner';
+import { Toaster } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Changelog from './pages/Changelog';
 
@@ -40,7 +40,7 @@ function App() {
               <Route path="/changelog" element={<Changelog />} />
             </Routes>
           </Router>
-          <ToastContainer position="bottom-right" />
+          <Toaster position="bottom-right" />
         </AuthProvider>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
