@@ -449,15 +449,6 @@ const Teleprompter = () => {
         canEdit={!isFullscreen}
       />
 
-      {/* Simplified Keyboard Instructions - Only show when not fullscreen */}
-      {!isFullscreen && (
-        <div className="fixed bottom-4 left-4 bg-black bg-opacity-75 text-white text-xs p-3 rounded max-w-sm">
-          <div className="space-y-1">
-            <div>Enter Fullscreen for keyboard controls (Arrow Keys: Speed | Space: Play/Pause)</div>
-            <div>Click on script text to edit</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
