@@ -282,7 +282,7 @@ const LandingPage = () => {
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">AD View Dashboard</h3>
             <p className="text-xl text-slate-400">
-              Dedicated Assistant Director view with live timing, script tracking, and comprehensive show control for professional broadcast environments.
+              Dedicated Assistant Director view with live timing, script tracking, and comprehensive show control for professional broadcast environments and multiviewer placement.
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center space-x-2 text-slate-300">
