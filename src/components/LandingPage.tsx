@@ -99,10 +99,10 @@ const LandingPage = () => {
           </Badge>
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto">
-            Your next production
+            The world's most
             <br />
             <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">
-              will be on time
+              intuitive rundown maker
             </span>
           </h1>
           
@@ -256,21 +256,21 @@ const LandingPage = () => {
           />
         </div>
 
-        {/* Additional Screenshots */}
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
+        {/* Vertical Layout - Live Show Control and Team Management */}
+        <div className="space-y-16 max-w-4xl mx-auto">
+          <div className="text-center space-y-6">
             <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
             <p className="text-xl text-slate-400">
               Professional timing controls and real-time status tracking for your entire production team.
             </p>
             <img 
-              src="/lovable-uploads/676dece7-bf11-4ace-bedd-a8104c9dd530.png" 
+              src="/lovable-uploads/651b8c21-2107-47df-8c45-9fb537043baa.png" 
               alt="Live Show Controls"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
             />
           </div>
           
-          <div className="space-y-6">
+          <div className="text-center space-y-6">
             <h3 className="text-3xl font-bold text-white">Team Management</h3>
             <p className="text-xl text-slate-400">
               Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
@@ -281,6 +281,46 @@ const LandingPage = () => {
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
             />
           </div>
+        </div>
+      </div>
+
+      {/* AI Assistant Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">
+            Smart AI assistance for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">perfect rundowns</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Get intelligent insights and suggestions from our AI assistant to optimize your rundown and catch potential issues before they happen.
+          </p>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Cuer AI Assistant</h3>
+            <p className="text-xl text-slate-400">
+              Your intelligent production companion analyzes your rundown in real-time, offering suggestions and identifying potential issues to keep your show running smoothly.
+            </p>
+            <div className="grid grid-cols-1 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time rundown analysis and optimization</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Proactive issue detection and suggestions</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Intelligent timing and content recommendations</span>
+              </div>
+            </div>
+          </div>
+          <img 
+            src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
+            alt="Cuer AI Assistant Interface"
+            className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30"
+          />
         </div>
       </div>
 
