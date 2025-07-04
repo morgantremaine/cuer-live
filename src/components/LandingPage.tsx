@@ -238,7 +238,7 @@ const LandingPage = () => {
               </div>
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Proactive issue detection and suggestions</span>
+                <span>Issue detection and suggestions</span>
               </div>
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
