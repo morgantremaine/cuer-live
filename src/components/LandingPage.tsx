@@ -180,16 +180,11 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* How It Works Section - Moved here to replace Blueprint section */}
+      {/* How It Works Section - Updated */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">How it works</h2>
-          <p className="text-xl text-slate-400">Simple, powerful, professional</p>
-        </div>
-        
         <div className="flex justify-center mb-16">
           <img 
-            src="/lovable-uploads/ef6cf2a6-c012-42e8-8c8f-4a7e0570f2b0.png" 
+            src="/lovable-uploads/f24e2bc5-3dc2-4493-9dad-16ca9fc91bd8.png" 
             alt="Create & Collaborate, Go Live, Share & Display"
             className="w-full max-w-5xl h-auto rounded-2xl shadow-lg border border-slate-600/30"
           />
