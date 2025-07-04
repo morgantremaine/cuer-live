@@ -96,7 +96,7 @@ const LandingPage = () => {
             <img 
               src="/lovable-uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
               alt="Professional Broadcast Control Room"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover animate-fade-in"
             />
             {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/60"></div>
