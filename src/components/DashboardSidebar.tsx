@@ -244,12 +244,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-slate-950 border-r border-gray-700 flex flex-col items-center py-4">
+      <div className="w-12 bg-slate-900 border-r border-slate-700 flex flex-col items-center py-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-gray-800"
+          className="text-gray-400 hover:text-white hover:bg-slate-700"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -262,8 +262,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={() => onFolderSelect(folder.id, folder.type)}
-                className={`text-gray-400 hover:text-white hover:bg-gray-800 ${
-                  isSelected ? 'bg-blue-600 text-white' : ''
+                className={`text-gray-400 hover:text-white hover:bg-slate-700 ${
+                  isSelected ? 'bg-slate-700 text-white' : ''
                 }`}
               >
                 <folder.icon className="h-4 w-4" />
@@ -276,9 +276,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
+    <div className="w-64 bg-slate-900 border-r border-slate-700 flex flex-col">
       {/* Header with Search */}
-      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+      <div className="p-4 border-b border-slate-700 flex items-center justify-between">
         <div className="flex-1 mr-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -286,14 +286,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               placeholder="Search rundowns..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
+              className="bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 pl-9 pr-8 h-8 text-sm"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={clearSearch}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white hover:bg-slate-700"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -304,7 +304,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="text-gray-400 hover:text-white hover:bg-gray-800"
+          className="text-gray-400 hover:text-white hover:bg-slate-700"
         >
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -339,11 +339,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   let containerClasses = "flex items-center justify-between p-2 rounded cursor-pointer transition-colors ";
                   
                   if (isDragOver) {
-                    containerClasses += "bg-gray-700 text-white";
+                    containerClasses += "bg-slate-700 text-white";
                   } else if (isSelected) {
-                    containerClasses += "bg-blue-600 text-white";
+                    containerClasses += "bg-slate-700 text-white";
                   } else {
-                    containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                    containerClasses += "text-gray-300 hover:bg-slate-800 hover:text-white";
                   }
                   
                   return (
@@ -376,12 +376,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-gray-800"
+                    className="h-5 w-5 text-gray-400 hover:text-white hover:bg-slate-700"
                   >
                     <FolderPlus className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-gray-800 border-gray-700">
+                <DialogContent className="bg-slate-800 border-slate-600">
                   <DialogHeader>
                     <DialogTitle className="text-white">Create New Folder</DialogTitle>
                   </DialogHeader>
@@ -390,7 +390,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                       placeholder="Folder name"
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-slate-700 border-slate-600 text-white"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleCreateFolder();
@@ -401,7 +401,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                       <Button
                         variant="outline"
                         onClick={() => setShowCreateDialog(false)}
-                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                        className="border-slate-600 text-gray-300 hover:bg-slate-700"
                       >
                         Cancel
                       </Button>
@@ -430,11 +430,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 if (isDragging) {
                   containerClasses += "opacity-50";
                 } else if (isDragOver) {
-                  containerClasses += "bg-gray-700 text-white";
+                  containerClasses += "bg-slate-700 text-white";
                 } else if (isSelected) {
-                  containerClasses += "bg-blue-600 text-white";
+                  containerClasses += "bg-slate-700 text-white";
                 } else {
-                  containerClasses += "text-gray-300 hover:bg-gray-800 hover:text-white";
+                  containerClasses += "text-gray-300 hover:bg-slate-800 hover:text-white";
                 }
                 
                 return (
@@ -462,7 +462,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                           <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
-                            className="bg-gray-700 border-gray-600 text-white text-sm h-6 px-1"
+                            className="bg-slate-700 border-slate-600 text-white text-sm h-6 px-1"
                             onBlur={() => handleEditFolder(folder)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
@@ -485,20 +485,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-gray-400 hover:text-white hover:bg-gray-700"
+                              className="h-6 w-6 text-gray-400 hover:text-white hover:bg-slate-700"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <MoreVertical className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-gray-800 border-gray-700">
+                          <DropdownMenuContent className="bg-slate-800 border-slate-600">
                             <DropdownMenuItem 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingFolder(folder.id);
                                 setEditName(folder.name);
                               }}
-                              className="text-gray-300 hover:text-white hover:bg-gray-700"
+                              className="text-gray-300 hover:text-white hover:bg-slate-700"
                             >
                               <Edit2 className="h-4 w-4 mr-2" />
                               Rename
