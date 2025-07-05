@@ -21,7 +21,7 @@ export const useTeamId = () => {
           .select('team_id')
           .eq('user_id', user.id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (error && error.code !== 'PGRST116') {
           console.error('Error fetching team ID:', error);
