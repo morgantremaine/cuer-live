@@ -583,6 +583,43 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 Terms of Service
               </a>
             </div>
+            <div>
+              <a 
+                href="/privacy" 
+                className="text-blue-400 hover:text-blue-300 underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/privacy';
+                }}
+              >
+                Privacy Policy
+              </a>
+            </div>
+          </div>
+          <div className="mt-3 text-gray-400">
+            By using this site, you agree to our{' '}
+            <a 
+              href="/terms" 
+              className="text-blue-400 hover:text-blue-300 underline"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/terms';
+              }}
+            >
+              Terms
+            </a>{' '}
+            and{' '}
+            <a 
+              href="/privacy" 
+              className="text-blue-400 hover:text-blue-300 underline"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/privacy';
+              }}
+            >
+              Privacy Policy
+            </a>
+            .
           </div>
         </div>
       </div>

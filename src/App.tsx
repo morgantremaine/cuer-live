@@ -25,6 +25,7 @@ import CameraPlotEditor from "./pages/CameraPlotEditor";
 import LandingPage from "./components/LandingPage";
 import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const AppRoutes = () => {
       <Route path="/help" element={<Help />} />
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />

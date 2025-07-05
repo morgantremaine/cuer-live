@@ -468,9 +468,20 @@ const LandingPage = () => {
 
       {/* Copyright Footer */}
       <footer className="relative z-10 text-center py-8 border-t border-slate-800/50">
-        <p className="text-slate-400 text-sm">
-          © {new Date().getFullYear()} Cuer Live. All rights reserved.
-        </p>
+        <div className="text-center text-slate-400 text-sm space-y-2">
+          <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>
+          <p>
+            By using this site, you agree to our{' '}
+            <a href="/terms" className="text-blue-400 hover:text-blue-300 underline">
+              Terms
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="text-blue-400 hover:text-blue-300 underline">
+              Privacy Policy
+            </a>
+            .
+          </p>
+        </div>
       </footer>
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
