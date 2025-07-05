@@ -188,7 +188,12 @@ const RundownCard = ({
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="flex items-center text-sm text-gray-400">
-            {rundown.items?.length || 0} items
+            {(() => {
+              const items = rundown.items || [];
+              const headers = items.filter(item => item.type === 'header').length;
+              const segments = items.filter(item => item.type !== 'header').length;
+              return `${headers} headers, ${segments} segments`;
+            })()}
           </div>
           <div className="flex gap-2">
             <Button 
