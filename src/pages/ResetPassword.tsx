@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
 import Footer from '@/components/Footer'
+import CuerLogo from '@/components/common/CuerLogo'
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('')
@@ -105,11 +106,7 @@ const ResetPassword = () => {
         <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-2">
-              <img 
-                src="/lovable-uploads/d3829867-67da-4acb-a6d3-66561a4e60e7.png" 
-                alt="Cuer Logo" 
-                className="h-12 w-auto"
-              />
+              <CuerLogo className="h-12 w-auto" isDark={true} />
             </div>
             <CardTitle className="text-white">Set New Password</CardTitle>
             <CardDescription className="text-gray-400">

@@ -30,19 +30,6 @@ const AuthCallback = () => {
 
         if (data.session?.user) {
           console.log('User authenticated successfully:', data.session.user.email)
-          
-          // Ensure user profile exists
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: data.session.user.id,
-              email: data.session.user.email,
-              full_name: data.session.user.user_metadata?.full_name || ''
-            })
-          
-          if (profileError) {
-            console.error('Profile creation error:', profileError)
-          }
 
           // Check for pending invitation token
           const pendingToken = localStorage.getItem('pendingInvitationToken')

@@ -10,10 +10,9 @@ import Footer from '@/components/Footer'
 import CuerLogo from '@/components/common/CuerLogo'
 
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+  // Separate form states for clarity
+  const [signInData, setSignInData] = useState({ email: '', password: '' })
+  const [signUpData, setSignUpData] = useState({ email: '', password: '', fullName: '', inviteCode: '' })
   const [resetEmail, setResetEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
@@ -25,66 +24,71 @@ const Login = () => {
     e.preventDefault()
     setLoading(true)
     
-    const { error } = await signIn(email, password)
-    
-    if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        setShowResendConfirmation(true)
-        toast({
-          title: 'Email not confirmed',
-          description: 'Please check your email and click the confirmation link, or resend the confirmation email.',
-          variant: 'destructive',
-        })
+    try {
+      const { error } = await signIn(signInData.email, signInData.password)
+      
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          setShowResendConfirmation(true)
+          toast({
+            title: 'Email not confirmed',
+            description: 'Please check your email and click the confirmation link, or resend the confirmation email.',
+            variant: 'destructive',
+          })
+        } else {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          })
+        }
       } else {
+        toast({
+          title: 'Success',
+          description: 'Signed in successfully!',
+        })
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    try {
+      const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName, signUpData.inviteCode)
+      
+      if (error) {
         toast({
           title: 'Error',
           description: error.message,
           variant: 'destructive',
         })
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Account created successfully! Please check your email to verify your account before signing in.',
+        })
+        // Clear form on success
+        setSignUpData({ email: '', password: '', fullName: '', inviteCode: '' })
       }
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Signed in successfully!',
-      })
-      // Remove manual navigation - let App.tsx handle the redirect based on auth state
-    }
-    
-    setLoading(false)
-  }
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validate invite code
-    if (inviteCode !== 'cuer2025') {
-      toast({
-        title: 'Invalid Invite Code',
-        description: 'Please enter a valid invite code to create an account.',
-        variant: 'destructive',
-      })
-      return
-    }
-    
-    setLoading(true)
-    
-    const { error } = await signUp(email, password, fullName, inviteCode)
-    
-    if (error) {
+    } catch (err) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       })
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Account created successfully! Please check your email to verify your account before signing in.',
-      })
-      // Don't navigate to dashboard, user needs to confirm email first
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -114,23 +118,31 @@ const Login = () => {
   const handleResendConfirmation = async () => {
     setLoading(true)
     
-    const { error } = await resendConfirmation(email)
-    
-    if (error) {
+    try {
+      const { error } = await resendConfirmation(signInData.email)
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Confirmation email sent! Please check your inbox.',
+        })
+        setShowResendConfirmation(false)
+      }
+    } catch (err) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       })
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Confirmation email sent! Please check your inbox.',
-      })
-      setShowResendConfirmation(false)
+    } finally {
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   if (showResetForm) {
@@ -205,8 +217,8 @@ const Login = () => {
                       id="signin-email"
                       name="email"
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={signInData.email}
+                      onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
                       autoComplete="email"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
@@ -218,8 +230,8 @@ const Login = () => {
                       id="signin-password"
                       name="password"
                       type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={signInData.password}
+                      onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
                       autoComplete="current-password"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
@@ -265,8 +277,8 @@ const Login = () => {
                       id="signup-name"
                       name="name"
                       type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      value={signUpData.fullName}
+                      onChange={(e) => setSignUpData({ ...signUpData, fullName: e.target.value })}
                       autoComplete="name"
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
                     />
@@ -277,8 +289,8 @@ const Login = () => {
                       id="signup-email"
                       name="email"
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={signUpData.email}
+                      onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
                       autoComplete="email"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
@@ -290,8 +302,8 @@ const Login = () => {
                       id="signup-password"
                       name="password"
                       type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={signUpData.password}
+                      onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
                       autoComplete="new-password"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
@@ -303,8 +315,8 @@ const Login = () => {
                       id="signup-invite-code"
                       name="inviteCode"
                       type="text"
-                      value={inviteCode}
-                      onChange={(e) => setInviteCode(e.target.value)}
+                      value={signUpData.inviteCode}
+                      onChange={(e) => setSignUpData({ ...signUpData, inviteCode: e.target.value })}
                       placeholder="Enter invite code"
                       required
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"

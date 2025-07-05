@@ -1,11 +1,12 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo, useRef } from 'react'
-import { User } from '@supabase/supabase-js'
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { clearInvalidTokens } from '@/utils/invitationUtils'
 import { logger } from '@/utils/logger'
 
 interface AuthContextType {
   user: User | null
+  session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string, fullName?: string, inviteCode?: string) => Promise<{ error: any }>
@@ -20,90 +21,51 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const mountedRef = useRef(true)
 
-  // Initialize auth state only once
+  // Initialize auth state
   useEffect(() => {
-    logger.debug('Initializing auth state...');
+    logger.debug('Initializing auth state...')
     
-    let loadingTimeout: NodeJS.Timeout;
-
-    const initializeAuth = async () => {
-      try {
-        // Set up auth state listener first
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (event, session) => {
-          if (!mountedRef.current) return;
-          
-          logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user' });
-          
-          // Clear any existing timeout
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout);
-          }
-          
-          // Update user state
-          setUser(session?.user ?? null);
-          
-          // Always set loading to false when we have a definitive auth state
-          setLoading(false);
-          
-          // Clean up invalid tokens when user signs in
-          if (session?.user && event === 'SIGNED_IN') {
-            setTimeout(() => clearInvalidTokens(), 500);
-          }
-        });
-
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (mountedRef.current) {
-          if (error) {
-            logger.error('Error getting initial session', error);
-          } else {
-            logger.debug('Initial session', { userEmail: session?.user?.email || 'no user' });
-          }
-          
-          setUser(session?.user ?? null);
-          setLoading(false);
-          
-          // Clean up invalid tokens if there's a user
-          if (session?.user) {
-            setTimeout(() => clearInvalidTokens(), 500);
-          }
-        }
-
-        // Set a timeout fallback to prevent infinite loading
-        loadingTimeout = setTimeout(() => {
-          if (mountedRef.current) {
-            logger.warn('Auth loading timeout - forcing loading to false');
-            setLoading(false);
-          }
-        }, 5000);
-
-        return () => {
-          subscription.unsubscribe();
-          if (loadingTimeout) {
-            clearTimeout(loadingTimeout);
-          }
-        };
-      } catch (error) {
-        if (mountedRef.current) {
-          logger.error('Auth initialization error', error);
-          setLoading(false);
-        }
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user' })
+      
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+      
+      // Clean up invalid tokens when user signs in
+      if (session?.user && event === 'SIGNED_IN') {
+        clearInvalidTokens()
       }
-    };
+    })
 
-    const cleanup = initializeAuth();
-    
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        logger.error('Error getting initial session', error)
+      } else {
+        logger.debug('Initial session', { userEmail: session?.user?.email || 'no user' })
+      }
+      
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+      
+      // Clean up invalid tokens if there's a user
+      if (session?.user) {
+        clearInvalidTokens()
+      }
+    })
+
     return () => {
-      mountedRef.current = false;
-      cleanup?.then(cleanupFn => cleanupFn?.());
-    };
-  }, []); // Remove dependencies to prevent re-initialization
+      subscription.unsubscribe()
+    }
+  }, [])
 
   // Memoized auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
@@ -129,99 +91,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string, inviteCode?: string) => {
-    logger.debug('Attempting to sign up', { email });
+    logger.debug('Attempting to sign up', { email })
     
-    // For normal signups (from login page), require invite code
-    // For team invitation signups, inviteCode will be undefined and we skip validation
-    if (inviteCode !== undefined && inviteCode !== 'cuer2025') {
-      return { error: { message: 'Invalid invite code. Please enter a valid invite code to create an account.' } };
-    }
-    
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          full_name: fullName,
-        }
+    try {
+      // For normal signups (from login page), require invite code
+      // For team invitation signups, inviteCode will be undefined and we skip validation
+      if (inviteCode !== undefined && inviteCode !== 'cuer2025') {
+        return { error: { message: 'Invalid invite code. Please enter a valid invite code to create an account.' } }
       }
-    })
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            full_name: fullName,
+          }
+        }
+      })
 
-    if (error) {
-      logger.error('Sign up error', error);
-    } else {
-      logger.debug('Account created successfully - profile will be created by database trigger');
+      if (error) {
+        logger.error('Sign up error', error)
+        return { error }
+      }
+      
+      logger.debug('Account created successfully')
+      return { error: null }
+    } catch (err) {
+      logger.error('Sign up catch error', err)
+      return { error: err }
     }
-    
-    return { error }
-  }, []);
+  }, [])
 
   const signOut = useCallback(async () => {
     try {
       logger.debug('Attempting to sign out...')
       
-      // Clear user state immediately to prevent further operations
-      if (mountedRef.current) {
-        setUser(null)
-        setLoading(false)
-      }
+      // Clear state immediately
+      setUser(null)
+      setSession(null)
       
       // Clear any pending invitation tokens
       localStorage.removeItem('pendingInvitationToken')
       
-      // Clear all Supabase session data from localStorage
-      const supabaseKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('sb-') || key.includes('supabase')
-      )
-      supabaseKeys.forEach(key => localStorage.removeItem(key))
-      
-      // Attempt server-side logout with scope global to clear all sessions
-      try {
-        const { error } = await supabase.auth.signOut({ scope: 'global' })
-        if (error) {
-          logger.warn('Server-side logout error (continuing anyway)', error)
-        } else {
-          logger.debug('Server-side logout successful')
-        }
-      } catch (serverError) {
-        logger.warn('Server-side logout failed (continuing anyway)', serverError)
+      // Attempt server-side logout
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        logger.warn('Server-side logout error', error)
+      } else {
+        logger.debug('Server-side logout successful')
       }
-      
-      // Force refresh the auth state to ensure clean logout
-      setTimeout(() => {
-        if (mountedRef.current) {
-          window.location.reload()
-        }
-      }, 100)
       
       logger.debug('Sign out completed')
       
     } catch (error) {
       logger.error('Logout error', error)
-      // Ensure user state is cleared even if everything fails
-      if (mountedRef.current) {
-        setUser(null)
-        setLoading(false)
-      }
+      // Ensure state is cleared even if logout fails
+      setUser(null)
+      setSession(null)
       localStorage.removeItem('pendingInvitationToken')
-      
-      // Clear all Supabase session data as fallback
-      const supabaseKeys = Object.keys(localStorage).filter(key => 
-        key.startsWith('sb-') || key.includes('supabase')
-      )
-      supabaseKeys.forEach(key => localStorage.removeItem(key))
-      
-      logger.debug('User state cleared due to error')
-      
-      // Force refresh if everything else fails
-      setTimeout(() => {
-        if (mountedRef.current) {
-          window.location.reload()
-        }
-      }, 100)
     }
-  }, []);
+  }, [])
 
   const updatePassword = useCallback(async (password: string) => {
     const { error } = await supabase.auth.updateUser({
@@ -270,6 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     user, 
+    session,
     loading, 
     signIn, 
     signUp, 
@@ -278,7 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateProfile, 
     resetPassword, 
     resendConfirmation 
-  }), [user, loading, signIn, signUp, signOut, updatePassword, updateProfile, resetPassword, resendConfirmation]);
+  }), [user, session, loading, signIn, signUp, signOut, updatePassword, updateProfile, resetPassword, resendConfirmation])
 
   return (
     <AuthContext.Provider value={contextValue}>
