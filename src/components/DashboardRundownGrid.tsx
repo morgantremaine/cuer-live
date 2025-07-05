@@ -134,7 +134,7 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: headers.slice(0, 2).map(header => {
+      firstItems: headers.slice(0, 3).map(header => {
         if (header.name && header.name.trim()) return header.name.trim()
         if (header.script && header.script.trim()) return header.script.trim().substring(0, 40) + (header.script.trim().length > 40 ? '...' : '')
         if (header.notes && header.notes.trim()) return header.notes.trim()
@@ -449,9 +449,9 @@ const DashboardRundownGrid = ({
                           • {item}
                         </div>
                       ))}
-                      {preview.segmentCount > 2 && (
+                      {preview.segmentCount > 3 && (
                         <div className="text-gray-500 text-xs">
-                          +{preview.segmentCount - 2} more headers...
+                          +{preview.segmentCount - 3} more headers...
                         </div>
                       )}
                     </div>
