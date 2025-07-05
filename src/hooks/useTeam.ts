@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
@@ -35,6 +34,7 @@ export const useTeam = () => {
   const [error, setError] = useState<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const isCreatingTeamRef = useRef(false);
 
   const loadTeamData = async () => {
     if (!user?.id || isLoadingRef.current) {
@@ -77,24 +77,41 @@ export const useTeam = () => {
         
         // If it's a 406 error or auth issue, try to create a team instead
         if (membershipError.code === 'PGRST301' || membershipError.message?.includes('406')) {
+          // Prevent multiple simultaneous team creation attempts
+          if (isCreatingTeamRef.current) {
+            console.log('Team creation already in progress due to auth issue, waiting...');
+            return;
+          }
+          
           console.log('Auth issue detected, trying to create user team');
-          const { data: newTeamData, error: createError } = await supabase.rpc(
-            'get_or_create_user_team',
-            { user_uuid: user.id }
-          );
+          isCreatingTeamRef.current = true;
+          
+          try {
+            const { data: newTeamData, error: createError } = await supabase.rpc(
+              'get_or_create_user_team',
+              { user_uuid: user.id }
+            );
 
-          if (createError) {
-            console.error('Error creating team:', createError);
-            setError('Failed to set up team');
-          } else if (newTeamData) {
-            console.log('Team created successfully, reloading...');
-            // Retry loading team data
-            setTimeout(() => {
+            if (createError) {
+              console.error('Error creating team:', createError);
+              setError('Failed to set up team');
+              isCreatingTeamRef.current = false;
+            } else if (newTeamData) {
+              console.log('Team created successfully, reloading...');
+              // Reset refs and retry loading team data
               loadedUserRef.current = null;
               isLoadingRef.current = false;
-              loadTeamData();
-            }, 1000);
-            return;
+              isCreatingTeamRef.current = false;
+              
+              setTimeout(() => {
+                loadTeamData();
+              }, 500);
+              return;
+            }
+          } catch (err) {
+            console.error('Error in team creation due to auth issue:', err);
+            isCreatingTeamRef.current = false;
+            setError('Failed to set up team');
           }
         } else {
           setError('Failed to load team data');
@@ -147,25 +164,43 @@ export const useTeam = () => {
             await loadPendingInvitations(teamData.id);
           }
         } else {
+          // Prevent multiple simultaneous team creation attempts
+          if (isCreatingTeamRef.current) {
+            console.log('Team creation already in progress, waiting...');
+            return;
+          }
+          
           console.log('No team found, creating one...');
-          // User has no team, create one
-          const { data: newTeamData, error: createError } = await supabase.rpc(
-            'get_or_create_user_team',
-            { user_uuid: user.id }
-          );
+          isCreatingTeamRef.current = true;
+          
+          try {
+            // User has no team, create one
+            const { data: newTeamData, error: createError } = await supabase.rpc(
+              'get_or_create_user_team',
+              { user_uuid: user.id }
+            );
 
-          if (createError) {
-            console.error('Error creating team:', createError);
-            setError('Failed to create team');
-          } else if (newTeamData) {
-            console.log('Team created, reloading data...');
-            // Reload team data after team creation
-            setTimeout(() => {
+            if (createError) {
+              console.error('Error creating team:', createError);
+              setError('Failed to create team');
+              isCreatingTeamRef.current = false;
+            } else if (newTeamData) {
+              console.log('Team created, reloading data...');
+              // Reset refs and reload team data
               loadedUserRef.current = null;
               isLoadingRef.current = false;
-              loadTeamData();
-            }, 1000);
-            return;
+              isCreatingTeamRef.current = false;
+              
+              // Small delay to ensure database consistency
+              setTimeout(() => {
+                loadTeamData();
+              }, 500);
+              return;
+            }
+          } catch (err) {
+            console.error('Error in team creation:', err);
+            isCreatingTeamRef.current = false;
+            setError('Failed to create team');
           }
         }
       }
@@ -446,6 +481,7 @@ export const useTeam = () => {
       setIsLoading(false);
       setError(null);
       loadedUserRef.current = null;
+      isCreatingTeamRef.current = false; // Reset team creation flag
     }
   }, [user?.id]);
 
