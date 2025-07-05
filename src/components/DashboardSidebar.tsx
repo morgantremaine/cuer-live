@@ -558,17 +558,31 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         <div className="text-center text-xs text-gray-500">
           <div>© {new Date().getFullYear()} Cuer Live</div>
           <div className="mt-1">Version 1.1.7</div>
-          <div className="mt-2">
-            <a 
-              href="/changelog" 
-              className="text-blue-400 hover:text-blue-300 underline"
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/changelog';
-              }}
-            >
-              View Changelog
-            </a>
+          <div className="mt-2 space-y-1">
+            <div>
+              <a 
+                href="/changelog" 
+                className="text-blue-400 hover:text-blue-300 underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/changelog';
+                }}
+              >
+                View Changelog
+              </a>
+            </div>
+            <div>
+              <a 
+                href="/terms" 
+                className="text-blue-400 hover:text-blue-300 underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/terms';
+                }}
+              >
+                Terms of Service
+              </a>
+            </div>
           </div>
         </div>
       </div>
