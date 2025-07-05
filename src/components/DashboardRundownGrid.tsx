@@ -443,10 +443,6 @@ const DashboardRundownGrid = ({
                 {/* Content Preview - Condensed */}
                 {preview.firstItems.length > 0 && (
                   <div className="bg-gray-700/30 rounded-lg p-2">
-                    <div className="text-gray-300 text-xs font-medium mb-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
-                      Headers Preview
-                    </div>
                     <div className="space-y-0.5">
                       {preview.firstItems.map((item, index) => (
                         <div key={index} className="text-gray-400 text-xs truncate">
