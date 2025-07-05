@@ -16,10 +16,6 @@ const JoinTeam = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   
-  console.log('JoinTeam component loaded with token:', token);
-  console.log('useParams result:', useParams());
-  console.log('Current URL:', window.location.href);
-  
   const [invitation, setInvitation] = useState<any>(null);
   const [inviterProfile, setInviterProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -187,15 +183,6 @@ const JoinTeam = () => {
     }
   };
 
-  // Handle invitation acceptance when user is authenticated
-  useEffect(() => {
-    if (user && invitation && !invitationProcessed && !isProcessing) {
-      console.log('User is authenticated and invitation is loaded, processing invitation');
-      setInvitationProcessed(true);
-      handleAcceptInvitation();
-    }
-  }, [user, invitation, invitationProcessed, isProcessing]);
-
   const handleAcceptInvitation = async () => {
     if (!token || isProcessing) return;
 
@@ -238,6 +225,16 @@ const JoinTeam = () => {
       setInvitationProcessed(false);
     }
   };
+
+  // Handle invitation acceptance when user is authenticated
+  useEffect(() => {
+    if (user && invitation && !invitationProcessed && !isProcessing) {
+      console.log('User is authenticated and invitation is loaded, processing invitation');
+      setInvitationProcessed(true);
+      handleAcceptInvitation();
+    }
+  }, [user, invitation, invitationProcessed, isProcessing]);
+
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
