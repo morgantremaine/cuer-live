@@ -39,8 +39,12 @@ const checkSharedLayoutExists = async (rundownId: string) => {
   return { data, error };
 };
 
-const SharedRundown = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
+interface SharedRundownProps {
+  isDemoMode?: boolean;
+}
+
+const SharedRundown = ({ isDemoMode = false }: SharedRundownProps) => {
+  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState(isDemoMode);
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
@@ -311,6 +315,7 @@ const SharedRundown = () => {
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={handleToggleAutoScroll}
             items={rundownData.items || []}
+            isDemoMode={isDemoMode}
           />
 
           <div className="flex-1 min-h-0 p-4 print:p-2">

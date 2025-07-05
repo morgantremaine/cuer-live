@@ -133,6 +133,15 @@ const LandingPage = () => {
                 <div className="absolute inset-0 shimmer"></div>
               </Button>
               <Button 
+                onClick={() => navigate('/demo')}
+                size="lg" 
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-lg px-8 py-4 h-auto glow-box relative overflow-hidden group"
+              >
+                <span className="relative z-10">Try Our Demo Rundown</span>
+                <Eye className="ml-2 h-5 w-5 relative z-10 group-hover:scale-110 transition-transform" />
+                <div className="absolute inset-0 shimmer"></div>
+              </Button>
+              <Button 
                 variant="outline" 
                 size="lg"
                 onClick={() => navigate('/help')}

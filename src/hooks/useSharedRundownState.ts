@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 
-export const useSharedRundownState = () => {
+export const useSharedRundownState = (isDemoMode = false, demoRundownId = 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8') => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id;
+  const rundownId = isDemoMode ? demoRundownId : params.id;
   
   const [rundownData, setRundownData] = useState<{
     id: string;

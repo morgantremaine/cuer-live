@@ -1,8 +1,9 @@
 import React from 'react';
-import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
+import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import CuerLogo from '@/components/common/CuerLogo';
+import { Link } from 'react-router-dom';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -17,6 +18,7 @@ interface SharedRundownHeaderProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   items?: any[]; // Add items prop for runtime calculation
+  isDemoMode?: boolean; // Add demo mode prop
 }
 
 export const SharedRundownHeader = ({
@@ -31,7 +33,8 @@ export const SharedRundownHeader = ({
   onToggleTheme,
   autoScrollEnabled = false,
   onToggleAutoScroll,
-  items = []
+  items = [],
+  isDemoMode = false
 }: SharedRundownHeaderProps) => {
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
@@ -97,6 +100,23 @@ export const SharedRundownHeader = ({
             </div>
             
             <div className="flex items-center space-x-2 print:hidden">
+              {/* Teleprompter button for demo mode */}
+              {isDemoMode && (
+                <Link to="/demo/teleprompter">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className={`${
+                      isDark 
+                        ? 'border-gray-600 hover:bg-gray-700' 
+                        : 'border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+              
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
                 <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${
