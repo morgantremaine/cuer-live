@@ -12,9 +12,9 @@ import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
-export const useSimplifiedRundownState = () => {
+export const useSimplifiedRundownState = (isDemoMode = false) => {
   const params = useParams<{ id: string }>();
-  const rundownId = params.id === 'new' ? null : params.id || null;
+  const rundownId = isDemoMode ? 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8' : (params.id === 'new' ? null : params.id || null);
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -50,14 +50,16 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
 
-  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
-    {
-      ...state,
-      columns: [] // Remove columns from team sync
-    }, 
-    rundownId, 
-    actions.markSaved
+  // Auto-save system (DISABLED for demo mode)
+  const { isSaving, setUndoActive, setTrackOwnUpdate, setUserTyping } = useSimpleAutoSave(
+    state,
+    rundownId,
+    () => {
+      if (!isDemoMode) {
+        actions.markSaved();
+      }
+    },
+    isDemoMode
   );
 
   // Standalone undo system - unchanged

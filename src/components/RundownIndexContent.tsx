@@ -7,14 +7,18 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 
-const RundownIndexContent = () => {
+interface RundownIndexContentProps {
+  isDemoMode?: boolean;
+}
+
+const RundownIndexContent = ({ isDemoMode = false }: RundownIndexContentProps) => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
     coreState,
     interactions,
     uiState
-  } = useRundownStateCoordination();
+  } = useRundownStateCoordination(isDemoMode);
   
   // Extract all needed values from the unified state
   const {

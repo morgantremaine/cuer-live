@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void
+  onSaved: () => void,
+  isDemoMode = false
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,17 +96,17 @@ export const useSimpleAutoSave = (
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
-        pendingSaveRef.current) {
+        pendingSaveRef.current ||
+        isDemoMode) { // DISABLE saving in demo mode
       return;
     }
 
     // Create signature of current state - excluding ALL showcaller data
     const currentSignature = createContentSignature();
 
-    // Only save if content actually changed
+    // Only save if content actually changed AND not in demo mode
     if (currentSignature === lastSavedRef.current) {
       console.log('💾 No content changes detected - marking as saved');
-      // Mark as saved since there are no actual content changes
       onSaved();
       return;
     }
@@ -138,7 +139,6 @@ export const useSimpleAutoSave = (
       
       if (finalSignature === lastSavedRef.current) {
         console.log('💾 No changes in final check - marking as saved');
-        // Mark as saved since there are no actual content changes
         onSaved();
         return;
       }

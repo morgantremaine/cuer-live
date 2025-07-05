@@ -8,13 +8,13 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
 
-export const useRundownStateCoordination = () => {
+export const useRundownStateCoordination = (isDemoMode = false) => {
   // Get user ID from auth
   const { user } = useAuth();
   const userId = user?.id;
 
   // Single source of truth for all rundown state (NO showcaller interference)
-  const simplifiedState = useSimplifiedRundownState();
+  const simplifiedState = useSimplifiedRundownState(isDemoMode);
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({

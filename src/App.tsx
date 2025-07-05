@@ -59,7 +59,7 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       
       {/* Demo routes - public access */}
-      <Route path="/demo" element={<SharedRundown isDemoMode={true} />} />
+      <Route path="/demo" element={<Index isDemoMode={true} />} />
       <Route path="/demo/teleprompter" element={<Teleprompter isDemoMode={true} />} />
       
       {/* Auth callback routes */}

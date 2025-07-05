@@ -2,10 +2,14 @@
 import React from 'react';
 import RundownIndexContent from '@/components/RundownIndexContent';
 
-const Index = () => {
+interface IndexProps {
+  isDemoMode?: boolean;
+}
+
+const Index = ({ isDemoMode = false }: IndexProps) => {
   return (
     <div className="h-screen overflow-hidden">
-      <RundownIndexContent />
+      <RundownIndexContent isDemoMode={isDemoMode} />
     </div>
   );
 };
