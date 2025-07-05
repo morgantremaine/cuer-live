@@ -26,6 +26,7 @@ const JoinTeam = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   const [userExists, setUserExists] = useState(false);
@@ -241,6 +242,15 @@ const JoinTeam = () => {
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!agreeToTerms) {
+      toast({
+        title: 'Error',
+        description: 'You must agree to the Terms of Service and Privacy Policy to create an account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     if (password.length < 6) {
       toast({
         title: 'Error',
@@ -420,6 +430,37 @@ const JoinTeam = () => {
                       className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                       placeholder="Create a password"
                     />
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <input
+                      type="checkbox"
+                      id="agree-terms-join"
+                      checked={agreeToTerms}
+                      onChange={(e) => setAgreeToTerms(e.target.checked)}
+                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
+                      required
+                    />
+                    <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
+                      By creating an account, you agree to the{' '}
+                      <a 
+                        href="/terms" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Terms of Service
+                      </a>
+                      {' '}and{' '}
+                      <a 
+                        href="/privacy" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Privacy Policy
+                      </a>
+                      .
+                    </label>
                   </div>
                   <Button 
                     type="submit" 
