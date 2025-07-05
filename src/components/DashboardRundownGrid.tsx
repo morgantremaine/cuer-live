@@ -295,8 +295,8 @@ const DashboardRundownGrid = ({
                 <CardContent className="pt-0 space-y-3">
                   {/* Compact Stats */}
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>{preview.segmentCount} segments</span>
-                    <span>{preview.itemCount} items</span>
+                    <span>{preview.segmentCount} headers</span>
+                    <span>{preview.itemCount} segments</span>
                     <span>{preview.totalDuration}</span>
                   </div>
 
@@ -425,11 +425,11 @@ const DashboardRundownGrid = ({
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-blue-400 text-sm font-medium">{preview.segmentCount}</div>
-                    <div className="text-gray-400 text-xs">Segments</div>
+                    <div className="text-gray-400 text-xs">Headers</div>
                   </div>
                   <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-green-400 text-sm font-medium">{preview.itemCount}</div>
-                    <div className="text-gray-400 text-xs">Items</div>
+                    <div className="text-gray-400 text-xs">Segments</div>
                   </div>
                   <div className="bg-gray-700/50 rounded-lg p-2">
                     <div className="text-purple-400 text-sm font-medium flex items-center justify-center gap-1">
