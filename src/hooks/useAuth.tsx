@@ -170,9 +170,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear any pending invitation tokens
       localStorage.removeItem('pendingInvitationToken')
       
-      // Attempt server-side logout, but don't fail if it errors
+      // Clear all Supabase session data from localStorage
+      const supabaseKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') || key.includes('supabase')
+      )
+      supabaseKeys.forEach(key => localStorage.removeItem(key))
+      
+      // Attempt server-side logout with scope global to clear all sessions
       try {
-        const { error } = await supabase.auth.signOut()
+        const { error } = await supabase.auth.signOut({ scope: 'global' })
         if (error) {
           logger.warn('Server-side logout error (continuing anyway)', error)
         } else {
@@ -181,6 +187,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (serverError) {
         logger.warn('Server-side logout failed (continuing anyway)', serverError)
       }
+      
+      // Force refresh the auth state to ensure clean logout
+      setTimeout(() => {
+        if (mountedRef.current) {
+          window.location.reload()
+        }
+      }, 100)
       
       logger.debug('Sign out completed')
       
@@ -192,7 +205,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false)
       }
       localStorage.removeItem('pendingInvitationToken')
+      
+      // Clear all Supabase session data as fallback
+      const supabaseKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') || key.includes('supabase')
+      )
+      supabaseKeys.forEach(key => localStorage.removeItem(key))
+      
       logger.debug('User state cleared due to error')
+      
+      // Force refresh if everything else fails
+      setTimeout(() => {
+        if (mountedRef.current) {
+          window.location.reload()
+        }
+      }, 100)
     }
   }, []);
 
