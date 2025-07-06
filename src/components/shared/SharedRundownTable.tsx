@@ -470,7 +470,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }`}>
               <tr className="print-header-row">
                 <th 
-                  className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
+                  className={`px-2 py-1 text-center text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
                     isDark 
                       ? 'text-gray-300 border-gray-600 bg-gray-800' 
                       : 'text-gray-500 border-gray-200 bg-gray-50'
@@ -556,7 +556,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     style={rowStyles}
                   >
                     <td 
-                      className={`px-2 py-1 whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
+                      className={`px-2 ${item.type === 'header' ? 'py-6' : 'py-1'} whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
                         isDark ? 'border-gray-600' : 'border-gray-200'
                       }`}
                       style={{ 
@@ -571,7 +571,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         } : {})
                       }}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center justify-center">
                         {/* Blue play icon for current segment - hidden in print */}
                         {isShowcallerCurrent && (
                           <Play 
