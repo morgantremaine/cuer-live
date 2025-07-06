@@ -94,8 +94,13 @@ export const useFindReplace = () => {
     }
 
     let totalReplacements = 0;
+    let hasChanges = false;
 
-    directState.items.forEach((item: RundownItem) => {
+    // Create a new items array to ensure reference change
+    const updatedItems = directState.items.map((item: RundownItem) => {
+      let itemUpdated = false;
+      const updatedItem = { ...item };
+
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -120,38 +125,41 @@ export const useFindReplace = () => {
               matches: beforeMatches.length
             });
 
-            // Update using direct state
+            // Update the field in the cloned item
             if (field.startsWith('customFields.')) {
-              directState.updateItem(item.id, field, newValue);
+              const customFieldKey = field.replace('customFields.', '');
+              updatedItem.customFields = {
+                ...updatedItem.customFields,
+                [customFieldKey]: newValue
+              };
             } else {
-              directState.updateItem(item.id, field, newValue);
+              (updatedItem as any)[field] = newValue;
             }
             
             totalReplacements += beforeMatches.length;
+            itemUpdated = true;
+            hasChanges = true;
           }
         }
       });
+
+      return itemUpdated ? updatedItem : item;
     });
 
     console.log('🔄 Replace all completed:', { totalReplacements });
     
-    // Force UI refresh by triggering a state change
-    if (totalReplacements > 0) {
-      // Mark as changed to ensure the UI updates
+    // Only update if there were actual changes
+    if (hasChanges) {
+      // Use setItems to force array reference change and trigger re-renders
+      directState.setItems(updatedItems);
       directState.markAsChanged();
-      
-      // Force a re-render by updating the items array reference
-      setTimeout(() => {
-        const currentItems = [...directState.items];
-        directState.setItems(currentItems);
-      }, 10);
     }
     
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, directState.updateItem, directState.markAsChanged, directState.setItems]);
+  }, [directState.items, directState.setItems, directState.markAsChanged]);
 
   return {
     findMatches,
