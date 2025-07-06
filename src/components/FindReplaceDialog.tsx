@@ -58,14 +58,16 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   };
 
   const handleReplace = () => {
+    console.log('🔥 FindReplaceDialog handleReplace called', { searchTerm, replaceTerm, onUpdateItem: !!onUpdateItem });
     if (searchTerm.trim() && replaceTerm.trim()) {
-      replaceAll({
+      const result = replaceAll({
         searchTerm,
         replaceTerm,
         fields: searchFields,
         caseSensitive: false,
         wholeWord: false
       });
+      console.log('🔥 Replace result:', result);
       // Clear search after replace
       setSearchTerm('');
       setReplaceTerm('');

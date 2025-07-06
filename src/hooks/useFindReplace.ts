@@ -11,6 +11,7 @@ export interface FindReplaceOptions {
 }
 
 export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void) => {
+  console.log('🚀 useFindReplace initialized with onUpdateItem:', !!onUpdateItem, typeof onUpdateItem);
   const directState = useDirectRundownState();
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
