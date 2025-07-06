@@ -68,10 +68,10 @@ const AuthCallback = () => {
             })
           }
 
-          // Wait a moment for everything to settle, then navigate
+          // Wait longer for auth state to fully settle, then navigate
           setTimeout(() => {
             navigate('/dashboard')
-          }, 1000)
+          }, 2000)
         } else {
           console.log('No session found, redirecting to login')
           navigate('/login')

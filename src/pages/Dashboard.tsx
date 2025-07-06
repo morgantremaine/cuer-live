@@ -12,7 +12,6 @@ import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
-import { useTeamId } from '@/hooks/useTeamId';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
@@ -24,8 +23,8 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { teamId } = useTeamId();
-  const { teamMembers } = useTeam();
+  const { team, teamMembers, isLoading: teamLoading } = useTeam();
+  const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
@@ -55,11 +54,11 @@ const Dashboard = () => {
 
   // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && !hasInitiallyLoaded && user && teamId) {
+    if (!loading && !teamLoading && !hasInitiallyLoaded && user && teamId) {
       // Only mark as initially loaded if we have user/teamId (actual data fetch attempt)
       setHasInitiallyLoaded(true);
     }
-  }, [loading, hasInitiallyLoaded, user, teamId]);
+  }, [loading, teamLoading, hasInitiallyLoaded, user, teamId]);
 
   // Reset loading state when user/team changes
   useEffect(() => {
@@ -291,7 +290,7 @@ const Dashboard = () => {
   const showMainContent = !isMobile || sidebarCollapsed;
 
   // Show loading skeleton if we haven't loaded data yet OR if actively loading
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0);
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
 
   if (shouldShowLoadingSkeleton) {
     return (

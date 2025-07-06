@@ -21,12 +21,15 @@ export const useTeamId = () => {
           .select('team_id')
           .eq('user_id', user.id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error fetching team ID:', error);
         } else if (data) {
           setTeamId(data.team_id);
+        } else {
+          // No team membership found - let useTeam handle team creation
+          console.log('No team membership found for user');
         }
       } catch (error) {
         console.error('Error fetching team ID:', error);
