@@ -136,6 +136,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
+        onUpdateItem={onUpdateItem}
       />
 
       {/* Main Content */}
