@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets } from '@/utils/scriptUtils';
@@ -164,11 +165,15 @@ const ExpandableScriptCell = ({
         {/* Styled display when collapsed */}
         {!isExpanded && (
           <div 
-            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded min-h-[24px] flex items-center"
+            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded min-h-[24px] flex items-center w-full"
             onClick={() => setIsExpanded(true)}
             style={{ color: textColor || undefined }}
           >
-            {value ? renderScriptWithBrackets(value, 14) : (
+            {value ? (
+              <div className="w-full overflow-hidden">
+                {renderScriptWithBrackets(value, 14)}
+              </div>
+            ) : (
               <span className="text-gray-400 italic">Click to add script...</span>
             )}
           </div>

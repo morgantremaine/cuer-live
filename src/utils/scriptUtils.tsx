@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const isNullScript = (script: string) => {
@@ -89,5 +90,10 @@ export const renderScriptWithBrackets = (text: string, fontSize = 14, isBold = f
     );
   }
 
-  return parts.length > 0 ? <>{parts}</> : <span className={`${getFontWeight()}`}>{text}</span>;
+  // Wrap all parts in a single inline container to prevent layout issues
+  return (
+    <span className="inline-flex flex-wrap items-center">
+      {parts.length > 0 ? parts : <span className={`${getFontWeight()}`}>{text}</span>}
+    </span>
+  );
 };
