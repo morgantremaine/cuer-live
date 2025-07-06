@@ -130,6 +130,13 @@ interface BlueprintContextValue {
   saveBlueprint: () => Promise<void>;
   refreshBlueprint: () => Promise<void>;
   autoRefreshLists: (rundownItems: RundownItem[]) => void;
+  
+  // Rundown data
+  rundownData: {
+    id: string;
+    title: string;
+    items: RundownItem[];
+  } | null;
 }
 
 const BlueprintContext = createContext<BlueprintContextValue | null>(null);
@@ -481,7 +488,12 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     updateComponentOrder,
     saveBlueprint,
     refreshBlueprint,
-    autoRefreshLists
+    autoRefreshLists,
+    rundownData: {
+      id: rundownId,
+      title: rundownTitle,
+      items: rundownItems
+    }
   };
 
   return (
