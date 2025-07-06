@@ -15,6 +15,7 @@ import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface ShareRundownMenuProps {
   rundownId: string;
@@ -41,6 +42,16 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   const permanentUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
 
   const copyToClipboard = async () => {
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Sharing and read-only links are available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(permanentUrl);
       setCopied(true);
@@ -59,6 +70,16 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   };
 
   const handlePrint = () => {
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Print and export features are available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
     // Open the shared rundown in a new window for printing
     const printWindow = window.open(permanentUrl, '_blank');
     if (printWindow) {
@@ -78,6 +99,16 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   };
 
   const handleExportCSV = () => {
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Print and export features are available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
     try {
       if (!rundownData) {
         throw new Error('No rundown data available for export');

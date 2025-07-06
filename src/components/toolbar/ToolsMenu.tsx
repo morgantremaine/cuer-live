@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Wrench, Monitor, FileText, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -35,6 +36,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       return;
     }
 
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Blueprint mode is available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
     navigate(`/blueprint/${rundownId}`);
   };
 
@@ -44,6 +55,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         title: "Cannot open teleprompter",
         description: "Save this rundown first before opening teleprompter.",
         variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Teleprompter mode is available with a subscription. Try the full experience!",
+        variant: "default"
       });
       return;
     }
@@ -59,6 +80,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         title: "Cannot open AD View",
         description: "Save this rundown first before opening AD View.",
         variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "AD View is available with a subscription. Try the full experience!",
+        variant: "default"
       });
       return;
     }
