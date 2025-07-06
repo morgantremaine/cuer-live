@@ -7,6 +7,7 @@ interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
+  isDemoMode?: boolean;
   addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
   addHeader: (selectedRowId?: string | null) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
@@ -20,6 +21,7 @@ export const useIndexHandlers = ({
   items,
   selectedRows,
   rundownId,
+  isDemoMode,
   addRow,
   addHeader,
   calculateEndTime,
@@ -41,9 +43,13 @@ export const useIndexHandlers = ({
   }, [setTimezone, markAsChanged]);
 
   const handleOpenTeleprompter = useCallback(() => {
-    if (!rundownId) return;
-    navigate(`/teleprompter/${rundownId}`);
-  }, [navigate, rundownId]);
+    if (isDemoMode) {
+      navigate('/demo/teleprompter');
+    } else {
+      if (!rundownId) return;
+      navigate(`/teleprompter/${rundownId}`);
+    }
+  }, [navigate, rundownId, isDemoMode]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
