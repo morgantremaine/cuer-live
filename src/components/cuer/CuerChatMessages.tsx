@@ -48,18 +48,42 @@ const CuerChatMessages = ({
   }, []);
 
   const extractModifications = (content: string): { cleanContent: string; modifications: RundownModification[] | null } => {
-    const modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
+    console.log('🔍 EXTRACTION: Raw content:', content);
+    
+    // Check for both old and new formats
+    let modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
+    let isOldFormat = true;
+    
+    if (!modificationMatch) {
+      // Check for MODIFICATION_REQUEST format from system prompt
+      modificationMatch = content.match(/MODIFICATION_REQUEST:\s*```json\s*([\s\S]*?)\s*```/);
+      isOldFormat = false;
+    }
+    
+    console.log('🔍 EXTRACTION: Modification match found:', !!modificationMatch);
+    console.log('🔍 EXTRACTION: Format used:', isOldFormat ? 'old __CUER_MODIFICATIONS__' : 'new MODIFICATION_REQUEST');
+    
     if (modificationMatch) {
+      console.log('🔍 EXTRACTION: Raw modification data:', modificationMatch[1]);
       try {
         const modificationData = JSON.parse(modificationMatch[1]);
-        return {
-          cleanContent: content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim(),
+        console.log('🔍 EXTRACTION: Parsed modification data:', modificationData);
+        
+        const cleanContent = isOldFormat 
+          ? content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim()
+          : content.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+        
+        const result = {
+          cleanContent,
           modifications: modificationData.modifications || []
         };
+        console.log('🔍 EXTRACTION: Final result:', result);
+        return result;
       } catch (error) {
-        console.error('Failed to parse modifications:', error);
+        console.error('🔍 EXTRACTION: Failed to parse modifications:', error);
       }
     }
+    console.log('🔍 EXTRACTION: No modifications found, returning null');
     return { cleanContent: content, modifications: null };
   };
 
