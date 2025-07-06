@@ -12,6 +12,8 @@ import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
+import { createDefaultRundownItems } from '@/data/defaultRundownItems';
+import { supabase } from '@/lib/supabase';
 import { logger } from '@/utils/logger';
 
 const BlueprintLoadingSkeleton = () => (
@@ -46,16 +48,8 @@ const BlueprintLoadingSkeleton = () => (
 );
 
 const BlueprintContent = () => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { savedRundowns, loading } = useRundownStorage();
-  
-  // Find the rundown - but only search if we have data loaded
-  const rundown = React.useMemo(() => {
-    if (loading || !savedRundowns.length) return null;
-    return savedRundowns.find(r => r.id === id) || undefined;
-  }, [savedRundowns, id, loading]);
   
   // Use BlueprintContext directly - single source of truth
   const {
@@ -67,43 +61,44 @@ const BlueprintContent = () => {
     updateCheckedItems,
     updateShowDate,
     updateComponentOrder,
-    autoRefreshLists
+    autoRefreshLists,
+    rundownData // Get rundown data from context
   } = useBlueprintContext();
 
-  // Get available columns from rundown items
+  // Get available columns from context rundown items
   const availableColumns = React.useMemo(() => {
-    if (!rundown?.items) return [];
-    return getAvailableColumns(rundown.items);
-  }, [rundown?.items]);
+    if (!rundownData?.items) return [];
+    return getAvailableColumns(rundownData.items);
+  }, [rundownData?.items]);
 
   // Add new list
   const addNewList = React.useCallback((name: string, sourceColumn: string) => {
     logger.blueprint('Adding new list:', { name, sourceColumn });
     
-    if (!rundown?.items) return;
+    if (!rundownData?.items) return;
     
     const newList = {
       id: `${sourceColumn}_${Date.now()}`,
       name,
       sourceColumn,
-      items: generateListFromColumn(rundown.items, sourceColumn),
+      items: generateListFromColumn(rundownData.items, sourceColumn),
       checkedItems: {}
     };
     
     logger.blueprint('Generated new list:', newList);
     addList(newList);
-  }, [rundown?.items, addList]);
+  }, [rundownData?.items, addList]);
 
   // Refresh all lists - now using the context's autoRefreshLists
   const refreshAllLists = React.useCallback(() => {
     logger.blueprint('Manual refresh all lists triggered');
-    if (!rundown?.items) {
+    if (!rundownData?.items) {
       logger.blueprint('No rundown items available for refresh');
       return;
     }
     
-    autoRefreshLists(rundown.items);
-  }, [rundown?.items, autoRefreshLists]);
+    autoRefreshLists(rundownData.items);
+  }, [rundownData?.items, autoRefreshLists]);
 
   // Toggle unique items display
   const toggleUniqueItems = React.useCallback((listId: string, showUnique: boolean) => {
@@ -229,40 +224,13 @@ const BlueprintContent = () => {
   }
 
   const handleBack = () => {
-    navigate('/dashboard');
+    const isDemoMode = rundownData?.id === 'demo';
+    if (isDemoMode) {
+      navigate('/demo');
+    } else {
+      navigate('/dashboard');
+    }
   };
-
-  // Show loading skeleton while data is being loaded
-  if (loading) {
-    return <BlueprintLoadingSkeleton />;
-  }
-
-  // If data has loaded but rundown is not found, show error
-  if (!loading && rundown === undefined) {
-    return (
-      <div className="min-h-screen bg-gray-900">
-        <DashboardHeader 
-          userEmail={user?.email} 
-          onSignOut={handleSignOut} 
-          showBackButton={true}
-          onBack={handleBack}
-        />
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
-            <Button onClick={() => navigate('/dashboard')}>
-              Return to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading skeleton if rundown data is still null (being loaded)
-  if (!rundown) {
-    return <BlueprintLoadingSkeleton />;
-  }
 
   // Create component mapping for rendering in the correct order (removed crew-list)
   const componentMap = {
@@ -280,8 +248,8 @@ const BlueprintContent = () => {
         onDragEnd={handleDragEnd}
       >
         <CameraPlot
-          rundownId={id || ''}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
+          rundownId={rundownData?.id || ''}
+          rundownTitle={rundownData?.title || 'Unknown Rundown'}
           isDragging={draggedListId === 'camera-plot'}
           onDragStart={handleDragStart}
           onDragEnterContainer={handleDragEnterContainer}
@@ -303,8 +271,8 @@ const BlueprintContent = () => {
         onDragEnd={handleDragEnd}
       >
         <BlueprintScratchpad
-          rundownId={id || ''}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
+          rundownId={rundownData?.id || ''}
+          rundownTitle={rundownData?.title || 'Unknown Rundown'}
         />
       </div>
     )
@@ -320,7 +288,7 @@ const BlueprintContent = () => {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
-          rundown={rundown}
+          rundown={rundownData}
           showDate={state.showDate}
           availableColumns={availableColumns}
           onShowDateUpdate={updateShowDate}
@@ -342,7 +310,7 @@ const BlueprintContent = () => {
           ) : (
             <BlueprintListsGrid
               lists={state.lists}
-              rundownItems={rundown?.items || []}
+              rundownItems={rundownData?.items || []}
               draggedListId={draggedListId}
               insertionIndex={insertionIndex}
               onDeleteList={deleteList}
@@ -382,17 +350,91 @@ const BlueprintContent = () => {
   );
 };
 
-const Blueprint = () => {
+interface BlueprintProps {
+  isDemoMode?: boolean;
+}
+
+const Blueprint = ({ isDemoMode = false }: BlueprintProps) => {
   const { id } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
-  // Find the rundown - but only search if we have data loaded
+  // State to track demo loading and data
+  const [demoLoaded, setDemoLoaded] = React.useState(false);
+  const [demoData, setDemoData] = React.useState<any>(null);
+
+  // Create demo rundown data when in demo mode - load actual demo data
+  const demoRundown = React.useMemo(() => {
+    if (!isDemoMode) return null;
+    if (demoData) return demoData;
+    return {
+      id: 'demo',
+      title: 'Demo Rundown',
+      items: [], // Will be loaded from database
+      start_time: '09:00:00',
+      timezone: 'America/New_York'
+    };
+  }, [isDemoMode, demoData]);
+
+  // Load demo rundown data from database when in demo mode
+  React.useEffect(() => {
+    const loadDemoData = async () => {
+      if (!isDemoMode || demoLoaded) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8')
+          .single();
+
+        if (error) {
+          console.error('Error loading demo rundown:', error);
+          // Fallback to default data
+          setDemoData({
+            id: 'demo',
+            title: 'Demo Rundown',
+            items: createDefaultRundownItems(),
+            start_time: '09:00:00',
+            timezone: 'America/New_York'
+          });
+        } else if (data) {
+          // Set the demo rundown with actual data
+          setDemoData({
+            id: 'demo',
+            title: data.title || 'Demo Rundown',
+            items: Array.isArray(data.items) && data.items.length > 0 
+              ? data.items 
+              : createDefaultRundownItems(),
+            start_time: data.start_time || '09:00:00',
+            timezone: data.timezone || 'America/New_York'
+          });
+        }
+        setDemoLoaded(true);
+      } catch (error) {
+        console.error('Failed to load demo rundown:', error);
+        // Fallback to default data
+        setDemoData({
+          id: 'demo',
+          title: 'Demo Rundown',
+          items: createDefaultRundownItems(),
+          start_time: '09:00:00',
+          timezone: 'America/New_York'
+        });
+        setDemoLoaded(true);
+      }
+    };
+
+    loadDemoData();
+  }, [isDemoMode, demoLoaded]);
+  
+  // Find the rundown - use demo data in demo mode, otherwise search saved rundowns
   const rundown = React.useMemo(() => {
+    if (isDemoMode) return demoRundown;
     if (loading || !savedRundowns.length) return null;
     return savedRundowns.find(r => r.id === id) || undefined;
-  }, [savedRundowns, id, loading]);
+  }, [isDemoMode, demoRundown, savedRundowns, id, loading, demoLoaded]); // Add demoLoaded dependency
 
   const handleSignOut = async () => {
     try {
@@ -404,16 +446,20 @@ const Blueprint = () => {
   }
 
   const handleBack = () => {
-    navigate('/dashboard');
+    if (isDemoMode) {
+      navigate('/demo');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
-  // Show loading state while fetching rundowns
-  if (loading) {
+  // Show loading state while fetching rundowns (skip for demo mode)
+  if (!isDemoMode && loading) {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Show error state if rundown not found after loading is complete
-  if (!loading && rundown === undefined) {
+  // Show error state if rundown not found after loading is complete (skip for demo mode)
+  if (!isDemoMode && !loading && rundown === undefined) {
     return (
       <div className="min-h-screen bg-gray-900">
         <DashboardHeader 
@@ -434,17 +480,23 @@ const Blueprint = () => {
     );
   }
 
-  // Show loading skeleton if rundown data is still null (being loaded)
-  if (!rundown) {
+  // Show loading skeleton if rundown data is still null (skip for demo mode since we have demo data)
+  if (!isDemoMode && !rundown) {
+    return <BlueprintLoadingSkeleton />;
+  }
+
+  // Show loading skeleton for demo mode while loading demo data
+  if (isDemoMode && !demoLoaded) {
     return <BlueprintLoadingSkeleton />;
   }
 
   // Only wrap in provider when we have a valid rundown - now passing rundown items
   return (
     <BlueprintProvider 
-      rundownId={id || ''} 
-      rundownTitle={rundown.title || 'Unknown Rundown'}
-      rundownItems={rundown.items || []}
+      rundownId={isDemoMode ? 'demo' : (id || '')} 
+      rundownTitle={rundown?.title || 'Unknown Rundown'}
+      rundownItems={rundown?.items || []}
+      isDemoMode={isDemoMode}
     >
       <BlueprintContent />
     </BlueprintProvider>

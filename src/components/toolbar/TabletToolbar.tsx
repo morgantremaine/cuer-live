@@ -33,6 +33,7 @@ interface TabletToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  isDemoMode?: boolean;
 }
 
 const TabletToolbar = ({
@@ -56,7 +57,8 @@ const TabletToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  isDemoMode = false
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -90,6 +92,7 @@ const TabletToolbar = ({
                 isMobile={true}
                 rundownTitle={rundownTitle}
                 rundownData={rundownData}
+                isDemoMode={isDemoMode}
               />
             </div>
           </DropdownMenuContent>

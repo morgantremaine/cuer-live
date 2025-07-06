@@ -33,6 +33,7 @@ interface MobileToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  isDemoMode?: boolean;
 }
 
 const MobileToolbar = ({
@@ -56,7 +57,8 @@ const MobileToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  isDemoMode = false
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -92,6 +94,7 @@ const MobileToolbar = ({
                 rundownData={rundownData}
                 autoScrollEnabled={autoScrollEnabled}
                 onToggleAutoScroll={onToggleAutoScroll}
+                isDemoMode={isDemoMode}
                 // Pass playback controls for mobile
                 isPlaying={isPlaying}
                 currentSegmentId={currentSegmentId}
