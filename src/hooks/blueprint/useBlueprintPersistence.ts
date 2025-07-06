@@ -17,8 +17,7 @@ export const useBlueprintPersistence = (
   rundownTitle: string,
   showDate: string,
   savedBlueprint: any,
-  setSavedBlueprint: (blueprint: any) => void,
-  isDemoMode: boolean = false
+  setSavedBlueprint: (blueprint: any) => void
 ) => {
   // Load blueprint from database - prioritize team blueprints for collaboration
   const loadBlueprint = useCallback(async () => {
@@ -181,11 +180,6 @@ export const useBlueprintPersistence = (
     cameraPlots?: any,
     componentOrder?: string[]
   ) => {
-    if (isDemoMode) {
-      console.log('📋 Save skipped - demo mode enabled');
-      return;
-    }
-    
     if (!rundownId) {
       console.log('📋 Save skipped - no rundownId');
       return;
@@ -315,15 +309,10 @@ export const useBlueprintPersistence = (
       console.error('📋 Error saving blueprint:', error);
       // Silent error handling - don't throw to prevent disrupting the UI
     }
-  }, [rundownId, rundownTitle, showDate, savedBlueprint, setSavedBlueprint, isDemoMode]);
+  }, [rundownId, rundownTitle, showDate, savedBlueprint, setSavedBlueprint]);
 
   // New partial save function - only updates specific fields
   const savePartialBlueprint = useCallback(async (partialUpdate: PartialBlueprintUpdate, silent = true) => {
-    if (isDemoMode) {
-      console.log('📋 Partial save skipped - demo mode enabled');
-      return;
-    }
-    
     if (!rundownId) {
       console.log('📋 Partial save skipped - no rundownId');
       return;
@@ -445,7 +434,7 @@ export const useBlueprintPersistence = (
       console.error('📋 Error in partial save:', error);
       // Silent error handling - don't throw to prevent disrupting the UI
     }
-  }, [rundownId, rundownTitle, setSavedBlueprint, isDemoMode]);
+  }, [rundownId, rundownTitle, setSavedBlueprint]);
 
   return {
     loadBlueprint,

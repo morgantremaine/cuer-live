@@ -98,17 +98,6 @@ export const useSimpleAutoSave = (
         userTypingRef.current ||
         pendingSaveRef.current ||
         isDemoMode) { // DISABLE saving in demo mode
-      if (!state.hasUnsavedChanges) {
-        console.log('💾 No unsaved changes, skipping autosave');
-      } else {
-        console.log('💾 Autosave blocked by condition:', {
-          hasUnsavedChanges: state.hasUnsavedChanges,
-          undoActive: undoActiveRef.current,
-          userTyping: userTypingRef.current,
-          pendingSave: pendingSaveRef.current,
-          isDemoMode
-        });
-      }
       return;
     }
 
@@ -141,12 +130,7 @@ export const useSimpleAutoSave = (
           undoActiveRef.current || 
           userTypingRef.current ||
           pendingSaveRef.current) {
-        console.log('🚫 Save cancelled - blocking condition active:', {
-          isSaving,
-          undoActive: undoActiveRef.current,
-          userTyping: userTypingRef.current,
-          pendingSave: pendingSaveRef.current
-        });
+        console.log('🚫 Save cancelled - blocking condition active');
         return;
       }
       
@@ -242,7 +226,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, rundownId, onSaved, navigate, trackMyUpdate, location.state?.folderId]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {

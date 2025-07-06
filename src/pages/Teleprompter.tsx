@@ -79,7 +79,11 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
       return;
     }
 
-    // Allow public viewing - authentication only required for editing
+    if (!isDemoMode && !user) {
+      setLoading(false);
+      setError('Authentication required');
+      return;
+    }
 
     setError(null);
 
@@ -468,7 +472,7 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
         isBold={isBold}
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
-        canEdit={!isFullscreen && (isDemoMode || !!user)}
+        canEdit={!isFullscreen}
       />
 
     </div>

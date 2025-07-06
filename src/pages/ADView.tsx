@@ -17,12 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface ADViewProps {
-  isDemoMode?: boolean;
-}
-
-const ADView = ({ isDemoMode = false }: ADViewProps) => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState(isDemoMode);
+const ADView = () => {
+  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showScript, setShowScript] = useState(true);
@@ -59,89 +55,6 @@ const ADView = ({ isDemoMode = false }: ADViewProps) => {
     if (!script) return false;
     const trimmed = script.trim();
     return trimmed !== '' && !isNullScript(trimmed);
-  };
-
-  // Function to render script text with bracket colors (same as teleprompter)
-  const renderScriptWithBrackets = (text: string) => {
-    if (isNullScript(text)) {
-      return null;
-    }
-
-    const bracketRegex = /\[([^\[\]{}]+)(?:\{([^}]+)\})?\]/g;
-    
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = bracketRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(
-          <span key={`text-${lastIndex}`}>
-            {text.slice(lastIndex, match.index)}
-          </span>
-        );
-      }
-
-      const bracketText = match[1];
-      const colorName = match[2]?.toLowerCase();
-
-      let backgroundColor = 'white';
-      let textColor = 'black';
-
-      if (colorName) {
-        const colorMap: { [key: string]: string } = {
-          'red': '#ef4444',
-          'blue': '#3b82f6',
-          'green': '#22c55e',
-          'yellow': '#eab308',
-          'purple': '#a855f7',
-          'orange': '#f97316',
-          'pink': '#ec4899',
-          'gray': '#6b7280',
-          'grey': '#6b7280',
-          'cyan': '#06b6d4',
-          'lime': '#84cc16',
-          'indigo': '#6366f1',
-          'teal': '#14b8a6',
-          'amber': '#f59e0b',
-          'emerald': '#10b981',
-          'violet': '#8b5cf6',
-          'rose': '#f43f5e',
-          'slate': '#64748b',
-          'stone': '#78716c',
-          'neutral': '#737373',
-          'zinc': '#71717a'
-        };
-        
-        backgroundColor = colorMap[colorName] || colorName;
-        textColor = 'white';
-      }
-
-      parts.push(
-        <span
-          key={`bracket-${match.index}`}
-          className="py-0.5 px-2 inline-block rounded mx-1"
-          style={{ 
-            backgroundColor,
-            color: textColor
-          }}
-        >
-          {bracketText}
-        </span>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-      parts.push(
-        <span key={`text-${lastIndex}`}>
-          {text.slice(lastIndex)}
-        </span>
-      );
-    }
-
-    return parts.length > 0 ? parts : text;
   };
 
   // Get storage key based on rundown ID
@@ -947,7 +860,7 @@ const ADView = ({ isDemoMode = false }: ADViewProps) => {
                           lineHeight: '1.4'
                         }}
                       >
-                        {renderScriptWithBrackets(currentSegment.script)}
+                        {currentSegment.script}
                       </div>
                     </div>
                   </CardContent>
