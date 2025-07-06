@@ -23,7 +23,8 @@ const RundownTableHeader = ({
           style={{ 
             width: '64px', 
             minWidth: '64px',
-            maxWidth: '64px'
+            maxWidth: '64px',
+            borderWidth: '1px'
           }}
         >
           #

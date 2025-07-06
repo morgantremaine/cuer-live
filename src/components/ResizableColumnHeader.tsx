@@ -134,7 +134,8 @@ const ResizableColumnHeader = ({
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
-        maxWidth: constrainedWidthPx
+        maxWidth: constrainedWidthPx,
+        borderWidth: '1px'
       }}
     >
       {showLeftSeparator && (

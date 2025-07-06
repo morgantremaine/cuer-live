@@ -52,16 +52,17 @@ const RegularRowContent = ({
           backgroundColor,
           width: '64px',
           minWidth: '64px',
-          maxWidth: '64px'
+          maxWidth: '64px',
+          borderWidth: '1px'
         }}
       >
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center justify-center relative w-full">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-5 w-5 text-blue-500 fill-blue-500" 
+              className="h-4 w-4 text-blue-500 fill-blue-500 absolute left-0" 
             />
           )}
-          <span style={{ color: textColor }}>{rowNumber}</span>
+          <span style={{ color: textColor }} className={isCurrentlyPlaying ? 'ml-5' : ''}>{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
@@ -77,7 +78,8 @@ const RegularRowContent = ({
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
-              backgroundColor 
+              backgroundColor,
+              borderWidth: '1px'
             }}
           >
             <CellRenderer
