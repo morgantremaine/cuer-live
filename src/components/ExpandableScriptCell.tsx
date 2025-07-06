@@ -195,12 +195,12 @@ const ExpandableScriptCell = ({
         {/* Styled display when collapsed */}
         {!isExpanded && (
           <div 
-            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded min-h-[24px] flex items-center w-full"
+            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded min-h-[24px] w-full"
             onClick={() => setIsExpanded(true)}
             style={{ color: textColor || undefined }}
           >
             {value ? (
-              <div className="w-full overflow-hidden">
+              <div className="w-full line-clamp-3 break-words">
                 {renderScriptWithBrackets(value, 14)}
               </div>
             ) : (
