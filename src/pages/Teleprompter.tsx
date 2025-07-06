@@ -65,18 +65,18 @@ const Teleprompter = () => {
     }
   });
 
-  // Load rundown data with authentication and backup restoration
+  // Load rundown data with optional authentication (read-only if not authenticated)
   const loadRundownData = async () => {
-    if (!rundownId || !user) {
+    if (!rundownId) {
       setLoading(false);
-      setError('Authentication required or no rundown ID provided');
+      setError('No rundown ID provided');
       return;
     }
 
     setError(null);
 
     try {
-      // Access rundown with authentication
+      // Access rundown (works for both authenticated and public access)
       const { data, error: queryError } = await supabase
         .from('rundowns')
         .select('id, title, items, columns, created_at, updated_at')
@@ -93,29 +93,31 @@ const Teleprompter = () => {
           items: data.items || []
         };
         
-        // Check for and restore any backed up changes
-        const backupData = loadBackup();
-        if (Object.keys(backupData).length > 0) {
-          // Restore backed up changes
-          const restoredItems = loadedData.items.map((item: any) => {
-            if (backupData[item.id]) {
-              return { ...item, script: backupData[item.id] };
-            }
-            return item;
-          });
-          
-          loadedData.items = restoredItems;
-          
-          toast.info('Restored unsaved changes from local backup', {
-            duration: 4000,
-            action: {
-              label: 'Clear backup',
-              onClick: () => {
-                localStorage.removeItem(`teleprompter_backup_${rundownId}`);
-                loadRundownData(); // Reload without backup
+        // Check for and restore any backed up changes (only for authenticated users)
+        if (user) {
+          const backupData = loadBackup();
+          if (Object.keys(backupData).length > 0) {
+            // Restore backed up changes
+            const restoredItems = loadedData.items.map((item: any) => {
+              if (backupData[item.id]) {
+                return { ...item, script: backupData[item.id] };
               }
-            }
-          });
+              return item;
+            });
+            
+            loadedData.items = restoredItems;
+            
+            toast.info('Restored unsaved changes from local backup', {
+              duration: 4000,
+              action: {
+                label: 'Clear backup',
+                onClick: () => {
+                  localStorage.removeItem(`teleprompter_backup_${rundownId}`);
+                  loadRundownData(); // Reload without backup
+                }
+              }
+            });
+          }
         }
         
         setRundownData(loadedData);
@@ -133,7 +135,7 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
-  // Enhanced script update with robust saving
+  // Enhanced script update with robust saving (only for authenticated users)
   const updateScriptContent = async (itemId: string, newScript: string) => {
     if (!rundownData || !user) return;
 
@@ -313,14 +315,14 @@ const Teleprompter = () => {
   // Initial load
   useEffect(() => {
     loadRundownData();
-  }, [rundownId, user]);
+  }, [rundownId]);
 
   // Enhanced polling with pause support
   useEffect(() => {
-    if (!rundownId || loading || !user || isPollingPaused) return;
+    if (!rundownId || loading || isPollingPaused) return;
     
     const pollInterval = setInterval(() => {
-      if (!isPollingPaused && !saveState.isSaving) {
+      if (!isPollingPaused && (!user || !saveState.isSaving)) {
         loadRundownData();
       }
     }, 8000); // Increased interval to 8 seconds
@@ -328,7 +330,7 @@ const Teleprompter = () => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [rundownId, loading, user, isPollingPaused, saveState.isSaving]);
+  }, [rundownId, loading, isPollingPaused, saveState.isSaving]);
 
   const getRowNumber = (index: number) => {
     if (!rundownData?.items || index < 0 || index >= rundownData.items.length) {
@@ -406,6 +408,13 @@ const Teleprompter = () => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Read-only banner for non-authenticated users */}
+      {!user && (
+        <div className="bg-blue-600 text-white text-center py-2 text-sm">
+          Read-only mode - <a href="/login" className="underline hover:text-blue-200">Sign in</a> to edit teleprompter content
+        </div>
+      )}
+      
       {/* Top Menu Controls - Hidden in fullscreen */}
       {!isFullscreen && (
         <>
@@ -427,12 +436,14 @@ const Teleprompter = () => {
             onPrint={handlePrint}
           />
           
-          {/* Save Status Indicator */}
-          <div className="fixed top-16 right-4 z-30">
-            <TeleprompterSaveIndicator 
-              saveState={saveState}
-            />
-          </div>
+          {/* Save Status Indicator - only show for authenticated users */}
+          {user && (
+            <div className="fixed top-16 right-4 z-30">
+              <TeleprompterSaveIndicator 
+                saveState={saveState}
+              />
+            </div>
+          )}
         </>
       )}
 
@@ -446,7 +457,7 @@ const Teleprompter = () => {
         isBold={isBold}
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
-        canEdit={!isFullscreen}
+        canEdit={!isFullscreen && !!user}
       />
 
     </div>
