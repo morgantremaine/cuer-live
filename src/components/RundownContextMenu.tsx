@@ -22,7 +22,6 @@ interface RundownContextMenuProps {
   onCopy: () => void;
   onDelete: () => void;
   onToggleFloat: () => void;
-  onToggleFloatHeader?: () => void;
   onColorPicker: () => void;
   onColorSelect: (itemId: string, color: string) => void;
   onCloseColorPicker?: () => void;
@@ -45,7 +44,6 @@ const RundownContextMenu = memo(({
   onCopy,
   onDelete,
   onToggleFloat,
-  onToggleFloatHeader,
   onColorPicker,
   onColorSelect,
   onCloseColorPicker,
@@ -189,7 +187,7 @@ const RundownContextMenu = memo(({
           <ContextMenuSeparator />
           
           <ContextMenuItem 
-            onClick={itemType === 'header' && onToggleFloatHeader ? () => onToggleFloatHeader() : handleContextMenuFloat} 
+            onClick={handleContextMenuFloat} 
             className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <LifeBuoy className="mr-2 h-4 w-4" />

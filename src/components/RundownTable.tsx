@@ -115,7 +115,7 @@ const RundownTable = ({
 
   return (
     <div className="relative w-full bg-background">
-      <table className="w-full border-separate border-spacing-0 border border-border">
+      <table className="w-full border-collapse border border-border">
         <tbody className="bg-background">
           {items.map((item, index) => {
             const rowNumber = getRowNumber(index);

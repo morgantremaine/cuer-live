@@ -39,7 +39,6 @@ interface HeaderRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onToggleFloatHeader?: (id: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
 }
@@ -132,7 +131,6 @@ const HeaderRow = (props: HeaderRowProps) => {
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={() => {}}
-      onToggleFloatHeader={() => props.onToggleFloatHeader?.(item.id)}
       onColorPicker={handleContextMenuColor}
       onColorSelect={onColorSelect}
       onPaste={handleContextMenuPaste}

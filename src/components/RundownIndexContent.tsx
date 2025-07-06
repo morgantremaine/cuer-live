@@ -30,7 +30,6 @@ const RundownIndexContent = () => {
     updateItem,
     deleteRow,
     toggleFloatRow,
-    toggleFloatHeader,
     addRow,
     addHeader,
     isPlaying,
@@ -365,7 +364,6 @@ const RundownIndexContent = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onToggleFloatHeader={toggleFloatHeader}
         onRowSelect={handleRowSelect}
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}

@@ -37,7 +37,6 @@ interface RundownContentProps {
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onToggleFloatHeader: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index?: number) => void;
@@ -82,7 +81,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   onColorSelect,
   onDeleteRow,
   onToggleFloat,
-  onToggleFloatHeader,
   onRowSelect,
   onDragStart,
   onDragOver,
@@ -128,7 +126,7 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div className="min-w-max bg-background">
           {/* Sticky Header - Inside ScrollArea */}
           <div className="sticky top-0 z-20 bg-background border-b border-border">
-            <table className="w-full border-separate border-spacing-0">
+            <table className="w-full border-collapse">
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 getColumnWidth={getColumnWidth}
@@ -161,7 +159,6 @@ const RundownContent = React.memo<RundownContentProps>(({
             onColorSelect={onColorSelect}
             onDeleteRow={onDeleteRow}
             onToggleFloat={onToggleFloat}
-            onToggleFloatHeader={onToggleFloatHeader}
             onRowSelect={onRowSelect}
             onDragStart={onDragStart}
             onDragOver={handleEnhancedDragOver}
