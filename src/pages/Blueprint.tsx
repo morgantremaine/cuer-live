@@ -13,6 +13,7 @@ import CameraPlot from '@/components/blueprint/CameraPlot';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
+import { supabase } from '@/lib/supabase';
 import { logger } from '@/utils/logger';
 
 const BlueprintLoadingSkeleton = () => (
@@ -359,24 +360,81 @@ const Blueprint = ({ isDemoMode = false }: BlueprintProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
-  // Create demo rundown data when in demo mode
+  // State to track demo loading and data
+  const [demoLoaded, setDemoLoaded] = React.useState(false);
+  const [demoData, setDemoData] = React.useState<any>(null);
+
+  // Create demo rundown data when in demo mode - load actual demo data
   const demoRundown = React.useMemo(() => {
     if (!isDemoMode) return null;
+    if (demoData) return demoData;
     return {
       id: 'demo',
       title: 'Demo Rundown',
-      items: createDefaultRundownItems(),
+      items: [], // Will be loaded from database
       start_time: '09:00:00',
       timezone: 'America/New_York'
     };
-  }, [isDemoMode]);
+  }, [isDemoMode, demoData]);
+
+  // Load demo rundown data from database when in demo mode
+  React.useEffect(() => {
+    const loadDemoData = async () => {
+      if (!isDemoMode || demoLoaded) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8')
+          .single();
+
+        if (error) {
+          console.error('Error loading demo rundown:', error);
+          // Fallback to default data
+          setDemoData({
+            id: 'demo',
+            title: 'Demo Rundown',
+            items: createDefaultRundownItems(),
+            start_time: '09:00:00',
+            timezone: 'America/New_York'
+          });
+        } else if (data) {
+          // Set the demo rundown with actual data
+          setDemoData({
+            id: 'demo',
+            title: data.title || 'Demo Rundown',
+            items: Array.isArray(data.items) && data.items.length > 0 
+              ? data.items 
+              : createDefaultRundownItems(),
+            start_time: data.start_time || '09:00:00',
+            timezone: data.timezone || 'America/New_York'
+          });
+        }
+        setDemoLoaded(true);
+      } catch (error) {
+        console.error('Failed to load demo rundown:', error);
+        // Fallback to default data
+        setDemoData({
+          id: 'demo',
+          title: 'Demo Rundown',
+          items: createDefaultRundownItems(),
+          start_time: '09:00:00',
+          timezone: 'America/New_York'
+        });
+        setDemoLoaded(true);
+      }
+    };
+
+    loadDemoData();
+  }, [isDemoMode, demoLoaded]);
   
   // Find the rundown - use demo data in demo mode, otherwise search saved rundowns
   const rundown = React.useMemo(() => {
     if (isDemoMode) return demoRundown;
     if (loading || !savedRundowns.length) return null;
     return savedRundowns.find(r => r.id === id) || undefined;
-  }, [isDemoMode, demoRundown, savedRundowns, id, loading]);
+  }, [isDemoMode, demoRundown, savedRundowns, id, loading, demoLoaded]); // Add demoLoaded dependency
 
   const handleSignOut = async () => {
     try {
@@ -424,6 +482,11 @@ const Blueprint = ({ isDemoMode = false }: BlueprintProps) => {
 
   // Show loading skeleton if rundown data is still null (skip for demo mode since we have demo data)
   if (!isDemoMode && !rundown) {
+    return <BlueprintLoadingSkeleton />;
+  }
+
+  // Show loading skeleton for demo mode while loading demo data
+  if (isDemoMode && !demoLoaded) {
     return <BlueprintLoadingSkeleton />;
   }
 
