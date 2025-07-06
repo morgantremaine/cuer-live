@@ -91,6 +91,80 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     }
   }, []);
 
+  const replaceCurrent = useCallback((options: FindReplaceOptions, currentMatchIndex: number) => {
+    const { searchTerm, replaceTerm, fields, caseSensitive } = options;
+    
+    if (!searchTerm.trim() || lastSearchResults.matches.length === 0 || currentMatchIndex >= lastSearchResults.matches.length) {
+      return { replacements: 0 };
+    }
+
+    const currentMatch = lastSearchResults.matches[currentMatchIndex];
+    const targetItem = currentItems.find(item => item.id === currentMatch.itemId);
+    
+    if (!targetItem) {
+      return { replacements: 0 };
+    }
+
+    let searchRegex: RegExp;
+    try {
+      // Always search case-insensitively
+      const flags = 'gi';
+      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      searchRegex = new RegExp(pattern, flags);
+    } catch (error) {
+      console.error('🔄 Invalid search regex:', error);
+      return { replacements: 0 };
+    }
+
+    // Get field value
+    let fieldValue = '';
+    if (currentMatch.field.startsWith('customFields.')) {
+      const customFieldKey = currentMatch.field.replace('customFields.', '');
+      fieldValue = targetItem.customFields?.[customFieldKey] || '';
+    } else {
+      fieldValue = (targetItem as any)[currentMatch.field] || '';
+    }
+
+    if (typeof fieldValue === 'string' && fieldValue) {
+      // Replace only the first match in this field
+      let newValue = fieldValue;
+      let replacementCount = 0;
+      
+      if (caseSensitive) {
+        // Smart case replacement - preserve original capitalization
+        newValue = fieldValue.replace(searchRegex, (match) => {
+          if (replacementCount === 0) {
+            replacementCount++;
+            return matchCapitalization(match, replaceTerm);
+          }
+          return match; // Don't replace subsequent matches
+        });
+      } else {
+        // Simple replacement - use exact replacement term
+        newValue = fieldValue.replace(searchRegex, (match) => {
+          if (replacementCount === 0) {
+            replacementCount++;
+            return replaceTerm;
+          }
+          return match; // Don't replace subsequent matches
+        });
+      }
+      
+      if (replacementCount > 0) {
+        // Use the same update mechanism as manual user edits
+        if (onUpdateItem) {
+          onUpdateItem(targetItem.id, currentMatch.field, newValue);
+        } else {
+          directState.updateItem(targetItem.id, currentMatch.field, newValue);
+        }
+        
+        return { replacements: 1 };
+      }
+    }
+    
+    return { replacements: 0 };
+  }, [currentItems, onUpdateItem, directState.updateItem, matchCapitalization, lastSearchResults.matches]);
+
   const replaceAll = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, replaceTerm, fields, caseSensitive } = options;
     
@@ -164,6 +238,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   return {
     findMatches,
     replaceAll,
+    replaceCurrent,
     lastSearchResults,
     clearResults,
     // Expose current items for preview purposes

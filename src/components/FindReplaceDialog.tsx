@@ -20,7 +20,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const { findMatches, replaceAll, lastSearchResults, clearResults } = useFindReplace(onUpdateItem, items);
+  const { findMatches, replaceAll, replaceCurrent, lastSearchResults, clearResults } = useFindReplace(onUpdateItem, items);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +82,34 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
       setSearchTerm('');
       setReplaceTerm('');
       setCurrentMatchIndex(0);
+    }
+  };
+
+  const handleReplaceCurrent = () => {
+    if (searchTerm.trim() && replaceTerm.trim() && lastSearchResults.matches.length > 0) {
+      const result = replaceCurrent({
+        searchTerm,
+        replaceTerm,
+        fields: searchFields,
+        caseSensitive,
+        wholeWord: false
+      }, currentMatchIndex);
+      
+      if (result.replacements > 0) {
+        // Refresh the search to get updated results
+        setTimeout(() => {
+          findMatches({
+            searchTerm,
+            replaceTerm: '',
+            fields: searchFields,
+            caseSensitive,
+            wholeWord: false
+          });
+          // Move to next match or reset if we were at the last one
+          const newIndex = currentMatchIndex >= lastSearchResults.matches.length - 1 ? 0 : currentMatchIndex;
+          setCurrentMatchIndex(newIndex);
+        }, 100);
+      }
     }
   };
 
@@ -246,12 +274,23 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
                       onKeyDown={handleKeyPress}
                       className="flex-1"
                     />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReplaceCurrent}
+                      disabled={!searchTerm.trim() || !replaceTerm.trim() || lastSearchResults.matches.length === 0}
+                      className="flex-1"
+                    >
+                      Replace
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleReplace}
                       disabled={!searchTerm.trim() || !replaceTerm.trim()}
-                      className="px-3"
+                      className="flex-1"
                     >
                       Replace All
                     </Button>
