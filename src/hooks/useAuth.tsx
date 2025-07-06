@@ -128,29 +128,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.debug('Attempting to sign out...')
       
-      // Clear state immediately
-      setUser(null)
-      setSession(null)
-      
-      // Clear any pending invitation tokens
+      // Clear any pending invitation tokens first
       localStorage.removeItem('pendingInvitationToken')
       
-      // Attempt server-side logout
-      const { error } = await supabase.auth.signOut()
+      // Attempt server-side logout FIRST, before clearing local state
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      
       if (error) {
         logger.warn('Server-side logout error', error)
+        // Even if server logout fails, we should clear local state
+        // This handles cases where the session is already invalid server-side
       } else {
         logger.debug('Server-side logout successful')
       }
+      
+      // Clear local state after server logout attempt
+      setUser(null)
+      setSession(null)
+      
+      // Also clear any cached auth data from localStorage
+      localStorage.removeItem('supabase.auth.token')
       
       logger.debug('Sign out completed')
       
     } catch (error) {
       logger.error('Logout error', error)
-      // Ensure state is cleared even if logout fails
+      // Ensure state is cleared even if logout fails completely
       setUser(null)
       setSession(null)
       localStorage.removeItem('pendingInvitationToken')
+      localStorage.removeItem('supabase.auth.token')
     }
   }, [])
 
