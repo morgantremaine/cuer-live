@@ -32,7 +32,8 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
     currentSegmentId,
     timeRemaining,
     autoScrollEnabled,
-    onToggleAutoScroll
+    onToggleAutoScroll,
+    onUpdateItem
   } = props;
 
   // Debug logging for prop passing
@@ -69,6 +70,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       autoScrollEnabled={autoScrollEnabled}
       onToggleAutoScroll={onToggleAutoScroll}
       rundownId={rundownId}
+      onUpdateItem={onUpdateItem}
     />
   );
 };

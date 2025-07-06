@@ -45,6 +45,7 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
 const RundownHeaderSection = ({
@@ -87,7 +88,8 @@ const RundownHeaderSection = ({
   isProcessingRealtimeUpdate,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  onUpdateItem
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -114,6 +116,8 @@ const RundownHeaderSection = ({
         timeRemaining={timeRemaining}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
+        rundownId={rundownId}
+        onUpdateItem={onUpdateItem}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

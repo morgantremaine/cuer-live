@@ -10,7 +10,7 @@ export interface FindReplaceOptions {
   wholeWord: boolean;
 }
 
-export const useFindReplace = () => {
+export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void) => {
   const directState = useDirectRundownState();
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
@@ -94,13 +94,8 @@ export const useFindReplace = () => {
     }
 
     let totalReplacements = 0;
-    let hasChanges = false;
 
-    // Create a new items array to ensure reference change
-    const updatedItems = directState.items.map((item: RundownItem) => {
-      let itemUpdated = false;
-      const updatedItem = { ...item };
-
+    directState.items.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -125,41 +120,27 @@ export const useFindReplace = () => {
               matches: beforeMatches.length
             });
 
-            // Update the field in the cloned item
-            if (field.startsWith('customFields.')) {
-              const customFieldKey = field.replace('customFields.', '');
-              updatedItem.customFields = {
-                ...updatedItem.customFields,
-                [customFieldKey]: newValue
-              };
+            // Use the same update mechanism as manual edits
+            if (onUpdateItem) {
+              onUpdateItem(item.id, field, newValue);
             } else {
-              (updatedItem as any)[field] = newValue;
+              // Fallback to direct state if no update function provided
+              directState.updateItem(item.id, field, newValue);
             }
             
             totalReplacements += beforeMatches.length;
-            itemUpdated = true;
-            hasChanges = true;
           }
         }
       });
-
-      return itemUpdated ? updatedItem : item;
     });
 
     console.log('🔄 Replace all completed:', { totalReplacements });
-    
-    // Only update if there were actual changes
-    if (hasChanges) {
-      // Use setItems to force array reference change and trigger re-renders
-      directState.setItems(updatedItems);
-      directState.markAsChanged();
-    }
     
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, directState.setItems, directState.markAsChanged]);
+  }, [directState.items, onUpdateItem, directState.updateItem]);
 
   return {
     findMatches,

@@ -37,6 +37,7 @@ interface RundownHeaderProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   rundownId?: string | null;
+  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
 const RundownHeader = ({
@@ -61,7 +62,8 @@ const RundownHeader = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   items = [],
-  rundownId
+  rundownId,
+  onUpdateItem
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -434,6 +436,7 @@ const RundownHeader = ({
       <FindReplaceDialog 
         isOpen={showFindReplace}
         onClose={() => setShowFindReplace(false)}
+        onUpdateItem={onUpdateItem}
       />
     </div>
   );

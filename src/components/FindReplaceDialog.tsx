@@ -10,14 +10,15 @@ import { useFindReplace } from '@/hooks/useFindReplace';
 interface FindReplaceDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onUpdateItem?: (id: string, field: string, value: string) => void;
 }
 
-const FindReplaceDialog = ({ isOpen, onClose }: FindReplaceDialogProps) => {
+const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
-  const { findMatches, replaceAll, lastSearchResults } = useFindReplace();
+  const { findMatches, replaceAll, lastSearchResults } = useFindReplace(onUpdateItem);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
