@@ -27,7 +27,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           style={baseStyle}
         >
           <img 
-            src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
+            src="/uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
             alt="Camera"
             className="w-8 h-8 object-contain"
           />
@@ -41,7 +41,7 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
           style={baseStyle}
         >
           <img 
-            src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
+            src="/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
             alt="Person"
             className="w-12 h-12 object-contain"
           />

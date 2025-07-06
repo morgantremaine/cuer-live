@@ -10,8 +10,8 @@ interface CuerLogoProps {
 const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }: CuerLogoProps) => {
   // Use the uploaded logo images
   const logoSrc = isDark 
-    ? "/lovable-uploads/376f4f6f-fa91-4af6-b8fd-8da723bdc3fa.png" // White logo for dark backgrounds
-    : "/lovable-uploads/afb9e93f-aa34-4180-9c2a-5e154e539215.png"; // Black logo for light backgrounds
+    ? "/uploads/376f4f6f-fa91-4af6-b8fd-8da723bdc3fa.png" // White logo for dark backgrounds
+    : "/uploads/afb9e93f-aa34-4180-9c2a-5e154e539215.png"; // Black logo for light backgrounds
 
   return (
     <img 

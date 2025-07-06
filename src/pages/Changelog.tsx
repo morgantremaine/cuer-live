@@ -44,7 +44,7 @@ const Changelog: React.FC = () => {
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/f74a55ba-a0ab-4dfb-923d-6899ae03bf2b.png" 
+                        src="/uploads/f74a55ba-a0ab-4dfb-923d-6899ae03bf2b.png" 
                         alt="Figma file integration showing project name and external link"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />
@@ -76,7 +76,7 @@ const Changelog: React.FC = () => {
                     </p>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/fe736151-04ad-4619-9982-e9b08817fbcf.png" 
+                        src="/uploads/fe736151-04ad-4619-9982-e9b08817fbcf.png" 
                         alt="Collapsible headers feature showing rundown sections"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />

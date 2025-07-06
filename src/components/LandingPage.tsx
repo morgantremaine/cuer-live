@@ -94,7 +94,7 @@ const LandingPage = () => {
           {/* Background Image */}
           <div className="absolute inset-0 w-full">
             <img 
-              src="/lovable-uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
+              src="/uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
               alt="Professional Broadcast Control Room"
               className="w-full h-full object-cover animate-fade-in"
             />
@@ -148,7 +148,7 @@ const LandingPage = () => {
         <div className="relative max-w-6xl mx-auto mb-16 fade-up">
           <div className="relative group">
             <img 
-              src="/lovable-uploads/53627402-7a2b-423b-90cc-46b95c189315.png" 
+              src="/uploads/53627402-7a2b-423b-90cc-46b95c189315.png" 
               alt="Cuer Live Professional Rundown Interface"
               className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -205,7 +205,7 @@ const LandingPage = () => {
           </p>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
+              src="/uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
               alt="Live Show Controls"
               className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -248,7 +248,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
+              src="/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
               alt="Cuer AI Assistant Interface"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -273,7 +273,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
+              src="/uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
               alt="Shared Rundown View"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -283,7 +283,7 @@ const LandingPage = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
+              src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
               alt="AD View Dashboard"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -318,7 +318,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
+              src="/uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
               alt="Teleprompter Full Screen"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -356,7 +356,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
+              src="/uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
               alt="Blueprint Planning Interface"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -367,7 +367,7 @@ const LandingPage = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
+              src="/uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
               alt="Camera Plot Editor"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -410,7 +410,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+              src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
               alt="Notes and Documentation"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -421,7 +421,7 @@ const LandingPage = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+              src="/uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
               alt="Team Management Interface"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
@@ -483,7 +483,7 @@ const LandingPage = () => {
           </div>
           <div className="group fade-up">
             <img 
-              src="/lovable-uploads/fda659c6-14fe-4a8f-9b42-efba05fb6022.png" 
+              src="/uploads/fda659c6-14fe-4a8f-9b42-efba05fb6022.png" 
               alt="Detailed Rundown Card Interface"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />

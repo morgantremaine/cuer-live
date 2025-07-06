@@ -444,7 +444,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
             /* Force black logo in print view */
             img[src*="376f4f6f-fa91-4af6-b8fd-8da723bdc3fa.png"] {
-              content: url('/lovable-uploads/afb9e93f-aa34-4180-9c2a-5e154e539215.png') !important;
+              content: url('/uploads/afb9e93f-aa34-4180-9c2a-5e154e539215.png') !important;
             }
           }
           

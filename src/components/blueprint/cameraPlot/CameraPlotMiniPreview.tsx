@@ -93,7 +93,7 @@ const CameraPlotMiniPreview = ({
             }}
           >
             <img 
-              src="/lovable-uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
+              src="/uploads/18d85ba8-e104-4668-8abc-7ccc6eb22d88.png" 
               alt="Camera"
               style={{
                 width: Math.max(width * 0.8, 4),
@@ -116,7 +116,7 @@ const CameraPlotMiniPreview = ({
             }}
           >
             <img 
-              src="/lovable-uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
+              src="/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
               alt="Person"
               style={{
                 width: Math.max(width * 0.8, 4),
