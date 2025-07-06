@@ -38,20 +38,19 @@ serve(async (req) => {
     // Get team conversations and context
     const authHeader = req.headers.get('Authorization')
     let teamContext = ''
-    let conversationHistory = ''
+    let supabase, user, teamId;
     
     if (authHeader) {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        supabase = createClient(supabaseUrl, supabaseKey)
 
-        // Get user from auth header
         const jwt = authHeader.replace('Bearer ', '')
-        const { data: { user } } = await supabase.auth.getUser(jwt)
+        const { data: { user: userData } } = await supabase.auth.getUser(jwt)
+        user = userData;
         
         if (user) {
-          // Get user's team
           const { data: teamMemberships } = await supabase
             .from('team_members')
             .select('team_id')
@@ -59,24 +58,9 @@ serve(async (req) => {
             .limit(1)
 
           if (teamMemberships && teamMemberships.length > 0) {
-            const teamId = teamMemberships[0].team_id
+            teamId = teamMemberships[0].team_id
             
-            // Get recent team conversations for context
-            const { data: conversations } = await supabase
-              .from('team_conversations')
-              .select('user_message, assistant_response, created_at')
-              .eq('team_id', teamId)
-              .order('created_at', { ascending: false })
-              .limit(10)
-
-            if (conversations && conversations.length > 0) {
-              teamContext = '\n\nTeam Knowledge Context (recent conversations):\n' + 
-                conversations.map(conv => 
-                  `Q: ${conv.user_message}\nA: ${conv.assistant_response}\n---`
-                ).join('\n')
-            }
-            
-            // Get the most recent conversation for immediate context
+            // Get the most recent conversation to check for pending modifications
             const { data: recentConv } = await supabase
               .from('team_conversations')
               .select('user_message, assistant_response')
@@ -87,23 +71,22 @@ serve(async (req) => {
 
             if (recentConv && recentConv.length > 0) {
               const lastConv = recentConv[0]
-              // Check if the last response contained a modification request
-              if (lastConv.assistant_response.includes('MODIFICATION_REQUEST')) {
-                conversationHistory = `
+              
+              // Check if the last response contained a modification request and current message is a confirmation
+              if (lastConv.assistant_response.includes('Would you like me to apply this change') && 
+                  message.toLowerCase().match(/^(yes|apply|proceed|do it|go ahead|confirm|yes apply|apply it|yes apply it)/)) {
+                teamContext = `
 
-RECENT CONTEXT - Last exchange:
-User: ${lastConv.user_message}
-Assistant: ${lastConv.assistant_response}
+IMMEDIATE CONTEXT: The user just confirmed a modification request from the previous conversation.
+Last request: ${lastConv.user_message}
+User is now saying: ${message}
 
-CURRENT USER MESSAGE: ${message}
-
-If the current message is a confirmation (yes/proceed/apply/etc.), apply the modification from the recent context immediately.`
+APPLY THE MODIFICATION IMMEDIATELY using MODIFICATION_REQUEST format. Do not ask for confirmation again.`
               }
             }
           }
         }
       } catch (error) {
-        // Silently continue without team context if there's an error
         console.error('Error fetching team context:', error)
       }
     }
@@ -111,7 +94,7 @@ If the current message is a confirmation (yes/proceed/apply/etc.), apply the mod
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: getSystemPrompt(rundownData) + teamContext + conversationHistory,
+        content: getSystemPrompt(rundownData) + teamContext,
       },
       {
         role: 'user',
@@ -121,6 +104,25 @@ If the current message is a confirmation (yes/proceed/apply/etc.), apply the mod
 
     const aiMessage = await callOpenAI(messages, openaiApiKey)
     const cleaned = cleanMessage(aiMessage)
+
+    // Store the conversation for future context if user is authenticated
+    if (supabase && user && teamId) {
+      try {
+        // Store this conversation
+        await supabase
+          .from('team_conversations')
+          .insert({
+            team_id: teamId,
+            user_id: user.id,
+            user_message: message,
+            assistant_response: cleaned,
+            rundown_context: rundownData
+          })
+      } catch (error) {
+        console.error('Error storing conversation:', error)
+        // Continue anyway - don't let storage errors break the response
+      }
+    }
 
     return new Response(
       JSON.stringify({ message: cleaned }),

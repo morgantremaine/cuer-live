@@ -5,7 +5,7 @@ export function cleanMessage(aiMessage: string): string {
   if (modificationMatch) {
     try {
       const modificationData = JSON.parse(modificationMatch[1]);
-      // Return the message with the modification data attached as a special marker
+      // Return the message with the modification data attached as a special marker, completely hiding the JSON from users
       const cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
       return `${cleanedMessage}\n\n__CUER_MODIFICATIONS__:${JSON.stringify(modificationData)}`;
     } catch (error) {
