@@ -11,7 +11,6 @@ export interface FindReplaceOptions {
 }
 
 export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void) => {
-  console.log('🚀 useFindReplace initialized with onUpdateItem:', !!onUpdateItem, typeof onUpdateItem);
   const directState = useDirectRundownState();
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
@@ -19,8 +18,6 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   }>({ matches: [], totalMatches: 0 });
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
-    console.log('🔍 Starting find operation:', options);
-    
     const { searchTerm, fields, caseSensitive, wholeWord } = options;
     
     if (!searchTerm.trim()) {
@@ -70,19 +67,13 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     const results = { matches, totalMatches };
     setLastSearchResults(results);
     
-    console.log('🔍 Find results:', results);
     return results;
   }, [directState.items]);
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
-    console.log('🔄 Starting replace all operation:', options);
-    console.log('🔄 onUpdateItem function available:', !!onUpdateItem);
-    console.log('🔄 directState.items length:', directState.items.length);
-    
     const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
     
     if (!searchTerm.trim()) {
-      console.log('🔄 No search term provided');
       return { replacements: 0 };
     }
 
@@ -98,8 +89,6 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
 
     let totalReplacements = 0;
     
-    // CRITICAL FIX: Use the proper update mechanism that triggers React re-renders
-    // React 18 automatically batches multiple setState calls, so this will be efficient
     directState.items.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
@@ -117,21 +106,10 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
           if (beforeMatches && beforeMatches.length > 0) {
             const newValue = fieldValue.replace(searchRegex, replaceTerm);
             
-            console.log('🔄 Replacing in item:', {
-              itemId: item.id,
-              field,
-              oldValue: fieldValue,
-              newValue,
-              matches: beforeMatches.length
-            });
-
-            // CRITICAL: Use the same update mechanism as manual user edits
-            // This ensures proper React state updates and immediate UI refresh
+            // Use the same update mechanism as manual user edits
             if (onUpdateItem) {
-              console.log('🔄 Using onUpdateItem for:', item.id, field, newValue);
               onUpdateItem(item.id, field, newValue);
             } else {
-              console.log('🔄 Using directState.updateItem for:', item.id, field, newValue);
               directState.updateItem(item.id, field, newValue);
             }
             
@@ -140,8 +118,6 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
         }
       });
     });
-
-    console.log('🔄 Replace all completed:', { totalReplacements });
     
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });

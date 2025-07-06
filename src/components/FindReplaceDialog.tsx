@@ -14,7 +14,6 @@ interface FindReplaceDialogProps {
 }
 
 const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogProps) => {
-  console.log('💫 FindReplaceDialog rendered, isOpen:', isOpen, 'onUpdateItem:', !!onUpdateItem);
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
@@ -60,7 +59,6 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   };
 
   const handleReplace = () => {
-    console.log('🔥 FindReplaceDialog handleReplace called', { searchTerm, replaceTerm, onUpdateItem: !!onUpdateItem });
     if (searchTerm.trim() && replaceTerm.trim()) {
       const result = replaceAll({
         searchTerm,
@@ -69,7 +67,6 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         caseSensitive,
         wholeWord: false
       });
-      console.log('🔥 Replace result:', result);
       // Clear search after replace
       setSearchTerm('');
       setReplaceTerm('');
@@ -92,16 +89,44 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
     // Scroll to the matched item and highlight matching text
     const currentMatch = lastSearchResults.matches[newIndex];
     if (currentMatch) {
-      const element = document.querySelector(`[data-item-id="${currentMatch.itemId}"]`);
+      const element = document.querySelector(`tr[data-item-id="${currentMatch.itemId}"]`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Find and highlight matching text within the element
+        // Find and highlight matching text within input fields and text content
         const highlightMatchingText = (el: Element) => {
+          const flags = caseSensitive ? 'g' : 'gi';
+          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+          
+          // Check input fields and textareas
+          const inputs = el.querySelectorAll('input, textarea');
+          inputs.forEach(input => {
+            const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
+            if (inputElement.value && regex.test(inputElement.value)) {
+              // Temporarily highlight the input field
+              const originalBorder = inputElement.style.border;
+              const originalBackground = inputElement.style.backgroundColor;
+              
+              inputElement.style.border = '2px solid #fbbf24';
+              inputElement.style.backgroundColor = '#fef3c7';
+              
+              setTimeout(() => {
+                inputElement.style.border = originalBorder;
+                inputElement.style.backgroundColor = originalBackground;
+              }, 3000);
+            }
+          });
+          
+          // Also check text nodes for any non-input text
           const walker = document.createTreeWalker(
             el,
             NodeFilter.SHOW_TEXT,
-            null
+            (node) => {
+              // Skip text nodes inside input elements
+              const parent = node.parentElement;
+              return parent && !['INPUT', 'TEXTAREA'].includes(parent.tagName) ? 
+                NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
           );
           
           const textNodes: Text[] = [];
@@ -110,23 +135,20 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
             textNodes.push(node as Text);
           }
           
-          const flags = caseSensitive ? 'g' : 'gi';
-          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
-          
           textNodes.forEach(textNode => {
             if (textNode.textContent && regex.test(textNode.textContent)) {
               const parent = textNode.parentNode;
               if (parent) {
                 const wrapper = document.createElement('span');
-                wrapper.innerHTML = textNode.textContent.replace(regex, '<mark style="background-color: yellow; color: black;">$&</mark>');
+                wrapper.innerHTML = textNode.textContent.replace(regex, '<mark style="background-color: #fbbf24; color: #000; padding: 1px 2px; border-radius: 2px;">$&</mark>');
                 parent.replaceChild(wrapper, textNode);
                 
-                // Remove highlight after 2 seconds
+                // Remove highlight after 3 seconds
                 setTimeout(() => {
-                  if (wrapper.parentNode) {
-                    wrapper.parentNode.replaceChild(document.createTextNode(textNode.textContent || ''), wrapper);
+                  if (wrapper.parentNode && textNode.textContent) {
+                    wrapper.parentNode.replaceChild(document.createTextNode(textNode.textContent), wrapper);
                   }
-                }, 2000);
+                }, 3000);
               }
             }
           });
