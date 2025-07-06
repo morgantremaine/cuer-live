@@ -195,29 +195,31 @@ const ExpandableScriptCell = ({
         {/* Styled display when collapsed */}
         {!isExpanded && (
           <div 
-            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded w-full flex items-start"
+            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded w-full"
             onClick={() => setIsExpanded(true)}
             style={{ 
               color: textColor || undefined,
-              minHeight: value && value.trim() && !isNullScript(value) ? '48px' : '24px', // Taller when content exists
+              height: value && value.trim() && !isNullScript(value) ? '36px' : '24px', // Taller when content exists
+              maxHeight: value && value.trim() && !isNullScript(value) ? '36px' : '24px',
               overflow: 'hidden'
             }}
           >
             {value && !isNullScript(value) ? (
               <div 
-                className="w-full break-words leading-5 flex-1"
+                className="w-full break-words leading-5"
                 style={{
                   display: '-webkit-box',
                   WebkitBoxOrient: 'vertical',
-                  WebkitLineClamp: 3,
+                  WebkitLineClamp: value && value.trim() && !isNullScript(value) ? 2 : 1,
                   overflow: 'hidden',
-                  lineHeight: '1.25rem'
+                  lineHeight: '1.25rem',
+                  maxHeight: value && value.trim() && !isNullScript(value) ? '2.5rem' : '1.25rem'
                 }}
               >
                 {renderScriptWithBrackets(value, 14)}
               </div>
             ) : (
-              <div className="w-full h-full min-h-[20px]"></div>
+              <span className="text-gray-400 italic">Click to add script...</span>
             )}
           </div>
         )}
