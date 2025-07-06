@@ -118,7 +118,7 @@ const LandingPage = () => {
             </h1>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
-              Purpose-built for speed, clarity, and control, Cuer delivers high-end features in a minimal and intuitive UI which enables rapid decisions and the fastest content creation in live production.
+              Purpose-built for speed, clarity, and control, Cuer delivers high-end features in a minimal and intuitive UI which enables rapid decisions and the fastest content creation.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
