@@ -76,7 +76,7 @@ const Changelog: React.FC = () => {
                     </p>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/dba61719-2706-476b-9077-2cb0ef9fd170.png" 
+                        src="/lovable-uploads/fe736151-04ad-4619-9982-e9b08817fbcf.png" 
                         alt="Collapsible headers feature showing rundown sections"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />
