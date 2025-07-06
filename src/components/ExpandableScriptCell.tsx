@@ -161,74 +161,61 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        {isExpanded ? (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-                textareaRef.current = el;
-              } else {
-                delete cellRefs.current[cellKey];
-              }
-            }}
-            value={value}
-            onChange={(e) => {
-              onUpdateValue(e.target.value);
-              // Trigger resize on content change
-              if (e.target) {
-                e.target.style.height = 'auto';
-                const scrollHeight = e.target.scrollHeight;
+        <textarea
+          ref={(el) => {
+            if (el) {
+              cellRefs.current[cellKey] = el;
+              textareaRef.current = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={value}
+          onChange={(e) => {
+            onUpdateValue(e.target.value);
+            // Trigger resize on content change
+            if (e.target) {
+              e.target.style.height = 'auto';
+              const scrollHeight = e.target.scrollHeight;
+              
+              if (isExpanded) {
                 e.target.style.height = Math.max(scrollHeight, 120) + 'px';
+              } else {
+                // Keep collapsed height at 24px regardless of content
+                e.target.style.height = '24px';
               }
-            }}
-            onKeyDown={handleKeyDown}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '120px',
-              height: 'auto',
-              overflow: 'hidden',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word'
-            }}
-          />
-        ) : (
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none ${
+            isExpanded ? '' : 'text-transparent'
+          }`}
+          style={{ 
+            color: isExpanded ? (textColor || undefined) : 'transparent',
+            minHeight: isExpanded ? '120px' : '24px',
+            height: isExpanded ? 'auto' : '24px',
+            overflow: isExpanded ? 'hidden' : 'hidden',
+            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+            wordWrap: isExpanded ? 'break-word' : 'normal',
+            textOverflow: isExpanded ? 'unset' : 'ellipsis'
+          }}
+        />
+        {!isExpanded && value && !isNullScript(value) && (
           <div 
-            className={`w-full ${focusStyles} rounded px-2 py-1 text-sm flex items-center`}
+            className="absolute inset-0 flex items-center px-2 py-1 pointer-events-none"
             style={{ 
-              color: textColor || undefined,
               height: '24px',
               overflow: 'hidden'
             }}
-            onClick={() => setIsExpanded(true)}
           >
-            {value && !isNullScript(value) ? (
-              <div className="truncate w-full">
-                {renderScriptWithBrackets(value, { 
-                  inlineDisplay: true, 
-                  fontSize: 14 
-                })}
-              </div>
-            ) : null}
-            {/* Hidden textarea for maintaining cell ref functionality */}
-            <textarea
-              ref={(el) => {
-                if (el) {
-                  cellRefs.current[cellKey] = el;
-                } else {
-                  delete cellRefs.current[cellKey];
-                }
-              }}
-              value={value}
-              onChange={(e) => onUpdateValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              data-cell-id={cellKey}
-              data-cell-ref={cellKey}
-              className="absolute opacity-0 pointer-events-none"
-              style={{ left: '-9999px' }}
-            />
+            <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
+              {renderScriptWithBrackets(value, { 
+                inlineDisplay: true, 
+                fontSize: 14 
+              })}
+            </div>
           </div>
         )}
       </div>
