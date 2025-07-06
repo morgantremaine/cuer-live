@@ -43,7 +43,7 @@ interface OptimizedRundownTableWrapperProps {
   onJumpToHere?: (segmentId: string) => void;
 }
 
-const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
+const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> = ({
   items,
   visibleColumns,
   startTime,
@@ -214,7 +214,7 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
       draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}
     />
   );
-});
+};
 
 // Custom comparison function to ensure re-renders when items change
 OptimizedRundownTableWrapper.displayName = 'OptimizedRundownTableWrapper';
