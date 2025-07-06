@@ -68,6 +68,7 @@ const RundownHeaderPropsAdapter = ({ props }: RundownHeaderPropsAdapterProps) =>
       timeRemaining={timeRemaining}
       autoScrollEnabled={autoScrollEnabled}
       onToggleAutoScroll={onToggleAutoScroll}
+      rundownId={rundownId}
     />
   );
 };

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/lib/supabase';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -91,6 +92,16 @@ export const useSimpleAutoSave = (
   }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
+    // Check if this is a demo rundown - skip saving but allow change detection
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      console.log('💾 Demo rundown detected - skipping autosave but keeping UI feedback');
+      // Still mark as saved to prevent UI from showing "unsaved" state
+      if (state.hasUnsavedChanges) {
+        onSaved();
+      }
+      return;
+    }
+
     // Simple blocking conditions - no showcaller interference possible
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 

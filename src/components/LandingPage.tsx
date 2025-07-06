@@ -135,10 +135,11 @@ const LandingPage = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => navigate('/help')}
+                onClick={() => navigate('/rundown/demo-rundown-2024')}
                 className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
               >
-                Explore Features
+                <Eye className="mr-2 h-5 w-5" />
+                Try Demo
               </Button>
             </div>
           </div>

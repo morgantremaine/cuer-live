@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff, LoaderCircle } from 'lucide-react';
+import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -9,6 +9,7 @@ import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -33,6 +34,7 @@ interface RundownHeaderProps {
   timeRemaining: number;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  rundownId?: string | null;
 }
 
 const RundownHeader = ({
@@ -56,11 +58,15 @@ const RundownHeader = ({
   timeRemaining,
   autoScrollEnabled,
   onToggleAutoScroll,
-  items = []
+  items = [],
+  rundownId
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
+  
+  // Check if this is a demo rundown
+  const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
@@ -132,7 +138,9 @@ const RundownHeader = ({
   };
 
   const handleTitleEdit = () => {
-    setIsEditingTitle(true);
+    if (!isDemoRundown) {
+      setIsEditingTitle(true);
+    }
   };
 
   const handleTitleSubmit = () => {
@@ -219,7 +227,19 @@ const RundownHeader = ({
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <HeaderLogo />
             <div className="flex-1 min-w-0 flex items-center">
-              {isEditingTitle ? (
+              {isDemoRundown ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {title || "Untitled Rundown"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                    <Eye className="h-3 w-3" />
+                    Demo
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {isEditingTitle ? (
                 <textarea
                   value={title}
                   onChange={(e) => onTitleChange(e.target.value)}
@@ -237,15 +257,17 @@ const RundownHeader = ({
                     target.style.height = 'auto';
                     target.style.height = target.scrollHeight + 'px';
                   }}
-                  autoFocus
-                />
-              ) : (
-                <span 
-                  onClick={handleTitleEdit}
-                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
-                >
-                  {title || "Untitled Rundown"}
-                </span>
+                    autoFocus
+                  />
+                ) : (
+                  <span 
+                    onClick={handleTitleEdit}
+                    className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
+                  >
+                    {title || "Untitled Rundown"}
+                  </span>
+                )}
+              </>
               )}
             </div>
             
@@ -308,7 +330,19 @@ const RundownHeader = ({
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo />
           <div className="flex-1 min-w-0 flex items-center">
-            {isEditingTitle ? (
+            {isDemoRundown ? (
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {title || "Untitled Rundown"}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                  <Eye className="h-3 w-3" />
+                  Demo
+                </span>
+              </div>
+            ) : (
+              <>
+                {isEditingTitle ? (
               <textarea
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
@@ -336,6 +370,8 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
+          </>
+          )}
           </div>
           
           {/* {hasUnsavedChanges && (
