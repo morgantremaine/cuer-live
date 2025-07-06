@@ -29,9 +29,11 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
-      // Clear previous search results when dialog opens to force fresh data
+      // Clear previous search results and search term when dialog opens to force fresh data
       clearResults();
       setCurrentMatchIndex(0);
+      setSearchTerm('');
+      setReplaceTerm('');
     }
   }, [isOpen, clearResults]);
 
