@@ -242,7 +242,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state]);
+  }, [state.hasUnsavedChanges, rundownId, onSaved, navigate, trackMyUpdate, location.state?.folderId]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
