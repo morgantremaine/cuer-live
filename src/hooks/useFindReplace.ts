@@ -75,6 +75,8 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
     console.log('🔄 Starting replace all operation:', options);
+    console.log('🔄 onUpdateItem function available:', !!onUpdateItem);
+    console.log('🔄 directState.items length:', directState.items.length);
     
     const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
     
@@ -125,9 +127,10 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
             // CRITICAL: Use the same update mechanism as manual user edits
             // This ensures proper React state updates and immediate UI refresh
             if (onUpdateItem) {
+              console.log('🔄 Using onUpdateItem for:', item.id, field, newValue);
               onUpdateItem(item.id, field, newValue);
             } else {
-              // Fallback only if onUpdateItem is not available
+              console.log('🔄 Using directState.updateItem for:', item.id, field, newValue);
               directState.updateItem(item.id, field, newValue);
             }
             

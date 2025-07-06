@@ -216,6 +216,7 @@ const OptimizedRundownTableWrapper = memo<OptimizedRundownTableWrapperProps>(({
   );
 });
 
+// Custom comparison function to ensure re-renders when items change
 OptimizedRundownTableWrapper.displayName = 'OptimizedRundownTableWrapper';
 
 export default OptimizedRundownTableWrapper;
