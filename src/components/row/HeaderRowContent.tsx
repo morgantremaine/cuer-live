@@ -52,7 +52,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-3 py-6 text-xl font-mono font-semibold align-middle border border-border border-l-0 border-r-0 min-h-[96px]"
+        className="px-2 py-6 text-xl font-mono font-semibold align-middle border border-border border-l-0 border-r-0 min-h-[96px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -96,7 +96,7 @@ const HeaderRowContent = ({
               }}
             >
               <div 
-                className="px-3 py-6 flex items-center"
+                className="px-2 py-6 flex items-center"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
@@ -162,7 +162,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-6"></div>
+              <div className="px-2 py-6"></div>
             </td>
           );
         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
@@ -178,7 +178,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-6"></div>
+              <div className="px-2 py-6"></div>
             </td>
           );
         } else {
@@ -194,7 +194,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-3 py-6"></div>
+              <div className="px-2 py-6"></div>
             </td>
           );
         }

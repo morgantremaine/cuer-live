@@ -47,8 +47,13 @@ const RegularRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle border border-border w-16 min-w-16"
-        style={{ backgroundColor }}
+        className="px-2 py-1 text-sm font-mono align-middle border border-border"
+        style={{ 
+          backgroundColor,
+          width: '64px',
+          minWidth: '64px',
+          maxWidth: '64px'
+        }}
       >
         <div className="flex items-center space-x-1">
           {isCurrentlyPlaying && (
