@@ -17,14 +17,16 @@ export const useBlueprintPartialSave = (
   rundownTitle: string,
   showDate: string,
   savedBlueprint: any,
-  setSavedBlueprint: (blueprint: any) => void
+  setSavedBlueprint: (blueprint: any) => void,
+  isDemoMode: boolean = false
 ) => {
   const { savePartialBlueprint } = useBlueprintPersistence(
     rundownId,
     rundownTitle,
     showDate,
     savedBlueprint,
-    setSavedBlueprint
+    setSavedBlueprint,
+    isDemoMode
   );
 
   const saveListsOnly = useCallback(async (lists: BlueprintList[]) => {

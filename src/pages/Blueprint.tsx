@@ -382,7 +382,11 @@ const BlueprintContent = () => {
   );
 };
 
-const Blueprint = () => {
+interface BlueprintProps {
+  isDemoMode?: boolean;
+}
+
+const Blueprint = ({ isDemoMode = false }: BlueprintProps) => {
   const { id } = useParams<{ id: string }>();
   const { savedRundowns, loading } = useRundownStorage();
   const { user, signOut } = useAuth();
@@ -445,6 +449,7 @@ const Blueprint = () => {
       rundownId={id || ''} 
       rundownTitle={rundown.title || 'Unknown Rundown'}
       rundownItems={rundown.items || []}
+      isDemoMode={isDemoMode}
     >
       <BlueprintContent />
     </BlueprintProvider>

@@ -28,6 +28,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   const navigate = useNavigate();
 
   const handleOpenBlueprint = () => {
+    if (isDemoMode) {
+      const blueprintUrl = `${window.location.origin}/demo/blueprint`;
+      window.open(blueprintUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (!rundownId) {
       toast({
         title: "Cannot open blueprint",

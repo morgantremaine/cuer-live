@@ -139,13 +139,15 @@ interface BlueprintProviderProps {
   rundownId: string;
   rundownTitle: string;
   rundownItems?: RundownItem[];
+  isDemoMode?: boolean;
 }
 
 export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   children,
   rundownId,
   rundownTitle,
-  rundownItems = []
+  rundownItems = [],
+  isDemoMode = false
 }) => {
   const [state, dispatch] = useReducer(blueprintReducer, initialState);
   const [savedBlueprint, setSavedBlueprint] = React.useState<any>(null);
@@ -158,7 +160,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     rundownTitle,
     state.showDate,
     savedBlueprint,
-    setSavedBlueprint
+    setSavedBlueprint,
+    isDemoMode
   );
 
   // Use partial save hooks for different components (removed crew data)
@@ -173,7 +176,8 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     rundownTitle,
     state.showDate,
     savedBlueprint,
-    setSavedBlueprint
+    setSavedBlueprint,
+    isDemoMode
   );
 
   // Setup realtime sync
