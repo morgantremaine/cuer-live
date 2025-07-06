@@ -288,6 +288,35 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
+    toggleFloatHeader: useCallback((headerId: string) => {
+      saveUndoState(state.items, [], state.title, 'Toggle float header');
+      
+      // Find the header index
+      const headerIndex = state.items.findIndex(item => item.id === headerId);
+      if (headerIndex === -1) return;
+      
+      // Find all items under this header until the next header
+      const itemsToToggle: string[] = [];
+      for (let i = headerIndex + 1; i < state.items.length; i++) {
+        const item = state.items[i];
+        if (item.type === 'header') break; // Stop at next header
+        if (item.type === 'regular') {
+          itemsToToggle.push(item.id);
+        }
+      }
+      
+      // Determine new float state based on first item (toggle all to same state)
+      if (itemsToToggle.length > 0) {
+        const firstItem = state.items.find(item => item.id === itemsToToggle[0]);
+        const newFloatState = !firstItem?.isFloating;
+        
+        // Toggle all items under this header
+        itemsToToggle.forEach(itemId => {
+          actions.updateItem(itemId, { isFloating: newFloatState });
+        });
+      }
+    }, [actions.updateItem, state.items, state.title, saveUndoState]),
+
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
@@ -451,6 +480,7 @@ export const useSimplifiedRundownState = () => {
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
+    toggleFloatHeader: enhancedActions.toggleFloatHeader,
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,

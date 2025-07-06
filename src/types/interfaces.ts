@@ -42,6 +42,7 @@ export interface CoreRundownState {
   updateItem: (id: string, field: string, value: string) => void;
   deleteRow: (id: string) => void;
   toggleFloatRow: (id: string) => void;
+  toggleFloatHeader: (id: string) => void;
   deleteMultipleItems: (ids: string[]) => void;
   addItem: (item: RundownItem, insertIndex?: number) => void;
   setTitle: (title: string) => void;
