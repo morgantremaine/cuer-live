@@ -5,16 +5,18 @@ export const useDirectRundownState = () => {
   
   // Add debugging to track state changes
   const debugUpdateItem = (id: string, field: string, value: string) => {
-    console.log('🔧 Direct state update:', { id, field, value });
-    console.log('🔧 Items before update:', simplifiedState.items.length);
+    console.log('🔧 DIRECT STATE: Update item called:', { id, field, value });
+    console.log('🔧 DIRECT STATE: Items before update:', simplifiedState.items.length);
+    console.log('🔧 DIRECT STATE: Target item before:', simplifiedState.items.find(item => item.id === id));
     
     const result = simplifiedState.updateItem(id, field, value);
+    console.log('🔧 DIRECT STATE: updateItem returned:', result);
     
     // Log after a brief delay to see the change
     setTimeout(() => {
-      console.log('🔧 Items after update:', simplifiedState.items.length);
+      console.log('🔧 DIRECT STATE: Items after update:', simplifiedState.items.length);
       const updatedItem = simplifiedState.items.find(item => item.id === id);
-      console.log('🔧 Updated item:', updatedItem ? { id: updatedItem.id, [field]: updatedItem[field as keyof typeof updatedItem] } : 'not found');
+      console.log('🔧 DIRECT STATE: Updated item after:', updatedItem ? { id: updatedItem.id, [field]: updatedItem[field as keyof typeof updatedItem] } : 'not found');
     }, 10);
     
     return result;

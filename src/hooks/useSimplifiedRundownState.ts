@@ -126,6 +126,10 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    console.log('🚀 ENHANCED UPDATE ITEM CALLED:', { id, field, value });
+    console.log('🚀 Current items count:', state.items.length);
+    console.log('🚀 Target item exists:', !!state.items.find(item => item.id === id));
+    
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
@@ -156,20 +160,29 @@ export const useSimplifiedRundownState = () => {
       const customFieldKey = field.replace('customFields.', '');
       const item = state.items.find(i => i.id === id);
       if (item) {
+        console.log('🚀 Updating custom field:', { customFieldKey, value });
         const currentCustomFields = item.customFields || {};
-        actions.updateItem(id, {
+        const updateData = {
           customFields: {
             ...currentCustomFields,
             [customFieldKey]: value
           }
-        });
+        };
+        console.log('🚀 Calling actions.updateItem with custom fields:', updateData);
+        actions.updateItem(id, updateData);
+      } else {
+        console.error('🚀 Item not found for custom field update:', id);
       }
     } else {
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
       
-      actions.updateItem(id, { [updateField]: value });
+      const updateData = { [updateField]: value };
+      console.log('🚀 Calling actions.updateItem with regular field:', updateData);
+      actions.updateItem(id, updateData);
     }
+    
+    console.log('🚀 ENHANCED UPDATE ITEM COMPLETED');
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Update current time every second

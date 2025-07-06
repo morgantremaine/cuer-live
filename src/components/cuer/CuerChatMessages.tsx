@@ -91,12 +91,20 @@ const CuerChatMessages = ({
             <InlineModificationRequest
               modifications={modifications}
               onConfirm={() => {
-                console.log('🎯 Applying modifications directly:', modifications);
-                const success = applyModifications(modifications);
-                if (success) {
-                  console.log('✅ Modifications applied successfully');
-                } else {
-                  console.log('❌ Failed to apply modifications');
+                console.log('🎯 CUER: Starting modification application');
+                console.log('🎯 CUER: Modifications to apply:', JSON.stringify(modifications, null, 2));
+                console.log('🎯 CUER: applyModifications function available:', typeof applyModifications);
+                
+                try {
+                  const success = applyModifications(modifications);
+                  console.log('🎯 CUER: applyModifications returned:', success);
+                  if (success) {
+                    console.log('✅ CUER: Modifications applied successfully');
+                  } else {
+                    console.log('❌ CUER: Failed to apply modifications');
+                  }
+                } catch (error) {
+                  console.error('💥 CUER: Error applying modifications:', error);
                 }
               }}
               onCancel={handleCancelModifications}
