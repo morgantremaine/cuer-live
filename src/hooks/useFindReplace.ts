@@ -160,10 +160,15 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     return { replacements: totalReplacements };
   }, [directState, onUpdateItem, matchCapitalization]);
 
+  const clearResults = useCallback(() => {
+    setLastSearchResults({ matches: [], totalMatches: 0 });
+  }, []);
+
   return {
     findMatches,
     replaceAll,
     lastSearchResults,
+    clearResults,
     // Expose items for preview purposes
     items: directState.items
   };

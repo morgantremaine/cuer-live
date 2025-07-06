@@ -19,7 +19,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const { findMatches, replaceAll, lastSearchResults } = useFindReplace(onUpdateItem);
+  const { findMatches, replaceAll, lastSearchResults, clearResults } = useFindReplace(onUpdateItem);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -29,8 +29,11 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       searchInputRef.current.focus();
+      // Clear previous search results when dialog opens to force fresh data
+      clearResults();
+      setCurrentMatchIndex(0);
     }
-  }, [isOpen]);
+  }, [isOpen, clearResults]);
 
   useEffect(() => {
     if (searchTerm.trim()) {
@@ -42,8 +45,12 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         wholeWord: false
       });
       setCurrentMatchIndex(0);
+    } else {
+      // Clear results when search term is empty
+      clearResults();
+      setCurrentMatchIndex(0);
     }
-  }, [searchTerm]);
+  }, [searchTerm, findMatches, clearResults]);
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
