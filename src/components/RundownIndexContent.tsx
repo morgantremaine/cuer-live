@@ -411,6 +411,7 @@ const RundownIndexContent = ({ isDemoMode = false }: RundownIndexContentProps) =
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
+        isDemoMode={isDemoMode}
       />
       
       <CuerChatButton rundownData={rundownData} />
