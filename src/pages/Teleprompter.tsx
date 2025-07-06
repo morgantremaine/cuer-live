@@ -468,7 +468,7 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
         isBold={isBold}
         getRowNumber={getRowNumber}
         onUpdateScript={updateScriptContent}
-        canEdit={!isFullscreen && !isDemoMode && !!user}
+        canEdit={!isFullscreen && (isDemoMode || !!user)}
       />
 
     </div>
