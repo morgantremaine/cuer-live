@@ -43,7 +43,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
       });
       setCurrentMatchIndex(0);
     }
-  }, [searchTerm, caseSensitive]);
+  }, [searchTerm]);
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
@@ -96,7 +96,8 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         
         // Find and highlight matching text within input fields and text content
         const highlightMatchingText = (el: Element) => {
-          const flags = caseSensitive ? 'g' : 'gi';
+          // Always highlight case-insensitively since search is case-insensitive
+          const flags = 'gi';
           const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
           
           // Check input fields and textareas
@@ -291,7 +292,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
                       className="h-4 w-4"
                     />
                     <label htmlFor="caseSensitive" className="text-sm">
-                      Match case
+                      Preserve case pattern
                     </label>
                   </div>
                   <Button

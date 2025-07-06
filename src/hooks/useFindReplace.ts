@@ -18,7 +18,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   }>({ matches: [], totalMatches: 0 });
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
-    const { searchTerm, fields, caseSensitive, wholeWord } = options;
+    const { searchTerm, fields } = options;
     
     if (!searchTerm.trim()) {
       setLastSearchResults({ matches: [], totalMatches: 0 });
@@ -30,8 +30,9 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
 
     let searchRegex: RegExp;
     try {
-      const flags = caseSensitive ? 'g' : 'gi';
-      const pattern = wholeWord ? `\\b${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b` : searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Always search case-insensitively for find
+      const flags = 'gi';
+      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       searchRegex = new RegExp(pattern, flags);
     } catch (error) {
       console.error('🔍 Invalid search regex:', error);
@@ -73,8 +74,25 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     return results;
   }, [directState]);
 
+  // Helper function to match capitalization pattern
+  const matchCapitalization = useCallback((original: string, replacement: string): string => {
+    if (original === original.toLowerCase()) {
+      // Original is all lowercase
+      return replacement.toLowerCase();
+    } else if (original === original.toUpperCase()) {
+      // Original is all uppercase
+      return replacement.toUpperCase();
+    } else if (original[0] === original[0].toUpperCase() && original.slice(1) === original.slice(1).toLowerCase()) {
+      // Original is title case (first letter uppercase, rest lowercase)
+      return replacement.charAt(0).toUpperCase() + replacement.slice(1).toLowerCase();
+    } else {
+      // Mixed case or other pattern - return replacement as-is
+      return replacement;
+    }
+  }, []);
+
   const replaceAll = useCallback((options: FindReplaceOptions) => {
-    const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
+    const { searchTerm, replaceTerm, fields, caseSensitive } = options;
     
     if (!searchTerm.trim()) {
       return { replacements: 0 };
@@ -85,8 +103,9 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
 
     let searchRegex: RegExp;
     try {
-      const flags = caseSensitive ? 'g' : 'gi';
-      const pattern = wholeWord ? `\\b${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b` : searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Always search case-insensitively
+      const flags = 'gi';
+      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       searchRegex = new RegExp(pattern, flags);
     } catch (error) {
       console.error('🔄 Invalid search regex:', error);
@@ -110,7 +129,17 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
         if (typeof fieldValue === 'string' && fieldValue) {
           const beforeMatches = fieldValue.match(searchRegex);
           if (beforeMatches && beforeMatches.length > 0) {
-            const newValue = fieldValue.replace(searchRegex, replaceTerm);
+            let newValue = fieldValue;
+            
+            if (caseSensitive) {
+              // Smart case replacement - preserve original capitalization
+              newValue = fieldValue.replace(searchRegex, (match) => {
+                return matchCapitalization(match, replaceTerm);
+              });
+            } else {
+              // Simple replacement - use exact replacement term
+              newValue = fieldValue.replace(searchRegex, replaceTerm);
+            }
             
             // Use the same update mechanism as manual user edits
             if (onUpdateItem) {
@@ -129,7 +158,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState, onUpdateItem]);
+  }, [directState, onUpdateItem, matchCapitalization]);
 
   return {
     findMatches,
