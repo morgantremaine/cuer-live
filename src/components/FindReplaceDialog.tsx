@@ -97,76 +97,39 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
     
     setCurrentMatchIndex(newIndex);
     
-    // Scroll to the matched item and highlight matching text
+    // Clear any existing selections first
+    window.getSelection()?.removeAllRanges();
+    
+    // Scroll to the matched item and select matching text
     const currentMatch = lastSearchResults.matches[newIndex];
     if (currentMatch) {
       const element = document.querySelector(`tr[data-item-id="${currentMatch.itemId}"]`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Find and highlight matching text within input fields and text content
-        const highlightMatchingText = (el: Element) => {
-          // Always highlight case-insensitively since search is case-insensitive
+        // Find and select the matching text in input fields
+        setTimeout(() => {
+          const inputs = element.querySelectorAll('input, textarea');
           const flags = 'gi';
           const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
           
-          // Check input fields and textareas
-          const inputs = el.querySelectorAll('input, textarea');
-          inputs.forEach(input => {
+          for (const input of inputs) {
             const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
             if (inputElement.value && regex.test(inputElement.value)) {
-              // Temporarily highlight the input field
-              const originalBorder = inputElement.style.border;
-              const originalBackground = inputElement.style.backgroundColor;
-              
-              inputElement.style.border = '2px solid #fbbf24';
-              inputElement.style.backgroundColor = '#fef3c7';
-              
-              setTimeout(() => {
-                inputElement.style.border = originalBorder;
-                inputElement.style.backgroundColor = originalBackground;
-              }, 3000);
-            }
-          });
-          
-          // Also check text nodes for any non-input text
-          const walker = document.createTreeWalker(
-            el,
-            NodeFilter.SHOW_TEXT,
-            (node) => {
-              // Skip text nodes inside input elements
-              const parent = node.parentElement;
-              return parent && !['INPUT', 'TEXTAREA'].includes(parent.tagName) ? 
-                NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-            }
-          );
-          
-          const textNodes: Text[] = [];
-          let node;
-          while (node = walker.nextNode()) {
-            textNodes.push(node as Text);
-          }
-          
-          textNodes.forEach(textNode => {
-            if (textNode.textContent && regex.test(textNode.textContent)) {
-              const parent = textNode.parentNode;
-              if (parent) {
-                const wrapper = document.createElement('span');
-                wrapper.innerHTML = textNode.textContent.replace(regex, '<mark style="background-color: #fbbf24; color: #000; padding: 1px 2px; border-radius: 2px;">$&</mark>');
-                parent.replaceChild(wrapper, textNode);
-                
-                // Remove highlight after 3 seconds
-                setTimeout(() => {
-                  if (wrapper.parentNode && textNode.textContent) {
-                    wrapper.parentNode.replaceChild(document.createTextNode(textNode.textContent), wrapper);
-                  }
-                }, 3000);
+              // Find the first match in this input
+              const match = inputElement.value.match(regex);
+              if (match) {
+                const matchIndex = inputElement.value.search(regex);
+                if (matchIndex !== -1) {
+                  // Focus the input and select the matched text
+                  inputElement.focus();
+                  inputElement.setSelectionRange(matchIndex, matchIndex + match[0].length);
+                  break; // Only highlight the first match found
+                }
               }
             }
-          });
-        };
-        
-        highlightMatchingText(element);
+          }
+        }, 100); // Small delay to ensure scroll completes
       }
     }
   };
