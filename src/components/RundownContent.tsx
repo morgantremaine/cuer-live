@@ -126,7 +126,7 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div className="min-w-max bg-background">
           {/* Sticky Header - Inside ScrollArea */}
           <div className="sticky top-0 z-20 bg-background border-b border-border">
-            <table className="w-full border-collapse">
+            <table className="w-full border-separate border-spacing-0">
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 getColumnWidth={getColumnWidth}
