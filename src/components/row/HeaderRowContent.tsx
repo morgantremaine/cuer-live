@@ -52,12 +52,13 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-6 text-xl font-mono font-semibold align-middle border-r border-border min-h-[96px]"
+        className="px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px]"
         style={{ 
           backgroundColor,
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px' // Ensure exact width matching
+          maxWidth: '64px',
+          borderRight: '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center space-x-1">

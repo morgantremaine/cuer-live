@@ -19,12 +19,12 @@ const RundownTableHeader = ({
       <tr>
         {/* Row number column - matches the structure in RundownTable exactly */}
         <th 
-          className="px-2 py-1 text-left text-sm font-semibold text-white border-r border-border bg-blue-600"
+          className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
             width: '64px', 
             minWidth: '64px',
             maxWidth: '64px',
-            borderWidth: '1px'
+            borderRight: '1px solid hsl(var(--border))'
           }}
         >
           #

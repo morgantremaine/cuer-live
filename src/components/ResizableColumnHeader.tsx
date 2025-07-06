@@ -130,24 +130,22 @@ const ResizableColumnHeader = ({
   return (
     <th 
       ref={headerRef}
-      className="px-2 py-1 text-left text-sm font-semibold text-white relative select-none border-r border-border bg-blue-600"
+      className="px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600"
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
         maxWidth: constrainedWidthPx,
-        borderWidth: '1px'
+        borderRight: '1px solid hsl(var(--border))'
       }}
     >
-      {showLeftSeparator && (
-        <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
-      )}
+      {/* Remove left separator since we're using consistent borders */}
       
       <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
         {children}
       </div>
       
       <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10"
+        className="resize-handle absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 transition-colors z-10"
         onMouseDown={handleMouseDown}
       />
     </th>
