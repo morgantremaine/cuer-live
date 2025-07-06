@@ -148,7 +148,7 @@ const LandingPage = () => {
         <div className="relative max-w-6xl mx-auto mb-16 fade-up">
           <div className="relative group">
             <img 
-              src="/lovable-uploads/6f179638-63a7-459f-bf7d-3cb7ad116e38.png" 
+              src="/lovable-uploads/34bbc839-3104-4eea-856a-a5ab3163c30d.png" 
               alt="Cuer Live Professional Rundown Interface"
               className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
