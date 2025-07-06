@@ -25,6 +25,9 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       return { matches: [], totalMatches: 0 };
     }
 
+    // Get fresh items from directState to ensure we have the latest data
+    const currentItems = directState.items;
+
     let searchRegex: RegExp;
     try {
       const flags = caseSensitive ? 'g' : 'gi';
@@ -38,7 +41,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     const matches: Array<{ itemId: string, field: string, matchCount: number }> = [];
     let totalMatches = 0;
 
-    directState.items.forEach((item: RundownItem) => {
+    currentItems.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -68,7 +71,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults(results);
     
     return results;
-  }, [directState.items]);
+  }, [directState]);
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
@@ -76,6 +79,9 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     if (!searchTerm.trim()) {
       return { replacements: 0 };
     }
+
+    // Get fresh items from directState to ensure we have the latest data
+    const currentItems = directState.items;
 
     let searchRegex: RegExp;
     try {
@@ -89,7 +95,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
 
     let totalReplacements = 0;
     
-    directState.items.forEach((item: RundownItem) => {
+    currentItems.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -123,7 +129,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, onUpdateItem, directState.updateItem]);
+  }, [directState, onUpdateItem]);
 
   return {
     findMatches,

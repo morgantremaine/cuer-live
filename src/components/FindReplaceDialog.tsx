@@ -47,6 +47,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
+      // Force a fresh search with current case sensitivity setting
       findMatches({
         searchTerm,
         replaceTerm: '',
