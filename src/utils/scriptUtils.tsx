@@ -89,5 +89,5 @@ export const renderScriptWithBrackets = (text: string, fontSize = 14, isBold = f
     );
   }
 
-  return parts.length > 0 ? parts : <span className={`${getFontWeight()}`}>{text}</span>;
+  return parts.length > 0 ? <>{parts}</> : <span className={`${getFontWeight()}`}>{text}</span>;
 };

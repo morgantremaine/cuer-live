@@ -168,11 +168,7 @@ const ExpandableScriptCell = ({
             onClick={() => setIsExpanded(true)}
             style={{ color: textColor || undefined }}
           >
-            {value ? (
-              <div className="flex flex-wrap items-center">
-                {renderScriptWithBrackets(value, 14)}
-              </div>
-            ) : (
+            {value ? renderScriptWithBrackets(value, 14) : (
               <span className="text-gray-400 italic">Click to add script...</span>
             )}
           </div>
