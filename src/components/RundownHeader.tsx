@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
-import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff } from 'lucide-react';
+import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import TimezoneSelector from './TimezoneSelector';
@@ -10,6 +11,7 @@ import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import FindReplaceDialog from './FindReplaceDialog';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -63,6 +65,7 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [showFindReplace, setShowFindReplace] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
   
   // Check if this is a demo rundown
@@ -394,6 +397,15 @@ const RundownHeader = ({
             onTimezoneChange={onTimezoneChange}
           />
           
+          <Button
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowFindReplace(true)}
+            className="h-8 w-8 p-0 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
             <input
@@ -418,6 +430,11 @@ const RundownHeader = ({
           )}
         </div>
       </div>
+      
+      <FindReplaceDialog 
+        isOpen={showFindReplace}
+        onClose={() => setShowFindReplace(false)}
+      />
     </div>
   );
 };
