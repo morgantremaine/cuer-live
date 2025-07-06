@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { renderScriptWithBrackets } from '@/utils/scriptUtils';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -161,56 +160,45 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        {/* Styled display when collapsed */}
-        {!isExpanded && (
-          <div 
-            className="px-2 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded min-h-[24px] flex items-center"
-            onClick={() => setIsExpanded(true)}
-            style={{ color: textColor || undefined }}
-          >
-            {value ? renderScriptWithBrackets(value, 14) : (
-              <span className="text-gray-400 italic">Click to add script...</span>
-            )}
-          </div>
-        )}
-        
-        {/* Textarea when expanded */}
-        {isExpanded && (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-                textareaRef.current = el;
-              } else {
-                delete cellRefs.current[cellKey];
-              }
-            }}
-            value={value}
-            onChange={(e) => {
-              onUpdateValue(e.target.value);
-              // Trigger resize on content change
-              if (e.target) {
-                e.target.style.height = 'auto';
-                const scrollHeight = e.target.scrollHeight;
+        <textarea
+          ref={(el) => {
+            if (el) {
+              cellRefs.current[cellKey] = el;
+              textareaRef.current = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={value}
+          onChange={(e) => {
+            onUpdateValue(e.target.value);
+            // Trigger resize on content change
+            if (e.target) {
+              e.target.style.height = 'auto';
+              const scrollHeight = e.target.scrollHeight;
+              
+              if (isExpanded) {
                 e.target.style.height = Math.max(scrollHeight, 120) + 'px';
+              } else {
+                // Keep collapsed height at 24px regardless of content
+                e.target.style.height = '24px';
               }
-            }}
-            onKeyDown={handleKeyDown}
-            onBlur={() => setIsExpanded(false)}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '120px',
-              height: 'auto',
-              overflow: 'hidden',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word'
-            }}
-            autoFocus
-          />
-        )}
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
+          style={{ 
+            color: textColor || undefined,
+            minHeight: isExpanded ? '120px' : '24px',
+            height: isExpanded ? 'auto' : '24px',
+            overflow: isExpanded ? 'hidden' : 'hidden',
+            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
+            wordWrap: isExpanded ? 'break-word' : 'normal',
+            textOverflow: isExpanded ? 'unset' : 'ellipsis'
+          }}
+        />
       </div>
     </div>
   );

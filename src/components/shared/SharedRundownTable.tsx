@@ -4,7 +4,6 @@ import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { Play, ChevronDown, ChevronRight } from 'lucide-react';
-import { renderScriptWithBrackets } from '@/utils/scriptUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -175,14 +174,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 {value}
               </div>
             ) : (
-              <div className="text-sm" title={value}>
-                {columnKey === 'script' ? (
-                  <div className="flex flex-wrap items-center">
-                    {renderScriptWithBrackets(value, 14)}
-                  </div>
-                ) : (
-                  <div className="truncate">{value}</div>
-                )}
+              <div className="truncate text-sm" title={value}>
+                {value}
               </div>
             )}
           </div>
