@@ -225,7 +225,7 @@ const RundownHeader = ({
         {/* Top row - Logo, Title, and connection status */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
-            <HeaderLogo />
+            <HeaderLogo rundownId={rundownId} />
             <div className="flex-1 min-w-0 flex items-center">
               {isDemoRundown ? (
                 <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ const RundownHeader = ({
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
-          <HeaderLogo />
+          <HeaderLogo rundownId={rundownId} />
           <div className="flex-1 min-w-0 flex items-center">
             {isDemoRundown ? (
               <div className="flex items-center gap-2">

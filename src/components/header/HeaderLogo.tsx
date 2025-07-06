@@ -5,13 +5,23 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import CuerLogo from '@/components/common/CuerLogo';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
-const HeaderLogo = () => {
+interface HeaderLogoProps {
+  rundownId?: string | null;
+}
+
+const HeaderLogo = ({ rundownId }: HeaderLogoProps) => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
   const handleBackToDashboard = () => {
-    navigate('/dashboard');
+    // For demo rundown, go back to home page instead of dashboard
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      navigate('/');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
