@@ -14,6 +14,7 @@ interface FindReplaceDialogProps {
 }
 
 const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogProps) => {
+  console.log('💫 FindReplaceDialog rendered, isOpen:', isOpen, 'onUpdateItem:', !!onUpdateItem);
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
