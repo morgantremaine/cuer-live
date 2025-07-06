@@ -118,8 +118,7 @@ const LandingPage = () => {
             </h1>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
-              Create stunning run of show documents with your entire team on Cuer Live. 
-              Plan, cue, and direct events with precision, all from a web browser.
+              Purpose-built for speed, clarity, and control, Cuer delivers all the high-end features media pros demand, without the clutter.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
