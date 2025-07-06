@@ -17,8 +17,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const ADView = () => {
-  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
+interface ADViewProps {
+  isDemoMode?: boolean;
+}
+
+const ADView = ({ isDemoMode = false }: ADViewProps) => {
+  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState(isDemoMode);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showScript, setShowScript] = useState(true);

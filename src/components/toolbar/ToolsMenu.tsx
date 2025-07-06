@@ -15,12 +15,14 @@ interface ToolsMenuProps {
   rundownId: string | undefined;
   size?: 'sm' | 'default' | 'lg';
   className?: string;
+  isDemoMode?: boolean;
 }
 
 export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   rundownId,
   size = 'sm',
-  className = ''
+  className = '',
+  isDemoMode = false
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -39,6 +41,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   };
 
   const handleOpenTeleprompter = () => {
+    if (isDemoMode) {
+      const teleprompterUrl = `${window.location.origin}/demo/teleprompter`;
+      window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (!rundownId) {
       toast({
         title: "Cannot open teleprompter",
@@ -54,6 +62,12 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   };
 
   const handleOpenADView = () => {
+    if (isDemoMode) {
+      const adViewUrl = `${window.location.origin}/demo/teleprompter/ad-view`;
+      window.open(adViewUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (!rundownId) {
       toast({
         title: "Cannot open AD View",

@@ -20,12 +20,14 @@ interface ShareRundownMenuProps {
   rundownId: string;
   rundownTitle: string;
   rundownData?: CSVExportData;
+  isDemoMode?: boolean;
 }
 
 export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   rundownId,
   rundownTitle,
-  rundownData
+  rundownData,
+  isDemoMode = false
 }) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
@@ -37,8 +39,10 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     isLoading
   } = useSharedRundownLayout(rundownId);
 
-  // Always use the same permanent URL
-  const permanentUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
+  // Always use the same permanent URL - use demo URL if in demo mode
+  const permanentUrl = isDemoMode 
+    ? `${window.location.origin}/demo/shared`
+    : `${window.location.origin}/shared/rundown/${rundownId}`;
 
   const copyToClipboard = async () => {
     try {
