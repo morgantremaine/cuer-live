@@ -119,7 +119,7 @@ serve(async (req) => {
     console.log('Transfer completed:', transferResult);
 
     // Now delete the user from auth.users using service role
-    const userIdToDelete = transferResult?.user_id_to_delete;
+    const userIdToDelete = transferResult.user_id_to_delete;
     
     if (userIdToDelete) {
       console.log('Attempting to delete auth user:', userIdToDelete);

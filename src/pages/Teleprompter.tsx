@@ -11,11 +11,7 @@ import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSav
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
-interface TeleprompterProps {
-  isDemoMode?: boolean;
-}
-
-const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
+const Teleprompter = () => {
   const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const rundownId = params.id;
@@ -52,12 +48,12 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
   // Use the scroll hook with reverse support
   useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
 
-  // Enhanced save system (disabled for demo mode)
+  // Enhanced save system
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
-    rundownId: isDemoMode ? 'demo' : (rundownId || ''),
+    rundownId: rundownId!,
     onSaveSuccess: (itemId, script) => {
-      // Update local state immediately on successful save (only for non-demo mode)
-      if (!isDemoMode && rundownData) {
+      // Update local state immediately on successful save
+      if (rundownData) {
         const updatedItems = rundownData.items.map(item =>
           item.id === itemId ? { ...item, script } : item
         );
@@ -69,30 +65,22 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
     }
   });
 
-  // Load rundown data with demo support
+  // Load rundown data with authentication and backup restoration
   const loadRundownData = async () => {
-    const actualRundownId = isDemoMode ? 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8' : rundownId;
-    
-    if (!actualRundownId) {
+    if (!rundownId || !user) {
       setLoading(false);
-      setError(isDemoMode ? 'Demo rundown not available' : 'Authentication required or no rundown ID provided');
-      return;
-    }
-
-    if (!isDemoMode && !user) {
-      setLoading(false);
-      setError('Authentication required');
+      setError('Authentication required or no rundown ID provided');
       return;
     }
 
     setError(null);
 
     try {
-      // Access rundown with demo mode support
+      // Access rundown with authentication
       const { data, error: queryError } = await supabase
         .from('rundowns')
         .select('id, title, items, columns, created_at, updated_at')
-        .eq('id', actualRundownId)
+        .eq('id', rundownId)
         .single();
 
       if (queryError) {
@@ -105,35 +93,28 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
           items: data.items || []
         };
         
-        // Check for and restore any backed up changes (only for authenticated users)
-        if (!isDemoMode) {
-          const backupData = loadBackup();
-          if (Object.keys(backupData).length > 0) {
-            // Restore backed up changes
-            const restoredItems = loadedData.items.map((item: any) => {
-              if (backupData[item.id]) {
-                return { ...item, script: backupData[item.id] };
+        // Check for and restore any backed up changes
+        const backupData = loadBackup();
+        if (Object.keys(backupData).length > 0) {
+          // Restore backed up changes
+          const restoredItems = loadedData.items.map((item: any) => {
+            if (backupData[item.id]) {
+              return { ...item, script: backupData[item.id] };
+            }
+            return item;
+          });
+          
+          loadedData.items = restoredItems;
+          
+          toast.info('Restored unsaved changes from local backup', {
+            duration: 4000,
+            action: {
+              label: 'Clear backup',
+              onClick: () => {
+                localStorage.removeItem(`teleprompter_backup_${rundownId}`);
+                loadRundownData(); // Reload without backup
               }
-              return item;
-            });
-            
-            loadedData.items = restoredItems;
-            
-            toast.info('Restored unsaved changes from local backup', {
-              duration: 4000,
-              action: {
-                label: 'Clear backup',
-                onClick: () => {
-                  localStorage.removeItem(`teleprompter_backup_${actualRundownId}`);
-                  loadRundownData(); // Reload without backup
-                }
-              }
-            });
-          }
-        } else {
-          // For demo mode, show a demo indicator
-          toast.info('Demo Mode: Changes are not saved', {
-            duration: 6000,
+            }
           });
         }
         
@@ -152,16 +133,12 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
     setLoading(false);
   };
 
-  // Enhanced script update with demo mode support
+  // Enhanced script update with robust saving
   const updateScriptContent = async (itemId: string, newScript: string) => {
-    if (!rundownData) return;
-    if (!isDemoMode && !user) return;
+    if (!rundownData || !user) return;
 
-    // For demo mode, don't pause polling and don't save - just update local state
-    if (!isDemoMode) {
-      // Pause polling during edit to prevent conflicts
-      setIsPollingPaused(true);
-    }
+    // Pause polling during edit to prevent conflicts
+    setIsPollingPaused(true);
     
     // Update local state immediately for responsiveness
     const updatedItems = rundownData.items.map(item =>
@@ -173,16 +150,13 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
       items: updatedItems
     });
 
-    // Only save if not in demo mode
-    if (!isDemoMode && debouncedSave) {
-      // Use debounced save to prevent rapid-fire saves
-      debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems });
-      
-      // Resume polling after a delay
-      setTimeout(() => {
-        setIsPollingPaused(false);
-      }, 3000);
-    }
+    // Use debounced save to prevent rapid-fire saves
+    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems });
+    
+    // Resume polling after a delay
+    setTimeout(() => {
+      setIsPollingPaused(false);
+    }, 3000);
   };
 
   // Print function with improved formatting
@@ -339,11 +313,11 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
   // Initial load
   useEffect(() => {
     loadRundownData();
-  }, [isDemoMode, user]);
+  }, [rundownId, user]);
 
-  // Enhanced polling with pause support (disabled for demo mode)
+  // Enhanced polling with pause support
   useEffect(() => {
-    if (isDemoMode || !rundownId || loading || (!isDemoMode && !user) || isPollingPaused) return;
+    if (!rundownId || loading || !user || isPollingPaused) return;
     
     const pollInterval = setInterval(() => {
       if (!isPollingPaused && !saveState.isSaving) {
@@ -354,7 +328,7 @@ const Teleprompter = ({ isDemoMode = false }: TeleprompterProps) => {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [isDemoMode, rundownId, loading, user, isPollingPaused, saveState.isSaving]);
+  }, [rundownId, loading, user, isPollingPaused, saveState.isSaving]);
 
   const getRowNumber = (index: number) => {
     if (!rundownData?.items || index < 0 || index >= rundownData.items.length) {

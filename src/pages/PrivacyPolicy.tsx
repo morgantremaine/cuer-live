@@ -89,6 +89,7 @@ const PrivacyPolicy = () => {
                       <li>User IDs and internal database references</li>
                       <li>Timestamps for content creation and updates</li>
                       <li>Archive status for rundowns</li>
+                      <li>Rundown sharing settings (e.g., private, team, or public)</li>
                     </ul>
                   </div>
                 </div>
@@ -141,6 +142,7 @@ const PrivacyPolicy = () => {
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Access or update your profile information at any time</li>
                   <li>Delete your account by contacting support</li>
+                  <li>Adjust visibility settings for rundowns (private/team/public)</li>
                 </ul>
                 <p>If you're located in California or another region with specific privacy laws (e.g., GDPR), you may have additional rights including:</p>
                 <ul className="list-disc pl-6 space-y-1">
