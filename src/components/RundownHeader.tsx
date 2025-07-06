@@ -437,6 +437,7 @@ const RundownHeader = ({
         isOpen={showFindReplace}
         onClose={() => setShowFindReplace(false)}
         onUpdateItem={onUpdateItem}
+        items={items || []}
       />
     </div>
   );

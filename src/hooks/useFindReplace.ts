@@ -10,12 +10,15 @@ export interface FindReplaceOptions {
   wholeWord: boolean;
 }
 
-export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void) => {
+export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void, items?: any[]) => {
   const directState = useDirectRundownState();
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
     totalMatches: number;
   }>({ matches: [], totalMatches: 0 });
+
+  // Use provided items or fall back to directState items
+  const currentItems = items || directState.items;
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, fields } = options;
@@ -24,9 +27,6 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       setLastSearchResults({ matches: [], totalMatches: 0 });
       return { matches: [], totalMatches: 0 };
     }
-
-    // Get fresh items from directState to ensure we have the latest data
-    const currentItems = directState.items;
 
     let searchRegex: RegExp;
     try {
@@ -72,7 +72,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults(results);
     
     return results;
-  }, [directState]);
+  }, [currentItems]);
 
   // Helper function to match capitalization pattern
   const matchCapitalization = useCallback((original: string, replacement: string): string => {
@@ -97,9 +97,6 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     if (!searchTerm.trim()) {
       return { replacements: 0 };
     }
-
-    // Get fresh items from directState to ensure we have the latest data
-    const currentItems = directState.items;
 
     let searchRegex: RegExp;
     try {
@@ -158,7 +155,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState, onUpdateItem, matchCapitalization]);
+  }, [currentItems, onUpdateItem, directState.updateItem, matchCapitalization]);
 
   const clearResults = useCallback(() => {
     setLastSearchResults({ matches: [], totalMatches: 0 });
@@ -169,7 +166,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     replaceAll,
     lastSearchResults,
     clearResults,
-    // Expose items for preview purposes
-    items: directState.items
+    // Expose current items for preview purposes
+    items: currentItems
   };
 };

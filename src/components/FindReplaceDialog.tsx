@@ -11,15 +11,16 @@ interface FindReplaceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdateItem?: (id: string, field: string, value: string) => void;
+  items: any[]; // Current rundown items
 }
 
-const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogProps) => {
+const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplaceDialogProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const { findMatches, replaceAll, lastSearchResults, clearResults } = useFindReplace(onUpdateItem);
+  const { findMatches, replaceAll, lastSearchResults, clearResults } = useFindReplace(onUpdateItem, items);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
 
