@@ -10,11 +10,11 @@ export const useDirectRundownState = () => {
     
     const result = simplifiedState.updateItem(id, field, value);
     
-    // Force immediate re-render by updating items array reference
+    // Log after a brief delay to see the change
     setTimeout(() => {
-      const currentItems = simplifiedState.items;
-      simplifiedState.setItems([...currentItems]);
-      console.log('🔧 Forced re-render after update');
+      console.log('🔧 Items after update:', simplifiedState.items.length);
+      const updatedItem = simplifiedState.items.find(item => item.id === id);
+      console.log('🔧 Updated item:', updatedItem ? { id: updatedItem.id, [field]: updatedItem[field as keyof typeof updatedItem] } : 'not found');
     }, 10);
     
     return result;
