@@ -91,8 +91,13 @@ const CuerChatMessages = ({
             <InlineModificationRequest
               modifications={modifications}
               onConfirm={() => {
-                setPendingModifications({ messageId, modifications });
-                handleConfirmModifications();
+                console.log('🎯 Applying modifications directly:', modifications);
+                const success = applyModifications(modifications);
+                if (success) {
+                  console.log('✅ Modifications applied successfully');
+                } else {
+                  console.log('❌ Failed to apply modifications');
+                }
               }}
               onCancel={handleCancelModifications}
             />
