@@ -128,6 +128,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       hasClipboardData={hasClipboardData}
       showColorPicker={showColorPicker}
       itemId={item.id}
+      itemType="header"
       onCopy={handleContextMenuCopy}
       onDelete={handleContextMenuDelete}
       onToggleFloat={() => {}}

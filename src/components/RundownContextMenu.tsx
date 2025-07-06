@@ -186,16 +186,19 @@ const RundownContextMenu = memo(({
           
           <ContextMenuSeparator />
           
-          <ContextMenuItem 
-            onClick={handleContextMenuFloat} 
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <LifeBuoy className="mr-2 h-4 w-4" />
-            {isFloated ? 
-              (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
-              (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
-            }
-          </ContextMenuItem>
+          {/* Float option - only show for regular segments */}
+          {itemType === 'regular' && (
+            <ContextMenuItem 
+              onClick={handleContextMenuFloat} 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              {isFloated ? 
+                (isMultipleSelection ? `Unfloat ${selectedCount} rows` : 'Unfloat row') :
+                (isMultipleSelection ? `Float ${selectedCount} rows` : 'Float row')
+              }
+            </ContextMenuItem>
+          )}
           
           <ContextMenuItem 
             onClick={onColorPicker} 
