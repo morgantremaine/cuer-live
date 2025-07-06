@@ -37,6 +37,7 @@ interface RundownContentProps {
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
+  onToggleFloatHeader: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index?: number) => void;
@@ -81,6 +82,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onColorSelect,
   onDeleteRow,
   onToggleFloat,
+  onToggleFloatHeader,
   onRowSelect,
   onDragStart,
   onDragOver,
@@ -159,6 +161,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             onColorSelect={onColorSelect}
             onDeleteRow={onDeleteRow}
             onToggleFloat={onToggleFloat}
+            onToggleFloatHeader={onToggleFloatHeader}
             onRowSelect={onRowSelect}
             onDragStart={onDragStart}
             onDragOver={handleEnhancedDragOver}

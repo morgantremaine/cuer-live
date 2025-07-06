@@ -178,6 +178,7 @@ const RundownGrid = React.memo(() => {
       onColorSelect={stableCallbacks.handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
+      onToggleFloatHeader={coreState.toggleFloatHeader}
       onRowSelect={stableCallbacks.handleEnhancedRowSelection}
       onDragStart={interactions.handleDragStart}
       onDragOver={interactions.handleDragOver}
