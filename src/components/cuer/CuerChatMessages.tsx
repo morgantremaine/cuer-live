@@ -1,6 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Bot, User } from 'lucide-react';
 import { marked } from 'marked';
+import InlineModificationRequest from './CuerChatMessages/InlineModificationRequest';
+import { useCuerModifications } from '@/hooks/useCuerModifications';
+import { RundownModification } from '@/hooks/useCuerModifications/types';
 
 interface ChatMessage {
   id: string;
@@ -21,6 +24,12 @@ const CuerChatMessages = ({
   isConnected
 }: CuerChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [pendingModifications, setPendingModifications] = useState<{
+    messageId: string;
+    modifications: RundownModification[];
+  } | null>(null);
+  
+  const { applyModifications } = useCuerModifications();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,15 +47,57 @@ const CuerChatMessages = ({
     });
   }, []);
 
-  const renderMessageContent = (content: string, role: 'user' | 'assistant') => {
+  const extractModifications = (content: string): { cleanContent: string; modifications: RundownModification[] | null } => {
+    const modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
+    if (modificationMatch) {
+      try {
+        const modificationData = JSON.parse(modificationMatch[1]);
+        return {
+          cleanContent: content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim(),
+          modifications: modificationData.modifications || []
+        };
+      } catch (error) {
+        console.error('Failed to parse modifications:', error);
+      }
+    }
+    return { cleanContent: content, modifications: null };
+  };
+
+  const handleConfirmModifications = () => {
+    if (pendingModifications) {
+      const success = applyModifications(pendingModifications.modifications);
+      if (success) {
+        setPendingModifications(null);
+      }
+    }
+  };
+
+  const handleCancelModifications = () => {
+    setPendingModifications(null);
+  };
+
+  const renderMessageContent = (content: string, role: 'user' | 'assistant', messageId: string) => {
     if (role === 'assistant') {
-      // Parse markdown for AI responses
-      const htmlContent = marked(content);
+      const { cleanContent, modifications } = extractModifications(content);
+      
       return (
-        <div 
-          className="prose prose-sm max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4 [&>h1]:mb-3 [&>h2]:mb-3 [&>h3]:mb-3 [&>blockquote]:mb-4"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
+        <div>
+          <div 
+            className="prose prose-sm max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4 [&>h1]:mb-3 [&>h2]:mb-3 [&>h3]:mb-3 [&>blockquote]:mb-4"
+            dangerouslySetInnerHTML={{ __html: marked(cleanContent) }}
+          />
+          
+          {modifications && modifications.length > 0 && (
+            <InlineModificationRequest
+              modifications={modifications}
+              onConfirm={() => {
+                setPendingModifications({ messageId, modifications });
+                handleConfirmModifications();
+              }}
+              onCancel={handleCancelModifications}
+            />
+          )}
+        </div>
       );
     } else {
       // Plain text for user messages
@@ -94,7 +145,7 @@ const CuerChatMessages = ({
                 ? 'bg-gray-100 text-gray-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              {renderMessageContent(message.content, message.role)}
+              {renderMessageContent(message.content, message.role, message.id)}
             </div>
           </div>
         </div>
