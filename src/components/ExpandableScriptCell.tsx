@@ -24,6 +24,7 @@ const ExpandableScriptCell = ({
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -46,6 +47,29 @@ const ExpandableScriptCell = ({
       }
     }
   }, [value, isExpanded]);
+
+  // Focus textarea when expanded
+  useEffect(() => {
+    if (isExpanded && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isExpanded]);
+
+  // Handle clicks outside to collapse
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isExpanded]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -138,6 +162,12 @@ const ExpandableScriptCell = ({
       return;
     }
     
+    // For Escape key, collapse the cell
+    if (e.key === 'Escape') {
+      setIsExpanded(false);
+      return;
+    }
+    
     // For other navigation keys, use the provided handler
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
       // Let these work normally in the textarea
@@ -149,7 +179,7 @@ const ExpandableScriptCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="flex items-start space-x-2 w-full">
+    <div ref={containerRef} className="flex items-start space-x-2 w-full">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
@@ -201,7 +231,6 @@ const ExpandableScriptCell = ({
               }
             }}
             onKeyDown={handleKeyDown}
-            onBlur={() => setIsExpanded(false)}
             data-cell-id={cellKey}
             data-cell-ref={cellKey}
             className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-2 py-1 text-sm resize-none`}
@@ -213,7 +242,7 @@ const ExpandableScriptCell = ({
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word'
             }}
-            autoFocus
+            placeholder="Enter script content..."
           />
         )}
       </div>
