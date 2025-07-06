@@ -94,8 +94,10 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     }
 
     let totalReplacements = 0;
+    const updatedItems = [...directState.items];
 
-    directState.items.forEach((item: RundownItem) => {
+    // Process all items and collect changes in a single pass
+    updatedItems.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -120,12 +122,15 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
               matches: beforeMatches.length
             });
 
-            // Use the same update mechanism as manual edits
-            if (onUpdateItem) {
-              onUpdateItem(item.id, field, newValue);
+            // Apply the change directly to the item copy
+            if (field.startsWith('customFields.')) {
+              const customFieldKey = field.replace('customFields.', '');
+              if (!item.customFields) {
+                item.customFields = {};
+              }
+              item.customFields[customFieldKey] = newValue;
             } else {
-              // Fallback to direct state if no update function provided
-              directState.updateItem(item.id, field, newValue);
+              (item as any)[field] = newValue;
             }
             
             totalReplacements += beforeMatches.length;
@@ -134,13 +139,19 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       });
     });
 
+    // Apply all changes in a single state update for immediate UI refresh
+    if (totalReplacements > 0) {
+      console.log('🔄 Applying', totalReplacements, 'replacements as single update');
+      directState.setItems(updatedItems);
+    }
+
     console.log('🔄 Replace all completed:', { totalReplacements });
     
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, onUpdateItem, directState.updateItem]);
+  }, [directState.items, directState.setItems]);
 
   return {
     findMatches,
