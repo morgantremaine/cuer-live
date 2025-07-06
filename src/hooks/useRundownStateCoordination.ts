@@ -216,7 +216,6 @@ export const useRundownStateCoordination = () => {
       updateItem: simplifiedState.updateItem,
       deleteRow: simplifiedState.deleteRow,
       toggleFloatRow: simplifiedState.toggleFloat,
-      toggleFloatHeader: simplifiedState.toggleFloatHeader,
       deleteMultipleItems: simplifiedState.deleteMultipleItems,
       addItem: simplifiedState.addItem,
       setTitle: simplifiedState.setTitle,

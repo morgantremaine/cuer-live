@@ -68,7 +68,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onColorSelect,
     onDeleteRow,
     onToggleFloat,
-    onToggleFloatHeader,
     onRowSelect,
     onDragStart,
     onDragOver,
