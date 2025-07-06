@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { renderScriptWithBrackets } from '@/utils/scriptUtils';
+import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -199,21 +199,21 @@ const ExpandableScriptCell = ({
             onClick={() => setIsExpanded(true)}
             style={{ 
               color: textColor || undefined,
-              height: '48px', // Fixed height for 2 lines
-              maxHeight: '48px',
+              height: value && value.trim() && !isNullScript(value) ? '36px' : '24px', // Taller when content exists
+              maxHeight: value && value.trim() && !isNullScript(value) ? '36px' : '24px',
               overflow: 'hidden'
             }}
           >
-            {value ? (
+            {value && !isNullScript(value) ? (
               <div 
-                className="w-full break-words leading-6"
+                className="w-full break-words leading-5"
                 style={{
                   display: '-webkit-box',
                   WebkitBoxOrient: 'vertical',
-                  WebkitLineClamp: 2,
+                  WebkitLineClamp: value && value.trim() && !isNullScript(value) ? 2 : 1,
                   overflow: 'hidden',
-                  lineHeight: '1.5rem',
-                  maxHeight: '3rem' // 2 lines at 1.5rem each
+                  lineHeight: '1.25rem',
+                  maxHeight: value && value.trim() && !isNullScript(value) ? '2.5rem' : '1.25rem'
                 }}
               >
                 {renderScriptWithBrackets(value, 14)}
