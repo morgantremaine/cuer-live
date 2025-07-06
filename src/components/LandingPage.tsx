@@ -446,6 +446,52 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* Detailed Rundown Cards Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Rich rundown cards with <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">detailed insights</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Each rundown shows comprehensive details at a glance - track headers, segments, duration, and activity status for efficient project management.
+          </p>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Comprehensive Project Overview</h3>
+            <p className="text-xl text-slate-400">
+              Every rundown card displays essential information including segment counts, total duration, recent activity status, and quick access to both editing and blueprint modes.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time activity tracking</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Segment and header counts</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Total duration display</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Quick access to all modes</span>
+              </div>
+            </div>
+          </div>
+          <div className="group fade-up">
+            <img 
+              src="/lovable-uploads/fda659c6-14fe-4a8f-9b42-efba05fb6022.png" 
+              alt="Detailed Rundown Card Interface"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* CTA Section */}
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24 text-center">
         <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-12">
