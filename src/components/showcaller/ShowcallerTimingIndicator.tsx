@@ -42,8 +42,8 @@ const ShowcallerTimingIndicator = ({
   return (
     <div className={`flex items-center transition-all duration-200 ${statusColor} ${bgColor} border-current/20 ${
       isCompact 
-        ? 'space-x-1 px-2 py-0.5 rounded border text-xs' 
-        : 'space-x-2 px-3 py-1.5 rounded-lg border'
+        ? 'space-x-1 px-1.5 py-0.5 rounded border text-xs' 
+        : 'space-x-1.5 px-2.5 py-1 rounded-lg border'
     }`}>
       <Clock className={isCompact ? "h-3 w-3" : "h-4 w-4"} />
       <span className={`font-mono font-bold tabular-nums ${
