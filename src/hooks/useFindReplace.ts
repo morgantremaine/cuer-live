@@ -94,10 +94,10 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     }
 
     let totalReplacements = 0;
-    const updatedItems = [...directState.items];
-
-    // Process all items and collect changes in a single pass
-    updatedItems.forEach((item: RundownItem) => {
+    
+    // CRITICAL FIX: Use the proper update mechanism that triggers React re-renders
+    // React 18 automatically batches multiple setState calls, so this will be efficient
+    directState.items.forEach((item: RundownItem) => {
       fields.forEach(field => {
         let fieldValue = '';
         
@@ -122,15 +122,13 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
               matches: beforeMatches.length
             });
 
-            // Apply the change directly to the item copy
-            if (field.startsWith('customFields.')) {
-              const customFieldKey = field.replace('customFields.', '');
-              if (!item.customFields) {
-                item.customFields = {};
-              }
-              item.customFields[customFieldKey] = newValue;
+            // CRITICAL: Use the same update mechanism as manual user edits
+            // This ensures proper React state updates and immediate UI refresh
+            if (onUpdateItem) {
+              onUpdateItem(item.id, field, newValue);
             } else {
-              (item as any)[field] = newValue;
+              // Fallback only if onUpdateItem is not available
+              directState.updateItem(item.id, field, newValue);
             }
             
             totalReplacements += beforeMatches.length;
@@ -139,19 +137,13 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       });
     });
 
-    // Apply all changes in a single state update for immediate UI refresh
-    if (totalReplacements > 0) {
-      console.log('🔄 Applying', totalReplacements, 'replacements as single update');
-      directState.setItems(updatedItems);
-    }
-
     console.log('🔄 Replace all completed:', { totalReplacements });
     
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, directState.setItems]);
+  }, [directState.items, onUpdateItem, directState.updateItem]);
 
   return {
     findMatches,
