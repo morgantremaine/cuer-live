@@ -58,6 +58,7 @@ export const useDirectRundownState = () => {
       return simplifiedState.addHeader();
     },
     deleteRow: debugDeleteRow,
+    setItems: simplifiedState.setItems,
     
     // Other necessary functions
     calculateEndTime: (startTime: string, duration: string) => {

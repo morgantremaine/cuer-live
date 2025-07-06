@@ -135,11 +135,23 @@ export const useFindReplace = () => {
 
     console.log('🔄 Replace all completed:', { totalReplacements });
     
+    // Force UI refresh by triggering a state change
+    if (totalReplacements > 0) {
+      // Mark as changed to ensure the UI updates
+      directState.markAsChanged();
+      
+      // Force a re-render by updating the items array reference
+      setTimeout(() => {
+        const currentItems = [...directState.items];
+        directState.setItems(currentItems);
+      }, 10);
+    }
+    
     // Clear search results after replacement
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [directState.items, directState.updateItem]);
+  }, [directState.items, directState.updateItem, directState.markAsChanged, directState.setItems]);
 
   return {
     findMatches,
