@@ -35,9 +35,10 @@ serve(async (req) => {
       )
     }
 
-    // Get team conversations for context
+    // Get team conversations and context
     const authHeader = req.headers.get('Authorization')
     let teamContext = ''
+    let conversationHistory = ''
     
     if (authHeader) {
       try {
@@ -74,6 +75,31 @@ serve(async (req) => {
                   `Q: ${conv.user_message}\nA: ${conv.assistant_response}\n---`
                 ).join('\n')
             }
+            
+            // Get the most recent conversation for immediate context
+            const { data: recentConv } = await supabase
+              .from('team_conversations')
+              .select('user_message, assistant_response')
+              .eq('team_id', teamId)
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+
+            if (recentConv && recentConv.length > 0) {
+              const lastConv = recentConv[0]
+              // Check if the last response contained a modification request
+              if (lastConv.assistant_response.includes('MODIFICATION_REQUEST')) {
+                conversationHistory = `
+
+RECENT CONTEXT - Last exchange:
+User: ${lastConv.user_message}
+Assistant: ${lastConv.assistant_response}
+
+CURRENT USER MESSAGE: ${message}
+
+If the current message is a confirmation (yes/proceed/apply/etc.), apply the modification from the recent context immediately.`
+              }
+            }
           }
         }
       } catch (error) {
@@ -85,7 +111,7 @@ serve(async (req) => {
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: getSystemPrompt(rundownData) + teamContext,
+        content: getSystemPrompt(rundownData) + teamContext + conversationHistory,
       },
       {
         role: 'user',
