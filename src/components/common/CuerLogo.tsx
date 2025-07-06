@@ -18,6 +18,10 @@ const CuerLogo = ({ className = "h-8 w-auto", alt = "Cuer Logo", isDark = true }
       src={logoSrc}
       alt={alt}
       className={className}
+      draggable={false}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
       onError={(e) => {
         // Fallback to text logo if image fails
         const target = e.currentTarget;
