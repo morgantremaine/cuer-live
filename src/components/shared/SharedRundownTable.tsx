@@ -3,6 +3,7 @@ import React, { forwardRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { Play, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SharedRundownTableProps {
@@ -142,7 +143,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   // Helper function to render expandable cell content for script and notes
   const renderExpandableCell = (value: string, itemId: string, columnKey: string) => {
     const isExpanded = isCellExpanded(itemId, columnKey);
-    const hasContent = value && value.trim();
+    const hasContent = value && value.trim() && !isNullScript(value);
     
     if (!hasContent) {
       return null;
@@ -171,11 +172,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           <div className="flex-1 min-w-0">
             {isExpanded ? (
               <div className="whitespace-pre-wrap break-words text-sm">
-                {value}
+                {columnKey === 'script' ? 
+                  renderScriptWithBrackets(value, { inlineDisplay: false, fontSize: 14 }) : 
+                  value
+                }
               </div>
             ) : (
               <div className="truncate text-sm" title={value}>
-                {value}
+                {columnKey === 'script' ? 
+                  renderScriptWithBrackets(value, { inlineDisplay: true, fontSize: 14 }) : 
+                  value
+                }
               </div>
             )}
           </div>
