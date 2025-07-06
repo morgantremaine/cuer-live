@@ -81,7 +81,4 @@ export interface RundownContainerProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  
-  // Demo mode
-  isDemoMode?: boolean;
 }

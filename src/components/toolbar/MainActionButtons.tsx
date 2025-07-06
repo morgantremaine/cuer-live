@@ -23,7 +23,6 @@ interface MainActionButtonsProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  isDemoMode?: boolean;
   // Playback controls props for mobile
   isPlaying?: boolean;
   currentSegmentId?: string | null;
@@ -50,7 +49,6 @@ const MainActionButtons = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
-  isDemoMode = false,
   isPlaying,
   currentSegmentId,
   timeRemaining,
@@ -106,7 +104,6 @@ const MainActionButtons = ({
               rundownId={rundownId}
               size={buttonSize}
               className="w-full justify-start"
-              isDemoMode={isDemoMode}
             />
           </div>
           {rundownId && (
@@ -115,7 +112,6 @@ const MainActionButtons = ({
                 rundownId={rundownId} 
                 rundownTitle={rundownTitle}
                 rundownData={rundownData}
-                isDemoMode={isDemoMode}
               />
             </div>
           )}
@@ -189,14 +185,13 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} isDemoMode={isDemoMode} />
+      <ToolsMenu rundownId={rundownId} size={buttonSize} />
       
       {rundownId && (
         <ShareRundownMenu 
           rundownId={rundownId} 
           rundownTitle={rundownTitle}
           rundownData={rundownData}
-          isDemoMode={isDemoMode}
         />
       )}
     </>

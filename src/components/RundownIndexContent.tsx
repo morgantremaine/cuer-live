@@ -196,6 +196,7 @@ const RundownIndexContent = ({ isDemoMode = false }: RundownIndexContentProps) =
     return status;
   };
 
+  // Use simplified handlers for common operations (but NOT add operations)
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
@@ -205,7 +206,6 @@ const RundownIndexContent = ({ isDemoMode = false }: RundownIndexContentProps) =
     items,
     selectedRows,
     rundownId,
-    isDemoMode,
     addRow: () => addRow(),
     addHeader: () => addHeader(),
     calculateEndTime,
@@ -411,7 +411,6 @@ const RundownIndexContent = ({ isDemoMode = false }: RundownIndexContentProps) =
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
-        isDemoMode={isDemoMode}
       />
       
       <CuerChatButton rundownData={rundownData} />

@@ -130,13 +130,6 @@ interface BlueprintContextValue {
   saveBlueprint: () => Promise<void>;
   refreshBlueprint: () => Promise<void>;
   autoRefreshLists: (rundownItems: RundownItem[]) => void;
-  
-  // Rundown data
-  rundownData: {
-    id: string;
-    title: string;
-    items: RundownItem[];
-  } | null;
 }
 
 const BlueprintContext = createContext<BlueprintContextValue | null>(null);
@@ -146,15 +139,13 @@ interface BlueprintProviderProps {
   rundownId: string;
   rundownTitle: string;
   rundownItems?: RundownItem[];
-  isDemoMode?: boolean;
 }
 
 export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   children,
   rundownId,
   rundownTitle,
-  rundownItems = [],
-  isDemoMode = false
+  rundownItems = []
 }) => {
   const [state, dispatch] = useReducer(blueprintReducer, initialState);
   const [savedBlueprint, setSavedBlueprint] = React.useState<any>(null);
@@ -167,8 +158,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     rundownTitle,
     state.showDate,
     savedBlueprint,
-    setSavedBlueprint,
-    isDemoMode
+    setSavedBlueprint
   );
 
   // Use partial save hooks for different components (removed crew data)
@@ -183,8 +173,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     rundownTitle,
     state.showDate,
     savedBlueprint,
-    setSavedBlueprint,
-    isDemoMode
+    setSavedBlueprint
   );
 
   // Setup realtime sync
@@ -488,12 +477,7 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     updateComponentOrder,
     saveBlueprint,
     refreshBlueprint,
-    autoRefreshLists,
-    rundownData: {
-      id: rundownId,
-      title: rundownTitle,
-      items: rundownItems
-    }
+    autoRefreshLists
   };
 
   return (

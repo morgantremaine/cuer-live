@@ -35,8 +35,6 @@ interface RundownToolbarProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  // Demo mode
-  isDemoMode?: boolean;
 }
 
 const RundownToolbar = ({
@@ -60,8 +58,7 @@ const RundownToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  isDemoMode = false
+  onToggleAutoScroll
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -86,8 +83,7 @@ const RundownToolbar = ({
     rundownTitle,
     rundownData,
     autoScrollEnabled,
-    onToggleAutoScroll,
-    isDemoMode
+    onToggleAutoScroll
   };
 
   if (isMobile) {
