@@ -135,7 +135,7 @@ const LandingPage = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => navigate('/rundown/demo-rundown-2024')}
+                onClick={() => navigate('/demo')}
                 className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
               >
                 <Eye className="mr-2 h-5 w-5" />

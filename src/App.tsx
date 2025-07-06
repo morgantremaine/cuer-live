@@ -50,6 +50,7 @@ const AppRoutes = () => {
       
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/demo" element={<Index />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/ad-view/:id" element={<ADView />} />
       <Route path="/join-team/:token" element={<JoinTeam />} />
