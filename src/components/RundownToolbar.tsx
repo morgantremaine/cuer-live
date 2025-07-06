@@ -58,8 +58,7 @@ const RundownToolbar = ({
   rundownTitle,
   rundownData,
   autoScrollEnabled,
-  onToggleAutoScroll,
-  isDemoMode = false
+  onToggleAutoScroll
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 

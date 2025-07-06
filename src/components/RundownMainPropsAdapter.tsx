@@ -80,8 +80,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     autoScrollEnabled,
-    onToggleAutoScroll,
-    isDemoMode
+    onToggleAutoScroll
   } = props;
 
   // Create rundown data for CSV export
@@ -137,7 +136,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
-        isDemoMode={isDemoMode}
       />
 
       {/* Main Content */}
