@@ -117,11 +117,7 @@ const AppRoutes = () => {
       />
       <Route 
         path="/teleprompter/:id" 
-        element={
-          <ProtectedRoute>
-            <Teleprompter />
-          </ProtectedRoute>
-        } 
+        element={<Teleprompter />} 
       />
       
       {/* Catch-all route */}
