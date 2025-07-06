@@ -204,13 +204,14 @@ const ExpandableScriptCell = ({
         />
         {!isExpanded && value && !isNullScript(value) && (
           <div 
-            className="absolute inset-0 flex items-center px-1 py-1 pointer-events-none"
+            className="absolute inset-0 flex items-center justify-start px-1 pointer-events-none"
             style={{ 
               height: '24px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              lineHeight: '24px'
             }}
           >
-            <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
+            <div className="truncate w-full text-sm leading-6" style={{ color: textColor || undefined }}>
               {renderScriptWithBrackets(value, { 
                 inlineDisplay: true, 
                 fontSize: 14 
