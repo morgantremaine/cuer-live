@@ -19,6 +19,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
+  const [caseSensitive, setCaseSensitive] = useState(false);
   const { findMatches, replaceAll, lastSearchResults } = useFindReplace(onUpdateItem);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -38,12 +39,12 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         searchTerm,
         replaceTerm: '',
         fields: searchFields,
-        caseSensitive: false,
+        caseSensitive,
         wholeWord: false
       });
       setCurrentMatchIndex(0);
     }
-  }, [searchTerm]);
+  }, [searchTerm, caseSensitive]);
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
@@ -51,7 +52,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         searchTerm,
         replaceTerm: '',
         fields: searchFields,
-        caseSensitive: false,
+        caseSensitive,
         wholeWord: false
       });
       setCurrentMatchIndex(0);
@@ -65,7 +66,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
         searchTerm,
         replaceTerm,
         fields: searchFields,
-        caseSensitive: false,
+        caseSensitive,
         wholeWord: false
       });
       console.log('🔥 Replace result:', result);
@@ -88,17 +89,50 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
     
     setCurrentMatchIndex(newIndex);
     
-    // Scroll to the matched item
+    // Scroll to the matched item and highlight matching text
     const currentMatch = lastSearchResults.matches[newIndex];
     if (currentMatch) {
       const element = document.querySelector(`[data-item-id="${currentMatch.itemId}"]`);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Add temporary highlight
-        element.classList.add('bg-yellow-200', 'dark:bg-yellow-800');
-        setTimeout(() => {
-          element.classList.remove('bg-yellow-200', 'dark:bg-yellow-800');
-        }, 2000);
+        
+        // Find and highlight matching text within the element
+        const highlightMatchingText = (el: Element) => {
+          const walker = document.createTreeWalker(
+            el,
+            NodeFilter.SHOW_TEXT,
+            null
+          );
+          
+          const textNodes: Text[] = [];
+          let node;
+          while (node = walker.nextNode()) {
+            textNodes.push(node as Text);
+          }
+          
+          const flags = caseSensitive ? 'g' : 'gi';
+          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+          
+          textNodes.forEach(textNode => {
+            if (textNode.textContent && regex.test(textNode.textContent)) {
+              const parent = textNode.parentNode;
+              if (parent) {
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = textNode.textContent.replace(regex, '<mark style="background-color: yellow; color: black;">$&</mark>');
+                parent.replaceChild(wrapper, textNode);
+                
+                // Remove highlight after 2 seconds
+                setTimeout(() => {
+                  if (wrapper.parentNode) {
+                    wrapper.parentNode.replaceChild(document.createTextNode(textNode.textContent || ''), wrapper);
+                  }
+                }, 2000);
+              }
+            }
+          });
+        };
+        
+        highlightMatchingText(element);
       }
     }
   };
@@ -116,8 +150,8 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/20 dark:bg-black/40 z-50 flex items-start justify-center pt-20">
-      <Card className="w-96 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div className="fixed top-4 right-4 z-50">
+      <Card className="w-96 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -225,6 +259,18 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
                       Replace All
                     </Button>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="caseSensitive"
+                      checked={caseSensitive}
+                      onChange={(e) => setCaseSensitive(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="caseSensitive" className="text-sm">
+                      Match case
+                    </label>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -236,11 +282,6 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem }: FindReplaceDialogP
                 </div>
               </>
             )}
-          </div>
-
-          <div className="mt-4 text-xs text-muted-foreground">
-            <div>Enter: Next match • Shift+Enter: Previous match</div>
-            <div>Searching: Name, Script, Talent, Notes, Location, Graphics</div>
           </div>
         </CardContent>
       </Card>
