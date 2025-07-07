@@ -1,4 +1,3 @@
-
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
@@ -121,7 +120,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate total table width to ensure proper sizing
+  // Calculate total table width - just sum the actual column widths
   const totalTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
@@ -129,10 +128,7 @@ const RundownContent = React.memo<RundownContentProps>(({
       const widthValue = parseInt(width.replace('px', ''));
       total += widthValue;
     });
-    
-    // Ensure table is never smaller than viewport width
-    const viewportWidth = window.innerWidth;
-    return Math.max(total, viewportWidth);
+    return total;
   }, [visibleColumns, getColumnWidth]);
 
   return (

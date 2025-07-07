@@ -62,12 +62,22 @@ export const useSimpleColumnWidths = (
     const viewportWidth = window.innerWidth;
     if (totalNaturalWidth < viewportWidth) {
       const extraSpace = viewportWidth - totalNaturalWidth;
-      const extraPerColumn = Math.floor(extraSpace / columns.length);
       
-      // Distribute extra space proportionally
+      // Distribute extra space proportionally based on current widths
+      const totalColumnWidth = Object.values(widths).reduce((sum, width) => sum + width, 0);
+      
       columns.forEach(column => {
-        widths[column.id] += extraPerColumn;
+        const proportion = widths[column.id] / totalColumnWidth;
+        const additionalWidth = Math.floor(extraSpace * proportion);
+        widths[column.id] += additionalWidth;
       });
+      
+      // Handle any remaining pixels due to rounding
+      const remainingSpace = viewportWidth - (64 + Object.values(widths).reduce((sum, width) => sum + width, 0));
+      if (remainingSpace > 0 && columns.length > 0) {
+        // Add remaining pixels to the first column
+        widths[columns[0].id] += remainingSpace;
+      }
     }
     
     setColumnWidths(widths);
