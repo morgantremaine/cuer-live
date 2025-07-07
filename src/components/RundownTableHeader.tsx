@@ -99,6 +99,7 @@ const RundownTableHeader = ({
           >
             {visibleColumns.map((column, index) => {
               const columnWidth = getColumnWidth(column);
+              const isLastColumn = index === visibleColumns.length - 1;
               
               return (
                 <ResizableColumnHeader
@@ -107,6 +108,7 @@ const RundownTableHeader = ({
                   width={columnWidth}
                   onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
                   showLeftSeparator={index > 0}
+                  isLastColumn={isLastColumn}
                 >
                   {column.name || column.key}
                 </ResizableColumnHeader>

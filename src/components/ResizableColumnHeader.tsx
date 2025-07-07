@@ -10,6 +10,7 @@ interface ResizableColumnHeaderProps {
   onWidthChange: (columnId: string, width: number) => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
+  isLastColumn?: boolean;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -40,7 +41,8 @@ const ResizableColumnHeader = ({
   width, 
   onWidthChange, 
   children, 
-  showLeftSeparator = false
+  showLeftSeparator = false,
+  isLastColumn = false
 }: ResizableColumnHeaderProps) => {
   const {
     attributes,
@@ -142,10 +144,10 @@ const ResizableColumnHeader = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // Lock dimensions completely during drag to prevent any resizing
-    width: constrainedWidthPx,
+    // For last column, use auto width to fill remaining space
+    width: isLastColumn ? 'auto' : constrainedWidthPx,
     minWidth: constrainedWidthPx,
-    maxWidth: constrainedWidthPx,
+    maxWidth: isLastColumn ? 'none' : constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     // Prevent any flex or layout changes during drag

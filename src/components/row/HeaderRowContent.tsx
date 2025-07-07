@@ -79,6 +79,7 @@ const HeaderRowContent = ({
       {/* Dynamic columns */}
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
+        const isLastColumn = columnIndex === columns.length - 1;
         const widthValue = parseInt(columnWidth.replace('px', ''));
         
         // Always show header name and duration in the first column (after row number)
@@ -89,9 +90,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px] relative"
               style={{ 
-                width: columnWidth, 
+                width: isLastColumn ? 'auto' : columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth,
+                maxWidth: isLastColumn ? 'none' : columnWidth,
                 backgroundColor,
                 overflow: 'visible'
               }}
@@ -157,9 +158,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: columnWidth, 
+                width: isLastColumn ? 'auto' : columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: isLastColumn ? 'none' : columnWidth,
                 backgroundColor 
               }}
             >
@@ -173,9 +174,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: columnWidth, 
+                width: isLastColumn ? 'auto' : columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: isLastColumn ? 'none' : columnWidth,
                 backgroundColor 
               }}
             >
@@ -189,9 +190,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: columnWidth, 
+                width: isLastColumn ? 'auto' : columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
+                maxWidth: isLastColumn ? 'none' : columnWidth,
                 backgroundColor 
               }}
             >

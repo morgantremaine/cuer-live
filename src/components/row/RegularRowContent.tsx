@@ -66,8 +66,9 @@ const RegularRowContent = ({
         </div>
       </td>
       {/* Dynamic columns */}
-      {columns.map((column) => {
+      {columns.map((column, index) => {
         const columnWidth = getColumnWidth(column);
+        const isLastColumn = index === columns.length - 1;
         const isCurrentSegmentName = currentSegmentId === item.id && 
           (column.key === 'segmentName' || column.key === 'name');
         
@@ -76,8 +77,9 @@ const RegularRowContent = ({
             key={column.id}
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
-              width: columnWidth, 
+              width: isLastColumn ? 'auto' : columnWidth, 
               minWidth: columnWidth,
+              maxWidth: isLastColumn ? 'none' : columnWidth,
               backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}
