@@ -22,32 +22,40 @@ const RundownTableHeader = ({
   const handleColumnDragStart = useCallback((e: React.DragEvent, column: Column, index: number) => {
     // Ensure we're not resizing when starting drag
     const target = e.target as HTMLElement;
-    if (target.classList.contains('resize-handle')) {
+    if (target.classList.contains('resize-handle') || target.closest('.resize-handle')) {
       e.preventDefault();
       return;
     }
     
-    setDraggedColumnId(column.id);
+    // Clean up any existing drag state first
+    setDropTargetIndex(null);
+    
+    // Set drag state with a small delay to ensure clean state
+    requestAnimationFrame(() => {
+      setDraggedColumnId(column.id);
+    });
+    
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', column.id);
     
-    // Use a more stable drag image approach
+    // Simplified drag image - avoid potential issues with complex positioning
     try {
       const dragElement = e.currentTarget as HTMLElement;
       if (dragElement) {
-        e.dataTransfer.setDragImage(dragElement, dragElement.offsetWidth / 2, dragElement.offsetHeight / 2);
+        // Use simpler positioning to avoid coordinate issues
+        e.dataTransfer.setDragImage(dragElement, 10, 10);
       }
     } catch (error) {
-      // Fallback for environments where setDragImage fails
-      console.warn('setDragImage failed, using default drag appearance');
+      // Silently fall back to default behavior
     }
   }, []);
 
   const handleColumnDragOver = useCallback((e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
     
-    if (draggedColumnId) {
+    if (draggedColumnId || e.dataTransfer.types.includes('text/plain')) {
       setDropTargetIndex(targetIndex);
     }
   }, [draggedColumnId]);
@@ -65,37 +73,47 @@ const RundownTableHeader = ({
 
   const handleColumnDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    e.stopPropagation();
     
-    if (!draggedColumnId || !onReorderColumns) {
+    const draggedId = draggedColumnId || e.dataTransfer.getData('text/plain');
+    
+    if (!draggedId || !onReorderColumns) {
       setDraggedColumnId(null);
       setDropTargetIndex(null);
       return;
     }
 
-    const draggedIndex = visibleColumns.findIndex(col => col.id === draggedColumnId);
+    const draggedIndex = visibleColumns.findIndex(col => col.id === draggedId);
     if (draggedIndex === -1 || draggedIndex === targetIndex) {
       setDraggedColumnId(null);
       setDropTargetIndex(null);
       return;
     }
 
-    // Create new column order
-    const newColumns = [...visibleColumns];
-    const [draggedColumn] = newColumns.splice(draggedIndex, 1);
-    
-    // Adjust target index if dragging from left to right
-    const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    newColumns.splice(adjustedTargetIndex, 0, draggedColumn);
+    // Use requestAnimationFrame to ensure clean state updates
+    requestAnimationFrame(() => {
+      // Create new column order
+      const newColumns = [...visibleColumns];
+      const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+      
+      // Adjust target index if dragging from left to right
+      const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      newColumns.splice(adjustedTargetIndex, 0, draggedColumn);
 
-    onReorderColumns(newColumns);
-    
-    setDraggedColumnId(null);
-    setDropTargetIndex(null);
+      onReorderColumns(newColumns);
+      
+      // Clean up state
+      setDraggedColumnId(null);
+      setDropTargetIndex(null);
+    });
   }, [draggedColumnId, visibleColumns, onReorderColumns]);
 
   const handleColumnDragEnd = useCallback(() => {
-    setDraggedColumnId(null);
-    setDropTargetIndex(null);
+    // Use a small delay to ensure all other events have processed
+    setTimeout(() => {
+      setDraggedColumnId(null);
+      setDropTargetIndex(null);
+    }, 50);
   }, []);
 
   return (

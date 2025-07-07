@@ -144,6 +144,7 @@ const ResizableColumnHeader = ({
     // Prevent drag if we're currently resizing
     if (isDraggingRef.current) {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
     
@@ -151,9 +152,11 @@ const ResizableColumnHeader = ({
     const target = e.target as HTMLElement;
     if (target.classList.contains('resize-handle') || target.closest('.resize-handle')) {
       e.preventDefault();
+      e.stopPropagation();
       return;
     }
     
+    // Ensure we have a clean start
     if (onDragStart) {
       onDragStart(e);
     }
