@@ -142,16 +142,16 @@ const ResizableColumnHeader = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: isDragging ? `${constrainedWidth}px` : constrainedWidthPx, 
-    minWidth: isDragging ? `${constrainedWidth}px` : constrainedWidthPx,
-    maxWidth: isDragging ? `${constrainedWidth}px` : constrainedWidthPx,
+    // Lock dimensions completely during drag to prevent any resizing
+    width: constrainedWidthPx,
+    minWidth: constrainedWidthPx,
+    maxWidth: constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
-    ...(isDragging && {
-      flexShrink: 0,
-      flexGrow: 0,
-      boxSizing: 'border-box' as const
-    })
+    // Prevent any flex or layout changes during drag
+    position: isDragging ? 'relative' as const : undefined,
+    display: isDragging ? 'table-cell' as const : undefined,
+    tableLayout: isDragging ? 'fixed' as const : undefined
   };
 
   // Create listeners that exclude the resize handle
@@ -183,12 +183,12 @@ const ResizableColumnHeader = ({
     >
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
-        style={isDragging ? { 
-          width: `${constrainedWidth - 16}px`, // Account for padding
+        style={{
+          // Lock text container width to prevent stretching
+          width: `${constrainedWidth - 16}px`,
           minWidth: `${constrainedWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`,
-          flexShrink: 0
-        } : undefined}
+          maxWidth: `${constrainedWidth - 16}px`
+        }}
       >
         {children}
       </div>
