@@ -123,7 +123,6 @@ const RundownTableHeader = ({
                   minWidth: getColumnWidth(activeColumn),
                   maxWidth: getColumnWidth(activeColumn),
                   opacity: 0.9,
-                  transform: 'rotate(5deg)',
                   zIndex: 1000
                 }}
               >
