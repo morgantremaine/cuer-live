@@ -36,23 +36,43 @@ export const useFloatingNotes = (rundownId: string) => {
           // Try to parse as JSON array first
           const parsed = JSON.parse(data.notes);
           if (Array.isArray(parsed)) {
-            parsedNotes = parsed;
+            // Validate each note has required fields
+            parsedNotes = parsed.filter(note => 
+              note && 
+              typeof note === 'object' && 
+              note.id && 
+              note.title !== undefined && 
+              note.content !== undefined
+            );
+          } else if (typeof parsed === 'object' && parsed.content) {
+            // Single note object
+            parsedNotes = [parsed];
           } else {
-            // Convert old text format to new format
+            // Treat as plain text
             parsedNotes = [{
               id: `note-${Date.now()}`,
               title: 'Notes',
-              content: data.notes,
+              content: typeof parsed === 'string' ? parsed : data.notes,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }];
           }
         } catch {
-          // Handle plain text format
+          // Handle plain text format - clean up any malformed JSON
+          let cleanContent = data.notes;
+          
+          // Remove any trailing JSON fragments
+          const jsonPattern = /[,\]\}]["'\s]*$/;
+          cleanContent = cleanContent.replace(jsonPattern, '');
+          
+          // Remove any leading JSON fragments
+          const leadingJsonPattern = /^[{\[]["'\s]*/;
+          cleanContent = cleanContent.replace(leadingJsonPattern, '');
+          
           parsedNotes = [{
             id: `note-${Date.now()}`,
             title: 'Notes',
-            content: data.notes,
+            content: cleanContent.trim(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }];
