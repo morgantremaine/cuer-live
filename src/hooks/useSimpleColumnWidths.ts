@@ -58,7 +58,7 @@ export const useSimpleColumnWidths = (
       totalNaturalWidth += widths[column.id];
     });
     
-    // Check if we need to expand columns to fill viewport
+    // Always expand to fill viewport if smaller
     const viewportWidth = window.innerWidth;
     if (totalNaturalWidth < viewportWidth) {
       const extraSpace = viewportWidth - totalNaturalWidth;
@@ -73,7 +73,8 @@ export const useSimpleColumnWidths = (
       });
       
       // Handle any remaining pixels due to rounding
-      const remainingSpace = viewportWidth - (64 + Object.values(widths).reduce((sum, width) => sum + width, 0));
+      const actualTotal = 64 + Object.values(widths).reduce((sum, width) => sum + width, 0);
+      const remainingSpace = viewportWidth - actualTotal;
       if (remainingSpace > 0 && columns.length > 0) {
         // Add remaining pixels to the first column
         widths[columns[0].id] += remainingSpace;
@@ -129,9 +130,24 @@ export const useSimpleColumnWidths = (
     return getColumnWidth(column);
   }, [getColumnWidth]);
 
+  // Get total table width including row number column
+  const getTotalTableWidth = useCallback(() => {
+    let total = 64; // Row number column width
+    columns.forEach(column => {
+      const width = getColumnWidth(column);
+      const widthValue = parseInt(width.replace('px', ''));
+      total += widthValue;
+    });
+    
+    // Ensure table is never smaller than viewport width
+    const viewportWidth = window.innerWidth;
+    return Math.max(total, viewportWidth);
+  }, [columns, getColumnWidth]);
+
   return {
     updateColumnWidth,
     getColumnWidth,
-    getColumnWidthForTable
+    getColumnWidthForTable,
+    getTotalTableWidth
   };
 };

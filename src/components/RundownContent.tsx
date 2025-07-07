@@ -1,3 +1,4 @@
+
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
@@ -26,6 +27,7 @@ interface RundownContentProps {
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
+  getTotalTableWidth?: () => number;
   onReorderColumns?: (columns: Column[]) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
@@ -71,6 +73,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
+  getTotalTableWidth,
   onReorderColumns,
   getRowNumber,
   getRowStatus,
@@ -120,16 +123,24 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate total table width - just sum the actual column widths
+  // Calculate total table width using the hook's method or fallback
   const totalTableWidth = React.useMemo(() => {
+    if (getTotalTableWidth) {
+      return getTotalTableWidth();
+    }
+    
+    // Fallback calculation
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
       const widthValue = parseInt(width.replace('px', ''));
       total += widthValue;
     });
-    return total;
-  }, [visibleColumns, getColumnWidth]);
+    
+    // Ensure table is never smaller than viewport width
+    const viewportWidth = window.innerWidth;
+    return Math.max(total, viewportWidth);
+  }, [visibleColumns, getColumnWidth, getTotalTableWidth]);
 
   return (
     <div className="relative bg-background h-full">
