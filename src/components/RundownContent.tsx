@@ -50,7 +50,7 @@ interface RundownContentProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (segmentId: string) => void;
+  onJumpToHere?: (itemId: string) => void;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
