@@ -22,7 +22,6 @@ interface RundownRowProps {
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
-  expandedColumns?: { [columnKey: string]: boolean };
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -74,7 +73,6 @@ const RundownRow = (props: RundownRowProps) => {
         hasClipboardData={props.hasClipboardData}
         currentSegmentId={props.currentSegmentId}
         isCollapsed={props.isCollapsed}
-        expandedColumns={props.expandedColumns}
         onToggleCollapse={props.onToggleCollapse}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
@@ -96,7 +94,6 @@ const RundownRow = (props: RundownRowProps) => {
       selectedRows={props.selectedRows}
       hasClipboardData={props.hasClipboardData}
       currentSegmentId={props.currentSegmentId}
-      expandedColumns={props.expandedColumns}
       onToggleFloat={props.onToggleFloat || (() => {})}
       onPasteRows={props.onPasteRows}
       onClearSelection={props.onClearSelection}

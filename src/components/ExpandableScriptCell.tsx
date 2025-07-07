@@ -8,7 +8,6 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
-  isExpanded?: boolean;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -19,19 +18,15 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
-  isExpanded: columnExpanded,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
-  const [localExpanded, setLocalExpanded] = useState(false);
-  const isExpanded = columnExpanded !== undefined ? columnExpanded : localExpanded;
+  const [isExpanded, setIsExpanded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (columnExpanded === undefined) {
-      setLocalExpanded(!localExpanded);
-    }
+    setIsExpanded(!isExpanded);
   };
 
   // Auto-resize textarea based on content
