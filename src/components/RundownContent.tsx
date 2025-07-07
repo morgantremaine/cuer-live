@@ -139,8 +139,8 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div className="bg-background" style={{ minWidth: `${minTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
           <table className="border-collapse border border-border w-full" style={{ 
-            tableLayout: 'auto',
-            minWidth: `${minTableWidth}px`
+            tableLayout: 'fixed',
+            width: '100%'
           }}>
             {/* Sticky Header */}
             <RundownTableHeader 

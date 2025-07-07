@@ -144,9 +144,10 @@ const ResizableColumnHeader = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: width, // Use exact width from getColumnWidth (includes expansion)
+    // CRITICAL: Use the exact width from getColumnWidth (includes expansion)
+    width: width,
     minWidth: `${minimumWidth}px`,
-    maxWidth: width, // Use exact width from getColumnWidth (includes expansion)
+    // NO maxWidth constraint - let it expand as calculated
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
@@ -181,11 +182,6 @@ const ResizableColumnHeader = ({
     >
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
-        style={{
-          width: `${actualWidth - 16}px`,
-          minWidth: `${minimumWidth - 16}px`,
-          maxWidth: `${actualWidth - 16}px`
-        }}
       >
         {children}
       </div>
