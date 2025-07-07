@@ -26,10 +26,38 @@ export const useRundownUIManager = (
     }, 300);
   }, [markAsChanged]);
 
-  // Column width management - restored to original simple pattern
+  // Column width management - with viewport expansion
   const getColumnWidth = useCallback((column: Column) => {
-    return column.width || '150px';
-  }, []);
+    const naturalWidth = column.width || '150px';
+    
+    // Calculate total natural width
+    let totalNaturalWidth = 64; // Row number column
+    columns.forEach(col => {
+      const width = col.width || '150px';
+      const widthValue = parseInt(width.replace('px', ''));
+      totalNaturalWidth += widthValue;
+    });
+    
+    const viewportWidth = window.innerWidth;
+    
+    // If total is less than viewport, expand proportionally
+    if (totalNaturalWidth < viewportWidth) {
+      const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
+      const totalColumnsWidth = columns.reduce((sum, col) => {
+        const width = col.width || '150px';
+        return sum + parseInt(width.replace('px', ''));
+      }, 0);
+      
+      const extraSpace = viewportWidth - totalNaturalWidth;
+      const proportion = naturalWidthValue / totalColumnsWidth;
+      const additionalWidth = Math.floor(extraSpace * proportion);
+      const expandedWidth = naturalWidthValue + additionalWidth;
+      
+      return `${expandedWidth}px`;
+    }
+    
+    return naturalWidth;
+  }, [columns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     // Find the column to get its minimum width
