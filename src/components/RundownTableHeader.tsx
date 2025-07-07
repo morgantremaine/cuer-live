@@ -74,6 +74,9 @@ const RundownTableHeader = ({
   // Auto-resize column to fit content
   const handleAutoResize = (column: Column) => {
     if (!items.length) return;
+    
+    // Disable auto-resize for script and notes columns as they have expandable cells
+    if (column.key === 'script' || column.key === 'notes') return;
 
     // Create a temporary element to measure text width
     const measureElement = document.createElement('div');
