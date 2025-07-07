@@ -173,19 +173,26 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const mergedColumns: Column[] = [];
       const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
 
+      console.log('🔍 Layout column IDs:', Array.from(layoutColumnIds));
+      console.log('🔍 Default columns:', defaultColumns.map(col => col.id));
+
       // First, add all columns from updated layout (preserving order, custom columns, and widths)
       updatedLayoutColumns.forEach(layoutCol => {
         mergedColumns.push(layoutCol);
       });
 
       // Then, add any missing default columns (including gfx and video)
+      const addedColumns: string[] = [];
       defaultColumns.forEach(defaultCol => {
         if (!layoutColumnIds.has(defaultCol.id)) {
           mergedColumns.push(defaultCol);
+          addedColumns.push(defaultCol.id);
         }
       });
 
       console.log('✅ Layout loaded with', mergedColumns.length, 'columns');
+      console.log('🔍 Added missing default columns:', addedColumns);
+      console.log('🔍 Final merged column IDs:', mergedColumns.map(col => col.id));
       
       if (markAsChanged) {
         markAsChanged();
