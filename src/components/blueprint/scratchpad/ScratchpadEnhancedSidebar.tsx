@@ -6,24 +6,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, FileText, Search, MoreVertical, Trash2, Edit3, GripVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScratchpadNote } from '@/types/scratchpad';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface ScratchpadEnhancedSidebarProps {
   notes: ScratchpadNote[];
@@ -37,8 +19,9 @@ interface ScratchpadEnhancedSidebarProps {
   onReorderNotes?: (startIndex: number, endIndex: number) => void;
 }
 
-interface SortableNoteItemProps {
+interface NoteItemProps {
   note: ScratchpadNote;
+  index: number;
   isActive: boolean;
   editingNoteId: string | null;
   editingTitle: string;
@@ -49,10 +32,15 @@ interface SortableNoteItemProps {
   saveTitle: () => void;
   cancelEditing: () => void;
   formatDate: (dateString: string) => string;
+  onDragStart: (e: React.DragEvent, noteId: string) => void;
+  onDragEnterContainer: (e: React.DragEvent, index: number) => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }
 
-const SortableNoteItem = ({
+const NoteItem = ({
   note,
+  index,
   isActive,
   editingNoteId,
   editingTitle,
@@ -62,48 +50,28 @@ const SortableNoteItem = ({
   setEditingTitle,
   saveTitle,
   cancelEditing,
-  formatDate
-}: SortableNoteItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
-    id: note.id,
-    data: {
-      type: 'note',
-      note: note
-    }
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
+  formatDate,
+  onDragStart,
+  onDragEnterContainer,
+  onDragEnd,
+  isDragging
+}: NoteItemProps) => {
   return (
     <div
-      ref={setNodeRef}
-      style={style}
+      draggable
+      onDragStart={(e) => onDragStart(e, note.id)}
+      onDragEnter={(e) => onDragEnterContainer(e, index)}
+      onDragEnd={onDragEnd}
       className={`group p-3 rounded-md cursor-pointer transition-colors mb-2 relative ${
         isActive 
           ? 'bg-blue-600 text-white' 
           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-      } ${isDragging ? 'z-10' : ''}`}
+      } ${isDragging ? 'opacity-50 z-10' : ''}`}
       onClick={() => onSelectNote(note.id)}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-200 touch-none"
-            style={{ touchAction: 'none' }}
-          >
+          <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-200">
             <GripVertical className="h-3 w-3" />
           </div>
           <div className="flex-1 min-w-0">
@@ -175,13 +143,8 @@ const ScratchpadEnhancedSidebar = ({
 }: ScratchpadEnhancedSidebarProps) => {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
+  const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -219,22 +182,50 @@ const ScratchpadEnhancedSidebar = ({
     setEditingTitle('');
   };
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
+  const handleDragStart = (e: React.DragEvent, noteId: string) => {
+    setDraggedNoteId(noteId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', noteId);
+  };
 
-    if (active.id !== over?.id && onReorderNotes) {
-      // Only handle if both items are notes
-      if (active.data.current?.type === 'note' && over?.data.current?.type === 'note') {
-        const oldIndex = filteredNotes.findIndex(note => note.id === active.id);
-        const newIndex = filteredNotes.findIndex(note => note.id === over.id);
-        
-        // Map back to original notes array
-        const originalOldIndex = notes.findIndex(note => note.id === active.id);
-        const originalNewIndex = notes.findIndex(note => note.id === over.id);
-        
-        onReorderNotes(originalOldIndex, originalNewIndex);
-      }
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnterContainer = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setInsertionIndex(index);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setInsertionIndex(null);
     }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain') || draggedNoteId;
+    
+    if (draggedId && insertionIndex !== null && onReorderNotes) {
+      const currentIndex = filteredNotes.findIndex(note => note.id === draggedId);
+      if (currentIndex === -1) return;
+
+      // Map back to original notes array
+      const originalCurrentIndex = notes.findIndex(note => note.id === draggedId);
+      const targetNote = filteredNotes[insertionIndex];
+      const originalTargetIndex = targetNote ? notes.findIndex(note => note.id === targetNote.id) : notes.length;
+      
+      onReorderNotes(originalCurrentIndex, originalTargetIndex);
+    }
+    
+    setInsertionIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedNoteId(null);
+    setInsertionIndex(null);
   };
 
   const filteredNotes = notes.filter(note =>
@@ -243,7 +234,7 @@ const ScratchpadEnhancedSidebar = ({
   );
 
   return (
-    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col" style={{ isolation: 'isolate' }}>
+    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
       <div className="p-3 border-b border-gray-700 space-y-3">
         <div className="flex items-center justify-between">
           <Button
@@ -269,35 +260,40 @@ const ScratchpadEnhancedSidebar = ({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-2">
-          <DndContext 
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            id="notes-dnd-context"
-          >
-            <SortableContext 
-              items={filteredNotes.map(note => note.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredNotes.map((note) => (
-                <SortableNoteItem
-                  key={note.id}
-                  note={note}
-                  isActive={activeNoteId === note.id}
-                  editingNoteId={editingNoteId}
-                  editingTitle={editingTitle}
-                  onSelectNote={onSelectNote}
-                  onStartEditing={startEditing}
-                  onDeleteNote={onDeleteNote}
-                  setEditingTitle={setEditingTitle}
-                  saveTitle={saveTitle}
-                  cancelEditing={cancelEditing}
-                  formatDate={formatDate}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+        <div 
+          className="p-2"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {filteredNotes.map((note, index) => (
+            <React.Fragment key={note.id}>
+              {insertionIndex === index && (
+                <div className="h-1 bg-blue-400 rounded-full mb-2 animate-pulse" />
+              )}
+              <NoteItem
+                note={note}
+                index={index}
+                isActive={activeNoteId === note.id}
+                editingNoteId={editingNoteId}
+                editingTitle={editingTitle}
+                onSelectNote={onSelectNote}
+                onStartEditing={startEditing}
+                onDeleteNote={onDeleteNote}
+                setEditingTitle={setEditingTitle}
+                saveTitle={saveTitle}
+                cancelEditing={cancelEditing}
+                formatDate={formatDate}
+                onDragStart={handleDragStart}
+                onDragEnterContainer={handleDragEnterContainer}
+                onDragEnd={handleDragEnd}
+                isDragging={draggedNoteId === note.id}
+              />
+            </React.Fragment>
+          ))}
+          {insertionIndex === filteredNotes.length && (
+            <div className="h-1 bg-blue-400 rounded-full mt-2 animate-pulse" />
+          )}
           
           {filteredNotes.length === 0 && (
             <div className="text-center py-8 text-gray-400">
