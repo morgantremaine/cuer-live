@@ -29,23 +29,42 @@ export const useScratchpadNotes = (rundownId: string) => {
         try {
           const parsed = JSON.parse(state.notes);
           if (Array.isArray(parsed)) {
-            parsedNotes = parsed;
+            // Validate each note has required fields and clean content
+            parsedNotes = parsed.filter(note => 
+              note && 
+              typeof note === 'object' && 
+              note.id && 
+              note.title !== undefined && 
+              note.content !== undefined
+            ).map(note => ({
+              ...note,
+              // Clean up any malformed content
+              content: typeof note.content === 'string' ? note.content : ''
+            }));
+          } else if (typeof parsed === 'object' && parsed.content) {
+            // Single note object
+            parsedNotes = [parsed];
           } else {
-            // Handle old text format - convert to new format
+            // Treat as plain text but clean it up
+            let cleanContent = typeof parsed === 'string' ? parsed : state.notes;
+            cleanContent = cleanupMalformedJson(cleanContent);
+            
             parsedNotes = [{
               id: `note-${Date.now()}`,
               title: 'Show Notes',
-              content: state.notes,
+              content: cleanContent,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }];
           }
         } catch {
-          // Handle old text format - convert to new format
+          // Handle plain text format - clean up any malformed JSON
+          let cleanContent = cleanupMalformedJson(state.notes);
+          
           parsedNotes = [{
             id: `note-${Date.now()}`,
             title: 'Show Notes',
-            content: state.notes,
+            content: cleanContent,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }];
@@ -74,6 +93,22 @@ export const useScratchpadNotes = (rundownId: string) => {
       createDefaultNote();
     }
   }, [state.notes, isInitialized]);
+
+  // Helper function to clean up malformed JSON content
+  const cleanupMalformedJson = (content: string): string => {
+    if (!content) return '';
+    
+    // Remove any trailing JSON fragments
+    let cleaned = content.replace(/[,\]\}]["'\s]*$/, '');
+    
+    // Remove any leading JSON fragments  
+    cleaned = cleaned.replace(/^[{\[]["'\s]*/, '');
+    
+    // Remove any escaped quotes that might appear in malformed JSON
+    cleaned = cleaned.replace(/\\"/g, '"');
+    
+    return cleaned.trim();
+  };
 
   // Save notes to blueprint context with debouncing
   const saveToBlueprint = useCallback((newState: ScratchpadState) => {
@@ -149,14 +184,24 @@ export const useScratchpadNotes = (rundownId: string) => {
       ...prev,
       notes: prev.notes.map(note => {
         if (note.id === localState.activeNoteId) {
-          // Only auto-update title if note hasn't been manually renamed AND has no title or default title
+          // More conservative auto-renaming - only for completely empty titles or exact default titles
           const shouldAutoUpdateTitle = !manuallyRenamedNotes.has(note.id) && 
-            (!note.title || note.title.startsWith('Note ') || note.title === 'Show Notes');
+            (note.title === '' || note.title === 'Show Notes' || note.title.match(/^Note \d+$/));
+          
+          // Extract title more carefully
+          let newTitle = note.title;
+          if (shouldAutoUpdateTitle) {
+            const extractedTitle = extractTitleFromContent(content);
+            // Only update if we got a meaningful title and it's different
+            if (extractedTitle && extractedTitle.length > 2 && extractedTitle !== note.title) {
+              newTitle = extractedTitle;
+            }
+          }
           
           return {
             ...note,
-            content,
-            title: shouldAutoUpdateTitle ? (extractTitleFromContent(content) || note.title) : note.title,
+            content: cleanupMalformedJson(content),
+            title: newTitle,
             updatedAt: new Date().toISOString()
           };
         }
@@ -214,11 +259,23 @@ export const useScratchpadNotes = (rundownId: string) => {
 
   // Helper function to extract title from HTML content
   const extractTitleFromContent = (htmlContent: string) => {
+    if (!htmlContent || htmlContent.trim() === '') return null;
+    
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
     const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Get first line, but be more conservative
     const firstLine = textContent.split('\n')[0].trim();
-    return firstLine.substring(0, 30) || null;
+    
+    // Don't extract titles that are too short, too long, or contain suspicious patterns
+    if (firstLine.length < 3 || firstLine.length > 50 || 
+        firstLine.includes('{') || firstLine.includes('}') ||
+        firstLine.includes('"') || firstLine.includes('[')) {
+      return null;
+    }
+    
+    return firstLine;
   };
 
   const activeNote = localState.notes.find(note => note.id === localState.activeNoteId);
@@ -232,6 +289,20 @@ export const useScratchpadNotes = (rundownId: string) => {
     };
   }, [saveTimer]);
 
+  // Reorder notes function
+  const reorderNotes = useCallback((startIndex: number, endIndex: number) => {
+    updateState(prev => {
+      const newNotes = Array.from(prev.notes);
+      const [reorderedItem] = newNotes.splice(startIndex, 1);
+      newNotes.splice(endIndex, 0, reorderedItem);
+      
+      return {
+        ...prev,
+        notes: newNotes
+      };
+    });
+  }, [updateState]);
+
   return {
     notes: localState.notes,
     activeNote,
@@ -241,6 +312,7 @@ export const useScratchpadNotes = (rundownId: string) => {
     updateNoteContent,
     renameNote,
     deleteNote,
-    setSearchQuery
+    setSearchQuery,
+    reorderNotes
   };
 };

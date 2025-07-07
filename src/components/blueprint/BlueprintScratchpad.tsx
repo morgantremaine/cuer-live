@@ -36,7 +36,8 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
     updateNoteContent,
     renameNote,
     deleteNote,
-    setSearchQuery
+    setSearchQuery,
+    reorderNotes
   } = useScratchpadNotes(rundownId);
 
   const handleFormat = (action: string) => {
@@ -88,6 +89,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
           onDeleteNote={deleteNote}
           onRenameNote={renameNote}
           onSearchChange={setSearchQuery}
+          onReorderNotes={reorderNotes}
         />
         
         <div className="flex-1 flex flex-col">

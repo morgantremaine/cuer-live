@@ -46,7 +46,8 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
     selectNote,
     updateNoteContent,
     renameNote,
-    deleteNote
+    deleteNote,
+    reorderNotes
   } = useFloatingNotes(rundownId);
 
   // Mouse event handlers for dragging
@@ -203,17 +204,28 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           {/* Note tabs if multiple notes */}
           {notes.length > 1 && (
             <div className="flex border-b border-gray-700 bg-gray-800 overflow-x-auto">
-              {notes.map(note => (
+              {notes.map((note, index) => (
                 <button
                   key={note.id}
                   onClick={() => selectNote(note.id)}
-                  className={`px-3 py-2 text-xs border-r border-gray-700 truncate min-w-0 max-w-32 ${
+                  className={`px-3 py-2 text-xs border-r border-gray-700 truncate min-w-0 max-w-32 relative group ${
                     note.id === activeNote?.id
                       ? 'bg-gray-700 text-white'
                       : 'text-gray-400 hover:text-white hover:bg-gray-750'
                   }`}
                 >
                   {note.title}
+                  {notes.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNote(note.id);
+                      }}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  )}
                 </button>
               ))}
               <button

@@ -109,6 +109,22 @@ export const useFloatingNotes = (rundownId: string) => {
     }
   }, [rundownId]);
 
+  // Helper function to clean up malformed JSON content
+  const cleanupMalformedJson = (content: string): string => {
+    if (!content) return '';
+    
+    // Remove any trailing JSON fragments
+    let cleaned = content.replace(/[,\]\}]["'\s]*$/, '');
+    
+    // Remove any leading JSON fragments  
+    cleaned = cleaned.replace(/^[{\[]["'\s]*/, '');
+    
+    // Remove any escaped quotes that might appear in malformed JSON
+    cleaned = cleaned.replace(/\\"/g, '"');
+    
+    return cleaned.trim();
+  };
+
   // Save notes with debouncing
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
     if (saveTimeout) {
@@ -172,20 +188,30 @@ export const useFloatingNotes = (rundownId: string) => {
     loadNotes();
   }, [loadNotes]);
 
-  // Update note content
   const updateNoteContent = useCallback((content: string) => {
     if (!activeNoteId) return;
 
     setNotes(prev => {
       const updated = prev.map(note => 
         note.id === activeNoteId 
-          ? { ...note, content, updatedAt: new Date().toISOString() }
+          ? { ...note, content: cleanupMalformedJson(content), updatedAt: new Date().toISOString() }
           : note
       );
       saveNotes(updated);
       return updated;
     });
   }, [activeNoteId, saveNotes]);
+
+  // Reorder notes function
+  const reorderNotes = useCallback((startIndex: number, endIndex: number) => {
+    setNotes(prev => {
+      const newNotes = Array.from(prev);
+      const [reorderedItem] = newNotes.splice(startIndex, 1);
+      newNotes.splice(endIndex, 0, reorderedItem);
+      saveNotes(newNotes);
+      return newNotes;
+    });
+  }, [saveNotes]);
 
   // Create new note
   const createNote = useCallback(() => {
@@ -255,6 +281,7 @@ export const useFloatingNotes = (rundownId: string) => {
     selectNote,
     updateNoteContent,
     renameNote,
-    deleteNote
+    deleteNote,
+    reorderNotes
   };
 };
