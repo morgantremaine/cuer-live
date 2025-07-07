@@ -137,16 +137,16 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
 
-  // Parse width value and ensure it's a valid pixel value
+  // Parse width value - use the exact width passed from getColumnWidth (which handles expansion)
   const widthValue = parseInt(width.replace('px', ''));
-  const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
+  const actualWidth = isNaN(widthValue) ? minimumWidth : widthValue;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: `${constrainedWidth}px`,
+    width: width, // Use exact width from getColumnWidth (includes expansion)
     minWidth: `${minimumWidth}px`,
-    maxWidth: `${constrainedWidth}px`,
+    maxWidth: width, // Use exact width from getColumnWidth (includes expansion)
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
@@ -182,9 +182,9 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
         style={{
-          width: `${constrainedWidth - 16}px`,
+          width: `${actualWidth - 16}px`,
           minWidth: `${minimumWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`
+          maxWidth: `${actualWidth - 16}px`
         }}
       >
         {children}
