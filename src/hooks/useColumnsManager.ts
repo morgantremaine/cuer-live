@@ -204,11 +204,21 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   // Reset to default columns function for new rundowns
   const resetToDefaults = useCallback(() => {
     console.log('🔄 Resetting to default columns');
-    setColumns(getDefaultColumns());
+    const defaults = getDefaultColumns();
+    console.log('🔍 Default columns being set:', defaults.map(col => col.id));
+    setColumns(defaults);
     if (markAsChanged) {
       markAsChanged();
     }
   }, [markAsChanged]);
+
+  // Debug function to check current columns state
+  const debugColumns = useCallback(() => {
+    console.log('🔍 Current columns state:');
+    console.log('📊 All columns:', columns.map(col => `${col.id} (${col.name}) - visible: ${col.isVisible}`));
+    console.log('👁️ Visible columns:', visibleColumns.map(col => `${col.id} (${col.name})`));
+    console.log('🔍 ElapsedTime column exists:', columns.find(col => col.id === 'elapsedTime') ? 'YES' : 'NO');
+  }, [columns, visibleColumns]);
 
   return {
     columns: Array.isArray(columns) ? columns : [],
@@ -220,6 +230,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     handleUpdateColumnWidth,
-    resetToDefaults
+    resetToDefaults,
+    debugColumns
   };
 };

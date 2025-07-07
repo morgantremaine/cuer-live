@@ -20,6 +20,8 @@ const RundownMainContent = ({
   handleRenameColumn,
   handleToggleColumnVisibility,
   handleLoadLayout,
+  debugColumns,
+  resetToDefaults,
   currentSegmentName,
   totalDuration,
   autoScrollEnabled,
@@ -47,6 +49,8 @@ const RundownMainContent = ({
           onRenameColumn={handleRenameColumn}
           onToggleColumnVisibility={handleToggleColumnVisibility}
           onLoadLayout={handleLoadLayout}
+          debugColumns={debugColumns}
+          resetToDefaults={resetToDefaults}
         />
       )}
     </>

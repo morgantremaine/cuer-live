@@ -71,7 +71,9 @@ const RundownIndexContent = () => {
     handleRenameColumn,
     handleToggleColumnVisibility,
     handleLoadLayout,
-    handleUpdateColumnWidth
+    handleUpdateColumnWidth,
+    debugColumns,
+    resetToDefaults
   } = useColumnsManager(() => {
     // Mark as changed - handled by auto-save
   });
@@ -391,6 +393,8 @@ const RundownIndexContent = () => {
         handleRenameColumn={handleRenameColumnWrapper}
         handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
         handleLoadLayout={handleLoadLayoutWrapper}
+        debugColumns={debugColumns}
+        resetToDefaults={resetToDefaults}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}

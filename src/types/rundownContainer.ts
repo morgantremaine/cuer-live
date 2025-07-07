@@ -58,6 +58,8 @@ export interface RundownContainerProps {
   handleRenameColumn: (columnId: string, newName: string) => void;
   handleToggleColumnVisibility: (columnId: string) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
+  debugColumns?: () => void;
+  resetToDefaults?: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
