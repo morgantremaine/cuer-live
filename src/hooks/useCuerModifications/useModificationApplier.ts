@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 interface UseModificationApplierProps {
   items: RundownItem[];
-  updateItem: (id: string, field: string, value: string) => boolean | void;
+  updateItem: (id: string, field: string, value: string) => void;
   addRow: (calculateEndTime: any) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
@@ -27,22 +27,13 @@ export const useModificationApplier = ({
   const { findItemByReference } = useItemFinder(items);
 
   const applyModifications = useCallback((modifications: RundownModification[]) => {
-    console.log('🚀 === APPLYING MODIFICATIONS START ===');
-    console.log('📝 Modifications received:', JSON.stringify(modifications, null, 2));
+    console.log('🚀 === APPLYING MODIFICATIONS ===');
+    console.log('📝 Modifications received:', modifications);
     console.log('📊 Current items count:', items.length);
-    console.log('🔧 updateItem function exists:', typeof updateItem);
-    console.log('🔧 addRow function exists:', typeof addRow);
-    console.log('🔧 markAsChanged function exists:', typeof markAsChanged);
-
-    // FORCE VISIBLE DEBUG - Alert for critical debugging
-    if (modifications.length > 0) {
-      alert(`🔧 CUER DEBUG: Starting to apply ${modifications.length} modifications. Check console for details.`);
-    }
 
     // Prevent modifications if items are empty (still loading)
     if (items.length === 0) {
       console.warn('⚠️ Items still loading, delaying modifications');
-      alert('⚠️ CUER DEBUG: Items still loading, delaying modifications');
       toast.error('Rundown is still loading. Please try again in a moment.');
       return false;
     }
@@ -92,11 +83,8 @@ export const useModificationApplier = ({
                   console.log(`🖊️ Updating ${targetItem.id}.${field} = "${value}"`);
                   
                   try {
-                    const success = updateItem(targetItem.id, field, String(value));
-                    console.log(`✅ Successfully updated ${field}, returned:`, success);
-                    if (success === false) {
-                      console.error(`❌ Update returned false for ${field}`);
-                    }
+                    updateItem(targetItem.id, field, String(value));
+                    console.log(`✅ Successfully updated ${field}`);
                   } catch (error) {
                     console.error(`❌ Failed to update ${field}:`, error);
                   }
@@ -149,9 +137,9 @@ export const useModificationApplier = ({
       // Force immediate re-render by marking changes
       markAsChanged();
       
-      // Show success message
-      toast.success(`Applied ${modifications.length} modification(s) successfully.`, {
-        duration: 3000
+      // Show success message and prompt user to refresh to see changes
+      toast.success(`Applied ${modifications.length} modification(s). Please refresh the page to see the changes.`, {
+        duration: 6000
       });
     } else {
       toast.error('No modifications were applied successfully.');

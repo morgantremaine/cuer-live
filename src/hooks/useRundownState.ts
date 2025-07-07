@@ -48,18 +48,12 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>) => {
-    console.log('🔧 REDUCER: markChanged called with:', newState);
-    console.log('🔧 REDUCER: hasUnsavedChanges will be set to true');
-    
-    const result = {
+    return {
       ...state,
       ...newState,
       hasUnsavedChanges: true,
       lastChanged: Date.now()
     };
-    
-    console.log('🔧 REDUCER: Returning new state with items:', result.items?.length);
-    return result;
   };
 
   switch (action.type) {
@@ -67,19 +61,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return markChanged({ items: action.payload });
 
     case 'UPDATE_ITEM': {
-      console.log('🔧 REDUCER: UPDATE_ITEM called with:', action.payload);
-      console.log('🔧 REDUCER: Current items:', state.items.length);
-      console.log('🔧 REDUCER: Target item before update:', state.items.find(item => item.id === action.payload.id));
-      
       const items = state.items.map(item =>
         item.id === action.payload.id 
           ? { ...item, ...action.payload.updates }
           : item
       );
-      
-      console.log('🔧 REDUCER: Target item after update:', items.find(item => item.id === action.payload.id));
-      console.log('🔧 REDUCER: About to return markChanged with items:', items.length);
-      
       return markChanged({ items });
     }
 

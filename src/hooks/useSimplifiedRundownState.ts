@@ -126,79 +126,49 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    console.log('🚀 ENHANCED UPDATE ITEM CALLED:', { id, field, value });
-    console.log('🚀 Current items count:', state.items.length);
-    console.log('🚀 Target item exists:', !!state.items.find(item => item.id === id));
+    // Check if this is a typing field
+    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
+                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
     
-    // FORCE VISIBLE DEBUG
-    alert(`🚀 ENHANCED UPDATE: Called with id=${id}, field=${field}, value=${value}`);
-    
-    try {
-      // Check if this is a typing field
-      const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                           field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
+    if (isTypingField) {
+      const sessionKey = `${id}-${field}`;
       
-      if (isTypingField) {
-        const sessionKey = `${id}-${field}`;
-        
-        if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-          saveUndoState(state.items, [], state.title, `Edit ${field}`);
-          typingSessionRef.current = {
-            fieldKey: sessionKey,
-            startTime: Date.now()
-          };
-        }
-        
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-        }
-        
-        typingTimeoutRef.current = setTimeout(() => {
-          typingSessionRef.current = null;
-        }, 1000);
-      } else if (field === 'duration') {
-        saveUndoState(state.items, [], state.title, 'Edit duration');
+      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+        saveUndoState(state.items, [], state.title, `Edit ${field}`);
+        typingSessionRef.current = {
+          fieldKey: sessionKey,
+          startTime: Date.now()
+        };
       }
       
-      if (field.startsWith('customFields.')) {
-        const customFieldKey = field.replace('customFields.', '');
-        const item = state.items.find(i => i.id === id);
-        if (item) {
-          console.log('🚀 Updating custom field:', { customFieldKey, value });
-          const currentCustomFields = item.customFields || {};
-          const updateData = {
-            customFields: {
-              ...currentCustomFields,
-              [customFieldKey]: value
-            }
-          };
-          console.log('🚀 Calling actions.updateItem with custom fields:', updateData);
-          alert(`🚀 ABOUT TO CALL actions.updateItem with custom fields: ${JSON.stringify(updateData)}`);
-          actions.updateItem(id, updateData);
-          alert('🚀 CALLED actions.updateItem with custom fields');
-        } else {
-          console.error('🚀 Item not found for custom field update:', id);
-          alert(`🚀 ERROR: Item not found for custom field update: ${id}`);
-          return false;
-        }
-      } else {
-        let updateField = field;
-        if (field === 'segmentName') updateField = 'name';
-        
-        const updateData = { [updateField]: value };
-        console.log('🚀 Calling actions.updateItem with regular field:', updateData);
-        alert(`🚀 ABOUT TO CALL actions.updateItem with regular field: ${JSON.stringify(updateData)}`);
-        actions.updateItem(id, updateData);
-        alert('🚀 CALLED actions.updateItem with regular field');
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
       
-      console.log('🚀 ENHANCED UPDATE ITEM COMPLETED SUCCESSFULLY');
-      alert('🚀 ENHANCED UPDATE ITEM COMPLETED SUCCESSFULLY');
-      return true;
-    } catch (error) {
-      console.error('🚀 ENHANCED UPDATE ITEM FAILED:', error);
-      alert(`🚀 ENHANCED UPDATE ITEM FAILED: ${error}`);
-      return false;
+      typingTimeoutRef.current = setTimeout(() => {
+        typingSessionRef.current = null;
+      }, 1000);
+    } else if (field === 'duration') {
+      saveUndoState(state.items, [], state.title, 'Edit duration');
+    }
+    
+    if (field.startsWith('customFields.')) {
+      const customFieldKey = field.replace('customFields.', '');
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        const currentCustomFields = item.customFields || {};
+        actions.updateItem(id, {
+          customFields: {
+            ...currentCustomFields,
+            [customFieldKey]: value
+          }
+        });
+      }
+    } else {
+      let updateField = field;
+      if (field === 'segmentName') updateField = 'name';
+      
+      actions.updateItem(id, { [updateField]: value });
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
@@ -290,21 +260,11 @@ export const useSimplifiedRundownState = () => {
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
-    console.log('🧮 CALCULATED ITEMS: Recalculating with state.items:', state.items?.length);
-    console.log('🧮 CALCULATED ITEMS: state.startTime:', state.startTime);
-    
     if (!state.items || !Array.isArray(state.items)) {
-      console.log('🧮 CALCULATED ITEMS: No items, returning empty array');
       return [];
     }
     
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    console.log('🧮 CALCULATED ITEMS: Calculated items:', calculated.length);
-    console.log('🧮 CALCULATED ITEMS: First item name:', calculated[0]?.name);
-    
-    // FORCE VISIBLE DEBUG
-    alert(`🧮 CALCULATED ITEMS: Recalculated ${calculated.length} items. First item: ${calculated[0]?.name || 'None'}`);
-    
     return calculated;
   }, [state.items, state.startTime]);
 

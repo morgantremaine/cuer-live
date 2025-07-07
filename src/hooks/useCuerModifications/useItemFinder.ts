@@ -12,35 +12,6 @@ export const useItemFinder = (items: RundownItem[]) => {
       type: item.type 
     })));
     
-    // Handle "row X" or "row number X" references
-    const rowMatch = reference.toLowerCase().match(/(?:row\s*(?:number\s*)?)?(\d+)/);
-    if (rowMatch) {
-      const rowNumber = parseInt(rowMatch[1]);
-      console.log(`🔢 Looking for row number ${rowNumber}`);
-      
-      // Find by actual position in the list (1-based indexing)
-      if (rowNumber > 0 && rowNumber <= items.length) {
-        const item = items[rowNumber - 1];
-        console.log('✅ Found by row position:', item);
-        return item;
-      }
-    }
-    
-    // Handle segment references like "weather segment", "sports segment"
-    const segmentMatch = reference.toLowerCase().match(/(.+?)\s*segment/);
-    if (segmentMatch) {
-      const segmentName = segmentMatch[1].trim();
-      console.log(`🎬 Looking for segment containing: "${segmentName}"`);
-      const item = items.find(item => 
-        item.name.toLowerCase().includes(segmentName) ||
-        item.script.toLowerCase().includes(segmentName)
-      );
-      if (item) {
-        console.log('✅ Found by segment name:', item);
-        return item;
-      }
-    }
-    
     // First try to find by exact ID match
     let item = items.find(item => item.id === reference);
     if (item) {
@@ -57,8 +28,8 @@ export const useItemFinder = (items: RundownItem[]) => {
 
     // Try to find by name (case insensitive partial match)
     item = items.find(item => 
-      item.name && item.name.toLowerCase().includes(reference.toLowerCase()) ||
-      reference.toLowerCase().includes(item.name?.toLowerCase() || '')
+      item.name.toLowerCase().includes(reference.toLowerCase()) ||
+      reference.toLowerCase().includes(item.name.toLowerCase())
     );
     if (item) {
       console.log('✅ Found by name match:', item);
@@ -94,10 +65,10 @@ export const useItemFinder = (items: RundownItem[]) => {
     item = items.find(item => {
       const searchTerm = reference.toLowerCase();
       return (
-        (item.name || '').toLowerCase().includes(searchTerm) ||
-        (item.script || '').toLowerCase().includes(searchTerm) ||
-        (item.notes || '').toLowerCase().includes(searchTerm) ||
-        (item.talent || '').toLowerCase().includes(searchTerm)
+        item.name.toLowerCase().includes(searchTerm) ||
+        item.script.toLowerCase().includes(searchTerm) ||
+        item.notes.toLowerCase().includes(searchTerm) ||
+        item.talent.toLowerCase().includes(searchTerm)
       );
     });
     
