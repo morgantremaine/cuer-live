@@ -26,7 +26,7 @@ export const useRundownUIManager = (
     }, 300);
   }, [markAsChanged]);
 
-  // Column width management - with viewport expansion
+  // Column width management - with viewport expansion and debugging
   const getColumnWidth = useCallback((column: Column) => {
     const naturalWidth = column.width || '150px';
     
@@ -40,6 +40,15 @@ export const useRundownUIManager = (
     
     const viewportWidth = window.innerWidth;
     
+    // Debug logging
+    console.log('Viewport expansion check:', {
+      totalNaturalWidth,
+      viewportWidth,
+      shouldExpand: totalNaturalWidth < viewportWidth,
+      columnId: column.id,
+      naturalWidth
+    });
+    
     // If total is less than viewport, expand proportionally
     if (totalNaturalWidth < viewportWidth) {
       const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
@@ -52,6 +61,14 @@ export const useRundownUIManager = (
       const proportion = naturalWidthValue / totalColumnsWidth;
       const additionalWidth = Math.floor(extraSpace * proportion);
       const expandedWidth = naturalWidthValue + additionalWidth;
+      
+      console.log('Expanding column:', {
+        columnId: column.id,
+        naturalWidthValue,
+        proportion,
+        additionalWidth,
+        expandedWidth
+      });
       
       return `${expandedWidth}px`;
     }
