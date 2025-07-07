@@ -121,28 +121,26 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate total table width with expansion logic
-  const totalTableWidth = React.useMemo(() => {
+  // Calculate minimum table width based on actual column widths
+  const minTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
       const widthValue = parseInt(width.replace('px', ''));
       total += widthValue;
     });
-    
-    // Ensure table always fills viewport width (getColumnWidth handles expansion)
-    return Math.max(total, window.innerWidth);
+    return total;
   }, [visibleColumns, getColumnWidth]);
 
   return (
     <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
+        <div className="bg-background" style={{ minWidth: `${minTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse border border-border" style={{ 
-            tableLayout: 'fixed', 
-            width: `${totalTableWidth}px`
+          <table className="border-collapse border border-border w-full" style={{ 
+            tableLayout: 'auto',
+            minWidth: `${minTableWidth}px`
           }}>
             {/* Sticky Header */}
             <RundownTableHeader 
