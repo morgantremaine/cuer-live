@@ -117,9 +117,9 @@ const ResizableColumnHeader = ({
       // Final update on mouse up
       onWidthChange(column.id, finalWidth);
       
-      // Reset global styles to proper defaults
-      document.body.style.cursor = 'auto';
-      document.body.style.userSelect = 'auto';
+      // Reset global styles
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
       
       // Reset resize handle
       const resizeHandle = headerRef.current?.querySelector('.resize-handle') as HTMLElement;
@@ -158,13 +158,12 @@ const ResizableColumnHeader = ({
       ref={headerRef}
       className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
         isDragging ? 'opacity-50' : ''
-      }`}
+      } ${onDragStart ? 'cursor-move' : ''}`}
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
         maxWidth: constrainedWidthPx,
-        borderRight: '1px solid hsl(var(--border))',
-        cursor: onDragStart ? 'move' : 'default'
+        borderRight: '1px solid hsl(var(--border))'
       }}
       draggable={!!onDragStart}
       onDragStart={handleHeaderDragStart}
@@ -180,8 +179,7 @@ const ResizableColumnHeader = ({
       </div>
       
       <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-2 hover:bg-blue-400 transition-colors z-10"
-        style={{ cursor: 'col-resize' }}
+        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10"
         onMouseDown={handleMouseDown}
       />
     </th>

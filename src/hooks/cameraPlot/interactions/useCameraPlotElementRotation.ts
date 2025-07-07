@@ -78,9 +78,9 @@ export const useCameraPlotElementRotation = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
-      // Restore normal interactions with proper defaults
-      document.body.style.userSelect = 'auto';
-      document.body.style.pointerEvents = 'auto';
+      // Restore normal interactions
+      document.body.style.userSelect = '';
+      document.body.style.pointerEvents = '';
       
       const elementDiv = document.querySelector(`[data-element-id="${element.id}"]`) as HTMLElement;
       if (elementDiv) {

@@ -189,9 +189,9 @@ const ExpandableScriptCell = ({
           onKeyDown={handleKeyDown}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 text-sm resize-none ${
-            isExpanded ? 'py-1' : 'py-0'
-          } ${isExpanded ? '' : 'text-transparent'}`}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none ${
+            isExpanded ? '' : 'text-transparent'
+          }`}
           style={{ 
             color: isExpanded ? (textColor || undefined) : 'transparent',
             minHeight: isExpanded ? '120px' : '24px',
@@ -204,15 +204,14 @@ const ExpandableScriptCell = ({
         />
         {!isExpanded && value && !isNullScript(value) && (
           <div 
-            className="absolute inset-0 flex items-center justify-start pointer-events-none"
+            className="absolute inset-0 flex items-center justify-start px-1 pointer-events-none"
             style={{ 
-              height: '100%',
+              height: '24px',
               overflow: 'hidden',
-              paddingLeft: '4px',
-              paddingRight: '4px'
+              lineHeight: '24px'
             }}
           >
-            <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
+            <div className="truncate w-full text-sm leading-6" style={{ color: textColor || undefined }}>
               {renderScriptWithBrackets(value, { 
                 inlineDisplay: true, 
                 fontSize: 14 
