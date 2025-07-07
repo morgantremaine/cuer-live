@@ -53,15 +53,25 @@ const CuerChatMessages = ({
     // Check for both old and new formats
     let modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
     let isOldFormat = true;
+    let matchedPattern = '';
     
     if (!modificationMatch) {
-      // Check for MODIFICATION_REQUEST format from system prompt
+      // Check for MODIFICATION_REQUEST format from system prompt (with or without code blocks)
       modificationMatch = content.match(/MODIFICATION_REQUEST:\s*```json\s*([\s\S]*?)\s*```/);
-      isOldFormat = false;
+      if (modificationMatch) {
+        matchedPattern = 'codeblock';
+        isOldFormat = false;
+      } else {
+        modificationMatch = content.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\})/);
+        if (modificationMatch) {
+          matchedPattern = 'direct';
+          isOldFormat = false;
+        }
+      }
     }
     
     console.log('🔍 EXTRACTION: Modification match found:', !!modificationMatch);
-    console.log('🔍 EXTRACTION: Format used:', isOldFormat ? 'old __CUER_MODIFICATIONS__' : 'new MODIFICATION_REQUEST');
+    console.log('🔍 EXTRACTION: Format used:', isOldFormat ? 'old __CUER_MODIFICATIONS__' : `new MODIFICATION_REQUEST (${matchedPattern})`);
     
     if (modificationMatch) {
       console.log('🔍 EXTRACTION: Raw modification data:', modificationMatch[1]);
@@ -69,9 +79,14 @@ const CuerChatMessages = ({
         const modificationData = JSON.parse(modificationMatch[1]);
         console.log('🔍 EXTRACTION: Parsed modification data:', modificationData);
         
-        const cleanContent = isOldFormat 
-          ? content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim()
-          : content.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+        let cleanContent = content;
+        if (isOldFormat) {
+          cleanContent = content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim();
+        } else if (matchedPattern === 'codeblock') {
+          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+        } else if (matchedPattern === 'direct') {
+          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\}/, '').trim();
+        }
         
         const result = {
           cleanContent,
