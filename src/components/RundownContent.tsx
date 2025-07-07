@@ -1,7 +1,6 @@
 
 import React from 'react';
-import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
-import RundownTableHeader from './RundownTableHeader';
+import GridBasedRundownTable from './GridBasedRundownTable';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -134,62 +133,49 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   return (
     <div className="relative bg-background h-full">
-      {/* Scrollable Content with Header Inside */}
+      {/* Scrollable Content with Grid-based Table */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div className="bg-background" style={{ minWidth: `${minTableWidth}px` }}>
-          {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse border border-border w-full" style={{ 
-            tableLayout: 'fixed',
-            width: '100%'
-          }}>
-            {/* Sticky Header */}
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
-            />
-            
-            {/* Table Body - Content */}
-            <OptimizedRundownTableWrapper
-            items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
-            startTime={startTime}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={handleEnhancedDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragEnd={onDragEnd}
-            onCopySelectedRows={onCopySelectedRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows || (() => {})}
-            onClearSelection={onClearSelection || (() => {})}
-            onAddRow={onAddRow || (() => {})}
-            onAddHeader={onAddHeader || (() => {})}
-            onJumpToHere={onJumpToHere}
-            />
-          </table>
-        </div>
+        <GridBasedRundownTable
+          items={items}
+          visibleColumns={visibleColumns}
+          currentTime={currentTime}
+          showColorPicker={showColorPicker}
+          cellRefs={cellRefs}
+          selectedRows={selectedRows}
+          draggedItemIndex={draggedItemIndex}
+          isDraggingMultiple={isDraggingMultiple}
+          dropTargetIndex={dropTargetIndex}
+          currentSegmentId={currentSegmentId}
+          hasClipboardData={hasClipboardData}
+          selectedRowId={selectedRowId}
+          startTime={startTime}
+          getColumnWidth={getColumnWidth}
+          updateColumnWidth={updateColumnWidth}
+          onReorderColumns={onReorderColumns}
+          getRowNumber={getRowNumber}
+          getRowStatus={getRowStatus}
+          calculateHeaderDuration={calculateHeaderDuration}
+          onUpdateItem={onUpdateItem}
+          onCellClick={onCellClick}
+          onKeyDown={onKeyDown}
+          onToggleColorPicker={onToggleColorPicker}
+          onColorSelect={onColorSelect}
+          onDeleteRow={onDeleteRow}
+          onToggleFloat={onToggleFloat}
+          onRowSelect={onRowSelect}
+          onDragStart={onDragStart}
+          onDragOver={handleEnhancedDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          onDragEnd={onDragEnd}
+          onCopySelectedRows={onCopySelectedRows}
+          onDeleteSelectedRows={onDeleteSelectedRows}
+          onPasteRows={onPasteRows}
+          onClearSelection={onClearSelection}
+          onAddRow={onAddRow}
+          onAddHeader={onAddHeader}
+          onJumpToHere={onJumpToHere}
+        />
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
       </ScrollArea>
