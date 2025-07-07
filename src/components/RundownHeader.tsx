@@ -299,12 +299,11 @@ const RundownHeader = ({
         {/* Bottom row - Time info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
-            </div>
             <TimezoneSelector
               currentTimezone={timezone}
               onTimezoneChange={onTimezoneChange}
+              showTime={true}
+              timeDisplay={formatTimeInTimezone(currentTime, timezone)}
             />
           </div>
           
@@ -393,10 +392,12 @@ const RundownHeader = ({
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">
-          <span className="text-lg font-mono">{formatTimeInTimezone(currentTime, timezone)}</span>
           <TimezoneSelector
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
+            showTime={true}
+            timeDisplay={formatTimeInTimezone(currentTime, timezone)}
+            large={true}
           />
           
           <Button
