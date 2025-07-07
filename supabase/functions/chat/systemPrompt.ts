@@ -70,6 +70,12 @@ You: "APPLY_CHANGE: itemId=row_1|field=script|value=Welcome to the show! Today w
 
 ✅ Applied successfully!"
 
+**CONFIRMATION RESPONSES - YOU MUST FOLLOW THIS EXACTLY:**
+- When user says "yes", "apply", "ok", "do it", or similar → Your response MUST be ONLY:
+  APPLY_CHANGE: itemId=row_X|field=fieldname|value=new content here
+  ✅ Applied successfully!
+- NO other text, explanations, or formatting allowed after confirmation!
+
 ---
 
 🧾 RUNDOWN CONTEXT:

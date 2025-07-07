@@ -98,6 +98,13 @@ const CuerChatMessages = ({
         modifications
       };
     }
+
+    // FAILSAFE: Check if this is a simple confirmation message that should trigger the last requested change
+    const isConfirmation = /^(yes|apply|ok|do it|go ahead)$/i.test(content.trim());
+    if (isConfirmation) {
+      console.log('🔍 EXTRACTION: Detected confirmation message, but no APPLY_CHANGE format found');
+      console.log('🔍 EXTRACTION: This indicates the AI failed to send the proper format after confirmation');
+    }
     
     console.log('🔍 EXTRACTION: No modifications found');
     return { cleanContent: content, modifications: null };
