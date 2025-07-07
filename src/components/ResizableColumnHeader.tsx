@@ -158,7 +158,7 @@ const ResizableColumnHeader = ({
       ref={headerRef}
       className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
         isDragging ? 'opacity-50' : ''
-      } ${onDragStart ? 'cursor-move' : ''}`}
+      }`}
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
@@ -174,7 +174,9 @@ const ResizableColumnHeader = ({
     >
       {/* Remove left separator since we're using consistent borders */}
       
-      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
+      <div className={`truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap ${
+        onDragStart ? 'cursor-move' : ''
+      }`}>
         {children}
       </div>
       
