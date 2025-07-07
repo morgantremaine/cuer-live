@@ -142,9 +142,9 @@ const ResizableColumnHeader = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: constrainedWidthPx, 
-    minWidth: constrainedWidthPx,
-    maxWidth: constrainedWidthPx,
+    width: isDragging ? `${constrainedWidth}px` : constrainedWidthPx, 
+    minWidth: isDragging ? `${constrainedWidth}px` : constrainedWidthPx,
+    maxWidth: isDragging ? `${constrainedWidth}px` : constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
   };
@@ -179,10 +179,10 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
         style={isDragging ? { 
-          transform: 'translateX(0)',
-          willChange: 'auto',
-          width: 'fit-content',
-          minWidth: 'fit-content'
+          width: `${constrainedWidth - 16}px`, // Account for padding
+          minWidth: `${constrainedWidth - 16}px`,
+          maxWidth: `${constrainedWidth - 16}px`,
+          flexShrink: 0
         } : undefined}
       >
         {children}
