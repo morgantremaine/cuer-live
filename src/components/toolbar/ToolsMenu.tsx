@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -101,6 +101,10 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     window.open(adViewUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const handleOpenHelp = () => {
+    navigate('/help');
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -133,6 +137,13 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         <DropdownMenuItem onClick={handleOpenADView}>
           <Camera className="h-4 w-4 mr-2" />
           AD View
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        
+        <DropdownMenuItem onClick={handleOpenHelp}>
+          <HelpCircle className="h-4 w-4 mr-2" />
+          User Guide
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
