@@ -163,7 +163,8 @@ const ResizableColumnHeader = ({
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
         maxWidth: constrainedWidthPx,
-        borderRight: '1px solid hsl(var(--border))'
+        borderRight: '1px solid hsl(var(--border))',
+        cursor: onDragStart ? 'move' : 'default'
       }}
       draggable={!!onDragStart}
       onDragStart={handleHeaderDragStart}
@@ -174,14 +175,13 @@ const ResizableColumnHeader = ({
     >
       {/* Remove left separator since we're using consistent borders */}
       
-      <div className={`truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-        onDragStart ? 'cursor-move' : ''
-      }`}>
+      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
         {children}
       </div>
       
       <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10"
+        className="resize-handle absolute right-0 top-0 bottom-0 w-2 hover:bg-blue-400 transition-colors z-10"
+        style={{ cursor: 'col-resize' }}
         onMouseDown={handleMouseDown}
       />
     </th>
