@@ -117,9 +117,9 @@ const ResizableColumnHeader = ({
       // Final update on mouse up
       onWidthChange(column.id, finalWidth);
       
-      // Reset global styles
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      // Reset global styles to proper defaults
+      document.body.style.cursor = 'auto';
+      document.body.style.userSelect = 'auto';
       
       // Reset resize handle
       const resizeHandle = headerRef.current?.querySelector('.resize-handle') as HTMLElement;
