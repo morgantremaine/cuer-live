@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Undo, MapPin } from 'lucide-react';
+import { Plus, Settings, Undo, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -32,6 +32,7 @@ interface MainActionButtonsProps {
   onForward?: () => void;
   onBackward?: () => void;
   onReset?: () => void;
+  onShowFindReplace?: () => void;
 }
 
 const MainActionButtons = ({
@@ -56,7 +57,8 @@ const MainActionButtons = ({
   onPause,
   onForward,
   onBackward,
-  onReset
+  onReset,
+  onShowFindReplace
 }: MainActionButtonsProps) => {
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
@@ -98,7 +100,7 @@ const MainActionButtons = ({
         </div>
 
         {/* Tools and Share menus */}
-        <div className="grid grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-3 gap-2 w-full">
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
@@ -106,6 +108,12 @@ const MainActionButtons = ({
               className="w-full justify-start"
             />
           </div>
+          {onShowFindReplace && (
+            <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2 w-full">
+              <Search className="h-4 w-4" />
+              <span>Find</span>
+            </Button>
+          )}
           {rundownId && (
             <div className="w-full">
               <ShareRundownMenu 
@@ -186,6 +194,13 @@ const MainActionButtons = ({
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} />
+      
+      {onShowFindReplace && (
+        <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className={buttonClass}>
+          <Search className="h-4 w-4" />
+          <span>Find & Replace</span>
+        </Button>
+      )}
       
       {rundownId && (
         <ShareRundownMenu 
