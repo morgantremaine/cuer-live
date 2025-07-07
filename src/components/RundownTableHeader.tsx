@@ -1,6 +1,5 @@
 
-import React from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import React, { useState, useCallback } from 'react';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -17,20 +16,87 @@ const RundownTableHeader = ({
   updateColumnWidth,
   onReorderColumns
 }: RundownTableHeaderProps) => {
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination || !onReorderColumns) return;
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+
+  const handleColumnDragStart = useCallback((e: React.DragEvent, column: Column, index: number) => {
+    // Ensure we're not resizing when starting drag
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('resize-handle') || target.closest('.resize-handle')) {
+      e.preventDefault();
+      return;
+    }
     
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
+    try {
+      setDraggedColumnId(column.id);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', column.id);
+      
+      // Simple, reliable drag image
+      e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 10, 10);
+    } catch (error) {
+      console.warn('Drag start failed:', error);
+    }
+  }, []);
+
+  const handleColumnDragOver = useCallback((e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     
-    if (sourceIndex === destinationIndex) return;
+    if (draggedColumnId) {
+      setDropTargetIndex(targetIndex);
+    }
+  }, [draggedColumnId]);
+
+  const handleColumnDragLeave = useCallback((e: React.DragEvent) => {
+    // Only reset if we're leaving the header row entirely
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
     
-    const newColumns = Array.from(visibleColumns);
-    const [reorderedColumn] = newColumns.splice(sourceIndex, 1);
-    newColumns.splice(destinationIndex, 0, reorderedColumn);
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDropTargetIndex(null);
+    }
+  }, []);
+
+  const handleColumnDrop = useCallback((e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
     
-    onReorderColumns(newColumns);
-  };
+    if (!draggedColumnId || !onReorderColumns) {
+      setDraggedColumnId(null);
+      setDropTargetIndex(null);
+      return;
+    }
+
+    const draggedIndex = visibleColumns.findIndex(col => col.id === draggedColumnId);
+    if (draggedIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedColumnId(null);
+      setDropTargetIndex(null);
+      return;
+    }
+
+    try {
+      // Create new column order
+      const newColumns = [...visibleColumns];
+      const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+      
+      // Adjust target index if dragging from left to right
+      const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      newColumns.splice(adjustedTargetIndex, 0, draggedColumn);
+
+      onReorderColumns(newColumns);
+    } catch (error) {
+      console.warn('Drop failed:', error);
+    } finally {
+      setDraggedColumnId(null);
+      setDropTargetIndex(null);
+    }
+  }, [draggedColumnId, visibleColumns, onReorderColumns]);
+
+  const handleColumnDragEnd = useCallback(() => {
+    setDraggedColumnId(null);
+    setDropTargetIndex(null);
+  }, []);
 
   return (
     <thead className="bg-blue-600 dark:bg-blue-700">
@@ -48,46 +114,44 @@ const RundownTableHeader = ({
           #
         </th>
         
-        {/* Draggable columns */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="table-header" direction="horizontal">
-            {(provided) => (
-              <React.Fragment>
-                {visibleColumns.map((column, index) => {
-                  const columnWidth = getColumnWidth(column);
-                  
-                  return (
-                    <Draggable 
-                      key={column.id} 
-                      draggableId={column.id} 
-                      index={index}
-                      isDragDisabled={!onReorderColumns}
-                    >
-                      {(provided, snapshot) => (
-                        <ResizableColumnHeader
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          column={column}
-                          width={columnWidth}
-                          onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-                          showLeftSeparator={index > 0}
-                          isDragging={snapshot.isDragging}
-                          style={{
-                            ...provided.draggableProps.style,
-                          }}
-                        >
-                          {column.name || column.key}
-                        </ResizableColumnHeader>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
-              </React.Fragment>
-            )}
-          </Droppable>
-        </DragDropContext>
+        {/* Dynamic columns */}
+        {visibleColumns.map((column, index) => {
+          const columnWidth = getColumnWidth(column);
+          const isDragging = draggedColumnId === column.id;
+          
+          return (
+            <React.Fragment key={column.id}>
+              {/* Drop indicator before column */}
+              {dropTargetIndex === index && (
+                <th className="p-0 bg-blue-600 relative">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-300 z-10" />
+                </th>
+              )}
+              
+              <ResizableColumnHeader
+                column={column}
+                width={columnWidth}
+                onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+                showLeftSeparator={index > 0}
+                isDragging={isDragging}
+                onDragStart={(e) => handleColumnDragStart(e, column, index)}
+                onDragOver={(e) => handleColumnDragOver(e, index)}
+                onDragLeave={handleColumnDragLeave}
+                onDrop={(e) => handleColumnDrop(e, index)}
+                onDragEnd={handleColumnDragEnd}
+              >
+                {column.name || column.key}
+              </ResizableColumnHeader>
+              
+              {/* Drop indicator after last column */}
+              {dropTargetIndex === visibleColumns.length && index === visibleColumns.length - 1 && (
+                <th className="p-0 bg-blue-600 relative">
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-300 z-10" />
+                </th>
+              )}
+            </React.Fragment>
+          );
+        })}
       </tr>
     </thead>
   );
