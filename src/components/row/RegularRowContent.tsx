@@ -58,7 +58,7 @@ const RegularRowContent = ({
         <div className="flex items-center justify-center relative w-full">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-4 w-4 text-blue-500 fill-blue-500 absolute left-0" 
+              className="h-6 w-6 text-blue-500 fill-blue-500 absolute left-0" 
             />
           )}
           <span style={{ color: textColor }} className={isCurrentlyPlaying ? 'ml-5' : ''}>{rowNumber}</span>
