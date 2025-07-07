@@ -96,16 +96,16 @@ const Changelog: React.FC = () => {
             </div>
           </div>
 
-          {/* Version 1.1.3 */}
+          {/* Version 1.1.6 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold text-white">Version 1.1.3</h2>
+              <h2 className="text-2xl font-semibold text-white">Version 1.1.6</h2>
               <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
             </div>
             
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium text-blue-400 mb-2">🔧 New Features</h3>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">📂 Collapsible Headers</h3>
                 <div className="space-y-3">
                   <div>
                     <p className="text-gray-300 mb-3">
