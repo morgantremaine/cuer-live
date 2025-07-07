@@ -140,13 +140,16 @@ const ResizableColumnHeader = ({
   const constrainedWidthPx = `${constrainedWidth}px`;
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
     width: constrainedWidthPx, 
     minWidth: constrainedWidthPx,
     maxWidth: constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
+  };
+
+  const dragStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
   // Create listeners that exclude the resize handle
@@ -176,7 +179,10 @@ const ResizableColumnHeader = ({
       {...attributes}
       {...dragListeners}
     >
-      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none">
+      <div 
+        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        style={dragStyle}
+      >
         {children}
       </div>
       
