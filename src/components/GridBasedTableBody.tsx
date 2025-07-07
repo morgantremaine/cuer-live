@@ -96,7 +96,7 @@ const GridBasedTableBody = ({
         const isCurrentlyPlaying = item.id === currentSegmentId;
 
         return (
-          <React.Fragment key={item.id}>
+          <div key={item.id} style={{ display: 'contents' }}>
             {/* Drop indicator ABOVE this row */}
             {dropTargetIndex === index && (
               <div 
@@ -151,7 +151,7 @@ const GridBasedTableBody = ({
                 style={{ gridColumn: '1 / -1' }}
               />
             )}
-          </React.Fragment>
+          </div>
         );
       })}
       
