@@ -109,9 +109,8 @@ const MainActionButtons = ({
             />
           </div>
           {onShowFindReplace && (
-            <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2 w-full">
+            <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="flex items-center justify-center gap-2 w-full h-8 p-0">
               <Search className="h-4 w-4" />
-              <span>Find</span>
             </Button>
           )}
           {rundownId && (
@@ -196,9 +195,8 @@ const MainActionButtons = ({
       <ToolsMenu rundownId={rundownId} size={buttonSize} />
       
       {onShowFindReplace && (
-        <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className={buttonClass}>
+        <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="h-8 w-8 p-0">
           <Search className="h-4 w-4" />
-          <span>Find & Replace</span>
         </Button>
       )}
       
