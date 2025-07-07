@@ -48,6 +48,15 @@ export const useRundownUIState = (
     
     const viewportWidth = window.innerWidth;
     
+    console.log('Column width calculation:', {
+      columnId: column.id,
+      naturalWidth,
+      totalNaturalWidth,
+      viewportWidth,
+      needsExpansion: totalNaturalWidth < viewportWidth,
+      columnsCount: columns.length
+    });
+    
     // If total is less than viewport, expand proportionally
     if (totalNaturalWidth < viewportWidth) {
       const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
@@ -60,6 +69,17 @@ export const useRundownUIState = (
       const proportion = naturalWidthValue / totalColumnsWidth;
       const additionalWidth = Math.floor(extraSpace * proportion);
       const expandedWidth = naturalWidthValue + additionalWidth;
+      
+      console.log('Expanding column:', {
+        columnId: column.id,
+        naturalWidthValue,
+        totalColumnsWidth,
+        extraSpace,
+        proportion,
+        additionalWidth,
+        expandedWidth,
+        result: `${expandedWidth}px`
+      });
       
       return `${expandedWidth}px`;
     }
