@@ -6,7 +6,8 @@ export function cleanMessage(aiMessage: string): string {
   let matchedPattern = 'codeblock';
   
   if (!modificationMatch) {
-    modificationMatch = aiMessage.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\})/);
+    // More robust pattern that captures the complete JSON object
+    modificationMatch = aiMessage.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\n\})/);
     matchedPattern = 'direct';
   }
   
@@ -23,7 +24,7 @@ export function cleanMessage(aiMessage: string): string {
       if (matchedPattern === 'codeblock') {
         cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
       } else if (matchedPattern === 'direct') {
-        cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\}/, '').trim();
+        cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
       }
       
       const result = `${cleanedMessage}\n\n__CUER_MODIFICATIONS__:${JSON.stringify(modificationData)}`;
@@ -35,7 +36,7 @@ export function cleanMessage(aiMessage: string): string {
       if (matchedPattern === 'codeblock') {
         return aiMessage.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
       } else {
-        return aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\}/, '').trim();
+        return aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
       }
     }
   }

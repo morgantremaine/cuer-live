@@ -62,7 +62,7 @@ const CuerChatMessages = ({
         matchedPattern = 'codeblock';
         isOldFormat = false;
       } else {
-        modificationMatch = content.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\})/);
+        modificationMatch = content.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\n\})/);
         if (modificationMatch) {
           matchedPattern = 'direct';
           isOldFormat = false;
@@ -85,7 +85,7 @@ const CuerChatMessages = ({
         } else if (matchedPattern === 'codeblock') {
           cleanContent = content.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
         } else if (matchedPattern === 'direct') {
-          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\}/, '').trim();
+          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
         }
         
         const result = {
