@@ -2,7 +2,7 @@
 import React from 'react';
 import GridBasedRundownTable from './GridBasedRundownTable';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RundownItem } from '@/hooks/useRundownItems';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
