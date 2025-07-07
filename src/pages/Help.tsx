@@ -101,9 +101,6 @@ const Help = () => {
                 <li><strong>Replace Options:</strong> Replace individual matches or all matches at once with dedicated "Replace" and "Replace All" buttons</li>
                 <li><strong>Case Preservation:</strong> Optional "Preserve case pattern" setting maintains original capitalization when replacing text</li>
               </ul>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
-                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Access the Find & Replace dialog using Ctrl+F (Cmd+F on Mac) or from the rundown toolbar. The tool will automatically highlight matches and scroll to them for precise editing.</p>
-              </div>
             </div>
           </section>
 
