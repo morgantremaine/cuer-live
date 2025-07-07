@@ -140,9 +140,8 @@ const ResizableColumnHeader = ({
   const constrainedWidthPx = `${constrainedWidth}px`;
 
   const style = {
-    // Don't apply transform to avoid text distortion during drag
-    // transform: CSS.Transform.toString(transform),
-    transition: isDragging ? 'none' : transition,
+    transform: CSS.Transform.toString(transform),
+    transition,
     width: constrainedWidthPx, 
     minWidth: constrainedWidthPx,
     maxWidth: constrainedWidthPx,
@@ -170,16 +169,22 @@ const ResizableColumnHeader = ({
         setNodeRef(node);
         headerRef.current = node;
       }}
-      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none transition-all duration-200 ${
+      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none ${
         isDragging 
-          ? 'bg-blue-500 shadow-lg ring-2 ring-blue-300 ring-opacity-50 opacity-90 scale-105' 
+          ? 'bg-blue-500 shadow-lg ring-2 ring-blue-300 ring-opacity-50 opacity-90' 
           : 'bg-blue-600 hover:bg-blue-500'
       } cursor-move`}
       style={style}
       {...attributes}
       {...dragListeners}
     >
-      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none">
+      <div 
+        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        style={{
+          // Counter-transform to keep text stable during drag
+          transform: transform ? `${CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })}`.replace(/scale[XY]?\([^)]*\)/g, '') : undefined
+        }}
+      >
         {children}
       </div>
       
