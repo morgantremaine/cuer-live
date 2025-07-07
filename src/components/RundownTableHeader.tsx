@@ -1,8 +1,26 @@
 
 import React from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  restrictToHorizontalAxis,
+  restrictToParentElement,
+} from '@dnd-kit/modifiers';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
-import { useColumnDragDrop } from '@/hooks/useColumnDragDrop';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
@@ -17,16 +35,28 @@ const RundownTableHeader = ({
   updateColumnWidth,
   onReorderColumns
 }: RundownTableHeaderProps) => {
-  const {
-    draggedColumnId,
-    dropTargetIndex,
-    isDragging,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleDragEnd
-  } = useColumnDragDrop(visibleColumns, onReorderColumns);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id && onReorderColumns) {
+      const oldIndex = visibleColumns.findIndex((column) => column.id === active.id);
+      const newIndex = visibleColumns.findIndex((column) => column.id === over?.id);
+
+      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+      onReorderColumns(newColumns);
+    }
+  };
 
   return (
     <thead className="bg-blue-600 dark:bg-blue-700">
@@ -44,44 +74,34 @@ const RundownTableHeader = ({
           #
         </th>
         
-        {/* Dynamic columns */}
-        {visibleColumns.map((column, index) => {
-          const columnWidth = getColumnWidth(column);
-          const isColumnDragging = isDragging(column.id);
-          
-          return (
-            <React.Fragment key={column.id}>
-              {/* Drop indicator before column */}
-              {dropTargetIndex === index && (
-                <th className="p-0 bg-blue-600 relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-300 z-10" />
-                </th>
-              )}
+        {/* Draggable columns */}
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToHorizontalAxis, restrictToParentElement]}
+        >
+          <SortableContext 
+            items={visibleColumns.map(col => col.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {visibleColumns.map((column, index) => {
+              const columnWidth = getColumnWidth(column);
               
-              <ResizableColumnHeader
-                column={column}
-                width={columnWidth}
-                onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-                showLeftSeparator={index > 0}
-                isDragging={isColumnDragging}
-                onDragStart={(e) => handleDragStart(e, column, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-              >
-                {column.name || column.key}
-              </ResizableColumnHeader>
-              
-              {/* Drop indicator after last column */}
-              {dropTargetIndex === visibleColumns.length && index === visibleColumns.length - 1 && (
-                <th className="p-0 bg-blue-600 relative">
-                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-blue-300 z-10" />
-                </th>
-              )}
-            </React.Fragment>
-          );
-        })}
+              return (
+                <ResizableColumnHeader
+                  key={column.id}
+                  column={column}
+                  width={columnWidth}
+                  onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+                  showLeftSeparator={index > 0}
+                >
+                  {column.name || column.key}
+                </ResizableColumnHeader>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
       </tr>
     </thead>
   );
