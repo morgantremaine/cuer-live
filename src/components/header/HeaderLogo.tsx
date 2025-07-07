@@ -2,7 +2,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import CuerLogo from '@/components/common/CuerLogo';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -15,9 +15,11 @@ const HeaderLogo = ({ rundownId }: HeaderLogoProps) => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
+  const location = useLocation();
+  
   const handleBackToDashboard = () => {
     // For demo rundown, go back to home page instead of dashboard
-    if (rundownId === DEMO_RUNDOWN_ID) {
+    if (location.pathname === '/demo') {
       navigate('/');
     } else {
       navigate('/dashboard');

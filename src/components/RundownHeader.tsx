@@ -12,6 +12,7 @@ import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import FindReplaceDialog from './FindReplaceDialog';
+import { useLocation } from 'react-router-dom';
 
 interface RundownHeaderProps {
   currentTime: Date;
@@ -69,9 +70,10 @@ const RundownHeader = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [showFindReplace, setShowFindReplace] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
   
   // Check if this is a demo rundown
-  const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
+  const isDemoRundown = location.pathname === '/demo';
 
   // Get showcaller timing status
   const timingStatus = useShowcallerTiming({
