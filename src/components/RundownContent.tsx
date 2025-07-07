@@ -1,6 +1,7 @@
 
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
+import SimpleTableHeader from './SimpleTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -136,43 +137,50 @@ const RundownContent = React.memo<RundownContentProps>(({
       {/* Scrollable Content with Table */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div style={{ minWidth: `${minTableWidth}px`, width: '100%' }}>
-          <OptimizedRundownTableWrapper
-            items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
-            startTime={startTime}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={handleEnhancedDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragEnd={onDragEnd}
-            onCopySelectedRows={onCopySelectedRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows || (() => {})}
-            onClearSelection={onClearSelection || (() => {})}
-            onAddRow={onAddRow || (() => {})}
-            onAddHeader={onAddHeader || (() => {})}
-            onJumpToHere={onJumpToHere}
-          />
+          <table className="w-full border-collapse">
+            <SimpleTableHeader
+              visibleColumns={visibleColumns}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+            />
+            <OptimizedRundownTableWrapper
+              items={items}
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              isDraggingMultiple={isDraggingMultiple}
+              dropTargetIndex={dropTargetIndex}
+              currentSegmentId={currentSegmentId}
+              hasClipboardData={hasClipboardData}
+              selectedRowId={selectedRowId}
+              startTime={startTime}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={handleEnhancedDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows || (() => {})}
+              onClearSelection={onClearSelection || (() => {})}
+              onAddRow={onAddRow || (() => {})}
+              onAddHeader={onAddHeader || (() => {})}
+              onJumpToHere={onJumpToHere}
+            />
+          </table>
         </div>
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
