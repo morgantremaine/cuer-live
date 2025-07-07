@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -66,8 +65,9 @@ const RegularRowContent = ({
         </div>
       </td>
       {/* Dynamic columns */}
-      {columns.map((column) => {
+      {columns.map((column, index) => {
         const columnWidth = getColumnWidth(column);
+        const isLastColumn = index === columns.length - 1;
         const isCurrentSegmentName = currentSegmentId === item.id && 
           (column.key === 'segmentName' || column.key === 'name');
         
@@ -77,7 +77,6 @@ const RegularRowContent = ({
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
-              minWidth: columnWidth,
               backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}

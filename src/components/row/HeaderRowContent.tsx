@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -79,22 +78,23 @@ const HeaderRowContent = ({
       {/* Dynamic columns */}
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
-        const widthValue = parseInt(columnWidth.replace('px', ''));
+        const isLastColumn = columnIndex === columns.length - 1;
+        const widthValue = columnWidth.includes('%') ? 
+          parseFloat(columnWidth.replace('%', '')) : 
+          parseInt(columnWidth.replace('px', ''));
         
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
           const headerName = item.name || '';
-          return (
-            <td
-              key={column.id}
-              className="align-middle border-r border-border min-h-[96px] relative"
-              style={{ 
-                width: columnWidth, 
-                minWidth: columnWidth,
-                maxWidth: columnWidth,
-                backgroundColor,
-                overflow: 'visible'
-              }}
+            return (
+              <td
+                key={column.id}
+                className="align-middle border-r border-border min-h-[96px] relative"
+                style={{ 
+                  width: columnWidth, 
+                  backgroundColor,
+                  overflow: 'visible'
+                }}
             >
               <div 
                 className="px-2 py-6 flex items-center"
@@ -158,8 +158,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
@@ -174,8 +172,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
@@ -190,8 +186,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
-                maxWidth: columnWidth, // Ensure exact width matching
                 backgroundColor 
               }}
             >
