@@ -133,15 +133,17 @@ const RundownContent = React.memo<RundownContentProps>(({
   }, [visibleColumns, getColumnWidth]);
 
   return (
-    <div className="relative bg-background h-full">
+    <div className="bg-background h-full">
       {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse border border-border" style={{ 
+          <table className="border-collapse" style={{ 
             tableLayout: 'fixed', 
             width: `${totalTableWidth}px`,
-            minWidth: `${totalTableWidth}px`
+            minWidth: `${totalTableWidth}px`,
+            margin: 0,
+            padding: 0
           }}>
             {/* Sticky Header */}
             <RundownTableHeader 
