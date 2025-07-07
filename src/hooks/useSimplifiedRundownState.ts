@@ -216,10 +216,11 @@ export const useSimplifiedRundownState = () => {
               ? data.items 
               : createDefaultRundownItems();
 
-            // Load content only (columns loaded separately by useUserColumnPreferences)
+            // Load content only (columns handled by useUserColumnPreferences)
+            console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');
             actions.loadState({
               items: itemsToLoad,
-              columns: [],
+              columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
               timezone: data.timezone || 'America/New_York'

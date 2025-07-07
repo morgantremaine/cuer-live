@@ -64,15 +64,13 @@ const RundownIndexContent = () => {
     isSaving: isSavingPreferences 
   } = useUserColumnPreferences(rundownId);
 
-  // Use columns manager for operations
+  // Use columns manager for operations only - don't use its state
   const {
     handleAddColumn,
     handleReorderColumns,
     handleDeleteColumn,
     handleRenameColumn,
     handleToggleColumnVisibility,
-    handleLoadLayout,
-    handleUpdateColumnWidth,
     debugColumns,
     resetToDefaults
   } = useColumnsManager(() => {
@@ -271,7 +269,7 @@ const RundownIndexContent = () => {
   };
 
   const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
-    
+    console.log('🔄 RundownIndexContent: Loading layout with', layoutColumns.length, 'columns');
     
     if (!Array.isArray(layoutColumns)) {
       console.error('❌ Invalid layout columns - not an array:', layoutColumns);
@@ -292,7 +290,7 @@ const RundownIndexContent = () => {
       return;
     }
 
-    
+    console.log('✅ Setting user column preferences from loaded layout');
     setUserColumns(validColumns, true); // Immediate save for layout loading
   };
 

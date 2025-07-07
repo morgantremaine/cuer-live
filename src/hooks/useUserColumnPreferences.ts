@@ -234,6 +234,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   // Load preferences when rundown changes, but prevent duplicate loads
   useEffect(() => {
     if (rundownId && rundownId !== loadedRundownRef.current) {
+      console.log('🔄 UserColumnPreferences: Loading column preferences for rundown:', rundownId);
       loadedRundownRef.current = null; // Reset to allow new load
       loadColumnPreferences();
     }

@@ -65,15 +65,9 @@ export const useRundownDataLoader = ({
     console.log('⏰ Loading start time directly:', startTimeToLoad);
     setRundownStartTimeDirectly(startTimeToLoad);
     
-    // Load columns FIRST if they exist - this is critical for imported rundowns
-    if (rundown.columns && Array.isArray(rundown.columns) && rundown.columns.length > 0) {
-      console.log('📊 Loading saved column layout with', rundown.columns.length, 'columns');
-      handleLoadLayout(rundown.columns);
-    } else {
-      // If no columns are saved, ensure we load the default columns to prevent missing built-ins
-      console.log('📊 No saved columns found, loading default columns to ensure all built-ins are present');
-      handleLoadLayout([]);
-    }
+    // Columns are now handled exclusively by useUserColumnPreferences
+    // This prevents conflicts between rundown-stored columns and user preferences
+    console.log('📊 Skipping column loading - handled by useUserColumnPreferences');
 
     // Load the items back into the state using the updater pattern
     if (rundown.items && Array.isArray(rundown.items)) {
