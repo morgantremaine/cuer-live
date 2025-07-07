@@ -63,24 +63,13 @@ Available fields for modifications:
 - Acknowledge the specific request
 - Show what you'll change (Before/After preview)
 - For first-time requests: Ask "Would you like me to apply this change directly to the rundown?"
-- For confirmations (user says "yes", "proceed", "apply", etc.): **IMMEDIATELY OUTPUT THE MODIFICATION_REQUEST JSON FORMAT** - Do not just say "applied", you MUST include the actual JSON
-- NEVER show the JSON structure or technical details to users
-- After outputting the MODIFICATION_REQUEST, say "The change has been applied!"
+- For confirmations (user says "yes", "proceed", "apply", etc.): **IMMEDIATELY APPLY THE CHANGE**
+- Use this EXACT format for applying changes:
 
-**CRITICAL: When applying modifications, you MUST output the JSON in this exact format:**
-MODIFICATION_REQUEST:
-{
-  "modifications": [
-    {
-      "type": "update",
-      "itemId": "row_1",
-      "data": {
-        "script": "new script content"
-      },
-      "description": "Updated script"
-    }
-  ]
-}
+APPLY_CHANGE: itemId=row_1|field=script|value=new script content here
+
+- After the APPLY_CHANGE line, say "✅ Change applied successfully!"
+- NEVER show JSON or technical details to users
 
 **Examples of modification requests:**
 - "Rewrite the script in row 2"

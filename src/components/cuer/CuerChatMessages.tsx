@@ -50,56 +50,27 @@ const CuerChatMessages = ({
   const extractModifications = (content: string): { cleanContent: string; modifications: RundownModification[] | null } => {
     console.log('🔍 EXTRACTION: Raw content:', content);
     
-    // Check for both old and new formats
-    let modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
-    let isOldFormat = true;
-    let matchedPattern = '';
-    
-    if (!modificationMatch) {
-      // Check for MODIFICATION_REQUEST format from system prompt (with or without code blocks)
-      // Handle both **MODIFICATION_REQUEST:** and MODIFICATION_REQUEST: formats
-      modificationMatch = content.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*([\s\S]*?)\s*```/);
-      if (modificationMatch) {
-        matchedPattern = 'codeblock';
-        isOldFormat = false;
-      } else {
-        modificationMatch = content.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*(\{[\s\S]*?\})/);
-        if (modificationMatch) {
-          matchedPattern = 'direct';
-          isOldFormat = false;
-        }
-      }
-    }
-    
-    console.log('🔍 EXTRACTION: Modification match found:', !!modificationMatch);
-    console.log('🔍 EXTRACTION: Format used:', isOldFormat ? 'old __CUER_MODIFICATIONS__' : `new MODIFICATION_REQUEST (${matchedPattern})`);
+    // Look for the __CUER_MODIFICATIONS__ format (created by the parser)
+    const modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
     
     if (modificationMatch) {
-      console.log('🔍 EXTRACTION: Raw modification data:', modificationMatch[1]);
+      console.log('🔍 EXTRACTION: Found modification data:', modificationMatch[1]);
       try {
         const modificationData = JSON.parse(modificationMatch[1]);
         console.log('🔍 EXTRACTION: Parsed modification data:', modificationData);
         
-        let cleanContent = content;
-        if (isOldFormat) {
-          cleanContent = content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim();
-        } else if (matchedPattern === 'codeblock') {
-          cleanContent = content.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*[\s\S]*?\s*```/, '').trim();
-        } else if (matchedPattern === 'direct') {
-          cleanContent = content.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*\{[\s\S]*?\}/, '').trim();
-        }
+        const cleanContent = content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim();
         
-        const result = {
+        return {
           cleanContent,
           modifications: modificationData.modifications || []
         };
-        console.log('🔍 EXTRACTION: Final result:', result);
-        return result;
       } catch (error) {
         console.error('🔍 EXTRACTION: Failed to parse modifications:', error);
       }
     }
-    console.log('🔍 EXTRACTION: No modifications found, returning null');
+    
+    console.log('🔍 EXTRACTION: No modifications found');
     return { cleanContent: content, modifications: null };
   };
 
@@ -128,27 +99,40 @@ const CuerChatMessages = ({
           />
           
           {modifications && modifications.length > 0 && (
-            <InlineModificationRequest
-              modifications={modifications}
-              onConfirm={() => {
-                console.log('🎯 CUER: Starting modification application');
-                console.log('🎯 CUER: Modifications to apply:', JSON.stringify(modifications, null, 2));
-                console.log('🎯 CUER: applyModifications function available:', typeof applyModifications);
-                
-                try {
-                  const success = applyModifications(modifications);
-                  console.log('🎯 CUER: applyModifications returned:', success);
-                  if (success) {
-                    console.log('✅ CUER: Modifications applied successfully');
-                  } else {
-                    console.log('❌ CUER: Failed to apply modifications');
-                  }
-                } catch (error) {
-                  console.error('💥 CUER: Error applying modifications:', error);
-                }
-              }}
-              onCancel={handleCancelModifications}
-            />
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                Apply this change to your rundown?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    console.log('🎯 CUER: Applying modifications directly');
+                    console.log('🎯 CUER: Modifications:', JSON.stringify(modifications, null, 2));
+                    
+                    try {
+                      const success = applyModifications(modifications);
+                      console.log('🎯 CUER: applyModifications returned:', success);
+                      if (success) {
+                        console.log('✅ CUER: Modifications applied successfully');
+                      } else {
+                        console.log('❌ CUER: Failed to apply modifications');
+                      }
+                    } catch (error) {
+                      console.error('💥 CUER: Error applying modifications:', error);
+                    }
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  Apply
+                </button>
+                <button
+                  onClick={() => {}}
+                  className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
         </div>
       );
