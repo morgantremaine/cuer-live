@@ -1,7 +1,7 @@
 
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
-import SimpleTableHeader from './SimpleTableHeader';
+import AdvancedTableHeader from './AdvancedTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -143,10 +143,11 @@ const RundownContent = React.memo<RundownContentProps>(({
             minWidth: `${minTableWidth}px`
           }}>
             {/* Sticky Header */}
-            <SimpleTableHeader 
+            <AdvancedTableHeader 
               visibleColumns={visibleColumns}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
+              onReorderColumns={onReorderColumns}
             />
             
             {/* Table Body - Content */}
