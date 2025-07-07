@@ -145,10 +145,14 @@ const ResizableColumnHeader = ({
     maxWidth: constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
-    // Apply transform to the entire column during drag, not just the text
+    // Don't apply transform here - it interferes with fixed width
+  };
+
+  const dragOverlayStyle = isDragging ? {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
+    position: 'relative' as const,
+  } : {};
 
   // Create listeners that exclude the resize handle
   const dragListeners = {
@@ -179,6 +183,7 @@ const ResizableColumnHeader = ({
     >
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        style={dragOverlayStyle}
       >
         {children}
       </div>
