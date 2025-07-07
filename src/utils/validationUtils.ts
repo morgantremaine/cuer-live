@@ -1,6 +1,6 @@
 
 import { RundownItem } from '@/types/rundown';
-import { Column } from '@/types/columns';
+import { Column } from '@/hooks/useColumnsManager';
 
 /**
  * Validation utilities for rundown data

@@ -3,7 +3,7 @@ import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
 import { CalculatedRundownItem } from '@/utils/rundownCalculations';
-import { Column } from './useColumnsManager';
+import { Column } from '@/hooks/useColumnsManager';
 
 export const useRundownUIManager = (
   items: CalculatedRundownItem[],
@@ -11,7 +11,7 @@ export const useRundownUIManager = (
   columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
   markAsChanged: () => void,
-  handleUpdateColumnWidth?: (columnId: string, width: number) => void
+  handleUpdateColumnWidth?: (columnId: string, width: number, isManualResize?: boolean, resetToAutoSize?: boolean) => void
 ) => {
   // Debounced markAsChanged to prevent rapid auto-save during resize
   const markAsChangedTimeoutRef = useRef<NodeJS.Timeout>();
@@ -26,57 +26,48 @@ export const useRundownUIManager = (
     }, 300);
   }, [markAsChanged]);
 
-  // Column width management - with viewport expansion and debugging
+  // Smart Column Width Management - separates manual resize from auto-sizing
   const getColumnWidth = useCallback((column: Column) => {
-    const naturalWidth = column.width || '150px';
+    // Phase 1: If manually resized, use exact manual width
+    if (column.manuallyResized && column.manualWidth) {
+      return `${column.manualWidth}px`;
+    }
     
-    // Calculate total natural width
-    let totalNaturalWidth = 64; // Row number column
+    // Phase 2: Smart auto-sizing for non-manually-resized columns
+    const naturalWidth = column.width || '150px';
+    const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
+    
+    // Calculate total width of manually resized columns
+    let manuallyResizedWidth = 64; // Row number column
+    let autoSizedColumns: Column[] = [];
+    let autoSizedTotalNaturalWidth = 0;
+    
     columns.forEach(col => {
-      const width = col.width || '150px';
-      const widthValue = parseInt(width.replace('px', ''));
-      totalNaturalWidth += widthValue;
+      if (col.manuallyResized && col.manualWidth) {
+        manuallyResizedWidth += col.manualWidth;
+      } else {
+        autoSizedColumns.push(col);
+        const colWidth = col.width || '150px';
+        autoSizedTotalNaturalWidth += parseInt(colWidth.replace('px', ''));
+      }
     });
     
     const viewportWidth = window.innerWidth;
+    const totalCurrentWidth = manuallyResizedWidth + autoSizedTotalNaturalWidth;
     
-    // Debug logging
-    console.log('Viewport expansion check:', {
-      totalNaturalWidth,
-      viewportWidth,
-      shouldExpand: totalNaturalWidth < viewportWidth,
-      columnId: column.id,
-      naturalWidth
-    });
-    
-    // If total is less than viewport, expand proportionally
-    if (totalNaturalWidth < viewportWidth) {
-      const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
-      const totalColumnsWidth = columns.reduce((sum, col) => {
-        const width = col.width || '150px';
-        return sum + parseInt(width.replace('px', ''));
-      }, 0);
+    // Phase 3: Only expand auto-sized columns if there's extra space
+    if (totalCurrentWidth < viewportWidth && autoSizedColumns.length > 0) {
+      const extraSpace = viewportWidth - manuallyResizedWidth;
+      const proportion = naturalWidthValue / autoSizedTotalNaturalWidth;
+      const expandedWidth = Math.floor(extraSpace * proportion);
       
-      const extraSpace = viewportWidth - totalNaturalWidth;
-      const proportion = naturalWidthValue / totalColumnsWidth;
-      const additionalWidth = Math.floor(extraSpace * proportion);
-      const expandedWidth = naturalWidthValue + additionalWidth;
-      
-      console.log('Expanding column:', {
-        columnId: column.id,
-        naturalWidthValue,
-        proportion,
-        additionalWidth,
-        expandedWidth
-      });
-      
-      return `${expandedWidth}px`;
+      return `${Math.max(naturalWidthValue, expandedWidth)}px`;
     }
     
     return naturalWidth;
   }, [columns]);
 
-  const updateColumnWidth = useCallback((columnId: string, width: number) => {
+  const updateColumnWidth = useCallback((columnId: string, width: number, isManualResize: boolean = true) => {
     // Find the column to get its minimum width
     const column = columns.find(col => col.id === columnId);
     const getMinimumWidth = (col: Column): number => {
@@ -107,9 +98,17 @@ export const useRundownUIManager = (
     debouncedMarkAsChanged();
     
     if (handleUpdateColumnWidth) {
-      handleUpdateColumnWidth(column?.id || '', constrainedWidth);
+      // Pass resize information to the parent handler
+      handleUpdateColumnWidth(column?.id || '', constrainedWidth, isManualResize);
     }
   }, [columns, debouncedMarkAsChanged, handleUpdateColumnWidth]);
+
+  // Function to reset a column to auto-sizing
+  const resetColumnToAutoSize = useCallback((columnId: string) => {
+    if (handleUpdateColumnWidth) {
+      handleUpdateColumnWidth(columnId, 0, false, true); // 0 width, not manual, reset flag
+    }
+  }, [handleUpdateColumnWidth]);
 
   // Color picker state
   const {
@@ -165,6 +164,7 @@ export const useRundownUIManager = (
     // Column management
     updateColumnWidth,
     getColumnWidth,
+    resetColumnToAutoSize,
     
     // Color picker
     showColorPicker,

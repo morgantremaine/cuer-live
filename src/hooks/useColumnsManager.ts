@@ -9,6 +9,9 @@ export interface Column {
   isCustom: boolean;
   isEditable: boolean;
   isVisible?: boolean;
+  // Smart resize fields
+  manuallyResized?: boolean;
+  manualWidth?: number;
 }
 
 const getDefaultColumns = (): Column[] => [
@@ -113,12 +116,21 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   }, [markAsChanged]);
 
-  const handleUpdateColumnWidth = useCallback((columnId: string, width: number) => {
+  const handleUpdateColumnWidth = useCallback((columnId: string, width: number, isManualResize: boolean = true, resetToAutoSize: boolean = false) => {
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
       const updated = prev.map(col => {
         if (col.id === columnId) {
-          return { ...col, width: `${width}px` };
+          if (resetToAutoSize) {
+            // Reset to auto-sizing
+            return { ...col, manuallyResized: false, manualWidth: undefined };
+          } else if (isManualResize) {
+            // Manual resize - mark as manually resized and store the exact width
+            return { ...col, width: `${width}px`, manuallyResized: true, manualWidth: width };
+          } else {
+            // Programmatic resize (auto-expansion) - update width but don't mark as manual
+            return { ...col, width: `${width}px` };
+          }
         }
         return col;
       });
