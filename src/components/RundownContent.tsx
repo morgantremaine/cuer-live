@@ -1,7 +1,7 @@
 
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
-import AdvancedTableHeader from './AdvancedTableHeader';
+import SimpleTableHeader from './SimpleTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
@@ -121,7 +121,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate minimum table width based on actual column widths
+  // Calculate minimum table width - let CSS handle expansion
   const minTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
@@ -143,11 +143,10 @@ const RundownContent = React.memo<RundownContentProps>(({
             minWidth: `${minTableWidth}px`
           }}>
             {/* Sticky Header */}
-            <AdvancedTableHeader 
+            <SimpleTableHeader 
               visibleColumns={visibleColumns}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
             />
             
             {/* Table Body - Content */}
