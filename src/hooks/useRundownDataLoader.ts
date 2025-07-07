@@ -46,7 +46,7 @@ export const useRundownDataLoader = ({
     const rundown = savedRundowns.find(r => r.id === currentRundownId);
     if (!rundown) return;
 
-    console.log('🔄 Loading rundown data:', rundown.title, 'with timezone:', rundown.timezone, 'start_time:', rundown.start_time, 'columns:', rundown.columns);
+    console.log('🔄 Loading rundown data:', rundown.title, 'ID:', rundown.id, 'with timezone:', rundown.timezone, 'start_time:', rundown.start_time, 'columns:', rundown.columns);
     
     // Mark as loading and loaded to prevent loops
     isLoadingRef.current = true;
