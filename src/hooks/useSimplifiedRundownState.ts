@@ -130,6 +130,9 @@ export const useSimplifiedRundownState = () => {
     console.log('🚀 Current items count:', state.items.length);
     console.log('🚀 Target item exists:', !!state.items.find(item => item.id === id));
     
+    // FORCE VISIBLE DEBUG
+    alert(`🚀 ENHANCED UPDATE: Called with id=${id}, field=${field}, value=${value}`);
+    
     try {
       // Check if this is a typing field
       const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
@@ -170,9 +173,12 @@ export const useSimplifiedRundownState = () => {
             }
           };
           console.log('🚀 Calling actions.updateItem with custom fields:', updateData);
+          alert(`🚀 ABOUT TO CALL actions.updateItem with custom fields: ${JSON.stringify(updateData)}`);
           actions.updateItem(id, updateData);
+          alert('🚀 CALLED actions.updateItem with custom fields');
         } else {
           console.error('🚀 Item not found for custom field update:', id);
+          alert(`🚀 ERROR: Item not found for custom field update: ${id}`);
           return false;
         }
       } else {
@@ -181,13 +187,17 @@ export const useSimplifiedRundownState = () => {
         
         const updateData = { [updateField]: value };
         console.log('🚀 Calling actions.updateItem with regular field:', updateData);
+        alert(`🚀 ABOUT TO CALL actions.updateItem with regular field: ${JSON.stringify(updateData)}`);
         actions.updateItem(id, updateData);
+        alert('🚀 CALLED actions.updateItem with regular field');
       }
       
       console.log('🚀 ENHANCED UPDATE ITEM COMPLETED SUCCESSFULLY');
+      alert('🚀 ENHANCED UPDATE ITEM COMPLETED SUCCESSFULLY');
       return true;
     } catch (error) {
       console.error('🚀 ENHANCED UPDATE ITEM FAILED:', error);
+      alert(`🚀 ENHANCED UPDATE ITEM FAILED: ${error}`);
       return false;
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
