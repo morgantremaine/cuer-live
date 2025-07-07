@@ -92,6 +92,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         .select('*')
         .eq('user_id', user.id)
         .eq('rundown_id', rundownId)
+        .order('updated_at', { ascending: false })
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
