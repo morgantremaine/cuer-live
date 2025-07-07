@@ -79,7 +79,6 @@ const RegularRowContent = ({
             style={{ 
               width: columnWidth, 
               minWidth: columnWidth,
-              maxWidth: columnWidth,
               backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}

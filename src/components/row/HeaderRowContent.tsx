@@ -92,7 +92,6 @@ const HeaderRowContent = ({
                 style={{ 
                   width: columnWidth, 
                   minWidth: columnWidth,
-                  maxWidth: columnWidth,
                   backgroundColor,
                   overflow: 'visible'
                 }}
@@ -160,7 +159,6 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -176,7 +174,6 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -192,7 +189,6 @@ const HeaderRowContent = ({
               style={{ 
                 width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >

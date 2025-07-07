@@ -146,7 +146,6 @@ const ResizableColumnHeader = ({
     transition,
     width: constrainedWidthPx,
     minWidth: constrainedWidthPx,
-    maxWidth: constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     // Prevent any flex or layout changes during drag
