@@ -148,10 +148,10 @@ const ExpandableScriptCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="flex items-center space-x-1 w-full">
+    <div className="flex items-start space-x-1 w-full">
       <button
         onClick={toggleExpanded}
-        className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+        className="flex-shrink-0 mt-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
         title={isExpanded ? 'Collapse' : 'Expand'}
       >
         {isExpanded ? (
