@@ -176,7 +176,15 @@ const ResizableColumnHeader = ({
       {...attributes}
       {...dragListeners}
     >
-      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none">
+      <div 
+        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        style={isDragging ? { 
+          transform: 'translateX(0)',
+          willChange: 'auto',
+          width: 'fit-content',
+          minWidth: 'fit-content'
+        } : undefined}
+      >
         {children}
       </div>
       
