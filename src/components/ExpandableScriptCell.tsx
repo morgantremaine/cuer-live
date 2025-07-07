@@ -204,9 +204,11 @@ const ExpandableScriptCell = ({
         />
         {!isExpanded && value && !isNullScript(value) && (
           <div 
-            className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-start px-1 py-1 pointer-events-none"
+            className="absolute inset-0 flex items-center justify-start pointer-events-none"
             style={{ 
-              overflow: 'hidden'
+              height: '100%',
+              overflow: 'hidden',
+              padding: '4px'
             }}
           >
             <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
