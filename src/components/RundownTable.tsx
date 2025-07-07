@@ -17,6 +17,7 @@ interface RundownTableProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
+  expandedColumns?: { [columnKey: string]: boolean };
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -59,6 +60,7 @@ const RundownTable = ({
   currentSegmentId,
   hasClipboardData,
   selectedRowId,
+  expandedColumns,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -154,6 +156,7 @@ const RundownTable = ({
                   currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
+                  expandedColumns={expandedColumns}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}

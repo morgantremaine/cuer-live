@@ -21,6 +21,7 @@ import {
   restrictToHorizontalAxis,
   restrictToParentElement,
 } from '@dnd-kit/modifiers';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -30,6 +31,8 @@ interface RundownTableHeaderProps {
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
   items?: any[]; // For auto-sizing columns
+  expandedColumns?: { [columnKey: string]: boolean };
+  onToggleColumnExpansion?: (columnKey: string) => void;
 }
 
 const RundownTableHeader = ({
@@ -37,7 +40,9 @@ const RundownTableHeader = ({
   getColumnWidth,
   updateColumnWidth,
   onReorderColumns,
-  items = []
+  items = [],
+  expandedColumns = {},
+  onToggleColumnExpansion
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -149,7 +154,27 @@ const RundownTableHeader = ({
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
                 >
-                  {column.name || column.key}
+                  {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpansion ? (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleColumnExpansion(column.key);
+                        }}
+                        className="flex-shrink-0 p-1 hover:bg-blue-500 rounded transition-colors"
+                        title={expandedColumns[column.key] ? 'Collapse all' : 'Expand all'}
+                      >
+                        {expandedColumns[column.key] ? (
+                          <ChevronDown className="h-4 w-4 text-white" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-white" />
+                        )}
+                      </button>
+                      <span>{column.name || column.key}</span>
+                    </div>
+                  ) : (
+                    column.name || column.key
+                  )}
                 </ResizableColumnHeader>
               );
             })}
