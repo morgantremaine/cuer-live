@@ -8,6 +8,7 @@ interface ExpandableScriptCellProps {
   cellRefKey: string;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
+  columnExpanded?: boolean;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -18,15 +19,22 @@ const ExpandableScriptCell = ({
   cellRefKey,
   cellRefs,
   textColor,
+  columnExpanded = false,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Use column expanded state if provided, otherwise use local state
+  const effectiveExpanded = columnExpanded !== undefined ? columnExpanded : isExpanded;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
+    // Only allow local toggle if columnExpanded is not controlled
+    if (columnExpanded === undefined) {
+      setIsExpanded(!isExpanded);
+    }
   };
 
   // Auto-resize textarea based on content
@@ -36,7 +44,7 @@ const ExpandableScriptCell = ({
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       
-      if (isExpanded) {
+      if (effectiveExpanded) {
         // Set minimum height of 120px when expanded, but allow it to grow
         textarea.style.height = Math.max(scrollHeight, 120) + 'px';
       } else {
@@ -44,7 +52,7 @@ const ExpandableScriptCell = ({
         textarea.style.height = '24px';
       }
     }
-  }, [value, isExpanded]);
+  }, [value, effectiveExpanded]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -151,10 +159,18 @@ const ExpandableScriptCell = ({
     <div className="flex items-start space-x-1 w-full">
       <button
         onClick={toggleExpanded}
-        className="flex-shrink-0 mt-1 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
-        title={isExpanded ? 'Collapse' : 'Expand'}
+        className={`flex-shrink-0 mt-1 p-1 rounded transition-colors ${
+          columnExpanded !== undefined 
+            ? 'opacity-50 cursor-not-allowed' 
+            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+        }`}
+        title={columnExpanded !== undefined 
+          ? 'Column expansion controlled by header' 
+          : (effectiveExpanded ? 'Collapse' : 'Expand')
+        }
+        disabled={columnExpanded !== undefined}
       >
-        {isExpanded ? (
+        {effectiveExpanded ? (
           <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         ) : (
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -178,7 +194,7 @@ const ExpandableScriptCell = ({
               e.target.style.height = 'auto';
               const scrollHeight = e.target.scrollHeight;
               
-              if (isExpanded) {
+              if (effectiveExpanded) {
                 e.target.style.height = Math.max(scrollHeight, 120) + 'px';
               } else {
                 // Keep collapsed height at 24px regardless of content
@@ -189,22 +205,22 @@ const ExpandableScriptCell = ({
           onKeyDown={handleKeyDown}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          disabled={!isExpanded}
-          readOnly={!isExpanded}
+          disabled={!effectiveExpanded}
+          readOnly={!effectiveExpanded}
           className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none ${
-            isExpanded ? '' : 'text-transparent cursor-pointer'
+            effectiveExpanded ? '' : 'text-transparent cursor-pointer'
           }`}
           style={{ 
-            color: isExpanded ? (textColor || undefined) : 'transparent',
-            minHeight: isExpanded ? '120px' : '24px',
-            height: isExpanded ? 'auto' : '24px',
-            overflow: isExpanded ? 'hidden' : 'hidden',
-            whiteSpace: isExpanded ? 'pre-wrap' : 'nowrap',
-            wordWrap: isExpanded ? 'break-word' : 'normal',
-            textOverflow: isExpanded ? 'unset' : 'ellipsis'
+            color: effectiveExpanded ? (textColor || undefined) : 'transparent',
+            minHeight: effectiveExpanded ? '120px' : '24px',
+            height: effectiveExpanded ? 'auto' : '24px',
+            overflow: effectiveExpanded ? 'hidden' : 'hidden',
+            whiteSpace: effectiveExpanded ? 'pre-wrap' : 'nowrap',
+            wordWrap: effectiveExpanded ? 'break-word' : 'normal',
+            textOverflow: effectiveExpanded ? 'unset' : 'ellipsis'
           }}
         />
-        {!isExpanded && value && !isNullScript(value) && (
+        {!effectiveExpanded && value && !isNullScript(value) && (
           <div 
             className="absolute inset-0 flex items-center justify-start pointer-events-none"
             style={{ 

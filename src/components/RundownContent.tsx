@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -97,6 +97,16 @@ const RundownContent = React.memo<RundownContentProps>(({
   onAddHeader,
   onJumpToHere
 }) => {
+  // Column expand state for script and notes columns
+  const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+
+  // Toggle column expand state
+  const handleToggleColumnExpand = useCallback((columnKey: string) => {
+    setColumnExpandState(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey]
+    }));
+  }, []);
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
@@ -152,6 +162,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               updateColumnWidth={updateColumnWidth}
               onReorderColumns={onReorderColumns}
               items={items}
+              columnExpandState={columnExpandState}
+              onToggleColumnExpand={handleToggleColumnExpand}
             />
             
             {/* Table Body - Content */}
@@ -169,6 +181,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             hasClipboardData={hasClipboardData}
             selectedRowId={selectedRowId}
             startTime={startTime}
+            columnExpandState={columnExpandState}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             onUpdateItem={onUpdateItem}

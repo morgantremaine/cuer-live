@@ -21,6 +21,7 @@ interface HeaderRowProps {
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
+  columnExpandState?: { [columnKey: string]: boolean };
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
