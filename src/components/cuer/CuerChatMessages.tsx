@@ -89,26 +89,39 @@ const CuerChatMessages = ({
   };
 
   const renderMessageContent = (content: string, role: 'user' | 'assistant', messageId: string) => {
+    console.log('🎯 RENDER: Processing message', { role, messageId, contentLength: content.length });
+    
     if (role === 'assistant') {
       const { cleanContent, modifications } = extractModifications(content);
+      console.log('🎯 RENDER: Extracted modifications:', modifications);
       
       // Auto-apply modifications when detected (but only once per message)
       if (modifications && modifications.length > 0 && !appliedMessageIds.has(messageId)) {
         console.log('🔄 AUTO-APPLYING: Detected modifications in AI response');
         console.log('🔄 AUTO-APPLYING: Modifications:', JSON.stringify(modifications, null, 2));
+        console.log('🔄 AUTO-APPLYING: Message ID:', messageId);
+        console.log('🔄 AUTO-APPLYING: Already applied IDs:', Array.from(appliedMessageIds));
         
         // Mark this message as processed immediately to prevent infinite loops
         setAppliedMessageIds(prev => new Set([...prev, messageId]));
         
         // Apply modifications asynchronously to avoid blocking render
         setTimeout(() => {
+          console.log('🔄 AUTO-APPLYING: Starting timeout execution');
           try {
+            console.log('🔄 AUTO-APPLYING: About to call applyModifications');
             const success = applyModifications(modifications);
             console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
           } catch (error) {
             console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
           }
         }, 100);
+      } else {
+        console.log('🔄 AUTO-APPLYING: Skipping because:', {
+          hasModifications: !!(modifications && modifications.length > 0),
+          alreadyApplied: appliedMessageIds.has(messageId),
+          messageId
+        });
       }
       
       return (
