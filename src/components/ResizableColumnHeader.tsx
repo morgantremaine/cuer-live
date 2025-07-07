@@ -141,9 +141,15 @@ const ResizableColumnHeader = ({
 
   // Handle drag functionality without interfering with resize
   const handleHeaderDragStart = useCallback((e: React.DragEvent) => {
+    // Prevent drag if we're currently resizing
+    if (isDraggingRef.current) {
+      e.preventDefault();
+      return;
+    }
+    
     // Only allow dragging from the text area, not the resize handle
     const target = e.target as HTMLElement;
-    if (target.classList.contains('resize-handle')) {
+    if (target.classList.contains('resize-handle') || target.closest('.resize-handle')) {
       e.preventDefault();
       return;
     }

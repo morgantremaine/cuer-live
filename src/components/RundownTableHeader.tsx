@@ -20,12 +20,27 @@ const RundownTableHeader = ({
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   const handleColumnDragStart = useCallback((e: React.DragEvent, column: Column, index: number) => {
+    // Ensure we're not resizing when starting drag
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('resize-handle')) {
+      e.preventDefault();
+      return;
+    }
+    
     setDraggedColumnId(column.id);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', column.id);
     
-    // Add visual feedback
-    e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 0, 0);
+    // Use a more stable drag image approach
+    try {
+      const dragElement = e.currentTarget as HTMLElement;
+      if (dragElement) {
+        e.dataTransfer.setDragImage(dragElement, dragElement.offsetWidth / 2, dragElement.offsetHeight / 2);
+      }
+    } catch (error) {
+      // Fallback for environments where setDragImage fails
+      console.warn('setDragImage failed, using default drag appearance');
+    }
   }, []);
 
   const handleColumnDragOver = useCallback((e: React.DragEvent, targetIndex: number) => {
