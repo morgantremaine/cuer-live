@@ -27,9 +27,12 @@ export const useModificationApplier = ({
   const { findItemByReference } = useItemFinder(items);
 
   const applyModifications = useCallback((modifications: RundownModification[]) => {
-    console.log('🚀 === APPLYING MODIFICATIONS ===');
-    console.log('📝 Modifications received:', modifications);
+    console.log('🚀 === APPLYING MODIFICATIONS START ===');
+    console.log('📝 Modifications received:', JSON.stringify(modifications, null, 2));
     console.log('📊 Current items count:', items.length);
+    console.log('🔧 updateItem function exists:', typeof updateItem);
+    console.log('🔧 addRow function exists:', typeof addRow);
+    console.log('🔧 markAsChanged function exists:', typeof markAsChanged);
 
     // Prevent modifications if items are empty (still loading)
     if (items.length === 0) {

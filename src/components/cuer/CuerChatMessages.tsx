@@ -129,6 +129,7 @@ const CuerChatMessages = ({
         console.log('🔄 AUTO-APPLYING: Modifications:', JSON.stringify(modifications, null, 2));
         console.log('🔄 AUTO-APPLYING: Message ID:', messageId);
         console.log('🔄 AUTO-APPLYING: Already applied IDs:', Array.from(appliedMessageIds));
+        console.log('🔄 AUTO-APPLYING: applyModifications function:', applyModifications);
         
         // Mark this message as processed immediately to prevent infinite loops
         setAppliedMessageIds(prev => new Set([...prev, messageId]));
@@ -137,8 +138,9 @@ const CuerChatMessages = ({
         setTimeout(() => {
           console.log('🔄 AUTO-APPLYING: Starting timeout execution');
           console.log('🔄 AUTO-APPLYING: applyModifications function exists:', !!applyModifications);
+          console.log('🔄 AUTO-APPLYING: About to call applyModifications with:', JSON.stringify(modifications, null, 2));
           try {
-            console.log('🔄 AUTO-APPLYING: About to call applyModifications');
+            console.log('🔄 AUTO-APPLYING: Calling applyModifications NOW');
             const success = applyModifications(modifications);
             console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
             if (success) {
