@@ -104,7 +104,15 @@ const RundownTableHeader = ({
 
     // Measure all cell content for this column
     items.forEach(item => {
-      const cellValue = item[column.key] || '';
+      let cellValue = '';
+      
+      // Handle custom vs built-in columns
+      if (column.isCustom) {
+        cellValue = item.customFields?.[column.key] || '';
+      } else {
+        cellValue = item[column.key] || '';
+      }
+      
       const textValue = String(cellValue).trim();
       if (textValue) {
         measureElement.textContent = textValue;
