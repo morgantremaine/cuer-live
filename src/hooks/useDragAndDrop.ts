@@ -1,29 +1,6 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import {
-  DndContext,
-  DragEndEvent,
-  DragStartEvent,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  UniqueIdentifier
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
-  arrayMove
-} from '@dnd-kit/sortable';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import { RundownItem } from '@/types/rundown';
 
-interface DragInfo {
-  draggedIds: string[];
-  isHeaderGroup: boolean;
-  originalIndex: number;
-}
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { RundownItem } from '@/types/rundown';
 
 export const useDragAndDrop = (
   items: RundownItem[], 
@@ -36,34 +13,16 @@ export const useDragAndDrop = (
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean
 ) => {
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  
-  // Legacy state for compatibility
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   
   // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Setup @dnd-kit sensors with better activation constraints
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Minimum distance before drag starts
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   // Centralized state reset function
   const resetDragState = useCallback(() => {
-    setActiveId(null);
-    setDragInfo(null);
     setDraggedItemIndex(null);
     setIsDraggingMultiple(false);
     setDropTargetIndex(null);
@@ -97,7 +56,7 @@ export const useDragAndDrop = (
     };
   }, []);
 
-  const renumberItems = useCallback((items: RundownItem[]) => {
+  const renumberItems = (items: RundownItem[]) => {
     let headerIndex = 0;
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
@@ -114,145 +73,57 @@ export const useDragAndDrop = (
         return item;
       }
     });
-  }, []);
+  };
 
-  // @dnd-kit drag start handler
-  const handleDndKitDragStart = useCallback((event: DragStartEvent) => {
-    const { active } = event;
-    const activeIndex = items.findIndex(item => item.id === active.id);
-    const item = items[activeIndex];
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    // Reset any existing state first
+    resetDragState();
     
-    if (!item) return;
+    const item = items[index];
+    if (!item) {
+      return;
+    }
 
     let draggedIds: string[] = [];
-    let isHeaderGroup = false;
+    let isMultipleSelection = false;
     
     // Check if it's a collapsed header group
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
+      // Drag the entire header group
       draggedIds = getHeaderGroupItemIds(item.id);
-      isHeaderGroup = draggedIds.length > 1;
+      isMultipleSelection = draggedIds.length > 1;
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(selectedRows);
+      isMultipleSelection = true;
     } else {
       // Single item
       draggedIds = [item.id];
+      isMultipleSelection = false;
     }
     
-    setActiveId(active.id);
-    setDraggedItemIndex(activeIndex);
-    setIsDraggingMultiple(draggedIds.length > 1);
-    setDragInfo({
-      draggedIds,
-      isHeaderGroup,
-      originalIndex: activeIndex
-    });
-    setDragTimeout();
     isDragActiveRef.current = true;
-  }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
-
-  // @dnd-kit drag end handler
-  const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+    setDraggedItemIndex(index);
+    setIsDraggingMultiple(isMultipleSelection);
+    setDragTimeout();
     
-    if (!over || !dragInfo || active.id === over.id) {
-      resetDragState();
-      return;
-    }
-
-    const activeIndex = items.findIndex(item => item.id === active.id);
-    const overIndex = items.findIndex(item => item.id === over.id);
+    e.dataTransfer.effectAllowed = 'move';
     
-    if (activeIndex === -1 || overIndex === -1) {
-      resetDragState();
-      return;
+    // Check if enhanced handler already set drag data
+    const existingData = e.dataTransfer.getData('text/plain');
+    if (existingData) {
+      return; // Don't overwrite the enhanced data
     }
-
-    try {
-      const { draggedIds, isHeaderGroup } = dragInfo;
-      let newItems: RundownItem[];
-      let hasHeaderMoved = false;
-      let actionDescription = '';
-
-      if (draggedIds.length > 1) {
-        // Get all dragged items in their original order
-        const draggedItems = draggedIds
-          .map((id: string) => items.find(item => item.id === id))
-          .filter(Boolean) as RundownItem[];
-          
-        const remainingItems = items.filter(item => !draggedIds.includes(item.id));
-        
-        hasHeaderMoved = draggedItems.some(item => item.type === 'header');
-        
-        // Calculate the correct insertion point
-        let adjustedDropIndex = overIndex;
-        
-        // Find how many dragged items appear before the drop index
-        const removedItemsBeforeDropIndex = items.slice(0, overIndex).filter(item => 
-          draggedIds.includes(item.id)
-        ).length;
-        
-        adjustedDropIndex = overIndex - removedItemsBeforeDropIndex;
-        
-        // Ensure we don't go out of bounds
-        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
-        
-        // Insert all items at the adjusted drop position
-        newItems = [...remainingItems];
-        newItems.splice(adjustedDropIndex, 0, ...draggedItems);
-        
-        actionDescription = isHeaderGroup ? 
-          `Reorder header group (${draggedItems.length} items)` : 
-          `Reorder ${draggedItems.length} items`;
-      } else {
-        // Single item using @dnd-kit's arrayMove
-        newItems = arrayMove(items, activeIndex, overIndex);
-        
-        const draggedItem = items[activeIndex];
-        hasHeaderMoved = draggedItem?.type === 'header';
-        actionDescription = `Reorder "${draggedItem?.name || 'row'}"`;
-      }
-      
-      if (hasHeaderMoved) {
-        newItems = renumberItems(newItems);
-      }
-      
-      if (saveUndoState && columns && title) {
-        saveUndoState(items, columns, title, actionDescription);
-      }
-      
-      setItems(newItems);
-      
-    } catch (error) {
-      console.warn('@dnd-kit drag and drop error:', error);
-    } finally {
-      resetDragState();
-    }
-  }, [items, dragInfo, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
-
-  // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
-  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
-    // Prevent text selection from triggering drag
-    const target = e.target as HTMLElement;
-    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
-    const hasTextSelection = window.getSelection()?.toString().length > 0;
-    const isContentEditable = target.contentEditable === 'true';
     
-    if (isTextInput || hasTextSelection || isContentEditable) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-
-    // Let @dnd-kit handle the actual drag logic
-    const item = items[index];
-    if (item) {
-      // Simulate @dnd-kit drag start
-      handleDndKitDragStart({
-        active: { id: item.id, data: { current: {} }, rect: { current: {} } }
-      } as DragStartEvent);
-    }
-  }, [items, handleDndKitDragStart]);
+    // Store drag info with header group detection
+    const dragInfo = {
+      draggedIds,
+      isHeaderGroup: item.type === 'header' && isMultipleSelection,
+      originalIndex: index
+    };
+    
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
+  }, [items, selectedRows, resetDragState, setDragTimeout, getHeaderGroupItemIds, isHeaderCollapsed]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetIndex?: number) => {
     e.preventDefault();
@@ -293,50 +164,130 @@ export const useDragAndDrop = (
       return;
     }
 
-    // Simulate @dnd-kit drop by finding the target item
-    const targetItem = items[dropIndex];
-    if (targetItem) {
-      handleDndKitDragEnd({
-        active: { id: items[draggedItemIndex].id },
-        over: { id: targetItem.id }
-      } as any);
+    try {
+      const dragDataString = e.dataTransfer.getData('text/plain');
+      let dragInfo = { draggedIds: [], isHeaderGroup: false, originalIndex: -1, enhancedHandlerUsed: false };
+      
+      try {
+        dragInfo = JSON.parse(dragDataString);
+      } catch (error) {
+        // Use fallback values
+      }
+
+      const { draggedIds, isHeaderGroup, enhancedHandlerUsed } = dragInfo;
+      let newItems: RundownItem[];
+      let hasHeaderMoved = false;
+      let actionDescription = '';
+
+      if (draggedIds.length > 1) {
+        
+        // Get all dragged items in their original order
+        const draggedItems = draggedIds
+          .map((id: string) => items.find(item => item.id === id))
+          .filter(Boolean) as RundownItem[];
+          
+        const remainingItems = items.filter(item => !draggedIds.includes(item.id));
+        
+        hasHeaderMoved = draggedItems.some(item => item.type === 'header');
+        
+        // Calculate the correct insertion point
+        let adjustedDropIndex = dropIndex;
+        
+        // For header groups, we need to be more precise about positioning
+        if (isHeaderGroup) {
+          // Find how many dragged items appear before the drop index
+          const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+        } else {
+          // For regular multi-selection, use existing logic
+          const removedItemsBeforeDropIndex = items.slice(0, dropIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = dropIndex - removedItemsBeforeDropIndex;
+        }
+        
+        // Ensure we don't go out of bounds
+        adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
+        
+        // Insert all items at the adjusted drop position
+        newItems = [...remainingItems];
+        newItems.splice(adjustedDropIndex, 0, ...draggedItems);
+        
+        actionDescription = isHeaderGroup ? 
+          `Reorder header group (${draggedItems.length} items)` : 
+          `Reorder ${draggedItems.length} items`;
+      } else {
+        // Single item
+        if (draggedItemIndex === dropIndex) {
+          resetDragState();
+          return;
+        }
+
+        const draggedItem = items[draggedItemIndex];
+        if (!draggedItem) {
+          resetDragState();
+          return;
+        }
+
+        hasHeaderMoved = draggedItem.type === 'header';
+
+        newItems = [...items];
+        newItems.splice(draggedItemIndex, 1);
+        
+        // When moving down, we need to account for the item being removed first
+        // When moving up, the drop index is already correct
+        let adjustedDropIndex = dropIndex;
+        if (draggedItemIndex < dropIndex) {
+          // Moving down: only subtract 1 if moving by more than 1 position
+          if (dropIndex - draggedItemIndex > 1) {
+            adjustedDropIndex = dropIndex - 1;
+          }
+          // If moving down by exactly 1: use original dropIndex to place after the next item
+        }
+        
+        newItems.splice(adjustedDropIndex, 0, draggedItem);
+        
+        actionDescription = `Reorder "${draggedItem.name || 'row'}"`;
+      }
+      
+      if (hasHeaderMoved) {
+        newItems = renumberItems(newItems);
+      }
+      
+      if (saveUndoState && columns && title) {
+        saveUndoState(items, columns, title, actionDescription);
+      }
+      
+      setItems(newItems);
+      
+    } catch (error) {
+      // Handle error silently
+    } finally {
+      // Always reset state after drop attempt
+      resetDragState();
     }
-  }, [draggedItemIndex, items, handleDndKitDragEnd, resetDragState]);
+  }, [draggedItemIndex, items, resetDragState, setItems, saveUndoState, columns, title]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     resetDragState();
   }, [resetDragState]);
 
-  // Create sortable items list for @dnd-kit
-  const sortableItems = useMemo(() => 
-    items.map(item => item.id), 
-    [items]
-  );
-
   const isDragging = draggedItemIndex !== null && isDragActiveRef.current;
 
   return {
-    // @dnd-kit context components and props
-    DndContext,
-    SortableContext, 
-    sensors,
-    sortableItems,
-    dndKitDragStart: handleDndKitDragStart,
-    dndKitDragEnd: handleDndKitDragEnd,
-    modifiers: [restrictToVerticalAxis],
-    collisionDetection: closestCenter,
-    activeId,
-    
-    // Legacy compatibility
     draggedItemIndex,
     isDraggingMultiple,
     dropTargetIndex,
     isDragging,
-    handleDragStart, // Legacy HTML5 handler
+    handleDragStart,
     handleDragOver,
     handleDragLeave,
-    handleDrop, // Legacy HTML5 handler
-    handleDragEnd, // Legacy HTML5 handler
+    handleDrop,
+    handleDragEnd,
     resetDragState
   };
 };

@@ -114,7 +114,9 @@ const RundownTable = ({
   };
 
   return (
-    <tbody className="bg-background">
+    <div className="relative w-full bg-background">
+      <table className="w-full border-collapse border border-border">
+        <tbody className="bg-background">
           {items.map((item, index) => {
             const rowNumber = getRowNumber(index);
             const status = getRowStatus(item);
@@ -188,14 +190,15 @@ const RundownTable = ({
               </React.Fragment>
             );
           })}
+        </tbody>
+      </table>
+      
       {items.length === 0 && (
-        <tr>
-          <td colSpan={visibleColumns.length + 1} className="p-4 text-center text-muted-foreground">
-            No items to display
-          </td>
-        </tr>
+        <div className="p-4 text-center text-muted-foreground bg-background border border-border rounded">
+          No items to display
+        </div>
       )}
-    </tbody>
+    </div>
   );
 };
 

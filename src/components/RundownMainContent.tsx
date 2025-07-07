@@ -34,7 +34,6 @@ const RundownMainContent = ({
         visibleColumns={visibleColumns}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
-        onReorderColumns={handleReorderColumns}
       />
       
       {showColumnManager && (

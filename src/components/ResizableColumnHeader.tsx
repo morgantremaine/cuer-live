@@ -1,7 +1,5 @@
 
 import React, { useRef, useCallback } from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -40,34 +38,24 @@ const ResizableColumnHeader = ({
   width, 
   onWidthChange, 
   children, 
-  showLeftSeparator = false
+  showLeftSeparator = false 
 }: ResizableColumnHeaderProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: column.id });
   const headerRef = useRef<HTMLTableHeaderCellElement>(null);
-  const isResizingRef = useRef<boolean>(false);
   const initialWidthRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
   const animationFrameRef = useRef<number>();
 
   const minimumWidth = getMinimumWidth(column);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent drag from starting
     
     if (!headerRef.current) return;
-    
-    isResizingRef.current = true;
     
     const startX = e.clientX;
     const startWidth = parseInt(width);
     initialWidthRef.current = startWidth;
+    isDraggingRef.current = true;
 
     // Set cursor and disable text selection globally
     document.body.style.cursor = 'col-resize';
@@ -80,7 +68,7 @@ const ResizableColumnHeader = ({
     }
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizingRef.current || !headerRef.current) return;
+      if (!isDraggingRef.current || !headerRef.current) return;
       
       // Cancel any pending animation frame
       if (animationFrameRef.current) {
@@ -100,9 +88,9 @@ const ResizableColumnHeader = ({
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      if (!isResizingRef.current || !headerRef.current) return;
+      if (!isDraggingRef.current || !headerRef.current) return;
       
-      isResizingRef.current = false;
+      isDraggingRef.current = false;
       
       // Cancel any pending animation frame
       if (animationFrameRef.current) {
@@ -139,62 +127,25 @@ const ResizableColumnHeader = ({
   const constrainedWidth = Math.max(minimumWidth, parseInt(width));
   const constrainedWidthPx = `${constrainedWidth}px`;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    // Lock dimensions completely during drag to prevent any resizing
-    width: constrainedWidthPx,
-    minWidth: constrainedWidthPx,
-    maxWidth: constrainedWidthPx,
-    borderRight: '1px solid hsl(var(--border))',
-    zIndex: isDragging ? 1000 : 'auto',
-    // Prevent any flex or layout changes during drag
-    position: isDragging ? 'relative' as const : undefined,
-    display: isDragging ? 'table-cell' as const : undefined,
-    tableLayout: isDragging ? 'fixed' as const : undefined
-  };
-
-  // Create listeners that exclude the resize handle
-  const dragListeners = {
-    ...listeners,
-    onPointerDown: (e: React.PointerEvent) => {
-      // Don't start drag if clicking on resize handle
-      if (isResizingRef.current || 
-          (e.target as HTMLElement).classList.contains('resize-handle') ||
-          (e.target as HTMLElement).closest('.resize-handle')) {
-        return;
-      }
-      listeners?.onPointerDown?.(e);
-    }
-  };
-
   return (
     <th 
-      ref={(node) => {
-        setNodeRef(node);
-        headerRef.current = node;
+      ref={headerRef}
+      className="px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600"
+      style={{ 
+        width: constrainedWidthPx, 
+        minWidth: constrainedWidthPx,
+        maxWidth: constrainedWidthPx,
+        borderRight: '1px solid hsl(var(--border))'
       }}
-      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
-        isDragging ? 'opacity-50' : ''
-      } cursor-move`}
-      style={style}
-      {...attributes}
-      {...dragListeners}
     >
-      <div 
-        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
-        style={{
-          // Lock text container width to prevent stretching
-          width: `${constrainedWidth - 16}px`,
-          minWidth: `${constrainedWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`
-        }}
-      >
+      {/* Remove left separator since we're using consistent borders */}
+      
+      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
         {children}
       </div>
       
       <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
+        className="resize-handle absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400 transition-colors z-10"
         onMouseDown={handleMouseDown}
       />
     </th>

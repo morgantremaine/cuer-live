@@ -27,7 +27,6 @@ interface RundownContentProps {
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
-  onReorderColumns?: (columns: Column[]) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -50,7 +49,7 @@ interface RundownContentProps {
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (itemId: string) => void;
+  onJumpToHere?: (segmentId: string) => void;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -72,7 +71,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
-  onReorderColumns,
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
@@ -126,18 +124,19 @@ const RundownContent = React.memo<RundownContentProps>(({
       {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div className="min-w-max bg-background">
-          {/* Single Table Structure for Perfect Alignment */}
-          <table className="w-full border-collapse border border-border">
-            {/* Sticky Header */}
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
-            />
-            
-            {/* Table Body - Content */}
-            <OptimizedRundownTableWrapper
+          {/* Sticky Header - Inside ScrollArea */}
+          <div className="sticky top-0 z-20 bg-background border-b border-border">
+            <table className="w-full border-collapse">
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                getColumnWidth={getColumnWidth}
+                updateColumnWidth={updateColumnWidth}
+              />
+            </table>
+          </div>
+
+          {/* Optimized Table Content */}
+          <OptimizedRundownTableWrapper
             items={items}
             visibleColumns={visibleColumns}
             currentTime={currentTime}
@@ -173,8 +172,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
             onJumpToHere={onJumpToHere}
-            />
-          </table>
+          />
         </div>
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
