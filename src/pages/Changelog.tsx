@@ -42,7 +42,6 @@ const Changelog: React.FC = () => {
                       <li><strong>Smart Navigation:</strong> Navigate between matches with up/down arrows or Enter/Shift+Enter keyboard shortcuts</li>
                       <li><strong>Replace Options:</strong> Replace individual matches or all matches at once with dedicated "Replace" and "Replace All" buttons</li>
                       <li><strong>Case Preservation:</strong> Optional "Preserve case pattern" setting maintains original capitalization when replacing text</li>
-                      <li><strong>Real-time Highlighting:</strong> Automatically scrolls to and highlights matched text in the rundown for precise editing</li>
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
