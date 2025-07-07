@@ -105,19 +105,6 @@ const ColumnManager = ({
             canEditLayout={canEditLayout}
           />
 
-          {debugColumns && resetToDefaults && (
-            <div className="space-y-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border">
-              <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Debug Tools</h4>
-              <div className="flex space-x-2">
-                <Button size="sm" variant="outline" onClick={debugColumns}>
-                  Debug Columns
-                </Button>
-                <Button size="sm" variant="outline" onClick={resetToDefaults}>
-                  Reset to Defaults
-                </Button>
-              </div>
-            </div>
-          )}
 
           <ColumnEditor onAddColumn={onAddColumn} />
 
