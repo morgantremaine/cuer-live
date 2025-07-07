@@ -27,7 +27,6 @@ interface RundownContentProps {
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
-  getTotalTableWidth?: () => number;
   onReorderColumns?: (columns: Column[]) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
@@ -73,7 +72,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
-  getTotalTableWidth,
   onReorderColumns,
   getRowNumber,
   getRowStatus,
@@ -123,35 +121,26 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate total table width using the hook's method or fallback
-  const totalTableWidth = React.useMemo(() => {
-    if (getTotalTableWidth) {
-      return getTotalTableWidth();
-    }
-    
-    // Fallback calculation
+  // Calculate minimum table width - sum of all column widths
+  const minTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
       const widthValue = parseInt(width.replace('px', ''));
       total += widthValue;
     });
-    
-    // Ensure table is never smaller than viewport width
-    const viewportWidth = window.innerWidth;
-    return Math.max(total, viewportWidth);
-  }, [visibleColumns, getColumnWidth, getTotalTableWidth]);
+    return total;
+  }, [visibleColumns, getColumnWidth]);
 
   return (
     <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
+        <div className="bg-background" style={{ minWidth: `${minTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse border border-border" style={{ 
-            tableLayout: 'fixed', 
-            width: `${totalTableWidth}px`,
-            minWidth: `${totalTableWidth}px`
+          <table className="border-collapse border border-border w-full" style={{ 
+            tableLayout: 'auto', 
+            minWidth: `${minTableWidth}px`
           }}>
             {/* Sticky Header */}
             <RundownTableHeader 

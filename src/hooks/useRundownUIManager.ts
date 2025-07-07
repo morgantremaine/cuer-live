@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react';
-import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
@@ -27,17 +26,45 @@ export const useRundownUIManager = (
     }, 300);
   }, [markAsChanged]);
 
-  // Column width management
-  const {
-    updateColumnWidth,
-    getColumnWidth
-  } = useSimpleColumnWidths(
-    columns, 
-    (columnId: string, width: number) => {
-      debouncedMarkAsChanged();
-    },
-    handleUpdateColumnWidth
-  );
+  // Column width management - restored to original simple pattern
+  const getColumnWidth = useCallback((column: Column) => {
+    return column.width || '150px';
+  }, []);
+
+  const updateColumnWidth = useCallback((columnId: string, width: number) => {
+    // Find the column to get its minimum width
+    const column = columns.find(col => col.id === columnId);
+    const getMinimumWidth = (col: Column): number => {
+      switch (col.key) {
+        case 'duration':
+        case 'startTime':
+        case 'endTime':
+        case 'elapsedTime':
+          return 95;
+        case 'segmentName':
+          return 100;
+        case 'talent':
+          return 60;
+        case 'script':
+        case 'notes':
+          return 120;
+        case 'gfx':
+        case 'video':
+          return 80;
+        default:
+          return 50;
+      }
+    };
+    
+    const minimumWidth = column ? getMinimumWidth(column) : 50;
+    const constrainedWidth = Math.max(minimumWidth, width);
+    
+    debouncedMarkAsChanged();
+    
+    if (handleUpdateColumnWidth) {
+      handleUpdateColumnWidth(column?.id || '', constrainedWidth);
+    }
+  }, [columns, debouncedMarkAsChanged, handleUpdateColumnWidth]);
 
   // Color picker state
   const {
