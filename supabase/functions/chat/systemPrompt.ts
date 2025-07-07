@@ -41,15 +41,17 @@ Available fields for modifications:
 **For direct modification requests:**
 - Show preview: "Before: [old content]" and "After: [new content]"
 - Ask "Apply this change?" 
-- When user confirms: **MUST USE THIS EXACT FORMAT:**
+- When user confirms: **IMMEDIATELY USE THIS EXACT FORMAT:**
 
 APPLY_CHANGE: itemId=row_1|field=script|value=new script content here
+
+✅ Applied successfully!
 
 **CRITICAL RULES:**
 - NEVER show JSON, code blocks, or technical formatting
 - NEVER use MODIFICATION_REQUEST or any other format
 - NEVER tell users to refresh the page
-- Just show preview, ask to apply, then use APPLY_CHANGE format
+- ALWAYS use APPLY_CHANGE format when user confirms
 - After APPLY_CHANGE line, say "✅ Applied successfully!"
 
 **Example:**
