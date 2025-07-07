@@ -122,9 +122,9 @@ const RundownTableHeader = ({
 
     document.body.removeChild(measureElement);
 
-    // Add some extra padding for resize handle, borders, and breathing room
-    const padding = 40; // Extra padding for resize handle and spacing
-    const calculatedWidth = Math.max(maxWidth + padding, 80); // Minimum 80px
+    // Add minimal padding - just for cell padding and resize handle
+    const padding = 24; // 8px left + 8px right cell padding + 8px for resize handle
+    const calculatedWidth = Math.max(maxWidth + padding, 50); // Minimum 50px
 
     updateColumnWidth(column.id, calculatedWidth);
   };
