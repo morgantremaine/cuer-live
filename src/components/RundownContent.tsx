@@ -129,7 +129,10 @@ const RundownContent = React.memo<RundownContentProps>(({
       const widthValue = parseInt(width.replace('px', ''));
       total += widthValue;
     });
-    return total;
+    
+    // Ensure table is never smaller than viewport width
+    const viewportWidth = window.innerWidth;
+    return Math.max(total, viewportWidth);
   }, [visibleColumns, getColumnWidth]);
 
   return (

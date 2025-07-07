@@ -39,6 +39,8 @@ export const useSimpleColumnWidths = (
 
     const widths: { [key: string]: number } = {};
     
+    // First, calculate natural widths
+    let totalNaturalWidth = 64; // Row number column
     columns.forEach(column => {
       const minimumWidth = getMinimumWidth(column);
       
@@ -52,7 +54,21 @@ export const useSimpleColumnWidths = (
       } else {
         widths[column.id] = minimumWidth;
       }
+      
+      totalNaturalWidth += widths[column.id];
     });
+    
+    // Check if we need to expand columns to fill viewport
+    const viewportWidth = window.innerWidth;
+    if (totalNaturalWidth < viewportWidth) {
+      const extraSpace = viewportWidth - totalNaturalWidth;
+      const extraPerColumn = Math.floor(extraSpace / columns.length);
+      
+      // Distribute extra space proportionally
+      columns.forEach(column => {
+        widths[column.id] += extraPerColumn;
+      });
+    }
     
     setColumnWidths(widths);
   }, [columns]);
