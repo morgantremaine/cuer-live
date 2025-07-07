@@ -290,11 +290,21 @@ export const useSimplifiedRundownState = () => {
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
+    console.log('🧮 CALCULATED ITEMS: Recalculating with state.items:', state.items?.length);
+    console.log('🧮 CALCULATED ITEMS: state.startTime:', state.startTime);
+    
     if (!state.items || !Array.isArray(state.items)) {
+      console.log('🧮 CALCULATED ITEMS: No items, returning empty array');
       return [];
     }
     
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    console.log('🧮 CALCULATED ITEMS: Calculated items:', calculated.length);
+    console.log('🧮 CALCULATED ITEMS: First item name:', calculated[0]?.name);
+    
+    // FORCE VISIBLE DEBUG
+    alert(`🧮 CALCULATED ITEMS: Recalculated ${calculated.length} items. First item: ${calculated[0]?.name || 'None'}`);
+    
     return calculated;
   }, [state.items, state.startTime]);
 
