@@ -79,32 +79,43 @@ const RundownTableHeader = ({
     if (column.key === 'script' || column.key === 'notes') return;
 
     // Create a temporary element to measure text width
-    const measureElement = document.createElement('div');
+    const measureElement = document.createElement('span');
     measureElement.style.position = 'absolute';
     measureElement.style.visibility = 'hidden';
     measureElement.style.whiteSpace = 'nowrap';
     measureElement.style.fontSize = '14px'; // Match table font size
-    measureElement.style.fontFamily = 'inherit';
-    measureElement.style.padding = '8px'; // Match cell padding
+    measureElement.style.fontFamily = 'ui-sans-serif, system-ui, sans-serif'; // Match table font family
+    measureElement.style.fontWeight = '400'; // Normal font weight for cell content
+    measureElement.style.padding = '4px 8px'; // Match cell padding
+    measureElement.style.border = 'none';
+    measureElement.style.margin = '0';
+    measureElement.style.lineHeight = '1.25';
     document.body.appendChild(measureElement);
 
     let maxWidth = 0;
 
-    // Measure column header text
+    // Measure column header text with bold font weight
+    measureElement.style.fontWeight = '600'; // Bold for header
     measureElement.textContent = column.name || column.key;
     maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+
+    // Reset to normal weight for cell content
+    measureElement.style.fontWeight = '400';
 
     // Measure all cell content for this column
     items.forEach(item => {
       const cellValue = item[column.key] || '';
-      measureElement.textContent = String(cellValue);
-      maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+      const textValue = String(cellValue).trim();
+      if (textValue) {
+        measureElement.textContent = textValue;
+        maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+      }
     });
 
     document.body.removeChild(measureElement);
 
-    // Add some extra padding and ensure minimum width
-    const padding = 32; // Extra padding for resize handle and spacing
+    // Add some extra padding for resize handle, borders, and breathing room
+    const padding = 40; // Extra padding for resize handle and spacing
     const calculatedWidth = Math.max(maxWidth + padding, 80); // Minimum 80px
 
     updateColumnWidth(column.id, calculatedWidth);
