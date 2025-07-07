@@ -127,7 +127,7 @@ const RundownContent = React.memo<RundownContentProps>(({
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
         <div className="min-w-max bg-background">
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="w-full border-collapse border border-border">"
+          <table className="w-full border-collapse border border-border" style={{ tableLayout: 'fixed', width: '100%' }}>
             {/* Sticky Header */}
             <RundownTableHeader 
               visibleColumns={visibleColumns}

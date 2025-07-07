@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -137,15 +136,22 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
 
-  // Ensure the width never goes below minimum even when passed in
-  const constrainedWidth = Math.max(minimumWidth, parseInt(width));
-  const constrainedWidthPx = `${constrainedWidth}px`;
+  // For percentage-based widths, we need to handle them differently
+  const isPercentageWidth = width.includes('%');
+  const widthValue = isPercentageWidth ? 
+    parseFloat(width.replace('%', '')) : 
+    parseInt(width.replace('px', ''));
+  
+  // Ensure minimum width constraint
+  const constrainedWidth = isPercentageWidth ? 
+    `${Math.max(5, widthValue)}%` : // Minimum 5% for percentage widths
+    `${Math.max(minimumWidth, widthValue)}px`;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: constrainedWidthPx,
-    minWidth: constrainedWidthPx,
+    width: constrainedWidth,
+    minWidth: isPercentageWidth ? undefined : `${minimumWidth}px`,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     // Prevent any flex or layout changes during drag
@@ -184,10 +190,10 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
         style={{
-          // Lock text container width to prevent stretching
-          width: `${constrainedWidth - 16}px`,
-          minWidth: `${constrainedWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`
+          // For percentage widths, let the content flow naturally
+          width: isPercentageWidth ? 'calc(100% - 16px)' : `${(isPercentageWidth ? widthValue : Math.max(minimumWidth, widthValue)) - 16}px`,
+          minWidth: isPercentageWidth ? undefined : `${minimumWidth - 16}px`,
+          maxWidth: isPercentageWidth ? undefined : `${(isPercentageWidth ? widthValue : Math.max(minimumWidth, widthValue)) - 16}px`
         }}
       >
         {children}

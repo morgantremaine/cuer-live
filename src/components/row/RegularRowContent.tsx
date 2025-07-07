@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -78,7 +77,6 @@ const RegularRowContent = ({
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
-              minWidth: columnWidth,
               backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}

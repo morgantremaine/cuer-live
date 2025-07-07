@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
@@ -80,7 +79,9 @@ const HeaderRowContent = ({
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
         const isLastColumn = columnIndex === columns.length - 1;
-        const widthValue = parseInt(columnWidth.replace('px', ''));
+        const widthValue = columnWidth.includes('%') ? 
+          parseFloat(columnWidth.replace('%', '')) : 
+          parseInt(columnWidth.replace('px', ''));
         
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
@@ -91,7 +92,6 @@ const HeaderRowContent = ({
                 className="align-middle border-r border-border min-h-[96px] relative"
                 style={{ 
                   width: columnWidth, 
-                  minWidth: columnWidth,
                   backgroundColor,
                   overflow: 'visible'
                 }}
@@ -158,7 +158,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -173,7 +172,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -188,7 +186,6 @@ const HeaderRowContent = ({
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
                 width: columnWidth, 
-                minWidth: columnWidth,
                 backgroundColor 
               }}
             >
