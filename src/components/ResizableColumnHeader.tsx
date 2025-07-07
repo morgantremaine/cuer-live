@@ -1,5 +1,5 @@
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, forwardRef } from 'react';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface ResizableColumnHeaderProps {
@@ -9,11 +9,7 @@ interface ResizableColumnHeaderProps {
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isDragging?: boolean;
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
-  onDragEnd?: () => void;
+  style?: React.CSSProperties;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -39,19 +35,16 @@ const getMinimumWidth = (column: Column): number => {
   }
 };
 
-const ResizableColumnHeader = ({ 
+const ResizableColumnHeader = forwardRef<HTMLTableHeaderCellElement, ResizableColumnHeaderProps>(({ 
   column, 
   width, 
   onWidthChange, 
   children, 
   showLeftSeparator = false,
   isDragging = false,
-  onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragEnd
-}: ResizableColumnHeaderProps) => {
+  style,
+  ...dragProps
+}, ref) => {
   const headerRef = useRef<HTMLTableHeaderCellElement>(null);
   const initialWidthRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
@@ -139,50 +132,21 @@ const ResizableColumnHeader = ({
   const constrainedWidth = Math.max(minimumWidth, parseInt(width));
   const constrainedWidthPx = `${constrainedWidth}px`;
 
-  // Handle drag functionality without interfering with resize
-  const handleHeaderDragStart = useCallback((e: React.DragEvent) => {
-    // Prevent drag if we're currently resizing
-    if (isDraggingRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    
-    // Only allow dragging from the text area, not the resize handle
-    const target = e.target as HTMLElement;
-    if (target.classList.contains('resize-handle') || target.closest('.resize-handle')) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    
-    // Ensure we have a clean start
-    if (onDragStart) {
-      onDragStart(e);
-    }
-  }, [onDragStart]);
-
   return (
     <th 
-      ref={headerRef}
+      ref={ref || headerRef}
       className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
         isDragging ? 'opacity-50' : ''
-      } ${onDragStart ? 'cursor-move' : ''}`}
+      }`}
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
         maxWidth: constrainedWidthPx,
-        borderRight: '1px solid hsl(var(--border))'
+        borderRight: '1px solid hsl(var(--border))',
+        ...style
       }}
-      draggable={!!onDragStart}
-      onDragStart={handleHeaderDragStart}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
+      {...dragProps}
     >
-      {/* Remove left separator since we're using consistent borders */}
-      
       <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap">
         {children}
       </div>
@@ -193,6 +157,8 @@ const ResizableColumnHeader = ({
       />
     </th>
   );
-};
+});
+
+ResizableColumnHeader.displayName = 'ResizableColumnHeader';
 
 export default ResizableColumnHeader;
