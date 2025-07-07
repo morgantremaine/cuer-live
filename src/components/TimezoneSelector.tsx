@@ -57,7 +57,6 @@ const TimezoneSelector = ({
         onClick={() => setIsOpen(!isOpen)}
         className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1 flex items-center gap-2"
       >
-        <Clock className={`text-gray-900 dark:text-white ${large ? 'h-5 w-5' : 'h-4 w-4'}`} />
         {showTime && (
           <span className={`font-mono ${large ? 'text-lg' : 'text-sm'}`}>
             {timeDisplay}
