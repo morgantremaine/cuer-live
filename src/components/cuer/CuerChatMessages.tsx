@@ -50,6 +50,8 @@ const CuerChatMessages = ({
 
   const extractModifications = (content: string): { cleanContent: string; modifications: RundownModification[] | null } => {
     console.log('🔍 EXTRACTION: Raw content:', content);
+    console.log('🔍 EXTRACTION: Content length:', content.length);
+    console.log('🔍 EXTRACTION: Last 200 chars:', content.slice(-200));
     
     // Look for the __CUER_MODIFICATIONS__ format (created by the parser)
     const modificationMatch = content.match(/__CUER_MODIFICATIONS__:(.*)/);
@@ -69,6 +71,30 @@ const CuerChatMessages = ({
       } catch (error) {
         console.error('🔍 EXTRACTION: Failed to parse modifications:', error);
       }
+    }
+    
+    // Also look for the raw APPLY_CHANGE format as fallback
+    const applyChangeMatch = content.match(/APPLY_CHANGE:\s*itemId=([^|]+)\|field=([^|]+)\|value=(.+?)(?=\n|$)/);
+    if (applyChangeMatch) {
+      console.log('🔍 EXTRACTION: Found raw APPLY_CHANGE format');
+      const [, itemId, field, value] = applyChangeMatch;
+      const modifications = [{
+        type: "update" as const,
+        itemId: itemId.trim(),
+        data: {
+          [field.trim()]: value.trim()
+        },
+        description: `Updated ${field}`
+      }];
+      
+      console.log('🔍 EXTRACTION: Created modifications from APPLY_CHANGE:', modifications);
+      
+      const cleanContent = content.replace(/APPLY_CHANGE:\s*itemId=[^|]+\|field=[^|]+\|value=.+?(?=\n|$)/, '').trim();
+      
+      return {
+        cleanContent,
+        modifications
+      };
     }
     
     console.log('🔍 EXTRACTION: No modifications found');
