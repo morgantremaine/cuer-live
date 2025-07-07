@@ -8,6 +8,7 @@ interface ResizableColumnHeaderProps {
   column: Column;
   width: string;
   onWidthChange: (columnId: string, width: number) => void;
+  onAutoResize?: () => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
@@ -40,6 +41,7 @@ const ResizableColumnHeader = ({
   column, 
   width, 
   onWidthChange, 
+  onAutoResize,
   children, 
   showLeftSeparator = false,
   isLastColumn = false
@@ -58,6 +60,15 @@ const ResizableColumnHeader = ({
   const animationFrameRef = useRef<number>();
 
   const minimumWidth = getMinimumWidth(column);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onAutoResize) {
+      onAutoResize();
+    }
+  }, [onAutoResize]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -193,6 +204,8 @@ const ResizableColumnHeader = ({
       <div 
         className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
         onMouseDown={handleMouseDown}
+        onDoubleClick={handleDoubleClick}
+        title="Double-click to auto-resize column"
       />
     </th>
   );

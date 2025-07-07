@@ -29,13 +29,15 @@ interface RundownTableHeaderProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
+  items?: any[]; // For auto-sizing columns
 }
 
 const RundownTableHeader = ({
   visibleColumns,
   getColumnWidth,
   updateColumnWidth,
-  onReorderColumns
+  onReorderColumns,
+  items = []
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -67,6 +69,42 @@ const RundownTableHeader = ({
     }
     
     setActiveColumn(null);
+  };
+
+  // Auto-resize column to fit content
+  const handleAutoResize = (column: Column) => {
+    if (!items.length) return;
+
+    // Create a temporary element to measure text width
+    const measureElement = document.createElement('div');
+    measureElement.style.position = 'absolute';
+    measureElement.style.visibility = 'hidden';
+    measureElement.style.whiteSpace = 'nowrap';
+    measureElement.style.fontSize = '14px'; // Match table font size
+    measureElement.style.fontFamily = 'inherit';
+    measureElement.style.padding = '8px'; // Match cell padding
+    document.body.appendChild(measureElement);
+
+    let maxWidth = 0;
+
+    // Measure column header text
+    measureElement.textContent = column.name || column.key;
+    maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+
+    // Measure all cell content for this column
+    items.forEach(item => {
+      const cellValue = item[column.key] || '';
+      measureElement.textContent = String(cellValue);
+      maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+    });
+
+    document.body.removeChild(measureElement);
+
+    // Add some extra padding and ensure minimum width
+    const padding = 32; // Extra padding for resize handle and spacing
+    const calculatedWidth = Math.max(maxWidth + padding, 80); // Minimum 80px
+
+    updateColumnWidth(column.id, calculatedWidth);
   };
 
   return (
@@ -107,6 +145,7 @@ const RundownTableHeader = ({
                   column={column}
                   width={columnWidth}
                   onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+                  onAutoResize={() => handleAutoResize(column)}
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
                 >

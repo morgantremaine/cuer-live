@@ -151,6 +151,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onReorderColumns={onReorderColumns}
+              items={items}
             />
             
             {/* Table Body - Content */}
