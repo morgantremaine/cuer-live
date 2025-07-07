@@ -69,6 +69,10 @@ export const useRundownDataLoader = ({
     if (rundown.columns && Array.isArray(rundown.columns) && rundown.columns.length > 0) {
       console.log('📊 Loading saved column layout with', rundown.columns.length, 'columns');
       handleLoadLayout(rundown.columns);
+    } else {
+      // If no columns are saved, ensure we load the default columns to prevent missing built-ins
+      console.log('📊 No saved columns found, loading default columns to ensure all built-ins are present');
+      handleLoadLayout([]);
     }
 
     // Load the items back into the state using the updater pattern
