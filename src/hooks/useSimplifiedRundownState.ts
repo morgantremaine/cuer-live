@@ -130,59 +130,66 @@ export const useSimplifiedRundownState = () => {
     console.log('🚀 Current items count:', state.items.length);
     console.log('🚀 Target item exists:', !!state.items.find(item => item.id === id));
     
-    // Check if this is a typing field
-    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
-    
-    if (isTypingField) {
-      const sessionKey = `${id}-${field}`;
+    try {
+      // Check if this is a typing field
+      const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
+                           field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
       
-      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
-        typingSessionRef.current = {
-          fieldKey: sessionKey,
-          startTime: Date.now()
-        };
+      if (isTypingField) {
+        const sessionKey = `${id}-${field}`;
+        
+        if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
+          saveUndoState(state.items, [], state.title, `Edit ${field}`);
+          typingSessionRef.current = {
+            fieldKey: sessionKey,
+            startTime: Date.now()
+          };
+        }
+        
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        typingTimeoutRef.current = setTimeout(() => {
+          typingSessionRef.current = null;
+        }, 1000);
+      } else if (field === 'duration') {
+        saveUndoState(state.items, [], state.title, 'Edit duration');
       }
       
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        typingSessionRef.current = null;
-      }, 1000);
-    } else if (field === 'duration') {
-      saveUndoState(state.items, [], state.title, 'Edit duration');
-    }
-    
-    if (field.startsWith('customFields.')) {
-      const customFieldKey = field.replace('customFields.', '');
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        console.log('🚀 Updating custom field:', { customFieldKey, value });
-        const currentCustomFields = item.customFields || {};
-        const updateData = {
-          customFields: {
-            ...currentCustomFields,
-            [customFieldKey]: value
-          }
-        };
-        console.log('🚀 Calling actions.updateItem with custom fields:', updateData);
-        actions.updateItem(id, updateData);
+      if (field.startsWith('customFields.')) {
+        const customFieldKey = field.replace('customFields.', '');
+        const item = state.items.find(i => i.id === id);
+        if (item) {
+          console.log('🚀 Updating custom field:', { customFieldKey, value });
+          const currentCustomFields = item.customFields || {};
+          const updateData = {
+            customFields: {
+              ...currentCustomFields,
+              [customFieldKey]: value
+            }
+          };
+          console.log('🚀 Calling actions.updateItem with custom fields:', updateData);
+          actions.updateItem(id, updateData);
+        } else {
+          console.error('🚀 Item not found for custom field update:', id);
+          return false;
+        }
       } else {
-        console.error('🚀 Item not found for custom field update:', id);
+        let updateField = field;
+        if (field === 'segmentName') updateField = 'name';
+        
+        const updateData = { [updateField]: value };
+        console.log('🚀 Calling actions.updateItem with regular field:', updateData);
+        actions.updateItem(id, updateData);
       }
-    } else {
-      let updateField = field;
-      if (field === 'segmentName') updateField = 'name';
       
-      const updateData = { [updateField]: value };
-      console.log('🚀 Calling actions.updateItem with regular field:', updateData);
-      actions.updateItem(id, updateData);
+      console.log('🚀 ENHANCED UPDATE ITEM COMPLETED SUCCESSFULLY');
+      return true;
+    } catch (error) {
+      console.error('🚀 ENHANCED UPDATE ITEM FAILED:', error);
+      return false;
     }
-    
-    console.log('🚀 ENHANCED UPDATE ITEM COMPLETED');
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Update current time every second

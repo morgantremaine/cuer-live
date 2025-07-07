@@ -138,6 +138,9 @@ const CuerChatMessages = ({
         console.log('🔄 AUTO-APPLYING: Already applied IDs:', Array.from(appliedMessageIds));
         console.log('🔄 AUTO-APPLYING: applyModifications function:', applyModifications);
         
+        // FORCE VISIBLE DEBUG
+        alert(`🔄 CUER DEBUG: Detected ${modifications.length} modifications in message ${messageId}. About to auto-apply.`);
+        
         // Mark this message as processed immediately to prevent infinite loops
         setAppliedMessageIds(prev => new Set([...prev, messageId]));
         
@@ -152,11 +155,14 @@ const CuerChatMessages = ({
             console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
             if (success) {
               console.log('✅ MODIFICATIONS: Successfully applied changes');
+              alert('✅ CUER DEBUG: Successfully applied modifications!');
             } else {
               console.error('❌ MODIFICATIONS: Failed to apply changes');
+              alert('❌ CUER DEBUG: Failed to apply modifications!');
             }
           } catch (error) {
             console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
+            alert(`💥 CUER DEBUG: Error applying modifications: ${error}`);
           }
         }, 100);
       } else {

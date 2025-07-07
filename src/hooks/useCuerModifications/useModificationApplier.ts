@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 interface UseModificationApplierProps {
   items: RundownItem[];
-  updateItem: (id: string, field: string, value: string) => void;
+  updateItem: (id: string, field: string, value: string) => boolean | void;
   addRow: (calculateEndTime: any) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
@@ -34,9 +34,15 @@ export const useModificationApplier = ({
     console.log('🔧 addRow function exists:', typeof addRow);
     console.log('🔧 markAsChanged function exists:', typeof markAsChanged);
 
+    // FORCE VISIBLE DEBUG - Alert for critical debugging
+    if (modifications.length > 0) {
+      alert(`🔧 CUER DEBUG: Starting to apply ${modifications.length} modifications. Check console for details.`);
+    }
+
     // Prevent modifications if items are empty (still loading)
     if (items.length === 0) {
       console.warn('⚠️ Items still loading, delaying modifications');
+      alert('⚠️ CUER DEBUG: Items still loading, delaying modifications');
       toast.error('Rundown is still loading. Please try again in a moment.');
       return false;
     }
@@ -86,8 +92,11 @@ export const useModificationApplier = ({
                   console.log(`🖊️ Updating ${targetItem.id}.${field} = "${value}"`);
                   
                   try {
-                    updateItem(targetItem.id, field, String(value));
-                    console.log(`✅ Successfully updated ${field}`);
+                    const success = updateItem(targetItem.id, field, String(value));
+                    console.log(`✅ Successfully updated ${field}, returned:`, success);
+                    if (success === false) {
+                      console.error(`❌ Update returned false for ${field}`);
+                    }
                   } catch (error) {
                     console.error(`❌ Failed to update ${field}:`, error);
                   }
