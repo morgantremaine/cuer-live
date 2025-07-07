@@ -91,49 +91,25 @@ const CuerChatMessages = ({
     if (role === 'assistant') {
       const { cleanContent, modifications } = extractModifications(content);
       
+      // Auto-apply modifications when detected
+      if (modifications && modifications.length > 0) {
+        console.log('🔄 AUTO-APPLYING: Detected modifications in AI response');
+        console.log('🔄 AUTO-APPLYING: Modifications:', JSON.stringify(modifications, null, 2));
+        
+        try {
+          const success = applyModifications(modifications);
+          console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
+        } catch (error) {
+          console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
+        }
+      }
+      
       return (
         <div>
           <div 
             className="prose prose-sm max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4 [&>h1]:mb-3 [&>h2]:mb-3 [&>h3]:mb-3 [&>blockquote]:mb-4"
             dangerouslySetInnerHTML={{ __html: marked(cleanContent) }}
           />
-          
-          {modifications && modifications.length > 0 && (
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2">
-                Apply this change to your rundown?
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    console.log('🎯 CUER: Applying modifications directly');
-                    console.log('🎯 CUER: Modifications:', JSON.stringify(modifications, null, 2));
-                    
-                    try {
-                      const success = applyModifications(modifications);
-                      console.log('🎯 CUER: applyModifications returned:', success);
-                      if (success) {
-                        console.log('✅ CUER: Modifications applied successfully');
-                      } else {
-                        console.log('❌ CUER: Failed to apply modifications');
-                      }
-                    } catch (error) {
-                      console.error('💥 CUER: Error applying modifications:', error);
-                    }
-                  }}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={() => {}}
-                  className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       );
     } else {
