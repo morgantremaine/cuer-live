@@ -36,12 +36,7 @@ const TeamCustomColumns = ({ columns, onToggleColumnVisibility }: TeamCustomColu
     );
   }
 
-  // Filter team columns that exist in the current column layout
-  const availableTeamColumns = columns.filter(col => 
-    col.isCustom && (col as any).isTeamColumn
-  );
-
-  if (availableTeamColumns.length === 0) {
+  if (teamColumns.length === 0) {
     return (
       <div className="space-y-2">
         <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -55,6 +50,9 @@ const TeamCustomColumns = ({ columns, onToggleColumnVisibility }: TeamCustomColu
     );
   }
 
+  // Create a map of current columns by key for quick lookup
+  const currentColumnMap = new Map(columns.map(col => [col.key, col]));
+
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -65,33 +63,39 @@ const TeamCustomColumns = ({ columns, onToggleColumnVisibility }: TeamCustomColu
         Custom columns created by your teammates. Click to show/hide in your rundown.
       </div>
       <div className="space-y-1">
-        {availableTeamColumns.map((column) => (
-          <div
-            key={column.id}
-            className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md"
-          >
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {column.name}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                (Team column)
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onToggleColumnVisibility(column.id)}
-              className="h-8 w-8 p-0"
+        {teamColumns.map((teamCol) => {
+          // Check if this team column is currently in the layout
+          const currentColumn = currentColumnMap.get(teamCol.column_key);
+          const isVisible = currentColumn?.isVisible !== false;
+          
+          return (
+            <div
+              key={teamCol.id}
+              className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-md"
             >
-              {column.isVisible ? (
-                <Eye className="h-4 w-4" />
-              ) : (
-                <EyeOff className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        ))}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {teamCol.column_name}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  (Team column)
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onToggleColumnVisibility(currentColumn?.id || teamCol.column_key)}
+                className="h-8 w-8 p-0"
+              >
+                {isVisible ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
