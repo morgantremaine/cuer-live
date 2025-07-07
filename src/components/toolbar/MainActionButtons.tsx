@@ -100,19 +100,15 @@ const MainActionButtons = ({
         </div>
 
         {/* Tools and Share menus */}
-        <div className="grid grid-cols-3 gap-2 w-full">
+        <div className="grid grid-cols-2 gap-2 w-full">
           <div className="w-full">
             <ToolsMenu 
               rundownId={rundownId}
               size={buttonSize}
               className="w-full justify-start"
+              onShowFindReplace={onShowFindReplace}
             />
           </div>
-          {onShowFindReplace && (
-            <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="flex items-center justify-center gap-2 w-full h-8 p-0">
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
           {rundownId && (
             <div className="w-full">
               <ShareRundownMenu 
@@ -192,13 +188,7 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} />
-      
-      {onShowFindReplace && (
-        <Button onClick={onShowFindReplace} variant="outline" size={buttonSize} className="h-8 w-8 p-0">
-          <Search className="h-4 w-4" />
-        </Button>
-      )}
+      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} />
       
       {rundownId && (
         <ShareRundownMenu 
