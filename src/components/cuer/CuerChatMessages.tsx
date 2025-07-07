@@ -28,6 +28,7 @@ const CuerChatMessages = ({
     messageId: string;
     modifications: RundownModification[];
   } | null>(null);
+  const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(new Set());
   
   const { applyModifications } = useCuerModifications();
 
@@ -91,17 +92,23 @@ const CuerChatMessages = ({
     if (role === 'assistant') {
       const { cleanContent, modifications } = extractModifications(content);
       
-      // Auto-apply modifications when detected
-      if (modifications && modifications.length > 0) {
+      // Auto-apply modifications when detected (but only once per message)
+      if (modifications && modifications.length > 0 && !appliedMessageIds.has(messageId)) {
         console.log('🔄 AUTO-APPLYING: Detected modifications in AI response');
         console.log('🔄 AUTO-APPLYING: Modifications:', JSON.stringify(modifications, null, 2));
         
-        try {
-          const success = applyModifications(modifications);
-          console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
-        } catch (error) {
-          console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
-        }
+        // Mark this message as processed immediately to prevent infinite loops
+        setAppliedMessageIds(prev => new Set([...prev, messageId]));
+        
+        // Apply modifications asynchronously to avoid blocking render
+        setTimeout(() => {
+          try {
+            const success = applyModifications(modifications);
+            console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
+          } catch (error) {
+            console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
+          }
+        }, 100);
       }
       
       return (
