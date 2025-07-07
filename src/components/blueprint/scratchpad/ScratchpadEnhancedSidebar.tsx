@@ -71,7 +71,13 @@ const SortableNoteItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: note.id });
+  } = useSortable({ 
+    id: note.id,
+    data: {
+      type: 'note',
+      note: note
+    }
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -83,11 +89,11 @@ const SortableNoteItem = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group p-3 rounded-md cursor-pointer transition-colors mb-2 ${
+      className={`group p-3 rounded-md cursor-pointer transition-colors mb-2 relative ${
         isActive 
           ? 'bg-blue-600 text-white' 
           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-      }`}
+      } ${isDragging ? 'z-10' : ''}`}
       onClick={() => onSelectNote(note.id)}
     >
       <div className="flex items-start justify-between">
@@ -95,7 +101,8 @@ const SortableNoteItem = ({
           <div
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-200"
+            className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-200 touch-none"
+            style={{ touchAction: 'none' }}
           >
             <GripVertical className="h-3 w-3" />
           </div>
@@ -216,14 +223,17 @@ const ScratchpadEnhancedSidebar = ({
     const { active, over } = event;
 
     if (active.id !== over?.id && onReorderNotes) {
-      const oldIndex = filteredNotes.findIndex(note => note.id === active.id);
-      const newIndex = filteredNotes.findIndex(note => note.id === over.id);
-      
-      // Map back to original notes array
-      const originalOldIndex = notes.findIndex(note => note.id === active.id);
-      const originalNewIndex = notes.findIndex(note => note.id === over.id);
-      
-      onReorderNotes(originalOldIndex, originalNewIndex);
+      // Only handle if both items are notes
+      if (active.data.current?.type === 'note' && over?.data.current?.type === 'note') {
+        const oldIndex = filteredNotes.findIndex(note => note.id === active.id);
+        const newIndex = filteredNotes.findIndex(note => note.id === over.id);
+        
+        // Map back to original notes array
+        const originalOldIndex = notes.findIndex(note => note.id === active.id);
+        const originalNewIndex = notes.findIndex(note => note.id === over.id);
+        
+        onReorderNotes(originalOldIndex, originalNewIndex);
+      }
     }
   };
 
@@ -233,7 +243,7 @@ const ScratchpadEnhancedSidebar = ({
   );
 
   return (
-    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col" style={{ isolation: 'isolate' }}>
       <div className="p-3 border-b border-gray-700 space-y-3">
         <div className="flex items-center justify-between">
           <Button
@@ -264,6 +274,7 @@ const ScratchpadEnhancedSidebar = ({
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
+            id="notes-dnd-context"
           >
             <SortableContext 
               items={filteredNotes.map(note => note.id)}
