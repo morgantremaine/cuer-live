@@ -27,7 +27,7 @@ import { Column } from '@/hooks/useColumnsManager';
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
   getColumnWidth: (column: Column) => string;
-  updateColumnWidth: (columnId: string, width: number) => void;
+  updateColumnWidth: (columnId: string, width: number, isManualResize?: boolean, resetToAutoSize?: boolean) => void;
   onReorderColumns?: (columns: Column[]) => void;
 }
 
@@ -106,7 +106,8 @@ const RundownTableHeader = ({
                   key={column.id}
                   column={column}
                   width={columnWidth}
-                  onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+                  onWidthChange={(columnId: string, width: number, isManualResize?: boolean, resetToAutoSize?: boolean) => 
+                    updateColumnWidth(columnId, width, isManualResize, resetToAutoSize)}
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
                 >

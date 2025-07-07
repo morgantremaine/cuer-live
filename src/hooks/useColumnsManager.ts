@@ -126,6 +126,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
             return { ...col, manuallyResized: false, manualWidth: undefined };
           } else if (isManualResize) {
             // Manual resize - mark as manually resized and store the exact width
+            console.log(`🔧 Manually resizing column ${columnId} to ${width}px`);
             return { ...col, width: `${width}px`, manuallyResized: true, manualWidth: width };
           } else {
             // Programmatic resize (auto-expansion) - update width but don't mark as manual

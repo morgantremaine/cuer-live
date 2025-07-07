@@ -7,7 +7,7 @@ import { Column } from '@/hooks/useColumnsManager';
 interface ResizableColumnHeaderProps {
   column: Column;
   width: string;
-  onWidthChange: (columnId: string, width: number) => void;
+  onWidthChange: (columnId: string, width: number, isManualResize?: boolean, resetToAutoSize?: boolean) => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
@@ -171,6 +171,19 @@ const ResizableColumnHeader = ({
     position: isDragging ? 'relative' as const : undefined,
   };
 
+  // Double-click handler to reset to auto-size
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Reset this column to auto-sizing
+    if (column.manuallyResized) {
+      // Find the natural width and use it
+      const naturalWidth = parseInt((column.width || '150px').replace('px', ''));
+      onWidthChange(column.id, naturalWidth, false, true); // Not manual, reset flag
+    }
+  }, [column.id, column.manuallyResized, column.width, onWidthChange]);
+
   // Enhanced drag listeners with better separation from resize
   const dragListeners = {
     ...listeners,
@@ -217,20 +230,23 @@ const ResizableColumnHeader = ({
         {children}
       </div>
       
-      {/* Enhanced resize handle with better event isolation */}
+      {/* Enhanced resize handle with better event isolation and double-click */}
       <div 
         className="resize-handle absolute right-0 top-0 bottom-0 w-3 cursor-col-resize hover:bg-blue-400 transition-colors pointer-events-auto"
         style={{ zIndex: 100 }} // Higher z-index to ensure it's always on top
         onMouseDown={handleMouseDown}
+        onDoubleClick={handleDoubleClick}
         onPointerDown={(e) => e.stopPropagation()} // Prevent drag from starting
         onTouchStart={(e) => e.stopPropagation()} // Prevent touch drag
+        title={column.manuallyResized ? "Double-click to reset to auto-size" : "Drag to resize column"}
       />
       
-      {/* Double-click to reset to auto-size indicator */}
+      {/* Manual resize indicator - more visible blue dot */}
       {column.manuallyResized && (
         <div 
-          className="absolute right-1 top-1 w-1 h-1 bg-blue-300 rounded-full opacity-60"
-          title="Double-click resize handle to reset to auto-size"
+          className="absolute right-0.5 top-0.5 w-2 h-2 bg-blue-300 rounded-full opacity-80 border border-blue-500"
+          title="Manually resized - double-click resize handle to reset"
+          style={{ zIndex: 101 }}
         />
       )}
     </th>

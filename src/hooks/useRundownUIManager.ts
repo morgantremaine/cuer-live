@@ -30,6 +30,7 @@ export const useRundownUIManager = (
   const getColumnWidth = useCallback((column: Column) => {
     // Phase 1: If manually resized, use exact manual width
     if (column.manuallyResized && column.manualWidth) {
+      console.log(`📏 Using manual width for ${column.key}: ${column.manualWidth}px`);
       return `${column.manualWidth}px`;
     }
     
