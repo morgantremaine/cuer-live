@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -67,7 +68,7 @@ const ResizableColumnHeader = ({
     isResizingRef.current = true;
     
     const startX = e.clientX;
-    const startWidth = parseInt(width);
+    const startWidth = parseInt(width.replace('px', ''));
     initialWidthRef.current = startWidth;
 
     // Set cursor and disable text selection globally
@@ -136,28 +137,19 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
 
-  // For percentage-based widths, we need to handle them differently
-  const isPercentageWidth = width.includes('%');
-  const widthValue = isPercentageWidth ? 
-    parseFloat(width.replace('%', '')) : 
-    parseInt(width.replace('px', ''));
-  
-  // Ensure minimum width constraint
-  const constrainedWidth = isPercentageWidth ? 
-    `${Math.max(5, widthValue)}%` : // Minimum 5% for percentage widths
-    `${Math.max(minimumWidth, widthValue)}px`;
+  // Parse width value and ensure it's a valid pixel value
+  const widthValue = parseInt(width.replace('px', ''));
+  const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: constrainedWidth,
-    minWidth: isPercentageWidth ? undefined : `${minimumWidth}px`,
+    width: `${constrainedWidth}px`,
+    minWidth: `${minimumWidth}px`,
+    maxWidth: `${constrainedWidth}px`,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
-    // Prevent any flex or layout changes during drag
     position: isDragging ? 'relative' as const : undefined,
-    display: isDragging ? 'table-cell' as const : undefined,
-    tableLayout: isDragging ? 'fixed' as const : undefined
   };
 
   // Create listeners that exclude the resize handle
@@ -190,10 +182,9 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
         style={{
-          // For percentage widths, let the content flow naturally
-          width: isPercentageWidth ? 'calc(100% - 16px)' : `${(isPercentageWidth ? widthValue : Math.max(minimumWidth, widthValue)) - 16}px`,
-          minWidth: isPercentageWidth ? undefined : `${minimumWidth - 16}px`,
-          maxWidth: isPercentageWidth ? undefined : `${(isPercentageWidth ? widthValue : Math.max(minimumWidth, widthValue)) - 16}px`
+          width: `${constrainedWidth - 16}px`,
+          minWidth: `${minimumWidth - 16}px`,
+          maxWidth: `${constrainedWidth - 16}px`
         }}
       >
         {children}

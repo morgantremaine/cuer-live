@@ -121,13 +121,28 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
+  // Calculate total table width to ensure proper sizing
+  const totalTableWidth = React.useMemo(() => {
+    let total = 64; // Row number column width
+    visibleColumns.forEach(column => {
+      const width = getColumnWidth(column);
+      const widthValue = parseInt(width.replace('px', ''));
+      total += widthValue;
+    });
+    return total;
+  }, [visibleColumns, getColumnWidth]);
+
   return (
     <div className="relative bg-background h-full">
       {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div className="min-w-max bg-background">
+        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="w-full border-collapse border border-border" style={{ tableLayout: 'fixed', width: '100%' }}>
+          <table className="border-collapse border border-border" style={{ 
+            tableLayout: 'fixed', 
+            width: `${totalTableWidth}px`,
+            minWidth: `${totalTableWidth}px`
+          }}>
             {/* Sticky Header */}
             <RundownTableHeader 
               visibleColumns={visibleColumns}

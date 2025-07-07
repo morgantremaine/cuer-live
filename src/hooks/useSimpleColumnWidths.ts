@@ -9,19 +9,19 @@ const getMinimumWidth = (column: Column): number => {
     case 'startTime':
     case 'endTime':
     case 'elapsedTime':
-      return 95; // Reduced from 110px to 95px due to tighter padding
+      return 95;
     case 'segmentName':
-      return 100; // Reduced from 150px to 100px
+      return 100;
     case 'talent':
-      return 60; // Reduced from 100px to 60px
+      return 60;
     case 'script':
     case 'notes':
-      return 120; // Reduced from 200px to 120px for text fields
+      return 120;
     case 'gfx':
     case 'video':
-      return 80; // Reduced from 120px to 80px
+      return 80;
     default:
-      return 50; // Reduced from 100px to 50px for custom columns
+      return 50;
   }
 };
 
@@ -33,38 +33,34 @@ export const useSimpleColumnWidths = (
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isResizing, setIsResizing] = useState(false);
 
-  // Initialize from columns with better defaults and calculate percentages
+  // Initialize column widths based on columns
   useEffect(() => {
+    if (!columns || columns.length === 0) return;
+
     const widths: { [key: string]: number } = {};
-    let totalMinWidth = 0;
     
-    // First pass: calculate minimum widths
     columns.forEach(column => {
       const minimumWidth = getMinimumWidth(column);
-      totalMinWidth += minimumWidth;
       
       if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
         const widthValue = parseInt(column.width.replace('px', ''));
         if (!isNaN(widthValue)) {
           widths[column.id] = Math.max(minimumWidth, widthValue);
+        } else {
+          widths[column.id] = minimumWidth;
         }
       } else {
         widths[column.id] = minimumWidth;
       }
     });
     
-    // Calculate total current width
-    const totalCurrentWidth = Object.values(widths).reduce((sum, width) => sum + width, 0);
-    
-    // If we have space to distribute (assuming viewport is wider than minimum)
-    // We'll let the table layout handle the distribution while respecting minimums
     setColumnWidths(widths);
   }, [columns]);
 
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
     // Find the column to get its minimum width
     const column = columns.find(col => col.id === columnId);
-    const minimumWidth = column ? getMinimumWidth(column) : 100;
+    const minimumWidth = column ? getMinimumWidth(column) : 50;
     
     setColumnWidths(prev => {
       // Enforce minimum width constraint
@@ -79,7 +75,6 @@ export const useSimpleColumnWidths = (
 
       // Call the callback for each update to trigger save mechanism
       if (onColumnWidthChange) {
-        // Use setTimeout to ensure this doesn't block the UI during drag
         setTimeout(() => {
           onColumnWidthChange(columnId, constrainedWidth);
         }, 0);
@@ -96,23 +91,14 @@ export const useSimpleColumnWidths = (
     });
   }, [onColumnWidthChange, onUpdateColumnWidth, columns, isResizing]);
 
-  // Calculate percentage-based widths that fill the table
+  // Get column width in pixels - simple fixed width approach
   const getColumnWidth = useCallback((column: Column) => {
     const width = columnWidths[column.id];
     const actualWidth = width || getMinimumWidth(column);
-    
-    // Calculate total width of all columns
-    const totalWidth = columns.reduce((sum, col) => {
-      const colWidth = columnWidths[col.id] || getMinimumWidth(col);
-      return sum + colWidth;
-    }, 0);
-    
-    // Calculate percentage of total width
-    const percentage = (actualWidth / totalWidth) * 100;
-    return `${percentage}%`;
-  }, [columnWidths, columns]);
+    return `${actualWidth}px`;
+  }, [columnWidths]);
 
-  // Get column width for table layout - percentage-based for filling space
+  // Get column width for table layout - same as getColumnWidth for consistency
   const getColumnWidthForTable = useCallback((column: Column) => {
     return getColumnWidth(column);
   }, [getColumnWidth]);
