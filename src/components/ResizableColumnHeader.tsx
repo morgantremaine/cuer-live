@@ -140,8 +140,9 @@ const ResizableColumnHeader = ({
   const constrainedWidthPx = `${constrainedWidth}px`;
 
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    // Don't apply transform to avoid text distortion during drag
+    // transform: CSS.Transform.toString(transform),
+    transition: isDragging ? 'none' : transition,
     width: constrainedWidthPx, 
     minWidth: constrainedWidthPx,
     maxWidth: constrainedWidthPx,
