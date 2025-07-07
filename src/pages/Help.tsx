@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle } from 'lucide-react';
+import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle, Search } from 'lucide-react';
 import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,6 +83,26 @@ const Help = () => {
                   <li>Use Enter to save and move down</li>
                   <li>Right-click rows to color them or float/unfloat items</li>
                 </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Find & Replace */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Search className="h-6 w-6 mr-2 text-blue-600" />
+              Find & Replace
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Quickly locate and modify content across your entire rundown with the powerful find and replace tool:</p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li><strong>Global Search:</strong> Search across all text fields including names, scripts, talent, notes, and custom fields</li>
+                <li><strong>Smart Navigation:</strong> Navigate between matches with up/down arrows or Enter/Shift+Enter keyboard shortcuts</li>
+                <li><strong>Replace Options:</strong> Replace individual matches or all matches at once with dedicated "Replace" and "Replace All" buttons</li>
+                <li><strong>Case Preservation:</strong> Optional "Preserve case pattern" setting maintains original capitalization when replacing text</li>
+              </ul>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Access the Find & Replace dialog using Ctrl+F (Cmd+F on Mac) or from the rundown toolbar. The tool will automatically highlight matches and scroll to them for precise editing.</p>
               </div>
             </div>
           </section>
