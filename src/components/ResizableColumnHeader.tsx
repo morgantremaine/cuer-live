@@ -169,22 +169,14 @@ const ResizableColumnHeader = ({
         setNodeRef(node);
         headerRef.current = node;
       }}
-      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none ${
-        isDragging 
-          ? 'bg-blue-500 shadow-lg ring-2 ring-blue-300 ring-opacity-50 opacity-90' 
-          : 'bg-blue-600 hover:bg-blue-500'
+      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
+        isDragging ? 'opacity-50' : ''
       } cursor-move`}
       style={style}
       {...attributes}
       {...dragListeners}
     >
-      <div 
-        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
-        style={{
-          // Counter-transform to keep text stable during drag
-          transform: transform ? `${CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })}`.replace(/scale[XY]?\([^)]*\)/g, '') : undefined
-        }}
-      >
+      <div className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none">
         {children}
       </div>
       
