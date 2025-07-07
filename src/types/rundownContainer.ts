@@ -83,4 +83,7 @@ export interface RundownContainerProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  
+  // Notes window functionality
+  onShowNotes?: () => void;
 }

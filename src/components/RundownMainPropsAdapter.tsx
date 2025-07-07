@@ -83,7 +83,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleToggleColumnVisibility,
     handleLoadLayout,
     autoScrollEnabled,
-    onToggleAutoScroll
+    onToggleAutoScroll,
+    onShowNotes
   } = props;
 
   // Create rundown data for CSV export
@@ -141,6 +142,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onToggleAutoScroll={onToggleAutoScroll}
         onUpdateItem={onUpdateItem}
         onShowFindReplace={() => setShowFindReplace(true)}
+        onShowNotes={onShowNotes}
       />
 
       {/* Main Content */}

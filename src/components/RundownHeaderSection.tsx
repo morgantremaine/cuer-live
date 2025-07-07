@@ -47,6 +47,7 @@ interface RundownHeaderSectionProps {
   onToggleAutoScroll?: () => void;
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 const RundownHeaderSection = ({
@@ -91,7 +92,8 @@ const RundownHeaderSection = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   onUpdateItem,
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -144,6 +146,7 @@ const RundownHeaderSection = ({
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
         onShowFindReplace={onShowFindReplace}
+        onShowNotes={onShowNotes}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
+import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -113,6 +114,9 @@ const RundownIndexContent = () => {
 
   // State for column manager
   const [showColumnManager, setShowColumnManager] = React.useState(false);
+  
+  // State for notes window
+  const [showNotesWindow, setShowNotesWindow] = React.useState(false);
 
   // Calculate end time helper
   const calculateEndTime = (startTime: string, duration: string) => {
@@ -405,7 +409,16 @@ const RundownIndexContent = () => {
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
+        onShowNotes={() => setShowNotesWindow(true)}
       />
+      
+      {/* Floating Notes Window */}
+      {showNotesWindow && rundownId && (
+        <FloatingNotesWindow
+          rundownId={rundownId}
+          onClose={() => setShowNotesWindow(false)}
+        />
+      )}
       
       <CuerChatButton rundownData={rundownData} />
     </RealtimeConnectionProvider>

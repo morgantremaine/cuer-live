@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search, HelpCircle } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
@@ -18,13 +18,15 @@ interface ToolsMenuProps {
   size?: 'sm' | 'default' | 'lg';
   className?: string;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   rundownId,
   size = 'sm',
   className = '',
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -105,6 +107,29 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     navigate('/help');
   };
 
+  const handleOpenNotes = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open notes",
+        description: "Save this rundown first before opening notes.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features", 
+        description: "Notes feature is available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
+    onShowNotes?.();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -123,6 +148,13 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
             <DropdownMenuSeparator />
           </>
         )}
+        
+        <DropdownMenuItem onClick={handleOpenNotes}>
+          <StickyNote className="h-4 w-4 mr-2" />
+          Notes
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={handleOpenTeleprompter}>
           <Monitor className="h-4 w-4 mr-2" />

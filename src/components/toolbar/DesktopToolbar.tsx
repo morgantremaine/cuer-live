@@ -28,6 +28,7 @@ interface DesktopToolbarProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 const DesktopToolbar = ({
@@ -52,7 +53,8 @@ const DesktopToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }: DesktopToolbarProps) => {
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -71,6 +73,7 @@ const DesktopToolbar = ({
           rundownTitle={rundownTitle}
           rundownData={rundownData}
           onShowFindReplace={onShowFindReplace}
+          onShowNotes={onShowNotes}
         />
       </div>
 

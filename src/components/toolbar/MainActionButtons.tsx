@@ -33,6 +33,7 @@ interface MainActionButtonsProps {
   onBackward?: () => void;
   onReset?: () => void;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 const MainActionButtons = ({
@@ -58,7 +59,8 @@ const MainActionButtons = ({
   onForward,
   onBackward,
   onReset,
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }: MainActionButtonsProps) => {
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
@@ -107,6 +109,7 @@ const MainActionButtons = ({
               size={buttonSize}
               className="w-full justify-start"
               onShowFindReplace={onShowFindReplace}
+              onShowNotes={onShowNotes}
             />
           </div>
           {rundownId && (
@@ -188,7 +191,7 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} />
+      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
       
       {rundownId && (
         <ShareRundownMenu 

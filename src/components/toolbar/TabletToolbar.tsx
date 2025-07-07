@@ -34,6 +34,7 @@ interface TabletToolbarProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 const TabletToolbar = ({
@@ -58,7 +59,8 @@ const TabletToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -93,6 +95,7 @@ const TabletToolbar = ({
                 rundownTitle={rundownTitle}
                 rundownData={rundownData}
                 onShowFindReplace={onShowFindReplace}
+                onShowNotes={onShowNotes}
               />
             </div>
           </DropdownMenuContent>

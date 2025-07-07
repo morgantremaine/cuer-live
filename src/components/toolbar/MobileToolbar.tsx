@@ -34,6 +34,7 @@ interface MobileToolbarProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
+  onShowNotes?: () => void;
 }
 
 const MobileToolbar = ({
@@ -58,7 +59,8 @@ const MobileToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
-  onShowFindReplace
+  onShowFindReplace,
+  onShowNotes
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -104,6 +106,7 @@ const MobileToolbar = ({
                 onBackward={onBackward}
                 onReset={onReset}
                 onShowFindReplace={onShowFindReplace}
+                onShowNotes={onShowNotes}
               />
             </div>
           </DropdownMenuContent>
