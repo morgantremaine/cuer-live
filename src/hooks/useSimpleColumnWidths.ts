@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Column } from './useColumnsManager';
 
 // Define minimum widths for different column types - optimized for content
@@ -30,100 +29,79 @@ export const useSimpleColumnWidths = (
   onColumnWidthChange?: (columnId: string, width: number) => void,
   onUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
-  const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isResizing, setIsResizing] = useState(false);
 
-  // Initialize column widths based on columns
-  useEffect(() => {
-    if (!columns || columns.length === 0) return;
-
-    const widths: { [key: string]: number } = {};
-    
-    // First, calculate natural widths
-    let totalNaturalWidth = 64; // Row number column
-    columns.forEach(column => {
-      const minimumWidth = getMinimumWidth(column);
-      
-      if (column.width && typeof column.width === 'string' && column.width.endsWith('px')) {
-        const widthValue = parseInt(column.width.replace('px', ''));
-        if (!isNaN(widthValue)) {
-          widths[column.id] = Math.max(minimumWidth, widthValue);
-        } else {
-          widths[column.id] = minimumWidth;
-        }
-      } else {
-        widths[column.id] = minimumWidth;
-      }
-      
-      totalNaturalWidth += widths[column.id];
-    });
-    
-    // Always expand to fill viewport if smaller
-    const viewportWidth = window.innerWidth;
-    if (totalNaturalWidth < viewportWidth) {
-      const extraSpace = viewportWidth - totalNaturalWidth;
-      
-      // Distribute extra space proportionally based on current widths
-      const totalColumnWidth = Object.values(widths).reduce((sum, width) => sum + width, 0);
-      
-      columns.forEach(column => {
-        const proportion = widths[column.id] / totalColumnWidth;
-        const additionalWidth = Math.floor(extraSpace * proportion);
-        widths[column.id] += additionalWidth;
-      });
-      
-      // Handle any remaining pixels due to rounding
-      const actualTotal = 64 + Object.values(widths).reduce((sum, width) => sum + width, 0);
-      const remainingSpace = viewportWidth - actualTotal;
-      if (remainingSpace > 0 && columns.length > 0) {
-        // Add remaining pixels to the first column
-        widths[columns[0].id] += remainingSpace;
-      }
-    }
-    
-    setColumnWidths(widths);
-  }, [columns]);
-
+  // Update column width with minimum width enforcement
   const updateColumnWidth = useCallback((columnId: string, width: number) => {
-    // Find the column to get its minimum width
     const column = columns.find(col => col.id === columnId);
     const minimumWidth = column ? getMinimumWidth(column) : 50;
+    const constrainedWidth = Math.max(minimumWidth, width);
     
-    setColumnWidths(prev => {
-      // Enforce minimum width constraint
-      const constrainedWidth = Math.max(minimumWidth, width);
-      const newWidths = { ...prev, [columnId]: constrainedWidth };
-      
-      // Only log during the start and end of resize operations
-      if (!isResizing) {
-        setIsResizing(true);
-        setTimeout(() => setIsResizing(false), 1000);
-      }
+    // Only log during the start and end of resize operations
+    if (!isResizing) {
+      setIsResizing(true);
+      setTimeout(() => setIsResizing(false), 1000);
+    }
 
-      // Call the callback for each update to trigger save mechanism
-      if (onColumnWidthChange) {
-        setTimeout(() => {
-          onColumnWidthChange(columnId, constrainedWidth);
-        }, 0);
-      }
+    // Call the callback for each update to trigger save mechanism
+    if (onColumnWidthChange) {
+      setTimeout(() => {
+        onColumnWidthChange(columnId, constrainedWidth);
+      }, 0);
+    }
 
-      // Also update the actual column data structure for persistence
-      if (onUpdateColumnWidth) {
-        setTimeout(() => {
-          onUpdateColumnWidth(columnId, constrainedWidth);
-        }, 0);
-      }
-      
-      return newWidths;
-    });
+    // Also update the actual column data structure for persistence
+    if (onUpdateColumnWidth) {
+      setTimeout(() => {
+        onUpdateColumnWidth(columnId, constrainedWidth);
+      }, 0);
+    }
   }, [onColumnWidthChange, onUpdateColumnWidth, columns, isResizing]);
 
-  // Get column width in pixels - simple fixed width approach
+  // Calculate if we need to expand columns to fill viewport
+  const shouldExpandToViewport = useCallback(() => {
+    let totalWidth = 64; // Row number column
+    columns.forEach(column => {
+      const width = column.width || '150px';
+      const widthValue = parseInt(width.replace('px', ''));
+      totalWidth += widthValue;
+    });
+    
+    const viewportWidth = window.innerWidth;
+    return totalWidth < viewportWidth;
+  }, [columns]);
+
+  // Get column width - with viewport expansion when needed
   const getColumnWidth = useCallback((column: Column) => {
-    const width = columnWidths[column.id];
-    const actualWidth = width || getMinimumWidth(column);
-    return `${actualWidth}px`;
-  }, [columnWidths]);
+    const naturalWidth = column.width || '150px';
+    
+    if (!shouldExpandToViewport()) {
+      return naturalWidth;
+    }
+
+    // Calculate total natural width
+    let totalNaturalWidth = 64; // Row number column
+    const naturalWidths: { [key: string]: number } = {};
+    
+    columns.forEach(col => {
+      const width = col.width || '150px';
+      const widthValue = parseInt(width.replace('px', ''));
+      naturalWidths[col.id] = widthValue;
+      totalNaturalWidth += widthValue;
+    });
+
+    const viewportWidth = window.innerWidth;
+    const extraSpace = viewportWidth - totalNaturalWidth;
+    const totalColumnWidth = Object.values(naturalWidths).reduce((sum, width) => sum + width, 0);
+    
+    // Calculate proportional expansion
+    const naturalWidthValue = naturalWidths[column.id];
+    const proportion = naturalWidthValue / totalColumnWidth;
+    const additionalWidth = Math.floor(extraSpace * proportion);
+    const expandedWidth = naturalWidthValue + additionalWidth;
+    
+    return `${expandedWidth}px`;
+  }, [columns, shouldExpandToViewport]);
 
   // Get column width for table layout - same as getColumnWidth for consistency
   const getColumnWidthForTable = useCallback((column: Column) => {
@@ -139,10 +117,13 @@ export const useSimpleColumnWidths = (
       total += widthValue;
     });
     
-    // Ensure table is never smaller than viewport width
-    const viewportWidth = window.innerWidth;
-    return Math.max(total, viewportWidth);
-  }, [columns, getColumnWidth]);
+    // When expanding to viewport, ensure we fill exactly the viewport width
+    if (shouldExpandToViewport()) {
+      return window.innerWidth;
+    }
+    
+    return total;
+  }, [columns, getColumnWidth, shouldExpandToViewport]);
 
   return {
     updateColumnWidth,
