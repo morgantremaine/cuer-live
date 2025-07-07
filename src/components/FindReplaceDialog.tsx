@@ -20,13 +20,9 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showReplace, setShowReplace] = useState(false);
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const { findMatches, replaceAll, replaceCurrent, lastSearchResults, clearResults } = useFindReplace(onUpdateItem, items);
   
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Fields to search in
   const searchFields = ['name', 'script', 'talent', 'notes', 'customFields.location', 'customFields.graphics'];
@@ -39,8 +35,6 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
       setCurrentMatchIndex(0);
       setSearchTerm('');
       setReplaceTerm('');
-      // Reset position when opening
-      setPosition({ x: 0, y: 0 });
     }
   }, [isOpen, clearResults]);
 
@@ -178,61 +172,13 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
     }
   };
 
-  // Drag functionality
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const rect = dialogRef.current?.getBoundingClientRect();
-    if (rect) {
-      setIsDragging(true);
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        setPosition({
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y
-        });
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragOffset]);
-
   if (!isOpen) return null;
 
   return (
-    <div 
-      ref={dialogRef}
-      className="fixed z-50 select-none"
-      style={{
-        left: `${Math.max(0, Math.min(window.innerWidth - 384, position.x))}px`,
-        top: `${Math.max(0, Math.min(window.innerHeight - 400, position.y))}px`,
-        cursor: isDragging ? 'grabbing' : 'auto'
-      }}
-    >
+    <div className="fixed top-4 right-4 z-50">
       <Card className="w-96 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg">
         <CardContent className="p-4">
-          <div 
-            className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-          >
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               <span className="font-medium">Find & Replace</span>

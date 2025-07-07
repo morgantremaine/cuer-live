@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
-import FindReplaceDialog from './FindReplaceDialog';
 import { RundownContainerProps } from '@/types/rundownContainer';
 import { CSVExportData } from '@/utils/csvExport';
 
@@ -12,8 +11,6 @@ interface RundownMainPropsAdapterProps {
 }
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
-  const [showFindReplace, setShowFindReplace] = useState(false);
-  
   const {
     currentTime,
     timezone,
@@ -140,7 +137,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
         onUpdateItem={onUpdateItem}
-        onShowFindReplace={() => setShowFindReplace(true)}
       />
 
       {/* Main Content */}
@@ -151,13 +147,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
           totalDuration={totalRuntime}
         />
       </div>
-      
-      <FindReplaceDialog 
-        isOpen={showFindReplace}
-        onClose={() => setShowFindReplace(false)}
-        onUpdateItem={onUpdateItem}
-        items={items || []}
-      />
     </div>
   );
 };

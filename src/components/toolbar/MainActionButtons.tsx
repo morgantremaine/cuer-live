@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Undo, MapPin, Search } from 'lucide-react';
+import { Plus, Settings, Undo, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -32,7 +32,6 @@ interface MainActionButtonsProps {
   onForward?: () => void;
   onBackward?: () => void;
   onReset?: () => void;
-  onShowFindReplace?: () => void;
 }
 
 const MainActionButtons = ({
@@ -57,8 +56,7 @@ const MainActionButtons = ({
   onPause,
   onForward,
   onBackward,
-  onReset,
-  onShowFindReplace
+  onReset
 }: MainActionButtonsProps) => {
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
@@ -106,7 +104,6 @@ const MainActionButtons = ({
               rundownId={rundownId}
               size={buttonSize}
               className="w-full justify-start"
-              onShowFindReplace={onShowFindReplace}
             />
           </div>
           {rundownId && (
@@ -188,7 +185,7 @@ const MainActionButtons = ({
         <span>Manage Columns</span>
       </Button>
       
-      <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} />
+      <ToolsMenu rundownId={rundownId} size={buttonSize} />
       
       {rundownId && (
         <ShareRundownMenu 

@@ -13,9 +13,6 @@ import {
 interface TimezoneSelectorProps {
   currentTimezone: string;
   onTimezoneChange: (timezone: string) => void;
-  showTime?: boolean;
-  timeDisplay?: string;
-  large?: boolean;
 }
 
 const timezones = [
@@ -34,13 +31,7 @@ const timezones = [
   { value: 'UTC', label: 'UTC (UTC+0)' }
 ];
 
-const TimezoneSelector = ({ 
-  currentTimezone, 
-  onTimezoneChange, 
-  showTime = false, 
-  timeDisplay = '', 
-  large = false 
-}: TimezoneSelectorProps) => {
+const TimezoneSelector = ({ currentTimezone, onTimezoneChange }: TimezoneSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleTimezoneChange = (value: string) => {
@@ -55,13 +46,9 @@ const TimezoneSelector = ({
         variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1 flex items-center gap-2"
+        className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 p-1"
       >
-        {showTime && (
-          <span className={`font-mono ${large ? 'text-lg' : 'text-sm'}`}>
-            {timeDisplay}
-          </span>
-        )}
+        <Clock className="h-4 w-4 text-gray-900 dark:text-white" />
       </Button>
       
       {isOpen && (
@@ -70,7 +57,7 @@ const TimezoneSelector = ({
             <SelectTrigger className="w-48 bg-white dark:bg-gray-800">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+            <SelectContent>
               {timezones.map((tz) => (
                 <SelectItem key={tz.value} value={tz.value}>
                   {tz.label}
