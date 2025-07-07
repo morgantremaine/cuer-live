@@ -136,14 +136,10 @@ const RundownIndexContent = () => {
 
   // Create the handleJumpToHere function that respects current playing state
   const handleJumpToHere = (segmentId: string) => {
-    console.log('🎯 === FIXED IndexContent: handleJumpToHere called ===');
-    console.log('🎯 IndexContent: segmentId:', segmentId);
-    console.log('🎯 IndexContent: current segment ID before jump:', currentSegmentId);
-    console.log('🎯 IndexContent: is currently playing:', isPlaying);
     
     // Find the target segment to ensure it exists
     const targetSegment = items.find(item => item.id === segmentId);
-    console.log('🎯 IndexContent: target segment found:', targetSegment ? { id: targetSegment.id, name: targetSegment.name, type: targetSegment.type } : 'NOT FOUND');
+    
     
     if (!targetSegment) {
       console.error('🎯 IndexContent: Cannot jump - target segment not found');
@@ -152,16 +148,16 @@ const RundownIndexContent = () => {
     
     // CRITICAL FIX: Check current playing state and act accordingly
     if (isPlaying) {
-      console.log('🎯 IndexContent: Showcaller is playing - jumping and continuing playback');
+      
       if (play) {
         play(segmentId);
-        console.log('🎯 IndexContent: Play function called successfully');
+        
       }
     } else {
-      console.log('🎯 IndexContent: Showcaller is paused - jumping but staying paused');
+      
       if (coreState.jumpToSegment) {
         coreState.jumpToSegment(segmentId);
-        console.log('🎯 IndexContent: jumpToSegment function called successfully');
+        
       } else {
         console.error('🎯 IndexContent: jumpToSegment function not available');
       }
@@ -169,8 +165,6 @@ const RundownIndexContent = () => {
     
     // Clear the selection after jumping, like other context menu actions
     clearSelection();
-    console.log('🎯 IndexContent: Selection cleared after jump');
-    console.log('🎯 === FIXED IndexContent: handleJumpToHere completed ===');
   };
 
   // Create wrapper for cell click to match signature
@@ -221,7 +215,7 @@ const RundownIndexContent = () => {
 
   // Enhanced column management handlers that integrate with user preferences
   const handleAddColumnWrapper = (name: string) => {
-    console.log('🔄 Adding new column:', name);
+    
     const newColumn = {
       id: `custom_${Date.now()}`,
       name,
@@ -239,18 +233,18 @@ const RundownIndexContent = () => {
   };
 
   const handleReorderColumnsWrapper = (reorderedColumns: any[]) => {
-    console.log('🔄 Reordering columns to:', reorderedColumns.length, 'columns');
+    
     setUserColumns(reorderedColumns, true); // Immediate save for reordering
   };
 
   const handleDeleteColumnWrapper = (columnId: string) => {
-    console.log('🗑️ Deleting column:', columnId);
+    
     const filteredColumns = userColumns.filter(col => col.id !== columnId);
     setUserColumns(filteredColumns, true); // Immediate save for deletion
   };
 
   const handleRenameColumnWrapper = (columnId: string, newName: string) => {
-    console.log('✏️ Renaming column:', columnId, 'to:', newName);
+    
     const updatedColumns = userColumns.map(col => {
       if (col.id === columnId) {
         return { ...col, name: newName };
@@ -261,7 +255,7 @@ const RundownIndexContent = () => {
   };
 
   const handleToggleColumnVisibilityWrapper = (columnId: string) => {
-    console.log('👁️ Toggling visibility for column:', columnId);
+    
     const updatedColumns = userColumns.map(col => {
       if (col.id === columnId) {
         const newVisibility = col.isVisible !== false ? false : true;
@@ -273,7 +267,7 @@ const RundownIndexContent = () => {
   };
 
   const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
-    console.log('📥 Loading layout with', layoutColumns.length, 'columns');
+    
     
     if (!Array.isArray(layoutColumns)) {
       console.error('❌ Invalid layout columns - not an array:', layoutColumns);
@@ -294,7 +288,7 @@ const RundownIndexContent = () => {
       return;
     }
 
-    console.log('✅ Loading', validColumns.length, 'valid columns');
+    
     setUserColumns(validColumns, true); // Immediate save for layout loading
   };
 

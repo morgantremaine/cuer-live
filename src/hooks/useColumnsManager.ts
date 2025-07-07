@@ -47,7 +47,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
-      console.log('🔄 Adding new column:', newColumn.name, 'New total:', newColumns.length);
+      
       return newColumns;
     });
     
@@ -59,7 +59,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   const handleReorderColumns = useCallback((newColumns: Column[]) => {
     if (!Array.isArray(newColumns)) return;
-    console.log('🔄 Reordering columns to:', newColumns.length, 'columns');
+    
     setColumns(newColumns);
     if (markAsChanged) {
       markAsChanged();
@@ -70,7 +70,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
       const filtered = prev.filter(col => col.id !== columnId);
-      console.log('🗑️ Deleting column:', columnId, 'Remaining:', filtered.length);
+      
       return filtered;
     });
     if (markAsChanged) {
@@ -87,7 +87,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
         return col;
       });
-      console.log('✏️ Renaming column:', columnId, 'to:', newName);
+      
       return updated;
     });
     if (markAsChanged) {
@@ -105,7 +105,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
         return col;
       });
-      console.log('👁️ Toggling visibility for column:', columnId);
+      
       return updated;
     });
     if (markAsChanged) {
@@ -134,16 +134,16 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array
     if (!Array.isArray(layoutColumns)) {
-      console.error('handleLoadLayout: layoutColumns is not an array', layoutColumns);
+      
       return;
     }
 
-    console.log('📥 Loading layout with', layoutColumns.length, 'columns');
+    
 
     setColumns(prevColumns => {
       // Ensure prevColumns is an array
       if (!Array.isArray(prevColumns)) {
-        console.error('handleLoadLayout: prevColumns is not an array', prevColumns);
+        
         return layoutColumns; // Return the layout columns as fallback
       }
 
@@ -173,8 +173,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       const mergedColumns: Column[] = [];
       const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
 
-      console.log('🔍 Layout column IDs:', Array.from(layoutColumnIds));
-      console.log('🔍 Default columns:', defaultColumns.map(col => col.id));
 
       // First, add all columns from updated layout (preserving order, custom columns, and widths)
       updatedLayoutColumns.forEach(layoutCol => {
@@ -190,9 +188,6 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
       });
 
-      console.log('✅ Layout loaded with', mergedColumns.length, 'columns');
-      console.log('🔍 Added missing default columns:', addedColumns);
-      console.log('🔍 Final merged column IDs:', mergedColumns.map(col => col.id));
       
       if (markAsChanged) {
         markAsChanged();
@@ -203,9 +198,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Reset to default columns function for new rundowns
   const resetToDefaults = useCallback(() => {
-    console.log('🔄 Resetting to default columns');
     const defaults = getDefaultColumns();
-    console.log('🔍 Default columns being set:', defaults.map(col => col.id));
     setColumns(defaults);
     if (markAsChanged) {
       markAsChanged();
@@ -214,10 +207,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
   // Debug function to check current columns state
   const debugColumns = useCallback(() => {
-    console.log('🔍 Current columns state:');
-    console.log('📊 All columns:', columns.map(col => `${col.id} (${col.name}) - visible: ${col.isVisible}`));
-    console.log('👁️ Visible columns:', visibleColumns.map(col => `${col.id} (${col.name})`));
-    console.log('🔍 ElapsedTime column exists:', columns.find(col => col.id === 'elapsedTime') ? 'YES' : 'NO');
+    // Debug info available in development tools
   }, [columns, visibleColumns]);
 
   return {

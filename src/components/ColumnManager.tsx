@@ -54,7 +54,7 @@ const ColumnManager = ({
 
   // Enhanced load layout handler with better validation
   const handleLoadLayout = (layoutColumns: Column[]) => {
-    console.log('🔄 ColumnManager: Loading layout with columns:', layoutColumns);
+    
     
     if (!Array.isArray(layoutColumns)) {
       console.error('❌ Invalid layout columns - not an array:', layoutColumns);
@@ -62,7 +62,7 @@ const ColumnManager = ({
     }
 
     if (layoutColumns.length === 0) {
-      console.warn('⚠️ Layout has no columns');
+      
       return;
     }
 
@@ -76,14 +76,9 @@ const ColumnManager = ({
     );
 
     if (validColumns.length !== layoutColumns.length) {
-      console.warn('⚠️ Some columns were invalid:', {
-        total: layoutColumns.length,
-        valid: validColumns.length,
-        invalid: layoutColumns.filter(col => !col || !col.id || !col.name || !col.key)
-      });
     }
 
-    console.log('✅ Loading', validColumns.length, 'valid columns');
+    
     onLoadLayout(validColumns);
   };
 

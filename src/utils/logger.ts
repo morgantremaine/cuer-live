@@ -12,11 +12,11 @@ interface LoggerConfig {
 
 const config: LoggerConfig = {
   isDevelopment: import.meta.env.DEV,
-  enableConsoleLogging: import.meta.env.DEV,
+  enableConsoleLogging: false, // Disable all console logging in production
   enableErrorReporting: import.meta.env.PROD,
-  logLevel: 'error', // Only show errors in both dev and prod for clean console
-  enableBlueprintDebug: false, // Disable verbose blueprint debugging
-  enableRundownDebug: false // Disable verbose rundown debugging
+  logLevel: 'error', // Only errors if logging is enabled
+  enableBlueprintDebug: false,
+  enableRundownDebug: false
 };
 
 const LOG_LEVELS: Record<LogLevel, number> = {
