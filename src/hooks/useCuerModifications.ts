@@ -1,25 +1,25 @@
 
-import { useDirectRundownState } from '@/hooks/useDirectRundownState';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useModificationApplier } from './useCuerModifications/useModificationApplier';
 
 export const useCuerModifications = () => {
-  // Use direct state access instead of going through coordination layer
-  const directState = useDirectRundownState();
+  // Use the same state coordination system as the main rundown
+  const { coreState } = useRundownStateCoordination();
 
-  console.log('🤖 useCuerModifications initialized with direct state:', {
-    itemCount: directState.items.length,
-    rundownId: directState.rundownId,
-    hasUnsavedChanges: directState.hasUnsavedChanges
+  console.log('🤖 useCuerModifications initialized with coordinated state:', {
+    itemCount: coreState.items.length,
+    rundownId: coreState.rundownId,
+    hasUnsavedChanges: coreState.hasUnsavedChanges
   });
 
   const { applyModifications } = useModificationApplier({
-    items: directState.items,
-    updateItem: directState.updateItem,
-    addRow: directState.addRow,
-    addHeader: directState.addHeader,
-    deleteRow: directState.deleteRow,
-    calculateEndTime: directState.calculateEndTime,
-    markAsChanged: directState.markAsChanged
+    items: coreState.items,
+    updateItem: coreState.updateItem,
+    addRow: coreState.addRow,
+    addHeader: coreState.addHeader,
+    deleteRow: coreState.deleteRow,
+    calculateEndTime: coreState.calculateEndTime,
+    markAsChanged: coreState.markAsChanged
   });
 
   return {
