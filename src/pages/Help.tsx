@@ -87,6 +87,42 @@ const Help = () => {
             </div>
           </section>
 
+          {/* Column Manager */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <FileText className="h-6 w-6 mr-2 text-orange-600" />
+              Column Manager
+            </h2>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+              <p>Customize your rundown view with powerful column management features:</p>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Column Layout Management</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Save custom column layouts for different production needs</li>
+                    <li>Switch between saved layouts instantly</li>
+                    <li>Create team-wide layouts that all members can use</li>
+                    <li>Each team member can have their own personal layout preferences</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Column Organization</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Drag and drop column headers to reorder columns</li>
+                    <li>Show or hide columns based on your workflow</li>
+                    <li>Resize columns by dragging the column borders</li>
+                    <li>Double-click column resizers to auto-fit text content</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-4 mt-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Pro Tip:</strong> Auto-sizing works for most columns, but script and notes columns are excluded since they have expandable cells. Use the expand/collapse arrows on those columns instead.</p>
+              </div>
+            </div>
+          </section>
+
           {/* Find & Replace */}
           <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
