@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -8,6 +8,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -35,6 +37,8 @@ const RundownTableHeader = ({
   updateColumnWidth,
   onReorderColumns
 }: RundownTableHeaderProps) => {
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -46,6 +50,11 @@ const RundownTableHeader = ({
     })
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const column = visibleColumns.find(col => col.id === event.active.id);
+    setActiveColumn(column || null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -56,6 +65,8 @@ const RundownTableHeader = ({
       const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
       onReorderColumns(newColumns);
     }
+    
+    setActiveColumn(null);
   };
 
   return (
@@ -78,6 +89,7 @@ const RundownTableHeader = ({
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           modifiers={[restrictToHorizontalAxis, restrictToParentElement]}
         >
@@ -101,6 +113,33 @@ const RundownTableHeader = ({
               );
             })}
           </SortableContext>
+          
+          <DragOverlay>
+            {activeColumn ? (
+              <th 
+                className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
+                style={{ 
+                  width: getColumnWidth(activeColumn),
+                  minWidth: getColumnWidth(activeColumn),
+                  maxWidth: getColumnWidth(activeColumn),
+                  opacity: 0.9,
+                  transform: 'rotate(5deg)',
+                  zIndex: 1000
+                }}
+              >
+                <div 
+                  className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{
+                    width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                  }}
+                >
+                  {activeColumn.name || activeColumn.key}
+                </div>
+              </th>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </tr>
     </thead>
