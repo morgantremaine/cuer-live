@@ -59,7 +59,7 @@ const RundownTableHeader = ({
   };
 
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700">
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
