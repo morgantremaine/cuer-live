@@ -38,6 +38,7 @@ serve(async (req) => {
     // Get team conversations and context
     const authHeader = req.headers.get('Authorization')
     let teamContext = ''
+    let conversationHistory: OpenAIMessage[] = []
     let supabase, user, teamId;
     
     if (authHeader) {
@@ -60,28 +61,37 @@ serve(async (req) => {
           if (teamMemberships && teamMemberships.length > 0) {
             teamId = teamMemberships[0].team_id
             
-            // Get the most recent conversation to check for pending modifications
-            const { data: recentConv } = await supabase
+            // Get the most recent conversations to maintain context
+            const { data: recentConversations } = await supabase
               .from('team_conversations')
               .select('user_message, assistant_response')
               .eq('team_id', teamId)
               .eq('user_id', user.id)
               .order('created_at', { ascending: false })
-              .limit(1)
+              .limit(5) // Get last 5 exchanges
 
-            if (recentConv && recentConv.length > 0) {
-              const lastConv = recentConv[0]
+            if (recentConversations && recentConversations.length > 0) {
+              // Add recent conversation history
+              const conversationPairs = recentConversations.reverse() // Oldest first
+              for (const conv of conversationPairs) {
+                conversationHistory.push({
+                  role: 'user',
+                  content: conv.user_message
+                })
+                conversationHistory.push({
+                  role: 'assistant', 
+                  content: conv.assistant_response
+                })
+              }
               
-              // Check if the last response contained a modification request and current message is a confirmation
-              if (lastConv.assistant_response.includes('Would you like me to apply this change') && 
-                  message.toLowerCase().match(/^(yes|apply|proceed|do it|go ahead|confirm|yes apply|apply it|yes apply it)/)) {
+              // Check for immediate context (last response had modification request)
+              const lastConv = recentConversations[0]
+              if (lastConv.assistant_response.includes('Apply this change?') && 
+                  message.toLowerCase().match(/^(yes|apply|proceed|do it|go ahead|confirm|yes apply|apply it|yes apply it|apply this change)/)) {
                 teamContext = `
 
-IMMEDIATE CONTEXT: The user just confirmed a modification request from the previous conversation.
-Last request: ${lastConv.user_message}
-User is now saying: ${message}
-
-APPLY THE MODIFICATION IMMEDIATELY using MODIFICATION_REQUEST format. Do not ask for confirmation again.`
+IMMEDIATE CONTEXT: User just confirmed a modification request.
+Apply the change using the APPLY_CHANGE format immediately.`
               }
             }
           }
@@ -96,6 +106,7 @@ APPLY THE MODIFICATION IMMEDIATELY using MODIFICATION_REQUEST format. Do not ask
         role: 'system',
         content: getSystemPrompt(rundownData) + teamContext,
       },
+      ...conversationHistory,
       {
         role: 'user',
         content: message,
