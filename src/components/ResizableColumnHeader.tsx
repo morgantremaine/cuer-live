@@ -191,7 +191,7 @@ const ResizableColumnHeader = ({
       {...dragListeners}
     >
       <div 
-        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
         style={{
           width: `${constrainedWidth - 16}px`,
           minWidth: `${minimumWidth - 16}px`,
