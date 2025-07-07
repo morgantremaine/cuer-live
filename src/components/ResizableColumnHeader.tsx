@@ -170,8 +170,10 @@ const ResizableColumnHeader = ({
         setNodeRef(node);
         headerRef.current = node;
       }}
-      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
-        isDragging ? 'opacity-50' : ''
+      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none transition-all duration-200 ${
+        isDragging 
+          ? 'bg-blue-500 shadow-lg ring-2 ring-blue-300 ring-opacity-50 opacity-90 scale-105' 
+          : 'bg-blue-600 hover:bg-blue-500'
       } cursor-move`}
       style={style}
       {...attributes}
