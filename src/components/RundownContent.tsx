@@ -27,6 +27,7 @@ interface RundownContentProps {
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
+  onReorderColumns?: (columns: Column[]) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -71,6 +72,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
+  onReorderColumns,
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
@@ -131,6 +133,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                 visibleColumns={visibleColumns}
                 getColumnWidth={getColumnWidth}
                 updateColumnWidth={updateColumnWidth}
+                onReorderColumns={onReorderColumns}
               />
             </table>
           </div>

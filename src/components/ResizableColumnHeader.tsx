@@ -8,6 +8,12 @@ interface ResizableColumnHeaderProps {
   onWidthChange: (columnId: string, width: number) => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
+  isDragging?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -38,7 +44,13 @@ const ResizableColumnHeader = ({
   width, 
   onWidthChange, 
   children, 
-  showLeftSeparator = false 
+  showLeftSeparator = false,
+  isDragging = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd
 }: ResizableColumnHeaderProps) => {
   const headerRef = useRef<HTMLTableHeaderCellElement>(null);
   const initialWidthRef = useRef<number>(0);
@@ -127,16 +139,38 @@ const ResizableColumnHeader = ({
   const constrainedWidth = Math.max(minimumWidth, parseInt(width));
   const constrainedWidthPx = `${constrainedWidth}px`;
 
+  // Handle drag functionality without interfering with resize
+  const handleHeaderDragStart = useCallback((e: React.DragEvent) => {
+    // Only allow dragging from the text area, not the resize handle
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('resize-handle')) {
+      e.preventDefault();
+      return;
+    }
+    
+    if (onDragStart) {
+      onDragStart(e);
+    }
+  }, [onDragStart]);
+
   return (
     <th 
       ref={headerRef}
-      className="px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600"
+      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
+        isDragging ? 'opacity-50' : ''
+      } ${onDragStart ? 'cursor-move' : ''}`}
       style={{ 
         width: constrainedWidthPx, 
         minWidth: constrainedWidthPx,
         maxWidth: constrainedWidthPx,
         borderRight: '1px solid hsl(var(--border))'
       }}
+      draggable={!!onDragStart}
+      onDragStart={handleHeaderDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
     >
       {/* Remove left separator since we're using consistent borders */}
       
