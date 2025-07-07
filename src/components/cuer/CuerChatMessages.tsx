@@ -30,7 +30,9 @@ const CuerChatMessages = ({
   } | null>(null);
   const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(new Set());
   
+  console.log('🔧 CUER MESSAGES: Component rendered');
   const { applyModifications } = useCuerModifications();
+  console.log('🔧 CUER MESSAGES: Got applyModifications function:', !!applyModifications);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,10 +136,16 @@ const CuerChatMessages = ({
         // Apply modifications asynchronously to avoid blocking render
         setTimeout(() => {
           console.log('🔄 AUTO-APPLYING: Starting timeout execution');
+          console.log('🔄 AUTO-APPLYING: applyModifications function exists:', !!applyModifications);
           try {
             console.log('🔄 AUTO-APPLYING: About to call applyModifications');
             const success = applyModifications(modifications);
             console.log('🔄 AUTO-APPLYING: applyModifications returned:', success);
+            if (success) {
+              console.log('✅ MODIFICATIONS: Successfully applied changes');
+            } else {
+              console.error('❌ MODIFICATIONS: Failed to apply changes');
+            }
           } catch (error) {
             console.error('💥 AUTO-APPLYING: Error applying modifications:', error);
           }
