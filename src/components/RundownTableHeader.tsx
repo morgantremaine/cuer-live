@@ -122,12 +122,19 @@ const RundownTableHeader = ({
                 className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
                 style={{ 
                   width: getColumnWidth(activeColumn),
+                  minWidth: getColumnWidth(activeColumn),
+                  maxWidth: getColumnWidth(activeColumn),
                   opacity: 0.9,
                   zIndex: 1000
                 }}
               >
                 <div 
                   className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{
+                    width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                  }}
                 >
                   {activeColumn.name || activeColumn.key}
                 </div>

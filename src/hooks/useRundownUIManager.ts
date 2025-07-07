@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useSimpleColumnWidths } from './useSimpleColumnWidths';
 import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
@@ -26,90 +27,17 @@ export const useRundownUIManager = (
     }, 300);
   }, [markAsChanged]);
 
-  // Column width management - with viewport expansion and debugging
-  const getColumnWidth = useCallback((column: Column) => {
-    const naturalWidth = column.width || '150px';
-    
-    // Calculate total natural width
-    let totalNaturalWidth = 64; // Row number column
-    columns.forEach(col => {
-      const width = col.width || '150px';
-      const widthValue = parseInt(width.replace('px', ''));
-      totalNaturalWidth += widthValue;
-    });
-    
-    const viewportWidth = window.innerWidth;
-    
-    // Debug logging
-    console.log('Viewport expansion check:', {
-      totalNaturalWidth,
-      viewportWidth,
-      shouldExpand: totalNaturalWidth < viewportWidth,
-      columnId: column.id,
-      naturalWidth
-    });
-    
-    // If total is less than viewport, expand proportionally
-    if (totalNaturalWidth < viewportWidth) {
-      const naturalWidthValue = parseInt(naturalWidth.replace('px', ''));
-      const totalColumnsWidth = columns.reduce((sum, col) => {
-        const width = col.width || '150px';
-        return sum + parseInt(width.replace('px', ''));
-      }, 0);
-      
-      const extraSpace = viewportWidth - totalNaturalWidth;
-      const proportion = naturalWidthValue / totalColumnsWidth;
-      const additionalWidth = Math.floor(extraSpace * proportion);
-      const expandedWidth = naturalWidthValue + additionalWidth;
-      
-      console.log('Expanding column:', {
-        columnId: column.id,
-        naturalWidthValue,
-        proportion,
-        additionalWidth,
-        expandedWidth
-      });
-      
-      return `${expandedWidth}px`;
-    }
-    
-    return naturalWidth;
-  }, [columns]);
-
-  const updateColumnWidth = useCallback((columnId: string, width: number) => {
-    // Find the column to get its minimum width
-    const column = columns.find(col => col.id === columnId);
-    const getMinimumWidth = (col: Column): number => {
-      switch (col.key) {
-        case 'duration':
-        case 'startTime':
-        case 'endTime':
-        case 'elapsedTime':
-          return 95;
-        case 'segmentName':
-          return 100;
-        case 'talent':
-          return 60;
-        case 'script':
-        case 'notes':
-          return 120;
-        case 'gfx':
-        case 'video':
-          return 80;
-        default:
-          return 50;
-      }
-    };
-    
-    const minimumWidth = column ? getMinimumWidth(column) : 50;
-    const constrainedWidth = Math.max(minimumWidth, width);
-    
-    debouncedMarkAsChanged();
-    
-    if (handleUpdateColumnWidth) {
-      handleUpdateColumnWidth(column?.id || '', constrainedWidth);
-    }
-  }, [columns, debouncedMarkAsChanged, handleUpdateColumnWidth]);
+  // Column width management
+  const {
+    updateColumnWidth,
+    getColumnWidth
+  } = useSimpleColumnWidths(
+    columns, 
+    (columnId: string, width: number) => {
+      debouncedMarkAsChanged();
+    },
+    handleUpdateColumnWidth
+  );
 
   // Color picker state
   const {

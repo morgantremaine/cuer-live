@@ -1,9 +1,9 @@
 
 import React from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
-import SimpleTableHeader from './SimpleTableHeader';
+import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RundownItem } from '@/types/rundown';
+import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
@@ -121,8 +121,8 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver]);
 
-  // Calculate minimum table width - let CSS handle expansion
-  const minTableWidth = React.useMemo(() => {
+  // Calculate total table width to ensure proper sizing
+  const totalTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
@@ -134,51 +134,60 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   return (
     <div className="relative bg-background h-full">
-      {/* Scrollable Content with Table */}
+      {/* Scrollable Content with Header Inside */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div style={{ minWidth: `${minTableWidth}px`, width: '100%' }}>
-          <table className="w-full border-collapse">
-            <SimpleTableHeader
+        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
+          {/* Single Table Structure for Perfect Alignment */}
+          <table className="border-collapse border border-border" style={{ 
+            tableLayout: 'fixed', 
+            width: `${totalTableWidth}px`,
+            minWidth: `${totalTableWidth}px`
+          }}>
+            {/* Sticky Header */}
+            <RundownTableHeader 
               visibleColumns={visibleColumns}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
+              onReorderColumns={onReorderColumns}
             />
+            
+            {/* Table Body - Content */}
             <OptimizedRundownTableWrapper
-              items={items}
-              visibleColumns={visibleColumns}
-              currentTime={currentTime}
-              showColorPicker={showColorPicker}
-              cellRefs={cellRefs}
-              selectedRows={selectedRows}
-              draggedItemIndex={draggedItemIndex}
-              isDraggingMultiple={isDraggingMultiple}
-              dropTargetIndex={dropTargetIndex}
-              currentSegmentId={currentSegmentId}
-              hasClipboardData={hasClipboardData}
-              selectedRowId={selectedRowId}
-              startTime={startTime}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              onToggleColorPicker={onToggleColorPicker}
-              onColorSelect={onColorSelect}
-              onDeleteRow={onDeleteRow}
-              onToggleFloat={onToggleFloat}
-              onRowSelect={onRowSelect}
-              onDragStart={onDragStart}
-              onDragOver={handleEnhancedDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onDragEnd={onDragEnd}
-              onCopySelectedRows={onCopySelectedRows}
-              onDeleteSelectedRows={onDeleteSelectedRows}
-              onPasteRows={onPasteRows || (() => {})}
-              onClearSelection={onClearSelection || (() => {})}
-              onAddRow={onAddRow || (() => {})}
-              onAddHeader={onAddHeader || (() => {})}
-              onJumpToHere={onJumpToHere}
+            items={items}
+            visibleColumns={visibleColumns}
+            currentTime={currentTime}
+            showColorPicker={showColorPicker}
+            cellRefs={cellRefs}
+            selectedRows={selectedRows}
+            draggedItemIndex={draggedItemIndex}
+            isDraggingMultiple={isDraggingMultiple}
+            dropTargetIndex={dropTargetIndex}
+            currentSegmentId={currentSegmentId}
+            hasClipboardData={hasClipboardData}
+            selectedRowId={selectedRowId}
+            startTime={startTime}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={updateColumnWidth}
+            onUpdateItem={onUpdateItem}
+            onCellClick={onCellClick}
+            onKeyDown={onKeyDown}
+            onToggleColorPicker={onToggleColorPicker}
+            onColorSelect={onColorSelect}
+            onDeleteRow={onDeleteRow}
+            onToggleFloat={onToggleFloat}
+            onRowSelect={onRowSelect}
+            onDragStart={onDragStart}
+            onDragOver={handleEnhancedDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            onCopySelectedRows={onCopySelectedRows}
+            onDeleteSelectedRows={onDeleteSelectedRows}
+            onPasteRows={onPasteRows || (() => {})}
+            onClearSelection={onClearSelection || (() => {})}
+            onAddRow={onAddRow || (() => {})}
+            onAddHeader={onAddHeader || (() => {})}
+            onJumpToHere={onJumpToHere}
             />
           </table>
         </div>
