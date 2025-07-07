@@ -189,9 +189,9 @@ const ExpandableScriptCell = ({
           onKeyDown={handleKeyDown}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none ${
-            isExpanded ? '' : 'text-transparent'
-          }`}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 text-sm resize-none ${
+            isExpanded ? 'py-1' : 'py-0'
+          } ${isExpanded ? '' : 'text-transparent'}`}
           style={{ 
             color: isExpanded ? (textColor || undefined) : 'transparent',
             minHeight: isExpanded ? '120px' : '24px',
