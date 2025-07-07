@@ -78,26 +78,27 @@ const RundownTableHeader = ({
     // Disable auto-resize for script and notes columns as they have expandable cells
     if (column.key === 'script' || column.key === 'notes') return;
 
-    // Create a temporary element to measure text width with exact table cell styling
-    const measureElement = document.createElement('span');
+    // Create a temporary element to measure text width with EXACT TextAreaCell styling
+    const measureElement = document.createElement('div');
     measureElement.style.position = 'absolute';
     measureElement.style.visibility = 'hidden';
     measureElement.style.whiteSpace = 'nowrap';
-    measureElement.style.fontSize = '0.875rem'; // text-sm (14px)
-    measureElement.style.fontFamily = 'ui-sans-serif, system-ui, sans-serif';
+    measureElement.style.fontSize = '14px'; // text-sm
+    measureElement.style.fontFamily = 'inherit';
     measureElement.style.fontWeight = '400';
-    measureElement.style.padding = '0.25rem'; // py-1 (4px)
-    measureElement.style.lineHeight = '1.25rem';
+    measureElement.style.padding = '8px 12px'; // px-3 py-2 from TextAreaCell
+    measureElement.style.lineHeight = '1.3'; // exact match to TextAreaCell
     measureElement.style.border = 'none';
     measureElement.style.margin = '0';
     document.body.appendChild(measureElement);
 
     let maxWidth = 0;
 
-    // Measure column header text with bold font weight
-    measureElement.style.fontWeight = '600'; // font-semibold
+    // Measure column header text (headers can be font-medium for segmentName)
+    measureElement.style.fontWeight = '500'; // font-medium
     measureElement.textContent = column.name || column.key;
-    maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+    const headerWidth = measureElement.offsetWidth;
+    maxWidth = Math.max(maxWidth, headerWidth);
 
     // Reset to normal weight for cell content
     measureElement.style.fontWeight = '400';
@@ -115,16 +116,24 @@ const RundownTableHeader = ({
       
       const textValue = String(cellValue).trim();
       if (textValue) {
+        // For duration columns, use monospace font
+        if (column.key === 'duration') {
+          measureElement.style.fontFamily = 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        } else {
+          measureElement.style.fontFamily = 'inherit';
+        }
+        
         measureElement.textContent = textValue;
-        maxWidth = Math.max(maxWidth, measureElement.offsetWidth);
+        const contentWidth = measureElement.offsetWidth;
+        maxWidth = Math.max(maxWidth, contentWidth);
       }
     });
 
     document.body.removeChild(measureElement);
 
-    // Add minimal padding - just 8px for left/right padding + 8px for resize handle
-    const padding = 16;
-    const calculatedWidth = Math.max(maxWidth + padding, 50);
+    // The measureElement already includes padding (8px 12px), so we only need space for the resize handle
+    const resizeHandleSpace = 8; // Space for the resize handle
+    const calculatedWidth = Math.max(maxWidth + resizeHandleSpace, 50);
 
     updateColumnWidth(column.id, calculatedWidth);
   };
