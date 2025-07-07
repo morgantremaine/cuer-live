@@ -57,12 +57,13 @@ const CuerChatMessages = ({
     
     if (!modificationMatch) {
       // Check for MODIFICATION_REQUEST format from system prompt (with or without code blocks)
-      modificationMatch = content.match(/MODIFICATION_REQUEST:\s*```json\s*([\s\S]*?)\s*```/);
+      // Handle both **MODIFICATION_REQUEST:** and MODIFICATION_REQUEST: formats
+      modificationMatch = content.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*([\s\S]*?)\s*```/);
       if (modificationMatch) {
         matchedPattern = 'codeblock';
         isOldFormat = false;
       } else {
-        modificationMatch = content.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\n\})/);
+        modificationMatch = content.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*(\{[\s\S]*?\})/);
         if (modificationMatch) {
           matchedPattern = 'direct';
           isOldFormat = false;
@@ -83,9 +84,9 @@ const CuerChatMessages = ({
         if (isOldFormat) {
           cleanContent = content.replace(/__CUER_MODIFICATIONS__:.*/, '').trim();
         } else if (matchedPattern === 'codeblock') {
-          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+          cleanContent = content.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*[\s\S]*?\s*```/, '').trim();
         } else if (matchedPattern === 'direct') {
-          cleanContent = content.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
+          cleanContent = content.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*\{[\s\S]*?\}/, '').trim();
         }
         
         const result = {

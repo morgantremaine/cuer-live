@@ -2,12 +2,12 @@ export function cleanMessage(aiMessage: string): string {
   console.log('🔧 PARSER: Processing AI message:', aiMessage);
   
   // Extract modification requests if present - handle both formats
-  let modificationMatch = aiMessage.match(/MODIFICATION_REQUEST:\s*```json\s*([\s\S]*?)\s*```/);
+  let modificationMatch = aiMessage.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*([\s\S]*?)\s*```/);
   let matchedPattern = 'codeblock';
   
   if (!modificationMatch) {
     // More robust pattern that captures the complete JSON object
-    modificationMatch = aiMessage.match(/MODIFICATION_REQUEST:\s*\n?\s*(\{[\s\S]*?\n\})/);
+    modificationMatch = aiMessage.match(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*(\{[\s\S]*?\})/);
     matchedPattern = 'direct';
   }
   
@@ -22,9 +22,9 @@ export function cleanMessage(aiMessage: string): string {
       // Clean the message based on the matched pattern
       let cleanedMessage = aiMessage;
       if (matchedPattern === 'codeblock') {
-        cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+        cleanedMessage = aiMessage.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*[\s\S]*?\s*```/, '').trim();
       } else if (matchedPattern === 'direct') {
-        cleanedMessage = aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
+        cleanedMessage = aiMessage.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*\{[\s\S]*?\}/, '').trim();
       }
       
       const result = `${cleanedMessage}\n\n__CUER_MODIFICATIONS__:${JSON.stringify(modificationData)}`;
@@ -34,9 +34,9 @@ export function cleanMessage(aiMessage: string): string {
       console.error('🔧 PARSER: Failed to parse modification JSON:', error);
       // Return original message without the malformed JSON
       if (matchedPattern === 'codeblock') {
-        return aiMessage.replace(/MODIFICATION_REQUEST:\s*```json\s*[\s\S]*?\s*```/, '').trim();
+        return aiMessage.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*```json\s*[\s\S]*?\s*```/, '').trim();
       } else {
-        return aiMessage.replace(/MODIFICATION_REQUEST:\s*\n?\s*\{[\s\S]*?\n\}/, '').trim();
+        return aiMessage.replace(/(?:\*\*)?MODIFICATION_REQUEST:(?:\*\*)?\s*\n?\s*\{[\s\S]*?\}/, '').trim();
       }
     }
   }
