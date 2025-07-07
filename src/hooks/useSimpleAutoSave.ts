@@ -4,14 +4,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/lib/supabase';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { useAuth } from './useAuth';
 
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
   onSaved: () => void
 ) => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const lastSavedRef = useRef<string>('');
@@ -94,21 +92,14 @@ export const useSimpleAutoSave = (
   }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Check if this is a demo rundown accessed by anonymous user - skip saving
-    const isDemo = location.pathname === '/demo';
-    const isDemoOwner = user?.email === 'morgan@cuer.live';
-    
-    if (isDemo && !isDemoOwner) {
-      console.log('💾 Demo rundown accessed anonymously - skipping autosave but keeping UI feedback');
+    // Check if this is a demo rundown - skip saving but allow change detection
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      console.log('💾 Demo rundown detected - skipping autosave but keeping UI feedback');
       // Still mark as saved to prevent UI from showing "unsaved" state
       if (state.hasUnsavedChanges) {
         onSaved();
       }
       return;
-    }
-    
-    if (isDemo && isDemoOwner) {
-      console.log('💾 Demo rundown accessed by owner - allowing autosave to update demo content');
     }
 
     // Simple blocking conditions - no showcaller interference possible

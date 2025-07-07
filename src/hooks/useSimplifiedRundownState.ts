@@ -187,47 +187,43 @@ export const useSimplifiedRundownState = () => {
 
       setIsLoading(true);
       try {
-        // Load from database (whether demo or regular rundown)
-        console.log('📋 Loading rundown from database:', rundownId);
-        const isDemo = location.pathname === '/demo';
-        if (isDemo) {
-          console.log('🎬 This is the demo rundown - loading live content');
-        }
-        // Database loading for all rundowns (including demo)
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('*')
-          .eq('id', rundownId)
-          .single();
-
-        if (error) {
-          console.error('Error loading rundown:', error);
-          // Fallback to default data
+        // Check if this is a demo rundown
+        if (rundownId === DEMO_RUNDOWN_ID) {
+          console.log('📋 Loading demo rundown data');
+          
+          // Load demo data instead of from database
           actions.loadState({
-            items: createDefaultRundownItems(),
+            items: DEMO_RUNDOWN_DATA.items,
             columns: [],
-            title: 'Untitled Rundown',
-            startTime: '09:00:00',
-            timezone: 'America/New_York'
-          });
-        } else if (data) {
-          const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
-            ? data.items 
-            : createDefaultRundownItems();
-
-          // Load content only (columns loaded separately by useUserColumnPreferences)
-          actions.loadState({
-            items: itemsToLoad,
-            columns: [],
-            title: data.title || 'Untitled Rundown',
-            startTime: data.start_time || '09:00:00',
-            timezone: data.timezone || 'America/New_York'
+            title: DEMO_RUNDOWN_DATA.title,
+            startTime: DEMO_RUNDOWN_DATA.start_time,
+            timezone: DEMO_RUNDOWN_DATA.timezone
           });
           
-          if (isDemo) {
-            console.log('✅ Demo rundown loaded from database successfully');
-          } else {
-            console.log('✅ Regular rundown loaded successfully');
+          console.log('✅ Demo rundown loaded successfully');
+        } else {
+          // Normal database loading for real rundowns
+          const { data, error } = await supabase
+            .from('rundowns')
+            .select('*')
+            .eq('id', rundownId)
+            .single();
+
+          if (error) {
+            console.error('Error loading rundown:', error);
+          } else if (data) {
+            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
+              ? data.items 
+              : createDefaultRundownItems();
+
+            // Load content only (columns loaded separately by useUserColumnPreferences)
+            actions.loadState({
+              items: itemsToLoad,
+              columns: [],
+              title: data.title || 'Untitled Rundown',
+              startTime: data.start_time || '09:00:00',
+              timezone: data.timezone || 'America/New_York'
+            });
           }
         }
       } catch (error) {

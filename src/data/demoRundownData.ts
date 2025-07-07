@@ -1,6 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 
-export const DEMO_RUNDOWN_ID = 'e0d80b9d-5cf9-419d-bdb9-ae05e6e33dc8';
+export const DEMO_RUNDOWN_ID = 'demo-rundown-2024';
 
 export const DEMO_RUNDOWN_DATA = {
   id: DEMO_RUNDOWN_ID,

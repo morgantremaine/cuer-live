@@ -16,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { useLocation } from 'react-router-dom';
 
 interface ShareRundownMenuProps {
   rundownId: string;
@@ -31,7 +30,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 }) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const location = useLocation();
   const {
     sharedLayout,
     availableLayouts,
@@ -45,7 +43,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
   const copyToClipboard = async () => {
     // Check if this is the demo rundown
-    if (location.pathname === '/demo') {
+    if (rundownId === DEMO_RUNDOWN_ID) {
       toast({
         title: "Subscribe to unlock full features",
         description: "Sharing and read-only links are available with a subscription. Try the full experience!",
@@ -73,7 +71,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
   const handlePrint = () => {
     // Check if this is the demo rundown
-    if (location.pathname === '/demo') {
+    if (rundownId === DEMO_RUNDOWN_ID) {
       toast({
         title: "Subscribe to unlock full features",
         description: "Print and export features are available with a subscription. Try the full experience!",
@@ -102,7 +100,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
   const handleExportCSV = () => {
     // Check if this is the demo rundown
-    if (location.pathname === '/demo') {
+    if (rundownId === DEMO_RUNDOWN_ID) {
       toast({
         title: "Subscribe to unlock full features",
         description: "Print and export features are available with a subscription. Try the full experience!",
