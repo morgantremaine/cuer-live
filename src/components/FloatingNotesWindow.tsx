@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, FileText, Minimize2, Maximize2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useScratchpadNotes } from '@/hooks/blueprint/useScratchpadNotes';
+import { useScratchpadEditor } from '@/hooks/useScratchpadEditor';
 import ScratchpadRichTextEditor from '@/components/blueprint/scratchpad/ScratchpadRichTextEditor';
 import ScratchpadStreamlinedToolbar from '@/components/blueprint/scratchpad/ScratchpadStreamlinedToolbar';
 
@@ -37,16 +37,20 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
     strikethrough: false
   });
 
-  // Use the same notes hook as the blueprint
+  // Use standalone notes editor that doesn't depend on blueprint context
   const {
     notes,
-    activeNote,
-    createNote,
-    selectNote,
-    updateNoteContent,
-    renameNote,
-    deleteNote
-  } = useScratchpadNotes(rundownId);
+    handleNotesChange
+  } = useScratchpadEditor(rundownId, 'Notes', '', undefined);
+
+  // Create a simple active note structure for compatibility
+  const activeNote = {
+    id: 'notes-1',
+    title: 'Notes',
+    content: notes,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
 
   // Mouse event handlers for dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -139,9 +143,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
     }
   }, []);
 
-  if (!activeNote) {
-    return null;
-  }
+  // Always show the notes window
 
   return (
     <div
@@ -199,37 +201,13 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
             />
           </div>
 
-          {/* Note tabs if multiple notes */}
-          {notes.length > 1 && (
-            <div className="flex border-b border-gray-700 bg-gray-800 overflow-x-auto">
-              {notes.map(note => (
-                <button
-                  key={note.id}
-                  onClick={() => selectNote(note.id)}
-                  className={`px-3 py-2 text-xs border-r border-gray-700 truncate min-w-0 max-w-32 ${
-                    note.id === activeNote?.id
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-750'
-                  }`}
-                >
-                  {note.title}
-                </button>
-              ))}
-              <button
-                onClick={createNote}
-                className="px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-750 border-r border-gray-700"
-              >
-                +
-              </button>
-            </div>
-          )}
 
           {/* Editor */}
           <div className="flex-1 bg-gray-900 overflow-hidden">
             <ScratchpadRichTextEditor
               ref={editorRef}
               note={activeNote}
-              onContentChange={updateNoteContent}
+              onContentChange={handleNotesChange}
               onFormatStateChange={handleFormatStateChange}
             />
           </div>
