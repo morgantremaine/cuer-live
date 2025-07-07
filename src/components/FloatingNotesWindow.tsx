@@ -152,9 +152,9 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
         left: position.x,
         top: position.y,
         width: isMinimized ? '300px' : '500px',
-        height: isMinimized ? 'auto' : '600px',
+        height: isMinimized ? 'auto' : '400px',
         minWidth: '280px',
-        minHeight: isMinimized ? 'auto' : '400px'
+        minHeight: isMinimized ? 'auto' : '300px'
       }}
     >
       {/* Header */}
@@ -226,13 +226,15 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           )}
 
           {/* Editor */}
-          <div className="flex-1 bg-gray-900 overflow-hidden">
-            <ScratchpadRichTextEditor
-              ref={editorRef}
-              note={activeNote}
-              onContentChange={updateNoteContent}
-              onFormatStateChange={handleFormatStateChange}
-            />
+          <div className="flex-1 bg-gray-900 overflow-auto">
+            <div className="h-full max-h-full overflow-y-auto">
+              <ScratchpadRichTextEditor
+                ref={editorRef}
+                note={activeNote}
+                onContentChange={updateNoteContent}
+                onFormatStateChange={handleFormatStateChange}
+              />
+            </div>
           </div>
         </div>
       )}
