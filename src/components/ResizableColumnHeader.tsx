@@ -7,7 +7,7 @@ import { Column } from '@/hooks/useColumnsManager';
 interface ResizableColumnHeaderProps {
   column: Column;
   width: string;
-  onWidthChange: (columnId: string, width: number, isManualResize?: boolean, resetToAutoSize?: boolean) => void;
+  onWidthChange: (columnId: string, width: number) => void;
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
@@ -61,17 +61,11 @@ const ResizableColumnHeader = ({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent drag from starting
     
     if (!headerRef.current) return;
     
     isResizingRef.current = true;
-    
-    // Use pointer capture to prevent drag interference (simplified)
-    const target = e.target as HTMLElement;
-    if (target.setPointerCapture && 'pointerId' in e.nativeEvent) {
-      target.setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
-    }
     
     const startX = e.clientX;
     const startWidth = parseInt(width.replace('px', ''));
@@ -85,7 +79,6 @@ const ResizableColumnHeader = ({
     const resizeHandle = headerRef.current.querySelector('.resize-handle') as HTMLElement;
     if (resizeHandle) {
       resizeHandle.style.backgroundColor = '#60a5fa';
-      resizeHandle.style.zIndex = '9999';
     }
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -99,6 +92,7 @@ const ResizableColumnHeader = ({
       // Use requestAnimationFrame for smooth updates
       animationFrameRef.current = requestAnimationFrame(() => {
         const deltaX = e.clientX - startX;
+        // Strictly enforce minimum width constraint during drag
         const calculatedWidth = initialWidthRef.current + deltaX;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
@@ -112,17 +106,6 @@ const ResizableColumnHeader = ({
       
       isResizingRef.current = false;
       
-      // Release pointer capture (simplified)
-      const target = e.target as HTMLElement;
-      if (target.releasePointerCapture) {
-        try {
-          // Use a fixed pointer ID since we can't access the original
-          target.releasePointerCapture(1);
-        } catch (error) {
-          // Ignore errors if pointer capture wasn't set
-        }
-      }
-      
       // Cancel any pending animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -133,7 +116,7 @@ const ResizableColumnHeader = ({
       const calculatedWidth = initialWidthRef.current + deltaX;
       const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
-      // Final update on mouse up - this marks the column as manually resized
+      // Final update on mouse up
       onWidthChange(column.id, finalWidth);
       
       // Reset global styles
@@ -144,7 +127,6 @@ const ResizableColumnHeader = ({
       const resizeHandle = headerRef.current?.querySelector('.resize-handle') as HTMLElement;
       if (resizeHandle) {
         resizeHandle.style.backgroundColor = '';
-        resizeHandle.style.zIndex = '';
       }
       
       document.removeEventListener('mousemove', handleMouseMove);
@@ -155,58 +137,31 @@ const ResizableColumnHeader = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [column.id, onWidthChange, width, minimumWidth]);
 
-  // Parse width value - use the exact width passed from getColumnWidth (which handles expansion)
+  // Parse width value and ensure it's a valid pixel value
   const widthValue = parseInt(width.replace('px', ''));
-  const actualWidth = isNaN(widthValue) ? minimumWidth : widthValue;
+  const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // CRITICAL: Use the exact width from getColumnWidth (includes expansion)
-    width: width,
+    width: `${constrainedWidth}px`,
     minWidth: `${minimumWidth}px`,
-    // NO maxWidth constraint - let it expand as calculated
+    maxWidth: `${constrainedWidth}px`,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
   };
 
-  // Double-click handler to reset to auto-size
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Reset this column to auto-sizing
-    if (column.manuallyResized) {
-      // Find the natural width and use it
-      const naturalWidth = parseInt((column.width || '150px').replace('px', ''));
-      onWidthChange(column.id, naturalWidth, false, true); // Not manual, reset flag
-    }
-  }, [column.id, column.manuallyResized, column.width, onWidthChange]);
-
-  // Enhanced drag listeners with better separation from resize
+  // Create listeners that exclude the resize handle
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
-      // CRITICAL: Don't start drag if:
-      // 1. Currently resizing
-      // 2. Clicking on or near resize handle (with buffer zone)
-      // 3. Right edge of header (last 10px)
-      if (isResizingRef.current) return;
-      
-      const target = e.target as HTMLElement;
-      const isResizeHandle = target.classList.contains('resize-handle') || 
-                            target.closest('.resize-handle');
-      
-      // Calculate if click is in the resize zone (last 10px of header)
-      const headerRect = headerRef.current?.getBoundingClientRect();
-      const isInResizeZone = headerRect && 
-                            (e.clientX > headerRect.right - 10);
-      
-      if (isResizeHandle || isInResizeZone) {
+      // Don't start drag if clicking on resize handle
+      if (isResizingRef.current || 
+          (e.target as HTMLElement).classList.contains('resize-handle') ||
+          (e.target as HTMLElement).closest('.resize-handle')) {
         return;
       }
-      
       listeners?.onPointerDown?.(e);
     }
   };
@@ -226,29 +181,19 @@ const ResizableColumnHeader = ({
     >
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap pointer-events-none"
+        style={{
+          width: `${constrainedWidth - 16}px`,
+          minWidth: `${minimumWidth - 16}px`,
+          maxWidth: `${constrainedWidth - 16}px`
+        }}
       >
         {children}
       </div>
       
-      {/* Enhanced resize handle with better event isolation and double-click */}
       <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-3 cursor-col-resize hover:bg-blue-400 transition-colors pointer-events-auto"
-        style={{ zIndex: 100 }} // Higher z-index to ensure it's always on top
+        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
         onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClick}
-        onPointerDown={(e) => e.stopPropagation()} // Prevent drag from starting
-        onTouchStart={(e) => e.stopPropagation()} // Prevent touch drag
-        title={column.manuallyResized ? "Double-click to reset to auto-size" : "Drag to resize column"}
       />
-      
-      {/* Manual resize indicator - more visible blue dot */}
-      {column.manuallyResized && (
-        <div 
-          className="absolute right-0.5 top-0.5 w-2 h-2 bg-blue-300 rounded-full opacity-80 border border-blue-500"
-          title="Manually resized - double-click resize handle to reset"
-          style={{ zIndex: 101 }}
-        />
-      )}
     </th>
   );
 };
