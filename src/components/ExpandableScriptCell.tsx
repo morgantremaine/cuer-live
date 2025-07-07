@@ -189,8 +189,10 @@ const ExpandableScriptCell = ({
           onKeyDown={handleKeyDown}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
+          disabled={!isExpanded}
+          readOnly={!isExpanded}
           className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none ${
-            isExpanded ? '' : 'text-transparent'
+            isExpanded ? '' : 'text-transparent cursor-pointer'
           }`}
           style={{ 
             color: isExpanded ? (textColor || undefined) : 'transparent',
