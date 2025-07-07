@@ -1,6 +1,6 @@
 
 import React from 'react';
-import GridBasedRundownTable from './GridBasedRundownTable';
+import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
@@ -133,49 +133,47 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   return (
     <div className="relative bg-background h-full">
-      {/* Scrollable Content with Grid-based Table */}
+      {/* Scrollable Content with Table */}
       <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <GridBasedRundownTable
-          items={items}
-          visibleColumns={visibleColumns}
-          currentTime={currentTime}
-          showColorPicker={showColorPicker}
-          cellRefs={cellRefs}
-          selectedRows={selectedRows}
-          draggedItemIndex={draggedItemIndex}
-          isDraggingMultiple={isDraggingMultiple}
-          dropTargetIndex={dropTargetIndex}
-          currentSegmentId={currentSegmentId}
-          hasClipboardData={hasClipboardData}
-          selectedRowId={selectedRowId}
-          startTime={startTime}
-          getColumnWidth={getColumnWidth}
-          updateColumnWidth={updateColumnWidth}
-          onReorderColumns={onReorderColumns}
-          getRowNumber={getRowNumber}
-          getRowStatus={getRowStatus}
-          calculateHeaderDuration={calculateHeaderDuration}
-          onUpdateItem={onUpdateItem}
-          onCellClick={onCellClick}
-          onKeyDown={onKeyDown}
-          onToggleColorPicker={onToggleColorPicker}
-          onColorSelect={onColorSelect}
-          onDeleteRow={onDeleteRow}
-          onToggleFloat={onToggleFloat}
-          onRowSelect={onRowSelect}
-          onDragStart={onDragStart}
-          onDragOver={handleEnhancedDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onDragEnd={onDragEnd}
-          onCopySelectedRows={onCopySelectedRows}
-          onDeleteSelectedRows={onDeleteSelectedRows}
-          onPasteRows={onPasteRows}
-          onClearSelection={onClearSelection}
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
-          onJumpToHere={onJumpToHere}
-        />
+        <div style={{ minWidth: `${minTableWidth}px`, width: '100%' }}>
+          <OptimizedRundownTableWrapper
+            items={items}
+            visibleColumns={visibleColumns}
+            currentTime={currentTime}
+            showColorPicker={showColorPicker}
+            cellRefs={cellRefs}
+            selectedRows={selectedRows}
+            draggedItemIndex={draggedItemIndex}
+            isDraggingMultiple={isDraggingMultiple}
+            dropTargetIndex={dropTargetIndex}
+            currentSegmentId={currentSegmentId}
+            hasClipboardData={hasClipboardData}
+            selectedRowId={selectedRowId}
+            startTime={startTime}
+            getColumnWidth={getColumnWidth}
+            updateColumnWidth={updateColumnWidth}
+            onUpdateItem={onUpdateItem}
+            onCellClick={onCellClick}
+            onKeyDown={onKeyDown}
+            onToggleColorPicker={onToggleColorPicker}
+            onColorSelect={onColorSelect}
+            onDeleteRow={onDeleteRow}
+            onToggleFloat={onToggleFloat}
+            onRowSelect={onRowSelect}
+            onDragStart={onDragStart}
+            onDragOver={handleEnhancedDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            onCopySelectedRows={onCopySelectedRows}
+            onDeleteSelectedRows={onDeleteSelectedRows}
+            onPasteRows={onPasteRows || (() => {})}
+            onClearSelection={onClearSelection || (() => {})}
+            onAddRow={onAddRow || (() => {})}
+            onAddHeader={onAddHeader || (() => {})}
+            onJumpToHere={onJumpToHere}
+          />
+        </div>
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
       </ScrollArea>
