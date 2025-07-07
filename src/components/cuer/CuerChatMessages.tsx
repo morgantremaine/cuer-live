@@ -130,19 +130,15 @@ const CuerChatMessages = ({
       const { cleanContent, modifications } = extractModifications(content);
       console.log('🎯 RENDER: Extracted modifications:', modifications);
       
-      // Auto-apply modifications when detected (but only once per message)
-      if (modifications && modifications.length > 0 && !appliedMessageIds.has(messageId)) {
+      // Auto-apply modifications when detected - ALWAYS apply, no deduplication
+      if (modifications && modifications.length > 0) {
         console.log('🔄 AUTO-APPLYING: Detected modifications in AI response');
         console.log('🔄 AUTO-APPLYING: Modifications:', JSON.stringify(modifications, null, 2));
         console.log('🔄 AUTO-APPLYING: Message ID:', messageId);
-        console.log('🔄 AUTO-APPLYING: Already applied IDs:', Array.from(appliedMessageIds));
         console.log('🔄 AUTO-APPLYING: applyModifications function:', applyModifications);
         
         // FORCE VISIBLE DEBUG
         alert(`🔄 CUER DEBUG: Detected ${modifications.length} modifications in message ${messageId}. About to auto-apply.`);
-        
-        // Mark this message as processed immediately to prevent infinite loops
-        setAppliedMessageIds(prev => new Set([...prev, messageId]));
         
         // Apply modifications asynchronously to avoid blocking render
         setTimeout(() => {
@@ -166,11 +162,7 @@ const CuerChatMessages = ({
           }
         }, 100);
       } else {
-        console.log('🔄 AUTO-APPLYING: Skipping because:', {
-          hasModifications: !!(modifications && modifications.length > 0),
-          alreadyApplied: appliedMessageIds.has(messageId),
-          messageId
-        });
+        console.log('🔄 AUTO-APPLYING: No modifications found in message:', messageId);
       }
       
       return (
