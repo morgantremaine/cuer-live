@@ -147,6 +147,11 @@ const ResizableColumnHeader = ({
     maxWidth: isDragging ? `${constrainedWidth}px` : constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
+    ...(isDragging && {
+      flexShrink: 0,
+      flexGrow: 0,
+      boxSizing: 'border-box' as const
+    })
   };
 
   // Create listeners that exclude the resize handle
