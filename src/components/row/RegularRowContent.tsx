@@ -77,9 +77,9 @@ const RegularRowContent = ({
             key={column.id}
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
-              width: isLastColumn ? 'auto' : columnWidth, 
+              width: columnWidth, 
               minWidth: columnWidth,
-              maxWidth: isLastColumn ? 'none' : columnWidth,
+              maxWidth: columnWidth,
               backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}

@@ -144,10 +144,9 @@ const ResizableColumnHeader = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // For last column, use auto width to fill remaining space
-    width: isLastColumn ? 'auto' : constrainedWidthPx,
+    width: constrainedWidthPx,
     minWidth: constrainedWidthPx,
-    maxWidth: isLastColumn ? 'none' : constrainedWidthPx,
+    maxWidth: constrainedWidthPx,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     // Prevent any flex or layout changes during drag

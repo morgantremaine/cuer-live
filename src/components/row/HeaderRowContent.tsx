@@ -85,17 +85,17 @@ const HeaderRowContent = ({
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
           const headerName = item.name || '';
-          return (
-            <td
-              key={column.id}
-              className="align-middle border-r border-border min-h-[96px] relative"
-              style={{ 
-                width: isLastColumn ? 'auto' : columnWidth, 
-                minWidth: columnWidth,
-                maxWidth: isLastColumn ? 'none' : columnWidth,
-                backgroundColor,
-                overflow: 'visible'
-              }}
+            return (
+              <td
+                key={column.id}
+                className="align-middle border-r border-border min-h-[96px] relative"
+                style={{ 
+                  width: columnWidth, 
+                  minWidth: columnWidth,
+                  maxWidth: columnWidth,
+                  backgroundColor,
+                  overflow: 'visible'
+                }}
             >
               <div 
                 className="px-2 py-6 flex items-center"
@@ -158,9 +158,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: isLastColumn ? 'auto' : columnWidth, 
+                width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: isLastColumn ? 'none' : columnWidth,
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -174,9 +174,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: isLastColumn ? 'auto' : columnWidth, 
+                width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: isLastColumn ? 'none' : columnWidth,
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >
@@ -190,9 +190,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle border-r border-border min-h-[96px]"
               style={{ 
-                width: isLastColumn ? 'auto' : columnWidth, 
+                width: columnWidth, 
                 minWidth: columnWidth,
-                maxWidth: isLastColumn ? 'none' : columnWidth,
+                maxWidth: columnWidth,
                 backgroundColor 
               }}
             >

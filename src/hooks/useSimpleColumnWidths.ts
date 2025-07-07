@@ -99,17 +99,14 @@ export const useSimpleColumnWidths = (
     return `${minimumWidth}px`;
   }, [columnWidths]);
 
-  // Get column width for table layout - makes last column flexible
+  // Get column width for table layout - distributes space evenly when columns are smaller than screen
   const getColumnWidthForTable = useCallback((column: Column, index: number, totalColumns: number) => {
     const width = columnWidths[column.id];
     const actualWidth = width || getMinimumWidth(column);
     
-    // Make the last column flexible to fill remaining space
-    if (index === totalColumns - 1) {
-      return `minmax(${actualWidth}px, 1fr)`;
-    }
-    
-    return `${actualWidth}px`;
+    // Use fr units to distribute space proportionally while respecting minimum widths
+    const minWidth = getMinimumWidth(column);
+    return `minmax(${minWidth}px, max(${actualWidth}px, 1fr))`;
   }, [columnWidths]);
 
   return {
