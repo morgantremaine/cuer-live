@@ -45,8 +45,8 @@ const ExpandableScriptCell = ({
       const scrollHeight = textarea.scrollHeight;
       
       if (effectiveExpanded) {
-        // Set minimum height of 120px when expanded, but allow it to grow
-        textarea.style.height = Math.max(scrollHeight, 120) + 'px';
+        // When expanded, size to content with a small minimum (same as collapsed)
+        textarea.style.height = Math.max(scrollHeight, 24) + 'px';
       } else {
         // When collapsed, keep it at single line height (24px) regardless of content
         textarea.style.height = '24px';
@@ -195,7 +195,7 @@ const ExpandableScriptCell = ({
               const scrollHeight = e.target.scrollHeight;
               
               if (effectiveExpanded) {
-                e.target.style.height = Math.max(scrollHeight, 120) + 'px';
+                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
               } else {
                 // Keep collapsed height at 24px regardless of content
                 e.target.style.height = '24px';
@@ -212,7 +212,7 @@ const ExpandableScriptCell = ({
           }`}
           style={{ 
             color: effectiveExpanded ? (textColor || undefined) : 'transparent',
-            minHeight: effectiveExpanded ? '120px' : '24px',
+            minHeight: effectiveExpanded ? '24px' : '24px',
             height: effectiveExpanded ? 'auto' : '24px',
             overflow: effectiveExpanded ? 'hidden' : 'hidden',
             whiteSpace: effectiveExpanded ? 'pre-wrap' : 'nowrap',
