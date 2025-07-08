@@ -10,19 +10,22 @@ const PLANS = [
     name: 'Producer',
     description: 'Perfect for small productions',
     maxMembers: 2,
+    teamRange: '1-2 team members',
     monthlyPrice: 25,
     yearlyPrice: 240,
     features: [
       'Up to 2 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Basic support'
+      'Basic support',
+      'Mobile access'
     ]
   },
   {
     name: 'Show',
     description: 'Ideal for growing teams',
     maxMembers: 4,
+    teamRange: '1-4 team members',
     monthlyPrice: 35,
     yearlyPrice: 315,
     features: [
@@ -30,13 +33,15 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Priority support',
-      'Advanced features'
+      'Advanced features',
+      'Data export'
     ]
   },
   {
     name: 'Studio',
-    description: 'For professional studios',
+    description: 'Most popular for studios',
     maxMembers: 7,
+    teamRange: '1-7 team members',
     monthlyPrice: 55,
     yearlyPrice: 594,
     popular: true,
@@ -46,13 +51,15 @@ const PLANS = [
       'Real-time collaboration',
       'Priority support',
       'Advanced features',
-      'Custom integrations'
+      'Backup & restore',
+      'Team analytics'
     ]
   },
   {
     name: 'Studio Plus',
     description: 'Enhanced studio capabilities',
     maxMembers: 10,
+    teamRange: '1-10 team members',
     monthlyPrice: 75,
     yearlyPrice: 810,
     features: [
@@ -61,14 +68,16 @@ const PLANS = [
       'Real-time collaboration',
       'Priority support',
       'Advanced features',
-      'Custom integrations',
-      'Premium templates'
+      'Backup & restore',
+      'Team analytics',
+      'Extended history'
     ]
   },
   {
     name: 'Network',
     description: 'For large organizations',
     maxMembers: 25,
+    teamRange: '11-25 team members',
     monthlyPrice: 125,
     yearlyPrice: 1350,
     features: [
@@ -77,8 +86,9 @@ const PLANS = [
       'Real-time collaboration',
       'Priority support',
       'Advanced features',
-      'Custom integrations',
-      'Premium templates',
+      'Backup & restore',
+      'Team analytics',
+      'Extended history',
       'Dedicated account manager'
     ]
   }
@@ -157,19 +167,19 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
         <Button
           variant="outline"
           size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
           onClick={scrollLeft}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4 text-black" />
         </Button>
         
         <Button
           variant="outline"
           size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
           onClick={scrollRight}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4 text-black" />
         </Button>
 
         {/* Scrollable Plans Container */}
@@ -181,78 +191,93 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
           {PLANS.map((plan) => (
             <Card
               key={plan.name}
-              className={`flex-shrink-0 w-80 relative ${
+              className={`flex-shrink-0 w-80 relative transform transition-all duration-300 hover:scale-105 hover:shadow-xl ${
                 plan.popular
-                  ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
-                  : 'border-gray-200 dark:border-gray-700'
+                  ? 'border-2 border-blue-500 dark:border-blue-400 ring-4 ring-blue-500/20 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50'
+                  : 'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
               } ${
                 isCurrentPlan(plan.name)
-                  ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500'
-                  : 'bg-white dark:bg-gray-800'
+                  ? 'bg-green-50 dark:bg-green-950/20 border-2 border-green-500 ring-2 ring-green-500/20'
+                  : plan.popular 
+                  ? ''
+                  : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750'
               }`}
               style={{ scrollSnapAlign: 'center' }}
             >
             {plan.popular && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-blue-500 text-white">
-                  <Crown className="w-3 h-3 mr-1" />
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1 text-sm font-semibold shadow-lg">
+                  <Crown className="w-4 h-4 mr-1" />
                   Most Popular
                 </Badge>
               </div>
             )}
             
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-lg">{plan.name}</CardTitle>
-              <CardDescription className="text-sm">{plan.description}</CardDescription>
+            <CardHeader className="text-center pb-4 pt-6">
+              <CardTitle className={`text-xl font-bold ${plan.popular ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
+                {plan.name}
+              </CardTitle>
+              <CardDescription className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                {plan.description}
+              </CardDescription>
               
-              <div className="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-400">
+              <div className={`inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                plan.popular 
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              }`}>
                 <Users className="w-4 h-4" />
-                <span className="text-sm">{plan.maxMembers} team members</span>
+                <span>{plan.teamRange}</span>
               </div>
               
-              <div className="py-4">
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="py-6">
+                <div className={`text-4xl font-bold ${plan.popular ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
                   ${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   {interval === 'monthly' ? 'per month' : 'per year'}
                 </div>
                 {interval === 'yearly' && (
-                  <div className="text-xs text-green-600 dark:text-green-400 font-medium">
+                  <div className="text-sm text-green-600 dark:text-green-400 font-semibold mt-2 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full inline-block">
                     Save ${(plan.monthlyPrice * 12) - plan.yearlyPrice} yearly
                   </div>
                 )}
               </div>
             </CardHeader>
             
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 pb-6">
               <Button
                 onClick={() => createCheckout(plan.name, interval)}
                 disabled={loading || isCurrentPlan(plan.name)}
-                className={`w-full mb-4 ${
+                className={`w-full mb-6 py-3 text-base font-semibold transition-all duration-300 ${
                   isCurrentPlan(plan.name)
-                    ? 'bg-green-500 hover:bg-green-600'
+                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
                     : plan.popular
-                    ? 'bg-blue-600 hover:bg-blue-700'
-                    : ''
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
+                    : 'border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20'
                 }`}
-                variant={isCurrentPlan(plan.name) ? 'default' : plan.popular ? 'default' : 'outline'}
+                variant={isCurrentPlan(plan.name) || plan.popular ? 'default' : 'outline'}
               >
                 {isCurrentPlan(plan.name) ? (
                   <>
-                    <Check className="w-4 h-4 mr-2" />
+                    <Check className="w-5 h-5 mr-2" />
                     Current Plan
                   </>
                 ) : (
-                  'Get Started'
+                  <>
+                    Get Started
+                    {plan.popular && <Crown className="w-4 h-4 ml-2" />}
+                  </>
                 )}
               </Button>
               
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-3 text-sm">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
-                    <Check className="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                    <span className="text-gray-600 dark:text-gray-300">{feature}</span>
+                    <div className="flex-shrink-0 w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                      <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="text-gray-700 dark:text-gray-300 leading-relaxed">{feature}</span>
                   </li>
                 ))}
               </ul>
