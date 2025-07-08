@@ -633,6 +633,10 @@ export type Database = {
         Args: { user_uuid: string; team_uuid: string }
         Returns: string
       }
+      get_user_subscription_access: {
+        Args: { user_uuid: string }
+        Returns: Json
+      }
       get_user_team_ids: {
         Args: { user_uuid: string }
         Returns: string[]

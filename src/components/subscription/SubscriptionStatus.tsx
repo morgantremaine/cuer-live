@@ -13,6 +13,8 @@ export const SubscriptionStatus = () => {
     max_team_members,
     subscription_end,
     grandfathered,
+    access_type,
+    user_role,
     loading,
     checkSubscription,
     openCustomerPortal,
@@ -44,7 +46,10 @@ export const SubscriptionStatus = () => {
           Subscription Status
         </CardTitle>
         <CardDescription>
-          Manage your subscription and billing
+          {access_type === 'team_member' 
+            ? 'Your access is provided through your team membership'
+            : 'Manage your subscription and billing'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -62,6 +67,11 @@ export const SubscriptionStatus = () => {
                       Grandfathered
                     </Badge>
                   )}
+                  {access_type === 'team_member' && (
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                      Team Member
+                    </Badge>
+                  )}
                 </div>
                ) : (
                  <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">No Active Subscription</Badge>
@@ -73,13 +83,19 @@ export const SubscriptionStatus = () => {
               <span>Up to {max_team_members} team members</span>
             </div>
             
-            {subscribed && subscription_end && !grandfathered && (
+            {access_type === 'team_member' && (
+              <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                ℹ️ Access provided through team admin's subscription
+              </div>
+            )}
+
+            {access_type === 'personal' && subscribed && subscription_end && !grandfathered && (
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Next billing: {format(new Date(subscription_end), 'MMM d, yyyy')}
               </div>
             )}
 
-            {grandfathered && (
+            {grandfathered && access_type === 'personal' && (
               <div className="text-sm text-green-600 dark:text-green-400 font-medium">
                 🎉 Grandfathered - Free Network plan for life!
               </div>
@@ -97,7 +113,8 @@ export const SubscriptionStatus = () => {
               Refresh
             </Button>
             
-            {subscribed && !grandfathered && (
+            {/* Only show manage button for personal subscriptions (not team members) */}
+            {subscribed && !grandfathered && access_type === 'personal' && (
               <Button
                 variant="outline"
                 size="sm"
@@ -110,7 +127,7 @@ export const SubscriptionStatus = () => {
           </div>
         </div>
         
-        {!subscribed && !grandfathered && (
+        {!subscribed && access_type === 'none' && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="text-sm text-red-800 dark:text-red-200">
               <strong>Subscription Required</strong> - Choose a subscription plan below to access all Cuer Live features and start creating rundowns.
