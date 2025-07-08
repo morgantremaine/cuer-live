@@ -187,29 +187,28 @@ const ImageCell = ({
     setIsEditing(true);
   };
 
-  // Check if it looks like an image URL or supported design file
-  const isLikelyImageUrl = internalValue && (
+  // Check if it's a Google Drive file/folder (but not an image) first
+  const isGoogleDriveFile = internalValue && 
+    internalValue.includes('drive.google.com') && 
+    (internalValue.includes('/folders/') || internalValue.includes('/file/d/'));
+
+  // Check if it's a Figma design file
+  const isFigmaFile = internalValue && internalValue.includes('figma.com');
+
+  // Check if it looks like an image URL (but exclude Google Drive folders/files)
+  const isLikelyImageUrl = internalValue && !isGoogleDriveFile && (
     /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
     /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
     internalValue.includes('images') ||
     internalValue.includes('photos') ||
     internalValue.includes('imgur') ||
     internalValue.includes('unsplash') ||
-    internalValue.includes('drive.google.com') ||
+    (internalValue.includes('drive.google.com') && /\.(jpg|jpeg|png|gif|webp|svg)/i.test(internalValue)) ||
     internalValue.includes('dropbox.com') ||
     internalValue.includes('gstatic.com') ||
     internalValue.includes('amazonaws.com') ||
     internalValue.includes('cloudinary.com')
   );
-
-  // Check if it's a Figma design file
-  const isFigmaFile = internalValue && internalValue.includes('figma.com');
-  
-  // Check if it's a Google Drive file/folder (but not an image)
-  const isGoogleDriveFile = internalValue && 
-    internalValue.includes('drive.google.com') && 
-    (internalValue.includes('/folders/') || internalValue.includes('/file/d/')) &&
-    !isLikelyImageUrl;
 
   // Get the display URL (convert Google Drive or Dropbox links if necessary)
   const getDisplayUrl = (url: string): string => {
