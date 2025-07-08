@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
+import { SubscriptionDebug } from '@/components/SubscriptionDebug';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
@@ -306,7 +307,7 @@ const Dashboard = () => {
               <Skeleton className="h-8 w-full bg-gray-700" />
               <Skeleton className="h-6 w-3/4 bg-gray-700" />
               <Skeleton className="h-6 w-1/2 bg-gray-700" />
-              <Skeleton className="h-6 w-2/3 bg-gray-700" />
+               <Skeleton className="h-6 w-2/3 bg-gray-700" />
             </div>
           </div>
           
@@ -358,34 +359,10 @@ const Dashboard = () => {
         {/* Main Content - Hidden on mobile when sidebar is expanded */}
         {showMainContent && (
           <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-              <div className="px-4 py-6 sm:px-0 space-y-6">
-                {/* Breadcrumb - Hide when searching */}
-                {!searchQuery && (
-                  <DashboardFolderBreadcrumb
-                    selectedFolder={selectedFolder}
-                    folderType={folderType}
-                    customFolders={folders}
-                  />
-                )}
-                
-                {/* Create New and Import Buttons */}
-                <div className="flex items-center space-x-4">
-                  <CreateNewButton onClick={handleCreateNew} />
-                  <CSVImportDialog onImport={handleCSVImport}>
-                    <Button 
-                      size="lg" 
-                      variant="outline"
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 hover:text-gray-700 border-gray-300"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Import CSV
-                    </Button>
-                  </CSVImportDialog>
-                </div>
-                
-                {/* Rundowns Grid */}
-                <DashboardRundownGrid 
+            <div className="container mx-auto px-4 py-8">
+              <SubscriptionDebug />
+              <div className="mt-8">
+                <DashboardRundownGrid
                   title={folderTitle}
                   rundowns={filteredRundowns}
                   loading={loading && savedRundowns.length > 0}
