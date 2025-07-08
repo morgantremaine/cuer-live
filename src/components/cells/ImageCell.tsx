@@ -352,41 +352,41 @@ const ImageCell = ({
               }}
             />
           ) : isFigmaFile ? (
-            <div className="w-full h-16 flex items-center justify-between bg-gray-100 rounded border border-gray-300 p-2">
-              <div className="flex items-center space-x-2 text-gray-700">
-                <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-full min-h-[48px] max-h-16 flex items-center justify-between bg-gray-100 rounded border border-gray-300 p-1.5 overflow-hidden">
+              <div className="flex items-center space-x-1.5 text-gray-700 min-w-0 flex-1">
+                <div className="w-4 h-4 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   F
                 </div>
-                <span className="text-sm font-medium">{getFigmaProjectName(internalValue)}</span>
+                <span className="text-xs font-medium truncate">{getFigmaProjectName(internalValue)}</span>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   window.open(internalValue, '_blank');
                 }}
-                className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-300 transition-colors"
+                className="flex items-center justify-center w-6 h-6 rounded hover:bg-gray-300 transition-colors flex-shrink-0 ml-1"
                 title="Open in Figma"
               >
-                <ExternalLink className="h-4 w-4 text-gray-600" />
+                <ExternalLink className="h-3 w-3 text-gray-600" />
               </button>
             </div>
           ) : isGoogleDriveFile ? (
-            <div className="w-full h-16 flex items-center justify-between bg-blue-50 rounded border border-blue-200 p-2">
-              <div className="flex items-center space-x-2 text-blue-700">
-                <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-full min-h-[48px] max-h-16 flex items-center justify-between bg-blue-50 rounded border border-blue-200 p-1.5 overflow-hidden">
+              <div className="flex items-center space-x-1.5 text-blue-700 min-w-0 flex-1">
+                <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                   G
                 </div>
-                <span className="text-sm font-medium">{getGoogleDriveName(internalValue)}</span>
+                <span className="text-xs font-medium truncate">{getGoogleDriveName(internalValue)}</span>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   window.open(internalValue, '_blank');
                 }}
-                className="flex items-center justify-center w-8 h-8 rounded hover:bg-blue-200 transition-colors"
+                className="flex items-center justify-center w-6 h-6 rounded hover:bg-blue-200 transition-colors flex-shrink-0 ml-1"
                 title="Open in Google Drive"
               >
-                <ExternalLink className="h-4 w-4 text-blue-600" />
+                <ExternalLink className="h-3 w-3 text-blue-600" />
               </button>
             </div>
           ) : isGoogleDocsFile ? (
@@ -415,22 +415,22 @@ const ImageCell = ({
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-16 flex items-center justify-between bg-green-50 rounded border border-green-200 p-2">
-                  <div className="flex items-center space-x-2 text-green-700">
-                    <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-full min-h-[48px] max-h-16 flex items-center justify-between bg-green-50 rounded border border-green-200 p-1.5 overflow-hidden">
+                  <div className="flex items-center space-x-1.5 text-green-700 min-w-0 flex-1">
+                    <div className="w-4 h-4 bg-green-500 rounded flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                       D
                     </div>
-                    <span className="text-sm font-medium">{getGoogleDocsName(internalValue)}</span>
+                    <span className="text-xs font-medium truncate">{getGoogleDocsName(internalValue)}</span>
                   </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       window.open(internalValue, '_blank');
                     }}
-                    className="flex items-center justify-center w-8 h-8 rounded hover:bg-green-200 transition-colors"
+                    className="flex items-center justify-center w-6 h-6 rounded hover:bg-green-200 transition-colors flex-shrink-0 ml-1"
                     title="Open in Google Docs"
                   >
-                    <ExternalLink className="h-4 w-4 text-green-600" />
+                    <ExternalLink className="h-3 w-3 text-green-600" />
                   </button>
                 </div>
               );

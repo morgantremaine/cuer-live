@@ -85,9 +85,9 @@ const RundownTableHeader = ({
 
     // Special handling for images column
     if (column.key === 'images' || column.id === 'images') {
-      // For images column, set a reasonable width based on typical image display
-      const imageColumnWidth = 200; // Max width for images as set in the component
-      updateColumnWidth(column.id, imageColumnWidth + 16); // Add padding
+      // For images column, set a minimum width for preview cards to display properly
+      const minImageColumnWidth = 120; // Minimum width for cards to not overflow
+      updateColumnWidth(column.id, minImageColumnWidth);
       return;
     }
 
