@@ -363,7 +363,7 @@ const Dashboard = () => {
               <div className="flex gap-4 mb-6">
                 <CreateNewButton onClick={handleCreateNew} />
                 <CSVImportDialog onImport={handleCSVImport}>
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button variant="outline" size="lg" className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Import CSV
                   </Button>
