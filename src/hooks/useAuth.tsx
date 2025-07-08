@@ -28,15 +28,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     logger.debug('Initializing auth state...')
     
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user' })
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.debug('Auth state changed', { event, userEmail: session?.user?.email || 'no user', hasSession: !!session })
       
+      // Set session and user state
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
+      
+      // Only set loading to false after we've processed the auth state change
+      // Add a small delay to ensure Supabase has fully processed the session
+      setTimeout(() => {
+        setLoading(false)
+      }, 100)
       
       // Clean up invalid tokens when user signs in
       if (session?.user && event === 'SIGNED_IN') {
@@ -44,21 +50,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     })
 
-    // Get initial session
+    // THEN get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         logger.error('Error getting initial session', error)
+        setLoading(false)
       } else {
-        logger.debug('Initial session', { userEmail: session?.user?.email || 'no user' })
-      }
-      
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-      
-      // Clean up invalid tokens if there's a user
-      if (session?.user) {
-        clearInvalidTokens()
+        logger.debug('Initial session retrieved', { userEmail: session?.user?.email || 'no user', hasSession: !!session })
+        
+        // Only update state if we haven't already set it via the auth state change listener
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+        
+        // Clean up invalid tokens if there's a user
+        if (session?.user) {
+          clearInvalidTokens()
+        }
       }
     })
 

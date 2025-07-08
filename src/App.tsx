@@ -64,11 +64,11 @@ const AppRoutes = () => {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/auth/reset-password" element={<ResetPassword />} />
       
-      {/* Protected routes */}
+      {/* Protected routes - ALL require subscription except /subscription */}
       <Route 
         path="/dashboard" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <Dashboard />
           </ProtectedRoute>
         } 
@@ -76,7 +76,7 @@ const AppRoutes = () => {
       <Route 
         path="/account" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <AccountManagement />
           </ProtectedRoute>
         } 
@@ -92,7 +92,7 @@ const AppRoutes = () => {
       <Route 
         path="/rundown" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <Index />
           </ProtectedRoute>
         } 
@@ -100,7 +100,7 @@ const AppRoutes = () => {
       <Route 
         path="/rundown/:id" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <Index />
           </ProtectedRoute>
         } 
@@ -108,7 +108,7 @@ const AppRoutes = () => {
       <Route 
         path="/blueprint/:id" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <Blueprint />
           </ProtectedRoute>
         } 
@@ -116,14 +116,18 @@ const AppRoutes = () => {
       <Route 
         path="/camera-plot-editor/:id" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiresSubscription={true}>
             <CameraPlotEditor />
           </ProtectedRoute>
         } 
       />
       <Route 
         path="/teleprompter/:id" 
-        element={<Teleprompter />} 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <Teleprompter />
+          </ProtectedRoute>
+        } 
       />
       
       {/* Catch-all route */}

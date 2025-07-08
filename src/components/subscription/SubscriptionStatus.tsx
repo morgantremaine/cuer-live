@@ -63,9 +63,9 @@ export const SubscriptionStatus = () => {
                     </Badge>
                   )}
                 </div>
-              ) : (
-                <Badge variant="secondary">Free Trial</Badge>
-              )}
+               ) : (
+                 <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">No Active Subscription</Badge>
+               )}
             </div>
             
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -111,9 +111,9 @@ export const SubscriptionStatus = () => {
         </div>
         
         {!subscribed && !grandfathered && (
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <div className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>Free Trial Active</strong> - Choose a subscription plan to continue using all features after your trial ends.
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="text-sm text-red-800 dark:text-red-200">
+              <strong>Subscription Required</strong> - Choose a subscription plan below to access all Cuer Live features and start creating rundowns.
             </div>
           </div>
         )}
