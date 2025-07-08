@@ -45,7 +45,6 @@ export const useSubscription = () => {
       
       if (error) throw error;
       
-      console.log('Subscription data:', data);
       setStatus({
         subscribed: data.subscribed || false,
         subscription_tier: data.subscription_tier,
