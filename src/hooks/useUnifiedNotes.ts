@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useBlueprintContext } from '@/contexts/BlueprintContext';
+import { supabase } from '@/integrations/supabase/client';
+
+// Check if we're in a blueprint context (optional dependency)
+const useBlueprintContextSafe = () => {
+  try {
+    const { useBlueprintContext } = require('@/contexts/BlueprintContext');
+    return useBlueprintContext();
+  } catch {
+    return null;
+  }
+};
 
 interface Note {
   id: string;
@@ -10,11 +20,12 @@ interface Note {
 }
 
 export const useUnifiedNotes = (rundownId: string) => {
-  const { state, updateNotes } = useBlueprintContext();
+  const blueprintContext = useBlueprintContextSafe();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Track manually renamed notes
   const [manuallyRenamedNotes, setManuallyRenamedNotes] = useState<Set<string>>(new Set());
@@ -35,102 +46,203 @@ export const useUnifiedNotes = (rundownId: string) => {
     return cleaned.trim();
   };
 
-  // Initialize notes from blueprint context (single source of truth)
+  // Initialize notes from either blueprint context or direct database access
   useEffect(() => {
     if (isInitialized) return;
     
-    try {
-      let parsedNotes: Note[] = [];
-      
-      if (state.notes && typeof state.notes === 'string') {
-        try {
-          const parsed = JSON.parse(state.notes);
-          if (Array.isArray(parsed)) {
-            // Validate each note has required fields and clean content
-            parsedNotes = parsed.filter(note => 
-              note && 
-              typeof note === 'object' && 
-              note.id && 
-              note.title !== undefined && 
-              note.content !== undefined
-            ).map(note => ({
-              ...note,
-              // Clean up any malformed content
-              content: typeof note.content === 'string' ? cleanupMalformedJson(note.content) : ''
-            }));
-          } else if (typeof parsed === 'object' && parsed.content) {
-            // Single note object
-            parsedNotes = [parsed];
+    const initializeNotes = async () => {
+      try {
+        let rawNotes = '';
+        
+        // Try to get notes from blueprint context first (if available)
+        if (blueprintContext?.state?.notes) {
+          rawNotes = blueprintContext.state.notes;
+        } else {
+          // Fall back to direct database access
+          const { data, error } = await supabase
+            .from('blueprints')
+            .select('notes')
+            .eq('rundown_id', rundownId)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error loading notes from database:', error);
           } else {
-            // Treat as plain text but clean it up
-            let cleanContent = typeof parsed === 'string' ? parsed : state.notes;
-            cleanContent = cleanupMalformedJson(cleanContent);
+            rawNotes = data?.notes || '';
+          }
+        }
+
+        let parsedNotes: Note[] = [];
+        
+        if (rawNotes && typeof rawNotes === 'string') {
+          try {
+            const parsed = JSON.parse(rawNotes);
+            if (Array.isArray(parsed)) {
+              // Validate each note has required fields and clean content
+              parsedNotes = parsed.filter(note => 
+                note && 
+                typeof note === 'object' && 
+                note.id && 
+                note.title !== undefined && 
+                note.content !== undefined
+              ).map(note => ({
+                ...note,
+                // Clean up any malformed content
+                content: typeof note.content === 'string' ? cleanupMalformedJson(note.content) : ''
+              }));
+            } else if (typeof parsed === 'object' && parsed.content) {
+              // Single note object
+              parsedNotes = [parsed];
+            } else {
+              // Treat as plain text but clean it up
+              let cleanContent = typeof parsed === 'string' ? parsed : rawNotes;
+              cleanContent = cleanupMalformedJson(cleanContent);
+              
+              parsedNotes = [{
+                id: `note-${Date.now()}`,
+                title: 'Notes',
+                content: cleanContent,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              }];
+            }
+          } catch {
+            // Handle plain text format - clean up any malformed JSON
+            let cleanContent = cleanupMalformedJson(rawNotes);
             
             parsedNotes = [{
               id: `note-${Date.now()}`,
-              title: 'Notes',
+              title: 'Notes', 
               content: cleanContent,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             }];
           }
-        } catch {
-          // Handle plain text format - clean up any malformed JSON
-          let cleanContent = cleanupMalformedJson(state.notes);
-          
+        }
+
+        // Ensure we have at least one note
+        if (parsedNotes.length === 0) {
           parsedNotes = [{
             id: `note-${Date.now()}`,
-            title: 'Notes', 
-            content: cleanContent,
+            title: 'Notes',
+            content: '',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }];
         }
-      }
 
-      // Ensure we have at least one note
-      if (parsedNotes.length === 0) {
-        parsedNotes = [{
+        setNotes(parsedNotes);
+        setActiveNoteId(parsedNotes[0]?.id || null);
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Error initializing unified notes:', error);
+        // Create default note on error
+        const defaultNote = {
           id: `note-${Date.now()}`,
           title: 'Notes',
           content: '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        }];
+        };
+        setNotes([defaultNote]);
+        setActiveNoteId(defaultNote.id);
+        setIsInitialized(true);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      setNotes(parsedNotes);
-      setActiveNoteId(parsedNotes[0]?.id || null);
-      setIsInitialized(true);
-    } catch (error) {
-      console.error('Error initializing unified notes:', error);
-      // Create default note on error
-      const defaultNote = {
-        id: `note-${Date.now()}`,
-        title: 'Notes',
-        content: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setNotes([defaultNote]);
-      setActiveNoteId(defaultNote.id);
-      setIsInitialized(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [state.notes, isInitialized]);
+    initializeNotes();
+  }, [rundownId, blueprintContext?.state?.notes, isInitialized]);
 
-  // Save notes to blueprint context (unified save)
-  const saveNotes = useCallback((notesToSave: Note[]) => {
+  // Save notes using appropriate method (context or direct database)
+  const saveNotes = useCallback(async (notesToSave: Note[]) => {
     if (!isInitialized) return;
     
-    try {
-      const notesJson = JSON.stringify(notesToSave);
-      updateNotes(notesJson);
-    } catch (error) {
-      console.error('Error saving unified notes:', error);
+    // Clear existing timeout
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
     }
-  }, [updateNotes, isInitialized]);
+
+    const timeout = setTimeout(async () => {
+      try {
+        const notesJson = JSON.stringify(notesToSave);
+        
+        if (blueprintContext?.updateNotes) {
+          // Use blueprint context if available
+          blueprintContext.updateNotes(notesJson);
+        } else {
+          // Fall back to direct database save
+          const { data: existingBlueprint } = await supabase
+            .from('blueprints')
+            .select('id, rundown_title')
+            .eq('rundown_id', rundownId)
+            .maybeSingle();
+
+          if (!existingBlueprint) {
+            // Get rundown title for blueprint
+            const { data: rundownData } = await supabase
+              .from('rundowns')
+              .select('title')
+              .eq('id', rundownId)
+              .single();
+
+            // Create blueprint record
+            const { error: createError } = await supabase
+              .from('blueprints')
+              .insert({
+                rundown_id: rundownId,
+                rundown_title: rundownData?.title || 'Untitled',
+                lists: [],
+                notes: notesJson
+              });
+
+            if (createError) {
+              console.error('Error creating blueprint:', createError);
+            }
+          } else {
+            // Update existing blueprint
+            const { error: updateError } = await supabase
+              .from('blueprints')
+              .update({
+                notes: notesJson,
+                updated_at: new Date().toISOString()
+              })
+              .eq('rundown_id', rundownId);
+
+            if (updateError) {
+              console.error('Error saving notes:', updateError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error saving unified notes:', error);
+      }
+    }, 1000);
+
+    setSaveTimeout(timeout);
+  }, [blueprintContext, rundownId, isInitialized, saveTimeout]);
+
+  // Helper function to extract title from HTML content
+  const extractTitleFromContent = (htmlContent: string) => {
+    if (!htmlContent || htmlContent.trim() === '') return null;
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Get first line, but be more conservative
+    const firstLine = textContent.split('\n')[0].trim();
+    
+    // Don't extract titles that are too short, too long, or contain suspicious patterns
+    if (firstLine.length < 3 || firstLine.length > 50 || 
+        firstLine.includes('{') || firstLine.includes('}') ||
+        firstLine.includes('"') || firstLine.includes('[')) {
+      return null;
+    }
+    
+    return firstLine;
+  };
 
   // Update note content
   const updateNoteContent = useCallback((content: string) => {
@@ -167,27 +279,6 @@ export const useUnifiedNotes = (rundownId: string) => {
       return updated;
     });
   }, [activeNoteId, saveNotes, manuallyRenamedNotes]);
-
-  // Helper function to extract title from HTML content
-  const extractTitleFromContent = (htmlContent: string) => {
-    if (!htmlContent || htmlContent.trim() === '') return null;
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    const textContent = tempDiv.textContent || tempDiv.innerText || '';
-    
-    // Get first line, but be more conservative
-    const firstLine = textContent.split('\n')[0].trim();
-    
-    // Don't extract titles that are too short, too long, or contain suspicious patterns
-    if (firstLine.length < 3 || firstLine.length > 50 || 
-        firstLine.includes('{') || firstLine.includes('}') ||
-        firstLine.includes('"') || firstLine.includes('[')) {
-      return null;
-    }
-    
-    return firstLine;
-  };
 
   // Create new note
   const createNote = useCallback(() => {
@@ -260,6 +351,15 @@ export const useUnifiedNotes = (rundownId: string) => {
   }, [saveNotes]);
 
   const activeNote = notes.find(note => note.id === activeNoteId) || null;
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [saveTimeout]);
 
   return {
     notes,
