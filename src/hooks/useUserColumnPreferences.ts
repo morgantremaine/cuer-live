@@ -143,11 +143,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    // Filter out team columns when saving - only save personal column layout
-    const personalColumns = columnsToSave.filter(col => 
-      !col.isCustom || 
-      (col.isCustom && !(col as any).isTeamColumn)
-    );
+    // Save personal columns + user's preferences for team columns (visibility, width, position)
+    // We need to save team columns with their user preferences, but without the team metadata
+    const personalColumns = columnsToSave.map(col => {
+      if (col.isCustom && (col as any).isTeamColumn) {
+        // For team columns, save user's preferences but strip team metadata
+        const { isTeamColumn, createdBy, ...userPrefs } = col as any;
+        return userPrefs;
+      }
+      return col;
+    });
 
     const currentSignature = JSON.stringify(personalColumns);
     if (currentSignature === lastSavedRef.current) {
