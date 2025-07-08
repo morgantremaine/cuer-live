@@ -188,6 +188,7 @@ export const useSimpleAutoSave = (
               items: state.items,
               start_time: state.startTime,
               timezone: state.timezone,
+              is_locked: state.isLocked,
               team_id: teamData.team_id,
               user_id: (await supabase.auth.getUser()).data.user?.id,
               folder_id: folderId,
@@ -213,6 +214,7 @@ export const useSimpleAutoSave = (
               items: state.items,
               start_time: state.startTime,
               timezone: state.timezone,
+              is_locked: state.isLocked,
               updated_at: updateTimestamp
             })
             .eq('id', rundownId);

@@ -201,6 +201,7 @@ export type Database = {
           folder_id: string | null
           icon: string | null
           id: string
+          is_locked: boolean | null
           items: Json
           logo_url: string | null
           showcaller_state: Json | null
@@ -221,6 +222,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
+          is_locked?: boolean | null
           items: Json
           logo_url?: string | null
           showcaller_state?: Json | null
@@ -241,6 +243,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
+          is_locked?: boolean | null
           items?: Json
           logo_url?: string | null
           showcaller_state?: Json | null

@@ -91,7 +91,8 @@ export const useSimplifiedRundownState = () => {
           columns: [],
           title: updatedRundown.title || 'Untitled Rundown',
           startTime: updatedRundown.start_time || '09:00:00',
-          timezone: updatedRundown.timezone || 'America/New_York'
+          timezone: updatedRundown.timezone || 'America/New_York',
+          isLocked: updatedRundown.is_locked || false
         });
       }
     }, [actions, isSaving]),
@@ -197,7 +198,8 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: DEMO_RUNDOWN_DATA.title,
             startTime: DEMO_RUNDOWN_DATA.start_time,
-            timezone: DEMO_RUNDOWN_DATA.timezone
+            timezone: DEMO_RUNDOWN_DATA.timezone,
+            isLocked: false  // Demo is always unlocked
           });
           
           console.log('✅ Demo rundown loaded successfully');
@@ -223,7 +225,8 @@ export const useSimplifiedRundownState = () => {
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
-              timezone: data.timezone || 'America/New_York'
+              timezone: data.timezone || 'America/New_York',
+              isLocked: data.is_locked || false
             });
           }
         }
@@ -234,7 +237,8 @@ export const useSimplifiedRundownState = () => {
           columns: [],
           title: 'Untitled Rundown',
           startTime: '09:00:00',
-          timezone: 'America/New_York'
+          timezone: 'America/New_York',
+          isLocked: false
         });
       } finally {
         setIsLoading(false);
@@ -252,7 +256,8 @@ export const useSimplifiedRundownState = () => {
         columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
-        timezone: 'America/New_York'
+        timezone: 'America/New_York',
+        isLocked: false
       });
       setIsLoading(false);
       setIsInitialized(true);

@@ -318,18 +318,13 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
 
   // Action creators
   const actions = useMemo(() => ({
-    setItems: (items: RundownItem[]) => {
-      console.log('🔒 setItems called, current isLocked:', state.isLocked);
-      dispatch({ type: 'SET_ITEMS', payload: items });
-    },
+    setItems: (items: RundownItem[]) => dispatch({ type: 'SET_ITEMS', payload: items }),
     
     updateItem: (id: string, updates: Partial<RundownItem>) => 
       dispatch({ type: 'UPDATE_ITEM', payload: { id, updates } }),
     
-    addItem: (item: RundownItem, insertIndex?: number) => {
-      console.log('🔒 addItem called, current isLocked:', state.isLocked, 'item:', item.name);
-      dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } });
-    },
+    addItem: (item: RundownItem, insertIndex?: number) =>
+      dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } }),
     
     deleteItem: (id: string) => dispatch({ type: 'DELETE_ITEM', payload: id }),
     
@@ -364,7 +359,6 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
   // Helper functions for common operations
   const helpers = useMemo(() => ({
     addRow: (insertIndex?: number) => {
-      console.log('🔒 helpers.addRow called, isLocked:', state.isLocked, 'insertIndex:', insertIndex);
       const newItem: RundownItem = {
         id: uuidv4(),
         type: 'regular',

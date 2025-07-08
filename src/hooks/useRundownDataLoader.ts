@@ -12,6 +12,7 @@ interface UseRundownDataLoaderProps {
   setRundownTitle: (title: string) => void;
   setTimezoneDirectly: (timezone: string) => void; // Use direct setter
   setRundownStartTimeDirectly: (startTime: string) => void; // Use direct setter
+  setLockedDirectly: (locked: boolean) => void; // Add lock state setter
   handleLoadLayout: (columns: Column[]) => void;
   setItems: (updater: (prev: RundownItem[]) => RundownItem[]) => void;
   onRundownLoaded?: (rundown: SavedRundown) => void;
@@ -24,6 +25,7 @@ export const useRundownDataLoader = ({
   setRundownTitle,
   setTimezoneDirectly,
   setRundownStartTimeDirectly,
+  setLockedDirectly,
   handleLoadLayout,
   setItems,
   onRundownLoaded
@@ -65,6 +67,11 @@ export const useRundownDataLoader = ({
     console.log('⏰ Loading start time directly:', startTimeToLoad);
     setRundownStartTimeDirectly(startTimeToLoad);
     
+    // Load lock state - use saved value or fallback to false
+    const isLockedToLoad = rundown.is_locked || false;
+    console.log('🔒 Loading lock state directly:', isLockedToLoad);
+    setLockedDirectly(isLockedToLoad);
+    
     // Columns are now handled exclusively by useUserColumnPreferences
     // This prevents conflicts between rundown-stored columns and user preferences
     console.log('📊 Skipping column loading - handled by useUserColumnPreferences');
@@ -91,7 +98,8 @@ export const useRundownDataLoader = ({
     loading, 
     setRundownTitle, 
     setTimezoneDirectly, 
-    setRundownStartTimeDirectly, 
+    setRundownStartTimeDirectly,
+    setLockedDirectly,
     handleLoadLayout,
     setItems,
     onRundownLoaded
