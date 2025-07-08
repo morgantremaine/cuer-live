@@ -68,7 +68,11 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
+    <>
+      {/* Preload critical background image */}
+      <link rel="preload" as="image" href="/uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" />
+      
+      <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up bg-transparent">
         <div className="flex items-center">
@@ -97,6 +101,8 @@ const LandingPage = () => {
               src="/uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
               alt="Professional Broadcast Control Room"
               className="w-full h-full object-cover animate-fade-in"
+              loading="eager"
+              fetchPriority="high"
             />
             {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/60"></div>
@@ -536,7 +542,8 @@ const LandingPage = () => {
         <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl floating-element" style={{ animationDelay: '4s' }}></div>
         <div className="absolute top-1/4 left-1/3 w-60 h-60 bg-purple-500/5 rounded-full blur-2xl pulse-glow"></div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
