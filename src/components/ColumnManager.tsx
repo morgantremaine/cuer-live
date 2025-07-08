@@ -28,8 +28,6 @@ interface ColumnManagerProps {
   onClose: () => void;
   debugColumns?: () => void;
   resetToDefaults?: () => void;
-  isLocked?: boolean;
-  onToggleLock?: (locked: boolean) => void;
 }
 
 const ColumnManager = ({ 
@@ -42,9 +40,7 @@ const ColumnManager = ({
   onRenameColumn,
   onClose,
   debugColumns,
-  resetToDefaults,
-  isLocked = false,
-  onToggleLock
+  resetToDefaults
 }: ColumnManagerProps) => {
   const { 
     savedLayouts, 
@@ -109,32 +105,6 @@ const ColumnManager = ({
             canEditLayout={canEditLayout}
           />
 
-          {/* Row Numbering Lock Toggle */}
-          {onToggleLock && (
-            <div className="border rounded-lg p-4 space-y-3">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Row Numbering</h3>
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {isLocked ? 'Locked' : 'Unlocked'} Numbering
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {isLocked 
-                      ? 'New rows get letters (5A, 5B, etc.)' 
-                      : 'Sequential numbering (1, 2, 3, etc.)'
-                    }
-                  </span>
-                </div>
-                <Button
-                  variant={isLocked ? "destructive" : "default"}
-                  size="sm"
-                  onClick={() => onToggleLock(!isLocked)}
-                >
-                  {isLocked ? 'Unlock' : 'Lock'}
-                </Button>
-              </div>
-            </div>
-          )}
 
           <ColumnEditor onAddColumn={onAddColumn} />
 

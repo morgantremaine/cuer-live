@@ -91,8 +91,7 @@ export const useSimplifiedRundownState = () => {
           columns: [],
           title: updatedRundown.title || 'Untitled Rundown',
           startTime: updatedRundown.start_time || '09:00:00',
-          timezone: updatedRundown.timezone || 'America/New_York',
-          isLocked: updatedRundown.is_locked || false
+          timezone: updatedRundown.timezone || 'America/New_York'
         });
       }
     }, [actions, isSaving]),
@@ -198,8 +197,7 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: DEMO_RUNDOWN_DATA.title,
             startTime: DEMO_RUNDOWN_DATA.start_time,
-            timezone: DEMO_RUNDOWN_DATA.timezone,
-            isLocked: false  // Demo is always unlocked
+            timezone: DEMO_RUNDOWN_DATA.timezone
           });
           
           console.log('✅ Demo rundown loaded successfully');
@@ -225,8 +223,7 @@ export const useSimplifiedRundownState = () => {
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
-              timezone: data.timezone || 'America/New_York',
-              isLocked: data.is_locked || false
+              timezone: data.timezone || 'America/New_York'
             });
           }
         }
@@ -237,8 +234,7 @@ export const useSimplifiedRundownState = () => {
           columns: [],
           title: 'Untitled Rundown',
           startTime: '09:00:00',
-          timezone: 'America/New_York',
-          isLocked: false
+          timezone: 'America/New_York'
         });
       } finally {
         setIsLoading(false);
@@ -256,8 +252,7 @@ export const useSimplifiedRundownState = () => {
         columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
-        timezone: 'America/New_York',
-        isLocked: false
+        timezone: 'America/New_York'
       });
       setIsLoading(false);
       setIsInitialized(true);
@@ -440,10 +435,6 @@ export const useSimplifiedRundownState = () => {
     hasUnsavedChanges: state.hasUnsavedChanges,
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
-    
-    // Lock state
-    isLocked: state.isLocked,
-    setLocked: actions.setLocked,
     
     // Realtime connection status
     isConnected,

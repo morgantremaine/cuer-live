@@ -51,8 +51,6 @@ const RundownMainContent = ({
           onLoadLayout={handleLoadLayout}
           debugColumns={debugColumns}
           resetToDefaults={resetToDefaults}
-          isLocked={contentProps.isLocked}
-          onToggleLock={contentProps.onToggleLock}
         />
       )}
     </>

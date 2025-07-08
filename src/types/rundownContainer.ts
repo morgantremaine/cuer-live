@@ -86,8 +86,4 @@ export interface RundownContainerProps {
   
   // Notes window functionality
   onShowNotes?: () => void;
-  
-  // Lock functionality
-  isLocked?: boolean;
-  onToggleLock?: (locked: boolean) => void;
 }

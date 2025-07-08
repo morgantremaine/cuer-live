@@ -52,9 +52,7 @@ const RundownIndexContent = () => {
     isConnected,
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
-    toggleAutoScroll,
-    isLocked,
-    setLocked
+    toggleAutoScroll
   } = coreState;
 
   // Use user column preferences for persistent column management
@@ -410,8 +408,6 @@ const RundownIndexContent = () => {
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
         onShowNotes={() => setShowNotesWindow(true)}
-        isLocked={isLocked}
-        onToggleLock={setLocked}
       />
       
       {/* Floating Notes Window */}

@@ -85,12 +85,11 @@ export const useSimpleAutoSave = (
       items: cleanItems,
       title: state.title,
       startTime: state.startTime,
-      timezone: state.timezone,
-      isLocked: state.isLocked  // Include lock state in save signature
+      timezone: state.timezone
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone, state.isLocked]);
+  }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -188,7 +187,6 @@ export const useSimpleAutoSave = (
               items: state.items,
               start_time: state.startTime,
               timezone: state.timezone,
-              is_locked: state.isLocked,
               team_id: teamData.team_id,
               user_id: (await supabase.auth.getUser()).data.user?.id,
               folder_id: folderId,
@@ -206,7 +204,7 @@ export const useSimpleAutoSave = (
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
-          // Save only main content - showcaller state handled completely separately  
+          // Save only main content - showcaller state handled completely separately
           const { error } = await supabase
             .from('rundowns')
             .update({
@@ -214,7 +212,6 @@ export const useSimpleAutoSave = (
               items: state.items,
               start_time: state.startTime,
               timezone: state.timezone,
-              is_locked: state.isLocked,
               updated_at: updateTimestamp
             })
             .eq('id', rundownId);

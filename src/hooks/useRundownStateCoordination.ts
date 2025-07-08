@@ -253,11 +253,7 @@ export const useRundownStateCoordination = () => {
       
       // Autoscroll state with enhanced debugging
       autoScrollEnabled,
-      toggleAutoScroll,
-      
-      // Lock state
-      isLocked: simplifiedState.isLocked,
-      setLocked: simplifiedState.setLocked
+      toggleAutoScroll
     },
     interactions,
     uiState
