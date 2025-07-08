@@ -140,6 +140,7 @@ const CellRenderer = ({
         cellRefs={cellRefs}
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
+        fieldType={column.key as 'script' | 'notes'}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}

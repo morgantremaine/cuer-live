@@ -9,6 +9,7 @@ interface ExpandableScriptCellProps {
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   textColor?: string;
   columnExpanded?: boolean;
+  fieldType?: 'script' | 'notes';
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -20,6 +21,7 @@ const ExpandableScriptCell = ({
   cellRefs,
   textColor,
   columnExpanded = false,
+  fieldType = 'script',
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -239,7 +241,9 @@ const ExpandableScriptCell = ({
                 fontSize: 14 
               })
             ) : (
-              <span className="text-gray-400">Click to add script...</span>
+              <span className="text-gray-400">
+                {fieldType === 'notes' ? 'Click to add notes...' : 'Click to add script...'}
+              </span>
             )}
           </div>
         )}
