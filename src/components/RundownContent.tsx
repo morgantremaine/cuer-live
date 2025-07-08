@@ -1,32 +1,30 @@
-
-import React, { useState, useCallback } from 'react';
-import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
+import React from 'react';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import RundownTableHeader from './RundownTableHeader';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RundownItem } from '@/hooks/useRundownItems';
+import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
+import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
-import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
-import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 
 interface RundownContentProps {
   items: RundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
   showColorPicker: string | null;
-  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   selectedRows: Set<string>;
   draggedItemIndex: number | null;
   isDraggingMultiple: boolean;
   dropTargetIndex: number | null;
   currentSegmentId: string | null;
-  hasClipboardData?: boolean;
-  selectedRowId?: string | null;
-  isPlaying?: boolean;
-  autoScrollEnabled?: boolean;
-  startTime?: string;
-  onToggleAutoScroll?: () => void;
+  hasClipboardData: boolean;
+  selectedRowId: string | null;
+  startTime: string;
+  columnExpandState?: { [columnKey: string]: boolean };
+  cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
+  onToggleColumn?: (columnId: string) => void;
   onReorderColumns?: (columns: Column[]) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
@@ -39,39 +37,36 @@ interface RundownContentProps {
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
-  onDragStart: (e: React.DragEvent, index: number) => void;
-  onDragOver: (e: React.DragEvent, index?: number) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, index: number) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
-  onJumpToHere?: (itemId: string) => void;
+  onJumpToHere: (itemId: string) => void;
+  onDragStart?: (event: any) => void;
+  onDragEnd?: (event: any) => void;
+  sensors?: any;
 }
 
-const RundownContent = React.memo<RundownContentProps>(({
+const RundownContent = ({
   items,
   visibleColumns,
   currentTime,
   showColorPicker,
-  cellRefs,
   selectedRows,
   draggedItemIndex,
   isDraggingMultiple,
   dropTargetIndex,
   currentSegmentId,
-  hasClipboardData = false,
-  selectedRowId = null,
-  isPlaying = false,
-  autoScrollEnabled = false,
-  startTime = '00:00:00',
-  onToggleAutoScroll,
+  hasClipboardData,
+  selectedRowId,
+  startTime,
+  columnExpandState,
+  cellRefs,
   getColumnWidth,
   updateColumnWidth,
+  onToggleColumn,
   onReorderColumns,
   getRowNumber,
   getRowStatus,
@@ -84,136 +79,85 @@ const RundownContent = React.memo<RundownContentProps>(({
   onDeleteRow,
   onToggleFloat,
   onRowSelect,
-  onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragEnd,
   onCopySelectedRows,
   onDeleteSelectedRows,
   onPasteRows,
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
-}) => {
-  // Column expand state for script and notes columns
-  const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+  onJumpToHere,
+  onDragStart,
+  onDragEnd,
+  sensors
+}: RundownContentProps) => {
 
-  // Toggle column expand state
-  const handleToggleColumnExpand = useCallback((columnKey: string) => {
-    setColumnExpandState(prev => ({
-      ...prev,
-      [columnKey]: !prev[columnKey]
-    }));
-  }, []);
-
-  // Initialize autoscroll functionality
-  const { scrollContainerRef } = useRundownAutoscroll({
-    currentSegmentId,
-    isPlaying,
-    autoScrollEnabled,
-    items
-  });
-
-  // Initialize drag auto-scroll functionality
-  const isDragging = draggedItemIndex !== null;
-  const { handleDragAutoScroll } = useDragAutoScroll({
-    scrollContainerRef,
-    isActive: isDragging
-  });
-
-  // Enhanced drag over handler that includes auto-scroll
-  const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
-    // Handle auto-scroll first
-    handleDragAutoScroll(e);
-    // Then handle regular drag over logic
-    onDragOver(e, index);
-  }, [handleDragAutoScroll, onDragOver]);
-
-  // Calculate total table width to ensure proper sizing
-  const totalTableWidth = React.useMemo(() => {
-    let total = 64; // Row number column width
-    visibleColumns.forEach(column => {
-      const width = getColumnWidth(column);
-      const widthValue = parseInt(width.replace('px', ''));
-      total += widthValue;
-    });
-    return total;
-  }, [visibleColumns, getColumnWidth]);
+  // Create sortable items for @dnd-kit
+  const sortableItems = items.map(item => item.id);
 
   return (
-    <div className="bg-background h-full">
-      {/* Scrollable Content with Header Inside */}
-      <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
-        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
-          {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse" style={{ 
-            tableLayout: 'fixed', 
-            width: `${totalTableWidth}px`,
-            minWidth: `${totalTableWidth}px`,
-            margin: 0,
-            padding: 0
-          }}>
-            {/* Sticky Header */}
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
-              items={items}
-              columnExpandState={columnExpandState}
-              onToggleColumnExpand={handleToggleColumnExpand}
-            />
-            
-            {/* Table Body - Content */}
-            <OptimizedRundownTableWrapper
-            items={items}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
-            startTime={startTime}
-            columnExpandState={columnExpandState}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={handleEnhancedDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragEnd={onDragEnd}
-            onCopySelectedRows={onCopySelectedRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows || (() => {})}
-            onClearSelection={onClearSelection || (() => {})}
-            onAddRow={onAddRow || (() => {})}
-            onAddHeader={onAddHeader || (() => {})}
-            onJumpToHere={onJumpToHere}
-            />
-          </table>
-        </div>
-        <ScrollBar orientation="horizontal" />
-        <ScrollBar orientation="vertical" />
-      </ScrollArea>
+    <div className="min-h-0 flex-1 bg-background">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        modifiers={[restrictToVerticalAxis]}
+      >
+        <SortableContext 
+          items={sortableItems}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="bg-background border border-border rounded-lg overflow-hidden">
+            <div className="overflow-hidden">
+              <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-12rem)] scroll-container">
+                <table className="w-full">
+                  <RundownTableHeader
+                    visibleColumns={visibleColumns}
+                    getColumnWidth={getColumnWidth}
+                    updateColumnWidth={updateColumnWidth}
+                    onReorderColumns={onReorderColumns}
+                  />
+                  <OptimizedRundownTableWrapper
+                    items={items}
+                    visibleColumns={visibleColumns}
+                    currentTime={currentTime}
+                    showColorPicker={showColorPicker}
+                    cellRefs={cellRefs}
+                    selectedRows={selectedRows}
+                    draggedItemIndex={draggedItemIndex}
+                    isDraggingMultiple={isDraggingMultiple}
+                    dropTargetIndex={dropTargetIndex}
+                    currentSegmentId={currentSegmentId}
+                    hasClipboardData={hasClipboardData}
+                    selectedRowId={selectedRowId}
+                    startTime={startTime}
+                    columnExpandState={columnExpandState}
+                    getColumnWidth={getColumnWidth}
+                    updateColumnWidth={updateColumnWidth}
+                    onUpdateItem={onUpdateItem}
+                    onCellClick={onCellClick}
+                    onKeyDown={onKeyDown}
+                    onToggleColorPicker={onToggleColorPicker}
+                    onColorSelect={onColorSelect}
+                    onDeleteRow={onDeleteRow}
+                    onToggleFloat={onToggleFloat}
+                    onRowSelect={onRowSelect}
+                    onCopySelectedRows={onCopySelectedRows}
+                    onDeleteSelectedRows={onDeleteSelectedRows}
+                    onPasteRows={onPasteRows}
+                    onClearSelection={onClearSelection}
+                    onAddRow={onAddRow}
+                    onAddHeader={onAddHeader}
+                    onJumpToHere={onJumpToHere}
+                  />
+                </table>
+              </div>
+            </div>
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
-});
-
-RundownContent.displayName = 'RundownContent';
+};
 
 export default RundownContent;
