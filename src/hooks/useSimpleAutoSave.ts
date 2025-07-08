@@ -85,11 +85,12 @@ export const useSimpleAutoSave = (
       items: cleanItems,
       title: state.title,
       startTime: state.startTime,
-      timezone: state.timezone
+      timezone: state.timezone,
+      isLocked: state.isLocked  // Include lock state in save signature
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, state.isLocked]);
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -204,7 +205,7 @@ export const useSimpleAutoSave = (
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
-          // Save only main content - showcaller state handled completely separately
+          // Save only main content - showcaller state handled completely separately  
           const { error } = await supabase
             .from('rundowns')
             .update({
