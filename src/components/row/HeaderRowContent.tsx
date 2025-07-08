@@ -51,7 +51,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px]"
+        className="px-1 py-6 text-xl font-mono font-semibold align-middle min-h-[96px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -60,10 +60,10 @@ const HeaderRowContent = ({
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
-        <div className="flex items-center space-x-1">
+        <div className="flex flex-col items-center justify-center h-full">
           <button
             onClick={handleToggleCollapse}
-            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors mb-1"
             title={isCollapsed ? 'Expand header' : 'Collapse header'}
           >
             {isCollapsed ? (
