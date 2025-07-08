@@ -75,6 +75,36 @@ export const useTeamCustomColumns = () => {
     }
   }, [team?.id, user]);
 
+  // Soft delete a team custom column (admin only)
+  const deleteTeamColumn = useCallback(async (columnId: string) => {
+    if (!team?.id || !user) return { success: false, error: 'Not authenticated' };
+
+    try {
+      const { data, error } = await supabase.rpc('soft_delete_team_column', {
+        column_uuid: columnId
+      });
+
+      if (error) {
+        console.error('Error deleting team custom column:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data?.error) {
+        return { success: false, error: data.error };
+      }
+
+      // Remove from local state if successful
+      if (data?.success) {
+        setTeamColumns(prev => prev.filter(col => col.id !== columnId));
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to delete team custom column:', error);
+      return { success: false, error: 'Failed to delete column' };
+    }
+  }, [team?.id, user]);
+
   // Set up realtime subscription for team custom columns
   useEffect(() => {
     if (!team?.id) return;
@@ -97,14 +127,22 @@ export const useTeamCustomColumns = () => {
       .on(
         'postgres_changes',
         {
-          event: 'DELETE',
+          event: 'UPDATE',
           schema: 'public',
           table: 'team_custom_columns',
           filter: `team_id=eq.${team.id}`
         },
         (payload) => {
-          console.log('Team custom column deleted:', payload);
-          setTeamColumns(prev => prev.filter(col => col.id !== payload.old.id));
+          console.log('Team custom column updated:', payload);
+          // Handle soft deletion (when deleted_at is set)
+          if (payload.new.deleted_at) {
+            setTeamColumns(prev => prev.filter(col => col.id !== payload.new.id));
+          } else {
+            // Handle regular updates
+            setTeamColumns(prev => prev.map(col => 
+              col.id === payload.new.id ? payload.new as TeamCustomColumn : col
+            ));
+          }
         }
       )
       .subscribe();
@@ -123,6 +161,7 @@ export const useTeamCustomColumns = () => {
     teamColumns,
     loading,
     addTeamColumn,
+    deleteTeamColumn,
     reloadTeamColumns: loadTeamColumns
   };
 };
