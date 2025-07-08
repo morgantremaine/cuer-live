@@ -47,11 +47,6 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (itemId: string) => void;
-  onDragStart?: ((event: any) => void) | ((e: React.DragEvent, index: number) => void);
-  onDragEnd?: ((event: any) => void) | ((e: React.DragEvent) => void);
-  onDragOver?: (e: React.DragEvent, targetIndex?: number) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent, index: number) => void;
   sensors?: any;
 }
 
@@ -92,11 +87,6 @@ const RundownContent = ({
   onAddRow,
   onAddHeader,
   onJumpToHere,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDragLeave,
-  onDrop,
   sensors
 }: RundownContentProps) => {
 
@@ -108,8 +98,6 @@ const RundownContent = ({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={onDragStart && typeof onDragStart === 'function' ? onDragStart : undefined}
-        onDragEnd={onDragEnd && typeof onDragEnd === 'function' ? onDragEnd : undefined}
         modifiers={[restrictToVerticalAxis]}
       >
         <SortableContext 
