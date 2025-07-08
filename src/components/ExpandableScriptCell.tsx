@@ -24,6 +24,7 @@ const ExpandableScriptCell = ({
   onKeyDown
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Use column expanded state only if it's explicitly true, otherwise use local state
   const effectiveExpanded = columnExpanded === true ? true : isExpanded;
@@ -37,22 +38,31 @@ const ExpandableScriptCell = ({
     }
   };
 
+  // Handle clicking to enter edit mode
+  const handleClick = (e: React.MouseEvent) => {
+    if (effectiveExpanded && !isEditing) {
+      setIsEditing(true);
+      // Focus the textarea after a brief delay to ensure it's ready
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    }
+  };
+
+  // Handle blur to exit edit mode
+  const handleBlur = () => {
+    setIsEditing(false);
+  };
+
   // Auto-resize textarea based on content
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && isEditing) {
       const textarea = textareaRef.current;
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      
-      if (effectiveExpanded) {
-        // When expanded, size to content with a small minimum (same as collapsed)
-        textarea.style.height = Math.max(scrollHeight, 24) + 'px';
-      } else {
-        // When collapsed, keep it at single line height (24px) regardless of content
-        textarea.style.height = '24px';
-      }
+      textarea.style.height = Math.max(scrollHeight, 24) + 'px';
     }
-  }, [value, effectiveExpanded]);
+  }, [value, isEditing]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -177,49 +187,88 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        <textarea
-          ref={(el) => {
-            if (el) {
-              cellRefs.current[cellKey] = el;
-              textareaRef.current = el;
-            } else {
-              delete cellRefs.current[cellKey];
-            }
-          }}
-          value={value}
-          onChange={(e) => {
-            onUpdateValue(e.target.value);
-            // Trigger resize on content change
-            if (e.target) {
-              e.target.style.height = 'auto';
-              const scrollHeight = e.target.scrollHeight;
-              
-              if (effectiveExpanded) {
-                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+        {/* Textarea for editing - only visible when in edit mode */}
+        {isEditing && (
+          <textarea
+            ref={(el) => {
+              if (el) {
+                cellRefs.current[cellKey] = el;
+                textareaRef.current = el;
               } else {
-                // Keep collapsed height at 24px regardless of content
-                e.target.style.height = '24px';
+                delete cellRefs.current[cellKey];
               }
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          data-cell-id={cellKey}
-          data-cell-ref={cellKey}
-          disabled={!effectiveExpanded}
-          readOnly={!effectiveExpanded}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none ${
-            effectiveExpanded ? '' : 'text-transparent cursor-pointer'
-          }`}
-          style={{ 
-            color: effectiveExpanded ? (textColor || undefined) : 'transparent',
-            minHeight: effectiveExpanded ? '24px' : '24px',
-            height: effectiveExpanded ? 'auto' : '24px',
-            overflow: effectiveExpanded ? 'hidden' : 'hidden',
-            whiteSpace: effectiveExpanded ? 'pre-wrap' : 'nowrap',
-            wordWrap: effectiveExpanded ? 'break-word' : 'normal',
-            textOverflow: effectiveExpanded ? 'unset' : 'ellipsis'
-          }}
-        />
+            }}
+            value={value}
+            onChange={(e) => {
+              onUpdateValue(e.target.value);
+              // Trigger resize on content change
+              if (e.target) {
+                e.target.style.height = 'auto';
+                const scrollHeight = e.target.scrollHeight;
+                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            data-cell-id={cellKey}
+            data-cell-ref={cellKey}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
+            style={{ 
+              color: textColor || undefined,
+              minHeight: '24px',
+              height: 'auto',
+              overflow: 'hidden',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word'
+            }}
+          />
+        )}
+
+        {/* Expanded view mode - shows rendered script with brackets */}
+        {effectiveExpanded && !isEditing && (
+          <div
+            onClick={handleClick}
+            className="w-full cursor-text rounded px-1 py-1 text-sm min-h-[24px]"
+            style={{ 
+              color: textColor || undefined,
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word'
+            }}
+          >
+            {value && !isNullScript(value) ? (
+              renderScriptWithBrackets(value, { 
+                inlineDisplay: false, 
+                fontSize: 14 
+              })
+            ) : (
+              <span className="text-gray-400">Click to add script...</span>
+            )}
+          </div>
+        )}
+
+        {/* Invisible textarea for collapsed state to maintain ref */}
+        {!effectiveExpanded && (
+          <textarea
+            ref={(el) => {
+              if (el) {
+                cellRefs.current[cellKey] = el;
+              } else {
+                delete cellRefs.current[cellKey];
+              }
+            }}
+            value={value}
+            data-cell-id={cellKey}
+            data-cell-ref={cellKey}
+            disabled
+            readOnly
+            className="w-full border-none bg-transparent text-transparent cursor-pointer rounded px-1 py-1 text-sm resize-none"
+            style={{ 
+              minHeight: '24px',
+              height: '24px',
+              overflow: 'hidden'
+            }}
+          />
+        )}
         {!effectiveExpanded && value && !isNullScript(value) && (
           <div 
             className="absolute inset-0 flex items-center justify-start pointer-events-none"
