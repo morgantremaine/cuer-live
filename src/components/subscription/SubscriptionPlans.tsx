@@ -204,13 +204,13 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
         {/* Scrollable Plans Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-2"
+          className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-8"
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {PLANS.map((plan) => (
             <Card
               key={plan.name}
-              className={`flex-shrink-0 w-80 relative transform transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+              className={`flex-shrink-0 w-80 relative transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:z-20 ${
                 plan.popular
                   ? 'border-2 border-blue-500 dark:border-blue-400 ring-4 ring-blue-500/20 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50'
                   : 'border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
@@ -250,7 +250,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
               </div>
               
               <div className="py-6">
-                <div className={`text-4xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
+                <div className={`text-5xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
                   ${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
