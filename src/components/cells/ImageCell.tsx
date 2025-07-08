@@ -437,37 +437,10 @@ const ImageCell = ({
             })()
           ) : (
             <div 
-              className="w-full min-h-8 flex items-center text-sm break-words overflow-wrap-anywhere"
+              className="w-full h-8 flex items-center text-sm"
               style={{ color: textColor || '#666' }}
             >
-              {(() => {
-                if (imageError) {
-                  return 'Invalid image URL';
-                }
-                
-                if (!internalValue?.trim()) {
-                  return '';
-                }
-                
-                // Check if it's a valid URL and make it clickable
-                try {
-                  const url = new URL(internalValue);
-                  return (
-                    <a 
-                      href={internalValue}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline break-all"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {internalValue}
-                    </a>
-                  );
-                } catch {
-                  // Not a valid URL, show as regular text
-                  return internalValue;
-                }
-              })()}
+              {imageError ? 'Invalid image URL' : (internalValue || '')}
             </div>
           )}
         </div>
