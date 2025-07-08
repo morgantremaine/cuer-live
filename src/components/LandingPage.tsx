@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Users, Bot, Share2, Monitor, Upload, Eye, Radio, FileText, Zap, Star, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
+import { LandingPagePricing } from '@/components/LandingPagePricing';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [pricingInterval, setPricingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleGetStarted = () => {
     if (user) {
@@ -495,6 +497,23 @@ const LandingPage = () => {
             />
           </div>
         </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Choose the perfect plan for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">your team</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Start with any plan and scale as your team grows. All plans include the core features you need for professional broadcast production.
+          </p>
+        </div>
+        
+        <LandingPagePricing 
+          interval={pricingInterval}
+          onIntervalChange={setPricingInterval}
+        />
       </div>
 
       {/* CTA Section */}
