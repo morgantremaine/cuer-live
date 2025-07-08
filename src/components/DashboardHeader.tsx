@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, LogOut, HelpCircle } from 'lucide-react'
+import { ArrowLeft, User, LogOut, HelpCircle, Crown } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +58,13 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >
                   Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => navigate('/subscription')}
+                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Subscription
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={handleHelpClick}

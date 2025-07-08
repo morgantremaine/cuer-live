@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardHeader from '@/components/DashboardHeader'
 import TeamManagement from '@/components/TeamManagement'
+import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -118,12 +119,15 @@ const AccountManagement = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
             <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Profile
             </TabsTrigger>
             <TabsTrigger value="security" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Security
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+              Subscription
             </TabsTrigger>
             <TabsTrigger value="team" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Team
@@ -210,6 +214,10 @@ const AccountManagement = () => {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="subscription">
+            <SubscriptionStatus />
           </TabsContent>
 
           <TabsContent value="team">
