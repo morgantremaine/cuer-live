@@ -1,7 +1,5 @@
 
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import RundownContextMenu from './RundownContextMenu';
 import RegularRowContent from './row/RegularRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
@@ -30,6 +28,10 @@ interface RegularRowProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -63,29 +65,16 @@ const RegularRow = (props: RegularRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
-    onJumpToHere
+    onJumpToHere,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
+    isDragging
   } = props;
 
-  // @dnd-kit sortable hook
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isDndKitDragging,
-  } = useSortable({ 
-    id: item.id,
-    disabled: false // Enable dragging for this row
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   const { rowClass, backgroundColorOverride } = useRowStyling({
-    isDragging: isDndKitDragging,
+    isDragging,
     isDraggingMultiple,
     isSelected,
     isCurrentlyPlaying,
@@ -121,6 +110,41 @@ const RegularRow = (props: RegularRowProps) => {
     onJumpToHere
   });
 
+  // Enhanced drag start handler with better text selection detection
+  const handleDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check for text selection or input focus
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const hasTextSelection = window.getSelection()?.toString().length > 0;
+    const isContentEditable = target.contentEditable === 'true';
+    
+    // Check if target is within an expanded script cell or any editable area
+    const isInExpandedCell = target.closest('.expandable-script-cell') !== null;
+    const isInEditableArea = target.closest('[contenteditable="true"]') !== null || 
+                            target.closest('textarea') !== null || 
+                            target.closest('input') !== null;
+    
+    // Check if we're in an active editing state by looking for focused text inputs
+    const activeElement = document.activeElement as HTMLElement;
+    const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
+                             activeElement?.tagName === 'INPUT' ||
+                             activeElement?.contentEditable === 'true';
+    
+    if (isTextInput || hasTextSelection || isContentEditable || isInExpandedCell || isInEditableArea || isActivelyEditing) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    onDragStart(e, index);
+  };
+
+  // Enhanced drag end handler
+  const handleDragEnd = (e: React.DragEvent) => {
+    onDragEnd(e);
+  };
+
   const backgroundColor = backgroundColorOverride || 
     (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
 
@@ -145,16 +169,20 @@ const RegularRow = (props: RegularRowProps) => {
       onJumpToHere={handleJumpToHere}
     >
       <tr 
-        ref={setNodeRef}
-        style={{ ...style, backgroundColor }}
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer ${
-          isDndKitDragging ? 'opacity-50' : ''
-        }`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
+        style={{ backgroundColor }}
         data-item-id={item.id}
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={onDragOver}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDrop(e, index);
+        }}
+        onDragEnd={handleDragEnd}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
-        {...attributes}
-        {...listeners}
       >
         <RegularRowContent
           item={item}

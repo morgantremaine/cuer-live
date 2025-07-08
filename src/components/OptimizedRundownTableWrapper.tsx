@@ -30,6 +30,11 @@ interface OptimizedRundownTableWrapperProps {
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
   onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onPasteRows: () => void;
@@ -45,6 +50,11 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   startTime,
   currentSegmentId,
   columnExpandState,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
   ...restProps
 }) => {
   // Use header collapse functionality
@@ -69,6 +79,72 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     return items.findIndex(item => item.id === visibleItem.id);
   }, [items, visibleItems]);
 
+  // Map original item indexes to visible item indexes (for drop indicator)
+  const getVisibleIndex = React.useCallback((originalIndex: number): number => {
+    if (originalIndex < 0 || originalIndex >= items.length) return -1;
+    const originalItem = items[originalIndex];
+    return visibleItems.findIndex(item => item.id === originalItem.id);
+  }, [items, visibleItems]);
+
+  // Enhanced drag start that maps visible to original indexes AND handles header groups
+  const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
+    const originalIndex = getOriginalIndex(visibleIndex);
+    
+    if (originalIndex === -1) {
+      return;
+    }
+    
+    const item = items[originalIndex];
+    
+    // Check if this is a collapsed header and get all its items
+    let draggedIds: string[] = [];
+    let isHeaderGroup = false;
+    
+    if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
+      // Collapsed header group
+      draggedIds = getHeaderGroupItemIds(item.id);
+      isHeaderGroup = true;
+    } else if (restProps.selectedRows && restProps.selectedRows.size > 1 && restProps.selectedRows.has(item.id)) {
+      // Multiple selection
+      draggedIds = Array.from(restProps.selectedRows);
+      isHeaderGroup = false;
+    } else {
+      // Single item
+      draggedIds = [item.id];
+      isHeaderGroup = false;
+    }
+    
+    // Store the enhanced drag info
+    const dragInfo = {
+      draggedIds,
+      isHeaderGroup,
+      originalIndex,
+      enhancedHandlerUsed: true // Flag to prevent original handler from overwriting
+    };
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
+    
+    // Now call the original handler to set drag state, but it won't overwrite our data
+    // because we've already set it in dataTransfer
+    if (onDragStart) {
+      onDragStart(e, originalIndex);
+    }
+  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
+
+  // Enhanced drop that maps visible to original indexes  
+  const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
+    const originalIndex = getOriginalIndex(visibleIndex);
+    
+    if (originalIndex === -1) {
+      return;
+    }
+    
+    if (onDrop) {
+      onDrop(e, originalIndex);
+    }
+  }, [getOriginalIndex, onDrop]);
+
   // Enhanced row select that maps visible to original indexes
   const handleEnhancedRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean) => {
     const originalIndex = getOriginalIndex(visibleIndex);
@@ -81,6 +157,20 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick);
     }
   }, [getOriginalIndex, restProps.onRowSelect]);
+
+  // Enhanced drag over that maps visible to original indexes
+  const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, visibleIndex?: number) => {
+    if (visibleIndex !== undefined) {
+      const originalIndex = getOriginalIndex(visibleIndex);
+      if (originalIndex !== -1 && onDragOver) {
+        onDragOver(e, originalIndex);
+      }
+    } else {
+      if (onDragOver) {
+        onDragOver(e);
+      }
+    }
+  }, [getOriginalIndex, onDragOver]);
 
   // Create optimized getRowNumber function
   const getRowNumber = React.useCallback((index: number) => {
@@ -117,6 +207,14 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       onToggleHeaderCollapse={toggleHeaderCollapse}
       isHeaderCollapsed={isHeaderCollapsed}
       onRowSelect={handleEnhancedRowSelect}
+      onDragStart={handleEnhancedDragStart}
+      onDrop={handleEnhancedDrop}
+      onDragOver={handleEnhancedDragOver}
+      onDragLeave={onDragLeave}
+      onDragEnd={onDragEnd}
+      // Map dropTargetIndex from original space to visible space
+      dropTargetIndex={restProps.dropTargetIndex !== null ? getVisibleIndex(restProps.dropTargetIndex) : null}
+      draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}
     />
   );
 };

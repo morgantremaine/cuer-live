@@ -1,6 +1,5 @@
+
 import React from 'react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import RundownContextMenu from './RundownContextMenu';
 import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
@@ -27,6 +26,10 @@ interface HeaderRowProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onDeleteRow: (id: string) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: (e: React.DragEvent) => void;
   onCopySelectedRows: () => void;
   onDeleteSelectedRows: () => void;
   onToggleColorPicker: (itemId: string) => void;
@@ -46,7 +49,6 @@ const HeaderRow = (props: HeaderRowProps) => {
     item,
     index,
     rowNumber,
-    headerDuration,
     selectedRowsCount = 1,
     selectedRows,
     isSelected = false,
@@ -54,40 +56,23 @@ const HeaderRow = (props: HeaderRowProps) => {
     hasClipboardData = false,
     currentSegmentId,
     isCollapsed = false,
-    onToggleCollapse,
     onColorSelect,
     onClearSelection,
     onAddRow,
-    onAddHeader
+    onAddHeader,
+    onToggleCollapse,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
+    isDragging
   } = props;
 
-  // @dnd-kit sortable hook
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isDndKitDragging,
-  } = useSortable({ 
-    id: item.id,
-    disabled: false // Enable dragging for this row
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const { rowClass, backgroundColorOverride } = useRowStyling({
-    isDragging: isDndKitDragging,
-    isDraggingMultiple: false,
+  const { rowClass } = useRowStyling({
+    isDragging,
     isSelected,
-    isCurrentlyPlaying: false,
-    status: 'upcoming' as const,
-    color: item.color,
-    isFloating: item.isFloating,
-    isFloated: item.isFloated
+    isHeader: true,
+    color: item.color
   });
 
   const {
@@ -96,8 +81,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     handleContextMenuCopy,
     handleContextMenuDelete,
     handleContextMenuColor,
-    handleContextMenuPaste,
-    handleJumpToHere
+    handleContextMenuPaste
   } = useRowEventHandlers({
     item,
     index,
@@ -108,15 +92,34 @@ const HeaderRow = (props: HeaderRowProps) => {
     onDeleteSelectedRows: props.onDeleteSelectedRows,
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
-    onToggleFloat: undefined,
     selectedRows,
-    onPasteRows: props.onPasteRows,
-    onClearSelection,
-    onJumpToHere: undefined
+    onPasteRows: props.onPasteRows
   });
 
-  const backgroundColor = backgroundColorOverride || 
-    (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
+  // Enhanced drag start handler with better text selection detection
+  const handleDragStart = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check for text selection or input focus
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const hasTextSelection = window.getSelection()?.toString().length > 0;
+    const isContentEditable = target.contentEditable === 'true';
+    
+    if (isTextInput || hasTextSelection || isContentEditable) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    onDragStart(e, index);
+  };
+
+  // Enhanced drag end handler
+  const handleDragEnd = (e: React.DragEvent) => {
+    onDragEnd(e);
+  };
+
+  const backgroundColor = item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined;
 
   return (
     <RundownContextMenu
@@ -138,21 +141,25 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        ref={setNodeRef}
-        style={{ ...style, backgroundColor }}
-        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14 ${
-          isDndKitDragging ? 'opacity-50' : ''
-        }`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
+        style={{ backgroundColor }}
         data-item-id={item.id}
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={onDragOver}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDrop(e, index);
+        }}
+        onDragEnd={handleDragEnd}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
-        {...attributes}
-        {...listeners}
       >
         <HeaderRowContent
           item={item}
           columns={props.columns}
-          headerDuration={headerDuration}
+          headerDuration={props.headerDuration}
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
           currentSegmentId={currentSegmentId}
