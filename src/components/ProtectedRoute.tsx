@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requiresSubscription = false }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth()
-  const { subscribed, grandfathered, loading: subscriptionLoading } = useSubscription()
+  const { subscribed, grandfathered, access_type, loading: subscriptionLoading } = useSubscription()
 
   // Show loading while auth or subscription is being checked
   if (authLoading || (user && subscriptionLoading)) {
@@ -31,7 +31,7 @@ const ProtectedRoute = ({ children, requiresSubscription = false }: ProtectedRou
   // If subscription is required, check subscription status
   if (requiresSubscription) {
     // Allow access if user is subscribed, grandfathered, or has team access
-    const hasAccess = subscribed || grandfathered;
+    const hasAccess = subscribed || grandfathered || access_type === 'team_member';
     if (!hasAccess) {
       return <Navigate to="/subscription" replace />
     }
