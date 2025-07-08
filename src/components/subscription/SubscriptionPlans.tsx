@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Users } from 'lucide-react';
+import { Check, Crown, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const PLANS = [
@@ -91,9 +91,33 @@ interface SubscriptionPlansProps {
 
 export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPlansProps) => {
   const { subscription_tier, createCheckout, loading } = useSubscription();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const isCurrentPlan = (planName: string) => {
     return subscription_tier === planName;
+  };
+
+  // Center Studio plan on mount
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const studioIndex = PLANS.findIndex(plan => plan.name === 'Studio');
+      const cardWidth = 320; // Approximate card width + gap
+      const scrollPosition = (studioIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+      container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+    }
+  }, []);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -127,21 +151,47 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
         </div>
       </div>
 
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        {PLANS.map((plan) => (
-          <Card
-            key={plan.name}
-            className={`relative ${
-              plan.popular
-                ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
-                : 'border-gray-200 dark:border-gray-700'
-            } ${
-              isCurrentPlan(plan.name)
-                ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500'
-                : 'bg-white dark:bg-gray-800'
-            }`}
-          >
+      {/* Plans Carousel */}
+      <div className="relative">
+        {/* Navigation Arrows */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
+          onClick={scrollLeft}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg"
+          onClick={scrollRight}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+
+        {/* Scrollable Plans Container */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-2"
+          style={{ scrollSnapType: 'x mandatory' }}
+        >
+          {PLANS.map((plan) => (
+            <Card
+              key={plan.name}
+              className={`flex-shrink-0 w-80 relative ${
+                plan.popular
+                  ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
+                  : 'border-gray-200 dark:border-gray-700'
+              } ${
+                isCurrentPlan(plan.name)
+                  ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500'
+                  : 'bg-white dark:bg-gray-800'
+              }`}
+              style={{ scrollSnapAlign: 'center' }}
+            >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-blue-500 text-white">
@@ -210,6 +260,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
           </Card>
         ))}
       </div>
+    </div>
     </div>
   );
 };
