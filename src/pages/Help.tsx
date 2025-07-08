@@ -53,7 +53,7 @@ const Help = () => {
               <div className="mt-6">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Special Column Features</h3>
                 <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
-                  <li><strong>Images Column:</strong> Click on any cell in the images column and paste an image URL. The image will display automatically if it's a valid image link.</li>
+                  <li><strong>Images Column:</strong> Click on any cell in the images column and paste an image URL. The image will display automatically if it's a valid public image link.</li>
                   <li><strong>Script & Notes Columns:</strong> These columns are expandable - click on them to see the full content in a larger, easier-to-read format.</li>
                 </ul>
               </div>
