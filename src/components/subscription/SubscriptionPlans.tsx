@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -121,20 +121,35 @@ interface SubscriptionPlansProps {
 export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPlansProps) => {
   const { subscription_tier, createCheckout, loading } = useSubscription();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showArrows, setShowArrows] = useState(false);
 
   const isCurrentPlan = (planName: string) => {
     return subscription_tier === planName;
   };
 
-  // Center Studio plan on mount
+  // Center Studio plan on mount and check if arrows are needed
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const studioIndex = PLANS.findIndex(plan => plan.name === 'Studio');
-      const cardWidth = 320; // Approximate card width + gap
-      const scrollPosition = (studioIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
-      container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
-    }
+    const checkArrowsNeeded = () => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const needsScroll = container.scrollWidth > container.clientWidth;
+        setShowArrows(needsScroll);
+        
+        // Center Studio plan if arrows are needed
+        if (needsScroll) {
+          const studioIndex = PLANS.findIndex(plan => plan.name === 'Studio');
+          const cardWidth = 320; // Approximate card width + gap
+          const scrollPosition = (studioIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+          container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+        }
+      }
+    };
+
+    // Check initially and on resize
+    checkArrowsNeeded();
+    window.addEventListener('resize', checkArrowsNeeded);
+    
+    return () => window.removeEventListener('resize', checkArrowsNeeded);
   }, []);
 
   const scrollLeft = () => {
@@ -182,29 +197,35 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
 
       {/* Plans Carousel */}
       <div className="relative">
-        {/* Navigation Arrows */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
-          onClick={scrollLeft}
-        >
-          <ChevronLeft className="w-4 h-4 text-black" />
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
-          onClick={scrollRight}
-        >
-          <ChevronRight className="w-4 h-4 text-black" />
-        </Button>
+        {/* Navigation Arrows - Only show when scrolling is needed */}
+        {showArrows && (
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
+              onClick={scrollLeft}
+            >
+              <ChevronLeft className="w-4 h-4 text-black" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
+              onClick={scrollRight}
+            >
+              <ChevronRight className="w-4 h-4 text-black" />
+            </Button>
+          </>
+        )}
 
         {/* Scrollable Plans Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-8"
+          className={`flex gap-6 overflow-x-auto scrollbar-hide py-8 ${
+            showArrows ? 'px-12' : 'px-6 justify-center'
+          }`}
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {PLANS.map((plan) => (
