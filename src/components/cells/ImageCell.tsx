@@ -241,8 +241,9 @@ const ImageCell = ({
                 handleCellClick(e);
               }}
               style={{ 
-                maxHeight: 'calc(100vh - 200px)', // Allow scaling with row height
-                maxWidth: '200px' // Reasonable max width for table cell
+                maxHeight: '100%', // Scale with row height
+                width: 'auto', // Maintain aspect ratio
+                maxWidth: '100%' // Respect column width
               }}
             />
           ) : isFigmaFile ? (
