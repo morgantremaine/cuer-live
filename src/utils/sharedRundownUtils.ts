@@ -2,9 +2,14 @@ import { RundownItem } from '@/types/rundown';
 import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
 
 export const getVisibleColumns = (columns: any[]) => {
-  if (!columns) return [];
+  if (!columns || !Array.isArray(columns)) return [];
   // Filter out notes column and only show visible columns
-  return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
+  // Make sure to handle cases where isVisible might be undefined (should default to true)
+  return columns.filter(col => 
+    col && 
+    col.key !== 'notes' && 
+    (col.isVisible === undefined || col.isVisible === true)
+  );
 };
 
 export const getRowNumber = (index: number, items: RundownItem[]) => {
@@ -73,9 +78,10 @@ export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: 
     value = item.customFields?.[column.key] || '';
   } else {
     switch (column.key) {
+      case 'name':
       case 'segmentName':
         // For regular items, show the name/segmentName
-        value = item.segmentName || item.name || '';
+        value = item.name || item.segmentName || '';
         break;
       case 'duration':
         value = item.duration || '';
