@@ -168,6 +168,9 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           <span className="text-sm font-medium text-white">
             {activeNote?.title || 'Notes'}
           </span>
+          <span className="text-xs text-gray-400 ml-2">
+            - go to blueprints page to manage notes
+          </span>
         </div>
         
         <div className="flex items-center space-x-1">
