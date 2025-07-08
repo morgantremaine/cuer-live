@@ -259,8 +259,8 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             </CardContent>
           </Card>
         ))}
+        </div>
       </div>
-    </div>
     </div>
   );
 };
