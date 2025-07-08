@@ -194,11 +194,11 @@ const ImageCell = ({
 
   return (
     <div 
-      className="relative w-full p-1 cursor-pointer"
+      className="relative w-full p-1 cursor-pointer flex items-center"
       style={{ 
         backgroundColor,
-        minHeight: isValidImageUrl ? '72px' : '32px',
-        height: isValidImageUrl ? '72px' : 'auto'
+        minHeight: '32px',
+        height: 'auto'
       }}
       onClick={handleCellClick}
     >
@@ -225,14 +225,14 @@ const ImageCell = ({
         />
       ) : (
         <div 
-          className="w-full h-full cursor-pointer"
+          className="w-full h-full cursor-pointer flex items-center"
           onClick={handleCellClick}
         >
           {isValidImageUrl && isLikelyImageUrl ? (
             <img
               src={displayUrl}
               alt="Rundown image"
-              className="w-full h-full object-contain rounded"
+              className="max-w-full h-auto object-contain rounded"
               onError={handleImageError}
               onLoad={handleImageLoad}
               onClick={(e) => {
@@ -240,7 +240,10 @@ const ImageCell = ({
                 e.stopPropagation();
                 handleCellClick(e);
               }}
-              style={{ maxHeight: '68px' }}
+              style={{ 
+                maxHeight: 'calc(100vh - 200px)', // Allow scaling with row height
+                maxWidth: '200px' // Reasonable max width for table cell
+              }}
             />
           ) : isFigmaFile ? (
             <div className="w-full h-16 flex items-center justify-between bg-gray-100 rounded border border-gray-300 p-2">

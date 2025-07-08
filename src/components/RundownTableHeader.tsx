@@ -83,6 +83,14 @@ const RundownTableHeader = ({
     // Disable auto-resize for script and notes columns as they have expandable cells
     if (column.key === 'script' || column.key === 'notes') return;
 
+    // Special handling for images column
+    if (column.key === 'images' || column.id === 'images') {
+      // For images column, set a reasonable width based on typical image display
+      const imageColumnWidth = 200; // Max width for images as set in the component
+      updateColumnWidth(column.id, imageColumnWidth + 16); // Add padding
+      return;
+    }
+
     // Create a temporary element to measure text width with EXACT TextAreaCell styling
     const measureElement = document.createElement('div');
     measureElement.style.position = 'absolute';
