@@ -9,7 +9,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
-  signUp: (email: string, password: string, fullName?: string, inviteCode?: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
   updatePassword: (password: string) => Promise<{ error: any }>
   updateProfile: (fullName: string) => Promise<{ error: any }>
@@ -98,16 +98,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, fullName?: string, inviteCode?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
     logger.debug('Attempting to sign up', { email })
     
     try {
-      // For normal signups (from login page), require invite code
-      // For team invitation signups, inviteCode will be undefined and we skip validation
-      if (inviteCode !== undefined && inviteCode !== 'cuer2025') {
-        return { error: { message: 'Invalid invite code. Please enter a valid invite code to create an account.' } }
-      }
-      
       const { error } = await supabase.auth.signUp({
         email,
         password,

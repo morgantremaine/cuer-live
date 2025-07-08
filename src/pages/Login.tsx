@@ -12,7 +12,7 @@ import CuerLogo from '@/components/common/CuerLogo'
 const Login = () => {
   // Separate form states for clarity
   const [signInData, setSignInData] = useState({ email: '', password: '' })
-  const [signUpData, setSignUpData] = useState({ email: '', password: '', fullName: '', inviteCode: '', agreeToTerms: false })
+  const [signUpData, setSignUpData] = useState({ email: '', password: '', fullName: '', agreeToTerms: false })
   const [resetEmail, setResetEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
@@ -75,7 +75,7 @@ const Login = () => {
     setLoading(true)
     
     try {
-      const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName, signUpData.inviteCode)
+      const { error } = await signUp(signUpData.email, signUpData.password, signUpData.fullName)
       
       if (error) {
         toast({
@@ -86,7 +86,7 @@ const Login = () => {
       } else {
         setShowEmailConfirmation(true)
         // Clear form on success
-        setSignUpData({ email: '', password: '', fullName: '', inviteCode: '', agreeToTerms: false })
+        setSignUpData({ email: '', password: '', fullName: '', agreeToTerms: false })
       }
     } catch (err) {
       toast({
@@ -328,19 +328,6 @@ const Login = () => {
                         value={signUpData.password}
                         onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
                         autoComplete="new-password"
-                        required
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-invite-code" className="text-gray-300">Invite Code</Label>
-                      <Input
-                        id="signup-invite-code"
-                        name="inviteCode"
-                        type="text"
-                        value={signUpData.inviteCode}
-                        onChange={(e) => setSignUpData({ ...signUpData, inviteCode: e.target.value })}
-                        placeholder="Enter invite code"
                         required
                         className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
                       />
