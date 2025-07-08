@@ -130,6 +130,36 @@ const ImageCell = ({
     return 'Google Drive';
   };
 
+  // Helper function to extract Google Docs document name from URL
+  const getGoogleDocsName = (url: string): string => {
+    try {
+      // Google Docs URL pattern: https://docs.google.com/document/d/{doc-id}/edit?...
+      if (url.includes('docs.google.com/document/')) {
+        return 'Google Doc';
+      }
+      
+      // Google Sheets URL pattern: https://docs.google.com/spreadsheets/d/{sheet-id}/edit?...
+      if (url.includes('docs.google.com/spreadsheets/')) {
+        return 'Google Sheet';
+      }
+      
+      // Google Slides URL pattern: https://docs.google.com/presentation/d/{presentation-id}/edit?...
+      if (url.includes('docs.google.com/presentation/')) {
+        return 'Google Slides';
+      }
+      
+      // Generic Google Docs
+      if (url.includes('docs.google.com/')) {
+        return 'Google Docs';
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Google Docs';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInternalValue(newValue);
@@ -192,11 +222,14 @@ const ImageCell = ({
     internalValue.includes('drive.google.com') && 
     (internalValue.includes('/folders/') || internalValue.includes('/file/d/'));
 
+  // Check if it's a Google Docs file
+  const isGoogleDocsFile = internalValue && internalValue.includes('docs.google.com/');
+
   // Check if it's a Figma design file
   const isFigmaFile = internalValue && internalValue.includes('figma.com');
 
-  // Check if it looks like an image URL (but exclude Google Drive folders/files)
-  const isLikelyImageUrl = internalValue && !isGoogleDriveFile && (
+  // Check if it looks like an image URL (but exclude Google Drive folders/files and Google Docs)
+  const isLikelyImageUrl = internalValue && !isGoogleDriveFile && !isGoogleDocsFile && (
     /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(internalValue) ||
     /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(internalValue) ||
     internalValue.includes('images') ||
@@ -315,6 +348,25 @@ const ImageCell = ({
                 title="Open in Google Drive"
               >
                 <ExternalLink className="h-4 w-4 text-blue-600" />
+              </button>
+            </div>
+          ) : isGoogleDocsFile ? (
+            <div className="w-full h-16 flex items-center justify-between bg-green-50 rounded border border-green-200 p-2">
+              <div className="flex items-center space-x-2 text-green-700">
+                <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xs">
+                  D
+                </div>
+                <span className="text-sm font-medium">{getGoogleDocsName(internalValue)}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(internalValue, '_blank');
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded hover:bg-green-200 transition-colors"
+                title="Open in Google Docs"
+              >
+                <ExternalLink className="h-4 w-4 text-green-600" />
               </button>
             </div>
           ) : (
