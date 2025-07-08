@@ -177,6 +177,7 @@ function calculateUnlockedRowNumbers(items: RundownItem[]): RundownItem[] {
 
 // Helper function to calculate locked row numbers (with letters: 5A, 5B, etc.)
 function calculateLockedRowNumbers(items: RundownItem[]): RundownItem[] {
+  console.log('🔒 calculateLockedRowNumbers called with', items.length, 'items');
   return items.map((item, index) => {
     if (isHeaderItem(item)) {
       return { ...item, rowNumber: '' }; // Headers don't have numbers
@@ -276,9 +277,11 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     });
 
     // Calculate row numbers based on locked state
+    console.log('🔒 Row numbering - isLocked:', state.isLocked, 'items count:', itemsWithCalculatedTimes.length);
     const itemsWithRowNumbers = state.isLocked ? 
       calculateLockedRowNumbers(itemsWithCalculatedTimes) : 
       calculateUnlockedRowNumbers(itemsWithCalculatedTimes);
+    console.log('🔢 Row numbers calculated:', itemsWithRowNumbers.map(i => ({ name: i.name, rowNumber: i.rowNumber })));
 
     // Calculate total runtime (excluding floated items)
     const totalSeconds = state.items.reduce((acc, item) => {
