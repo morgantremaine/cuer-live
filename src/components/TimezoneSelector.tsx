@@ -20,7 +20,7 @@ interface TimezoneSelectorProps {
 
 const timezones = [
   { value: 'America/New_York', label: 'New York (UTC-5)' },
-  { value: 'America/Detroit', label: 'Columbus, Ohio (UTC-5)' },
+  { value: 'America/Detroit', label: 'Columbus (UTC-5)' },
   { value: 'America/Chicago', label: 'Chicago (UTC-6)' },
   { value: 'America/Denver', label: 'Denver (UTC-7)' },
   { value: 'America/Los_Angeles', label: 'Los Angeles (UTC-8)' },
@@ -29,6 +29,7 @@ const timezones = [
   { value: 'Europe/Berlin', label: 'Berlin (UTC+1)' },
   { value: 'Asia/Riyadh', label: 'Riyadh (UTC+3)' },
   { value: 'Asia/Dubai', label: 'Dubai (UTC+4)' },
+  { value: 'Asia/Seoul', label: 'Seoul (UTC+9)' },
   { value: 'Asia/Tokyo', label: 'Tokyo (UTC+9)' },
   { value: 'Asia/Shanghai', label: 'Shanghai (UTC+8)' },
   { value: 'Australia/Sydney', label: 'Sydney (UTC+10)' },
