@@ -174,7 +174,7 @@ const ExpandableScriptCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="flex items-start space-x-1 w-full">
+    <div className="flex items-start space-x-1 w-full expandable-script-cell">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -228,6 +228,7 @@ const ExpandableScriptCell = ({
         {effectiveExpanded && !isEditing && (
           <div
             onClick={handleClick}
+            onMouseDown={(e) => e.stopPropagation()}
             className="w-full cursor-text rounded px-1 py-1 text-sm min-h-[24px]"
             style={{ 
               color: textColor || undefined,

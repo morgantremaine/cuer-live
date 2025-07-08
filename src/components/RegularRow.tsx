@@ -119,7 +119,13 @@ const RegularRow = (props: RegularRowProps) => {
     const hasTextSelection = window.getSelection()?.toString().length > 0;
     const isContentEditable = target.contentEditable === 'true';
     
-    if (isTextInput || hasTextSelection || isContentEditable) {
+    // Check if target is within an expanded script cell or any editable area
+    const isInExpandedCell = target.closest('.expandable-script-cell') !== null;
+    const isInEditableArea = target.closest('[contenteditable="true"]') !== null || 
+                            target.closest('textarea') !== null || 
+                            target.closest('input') !== null;
+    
+    if (isTextInput || hasTextSelection || isContentEditable || isInExpandedCell || isInEditableArea) {
       e.preventDefault();
       e.stopPropagation();
       return;
