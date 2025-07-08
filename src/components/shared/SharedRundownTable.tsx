@@ -4,7 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
-import { Play, ChevronDown, ChevronRight } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -47,9 +47,155 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Helper function to convert Dropbox links to direct image URLs
+  const convertDropboxUrl = (url: string): string => {
+    // Check if it's a Dropbox sharing link
+    if (url.includes('dropbox.com') && url.includes('dl=0')) {
+      // Convert from sharing link to direct download by changing dl=0 to dl=1
+      return url.replace('dl=0', 'dl=1');
+    }
+    
+    // Check for Dropbox scl format and convert to direct link
+    if (url.includes('dropbox.com/scl/')) {
+      return url.replace('dl=0', 'dl=1');
+    }
+    
+    return url;
+  };
+
+  // Helper function to extract Figma project name from URL
+  const getFigmaProjectName = (url: string): string => {
+    try {
+      // Figma URL pattern: https://www.figma.com/design/{file-id}/{file-name}?query-params
+      const urlPath = new URL(url).pathname;
+      const pathParts = urlPath.split('/');
+      
+      // Find the file name part (usually after /design/{file-id}/)
+      if (pathParts.length >= 4 && pathParts[1] === 'design') {
+        const fileName = pathParts[3];
+        // Decode URL encoding and replace dashes/underscores with spaces
+        return decodeURIComponent(fileName)
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize first letter of each word
+      }
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Figma Design';
+  };
+
+  // Helper function to extract Google Drive folder/file name from URL
+  const getGoogleDriveName = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      
+      // Check if it's a folder
+      if (url.includes('/folders/')) {
+        return 'Google Drive Folder';
+      }
+      
+      // Check if it's a file
+      if (url.includes('/file/d/')) {
+        return 'Google Drive File';
+      }
+      
+      // Try to extract name from search params or path
+      const searchParams = urlObj.searchParams;
+      if (searchParams.has('usp')) {
+        return 'Google Drive Item';
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Google Drive';
+  };
+
+  // Helper function to extract Google Docs document name from URL
+  const getGoogleDocsName = (url: string): string => {
+    try {
+      // Google Docs URL pattern: https://docs.google.com/document/d/{doc-id}/edit?...
+      if (url.includes('docs.google.com/document/')) {
+        return 'Google Doc';
+      }
+      
+      // Google Sheets URL pattern: https://docs.google.com/spreadsheets/d/{sheet-id}/edit?...
+      if (url.includes('docs.google.com/spreadsheets/')) {
+        return 'Google Sheet';
+      }
+      
+      // Google Slides URL pattern: https://docs.google.com/presentation/d/{presentation-id}/edit?...
+      if (url.includes('docs.google.com/presentation/')) {
+        return 'Google Slides';
+      }
+      
+      // Generic Google Docs
+      if (url.includes('docs.google.com/')) {
+        return 'Google Docs';
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Google Docs';
+  };
+
+  // Helper function to get Google Docs thumbnail URL
+  const getGoogleDocsThumbnail = (url: string): string | null => {
+    try {
+      let docId = null;
+      
+      // Extract document ID from different Google Docs URL formats
+      if (url.includes('docs.google.com/document/d/')) {
+        const docMatch = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+        if (docMatch) {
+          docId = docMatch[1];
+          return `https://docs.google.com/document/d/${docId}/preview`;
+        }
+      }
+      
+      if (url.includes('docs.google.com/spreadsheets/d/')) {
+        const sheetMatch = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+        if (sheetMatch) {
+          docId = sheetMatch[1];
+          return `https://docs.google.com/spreadsheets/d/${docId}/preview`;
+        }
+      }
+      
+      if (url.includes('docs.google.com/presentation/d/')) {
+        const slideMatch = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/);
+        if (slideMatch) {
+          docId = slideMatch[1];
+          return `https://docs.google.com/presentation/d/${docId}/preview`;
+        }
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return null
+    }
+    
+    return null;
+  };
+
   // Helper function to check if a URL is likely an image
   const isLikelyImageUrl = (url: string): boolean => {
     if (!url || !url.trim()) return false;
+    
+    // Check if it's a Google Drive file/folder (but not an image) first
+    const isGoogleDriveFile = url.includes('drive.google.com') && 
+      (url.includes('/folders/') || url.includes('/file/d/'));
+    
+    // Check if it's a Google Docs file
+    const isGoogleDocsFile = url.includes('docs.google.com/');
+    
+    // Exclude Google Drive folders/files and Google Docs from image detection
+    if (isGoogleDriveFile || isGoogleDocsFile) {
+      return false;
+    }
+    
     return (
       /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) ||
       /\.(jpg|jpeg|png|gif|webp|svg)\?/i.test(url) ||
@@ -57,7 +203,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       url.includes('photos') ||
       url.includes('imgur') ||
       url.includes('unsplash') ||
-      url.includes('drive.google.com') ||
+      (url.includes('drive.google.com') && /\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) ||
+      url.includes('dropbox.com') ||
       url.includes('gstatic.com') ||
       url.includes('amazonaws.com') ||
       url.includes('cloudinary.com')
@@ -89,6 +236,16 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       return convertedUrl;
     }
     
+    return url;
+  };
+
+  // Get the display URL (convert Google Drive or Dropbox links if necessary)
+  const getDisplayUrl = (url: string): string => {
+    if (url.includes('drive.google.com')) {
+      return convertGoogleDriveUrl(url);
+    } else if (url.includes('dropbox.com')) {
+      return convertDropboxUrl(url);
+    }
     return url;
   };
 
@@ -201,27 +358,123 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
     }
     
-    // Special handling for images column - render as image if it's a valid URL
-    if ((column.key === 'images' || column.id === 'images') && value && isLikelyImageUrl(value)) {
-      const displayUrl = convertGoogleDriveUrl(value);
-      return (
-        <div className="flex items-center justify-center h-16">
-          <img
-            src={displayUrl}
-            alt="Rundown image"
-            className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
-            onError={(e) => {
-              // If image fails to load, show the URL as text instead
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              const parent = target.parentElement;
-              if (parent) {
-                parent.innerHTML = `<span class="text-xs text-gray-500 truncate">${value}</span>`;
-              }
-            }}
-          />
-        </div>
-      );
+    // Special handling for images column
+    if ((column.key === 'images' || column.id === 'images') && value && value.trim()) {
+      // Check if it's a Google Drive file/folder (but not an image) first
+      const isGoogleDriveFile = value.includes('drive.google.com') && 
+        (value.includes('/folders/') || value.includes('/file/d/'));
+      
+      // Check if it's a Google Docs file
+      const isGoogleDocsFile = value.includes('docs.google.com/');
+      
+      // Check if it's a Figma design file
+      const isFigmaFile = value.includes('figma.com');
+      
+      // Check if it looks like an image URL (but exclude Google Drive folders/files and Google Docs)
+      const isLikelyImage = isLikelyImageUrl(value);
+      
+      if (isLikelyImage) {
+        const displayUrl = getDisplayUrl(value);
+        return (
+          <div className="flex items-center justify-center h-16">
+            <img
+              src={displayUrl}
+              alt="Rundown image"
+              className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
+              onError={(e) => {
+                // If image fails to load, show "Invalid image URL"
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = `<span class="text-xs text-gray-500">Invalid image URL</span>`;
+                }
+              }}
+            />
+          </div>
+        );
+      } else if (isFigmaFile) {
+        return (
+          <div className="w-full min-h-[32px] max-h-12 flex items-center justify-between bg-gray-100 rounded border border-gray-300 p-1 overflow-hidden">
+            <div className="flex items-center space-x-1 text-gray-700 min-w-0 flex-1">
+              <div className="w-3 h-3 bg-purple-500 rounded flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0">
+                F
+              </div>
+              <span className="text-xs font-medium truncate">{getFigmaProjectName(value)}</span>
+            </div>
+            <ExternalLink className="h-2 w-2 text-gray-600 flex-shrink-0 ml-1" />
+          </div>
+        );
+      } else if (isGoogleDriveFile) {
+        return (
+          <div className="w-full min-h-[32px] max-h-12 flex items-center justify-between bg-blue-50 rounded border border-blue-200 p-1 overflow-hidden">
+            <div className="flex items-center space-x-1 text-blue-700 min-w-0 flex-1">
+              <div className="w-3 h-3 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0">
+                G
+              </div>
+              <span className="text-xs font-medium truncate">{getGoogleDriveName(value)}</span>
+            </div>
+            <ExternalLink className="h-2 w-2 text-blue-600 flex-shrink-0 ml-1" />
+          </div>
+        );
+      } else if (isGoogleDocsFile) {
+        const thumbnailUrl = getGoogleDocsThumbnail(value);
+        
+        if (thumbnailUrl) {
+          return (
+            <div className="w-full h-auto flex flex-col space-y-1">
+              <img
+                src={thumbnailUrl}
+                alt={getGoogleDocsName(value)}
+                className="w-full h-auto object-contain rounded border border-green-200"
+                onError={(e) => {
+                  // If thumbnail fails to load, fall back to card view
+                  const target = e.target as HTMLImageElement;
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.innerHTML = `
+                      <div class="w-full min-h-[32px] max-h-12 flex items-center justify-between bg-green-50 rounded border border-green-200 p-1 overflow-hidden">
+                        <div class="flex items-center space-x-1 text-green-700 min-w-0 flex-1">
+                          <div class="w-3 h-3 bg-green-500 rounded flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0">
+                            D
+                          </div>
+                          <span class="text-xs font-medium truncate">${getGoogleDocsName(value)}</span>
+                        </div>
+                      </div>
+                    `;
+                  }
+                }}
+                style={{ 
+                  maxHeight: '80px',
+                }}
+              />
+              <div className="flex items-center justify-between text-xs text-green-700">
+                <span className="truncate">{getGoogleDocsName(value)}</span>
+                <ExternalLink className="h-2 w-2 flex-shrink-0 ml-1" />
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="w-full min-h-[32px] max-h-12 flex items-center justify-between bg-green-50 rounded border border-green-200 p-1 overflow-hidden">
+              <div className="flex items-center space-x-1 text-green-700 min-w-0 flex-1">
+                <div className="w-3 h-3 bg-green-500 rounded flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0">
+                  D
+                </div>
+                <span className="text-xs font-medium truncate">{getGoogleDocsName(value)}</span>
+              </div>
+              <ExternalLink className="h-2 w-2 text-green-600 flex-shrink-0 ml-1" />
+            </div>
+          );
+        }
+      } else {
+        // For any other content in images column, show "Invalid image URL"
+        return (
+          <div className="w-full min-h-8 flex items-center text-xs text-gray-500">
+            Invalid image URL
+          </div>
+        );
+      }
     }
     
     // Use expandable cell for script and notes columns
