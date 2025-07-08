@@ -359,6 +359,17 @@ const Dashboard = () => {
         {showMainContent && (
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
+              {/* Action buttons */}
+              <div className="flex gap-4 mb-6">
+                <CreateNewButton onClick={handleCreateNew} />
+                <CSVImportDialog onImport={handleCSVImport}>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Import CSV
+                  </Button>
+                </CSVImportDialog>
+              </div>
+
               <DashboardRundownGrid
                 title={folderTitle}
                 rundowns={filteredRundowns}
