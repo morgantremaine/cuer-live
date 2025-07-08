@@ -223,7 +223,9 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
         {/* Scrollable Plans Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex gap-6 overflow-x-auto scrollbar-hide px-12 py-8"
+          className={`flex gap-6 overflow-x-auto scrollbar-hide py-8 ${
+            showArrows ? 'px-12' : 'px-6 justify-center'
+          }`}
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {PLANS.map((plan) => (
