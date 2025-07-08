@@ -72,8 +72,8 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email, tier, interval });
 
-    const stripeKey = Deno.env.get("Stripe");
-    if (!stripeKey) throw new Error("Stripe secret key is not set");
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
