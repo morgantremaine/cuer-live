@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ScratchpadInlineTable from './ScratchpadInlineTable';
+import { sanitizeRichText } from '@/utils/sanitize';
 
 interface ScratchpadEnhancedDisplayProps {
   content: string;
@@ -93,7 +94,7 @@ const ScratchpadEnhancedDisplay = ({
           // Line breaks
           .replace(/\n/g, '<br />');
 
-        return <div key={index} dangerouslySetInnerHTML={{ __html: processedText }} />;
+        return <div key={index} dangerouslySetInnerHTML={{ __html: sanitizeRichText(processedText) }} />;
       }
       
       return null;

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Bot, User } from 'lucide-react';
 import { marked } from 'marked';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 interface ChatMessage {
   id: string;
@@ -40,12 +41,13 @@ const CuerChatMessages = ({
 
   const renderMessageContent = (content: string, role: 'user' | 'assistant') => {
     if (role === 'assistant') {
-      // Parse markdown for AI responses
+      // Parse markdown for AI responses and sanitize
       const htmlContent = marked(content);
+      const sanitizedHtml = typeof htmlContent === 'string' ? sanitizeHtml(htmlContent) : '';
       return (
         <div 
           className="prose prose-sm max-w-none [&>p]:mb-4 [&>p:last-child]:mb-0 [&>ul]:mb-4 [&>ol]:mb-4 [&>h1]:mb-3 [&>h2]:mb-3 [&>h3]:mb-3 [&>blockquote]:mb-4"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
+          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
       );
     } else {

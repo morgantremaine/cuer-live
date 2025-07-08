@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { ScratchpadNote } from '@/types/scratchpad';
+import { sanitizeRichText } from '@/utils/sanitize';
 
 interface ScratchpadNoteEditorProps {
   note: ScratchpadNote;
@@ -88,7 +89,7 @@ const ScratchpadNoteEditor = ({
           <div 
             key={index}
             className="min-h-[1.5rem]"
-            dangerouslySetInnerHTML={{ __html: processedLine || '&nbsp;' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichText(processedLine || '&nbsp;') }}
           />
         );
       });
