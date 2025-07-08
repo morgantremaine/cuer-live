@@ -849,7 +849,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 // We need to find the original index for this item
                 const originalIndex = itemsWithTimes.findIndex(({ item: originalItem }) => originalItem.id === item.id);
                 const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
-                const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
+                const isCurrentlyPlaying = isPlaying;
                 const isFloated = item.isFloating || item.isFloated;
                 const itemHasCustomColor = hasCustomColor(item);
                 
