@@ -177,60 +177,46 @@ function calculateUnlockedRowNumbers(items: RundownItem[]): RundownItem[] {
 
 // Helper function to calculate locked row numbers (with letters: 5A, 5B, etc.)
 function calculateLockedRowNumbers(items: RundownItem[]): RundownItem[] {
-  // Keep track of what the current base number should be for new items
-  const baseNumbers: number[] = [];
-  
   return items.map((item, index) => {
     if (isHeaderItem(item)) {
       return { ...item, rowNumber: '' }; // Headers don't have numbers
     }
 
-    // If item already has a rowNumber and is from when rundown was first locked, preserve it
-    if (item.rowNumber && item.rowNumber.match(/^\d+[A-Z]?$/)) {
-      return { ...item };
-    }
-    
-    // This is a new item that needs a number based on where it's inserted
-    // Find the item immediately before this one that has a row number
-    let insertAfterNumber = 0;
-    let itemsWithSameBase = 0;
-    
+    // Find the previous non-header item
+    let previousItem = null;
     for (let i = index - 1; i >= 0; i--) {
-      if (!isHeaderItem(items[i]) && items[i].rowNumber) {
-        const match = items[i].rowNumber.match(/^(\d+)([A-Z]?)$/);
-        if (match) {
-          const baseNum = parseInt(match[1]);
-          const letter = match[2];
-          
-          insertAfterNumber = baseNum;
-          
-          // Count how many items already have this base number
-          itemsWithSameBase = 0;
-          for (let j = i; j < index; j++) {
-            if (!isHeaderItem(items[j]) && items[j].rowNumber) {
-              const itemMatch = items[j].rowNumber.match(/^(\d+)([A-Z]?)$/);
-              if (itemMatch && parseInt(itemMatch[1]) === baseNum) {
-                itemsWithSameBase++;
-              }
-            }
-          }
-          break;
-        }
+      if (!isHeaderItem(items[i])) {
+        previousItem = items[i];
+        break;
       }
     }
-    
-    // If no previous item found, this should be row 1
-    if (insertAfterNumber === 0) {
-      insertAfterNumber = 1;
+
+    if (!previousItem) {
+      // This is the first item, number it as "1"
+      return { ...item, rowNumber: '1' };
     }
+
+    // Get the previous item's row number
+    const prevRowNumber = previousItem.rowNumber || '1';
     
-    // Generate the letter suffix
-    const letterSuffix = itemsWithSameBase > 0 ? String.fromCharCode(65 + itemsWithSameBase - 1) : '';
-    
-    return {
-      ...item,
-      rowNumber: `${insertAfterNumber}${letterSuffix}`
-    };
+    // Check if the previous row number has a letter (like "5A")
+    const match = prevRowNumber.match(/^(\d+)([A-Z]?)$/);
+    if (match) {
+      const baseNumber = parseInt(match[1]);
+      const currentLetter = match[2];
+      
+      if (currentLetter) {
+        // Previous item has a letter, increment the letter
+        const nextLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
+        return { ...item, rowNumber: `${baseNumber}${nextLetter}` };
+      } else {
+        // Previous item has no letter, this new item gets "A"
+        return { ...item, rowNumber: `${baseNumber}A` };
+      }
+    }
+
+    // Fallback to sequential numbering
+    return { ...item, rowNumber: (parseInt(prevRowNumber) + 1).toString() };
   });
 }
 
@@ -325,7 +311,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
       timeToSeconds,
       secondsToTime
     };
-  }, [state.items, state.startTime]);
+  }, [state.items, state.startTime, state.isLocked]);
 
   // Action creators
   const actions = useMemo(() => ({
