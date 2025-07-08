@@ -449,24 +449,8 @@ const ImageCell = ({
                   return '';
                 }
                 
-                // Check if it's a valid URL and make it clickable
-                try {
-                  const url = new URL(internalValue);
-                  return (
-                    <a 
-                      href={internalValue}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline break-all"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {internalValue}
-                    </a>
-                  );
-                } catch {
-                  // Not a valid URL, show as regular text
-                  return internalValue;
-                }
+                // For non-image URLs, just show "Invalid image URL"
+                return 'Invalid image URL';
               })()}
             </div>
           )}
