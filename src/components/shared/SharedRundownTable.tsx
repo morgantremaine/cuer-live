@@ -25,6 +25,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 }, ref) => {
   // State for managing expanded script/notes cells
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
+  // State for managing collapsed headers
+  const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
+  // State for managing column expand state (expand all cells in a column)
+  const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -295,6 +299,44 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const isCellExpanded = (itemId: string, columnKey: string): boolean => {
     const cellKey = `${itemId}-${columnKey}`;
     return expandedCells.has(cellKey);
+  };
+
+  // Helper function to toggle column expand state (expand/collapse all cells in a column)
+  const toggleColumnExpand = (columnKey: string) => {
+    const newState = !columnExpandState[columnKey];
+    setColumnExpandState(prev => ({ ...prev, [columnKey]: newState }));
+    
+    // Apply to all items
+    setExpandedCells(prev => {
+      const newSet = new Set(prev);
+      items.forEach(item => {
+        const cellKey = `${item.id}-${columnKey}`;
+        if (newState) {
+          newSet.add(cellKey);
+        } else {
+          newSet.delete(cellKey);
+        }
+      });
+      return newSet;
+    });
+  };
+
+  // Helper function to toggle header collapse state
+  const toggleHeaderCollapse = (headerId: string) => {
+    setCollapsedHeaders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(headerId)) {
+        newSet.delete(headerId);
+      } else {
+        newSet.add(headerId);
+      }
+      return newSet;
+    });
+  };
+
+  // Helper function to check if a header is collapsed
+  const isHeaderCollapsed = (headerId: string): boolean => {
+    return collapsedHeaders.has(headerId);
   };
 
   // Helper function to render expandable cell content for script and notes
@@ -735,23 +777,45 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 {visibleColumns.map((column) => {
                   const columnWidth = getColumnWidth(column);
                   return (
-                    <th
-                      key={column.id}
-                      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
-                        isDark 
-                          ? 'text-gray-300 border-gray-600 bg-gray-800' 
-                          : 'text-gray-500 border-gray-200 bg-gray-50'
-                      } ${
-                        ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                          ? 'print-time-column' 
-                          : 'print-content-column'
-                      }`}
-                      style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                    >
-                      <div className="truncate">
-                        {column.name}
-                      </div>
-                    </th>
+                     <th
+                       key={column.id}
+                       className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+                         isDark 
+                           ? 'text-gray-300 border-gray-600 bg-gray-800' 
+                           : 'text-gray-500 border-gray-200 bg-gray-50'
+                       } ${
+                         ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+                           ? 'print-time-column' 
+                           : 'print-content-column'
+                       }`}
+                       style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+                     >
+                       <div className="flex items-center space-x-1">
+                         {(column.key === 'script' || column.key === 'notes') && (
+                           <button
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               toggleColumnExpand(column.key);
+                             }}
+                             className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
+                               isDark 
+                                 ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
+                                 : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                             }`}
+                             title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
+                           >
+                             {columnExpandState[column.key] ? (
+                               <ChevronDown className="h-3 w-3" />
+                             ) : (
+                               <ChevronRight className="h-3 w-3" />
+                             )}
+                           </button>
+                         )}
+                         <span className="truncate">
+                           {column.name}
+                         </span>
+                       </div>
+                     </th>
                   );
                 })}
               </tr>
@@ -761,7 +825,29 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 ? 'bg-gray-900 divide-gray-700' 
                 : 'bg-white divide-gray-200'
             }`}>
-              {itemsWithTimes.map(({ item, calculatedStartTime }, index) => {
+              {itemsWithTimes.filter(({ item }, index) => {
+                // Always show headers
+                if (item.type === 'header') return true;
+                
+                // Check if this item should be hidden due to a collapsed header
+                // Find the header this item belongs to
+                let headerIndex = -1;
+                for (let i = index - 1; i >= 0; i--) {
+                  if (itemsWithTimes[i].item.type === 'header') {
+                    headerIndex = i;
+                    break;
+                  }
+                }
+                
+                // If we found a header and it's collapsed, hide this item
+                if (headerIndex >= 0 && isHeaderCollapsed(itemsWithTimes[headerIndex].item.id)) {
+                  return false;
+                }
+                
+                return true;
+              }).map(({ item, calculatedStartTime }, filteredIndex) => {
+                // We need to find the original index for this item
+                const originalIndex = itemsWithTimes.findIndex(({ item: originalItem }) => originalItem.id === item.id);
                 const isShowcallerCurrent = item.type !== 'header' && currentSegmentId === item.id;
                 const isCurrentlyPlaying = isShowcallerCurrent && isPlaying;
                 const isFloated = item.isFloating || item.isFloated;
@@ -834,7 +920,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         {isFloated && (
                           <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600 print-hide-showcaller">🛟</span>
                         )}
-                        <span>{getRowNumber(index, items)}</span>
+                        <span>{getRowNumber(originalIndex, items)}</span>
                       </div>
                     </td>
                     
@@ -845,30 +931,49 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         (column.key === 'segmentName' || column.key === 'name');
                       
                       // For headers, handle special cases
-                      if (item.type === 'header') {
-                        if (column.key === 'segmentName' || column.key === 'name') {
-                          // Show the header name for both segmentName and name columns
-                          return (
-                            <td 
-                              key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
-                                isDark ? 'border-gray-600' : 'border-gray-200'
-                              }`}
-                              style={{ 
-                                width: columnWidth, 
-                                minWidth: columnWidth, 
-                                maxWidth: columnWidth,
-                                ...(itemHasCustomColor ? {
-                                  backgroundColor: rowBackgroundColor,
-                                  color: textColor,
-                                  WebkitPrintColorAdjust: 'exact',
-                                  printColorAdjust: 'exact'
-                                } : {})
-                              }}
-                            >
-                              <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
-                            </td>
-                          );
+                       if (item.type === 'header') {
+                         if (column.key === 'segmentName' || column.key === 'name') {
+                           // Show the header name for both segmentName and name columns with collapse button
+                           const isCollapsed = isHeaderCollapsed(item.id);
+                           return (
+                             <td 
+                               key={column.id} 
+                               className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
+                                 isDark ? 'border-gray-600' : 'border-gray-200'
+                               }`}
+                               style={{ 
+                                 width: columnWidth, 
+                                 minWidth: columnWidth, 
+                                 maxWidth: columnWidth,
+                                 ...(itemHasCustomColor ? {
+                                   backgroundColor: rowBackgroundColor,
+                                   color: textColor,
+                                   WebkitPrintColorAdjust: 'exact',
+                                   printColorAdjust: 'exact'
+                                 } : {})
+                               }}
+                             >
+                               <div className="flex items-start gap-1">
+                                 <button
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     toggleHeaderCollapse(item.id);
+                                   }}
+                                   className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
+                                     isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                                   }`}
+                                   title={isCollapsed ? 'Expand header' : 'Collapse header'}
+                                 >
+                                   {isCollapsed ? (
+                                     <ChevronRight className="h-3 w-3" />
+                                   ) : (
+                                     <ChevronDown className="h-3 w-3" />
+                                   )}
+                                 </button>
+                                 <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
+                               </div>
+                             </td>
+                           );
                         } else if (column.key === 'duration') {
                           // Show the calculated header duration (excluding floated items)
                           return (
@@ -891,7 +996,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 } : {})
                               }}
                             >
-                              <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(index)})</div>
+                              <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(originalIndex)})</div>
                             </td>
                           );
                         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
@@ -967,7 +1072,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           }}
                         >
                           <div className="break-words whitespace-pre-wrap overflow-hidden">
-                            {renderCellContent(item, column, calculatedStartTime)}
+                            {(column.key === 'script' || column.key === 'notes') ? 
+                              renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime), item.id, column.key) ||
+                              <div>{renderCellContent(item, column, calculatedStartTime)}</div> :
+                              renderCellContent(item, column, calculatedStartTime)
+                            }
                           </div>
                         </td>
                       );

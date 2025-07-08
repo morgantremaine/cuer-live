@@ -3,11 +3,10 @@ import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerU
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns || !Array.isArray(columns)) return [];
-  // Filter out notes column and only show visible columns
+  // Only show visible columns (notes is allowed in shared rundown if specifically included)
   // Make sure to handle cases where isVisible might be undefined (should default to true)
   return columns.filter(col => 
     col && 
-    col.key !== 'notes' && 
     (col.isVisible === undefined || col.isVisible === true)
   );
 };
@@ -118,6 +117,9 @@ export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: 
       case 'images':
         // Handle the images column specifically
         value = item.images || '';
+        break;
+      case 'notes':
+        value = item.notes || '';
         break;
       default:
         // Handle any other fields that might exist on the item
