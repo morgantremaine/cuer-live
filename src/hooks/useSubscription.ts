@@ -38,7 +38,15 @@ export const useSubscription = () => {
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
       
-      // Use the new database function to check subscription access
+      // First sync with Stripe to ensure our database is up to date
+      const { data: syncData, error: syncError } = await supabase.functions.invoke('check-subscription');
+      
+      if (syncError) {
+        console.warn('Failed to sync with Stripe:', syncError);
+        // Continue anyway, use local data
+      }
+      
+      // Then use the database function to check subscription access
       const { data, error } = await supabase.rpc('get_user_subscription_access', {
         user_uuid: user.id
       });
@@ -126,6 +134,15 @@ export const useSubscription = () => {
 
   useEffect(() => {
     checkSubscription();
+    
+    // Check for subscription success in URL params (after Stripe redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subscription') === 'success') {
+      // Wait a moment for Stripe to process, then check subscription
+      setTimeout(() => {
+        checkSubscription();
+      }, 2000);
+    }
   }, [checkSubscription]);
 
   return {
