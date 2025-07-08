@@ -29,10 +29,10 @@ export const useRowStyling = ({
     if (isDraggingMultiple && isSelected) {
       rowClass = 'opacity-70';
     } else {
-      rowClass = isHeader ? 'bg-muted opacity-50' : 'opacity-50';
+      rowClass = isHeader ? 'bg-[hsl(var(--header-background))] opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    rowClass = 'bg-muted border-l-4 border-border font-semibold';
+    rowClass = 'bg-[hsl(var(--header-background))] border-l-4 border-border font-semibold';
   } else if (isFloating || isFloated) {
     // Apply full red background for floated rows
     rowClass = 'border-l-4 border-red-600';

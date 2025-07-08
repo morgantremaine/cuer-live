@@ -31,6 +31,9 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
     
+    /* Header background for light mode - darker than muted */
+    --header-background: 210 40% 90%;
+    
     /* Subtle glow and animation variables */
     --glow-primary: 217 91% 60%;
     --glow-secondary: 262 83% 58%;
@@ -63,6 +66,9 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    
+    /* Header background for dark mode - keep existing muted color */
+    --header-background: 217.2 32.6% 17.5%;
   }
 }
 
