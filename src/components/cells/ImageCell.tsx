@@ -102,6 +102,34 @@ const ImageCell = ({
     return 'Figma Design';
   };
 
+  // Helper function to extract Google Drive folder/file name from URL
+  const getGoogleDriveName = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      
+      // Check if it's a folder
+      if (url.includes('/folders/')) {
+        return 'Google Drive Folder';
+      }
+      
+      // Check if it's a file
+      if (url.includes('/file/d/')) {
+        return 'Google Drive File';
+      }
+      
+      // Try to extract name from search params or path
+      const searchParams = urlObj.searchParams;
+      if (searchParams.has('usp')) {
+        return 'Google Drive Item';
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return default
+    }
+    
+    return 'Google Drive';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInternalValue(newValue);
@@ -176,6 +204,12 @@ const ImageCell = ({
 
   // Check if it's a Figma design file
   const isFigmaFile = internalValue && internalValue.includes('figma.com');
+  
+  // Check if it's a Google Drive file/folder (but not an image)
+  const isGoogleDriveFile = internalValue && 
+    internalValue.includes('drive.google.com') && 
+    (internalValue.includes('/folders/') || internalValue.includes('/file/d/')) &&
+    !isLikelyImageUrl;
 
   // Get the display URL (convert Google Drive or Dropbox links if necessary)
   const getDisplayUrl = (url: string): string => {
@@ -263,6 +297,25 @@ const ImageCell = ({
                 title="Open in Figma"
               >
                 <ExternalLink className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+          ) : isGoogleDriveFile ? (
+            <div className="w-full h-16 flex items-center justify-between bg-blue-50 rounded border border-blue-200 p-2">
+              <div className="flex items-center space-x-2 text-blue-700">
+                <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white font-bold text-xs">
+                  G
+                </div>
+                <span className="text-sm font-medium">{getGoogleDriveName(internalValue)}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(internalValue, '_blank');
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded hover:bg-blue-200 transition-colors"
+                title="Open in Google Drive"
+              >
+                <ExternalLink className="h-4 w-4 text-blue-600" />
               </button>
             </div>
           ) : (
