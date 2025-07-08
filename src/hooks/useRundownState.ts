@@ -15,6 +15,7 @@ export interface RundownState {
   isPlaying: boolean;
   hasUnsavedChanges: boolean;
   lastChanged: number;
+  isLocked: boolean;
 }
 
 type RundownAction = 
@@ -31,6 +32,7 @@ type RundownAction =
   | { type: 'SET_TIMEZONE'; payload: string }
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
+  | { type: 'SET_LOCKED'; payload: boolean }
   | { type: 'MARK_SAVED' }
   | { type: 'LOAD_STATE'; payload: Partial<RundownState> };
 
@@ -43,7 +45,8 @@ const initialState: RundownState = {
   currentSegmentId: null,
   isPlaying: false,
   hasUnsavedChanges: false,
-  lastChanged: 0
+  lastChanged: 0,
+  isLocked: false
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
@@ -126,6 +129,9 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     case 'SET_PLAYING':
       return { ...state, isPlaying: action.payload };
 
+    case 'SET_LOCKED':
+      return markChanged({ isLocked: action.payload });
+
     case 'MARK_SAVED':
       return { ...state, hasUnsavedChanges: false };
 
@@ -149,6 +155,82 @@ function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
       return { ...item, rowNumber: '' };
     }
     return item;
+  });
+}
+
+// Helper function to calculate unlocked row numbers (sequential: 1, 2, 3, etc.)
+function calculateUnlockedRowNumbers(items: RundownItem[]): RundownItem[] {
+  let regularRowCount = 0;
+  return items.map((item) => {
+    if (isHeaderItem(item)) {
+      return { ...item, rowNumber: '' }; // Headers don't have numbers
+    }
+
+    // Sequential numbering for regular items
+    regularRowCount++;
+    return {
+      ...item,
+      rowNumber: regularRowCount.toString()
+    };
+  });
+}
+
+// Helper function to calculate locked row numbers (with letters: 5A, 5B, etc.)
+function calculateLockedRowNumbers(items: RundownItem[]): RundownItem[] {
+  // Keep track of what the current base number should be for new items
+  const baseNumbers: number[] = [];
+  
+  return items.map((item, index) => {
+    if (isHeaderItem(item)) {
+      return { ...item, rowNumber: '' }; // Headers don't have numbers
+    }
+
+    // If item already has a rowNumber and is from when rundown was first locked, preserve it
+    if (item.rowNumber && item.rowNumber.match(/^\d+[A-Z]?$/)) {
+      return { ...item };
+    }
+    
+    // This is a new item that needs a number based on where it's inserted
+    // Find the item immediately before this one that has a row number
+    let insertAfterNumber = 0;
+    let itemsWithSameBase = 0;
+    
+    for (let i = index - 1; i >= 0; i--) {
+      if (!isHeaderItem(items[i]) && items[i].rowNumber) {
+        const match = items[i].rowNumber.match(/^(\d+)([A-Z]?)$/);
+        if (match) {
+          const baseNum = parseInt(match[1]);
+          const letter = match[2];
+          
+          insertAfterNumber = baseNum;
+          
+          // Count how many items already have this base number
+          itemsWithSameBase = 0;
+          for (let j = i; j < index; j++) {
+            if (!isHeaderItem(items[j]) && items[j].rowNumber) {
+              const itemMatch = items[j].rowNumber.match(/^(\d+)([A-Z]?)$/);
+              if (itemMatch && parseInt(itemMatch[1]) === baseNum) {
+                itemsWithSameBase++;
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
+    
+    // If no previous item found, this should be row 1
+    if (insertAfterNumber === 0) {
+      insertAfterNumber = 1;
+    }
+    
+    // Generate the letter suffix
+    const letterSuffix = itemsWithSameBase > 0 ? String.fromCharCode(65 + itemsWithSameBase - 1) : '';
+    
+    return {
+      ...item,
+      rowNumber: `${insertAfterNumber}${letterSuffix}`
+    };
   });
 }
 
@@ -207,20 +289,10 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
       };
     });
 
-    // Calculate row numbers - headers get empty, regular items get sequential numbers
-    let regularRowCount = 0;
-    const itemsWithRowNumbers = itemsWithCalculatedTimes.map((item, index) => {
-      if (isHeaderItem(item)) {
-        return { ...item, rowNumber: '' }; // Headers don't have numbers
-      }
-
-      // Sequential numbering for regular items
-      regularRowCount++;
-      return {
-        ...item,
-        rowNumber: regularRowCount.toString()
-      };
-    });
+    // Calculate row numbers based on locked state
+    const itemsWithRowNumbers = state.isLocked ? 
+      calculateLockedRowNumbers(itemsWithCalculatedTimes) : 
+      calculateUnlockedRowNumbers(itemsWithCalculatedTimes);
 
     // Calculate total runtime (excluding floated items)
     const totalSeconds = state.items.reduce((acc, item) => {
@@ -287,6 +359,8 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     setCurrentSegment: (id: string | null) => dispatch({ type: 'SET_CURRENT_SEGMENT', payload: id }),
     
     setPlaying: (playing: boolean) => dispatch({ type: 'SET_PLAYING', payload: playing }),
+    
+    setLocked: (locked: boolean) => dispatch({ type: 'SET_LOCKED', payload: locked }),
     
     markSaved: () => dispatch({ type: 'MARK_SAVED' }),
     

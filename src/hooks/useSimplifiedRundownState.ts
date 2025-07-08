@@ -436,6 +436,10 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
+    // Lock state
+    isLocked: state.isLocked,
+    setLocked: actions.setLocked,
+    
     // Realtime connection status
     isConnected,
     isProcessingRealtimeUpdate: realtimeRundown.isProcessingContentUpdate, // NEW: Use content processing state

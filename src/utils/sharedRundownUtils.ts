@@ -7,7 +7,7 @@ export const getVisibleColumns = (columns: any[]) => {
   return columns.filter(col => col.isVisible !== false && col.key !== 'notes');
 };
 
-export const getRowNumber = (index: number, items: RundownItem[]) => {
+export const getRowNumber = (index: number, items: RundownItem[], isLocked: boolean = false) => {
   if (index < 0 || index >= items.length) return '';
   
   const item = items[index];
@@ -16,6 +16,11 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   // Headers don't have row numbers
   if (item.type === 'header') {
     return '';
+  }
+  
+  // If locked, use the item's stored rowNumber, otherwise calculate sequentially
+  if (isLocked && item.rowNumber) {
+    return item.rowNumber;
   }
   
   // For regular items, just count sequentially, ignoring headers

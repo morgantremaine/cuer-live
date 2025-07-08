@@ -113,7 +113,7 @@ const TeleprompterItem = ({
               fontSize: `${fontSize + 8}px`
             }}
           >
-            {getRowNumber(item.originalIndex)} - {formatText(headerTitle.toUpperCase())}
+            {item.rowNumber || getRowNumber(item.originalIndex)} - {formatText(headerTitle.toUpperCase())}
           </span>
         </h2>
       </div>
@@ -156,7 +156,7 @@ const TeleprompterItem = ({
             fontSize: `${fontSize + 4}px`
           }}
         >
-          {getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
+          {item.rowNumber || getRowNumber(item.originalIndex)} - {formatText((item.segmentName || item.name)?.toUpperCase() || 'UNTITLED')}
         </span>
       </div>
 

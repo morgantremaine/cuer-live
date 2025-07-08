@@ -834,7 +834,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         {isFloated && (
                           <span className="text-yellow-400 mr-1 print:mr-0.5 print:text-yellow-600 print-hide-showcaller">🛟</span>
                         )}
-                        <span>{getRowNumber(index, items)}</span>
+                        <span>{getRowNumber(index, items, false)}</span>
                       </div>
                     </td>
                     
