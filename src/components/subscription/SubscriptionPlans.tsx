@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const PLANS = [
@@ -17,8 +17,8 @@ const PLANS = [
       'Up to 2 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Basic support',
-      'Mobile access'
+      'Advanced features',
+      'AI helper'
     ]
   },
   {
@@ -32,9 +32,8 @@ const PLANS = [
       'Up to 4 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Priority support',
       'Advanced features',
-      'Data export'
+      'AI helper'
     ]
   },
   {
@@ -49,10 +48,9 @@ const PLANS = [
       'Up to 7 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Priority support',
       'Advanced features',
-      'Backup & restore',
-      'Team analytics'
+      'AI helper',
+      'Priority support'
     ]
   },
   {
@@ -66,11 +64,9 @@ const PLANS = [
       'Up to 10 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Priority support',
       'Advanced features',
-      'Backup & restore',
-      'Team analytics',
-      'Extended history'
+      'AI helper',
+      'Priority support'
     ]
   },
   {
@@ -84,15 +80,38 @@ const PLANS = [
       'Up to 25 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Priority support',
       'Advanced features',
-      'Backup & restore',
-      'Team analytics',
-      'Extended history',
+      'AI helper',
+      'Priority support',
       'Dedicated account manager'
     ]
   }
 ];
+
+const getFeatureIcon = (feature: string) => {
+  if (feature.includes('team members')) {
+    return <UserPlus className="w-4 h-4 text-blue-500" />;
+  }
+  if (feature.includes('Unlimited rundowns')) {
+    return <Infinity className="w-4 h-4 text-purple-500" />;
+  }
+  if (feature.includes('Real-time collaboration')) {
+    return <Zap className="w-4 h-4 text-yellow-500" />;
+  }
+  if (feature.includes('Advanced features')) {
+    return <Crown className="w-4 h-4 text-orange-500" />;
+  }
+  if (feature.includes('AI helper')) {
+    return <Bot className="w-4 h-4 text-green-500" />;
+  }
+  if (feature.includes('Priority support')) {
+    return <Headphones className="w-4 h-4 text-red-500" />;
+  }
+  if (feature.includes('Dedicated account manager')) {
+    return <UserCheck className="w-4 h-4 text-indigo-500" />;
+  }
+  return <Check className="w-4 h-4 text-gray-500" />;
+};
 
 interface SubscriptionPlansProps {
   interval: 'monthly' | 'yearly';
@@ -274,8 +293,8 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
               <ul className="space-y-3 text-sm">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
-                    <div className="flex-shrink-0 w-5 h-5 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-3 mt-0.5">
-                      <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                      {getFeatureIcon(feature)}
                     </div>
                     <span className="text-gray-700 dark:text-gray-300 leading-relaxed">{feature}</span>
                   </li>
