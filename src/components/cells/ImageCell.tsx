@@ -28,11 +28,13 @@ const ImageCell = ({
   const [imageError, setImageError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [internalValue, setInternalValue] = useState(value || '');
+  const [thumbnailError, setThumbnailError] = useState(false);
   const cellKey = `${itemId}-${cellRefKey}`;
 
   // Sync internal value when external value changes
   useEffect(() => {
     setInternalValue(value || '');
+    setThumbnailError(false); // Reset thumbnail error when value changes
   }, [value]);
 
   // Helper function to convert Google Drive links to direct image URLs
@@ -158,6 +160,43 @@ const ImageCell = ({
     }
     
     return 'Google Docs';
+  };
+
+  // Helper function to get Google Docs thumbnail URL
+  const getGoogleDocsThumbnail = (url: string): string | null => {
+    try {
+      let docId = null;
+      
+      // Extract document ID from different Google Docs URL formats
+      if (url.includes('docs.google.com/document/d/')) {
+        const docMatch = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+        if (docMatch) {
+          docId = docMatch[1];
+          return `https://docs.google.com/document/d/${docId}/preview`;
+        }
+      }
+      
+      if (url.includes('docs.google.com/spreadsheets/d/')) {
+        const sheetMatch = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+        if (sheetMatch) {
+          docId = sheetMatch[1];
+          return `https://docs.google.com/spreadsheets/d/${docId}/preview`;
+        }
+      }
+      
+      if (url.includes('docs.google.com/presentation/d/')) {
+        const slideMatch = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/);
+        if (slideMatch) {
+          docId = slideMatch[1];
+          return `https://docs.google.com/presentation/d/${docId}/preview`;
+        }
+      }
+      
+    } catch (error) {
+      // If URL parsing fails, return null
+    }
+    
+    return null;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,24 +390,51 @@ const ImageCell = ({
               </button>
             </div>
           ) : isGoogleDocsFile ? (
-            <div className="w-full h-16 flex items-center justify-between bg-green-50 rounded border border-green-200 p-2">
-              <div className="flex items-center space-x-2 text-green-700">
-                <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xs">
-                  D
+            (() => {
+              const thumbnailUrl = getGoogleDocsThumbnail(internalValue);
+              
+              return thumbnailUrl && !thumbnailError ? (
+                <div className="w-full h-auto flex flex-col space-y-1">
+                  <img
+                    src={thumbnailUrl}
+                    alt={getGoogleDocsName(internalValue)}
+                    className="w-full h-auto object-contain rounded border border-green-200"
+                    onError={() => setThumbnailError(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(internalValue, '_blank');
+                    }}
+                    style={{ 
+                      maxHeight: '120px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div className="flex items-center justify-between text-xs text-green-700">
+                    <span className="truncate">{getGoogleDocsName(internalValue)}</span>
+                    <ExternalLink className="h-3 w-3 flex-shrink-0 ml-1" />
+                  </div>
                 </div>
-                <span className="text-sm font-medium">{getGoogleDocsName(internalValue)}</span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(internalValue, '_blank');
-                }}
-                className="flex items-center justify-center w-8 h-8 rounded hover:bg-green-200 transition-colors"
-                title="Open in Google Docs"
-              >
-                <ExternalLink className="h-4 w-4 text-green-600" />
-              </button>
-            </div>
+              ) : (
+                <div className="w-full h-16 flex items-center justify-between bg-green-50 rounded border border-green-200 p-2">
+                  <div className="flex items-center space-x-2 text-green-700">
+                    <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xs">
+                      D
+                    </div>
+                    <span className="text-sm font-medium">{getGoogleDocsName(internalValue)}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(internalValue, '_blank');
+                    }}
+                    className="flex items-center justify-center w-8 h-8 rounded hover:bg-green-200 transition-colors"
+                    title="Open in Google Docs"
+                  >
+                    <ExternalLink className="h-4 w-4 text-green-600" />
+                  </button>
+                </div>
+              );
+            })()
           ) : (
             <div 
               className="w-full h-8 flex items-center text-sm"
