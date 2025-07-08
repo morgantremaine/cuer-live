@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
-import { SubscriptionDebug } from '@/components/SubscriptionDebug';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
@@ -360,23 +359,20 @@ const Dashboard = () => {
         {showMainContent && (
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
-              <SubscriptionDebug />
-              <div className="mt-8">
-                <DashboardRundownGrid
-                  title={folderTitle}
-                  rundowns={filteredRundowns}
-                  loading={loading && savedRundowns.length > 0}
-                  onOpen={handleOpenRundown}
-                  onDelete={handleDeleteRundown}
-                  onArchive={handleArchiveRundown}
-                  onUnarchive={handleUnarchiveRundown}
-                  onDuplicate={handleDuplicateRundown}
-                  isArchived={folderType === 'archived'}
-                  showEmptyState={true}
-                  currentUserId={user?.id}
-                  teamMembers={teamMembers}
-                />
-              </div>
+              <DashboardRundownGrid
+                title={folderTitle}
+                rundowns={filteredRundowns}
+                loading={loading && savedRundowns.length > 0}
+                onOpen={handleOpenRundown}
+                onDelete={handleDeleteRundown}
+                onArchive={handleArchiveRundown}
+                onUnarchive={handleUnarchiveRundown}
+                onDuplicate={handleDuplicateRundown}
+                isArchived={folderType === 'archived'}
+                showEmptyState={true}
+                currentUserId={user?.id}
+                teamMembers={teamMembers}
+              />
             </div>
           </main>
         )}
