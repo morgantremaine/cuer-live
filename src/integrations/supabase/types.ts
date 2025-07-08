@@ -348,7 +348,6 @@ export type Database = {
           column_name: string
           created_at: string
           created_by: string
-          deleted_at: string | null
           id: string
           team_id: string
           updated_at: string
@@ -358,7 +357,6 @@ export type Database = {
           column_name: string
           created_at?: string
           created_by: string
-          deleted_at?: string | null
           id?: string
           team_id: string
           updated_at?: string
@@ -368,7 +366,6 @@ export type Database = {
           column_name?: string
           created_at?: string
           created_by?: string
-          deleted_at?: string | null
           id?: string
           team_id?: string
           updated_at?: string
@@ -665,10 +662,6 @@ export type Database = {
       }
       remove_team_member_with_transfer: {
         Args: { member_id: string; admin_id: string; team_id_param: string }
-        Returns: Json
-      }
-      soft_delete_team_column: {
-        Args: { column_uuid: string }
         Returns: Json
       }
       update_rundown_presence: {

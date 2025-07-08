@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useTeam } from '@/hooks/useTeam';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface Column {
   id: string;
@@ -27,13 +27,14 @@ interface TeamCustomColumnsProps {
 const TeamCustomColumns = ({ columns, onToggleColumnVisibility }: TeamCustomColumnsProps) => {
   const { teamColumns, loading, deleteTeamColumn } = useTeamCustomColumns();
   const { userRole } = useTeam();
+  const { toast } = useToast();
   const [deletingColumns, setDeletingColumns] = useState<Set<string>>(new Set());
 
   // Check if current user is team admin
   const isTeamAdmin = userRole === 'admin';
 
   const handleDeleteColumn = async (columnId: string, columnName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the "${columnName}" column? This will remove it for all team members and may affect existing rundowns.`)) {
+    if (!window.confirm(`Are you sure you want to delete the "${columnName}" column? This will permanently remove it from all team rundowns and cannot be undone.`)) {
       return;
     }
 
@@ -43,15 +44,23 @@ const TeamCustomColumns = ({ columns, onToggleColumnVisibility }: TeamCustomColu
       const result = await deleteTeamColumn(columnId);
       
       if (result.success) {
-        toast.success(result.message);
-        if (result.warning) {
-          toast.warning(result.warning);
-        }
+        toast({
+          title: "Column deleted",
+          description: result.message
+        });
       } else {
-        toast.error(result.error || 'Failed to delete column');
+        toast({
+          title: "Error",
+          description: result.error || 'Failed to delete column',
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      toast.error('Failed to delete column');
+      toast({
+        title: "Error", 
+        description: 'Failed to delete column',
+        variant: "destructive"
+      });
     } finally {
       setDeletingColumns(prev => {
         const newSet = new Set(prev);
