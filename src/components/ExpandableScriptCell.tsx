@@ -26,16 +26,21 @@ const ExpandableScriptCell = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Use column expanded state only if it's explicitly true, otherwise use local state
-  const effectiveExpanded = columnExpanded === true ? true : isExpanded;
+  // Sync with column expanded state changes but maintain local control
+  useEffect(() => {
+    if (columnExpanded !== undefined) {
+      setIsExpanded(columnExpanded);
+    }
+  }, [columnExpanded]);
+  
+  // Always use local state - column state just sets it initially
+  const effectiveExpanded = isExpanded;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Only allow local toggle if column is not actively expanded
-    if (columnExpanded !== true) {
-      setIsExpanded(!isExpanded);
-    }
+    // Always allow local toggle
+    setIsExpanded(!isExpanded);
   };
 
   // Handle clicking to enter edit mode
@@ -170,16 +175,8 @@ const ExpandableScriptCell = ({
     <div className="flex items-start space-x-1 w-full">
       <button
         onClick={toggleExpanded}
-        className={`flex-shrink-0 mt-1 p-1 rounded transition-colors ${
-          columnExpanded === true 
-            ? 'opacity-50 cursor-not-allowed' 
-            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
-        }`}
-        title={columnExpanded === true 
-          ? 'Column expanded - use header control' 
-          : (effectiveExpanded ? 'Collapse' : 'Expand')
-        }
-        disabled={columnExpanded === true}
+        className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
+        title={effectiveExpanded ? 'Collapse' : 'Expand'}
       >
         {effectiveExpanded ? (
           <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
