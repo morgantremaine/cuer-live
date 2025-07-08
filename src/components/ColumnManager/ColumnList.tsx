@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useRef } from 'react';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
+import DeleteColumnDialog from './DeleteColumnDialog';
 
 interface Column {
   id: string;
@@ -36,6 +37,8 @@ const ColumnList = ({
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [columnToDelete, setColumnToDelete] = useState<Column | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Initialize auto-scroll hook
@@ -148,6 +151,18 @@ const ColumnList = ({
     }
   };
 
+  const handleDeleteClick = (column: Column) => {
+    setColumnToDelete(column);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (columnToDelete) {
+      onDeleteColumn(columnToDelete.id);
+      setColumnToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Order & Visibility</h3>
@@ -225,7 +240,7 @@ const ColumnList = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDeleteColumn(column.id)}
+                    onClick={() => handleDeleteClick(column)}
                     className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -240,6 +255,13 @@ const ColumnList = ({
           </React.Fragment>
         ))}
       </div>
+
+      <DeleteColumnDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        columnName={columnToDelete?.name || ''}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 };
