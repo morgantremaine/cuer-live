@@ -8,6 +8,7 @@ interface SubscriptionStatus {
   subscription_tier: string | null;
   max_team_members: number;
   subscription_end: string | null;
+  grandfathered: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -20,6 +21,7 @@ export const useSubscription = () => {
     subscription_tier: null,
     max_team_members: 1,
     subscription_end: null,
+    grandfathered: false,
     loading: true,
     error: null,
   });
@@ -42,6 +44,7 @@ export const useSubscription = () => {
         subscription_tier: data.subscription_tier,
         max_team_members: data.max_team_members || 1,
         subscription_end: data.subscription_end,
+        grandfathered: data.grandfathered || false,
         loading: false,
         error: null,
       });

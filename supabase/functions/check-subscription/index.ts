@@ -47,10 +47,6 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const stripeKey = Deno.env.get("Stripe");
-    if (!stripeKey) throw new Error("Stripe secret key is not set");
-    logStep("Stripe key verified");
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
@@ -63,6 +59,35 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Check for existing grandfathered subscription first
+    const { data: existingSubscriber } = await supabaseClient
+      .from('subscribers')
+      .select('*')
+      .eq('email', user.email)
+      .eq('grandfathered', true)
+      .maybeSingle();
+
+    if (existingSubscriber) {
+      logStep("Found grandfathered subscription", { 
+        tier: existingSubscriber.subscription_tier, 
+        maxMembers: existingSubscriber.max_team_members 
+      });
+      return new Response(JSON.stringify({
+        subscribed: true,
+        subscription_tier: existingSubscriber.subscription_tier,
+        max_team_members: existingSubscriber.max_team_members,
+        subscription_end: null, // Grandfathered accounts don't expire
+        grandfathered: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    const stripeKey = Deno.env.get("Stripe");
+    if (!stripeKey) throw new Error("Stripe secret key is not set");
+    logStep("Stripe key verified");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -77,13 +102,15 @@ serve(async (req) => {
         subscription_tier: null,
         max_team_members: 1,
         subscription_end: null,
+        grandfathered: false,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'email' });
       return new Response(JSON.stringify({ 
         subscribed: false, 
         subscription_tier: null,
         max_team_members: 1,
-        subscription_end: null 
+        subscription_end: null,
+        grandfathered: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -132,20 +159,23 @@ serve(async (req) => {
       max_team_members: maxTeamMembers,
       subscription_end: subscriptionEnd,
       stripe_subscription_id: stripeSubscriptionId,
+      grandfathered: false,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
     logStep("Updated database with subscription info", { 
       subscribed: hasActiveSub, 
       subscriptionTier, 
-      maxTeamMembers 
+      maxTeamMembers,
+      grandfathered: false
     });
     
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       subscription_tier: subscriptionTier,
       max_team_members: maxTeamMembers,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      grandfathered: false
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

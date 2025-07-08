@@ -316,6 +316,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          grandfathered: boolean | null
           id: string
           max_team_members: number | null
           stripe_customer_id: string | null
@@ -329,6 +330,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          grandfathered?: boolean | null
           id?: string
           max_team_members?: number | null
           stripe_customer_id?: string | null
@@ -342,6 +344,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          grandfathered?: boolean | null
           id?: string
           max_team_members?: number | null
           stripe_customer_id?: string | null
@@ -653,6 +656,10 @@ export type Database = {
       get_user_teams: {
         Args: { user_uuid: string }
         Returns: string[]
+      }
+      grandfather_existing_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       is_layout_shared_for_public_rundown: {
         Args: { layout_uuid: string }

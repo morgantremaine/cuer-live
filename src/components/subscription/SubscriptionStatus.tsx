@@ -12,6 +12,7 @@ export const SubscriptionStatus = () => {
     subscription_tier,
     max_team_members,
     subscription_end,
+    grandfathered,
     loading,
     checkSubscription,
     openCustomerPortal,
@@ -52,9 +53,16 @@ export const SubscriptionStatus = () => {
             <div className="flex items-center gap-2">
               <span className="font-medium">Plan:</span>
               {subscribed && subscription_tier ? (
-                <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {subscription_tier}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {subscription_tier}
+                  </Badge>
+                  {grandfathered && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      Grandfathered
+                    </Badge>
+                  )}
+                </div>
               ) : (
                 <Badge variant="secondary">Free Trial</Badge>
               )}
@@ -65,9 +73,15 @@ export const SubscriptionStatus = () => {
               <span>Up to {max_team_members} team members</span>
             </div>
             
-            {subscribed && subscription_end && (
+            {subscribed && subscription_end && !grandfathered && (
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Next billing: {format(new Date(subscription_end), 'MMM d, yyyy')}
+              </div>
+            )}
+
+            {grandfathered && (
+              <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                🎉 Grandfathered - Free Network plan for life!
               </div>
             )}
           </div>
@@ -83,7 +97,7 @@ export const SubscriptionStatus = () => {
               Refresh
             </Button>
             
-            {subscribed && (
+            {subscribed && !grandfathered && (
               <Button
                 variant="outline"
                 size="sm"
@@ -96,7 +110,7 @@ export const SubscriptionStatus = () => {
           </div>
         </div>
         
-        {!subscribed && (
+        {!subscribed && !grandfathered && (
           <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
             <div className="text-sm text-yellow-800 dark:text-yellow-200">
               <strong>Free Trial Active</strong> - Choose a subscription plan to continue using all features after your trial ends.
