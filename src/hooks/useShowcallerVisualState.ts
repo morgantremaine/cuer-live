@@ -280,10 +280,10 @@ export const useShowcallerVisualState = ({
           prevState.isPlaying
         );
 
-        const remainingSeconds = Math.max(0, Math.ceil(preciseRemainingMs / 1000));
+        const remainingSeconds = Math.max(0, Math.floor(preciseRemainingMs / 1000));
 
-        // CRITICAL FIX: Only advance when we have truly reached 0 milliseconds remaining
-        if (preciseRemainingMs <= 0) {
+        // CRITICAL FIX: Only advance when we have truly reached 0 milliseconds remaining (with small buffer)
+        if (preciseRemainingMs <= 50) { // 50ms buffer to prevent premature advancement
           // Rate limiting: prevent rapid advancement
           const now = getPreciseTime();
           if (now - lastAdvancementTimeRef.current < 1500) {

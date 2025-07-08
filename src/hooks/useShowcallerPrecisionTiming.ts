@@ -31,7 +31,7 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
     return performance.now() + performance.timeOrigin;
   }, []);
 
-  // Enhanced precise time remaining calculation with stabilization
+  // Simplified precise time remaining calculation without drift compensation
   const calculatePreciseTimeRemaining = useCallback((
     segmentId: string,
     playbackStartTime: number,
@@ -49,28 +49,13 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
     const currentTime = getPreciseTime();
     const elapsedMs = currentTime - playbackStartTime;
     
-    // Enhanced drift compensation with periodic sync
-    const now = Date.now();
-    if (now - lastSyncTimeRef.current > 5000) { // Sync every 5 seconds
-      // Minimal drift correction to maintain long-term accuracy
-      const expectedElapsed = Math.floor(elapsedMs / 1000) * 1000;
-      const actualElapsed = elapsedMs;
-      const microDrift = actualElapsed - expectedElapsed;
-      
-      if (Math.abs(microDrift) > 100) { // Only correct significant drift
-        driftCompensationRef.current += microDrift * 0.1; // Gentle correction
-      }
-      
-      lastSyncTimeRef.current = now;
-    }
-    
-    const compensatedElapsed = elapsedMs + driftCompensationRef.current;
-    const remainingMs = Math.max(0, segmentDurationMs - compensatedElapsed);
+    // Simple, accurate calculation without drift compensation
+    const remainingMs = Math.max(0, segmentDurationMs - elapsedMs);
 
     return remainingMs;
   }, [items, timeToMilliseconds, getPreciseTime]);
 
-  // Enhanced playback start calculation with immediate precision
+  // Simplified playback start calculation without drift compensation
   const calculatePrecisePlaybackStart = useCallback((
     previousSegmentId: string | null,
     previousPlaybackStartTime: number | null,
@@ -78,39 +63,13 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
   ): number => {
     const preciseTransitionTime = getPreciseTime();
     
-    if (!previousSegmentId || !previousPlaybackStartTime) {
-      // Reset drift compensation on new playback sessions
-      driftCompensationRef.current = 0;
-      lastSyncTimeRef.current = Date.now();
-      return preciseTransitionTime;
-    }
-
-    const previousSegment = items.find(item => item.id === previousSegmentId);
-    if (!previousSegment) {
-      return preciseTransitionTime;
-    }
-
-    const previousDurationMs = timeToMilliseconds(previousSegment.duration || '00:00');
-    const idealEndTime = previousPlaybackStartTime + previousDurationMs;
-    
-    // Calculate and apply minimal drift compensation
-    const drift = preciseTransitionTime - idealEndTime;
-    
-    // Only accumulate significant drift to prevent over-correction
-    if (Math.abs(drift) > 50) { // 50ms threshold
-      driftCompensationRef.current += drift * 0.2; // Gentle 20% correction
-    }
-
-    console.log('📺 Enhanced timing precision:', {
-      previousDuration: previousDurationMs,
-      idealEndTime,
-      actualTransitionTime: preciseTransitionTime,
-      drift,
-      totalDriftCompensation: driftCompensationRef.current
+    console.log('📺 Precise timing transition:', {
+      previousSegmentId,
+      actualTransitionTime: preciseTransitionTime
     });
 
     return preciseTransitionTime;
-  }, [items, timeToMilliseconds, getPreciseTime]);
+  }, [getPreciseTime]);
 
   // Reset with enhanced initialization
   const resetDriftCompensation = useCallback(() => {
@@ -139,8 +98,8 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
       externalState.isPlaying
     );
 
-    // Convert to seconds with consistent rounding
-    const preciseSeconds = Math.round(preciseRemaining / 1000);
+    // Convert to seconds with consistent floor rounding to prevent timing jumps
+    const preciseSeconds = Math.floor(preciseRemaining / 1000);
 
     console.log('📺 Enhanced precision timing sync:', {
       externalTimeRemaining: externalState.timeRemaining,
