@@ -13,13 +13,19 @@ import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
 
-// Default columns to use when rundown has no columns defined
+// Default columns to use when rundown has no columns defined - matches useColumnsManager exactly
 const DEFAULT_COLUMNS = [
-  { id: 'segmentName', name: 'Segment Name', key: 'segmentName', isVisible: true, width: '200px' },
-  { id: 'duration', name: 'Duration', key: 'duration', isVisible: true, width: '100px' },
-  { id: 'startTime', name: 'Start Time', key: 'startTime', isVisible: true, width: '100px' },
-  { id: 'endTime', name: 'End Time', key: 'endTime', isVisible: true, width: '100px' },
-  { id: 'description', name: 'Description', key: 'description', isVisible: true, width: '300px' }
+  { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+  { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+  { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
 ];
 
 // Helper function to check if data exists in shared_rundown_layouts table
