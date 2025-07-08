@@ -19,7 +19,9 @@ interface RundownContentProps {
   currentSegmentId: string | null;
   hasClipboardData: boolean;
   selectedRowId: string | null;
-  startTime: string;
+  startTime?: string;
+  autoScrollEnabled?: boolean;
+  onToggleAutoScroll?: () => void;
   columnExpandState?: { [columnKey: string]: boolean };
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   getColumnWidth: (column: Column) => string;
