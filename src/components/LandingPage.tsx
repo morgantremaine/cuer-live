@@ -500,8 +500,8 @@ const LandingPage = () => {
       </div>
 
       {/* Pricing Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
+      <div className="relative z-10 w-full pb-24">
+        <div className="text-center mb-16 max-w-7xl mx-auto px-6">
           <h2 className="text-4xl font-bold mb-4 text-white">
             Choose the perfect plan for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">your team</span>
           </h2>
