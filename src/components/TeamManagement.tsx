@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2 } from 'lucide-react';
 import {
@@ -49,6 +50,7 @@ const TeamManagement = () => {
     revokeInvitation
   } = useTeam();
   
+  const { max_team_members } = useSubscription();
   const { toast } = useToast();
 
   // Get the admin's name from team members
@@ -333,7 +335,7 @@ const TeamManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <User className="h-5 w-5" />
-            Team Members ({teamMembers.length})
+            Team Members ({teamMembers.length} of {max_team_members})
           </CardTitle>
         </CardHeader>
         <CardContent>
