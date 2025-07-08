@@ -25,7 +25,7 @@ const PLANS = [
     name: 'Show',
     description: 'Ideal for growing teams',
     maxMembers: 4,
-    teamRange: '1-4 team members',
+    teamRange: '3-4 team members',
     monthlyPrice: 35,
     yearlyPrice: 315,
     features: [
@@ -40,7 +40,7 @@ const PLANS = [
     name: 'Studio',
     description: 'Most popular for studios',
     maxMembers: 7,
-    teamRange: '1-7 team members',
+    teamRange: '5-7 team members',
     monthlyPrice: 55,
     yearlyPrice: 594,
     popular: true,
@@ -57,7 +57,7 @@ const PLANS = [
     name: 'Studio Plus',
     description: 'Enhanced studio capabilities',
     maxMembers: 10,
-    teamRange: '1-10 team members',
+    teamRange: '8-10 team members',
     monthlyPrice: 75,
     yearlyPrice: 810,
     features: [
@@ -233,7 +233,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             )}
             
             <CardHeader className="text-center pb-4 pt-6">
-              <CardTitle className={`text-xl font-bold ${plan.popular ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
+              <CardTitle className={`text-xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
                 {plan.name}
               </CardTitle>
               <CardDescription className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -242,7 +242,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
               
               <div className={`inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
                 plan.popular 
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                  ? 'bg-white/20 text-white border border-white/30' 
                   : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
               }`}>
                 <Users className="w-4 h-4" />
@@ -250,7 +250,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
               </div>
               
               <div className="py-6">
-                <div className={`text-4xl font-bold ${plan.popular ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
+                <div className={`text-4xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
                   ${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
