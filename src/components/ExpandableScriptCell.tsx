@@ -40,6 +40,7 @@ const ExpandableScriptCell = ({
 
   // Handle clicking to enter edit mode
   const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row selection when clicking to edit
     if (effectiveExpanded && !isEditing) {
       setIsEditing(true);
       // Focus the textarea after a brief delay to ensure it's ready
