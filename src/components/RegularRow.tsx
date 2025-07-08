@@ -125,7 +125,13 @@ const RegularRow = (props: RegularRowProps) => {
                             target.closest('textarea') !== null || 
                             target.closest('input') !== null;
     
-    if (isTextInput || hasTextSelection || isContentEditable || isInExpandedCell || isInEditableArea) {
+    // Check if we're in an active editing state by looking for focused text inputs
+    const activeElement = document.activeElement as HTMLElement;
+    const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
+                             activeElement?.tagName === 'INPUT' ||
+                             activeElement?.contentEditable === 'true';
+    
+    if (isTextInput || hasTextSelection || isContentEditable || isInExpandedCell || isInEditableArea || isActivelyEditing) {
       e.preventDefault();
       e.stopPropagation();
       return;

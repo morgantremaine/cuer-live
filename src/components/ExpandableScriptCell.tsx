@@ -210,6 +210,10 @@ const ExpandableScriptCell = ({
             }}
             onKeyDown={handleKeyDown}
             onBlur={handleBlur}
+            onMouseDown={(e) => e.stopPropagation()}
+            onDragStart={(e) => e.preventDefault()}
+            onDrag={(e) => e.preventDefault()}
+            onDragEnd={(e) => e.preventDefault()}
             data-cell-id={cellKey}
             data-cell-ref={cellKey}
             className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
@@ -229,6 +233,7 @@ const ExpandableScriptCell = ({
           <div
             onClick={handleClick}
             onMouseDown={(e) => e.stopPropagation()}
+            onDragStart={(e) => e.preventDefault()}
             className="w-full cursor-text rounded px-1 py-1 text-sm min-h-[24px]"
             style={{ 
               color: textColor || undefined,
