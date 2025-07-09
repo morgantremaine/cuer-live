@@ -224,7 +224,7 @@ const AccountManagement = () => {
             <SubscriptionStatus />
             {/* Only show subscription plans for users without team access */}
             {access_type !== 'team_member' && (
-              <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-gray-900 py-8">
                 <SubscriptionPlans 
                   interval={interval}
                   onIntervalChange={setInterval}
