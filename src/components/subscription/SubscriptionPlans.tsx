@@ -203,7 +203,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             <Button
               variant="outline"
               size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white shadow-lg border-2"
               onClick={scrollLeft}
             >
               <ChevronLeft className="w-4 h-4 text-black" />
@@ -212,7 +212,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             <Button
               variant="outline"
               size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-2"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white shadow-lg border-2"
               onClick={scrollRight}
             >
               <ChevronRight className="w-4 h-4 text-black" />
