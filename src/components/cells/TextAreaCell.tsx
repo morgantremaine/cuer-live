@@ -40,11 +40,7 @@ const TextAreaCell = ({
     // Get the current width of the textarea
     const textareaWidth = textarea.getBoundingClientRect().width;
     
-    // Only recalculate if width changed or content changed
-    if (textareaWidth === currentWidth && calculatedHeight > 38) {
-      return;
-    }
-    
+    // Update current width
     setCurrentWidth(textareaWidth);
     
     // Copy textarea styles to measurement div
@@ -78,6 +74,7 @@ const TextAreaCell = ({
     // Use the larger of natural height or minimum height
     const newHeight = Math.max(naturalHeight, minHeight);
     
+    // Always update height if it's different (removed the conservative condition)
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
