@@ -45,9 +45,9 @@ const CameraPlot = ({
 
   if (isLoading) {
     return (
-      <Card className="w-full mt-8">
+      <Card className="w-full mt-8 bg-gray-800 border-gray-700">
         <CardContent className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </CardContent>
       </Card>
     );
@@ -55,7 +55,7 @@ const CameraPlot = ({
 
   return (
     <Card 
-      className={`w-full mt-8 ${isDragging ? 'opacity-50' : ''}`}
+      className={`w-full mt-8 bg-gray-800 border-gray-700 ${isDragging ? 'opacity-50' : ''}`}
       draggable
       onDragStart={(e) => onDragStart?.(e, 'camera-plot')}
       onDragEnter={(e) => onDragEnterContainer?.(e, -1)}
@@ -64,14 +64,14 @@ const CameraPlot = ({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-            <CardTitle className="text-xl">Camera Plot</CardTitle>
+            <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
+            <CardTitle className="text-xl text-white">Camera Plot</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             <Button
               onClick={handleOpenEditor}
               size="sm"
-              variant="outline"
+              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
             >
               <Edit className="h-4 w-4 mr-2" />
               Open Editor

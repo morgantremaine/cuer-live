@@ -64,14 +64,14 @@ const NoteItem = ({
       onDragEnd={onDragEnd}
       className={`group p-3 rounded-md cursor-pointer transition-colors mb-2 relative ${
         isActive 
-          ? 'bg-primary text-primary-foreground' 
-          : 'bg-muted hover:bg-muted/80'
+          ? 'bg-blue-600 text-white' 
+          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
       } ${isDragging ? 'opacity-50 z-10' : ''}`}
       onClick={() => onSelectNote(note.id)}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-muted-foreground">
+          <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-200">
             <GripVertical className="h-3 w-3" />
           </div>
           <div className="flex-1 min-w-0">
@@ -234,14 +234,14 @@ const ScratchpadEnhancedSidebar = ({
   );
 
   return (
-    <div className="w-80 border-r flex flex-col">
-      <div className="p-3 border-b space-y-3">
+    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+      <div className="p-3 border-b border-gray-700 space-y-3">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={onCreateNote}
-            className="gap-2"
+            className="text-gray-300 hover:text-white hover:bg-gray-600 gap-2"
           >
             <Plus className="h-4 w-4" />
             New Note
@@ -249,12 +249,12 @@ const ScratchpadEnhancedSidebar = ({
         </div>
         
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
           />
         </div>
       </div>
@@ -269,7 +269,7 @@ const ScratchpadEnhancedSidebar = ({
           {filteredNotes.map((note, index) => (
             <React.Fragment key={note.id}>
               {insertionIndex === index && (
-                <div className="h-1 bg-primary rounded-full mb-2 animate-pulse" />
+                <div className="h-1 bg-blue-400 rounded-full mb-2 animate-pulse" />
               )}
               <NoteItem
                 note={note}
@@ -292,11 +292,11 @@ const ScratchpadEnhancedSidebar = ({
             </React.Fragment>
           ))}
           {insertionIndex === filteredNotes.length && (
-            <div className="h-1 bg-primary rounded-full mt-2 animate-pulse" />
+            <div className="h-1 bg-blue-400 rounded-full mt-2 animate-pulse" />
           )}
           
           {filteredNotes.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-gray-400">
               {searchQuery ? (
                 <>
                   <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />

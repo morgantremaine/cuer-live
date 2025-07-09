@@ -71,11 +71,11 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
   };
 
   return (
-    <div className="w-full mt-8 border rounded-lg overflow-hidden">
-      <div className="flex items-center p-4 border-b">
+    <div className="w-full mt-8 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+      <div className="flex items-center p-4 border-b border-gray-700">
         <div className="flex items-center gap-2">
-          <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-          <h2 className="text-xl font-semibold">Notes</h2>
+          <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
+          <h2 className="text-xl font-semibold text-white">Notes</h2>
         </div>
       </div>
       
@@ -109,7 +109,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
           )}
           
           {!activeNote && (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex items-center justify-center h-full text-gray-400">
               <p>Select a note to start writing</p>
             </div>
           )}
