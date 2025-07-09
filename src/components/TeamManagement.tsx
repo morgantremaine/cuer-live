@@ -184,8 +184,8 @@ const TeamManagement = () => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 bg-gray-800 rounded-lg animate-pulse" />
-        <div className="h-64 bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-32 bg-muted rounded-lg animate-pulse" />
+        <div className="h-64 bg-muted rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -194,13 +194,13 @@ const TeamManagement = () => {
   if (error) {
     return (
       <div className="space-y-6">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               Error Loading Team
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription>
               {error}
             </CardDescription>
           </CardHeader>
@@ -213,13 +213,13 @@ const TeamManagement = () => {
   if (!team) {
     return (
       <div className="space-y-6">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
               Team Setup
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription>
               Setting up your team... Please refresh the page if this persists.
             </CardDescription>
           </CardHeader>
@@ -238,13 +238,13 @@ const TeamManagement = () => {
   return (
     <div className="space-y-6">
       {/* Team Info */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             {displayTeamName}
           </CardTitle>
-          <CardDescription className="text-gray-400">
+          <CardDescription>
             Manage your team members and collaborate on rundowns. You have {userRole} access.
           </CardDescription>
         </CardHeader>
@@ -252,33 +252,33 @@ const TeamManagement = () => {
 
       {/* Invite Members (Admin Only) */}
       {userRole === 'admin' && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
               Invite Team Members
             </CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription>
               Add new members to your team by sending email invitations.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* Usage indicator */}
-              <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                <span className="text-gray-300">Team Usage:</span>
-                <span className={`font-medium ${isAtLimit ? 'text-red-400' : 'text-green-400'}`}>
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="text-muted-foreground">Team Usage:</span>
+                <span className={`font-medium ${isAtLimit ? 'text-destructive' : 'text-green-600'}`}>
                   {currentUsage} of {max_team_members} slots used
                 </span>
               </div>
               
               {/* Limit warning */}
               {isAtLimit && (
-                <div className="flex items-start gap-3 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-yellow-400">Team Limit Reached</p>
-                    <p className="text-sm text-yellow-300 mt-1">
+                    <p className="font-medium text-yellow-800">Team Limit Reached</p>
+                    <p className="text-sm text-yellow-700 mt-1">
                       You've reached your team member limit. To invite more members, please upgrade your subscription or remove existing members.
                     </p>
                   </div>
@@ -293,15 +293,13 @@ const TeamManagement = () => {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="Enter email address"
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     required
                     disabled={!canInviteMore}
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  disabled={isInviting || !canInviteMore} 
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isInviting || !canInviteMore}
                 >
                   {isInviting ? 'Inviting...' : 'Send Invite'}
                 </Button>
@@ -313,9 +311,9 @@ const TeamManagement = () => {
 
       {/* Pending Invitations (Admin Only) */}
       {userRole === 'admin' && pendingInvitations.length > 0 && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+            <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
               Pending Invitations
             </CardTitle>
@@ -323,33 +321,33 @@ const TeamManagement = () => {
           <CardContent>
             <div className="space-y-2">
               {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between p-3 border border-gray-600 rounded-lg bg-gray-700">
+                <div key={invitation.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <span className="font-medium text-white">{invitation.email}</span>
-                    <p className="text-sm text-gray-400">
+                    <span className="font-medium">{invitation.email}</span>
+                    <p className="text-sm text-muted-foreground">
                       Invited {new Date(invitation.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="border-gray-500 text-gray-300">Pending</Badge>
+                    <Badge variant="outline">Pending</Badge>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-gray-600">
+                        <Button variant="ghost" size="sm">
                           <X className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-gray-800 border-gray-600 text-white">
+                      <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-white">Revoke Invitation</AlertDialogTitle>
-                          <AlertDialogDescription className="text-gray-300">
+                          <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+                          <AlertDialogDescription>
                             Are you sure you want to revoke the invitation for {invitation.email}?
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500">Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction 
                             onClick={() => handleRevokeInvitation(invitation.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Revoke
                           </AlertDialogAction>
@@ -365,9 +363,9 @@ const TeamManagement = () => {
       )}
 
       {/* Team Members */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
             Team Members
           </CardTitle>
@@ -375,36 +373,35 @@ const TeamManagement = () => {
         <CardContent>
           {teamMembers.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400">No team members found. Try refreshing the page.</p>
+              <p className="text-muted-foreground">No team members found. Try refreshing the page.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-600 rounded-lg bg-gray-700">
+                <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-white">
+                        <span className="font-medium">
                           {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
                         </span>
                         {member.role === 'admin' && (
                           <Crown className="h-4 w-4 text-yellow-500" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {member.profiles?.email}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className={member.role === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'}>
+                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
                       {member.role}
                     </Badge>
                     {userRole === 'admin' && member.role !== 'admin' && (
                       <Button 
                         variant="ghost" 
-                        size="sm" 
-                        className="text-gray-300 hover:text-white hover:bg-gray-600"
+                        size="sm"
                         onClick={() => handleRemoveMemberClick(
                           member.id, 
                           member.profiles?.full_name || member.profiles?.email || 'Unknown User'
@@ -423,13 +420,13 @@ const TeamManagement = () => {
 
       {/* Enhanced Remove Member Dialog */}
       <AlertDialog open={!!memberToRemove} onOpenChange={(open) => !open && handleCancelRemoveMember()}>
-        <AlertDialogContent className="bg-gray-800 border-gray-600 text-white max-w-md">
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               Remove Team Member
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300 space-y-3">
+            <AlertDialogDescription className="space-y-3">
               {isLoadingPreview ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -444,8 +441,8 @@ const TeamManagement = () => {
                     You are about to remove <strong>{transferPreview.member_name || transferPreview.member_email}</strong> from the team.
                   </p>
                   
-                  <div className="bg-gray-700 p-3 rounded border-l-4 border-red-500">
-                    <p className="font-semibold text-red-400 mb-2">What will happen:</p>
+                  <div className="bg-red-50 p-3 rounded border-l-4 border-red-500">
+                    <p className="font-semibold text-red-700 mb-2">What will happen:</p>
                     <ul className="space-y-1 text-sm">
                       <li>• Their account will be permanently deleted</li>
                       {transferPreview.rundown_count > 0 && (
@@ -458,7 +455,7 @@ const TeamManagement = () => {
                     </ul>
                   </div>
                   
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     All their rundowns and blueprints will be safely transferred to you before their account is deleted.
                   </p>
                 </div>
@@ -467,7 +464,6 @@ const TeamManagement = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel 
-              className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
               disabled={isRemoving}
             >
               Cancel
@@ -475,7 +471,7 @@ const TeamManagement = () => {
             <AlertDialogAction 
               onClick={handleConfirmRemoveMember}
               disabled={isLoadingPreview || isRemoving || !transferPreview}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isRemoving ? (
                 <>
