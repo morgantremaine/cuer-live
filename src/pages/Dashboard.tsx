@@ -294,19 +294,19 @@ const Dashboard = () => {
 
   if (shouldShowLoadingSkeleton) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <DashboardHeader 
           userEmail={user?.email}
           onSignOut={handleSignOut}
         />
         
         <div className="flex flex-1">
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
+          <div className="w-80 border-r p-4">
             <div className="space-y-4">
-              <Skeleton className="h-8 w-full bg-gray-700" />
-              <Skeleton className="h-6 w-3/4 bg-gray-700" />
-              <Skeleton className="h-6 w-1/2 bg-gray-700" />
-               <Skeleton className="h-6 w-2/3 bg-gray-700" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+               <Skeleton className="h-6 w-2/3" />
             </div>
           </div>
           
@@ -314,13 +314,13 @@ const Dashboard = () => {
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
               <div className="px-4 py-6 sm:px-0 space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-40 bg-gray-700" />
-                  <Skeleton className="h-12 w-32 bg-gray-700" />
+                  <Skeleton className="h-12 w-40" />
+                  <Skeleton className="h-12 w-32" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
+                    <Skeleton key={i} className="h-32 w-full" />
                   ))}
                 </div>
               </div>
@@ -332,7 +332,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Full-width Header */}
       <DashboardHeader 
         userEmail={user?.email}
@@ -363,7 +363,7 @@ const Dashboard = () => {
               <div className="flex gap-4 mb-6">
                 <CreateNewButton onClick={handleCreateNew} />
                 <CSVImportDialog onImport={handleCSVImport}>
-                  <Button size="lg" className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2">
+                  <Button size="lg" variant="outline" className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Import CSV
                   </Button>
