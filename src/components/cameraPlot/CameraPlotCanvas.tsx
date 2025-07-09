@@ -129,20 +129,24 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         )}
 
         {/* Render all elements */}
-        {scene?.elements.map((element) => (
-          <CameraPlotElement
-            key={element.id}
-            element={element}
-            isSelected={selectedElements.includes(element.id)}
-            onUpdate={onUpdateElement}
-            onDelete={onDeleteElement}
-            onDuplicate={onDuplicateElement}
-            onSelect={onSelectElement}
-            snapToGrid={snapToGrid}
-            allElements={scene.elements}
-            selectedElements={scene.elements.filter(el => selectedElements.includes(el.id))}
-          />
-        ))}
+        {scene?.elements.map((element) => {
+          const selectedElementObjects = scene.elements.filter(el => selectedElements.includes(el.id));
+          
+          return (
+            <CameraPlotElement
+              key={element.id}
+              element={element}
+              isSelected={selectedElements.includes(element.id)}
+              onUpdate={onUpdateElement}
+              onDelete={onDeleteElement}
+              onDuplicate={onDuplicateElement}
+              onSelect={onSelectElement}
+              snapToGrid={snapToGrid}
+              allElements={scene.elements}
+              selectedElements={selectedElementObjects}
+            />
+          );
+        })}
 
         <CameraPlotEmptyState 
           hasElements={!!scene?.elements.length}

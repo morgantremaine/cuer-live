@@ -82,8 +82,10 @@ export const useCameraPlotCanvasHandlers = ({
         setIsRightClickPanning(true);
         setLastPanPoint({ x: e.clientX, y: e.clientY });
       } else if (e.button === 0) { // Left click
+        console.log('🖱️ Starting selection box');
         const rect = e.currentTarget.getBoundingClientRect();
         const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
+        console.log('🖱️ Selection start coordinates:', { x, y });
         setIsSelecting(true);
         setSelectionStart({ x, y });
         setSelectionEnd({ x, y });
