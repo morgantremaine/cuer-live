@@ -52,11 +52,11 @@ const RundownCard = ({
   // Collapsed view for archived rundowns
   if (isArchived) {
     return (
-      <Card className="hover:shadow-lg transition-shadow relative opacity-75">
+      <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700 opacity-75">
         <CardHeader className="py-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center">
-              <Archive className="h-4 w-4 mr-2 text-muted-foreground" />
+            <CardTitle className="text-lg flex items-center text-white">
+              <Archive className="h-4 w-4 mr-2 text-gray-400" />
               {rundown.title}
             </CardTitle>
             <DropdownMenu>
@@ -64,7 +64,7 @@ const RundownCard = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 relative z-20"
+                  className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -72,7 +72,7 @@ const RundownCard = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="z-50 shadow-lg rounded-md min-w-[160px]"
+                className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
               >
                 {onDuplicate && (
                   <DropdownMenuItem 
@@ -80,6 +80,7 @@ const RundownCard = ({
                       e.stopPropagation()
                       onDuplicate(rundown.id, rundown.title, rundown.items, e)
                     }}
+                    className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                   >
                     <Copy className="h-4 w-4 mr-2" />
                     Duplicate
@@ -90,6 +91,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onUnarchive?.(rundown.id, rundown.title, rundown.items, e)
                   }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Archive className="h-4 w-4 mr-2" />
                   Unarchive
@@ -99,7 +101,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onDelete(rundown.id, rundown.title, e)
                   }}
-                  className="text-destructive hover:text-destructive"
+                  className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Permanently
@@ -114,14 +116,14 @@ const RundownCard = ({
 
   // Regular view for active rundowns
   return (
-    <Card className="hover:shadow-lg transition-shadow relative">
+    <Card className="hover:shadow-lg transition-shadow relative bg-gray-800 border-gray-700">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg flex items-center">
+            <CardTitle className="text-lg flex items-center text-white">
               {rundown.title}
             </CardTitle>
-            <CardDescription className="flex flex-col gap-1 text-sm">
+            <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
                 Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
@@ -137,7 +139,7 @@ const RundownCard = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 relative z-20"
+                className="h-8 w-8 relative z-20 hover:bg-gray-700 text-gray-400 hover:text-white"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="h-4 w-4" />
@@ -145,7 +147,7 @@ const RundownCard = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent 
               align="end" 
-              className="z-50 shadow-lg rounded-md min-w-[160px]"
+              className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
             >
               {onDuplicate && (
                 <DropdownMenuItem 
@@ -153,6 +155,7 @@ const RundownCard = ({
                     e.stopPropagation()
                     onDuplicate(rundown.id, rundown.title, rundown.items, e)
                   }}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
@@ -163,6 +166,7 @@ const RundownCard = ({
                   e.stopPropagation()
                   onArchive?.(rundown.id, rundown.title, e)
                 }}
+                className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
               >
                 <Archive className="h-4 w-4 mr-2" />
                 Archive
@@ -172,7 +176,7 @@ const RundownCard = ({
                   e.stopPropagation()
                   onDelete(rundown.id, rundown.title, e)
                 }}
-                className="text-destructive hover:text-destructive"
+                className="flex items-center px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 focus:text-red-400 cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
@@ -183,7 +187,7 @@ const RundownCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex items-center text-sm text-muted-foreground">
+          <div className="flex items-center text-sm text-gray-400">
             {(() => {
               const items = rundown.items || [];
               const headers = items.filter(item => item.type === 'header').length;
@@ -195,7 +199,7 @@ const RundownCard = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-primary hover:text-primary/80"
+              className="text-blue-400 hover:text-blue-300 hover:bg-gray-700"
               onClick={handleBlueprintClick}
             >
               <FileText className="h-4 w-4 mr-1" />
@@ -204,6 +208,7 @@ const RundownCard = ({
             <Button 
               variant="ghost" 
               size="sm" 
+              className="text-gray-300 hover:text-white hover:bg-gray-700"
               onClick={handleOpenClick}
             >
               Open →
