@@ -58,9 +58,12 @@ export const useUnifiedNotes = (rundownId: string) => {
       try {
         let rawNotes = '';
         
-        // Try to get notes from blueprint context first (if available)
-        if (blueprintContext?.state?.notes) {
+        // Try to get notes from blueprint context first (if available and initialized)
+        if (blueprintContext?.state?.notes && blueprintContext.state.isInitialized) {
           rawNotes = blueprintContext.state.notes;
+        } else if (blueprintContext?.state?.isInitialized === false) {
+          // Blueprint context is available but not initialized yet, wait for it
+          return;
         } else {
           // Fall back to direct database access
           const { data, error } = await supabase
@@ -157,7 +160,7 @@ export const useUnifiedNotes = (rundownId: string) => {
     };
 
     initializeNotes();
-  }, [rundownId, blueprintContext?.state?.notes, isInitialized]);
+  }, [rundownId, blueprintContext?.state?.notes, blueprintContext?.state?.isInitialized, isInitialized]);
 
   // Save notes using appropriate method (context or direct database)
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
@@ -172,8 +175,8 @@ export const useUnifiedNotes = (rundownId: string) => {
       try {
         const notesJson = JSON.stringify(notesToSave);
         
-        if (blueprintContext?.updateNotes) {
-          // Use blueprint context if available
+        if (blueprintContext?.updateNotes && blueprintContext.state.isInitialized) {
+          // Use blueprint context if available and initialized
           blueprintContext.updateNotes(notesJson);
         } else {
           // Fall back to direct database save
