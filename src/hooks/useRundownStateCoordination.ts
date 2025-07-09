@@ -1,3 +1,4 @@
+import { usePersistedRundownState } from './usePersistedRundownState';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
@@ -13,8 +14,8 @@ export const useRundownStateCoordination = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Single source of truth for all rundown state (NO showcaller interference)
-  const simplifiedState = useSimplifiedRundownState();
+  // Single source of truth for all rundown state (with persistence)
+  const simplifiedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({

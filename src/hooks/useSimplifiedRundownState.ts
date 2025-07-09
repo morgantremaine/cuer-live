@@ -3,8 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
-import { useRealtimeRundown } from './useRealtimeRundown';
-import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
+import { useOptimizedRealtime } from './useOptimizedRealtime';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
@@ -78,8 +77,8 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Realtime rundown updates - EXCLUDES showcaller completely
-  const realtimeRundown = useRealtimeRundown({
+  // Optimized realtime with connection persistence
+  const optimizedRealtime = useOptimizedRealtime({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
@@ -105,24 +104,15 @@ export const useSimplifiedRundownState = () => {
 
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
-    if (realtimeRundown.trackOwnUpdate) {
-      setTrackOwnUpdate(realtimeRundown.trackOwnUpdate);
+    if (optimizedRealtime.trackOwnUpdate) {
+      setTrackOwnUpdate(optimizedRealtime.trackOwnUpdate);
     }
-  }, [realtimeRundown.trackOwnUpdate, setTrackOwnUpdate]);
+  }, [optimizedRealtime.trackOwnUpdate, setTrackOwnUpdate]);
 
-  // Stable realtime collaboration - unchanged
-  const stableRealtime = useStableRealtimeCollaboration({
-    rundownId,
-    onRemoteUpdate: useCallback(() => {
-      // This is just for notifications, doesn't change core functionality
-    }, []),
-    enabled: !!rundownId
-  });
-
-  // Update connection status based on realtime hooks
+  // Update connection status from optimized realtime
   useEffect(() => {
-    setIsConnected(realtimeRundown.isConnected || stableRealtime.isConnected);
-  }, [realtimeRundown.isConnected, stableRealtime.isConnected]);
+    setIsConnected(optimizedRealtime.isConnected);
+  }, [optimizedRealtime.isConnected]);
 
   // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -438,7 +428,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeRundown.isProcessingContentUpdate, // NEW: Use content processing state
+    isProcessingRealtimeUpdate: optimizedRealtime.isProcessingUpdate,
     
     // Calculations
     totalRuntime,
