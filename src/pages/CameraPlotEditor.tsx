@@ -63,6 +63,25 @@ const CameraPlotEditor = () => {
     <>
       <style>{`
         @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: white !important;
+          }
+          .print-content .camera-plot-canvas {
+            background: white !important;
+          }
+          .print-content .grid-pattern {
+            display: none !important;
+          }
           .no-print {
             display: none !important;
           }
@@ -91,6 +110,32 @@ const CameraPlotEditor = () => {
             margin-bottom: 12px;
             text-align: center;
             color: black;
+          }
+          /* Ensure dotted lines remain dotted in print */
+          line[stroke-dasharray] {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          /* Keep labels with dark background in print */
+          .bg-gray-900 {
+            background-color: #111827 !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .text-white {
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .border-blue-400 {
+            border-color: #60a5fa !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .border-gray-600 {
+            border-color: #4b5563 !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
         }
       `}</style>
@@ -142,8 +187,6 @@ const CameraPlotEditor = () => {
             <CameraPlotToolbar
               selectedTool={selectedTool}
               onToolSelect={setSelectedTool}
-              showGrid={showGrid}
-              onToggleGrid={toggleGrid}
               zoom={zoom}
               onZoomIn={zoomIn}
               onZoomOut={zoomOut}
@@ -171,7 +214,7 @@ const CameraPlotEditor = () => {
             scene={activeScene}
             selectedTool={selectedTool}
             selectedElements={selectedElements}
-            showGrid={showGrid}
+            showGrid={false}
             zoom={zoom}
             pan={pan}
             updatePan={updatePan}

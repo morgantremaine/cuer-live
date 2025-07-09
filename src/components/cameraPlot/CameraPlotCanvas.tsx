@@ -101,7 +101,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         }}
         tabIndex={0}
       >
-        <CameraPlotGrid showGrid={showGrid || false} />
+        
 
         <CameraPlotWallPreview
           isDrawingWall={isDrawingWall}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -9,7 +8,6 @@ import {
   Square, 
   Circle,
   Minus,
-  Grid3X3,
   ZoomIn,
   ZoomOut,
   RotateCcw
@@ -18,8 +16,6 @@ import {
 interface CameraPlotToolbarProps {
   selectedTool: string;
   onToolSelect: (tool: string) => void;
-  showGrid: boolean;
-  onToggleGrid: () => void;
   zoom: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -29,8 +25,6 @@ interface CameraPlotToolbarProps {
 const CameraPlotToolbar = ({
   selectedTool,
   onToolSelect,
-  showGrid,
-  onToggleGrid,
   zoom,
   onZoomIn,
   onZoomOut,
@@ -75,20 +69,6 @@ const CameraPlotToolbar = ({
       <div>
         <h3 className="text-sm font-medium text-gray-300 mb-2">View</h3>
         <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onToggleGrid}
-            className={`w-full flex items-center gap-2 ${
-              showGrid 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'bg-gray-700 hover:bg-gray-600 text-gray-300 border-gray-600'
-            }`}
-          >
-            <Grid3X3 className="h-4 w-4" />
-            <span className="text-xs">Grid</span>
-          </Button>
-          
           <div className="flex gap-1">
             <Button
               variant="outline"
