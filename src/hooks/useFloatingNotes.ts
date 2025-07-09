@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
 
 interface Note {
   id: string;
@@ -10,6 +12,8 @@ interface Note {
 }
 
 export const useFloatingNotes = (rundownId: string) => {
+  const { user } = useAuth();
+  const { team } = useTeam();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,15 +152,26 @@ export const useFloatingNotes = (rundownId: string) => {
             .eq('id', rundownId)
             .single();
 
-          // Create blueprint record
+          // Create blueprint record following the same pattern as blueprint loading
+          const insertData: any = {
+            rundown_id: rundownId,
+            rundown_title: rundownData?.title || 'Untitled',
+            lists: [],
+            notes: JSON.stringify(notesToSave)
+          };
+
+          // Add user_id and team_id based on team presence
+          if (team?.id) {
+            insertData.user_id = user?.id;
+            insertData.team_id = team.id;
+          } else {
+            insertData.user_id = user?.id;
+            // team_id will be null by default
+          }
+
           const { error: createError } = await supabase
             .from('blueprints')
-            .insert({
-              rundown_id: rundownId,
-              rundown_title: rundownData?.title || 'Untitled',
-              lists: [],
-              notes: JSON.stringify(notesToSave)
-            });
+            .insert(insertData);
 
           if (createError) {
             console.error('Error creating blueprint:', createError);

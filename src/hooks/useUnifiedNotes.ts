@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
 
 // Check if we're in a blueprint context (optional dependency)
 const useBlueprintContextSafe = () => {
@@ -20,6 +22,8 @@ interface Note {
 }
 
 export const useUnifiedNotes = (rundownId: string) => {
+  const { user } = useAuth();
+  const { team } = useTeam();
   const blueprintContext = useBlueprintContextSafe();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
@@ -187,15 +191,26 @@ export const useUnifiedNotes = (rundownId: string) => {
               .eq('id', rundownId)
               .single();
 
-            // Create blueprint record
+            // Create blueprint record following the same pattern as blueprint loading
+            const insertData: any = {
+              rundown_id: rundownId,
+              rundown_title: rundownData?.title || 'Untitled',
+              lists: [],
+              notes: notesJson
+            };
+
+            // Add user_id and team_id based on team presence
+            if (team?.id) {
+              insertData.user_id = user?.id;
+              insertData.team_id = team.id;
+            } else {
+              insertData.user_id = user?.id;
+              // team_id will be null by default
+            }
+
             const { error: createError } = await supabase
               .from('blueprints')
-              .insert({
-                rundown_id: rundownId,
-                rundown_title: rundownData?.title || 'Untitled',
-                lists: [],
-                notes: notesJson
-              });
+              .insert(insertData);
 
             if (createError) {
               console.error('Error creating blueprint:', createError);
