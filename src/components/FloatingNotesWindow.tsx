@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, FileText, Minimize2, Maximize2, Copy } from 'lucide-react';
+import { X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUnifiedNotes } from '@/hooks/useUnifiedNotes';
 import ScratchpadRichTextEditor from '@/components/blueprint/scratchpad/ScratchpadRichTextEditor';
@@ -24,9 +24,13 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
   initialPosition = { x: 100, y: 100 }
 }) => {
   const [position, setPosition] = useState(initialPosition);
+  const [size, setSize] = useState({ width: 500, height: 400 });
   const [isDragging, setIsDragging] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState('');
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizeStartPos, setResizeStartPos] = useState({ x: 0, y: 0 });
+  const [resizeStartSize, setResizeStartSize] = useState({ width: 0, height: 0 });
   const windowRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   
@@ -52,7 +56,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
 
   // Mouse event handlers for dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!windowRef.current) return;
+    if (!windowRef.current || isResizing) return;
     
     const rect = windowRef.current.getBoundingClientRect();
     setDragOffset({
@@ -60,24 +64,63 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
       y: e.clientY - rect.top
     });
     setIsDragging(true);
-  }, []);
+  }, [isResizing]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
-    
-    setPosition({
-      x: e.clientX - dragOffset.x,
-      y: e.clientY - dragOffset.y
-    });
-  }, [isDragging, dragOffset]);
+    if (isDragging && !isResizing) {
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
+    } else if (isResizing) {
+      const deltaX = e.clientX - resizeStartPos.x;
+      const deltaY = e.clientY - resizeStartPos.y;
+      
+      let newWidth = resizeStartSize.width;
+      let newHeight = resizeStartSize.height;
+      let newX = position.x;
+      let newY = position.y;
+
+      if (resizeHandle.includes('right')) {
+        newWidth = Math.max(280, resizeStartSize.width + deltaX);
+      }
+      if (resizeHandle.includes('left')) {
+        newWidth = Math.max(280, resizeStartSize.width - deltaX);
+        newX = position.x + (resizeStartSize.width - newWidth);
+      }
+      if (resizeHandle.includes('bottom')) {
+        newHeight = Math.max(300, resizeStartSize.height + deltaY);
+      }
+      if (resizeHandle.includes('top')) {
+        newHeight = Math.max(300, resizeStartSize.height - deltaY);
+        newY = position.y + (resizeStartSize.height - newHeight);
+      }
+
+      setSize({ width: newWidth, height: newHeight });
+      setPosition({ x: newX, y: newY });
+    }
+  }, [isDragging, isResizing, dragOffset, resizeStartPos, resizeStartSize, position, resizeHandle]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setIsResizing(false);
+    setResizeHandle('');
   }, []);
+
+  // Resize handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent, handle: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsResizing(true);
+    setResizeHandle(handle);
+    setResizeStartPos({ x: e.clientX, y: e.clientY });
+    setResizeStartSize({ width: size.width, height: size.height });
+  }, [size]);
 
   // Add global mouse event listeners
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       
@@ -86,7 +129,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
   // Constrain window to viewport
   useEffect(() => {
@@ -148,16 +191,34 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
   return (
     <div
       ref={windowRef}
-      className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
+      className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden select-none"
       style={{
         left: position.x,
         top: position.y,
-        width: isMinimized ? '300px' : '500px',
-        height: isMinimized ? 'auto' : '400px',
+        width: size.width,
+        height: size.height,
         minWidth: '280px',
-        minHeight: isMinimized ? 'auto' : '300px'
+        minHeight: '300px'
       }}
     >
+      {/* Resize handles */}
+      <div 
+        className="absolute top-0 right-0 w-3 h-3 cursor-nw-resize"
+        onMouseDown={(e) => handleResizeStart(e, 'top-right')}
+      />
+      <div 
+        className="absolute bottom-0 right-0 w-3 h-3 cursor-nw-resize"
+        onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+      />
+      <div 
+        className="absolute bottom-0 left-0 w-3 h-3 cursor-ne-resize"
+        onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
+      />
+      <div 
+        className="absolute top-0 left-0 w-3 h-3 cursor-ne-resize"
+        onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+      />
+
       {/* Header */}
       <div
         className="flex items-center justify-between p-3 bg-gray-800 rounded-t-lg border-b border-gray-700 cursor-move"
@@ -177,14 +238,6 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-          >
-            {isMinimized ? <Maximize2 className="h-3 w-3" /> : <Minimize2 className="h-3 w-3" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={onClose}
             className="h-6 w-6 p-0 text-gray-400 hover:text-white"
           >
@@ -194,52 +247,50 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
       </div>
 
       {/* Content */}
-      {!isMinimized && (
-        <div className="flex flex-col" style={{ height: 'calc(100% - 60px)' }}>
-          {/* Toolbar */}
-          <div className="border-b border-gray-700">
-            <ScratchpadStreamlinedToolbar
-              formatStates={formatStates}
-              onFormat={applyFormatting}
-            />
-          </div>
-
-          {/* Note tabs if multiple notes */}
-          {notes.length > 1 && (
-            <div className="flex border-b border-gray-700 bg-gray-800 overflow-x-auto">
-              {notes.map((note, index) => (
-                <button
-                  key={note.id}
-                  onClick={() => selectNote(note.id)}
-                  className={`px-3 py-2 text-xs border-r border-gray-700 truncate min-w-0 max-w-32 ${
-                    note.id === activeNote?.id
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-750'
-                  }`}
-                >
-                  {note.title}
-                </button>
-              ))}
-              <button
-                onClick={createNote}
-                className="px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-750 border-r border-gray-700"
-              >
-                +
-              </button>
-            </div>
-          )}
-
-          {/* Editor */}
-          <div className="flex-1 overflow-auto">
-            <ScratchpadRichTextEditor
-              ref={editorRef}
-              note={activeNote}
-              onContentChange={updateNoteContent}
-              onFormatStateChange={handleFormatStateChange}
-            />
-          </div>
+      <div className="flex flex-col" style={{ height: 'calc(100% - 60px)' }}>
+        {/* Toolbar */}
+        <div className="border-b border-gray-700">
+          <ScratchpadStreamlinedToolbar
+            formatStates={formatStates}
+            onFormat={applyFormatting}
+          />
         </div>
-      )}
+
+        {/* Note tabs if multiple notes */}
+        {notes.length > 1 && (
+          <div className="flex border-b border-gray-700 bg-gray-800 overflow-x-auto">
+            {notes.map((note, index) => (
+              <button
+                key={note.id}
+                onClick={() => selectNote(note.id)}
+                className={`px-3 py-2 text-xs border-r border-gray-700 truncate min-w-0 max-w-32 ${
+                  note.id === activeNote?.id
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-750'
+                }`}
+              >
+                {note.title}
+              </button>
+            ))}
+            <button
+              onClick={createNote}
+              className="px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-750 border-r border-gray-700"
+            >
+              +
+            </button>
+          </div>
+        )}
+
+        {/* Editor */}
+        <div className="flex-1 overflow-auto">
+          <ScratchpadRichTextEditor
+            ref={editorRef}
+            note={activeNote}
+            onContentChange={updateNoteContent}
+            onFormatStateChange={handleFormatStateChange}
+          />
+        </div>
+      </div>
     </div>
   );
 };
