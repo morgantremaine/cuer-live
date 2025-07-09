@@ -148,8 +148,7 @@ const DashboardRundownGrid = ({
     const now = new Date()
     const hoursDiff = (now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60)
     
-    if (hoursDiff < 1) return { status: 'active', color: 'bg-green-500', label: 'Recently Active' }
-    if (hoursDiff < 24) return { status: 'recent', color: 'bg-yellow-500', label: 'Updated Today' }
+    if (hoursDiff < 48) return { status: 'active', color: 'bg-green-500', label: 'Recently Active' }
     if (hoursDiff < 168) return { status: 'week', color: 'bg-blue-500', label: 'This Week' }
     return { status: 'older', color: 'bg-gray-500', label: 'Older' }
   }
