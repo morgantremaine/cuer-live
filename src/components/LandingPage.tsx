@@ -117,7 +117,7 @@ const LandingPage = () => {
               Professional Broadcast Tool
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl fade-up">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-6xl mx-auto drop-shadow-2xl fade-up">
               <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                 Run Your Show,
               </span>
