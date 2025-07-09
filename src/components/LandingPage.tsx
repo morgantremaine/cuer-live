@@ -118,7 +118,7 @@ const LandingPage = () => {
             </Badge>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-6xl mx-auto drop-shadow-2xl fade-up">
-              Run Your Show,
+              Run Your Show
               <br />
               <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
                 Not Your Rundown Software
@@ -156,7 +156,7 @@ const LandingPage = () => {
         <div className="relative max-w-6xl mx-auto mb-16 fade-up">
           <div className="relative group">
             <img 
-              src="/uploads/53627402-7a2b-423b-90cc-46b95c189315.png" 
+              src="/lovable-uploads/c858dc01-7728-47ac-a272-98641948db24.png" 
               alt="Cuer Live Professional Rundown Interface"
               className="w-full h-auto rounded-2xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
