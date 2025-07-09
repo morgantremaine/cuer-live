@@ -72,21 +72,11 @@ export const useCameraPlotElementInteractions = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    console.log('🖱️ Element mousedown:', {
-      elementId: element.id,
-      ctrlKey: e.ctrlKey,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
-      multiSelect: e.ctrlKey || e.metaKey || e.shiftKey,
-      currentSelected: selectedElements.map(el => el.id)
-    });
-    
     if (e.detail === 2) {
       return { isDoubleClick: true };
     }
 
     const isMultiSelect = e.ctrlKey || e.metaKey || e.shiftKey;
-    console.log('🎯 About to call onSelect:', { elementId: element.id, isMultiSelect });
     onSelect(element.id, isMultiSelect);
     
     // Check if clicking on scale handles
