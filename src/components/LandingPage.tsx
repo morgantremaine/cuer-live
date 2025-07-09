@@ -118,15 +118,15 @@ const LandingPage = () => {
             </Badge>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-4xl mx-auto drop-shadow-2xl fade-up">
-              The world's most
-              <br />
               <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                intuitive rundown platform
+                Run Your Show,
               </span>
+              <br />
+              Not Your Rundown Software
             </h1>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
-              Purpose-built for speed, clarity, and control, Cuer delivers high-end features in a minimal and intuitive UI that enables rapid decisions and fastest content creation.
+              Purpose-built for speed, clarity, and control, Cuer delivers the high-end features of other premium rundown makers with the minimal and intuitive UI of Google Sheets.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
