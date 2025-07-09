@@ -75,8 +75,12 @@ const CameraPlotEditor = () => {
             top: 0;
             width: 100%;
             background: white !important;
+            overflow: visible !important;
           }
           .print-content .camera-plot-canvas {
+            background: white !important;
+          }
+          .print-content .bg-gray-600 {
             background: white !important;
           }
           .print-content .grid-pattern {
@@ -93,6 +97,14 @@ const CameraPlotEditor = () => {
             width: 100% !important;
             height: auto !important;
             background: white !important;
+            min-height: 800px !important;
+          }
+          .print-canvas > div {
+            background: white !important;
+            transform: none !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 800px !important;
           }
           body {
             background: white !important;
@@ -207,8 +219,8 @@ const CameraPlotEditor = () => {
           </div>
 
           {/* Main Canvas Area */}
-          <div className="flex-1 relative overflow-hidden">
-        <div className="camera-plot-canvas">
+          <div className="flex-1 relative overflow-hidden print-content">
+        <div className="camera-plot-canvas print-canvas">
           <CameraPlotCanvas
             ref={canvasRef}
             scene={activeScene}
