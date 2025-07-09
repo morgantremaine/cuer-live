@@ -102,40 +102,64 @@ export const useBlueprintPersistence = (
 
         if (personalData) {
           console.log('📋 Converting personal blueprint to team blueprint');
-          // Convert personal blueprint to team blueprint
-          const teamBlueprint = {
-            rundown_id: personalData.rundown_id,
-            rundown_title: personalData.rundown_title,
-            user_id: user.id,
-            team_id: rundownData.team_id,
-            lists: personalData.lists || [],
-            show_date: personalData.show_date,
-            notes: personalData.notes,
-            crew_data: personalData.crew_data || [],
-            camera_plots: personalData.camera_plots || [],
-            component_order: personalData.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
-            updated_at: new Date().toISOString()
-          };
-
-          // Insert team blueprint (let database generate new ID)
-          const { data: newTeamData, error: createError } = await supabase
+          
+          // Check if there's already a team blueprint for this rundown (any user)
+          const { data: existingTeamBlueprint, error: existingTeamError } = await supabase
             .from('blueprints')
-            .insert(teamBlueprint)
-            .select()
-            .single();
+            .select('*')
+            .eq('rundown_id', rundownId)
+            .eq('team_id', rundownData.team_id)
+            .maybeSingle();
 
-          if (!createError && newTeamData) {
-            console.log('📋 Successfully converted to team blueprint');
-            // Delete the personal blueprint after successful conversion
+          if (existingTeamError && existingTeamError.code !== 'PGRST116') {
+            console.error('📋 Error checking for existing team blueprint:', existingTeamError);
+          }
+
+          if (existingTeamBlueprint) {
+            console.log('📋 Team blueprint already exists, using existing one and cleaning up personal blueprint');
+            // Delete the personal blueprint since we have a team one
             await supabase
               .from('blueprints')
               .delete()
               .eq('id', personalData.id);
-
-            data = newTeamData;
+            
+            data = existingTeamBlueprint;
           } else {
-            console.error('📋 Failed to convert to team blueprint:', createError);
-            data = personalData; // Fallback to personal blueprint
+            // Convert personal blueprint to team blueprint
+            const teamBlueprint = {
+              rundown_id: personalData.rundown_id,
+              rundown_title: personalData.rundown_title,
+              user_id: user.id,
+              team_id: rundownData.team_id,
+              lists: personalData.lists || [],
+              show_date: personalData.show_date,
+              notes: personalData.notes,
+              crew_data: personalData.crew_data || [],
+              camera_plots: personalData.camera_plots || [],
+              component_order: personalData.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
+              updated_at: new Date().toISOString()
+            };
+
+            // Insert team blueprint (let database generate new ID)
+            const { data: newTeamData, error: createError } = await supabase
+              .from('blueprints')
+              .insert(teamBlueprint)
+              .select()
+              .single();
+
+            if (!createError && newTeamData) {
+              console.log('📋 Successfully converted to team blueprint');
+              // Delete the personal blueprint after successful conversion
+              await supabase
+                .from('blueprints')
+                .delete()
+                .eq('id', personalData.id);
+
+              data = newTeamData;
+            } else {
+              console.error('📋 Failed to convert to team blueprint:', createError);
+              data = personalData; // Fallback to personal blueprint
+            }
           }
         }
       }
