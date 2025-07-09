@@ -26,8 +26,6 @@ export const useCameraPlotTools = () => {
     setSelectedElements([]);
   };
 
-  console.log('📊 Current selectedElements state:', selectedElements);
-  
   return {
     selectedTool,
     selectedElements,

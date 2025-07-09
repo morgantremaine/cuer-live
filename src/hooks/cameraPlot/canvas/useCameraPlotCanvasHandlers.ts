@@ -81,14 +81,8 @@ export const useCameraPlotCanvasHandlers = ({
       if (e.button === 2) { // Right click
         setIsRightClickPanning(true);
         setLastPanPoint({ x: e.clientX, y: e.clientY });
-      } else if (e.button === 0) { // Left click
-        console.log('🖱️ Starting selection box');
-        const rect = e.currentTarget.getBoundingClientRect();
-        const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
-        console.log('🖱️ Selection start coordinates:', { x, y });
-        setIsSelecting(true);
-        setSelectionStart({ x, y });
-        setSelectionEnd({ x, y });
+      } else if (e.button === 0) { // Left click - remove selection box functionality
+        // No selection box anymore
       }
     }
   };
@@ -99,11 +93,8 @@ export const useCameraPlotCanvasHandlers = ({
     const snappedPos = snapToGrid(x, y);
     setMousePos(snappedPos);
 
-    // Handle selection box dragging
-    if (isSelecting && selectedTool === 'select') {
-      setSelectionEnd({ x, y });
-      return;
-    }
+    // Update mouse position (remove selection box updates)
+    setMousePos(snappedPos);
 
     // Handle panning (right-click drag only)
     if (isRightClickPanning && selectedTool === 'select') {
@@ -119,69 +110,7 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleMouseUp = () => {
-    // Handle selection box completion
-    if (isSelecting && selectedTool === 'select' && scene) {
-      // Selection coordinates are already in canvas space from getCanvasCoordinates
-      const minX = Math.min(selectionStart.x, selectionEnd.x);
-      const maxX = Math.max(selectionStart.x, selectionEnd.x);
-      const minY = Math.min(selectionStart.y, selectionEnd.y);
-      const maxY = Math.max(selectionStart.y, selectionEnd.y);
-
-      // Only process selection if there's a meaningful drag (at least 5 pixels in canvas coordinates)
-      const dragDistance = Math.abs(selectionEnd.x - selectionStart.x) + Math.abs(selectionEnd.y - selectionStart.y);
-      
-      console.log('🎯 Selection box coordinates:', { 
-        selectionBounds: { minX, maxX, minY, maxY }, 
-        dragDistance, 
-        zoom, 
-        pan 
-      });
-      
-      if (dragDistance > 5) {
-        console.log('🔍 Checking elements for selection...');
-        
-        // Find elements that intersect with the selection box
-        const selectedElementIds = scene.elements
-          .filter(element => {
-            const elementLeft = element.x;
-            const elementRight = element.x + element.width;
-            const elementTop = element.y;
-            const elementBottom = element.y + element.height;
-
-            // Check if element intersects with selection box
-            // An intersection occurs when the rectangles overlap in both dimensions
-            const horizontalOverlap = elementLeft < maxX && elementRight > minX;
-            const verticalOverlap = elementTop < maxY && elementBottom > minY;
-            
-            const intersects = horizontalOverlap && verticalOverlap;
-            
-            console.log(`📦 Element ${element.id}:`, { 
-              elementBounds: { left: elementLeft, right: elementRight, top: elementTop, bottom: elementBottom },
-              selectionBounds: { minX, maxX, minY, maxY },
-              horizontalOverlap,
-              verticalOverlap,
-              intersects
-            });
-            
-            return intersects;
-          })
-          .map(element => element.id);
-
-        console.log('✅ Selected elements:', selectedElementIds);
-
-        // Select all intersecting elements
-        if (selectedElementIds.length > 0) {
-          // Select the first element normally, then multi-select the rest
-          onSelectElement(selectedElementIds[0], false);
-          selectedElementIds.slice(1).forEach((elementId) => {
-            onSelectElement(elementId, true); // Multi-select for remaining elements
-          });
-        } else {
-          onSelectElement('', false); // Clear selection if no elements found
-        }
-      }
-    }
-
+    // Remove all selection box logic
     setIsPanning(false);
     setIsRightClickPanning(false);
     setIsSelecting(false);
