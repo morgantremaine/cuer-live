@@ -95,7 +95,6 @@ const RundownTableHeader = ({
     const measureElement = document.createElement('div');
     measureElement.style.position = 'absolute';
     measureElement.style.visibility = 'hidden';
-    measureElement.style.whiteSpace = 'nowrap';
     measureElement.style.fontSize = '14px'; // text-sm
     measureElement.style.fontFamily = 'inherit';
     measureElement.style.fontWeight = '400';
@@ -103,6 +102,7 @@ const RundownTableHeader = ({
     measureElement.style.lineHeight = '1.3'; // exact match to TextAreaCell
     measureElement.style.border = 'none';
     measureElement.style.margin = '0';
+    measureElement.style.width = 'max-content'; // Allow natural sizing
     document.body.appendChild(measureElement);
 
     let maxWidth = 0;
@@ -136,9 +136,19 @@ const RundownTableHeader = ({
           measureElement.style.fontFamily = 'inherit';
         }
         
-        measureElement.textContent = textValue;
-        const contentWidth = measureElement.offsetWidth;
-        maxWidth = Math.max(maxWidth, contentWidth);
+        // Handle multi-line text by measuring each line and finding the longest
+        const lines = textValue.split('\n');
+        let maxLineWidth = 0;
+        
+        lines.forEach(line => {
+          measureElement.textContent = line.trim();
+          const lineWidth = measureElement.offsetWidth;
+          maxLineWidth = Math.max(maxLineWidth, lineWidth);
+        });
+        
+        // Cap the width to prevent excessively wide columns for very long lines
+        const cappedWidth = Math.min(maxLineWidth, 300); // Max 300px for readability
+        maxWidth = Math.max(maxWidth, cappedWidth);
       }
     });
 
