@@ -148,7 +148,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
   return (
     <div
       ref={windowRef}
-      className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl"
+      className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden"
       style={{
         left: position.x,
         top: position.y,
@@ -195,7 +195,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
 
       {/* Content */}
       {!isMinimized && (
-        <div className="flex flex-col h-full rounded-b-lg overflow-hidden">
+        <div className="flex flex-col" style={{ height: 'calc(100% - 60px)' }}>
           {/* Toolbar */}
           <div className="border-b border-gray-700">
             <ScratchpadStreamlinedToolbar
@@ -230,15 +230,13 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           )}
 
           {/* Editor */}
-          <div className="flex-1 bg-gray-900 overflow-auto rounded-b-lg">
-            <div className="h-full max-h-full overflow-y-auto">
-              <ScratchpadRichTextEditor
-                ref={editorRef}
-                note={activeNote}
-                onContentChange={updateNoteContent}
-                onFormatStateChange={handleFormatStateChange}
-              />
-            </div>
+          <div className="flex-1 overflow-auto">
+            <ScratchpadRichTextEditor
+              ref={editorRef}
+              note={activeNote}
+              onContentChange={updateNoteContent}
+              onFormatStateChange={handleFormatStateChange}
+            />
           </div>
         </div>
       )}
