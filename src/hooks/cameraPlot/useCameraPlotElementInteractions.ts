@@ -55,7 +55,7 @@ export const useCameraPlotElementInteractions = ({
       return { isDoubleClick: true };
     }
 
-    onSelect(element.id, e.ctrlKey || e.metaKey);
+    onSelect(element.id, e.ctrlKey || e.metaKey || e.shiftKey);
     
     // Check if clicking on scale handles
     const target = e.target as HTMLElement;

@@ -143,8 +143,10 @@ export const useCameraPlotCanvasHandlers = ({
 
         // Select all intersecting elements
         if (selectedElementIds.length > 0) {
+          // Clear existing selection first, then select all found elements
+          onSelectElement('', false);
           selectedElementIds.forEach((elementId, index) => {
-            onSelectElement(elementId, index > 0); // Multi-select for all but the first
+            onSelectElement(elementId, true); // Multi-select for all elements
           });
         } else {
           onSelectElement('', false); // Clear selection if no elements found
