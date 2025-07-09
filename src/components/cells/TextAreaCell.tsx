@@ -112,27 +112,32 @@ const TextAreaCell = ({
 
   // Handle keyboard navigation and line breaks
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Debug logging for Mac command key detection
-    if (e.key === 'Enter') {
-      console.log('Enter key pressed:', {
-        key: e.key,
-        metaKey: e.metaKey,
-        ctrlKey: e.ctrlKey,
-        shiftKey: e.shiftKey,
-        altKey: e.altKey
-      });
-    }
-    
-    // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), allow line break (don't prevent default)
+    // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), manually insert line break
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      console.log('Command/Ctrl+Enter detected - allowing line break');
-      // Allow the default behavior to insert a line break
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const textarea = e.target as HTMLTextAreaElement;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = textarea.value;
+      
+      // Insert line break at cursor position
+      const newValue = currentValue.substring(0, start) + '\n' + currentValue.substring(end);
+      
+      // Update the value
+      onUpdateValue(newValue);
+      
+      // Set cursor position after the inserted line break
+      setTimeout(() => {
+        textarea.setSelectionRange(start + 1, start + 1);
+      }, 0);
+      
       return;
     }
     
     // For Enter (without Cmd/Ctrl) and arrow keys, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      console.log('Regular navigation key - calling onKeyDown');
       onKeyDown(e, itemId, cellRefKey);
       return;
     }
