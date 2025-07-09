@@ -51,40 +51,37 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add New List
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-800 border-gray-600 text-white">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-white">Create New Asset List</DialogTitle>
+          <DialogTitle>Create New Asset List</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="list-name" className="text-gray-300">List Name</Label>
+            <Label htmlFor="list-name">List Name</Label>
             <Input
               id="list-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Props List"
-              className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gray-500"
               required
             />
           </div>
           <div>
-            <Label htmlFor="source-column" className="text-gray-300">Source Column</Label>
+            <Label htmlFor="source-column">Source Column</Label>
             <Select value={sourceColumn} onValueChange={setSourceColumn} required>
-              <SelectTrigger className="bg-gray-700 border-gray-600 text-white focus:border-gray-500">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a column" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-600">
+              <SelectContent>
                 {meaningfulColumns.map((column) => (
                   <SelectItem 
                     key={column.value} 
                     value={column.value}
-                    className="text-white hover:bg-gray-700 focus:bg-gray-700 hover:text-white focus:text-white"
                   >
                     {column.name}
                   </SelectItem>
@@ -97,14 +94,12 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
               type="button" 
               variant="outline" 
               onClick={() => setOpen(false)}
-              className="bg-gray-600 hover:bg-gray-500 text-white border-gray-500"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={!name.trim() || !sourceColumn}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
             >
               Create List
             </Button>

@@ -117,7 +117,7 @@ const BlueprintListCard = ({
 
   return (
     <Card 
-      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 cursor-move ${
+      className={`h-fit transition-all duration-200 cursor-move ${
         isDragging ? 'opacity-50 transform rotate-2' : ''
       }`}
       draggable
@@ -129,7 +129,7 @@ const BlueprintListCard = ({
         <div className="flex items-start gap-2">
           {/* Drag Handle - positioned on the left like other components */}
           <div className="p-1 rounded flex-shrink-0 mt-1">
-            <GripVertical className="h-4 w-4 text-gray-400" />
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>
           
           {/* List Header - takes up remaining space */}
@@ -151,7 +151,7 @@ const BlueprintListCard = ({
       <CardContent>
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {itemsToDisplay.length === 0 ? (
-            <p className="text-gray-500 italic">No items found</p>
+            <p className="text-muted-foreground italic">No items found</p>
           ) : (
             itemsToDisplay.map((item, itemIndex) => {
               const startTime = getHeaderStartTime(item);

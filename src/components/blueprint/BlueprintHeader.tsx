@@ -33,27 +33,27 @@ const BlueprintHeader = ({
     <div className="flex flex-col space-y-6 mb-8">
       <div>
         <div className="mb-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">{rundown.title}</h1>
-          <p className="text-gray-400">Blueprint</p>
+          <h1 className="text-2xl sm:text-3xl font-bold break-words">{rundown.title}</h1>
+          <p className="text-muted-foreground">Blueprint</p>
         </div>
         
         {/* Start Time and Date Section */}
         <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6 mb-4">
           {rundown.startTime && (
-            <div className="flex items-center space-x-2 text-gray-300">
+            <div className="flex items-center space-x-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span className="text-sm">Start Time: {rundown.startTime}</span>
             </div>
           )}
           <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4 text-gray-300" />
-            <label htmlFor="show-date" className="text-sm text-gray-300">Show Date:</label>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <label htmlFor="show-date" className="text-sm text-muted-foreground">Show Date:</label>
             <Input
               id="show-date"
               type="date"
               value={showDate}
               onChange={(e) => onShowDateUpdate(e.target.value)}
-              className="bg-gray-800 border-gray-600 text-white w-40 h-8 text-sm"
+              className="w-40 h-8 text-sm"
             />
           </div>
         </div>
@@ -66,7 +66,6 @@ const BlueprintHeader = ({
           <Button
             variant="outline"
             onClick={onRefreshAll}
-            className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh All
@@ -74,7 +73,6 @@ const BlueprintHeader = ({
           <Button
             variant="outline"
             onClick={() => navigate(`/rundown/${rundown.id}`)}
-            className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
           >
             <FileText className="h-4 w-4 mr-2" />
             Rundown

@@ -81,7 +81,7 @@ const BlueprintListHeader = ({
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="text-base bg-gray-700 border-gray-600 text-white"
+              className="text-base"
               autoFocus
             />
             <Button
@@ -95,15 +95,15 @@ const BlueprintListHeader = ({
               size="sm"
               variant="outline"
               onClick={handleCancel}
-              className="h-6 w-6 p-0 border-gray-600 text-gray-400 hover:text-white"
+              className="h-6 w-6 p-0"
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
         ) : (
           <div>
-            <h3 className="text-white font-medium text-base truncate">{listName}</h3>
-            <p className="text-gray-400 text-xs">
+            <h3 className="font-medium text-base truncate">{listName}</h3>
+            <p className="text-muted-foreground text-xs">
               {countLabel}
             </p>
             
@@ -113,9 +113,9 @@ const BlueprintListHeader = ({
                 <Switch
                   checked={showUniqueOnly}
                   onCheckedChange={onToggleUnique}
-                  className="data-[state=checked]:bg-blue-600"
+                  className="data-[state=checked]:bg-primary"
                 />
-                <div className="flex items-center gap-1 text-xs text-gray-400">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   {showUniqueOnly ? <Filter className="h-3 w-3" /> : <List className="h-3 w-3" />}
                   <span>{showUniqueOnly ? 'Unique only' : 'Show all'}</span>
                 </div>
@@ -130,30 +130,28 @@ const BlueprintListHeader = ({
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0 flex-shrink-0"
+            className="h-6 w-6 p-0 flex-shrink-0"
           >
             <MoreVertical className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+        <DropdownMenuContent align="end">
           <DropdownMenuItem 
             onClick={() => setIsEditing(true)}
-            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
           >
             <Edit2 className="h-4 w-4 mr-2" />
             Rename
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={onCopy}
-            className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
           >
             <Copy className="h-4 w-4 mr-2" />
             Copy to Clipboard
           </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-gray-700" />
+          <DropdownMenuSeparator />
           <DropdownMenuItem 
             onClick={onDelete}
-            className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer"
+            className="text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Delete List

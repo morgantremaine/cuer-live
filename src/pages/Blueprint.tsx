@@ -15,7 +15,7 @@ import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUt
 import { logger } from '@/utils/logger';
 
 const BlueprintLoadingSkeleton = () => (
-  <div className="min-h-screen bg-gray-900">
+  <div className="min-h-screen bg-background">
     <DashboardHeader 
       userEmail=""
       onSignOut={() => {}} 
@@ -26,18 +26,18 @@ const BlueprintLoadingSkeleton = () => (
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="space-y-4">
-          <Skeleton className="h-8 w-64 bg-gray-700" />
+          <Skeleton className="h-8 w-64" />
           <div className="flex items-center space-x-4">
-            <Skeleton className="h-10 w-32 bg-gray-700" />
-            <Skeleton className="h-10 w-40 bg-gray-700" />
-            <Skeleton className="h-10 w-28 bg-gray-700" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+            <Skeleton className="h-10 w-28" />
           </div>
         </div>
         
         {/* Content skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-64 w-full bg-gray-700" />
+            <Skeleton key={i} className="h-64 w-full" />
           ))}
         </div>
       </div>
@@ -240,7 +240,7 @@ const BlueprintContent = () => {
   // If data has loaded but rundown is not found, show error
   if (!loading && rundown === undefined) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-background">
         <DashboardHeader 
           userEmail={user?.email} 
           onSignOut={handleSignOut} 
@@ -249,7 +249,7 @@ const BlueprintContent = () => {
         />
         <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
+            <h1 className="text-2xl font-bold mb-4">Rundown Not Found</h1>
             <Button onClick={() => navigate('/dashboard')}>
               Return to Dashboard
             </Button>
@@ -311,7 +311,7 @@ const BlueprintContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-background">
       <DashboardHeader 
         userEmail={user?.email} 
         onSignOut={handleSignOut} 
@@ -365,7 +365,7 @@ const BlueprintContent = () => {
               <React.Fragment key={componentId}>
                 {/* Insertion line before component */}
                 {insertionIndex === componentIndex && (
-                  <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+                  <div className="h-1 bg-border rounded-full mb-4 animate-pulse w-full" />
                 )}
                 {componentMap[componentId as keyof typeof componentMap]}
               </React.Fragment>
@@ -374,7 +374,7 @@ const BlueprintContent = () => {
 
           {/* Final insertion line */}
           {insertionIndex === state.lists.length + state.componentOrder.length && (
-            <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+            <div className="h-1 bg-border rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>
       </div>
@@ -415,7 +415,7 @@ const Blueprint = () => {
   // Show error state if rundown not found after loading is complete
   if (!loading && rundown === undefined) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-background">
         <DashboardHeader 
           userEmail={user?.email} 
           onSignOut={handleSignOut} 
@@ -424,7 +424,7 @@ const Blueprint = () => {
         />
         <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
+            <h1 className="text-2xl font-bold mb-4">Rundown Not Found</h1>
             <Button onClick={() => navigate('/dashboard')}>
               Return to Dashboard
             </Button>
