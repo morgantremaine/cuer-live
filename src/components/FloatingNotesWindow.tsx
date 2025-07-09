@@ -76,26 +76,13 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
       const deltaX = e.clientX - resizeStartPos.x;
       const deltaY = e.clientY - resizeStartPos.y;
       
-      let newWidth = resizeStartSize.width;
-      let newHeight = resizeStartSize.height;
-
-      // Only resize dimensions - don't move the window
-      if (resizeHandle.includes('right')) {
-        newWidth = Math.max(280, resizeStartSize.width + deltaX);
-      }
-      if (resizeHandle.includes('left')) {
-        newWidth = Math.max(280, resizeStartSize.width - deltaX);
-      }
-      if (resizeHandle.includes('bottom')) {
-        newHeight = Math.max(300, resizeStartSize.height + deltaY);
-      }
-      if (resizeHandle.includes('top')) {
-        newHeight = Math.max(300, resizeStartSize.height - deltaY);
-      }
+      // Only bottom-right resizing - expand width and height
+      const newWidth = Math.max(280, resizeStartSize.width + deltaX);
+      const newHeight = Math.max(300, resizeStartSize.height + deltaY);
 
       setSize({ width: newWidth, height: newHeight });
     }
-  }, [isDragging, isResizing, dragOffset, resizeStartPos, resizeStartSize, resizeHandle]);
+  }, [isDragging, isResizing, dragOffset, resizeStartPos, resizeStartSize]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -197,23 +184,16 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
         minHeight: '300px'
       }}
     >
-      {/* Resize handles */}
+      {/* Resize handle - bottom right corner only */}
       <div 
-        className="absolute top-0 right-0 w-3 h-3 cursor-nw-resize"
-        onMouseDown={(e) => handleResizeStart(e, 'top-right')}
-      />
-      <div 
-        className="absolute bottom-0 right-0 w-3 h-3 cursor-nw-resize"
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nw-resize bg-gray-600 rounded-tl-sm opacity-50 hover:opacity-75"
         onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
-      />
-      <div 
-        className="absolute bottom-0 left-0 w-3 h-3 cursor-ne-resize"
-        onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
-      />
-      <div 
-        className="absolute top-0 left-0 w-3 h-3 cursor-ne-resize"
-        onMouseDown={(e) => handleResizeStart(e, 'top-left')}
-      />
+      >
+        <div className="absolute bottom-0.5 right-0.5 w-2 h-2">
+          <div className="w-full h-0.5 bg-gray-400 mb-0.5"></div>
+          <div className="w-full h-0.5 bg-gray-400"></div>
+        </div>
+      </div>
 
       {/* Header */}
       <div
