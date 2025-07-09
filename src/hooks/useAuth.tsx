@@ -11,7 +11,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
-  updatePassword: (password: string) => Promise<{ error: any }>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
+  resetPasswordFromEmail: (newPassword: string) => Promise<{ error: any }>
   updateProfile: (fullName: string) => Promise<{ error: any }>
   resetPassword: (email: string) => Promise<{ error: any }>
   resendConfirmation: (email: string) => Promise<{ error: any }>
@@ -167,9 +168,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  const updatePassword = useCallback(async (password: string) => {
+  const updatePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    // First verify the current password by attempting to sign in
+    if (!user?.email) {
+      return { error: { message: 'No user email available' } }
+    }
+    
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword
+    })
+    
+    if (verifyError) {
+      return { error: { message: 'Current password is incorrect' } }
+    }
+    
+    // If verification succeeds, update the password
     const { error } = await supabase.auth.updateUser({
-      password: password
+      password: newPassword
+    })
+    return { error }
+  }, [user]);
+
+  const resetPasswordFromEmail = useCallback(async (newPassword: string) => {
+    // This is used when resetting password from email link - no current password verification needed
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
     })
     return { error }
   }, []);
@@ -219,11 +243,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signIn, 
     signUp, 
     signOut, 
-    updatePassword, 
+    updatePassword,
+    resetPasswordFromEmail, 
     updateProfile, 
     resetPassword, 
     resendConfirmation 
-  }), [user, session, loading, signIn, signUp, signOut, updatePassword, updateProfile, resetPassword, resendConfirmation])
+  }), [user, session, loading, signIn, signUp, signOut, updatePassword, resetPasswordFromEmail, updateProfile, resetPassword, resendConfirmation])
 
   return (
     <AuthContext.Provider value={contextValue}>

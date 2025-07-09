@@ -16,7 +16,7 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [validSession, setValidSession] = useState(false)
-  const { updatePassword } = useAuth()
+  const { resetPasswordFromEmail } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -63,7 +63,7 @@ const ResetPassword = () => {
     setLoading(true)
     
     try {
-      const { error } = await updatePassword(password)
+      const { error } = await resetPasswordFromEmail(password)
       
       if (error) {
         toast({

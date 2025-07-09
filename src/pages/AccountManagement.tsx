@@ -88,7 +88,7 @@ const AccountManagement = () => {
     }
 
     setLoading(true)
-    const { error } = await updatePassword(newPassword)
+    const { error } = await updatePassword(currentPassword, newPassword)
     
     if (error) {
       toast({
@@ -189,6 +189,17 @@ const AccountManagement = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword" className="text-gray-300">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="newPassword" className="text-gray-300">New Password</Label>
                     <Input
