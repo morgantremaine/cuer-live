@@ -53,6 +53,11 @@ const CameraPlotElement = ({
     snapToGrid
   });
 
+  console.log(`🔍 Element ${element.id} render:`, { 
+    isSelected, 
+    selectedElementsLength: selectedElements.length,
+    selectedElementIds: selectedElements.map(el => el.id)
+  });
   const handleElementMouseDown = (e: React.MouseEvent) => {
     const result = handleMouseDown(e);
     if (result?.isDoubleClick) {

@@ -7,14 +7,20 @@ export const useCameraPlotTools = () => {
   const [showGrid, setShowGrid] = useState(true);
 
   const selectElement = (elementId: string, multiSelect = false) => {
+    console.log('🎯 selectElement called:', { elementId, multiSelect, currentSelected: selectedElements });
+    
     if (multiSelect) {
-      setSelectedElements(prev => 
-        prev.includes(elementId) 
+      setSelectedElements(prev => {
+        const newSelection = prev.includes(elementId) 
           ? prev.filter(id => id !== elementId)
-          : [...prev, elementId]
-      );
+          : [...prev, elementId];
+        console.log('🎯 Multi-select result:', { prev, newSelection });
+        return newSelection;
+      });
     } else {
-      setSelectedElements(elementId ? [elementId] : []);
+      const newSelection = elementId ? [elementId] : [];
+      console.log('🎯 Single-select result:', { elementId, newSelection });
+      setSelectedElements(newSelection);
     }
   };
 
