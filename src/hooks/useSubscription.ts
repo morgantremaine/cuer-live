@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -28,15 +28,29 @@ export const useSubscription = () => {
     loading: true,
     error: null,
   });
+  
+  // Track which user we've loaded data for to prevent duplicate requests
+  const loadedUserRef = useRef<string | null>(null);
+  const isLoadingRef = useRef(false);
 
   const checkSubscription = useCallback(async () => {
-    if (!user) {
+    if (!user?.id || isLoadingRef.current) {
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
 
+    // Prevent duplicate loading for the same user
+    if (loadedUserRef.current === user.id) {
+      console.log('🔄 useSubscription: Skipping check - already loaded for user:', user.id);
+      setStatus(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    isLoadingRef.current = true;
+    loadedUserRef.current = user.id;
+
     try {
-      console.log('Checking subscription for user:', user.id);
+      console.log('🔄 useSubscription: Checking subscription for user:', user.id);
       setStatus(prev => ({ ...prev, loading: true, error: null }));
       
       // First sync with Stripe to ensure our database is up to date
@@ -126,8 +140,10 @@ export const useSubscription = () => {
           error: errorMessage
         }));
       }
+    } finally {
+      isLoadingRef.current = false;
     }
-  }, [user]);
+  }, []); // Remove user dependency to prevent recreation
 
   const createCheckout = useCallback(async (tier: string, interval: 'monthly' | 'yearly') => {
     if (!user) {
@@ -187,18 +203,49 @@ export const useSubscription = () => {
     }
   }, [user, toast]);
 
+  // Load subscription data when user changes
   useEffect(() => {
-    checkSubscription();
+    if (user?.id && user.id !== loadedUserRef.current) {
+      console.log('🔄 useSubscription: Loading subscription data for user change:', user.id);
+      loadedUserRef.current = null; // Reset to allow new load
+      checkSubscription();
+    } else if (!user?.id) {
+      console.log('🔄 useSubscription: Clearing subscription data (no user)');
+      setStatus(prev => ({ ...prev, loading: false }));
+      loadedUserRef.current = null;
+    }
     
     // Check for subscription success in URL params (after Stripe redirect)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('subscription') === 'success') {
       // Wait a moment for Stripe to process, then check subscription
       setTimeout(() => {
+        loadedUserRef.current = null; // Reset to force reload
         checkSubscription();
       }, 2000);
     }
-  }, [checkSubscription]);
+  }, [user?.id]); // Only depend on user.id, not the checkSubscription function
+
+  // Handle page visibility changes to prevent unnecessary subscription checks
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('🔄 useSubscription: Page became visible - checking if reload needed');
+        // Only reload if we don't have subscription data and we should have it
+        if (user?.id && !isLoadingRef.current && status.loading) {
+          console.log('🔄 useSubscription: Reloading subscription data after visibility change');
+          loadedUserRef.current = null; // Reset to allow reload
+          checkSubscription();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id, status.loading]);
 
   return {
     ...status,
