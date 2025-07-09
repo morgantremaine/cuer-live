@@ -78,28 +78,24 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
       
       let newWidth = resizeStartSize.width;
       let newHeight = resizeStartSize.height;
-      let newX = position.x;
-      let newY = position.y;
 
+      // Only resize dimensions - don't move the window
       if (resizeHandle.includes('right')) {
         newWidth = Math.max(280, resizeStartSize.width + deltaX);
       }
       if (resizeHandle.includes('left')) {
         newWidth = Math.max(280, resizeStartSize.width - deltaX);
-        newX = position.x + (resizeStartSize.width - newWidth);
       }
       if (resizeHandle.includes('bottom')) {
         newHeight = Math.max(300, resizeStartSize.height + deltaY);
       }
       if (resizeHandle.includes('top')) {
         newHeight = Math.max(300, resizeStartSize.height - deltaY);
-        newY = position.y + (resizeStartSize.height - newHeight);
       }
 
       setSize({ width: newWidth, height: newHeight });
-      setPosition({ x: newX, y: newY });
     }
-  }, [isDragging, isResizing, dragOffset, resizeStartPos, resizeStartSize, position, resizeHandle]);
+  }, [isDragging, isResizing, dragOffset, resizeStartPos, resizeStartSize, resizeHandle]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
