@@ -19,7 +19,7 @@ export const useBlueprintPersistence = (
   savedBlueprint: any,
   setSavedBlueprint: (blueprint: any) => void
 ) => {
-  // Load blueprint from database - prioritize team blueprints for collaboration
+  // Load blueprint from database - team blueprints only
   const loadBlueprint = useCallback(async () => {
     if (!rundownId) {
       console.log('📋 Load skipped - no rundownId');
@@ -34,7 +34,7 @@ export const useBlueprintPersistence = (
         return null;
       }
 
-      // First, get the rundown to determine the team_id
+      // Get the rundown to determine the team_id
       const { data: rundownData, error: rundownError } = await supabase
         .from('rundowns')
         .select('team_id')
@@ -47,33 +47,13 @@ export const useBlueprintPersistence = (
       }
 
       if (!rundownData?.team_id) {
-        console.log('📋 No team_id found, trying personal blueprint');
-        // Fallback to personal blueprint
-        const { data, error } = await supabase
-          .from('blueprints')
-          .select('*')
-          .eq('rundown_id', rundownId)
-          .eq('user_id', user.id)
-          .is('team_id', null)
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('📋 Error loading personal blueprint:', error);
-          throw error;
-        }
-        
-        console.log('📋 Loaded personal blueprint:', data ? 'found' : 'not found');
-        if (data) {
-          console.log('📋 LOAD DEBUG - Personal blueprint raw data:', data);
-          console.log('📋 LOAD DEBUG - Personal blueprint lists:', data.lists);
-          console.log('📋 LOAD DEBUG - Personal blueprint component_order:', data.component_order);
-        }
-        return data;
+        console.log('📋 No team_id found for rundown - cannot load blueprint');
+        return null;
       }
 
-      // Try to load team blueprint first (for collaboration)
+      // Load team blueprint
       console.log('📋 Loading team blueprint for team:', rundownData.team_id);
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('blueprints')
         .select('*')
         .eq('rundown_id', rundownId)
@@ -83,85 +63,6 @@ export const useBlueprintPersistence = (
       if (error && error.code !== 'PGRST116') {
         console.error('📋 Error loading team blueprint:', error);
         throw error;
-      }
-
-      // If no team blueprint exists, try to load personal blueprint and convert it
-      if (!data) {
-        console.log('📋 No team blueprint found, checking for personal blueprint to convert');
-        const { data: personalData, error: personalError } = await supabase
-          .from('blueprints')
-          .select('*')
-          .eq('rundown_id', rundownId)
-          .eq('user_id', user.id)
-          .is('team_id', null)
-          .maybeSingle();
-
-        if (personalError && personalError.code !== 'PGRST116') {
-          console.error('📋 Error loading personal blueprint for conversion:', personalError);
-        }
-
-        if (personalData) {
-          console.log('📋 Converting personal blueprint to team blueprint');
-          
-          // Check if there's already a team blueprint for this rundown (any user)
-          const { data: existingTeamBlueprint, error: existingTeamError } = await supabase
-            .from('blueprints')
-            .select('*')
-            .eq('rundown_id', rundownId)
-            .eq('team_id', rundownData.team_id)
-            .maybeSingle();
-
-          if (existingTeamError && existingTeamError.code !== 'PGRST116') {
-            console.error('📋 Error checking for existing team blueprint:', existingTeamError);
-          }
-
-          if (existingTeamBlueprint) {
-            console.log('📋 Team blueprint already exists, using existing one and cleaning up personal blueprint');
-            // Delete the personal blueprint since we have a team one
-            await supabase
-              .from('blueprints')
-              .delete()
-              .eq('id', personalData.id);
-            
-            data = existingTeamBlueprint;
-          } else {
-            // Convert personal blueprint to team blueprint
-            const teamBlueprint = {
-              rundown_id: personalData.rundown_id,
-              rundown_title: personalData.rundown_title,
-              user_id: user.id,
-              team_id: rundownData.team_id,
-              lists: personalData.lists || [],
-              show_date: personalData.show_date,
-              notes: personalData.notes,
-              crew_data: personalData.crew_data || [],
-              camera_plots: personalData.camera_plots || [],
-              component_order: personalData.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
-              updated_at: new Date().toISOString()
-            };
-
-            // Insert team blueprint (let database generate new ID)
-            const { data: newTeamData, error: createError } = await supabase
-              .from('blueprints')
-              .insert(teamBlueprint)
-              .select()
-              .single();
-
-            if (!createError && newTeamData) {
-              console.log('📋 Successfully converted to team blueprint');
-              // Delete the personal blueprint after successful conversion
-              await supabase
-                .from('blueprints')
-                .delete()
-                .eq('id', personalData.id);
-
-              data = newTeamData;
-            } else {
-              console.error('📋 Failed to convert to team blueprint:', createError);
-              data = personalData; // Fallback to personal blueprint
-            }
-          }
-        }
       }
 
       if (data) {
