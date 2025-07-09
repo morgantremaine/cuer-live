@@ -195,7 +195,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
 
       {/* Content */}
       {!isMinimized && (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full rounded-b-lg overflow-hidden">
           {/* Toolbar */}
           <div className="border-b border-gray-700">
             <ScratchpadStreamlinedToolbar
@@ -230,7 +230,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
           )}
 
           {/* Editor */}
-          <div className="flex-1 bg-gray-900 overflow-auto">
+          <div className="flex-1 bg-gray-900 overflow-auto rounded-b-lg">
             <div className="h-full max-h-full overflow-y-auto">
               <ScratchpadRichTextEditor
                 ref={editorRef}
