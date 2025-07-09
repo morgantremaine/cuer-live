@@ -5,6 +5,7 @@ import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
+import { useRundownStateCache } from './useRundownStateCache';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -17,9 +18,11 @@ export const useSimplifiedRundownState = () => {
   const location = useLocation();
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
+  const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
+  
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!shouldSkipLoading);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   
@@ -173,9 +176,24 @@ export const useSimplifiedRundownState = () => {
   // Load rundown data if we have an ID (content only, columns loaded separately)
   useEffect(() => {
     const loadRundown = async () => {
-      if (!rundownId || isInitialized) return;
+      if (!rundownId) return;
+
+      // Check if we already have this rundown loaded to prevent reload
+      if (isInitialized && state.items.length > 0) {
+        console.log('📋 Skipping reload - rundown already loaded:', rundownId);
+        return;
+      }
+
+      // Don't show loading if we have cached state
+      if (shouldSkipLoading) {
+        console.log('📋 Skipping loading state - using cached data for:', rundownId);
+        setIsLoading(false);
+        setIsInitialized(true);
+        return;
+      }
 
       setIsLoading(true);
+      setCacheLoading(true);
       try {
         // Check if this is a demo rundown
         if (rundownId === DEMO_RUNDOWN_ID) {
@@ -229,11 +247,12 @@ export const useSimplifiedRundownState = () => {
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
+        setCacheLoading(false);
       }
     };
 
     loadRundown();
-  }, [rundownId, isInitialized, actions]);
+  }, [rundownId]); // Remove isInitialized dependency to prevent reload
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {

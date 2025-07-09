@@ -241,6 +241,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     if (rundownId && rundownId !== loadedRundownRef.current) {
       console.log('🔄 UserColumnPreferences: Loading column preferences for rundown:', rundownId);
       loadedRundownRef.current = null; // Reset to allow new load
+      setIsLoading(true); // Set loading immediately
       loadColumnPreferences();
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
