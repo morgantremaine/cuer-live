@@ -21,6 +21,7 @@ const AccountManagement = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly')
+  const [showPlans, setShowPlans] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { access_type } = useSubscription()
   const { toast } = useToast()
@@ -224,11 +225,23 @@ const AccountManagement = () => {
             <SubscriptionStatus />
             {/* Only show subscription plans for users without team access */}
             {access_type !== 'team_member' && (
-              <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-gray-900 py-8">
-                <SubscriptionPlans 
-                  interval={interval}
-                  onIntervalChange={setInterval}
-                />
+              <div className="space-y-4">
+                <Button
+                  onClick={() => setShowPlans(!showPlans)}
+                  variant="outline"
+                  className="w-full bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+                >
+                  {showPlans ? 'Hide Plans' : 'View All Plans'}
+                </Button>
+                
+                {showPlans && (
+                  <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen bg-gray-900 py-8">
+                    <SubscriptionPlans 
+                      interval={interval}
+                      onIntervalChange={setInterval}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
