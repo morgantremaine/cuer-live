@@ -5,15 +5,13 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import { useCameraPlotEditor } from '@/hooks/useCameraPlotEditor';
 import { useCameraPlotZoom } from '@/hooks/cameraPlot/useCameraPlotZoom';
 import CameraPlotCanvas from '@/components/cameraPlot/CameraPlotCanvas';
-import EnhancedToolbar from '@/components/cameraPlot/tools/EnhancedToolbar';
-import FurnitureLibrary from '@/components/cameraPlot/furniture/FurnitureLibrary';
+import CameraPlotToolbar from '@/components/cameraPlot/CameraPlotToolbar';
 import CameraPlotSceneManager from '@/components/cameraPlot/CameraPlotSceneManager';
 
 const CameraPlotEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [selectedColor, setSelectedColor] = React.useState('#3B82F6');
 
   const {
     scenes,
@@ -59,30 +57,6 @@ const CameraPlotEditor = () => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleFurnitureSelect = (furniture: any) => {
-    setSelectedTool('furniture');
-    // Store furniture type for placement
-    addElement(furniture.id, 0, 0);
-  };
-
-  const handleCopy = () => {
-    selectedElements.forEach(elementId => {
-      duplicateElement(elementId);
-    });
-  };
-
-  const handleDelete = () => {
-    selectedElements.forEach(elementId => {
-      deleteElement(elementId);
-    });
-  };
-
-  const handleDuplicate = () => {
-    selectedElements.forEach(elementId => {
-      duplicateElement(elementId);
-    });
   };
 
   return (
@@ -164,33 +138,19 @@ const CameraPlotEditor = () => {
 
         <div className="flex h-[calc(100vh-73px)]">
           {/* Left Sidebar - Tools */}
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4 flex flex-col no-print overflow-y-auto">
-            <EnhancedToolbar
+          <div className="w-64 bg-gray-800 border-r border-gray-700 p-4 flex flex-col no-print">
+            <CameraPlotToolbar
               selectedTool={selectedTool}
-              selectedElements={selectedElements}
               onToolSelect={setSelectedTool}
-              onFurnitureSelect={handleFurnitureSelect}
               showGrid={showGrid}
               onToggleGrid={toggleGrid}
               zoom={zoom}
               onZoomIn={zoomIn}
               onZoomOut={zoomOut}
               onResetZoom={resetZoom}
-              onColorChange={setSelectedColor}
-              selectedColor={selectedColor}
-              onCopy={handleCopy}
-              onDelete={handleDelete}
-              onDuplicate={handleDuplicate}
             />
             
-            <div className="mt-6">
-              <FurnitureLibrary
-                onSelectFurniture={handleFurnitureSelect}
-                selectedTool={selectedTool}
-              />
-            </div>
-            
-            <div className="mt-6">
+            <div className="mt-8">
               <CameraPlotSceneManager
                 scenes={scenes}
                 activeSceneId={activeScene?.id}

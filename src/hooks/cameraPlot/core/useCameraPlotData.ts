@@ -4,7 +4,6 @@ import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersisten
 export interface CameraElement {
   id: string;
   type: 'camera' | 'person' | 'wall' | 'furniture';
-  subtype?: string; // For furniture items, stores the furniture ID
   x: number;
   y: number;
   width: number;
