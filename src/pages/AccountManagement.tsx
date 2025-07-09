@@ -140,38 +140,37 @@ const AccountManagement = () => {
           </TabsList>
 
           <TabsContent value="profile">
-            <Card className="bg-gray-800 border-gray-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white">Profile Information</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>
                   Update your profile information
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={user?.email || ''}
                       disabled
-                      className="bg-gray-700 border-gray-600 text-gray-400"
+                      className="opacity-60"
                     />
-                    <p className="text-sm text-gray-500">Email cannot be changed</p>
+                    <p className="text-sm text-muted-foreground">Email cannot be changed</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
+                    <Label htmlFor="fullName">Full Name</Label>
                     <Input
                       id="fullName"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder={user?.user_metadata?.full_name || 'Enter your full name'}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     />
                   </div>
-                  <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+                  <Button type="submit" disabled={loading}>
                     {loading ? 'Updating...' : 'Update Profile'}
                   </Button>
                 </form>
@@ -180,28 +179,27 @@ const AccountManagement = () => {
           </TabsContent>
 
           <TabsContent value="security">
-            <Card className="bg-gray-800 border-gray-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white">Change Password</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>
                   Update your password to keep your account secure
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword" className="text-gray-300">Current Password</Label>
+                    <Label htmlFor="currentPassword">Current Password</Label>
                     <Input
                       id="currentPassword"
                       type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword" className="text-gray-300">New Password</Label>
+                    <Label htmlFor="newPassword">New Password</Label>
                     <Input
                       id="newPassword"
                       type="password"
@@ -209,11 +207,10 @@ const AccountManagement = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-gray-300">Confirm New Password</Label>
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
@@ -221,10 +218,9 @@ const AccountManagement = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                     />
                   </div>
-                  <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+                  <Button type="submit" disabled={loading}>
                     {loading ? 'Updating...' : 'Update Password'}
                   </Button>
                 </form>
