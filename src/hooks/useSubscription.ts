@@ -43,7 +43,24 @@ export const useSubscription = () => {
       
       if (syncError) {
         console.warn('Failed to sync with Stripe:', syncError);
-        // Continue anyway, use local data
+        
+        // If it's an auth error (401, 403), the session is invalid
+        if (syncError.message?.includes('401') || syncError.message?.includes('403') || 
+            syncError.message?.includes('Authentication') || syncError.message?.includes('Forbidden')) {
+          console.warn('Authentication failed - session may be expired');
+          setStatus({
+            subscribed: false,
+            subscription_tier: null,
+            max_team_members: 1,
+            subscription_end: null,
+            grandfathered: false,
+            access_type: 'none',
+            loading: false,
+            error: null,
+          });
+          return;
+        }
+        // Continue anyway for other errors, use local data
       }
       
       // Then use the database function to check subscription access
@@ -51,7 +68,25 @@ export const useSubscription = () => {
         user_uuid: user.id
       });
       
-      if (error) throw error;
+      if (error) {
+        // Check if it's also an auth error
+        if (error.message?.includes('JWT') || error.message?.includes('authentication') || 
+            error.message?.includes('permission')) {
+          console.warn('Database authentication failed - session may be expired');
+          setStatus({
+            subscribed: false,
+            subscription_tier: null,
+            max_team_members: 1,
+            subscription_end: null,
+            grandfathered: false,
+            access_type: 'none',
+            loading: false,
+            error: null,
+          });
+          return;
+        }
+        throw error;
+      }
       
       setStatus({
         subscribed: data.subscribed || false,
@@ -66,11 +101,29 @@ export const useSubscription = () => {
       });
     } catch (error) {
       console.error('Error checking subscription:', error);
-      setStatus(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to check subscription'
-      }));
+      
+      // Check if it's an authentication error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('JWT') || errorMessage.includes('authentication') || 
+          errorMessage.includes('401') || errorMessage.includes('403')) {
+        console.warn('Authentication error detected - clearing subscription state');
+        setStatus({
+          subscribed: false,
+          subscription_tier: null,
+          max_team_members: 1,
+          subscription_end: null,
+          grandfathered: false,
+          access_type: 'none',
+          loading: false,
+          error: null,
+        });
+      } else {
+        setStatus(prev => ({
+          ...prev,
+          loading: false,
+          error: errorMessage
+        }));
+      }
     }
   }, [user]);
 

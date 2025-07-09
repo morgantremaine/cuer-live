@@ -130,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.debug('Attempting to sign out...')
       
-      // Clear state immediately
+      // Clear state immediately to prevent further API calls with invalid tokens
       setUser(null)
       setSession(null)
       
@@ -140,7 +140,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Attempt server-side logout
       const { error } = await supabase.auth.signOut()
       if (error) {
-        logger.warn('Server-side logout error', error)
+        // If logout fails due to invalid session (403), that's actually fine
+        // since the session is already invalid
+        if (error.message?.includes('403') || error.message?.includes('Forbidden') || 
+            error.message?.includes('session_not_found')) {
+          logger.debug('Session was already invalid - logout completed locally')
+        } else {
+          logger.warn('Server-side logout error', error)
+        }
       } else {
         logger.debug('Server-side logout successful')
       }
