@@ -442,12 +442,15 @@ export const useTeam = () => {
 
   // Load team data when user changes, with better handling
   useEffect(() => {
+    // Only load if we don't have a cached result for this user
     if (user?.id && user.id !== loadedUserRef.current) {
+      console.log('🔄 useTeam: Loading team data for user change:', user.id);
       loadedUserRef.current = null; // Reset to allow new load
       setIsLoading(true);
       // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
+      console.log('🔄 useTeam: Clearing team data (no user)');
       setTeam(null);
       setTeamMembers([]);
       setPendingInvitations([]);
@@ -455,8 +458,30 @@ export const useTeam = () => {
       setIsLoading(false);
       setError(null);
       loadedUserRef.current = null;
+    } else if (user?.id === loadedUserRef.current) {
+      console.log('🔄 useTeam: Skipping load - already loaded for user:', user.id);
     }
   }, [user?.id]);
+
+  // Handle page visibility changes to prevent unnecessary reloads
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('🔄 useTeam: Page became visible - checking if reload needed');
+        // Only reload if we don't have team data and we should have it
+        if (user?.id && !team && !isLoadingRef.current) {
+          console.log('🔄 useTeam: Reloading team data after visibility change');
+          loadTeamData();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id, team]);
 
   return {
     team,
