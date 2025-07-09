@@ -175,7 +175,7 @@ const RundownHeader = ({
 
   if (isMobile) {
     return (
-      <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-3 bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Title */}
         <div className="mb-3">
           <div className="flex-1 min-w-0">
@@ -226,7 +226,7 @@ const RundownHeader = ({
 
   if (isTablet) {
     return (
-      <div className="p-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-3 bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Top row - Logo, Title, and connection status */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-4 flex-1 min-w-0">
@@ -329,7 +329,7 @@ const RundownHeader = ({
 
   // Desktop layout - with properly centered title and timing indicator
   return (
-    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <HeaderLogo rundownId={rundownId} />

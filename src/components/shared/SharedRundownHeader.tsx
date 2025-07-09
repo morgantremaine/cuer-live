@@ -68,7 +68,7 @@ export const SharedRundownHeader = ({
   const totalRuntime = calculateTotalRuntime();
 
   return (
-    <div className={`${isDark ? 'bg-gray-900' : 'bg-white'}`}>
+    <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-200'}`}>
       <div className="px-4 py-3 print:px-2 print:py-1">
         <div className="flex flex-col space-y-3 print:space-y-1">
           {/* Title and Controls Row */}
