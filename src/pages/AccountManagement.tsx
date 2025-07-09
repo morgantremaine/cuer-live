@@ -224,10 +224,12 @@ const AccountManagement = () => {
             <SubscriptionStatus />
             {/* Only show subscription plans for users without team access */}
             {access_type !== 'team_member' && (
-              <SubscriptionPlans 
-                interval={interval}
-                onIntervalChange={setInterval}
-              />
+              <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+                <SubscriptionPlans 
+                  interval={interval}
+                  onIntervalChange={setInterval}
+                />
+              </div>
             )}
           </TabsContent>
 
