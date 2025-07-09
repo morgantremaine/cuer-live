@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePageVisibility } from '@/hooks/usePageVisibility';
-import { usePreventTabUnmount } from '@/hooks/usePreventTabUnmount';
 import RundownIndexContent from '@/components/RundownIndexContent';
 import Blueprint from '@/pages/Blueprint';
 import CameraPlotEditor from '@/pages/CameraPlotEditor';
@@ -13,9 +11,6 @@ const RundownWithTabs = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Prevent browser tab unloading
-  const { isTabVisible, wasHidden } = usePageVisibility();
-  const { uptime, activeComponents } = usePreventTabUnmount(`rundown-${id}`);
   
   // Determine active tab from URL path
   const getActiveTab = () => {
@@ -46,13 +41,11 @@ const RundownWithTabs = () => {
 
   useEffect(() => {
     console.log('🔄 RundownWithTabs mounted for rundown:', id, 'active tab:', activeTab);
-    console.log('🔍 Tab visibility:', isTabVisible, 'was hidden:', wasHidden, 'uptime:', uptime);
     
     return () => {
-      console.log('🧹 RundownWithTabs unmounting - this should NOT happen on browser tab switches');
-      console.log('🧹 Final stats - uptime:', uptime, 'active components:', activeComponents);
+      console.log('🧹 RundownWithTabs unmounting');
     };
-  }, [id, activeTab, isTabVisible, wasHidden, uptime, activeComponents]);
+  }, [id, activeTab]);
 
   if (!id) {
     return <div>No rundown ID provided</div>;
