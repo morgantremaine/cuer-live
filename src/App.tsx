@@ -22,7 +22,7 @@ import ADView from "./pages/ADView";
 import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
 import CameraPlotEditor from "./pages/CameraPlotEditor";
-import RundownLayout from "./components/RundownLayout";
+import RundownWithTabs from "./components/RundownWithTabs";
 import LandingPage from "./components/LandingPage";
 import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
@@ -89,12 +89,60 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      {/* Unified rundown layout for all rundown-related routes */}
       <Route 
-        path="/rundown/:id/*" 
+        path="/rundown/:id" 
         element={
           <ProtectedRoute requiresSubscription={true}>
-            <RundownLayout />
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown/:id/blueprint" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown/:id/camera-plot-editor" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/rundown/:id/teleprompter" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      {/* Legacy routes for backward compatibility */}
+      <Route 
+        path="/blueprint/:id" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/camera-plot-editor/:id" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teleprompter/:id" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <RundownWithTabs />
           </ProtectedRoute>
         } 
       />

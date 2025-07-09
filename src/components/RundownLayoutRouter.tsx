@@ -6,6 +6,8 @@ import CameraPlotEditor from '@/pages/CameraPlotEditor';
 import Teleprompter from '@/pages/Teleprompter';
 
 const RundownLayoutRouter = () => {
+  console.log('🔄 RundownLayoutRouter rendering nested routes');
+  
   return (
     <Routes>
       <Route path="/" element={<Index />} />
