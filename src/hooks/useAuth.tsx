@@ -76,55 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
-  // Session keepalive to prevent timeout during inactivity
-  useEffect(() => {
-    if (!session?.user) return
-
-    // Refresh session every 45 minutes (sessions typically expire after 1 hour)
-    const keepAliveInterval = setInterval(async () => {
-      try {
-        logger.debug('Refreshing session to prevent timeout...')
-        const { data, error } = await supabase.auth.refreshSession()
-        
-        if (error) {
-          logger.warn('Session refresh failed:', error)
-        } else {
-          logger.debug('Session refreshed successfully')
-        }
-      } catch (error) {
-        logger.error('Session refresh error:', error)
-      }
-    }, 45 * 60 * 1000) // 45 minutes
-
-    // Also refresh on user activity after periods of inactivity
-    let activityTimer: NodeJS.Timeout
-    const refreshOnActivity = async () => {
-      clearTimeout(activityTimer)
-      activityTimer = setTimeout(async () => {
-        try {
-          logger.debug('Refreshing session after activity...')
-          await supabase.auth.refreshSession()
-        } catch (error) {
-          logger.error('Activity-based refresh error:', error)
-        }
-      }, 1000) // Debounce activity
-    }
-
-    // Listen for user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
-    events.forEach(event => {
-      document.addEventListener(event, refreshOnActivity, { passive: true })
-    })
-
-    return () => {
-      clearInterval(keepAliveInterval)
-      clearTimeout(activityTimer)
-      events.forEach(event => {
-        document.removeEventListener(event, refreshOnActivity)
-      })
-    }
-  }, [session?.user])
-
   // Memoized auth functions to prevent unnecessary re-renders
   const signIn = useCallback(async (email: string, password: string) => {
     logger.debug('Attempting to sign in', { email });
