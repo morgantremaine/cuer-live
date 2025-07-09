@@ -33,9 +33,12 @@ export const useCameraPlotMultiElementDrag = ({
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
       
+      console.log('🔄 Multi-drag moving:', { deltaX, deltaY, elementCount: dragStart.elementPositions.length });
+      
       // Update all selected elements
       dragStart.elementPositions.forEach(elementStart => {
         const newPos = snapToGrid(elementStart.x + deltaX, elementStart.y + deltaY);
+        console.log(`Moving element ${elementStart.id} to:`, newPos);
         onUpdate(elementStart.id, {
           x: newPos.x,
           y: newPos.y
@@ -58,6 +61,8 @@ export const useCameraPlotMultiElementDrag = ({
   const startDrag = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log('🎯 Starting multi-element drag with elements:', elements.map(el => ({ id: el.id, x: el.x, y: el.y })));
     
     setIsDragging(true);
     setDragStart({

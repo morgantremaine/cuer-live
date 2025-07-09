@@ -127,7 +127,11 @@ export const useCameraPlotCanvasHandlers = ({
       // Only process selection if there's a meaningful drag (at least 5 pixels in canvas coordinates)
       const dragDistance = Math.abs(selectionEnd.x - selectionStart.x) + Math.abs(selectionEnd.y - selectionStart.y);
       
+      console.log('🎯 Selection box coordinates:', { minX, maxX, minY, maxY, dragDistance });
+      
       if (dragDistance > 5) {
+        console.log('🔍 Checking elements for selection...');
+        
         // Find elements that intersect with the selection box
         const selectedElementIds = scene.elements
           .filter(element => {
@@ -141,9 +145,21 @@ export const useCameraPlotCanvasHandlers = ({
             const horizontalOverlap = elementLeft < maxX && elementRight > minX;
             const verticalOverlap = elementTop < maxY && elementBottom > minY;
             
-            return horizontalOverlap && verticalOverlap;
+            const intersects = horizontalOverlap && verticalOverlap;
+            
+            console.log(`📦 Element ${element.id}:`, { 
+              elementBounds: { left: elementLeft, right: elementRight, top: elementTop, bottom: elementBottom },
+              selectionBounds: { minX, maxX, minY, maxY },
+              horizontalOverlap,
+              verticalOverlap,
+              intersects
+            });
+            
+            return intersects;
           })
           .map(element => element.id);
+
+        console.log('✅ Selected elements:', selectedElementIds);
 
         // Select all intersecting elements
         if (selectedElementIds.length > 0) {

@@ -30,6 +30,13 @@ export const useCameraPlotElementInteractions = ({
   // Individual interaction hooks - choose between single and multi-element drag
   const shouldUseMultiDrag = selectedElements.length > 1 && selectedElements.some(el => el.id === element.id);
   
+  console.log('🎛️ Drag system selection:', { 
+    elementId: element.id, 
+    selectedElementsCount: selectedElements.length, 
+    shouldUseMultiDrag,
+    selectedElementIds: selectedElements.map(el => el.id)
+  });
+  
   const { isDragging: singleDragging, startDrag: startSingleDrag } = useCameraPlotElementDrag({
     element,
     onUpdate,
