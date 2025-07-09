@@ -229,6 +229,11 @@ const TeamManagement = () => {
   }
 
   const displayTeamName = teamAdminName ? `${teamAdminName}'s Team` : team.name;
+  
+  // Calculate current team usage (members + pending invitations)
+  const currentUsage = teamMembers.length + pendingInvitations.length;
+  const isAtLimit = currentUsage >= max_team_members;
+  const canInviteMore = userRole === 'admin' && !isAtLimit;
 
   return (
     <div className="space-y-6">
@@ -258,21 +263,50 @@ const TeamManagement = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleInviteMember} className="flex gap-4">
-              <div className="flex-1">
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                  required
-                />
+            <div className="space-y-4">
+              {/* Usage indicator */}
+              <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                <span className="text-gray-300">Team Usage:</span>
+                <span className={`font-medium ${isAtLimit ? 'text-red-400' : 'text-green-400'}`}>
+                  {currentUsage} of {max_team_members} slots used
+                </span>
               </div>
-              <Button type="submit" disabled={isInviting} className="bg-blue-600 hover:bg-blue-700">
-                {isInviting ? 'Inviting...' : 'Send Invite'}
-              </Button>
-            </form>
+              
+              {/* Limit warning */}
+              {isAtLimit && (
+                <div className="flex items-start gap-3 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-yellow-400">Team Limit Reached</p>
+                    <p className="text-sm text-yellow-300 mt-1">
+                      You've reached your team member limit. To invite more members, please upgrade your subscription or remove existing members.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Invite form */}
+              <form onSubmit={handleInviteMember} className="flex gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                    required
+                    disabled={!canInviteMore}
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  disabled={isInviting || !canInviteMore} 
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isInviting ? 'Inviting...' : 'Send Invite'}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -80,6 +80,101 @@ serve(async (req) => {
 
     console.log('Current user:', user.id);
 
+    // Check subscription limits before creating invitation
+    console.log('Checking subscription limits for team:', teamId);
+    
+    // Get current team size (active members + pending invitations)
+    const { data: currentMembers, error: membersError } = await supabase
+      .from('team_members')
+      .select('id')
+      .eq('team_id', teamId);
+    
+    if (membersError) {
+      console.error('Error fetching team members:', membersError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check team membership' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    const { data: pendingInvitations, error: invitationsError } = await supabase
+      .from('team_invitations')
+      .select('id')
+      .eq('team_id', teamId)
+      .eq('accepted', false)
+      .gt('expires_at', new Date().toISOString());
+    
+    if (invitationsError) {
+      console.error('Error fetching pending invitations:', invitationsError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check pending invitations' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    const currentTeamSize = (currentMembers?.length || 0) + (pendingInvitations?.length || 0);
+    console.log('Current team size (members + pending):', currentTeamSize);
+
+    // Get the team admin's subscription limits
+    const { data: adminData, error: adminError } = await supabase
+      .from('team_members')
+      .select('user_id')
+      .eq('team_id', teamId)
+      .eq('role', 'admin')
+      .single();
+
+    if (adminError || !adminData) {
+      console.error('Error finding team admin:', adminError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to find team admin' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    // Check admin's subscription
+    const { data: subscriptionData, error: subscriptionError } = await supabase.rpc(
+      'get_user_subscription_access',
+      { user_uuid: adminData.user_id }
+    );
+
+    if (subscriptionError) {
+      console.error('Error checking subscription:', subscriptionError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to check subscription limits' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    const maxTeamMembers = subscriptionData?.max_team_members || 1;
+    console.log('Subscription allows max team members:', maxTeamMembers);
+    console.log('Current usage vs limit:', currentTeamSize, 'of', maxTeamMembers);
+
+    // Check if adding this invitation would exceed the limit
+    if (currentTeamSize >= maxTeamMembers) {
+      console.log('Team size limit exceeded');
+      return new Response(
+        JSON.stringify({ 
+          error: `Team limit reached. Your subscription allows ${maxTeamMembers} team member${maxTeamMembers > 1 ? 's' : ''}, but you currently have ${currentTeamSize} (including pending invitations). Please upgrade your subscription or remove existing members to invite more.` 
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
     // Generate a unique token for the invitation
     const token = crypto.randomUUID()
     console.log('Generated invitation token:', token);
