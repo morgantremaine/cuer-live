@@ -46,7 +46,8 @@ export const useSubscription = () => {
         
         // If it's an auth error (401, 403), the session is invalid
         if (syncError.message?.includes('401') || syncError.message?.includes('403') || 
-            syncError.message?.includes('Authentication') || syncError.message?.includes('Forbidden')) {
+            syncError.message?.includes('Authentication') || syncError.message?.includes('Forbidden') ||
+            syncError.message?.includes('Invalid or expired session')) {
           console.warn('Authentication failed - session may be expired');
           setStatus({
             subscribed: false,

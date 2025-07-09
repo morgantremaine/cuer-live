@@ -137,6 +137,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear any pending invitation tokens
       localStorage.removeItem('pendingInvitationToken')
       
+      // Clear the session from localStorage to ensure complete logout
+      localStorage.removeItem('sb-khdiwrkgahsbjszlwnob-auth-token')
+      
       // Attempt server-side logout
       const { error } = await supabase.auth.signOut()
       if (error) {
@@ -160,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null)
       setSession(null)
       localStorage.removeItem('pendingInvitationToken')
+      localStorage.removeItem('sb-khdiwrkgahsbjszlwnob-auth-token')
     }
   }, [])
 
