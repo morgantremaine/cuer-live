@@ -121,6 +121,7 @@ export const useCameraPlotCanvasHandlers = ({
   const handleMouseUp = () => {
     // Handle selection box completion
     if (isSelecting && selectedTool === 'select' && scene) {
+      // Selection coordinates are already in canvas space from getCanvasCoordinates
       const minX = Math.min(selectionStart.x, selectionEnd.x);
       const maxX = Math.max(selectionStart.x, selectionEnd.x);
       const minY = Math.min(selectionStart.y, selectionEnd.y);
@@ -129,7 +130,12 @@ export const useCameraPlotCanvasHandlers = ({
       // Only process selection if there's a meaningful drag (at least 5 pixels in canvas coordinates)
       const dragDistance = Math.abs(selectionEnd.x - selectionStart.x) + Math.abs(selectionEnd.y - selectionStart.y);
       
-      console.log('🎯 Selection box coordinates:', { minX, maxX, minY, maxY, dragDistance });
+      console.log('🎯 Selection box coordinates:', { 
+        selectionBounds: { minX, maxX, minY, maxY }, 
+        dragDistance, 
+        zoom, 
+        pan 
+      });
       
       if (dragDistance > 5) {
         console.log('🔍 Checking elements for selection...');
@@ -165,10 +171,10 @@ export const useCameraPlotCanvasHandlers = ({
 
         // Select all intersecting elements
         if (selectedElementIds.length > 0) {
-          // Clear existing selection first, then select all found elements
-          onSelectElement('', false);
-          selectedElementIds.forEach((elementId, index) => {
-            onSelectElement(elementId, true); // Multi-select for all elements
+          // Select the first element normally, then multi-select the rest
+          onSelectElement(selectedElementIds[0], false);
+          selectedElementIds.slice(1).forEach((elementId) => {
+            onSelectElement(elementId, true); // Multi-select for remaining elements
           });
         } else {
           onSelectElement('', false); // Clear selection if no elements found
