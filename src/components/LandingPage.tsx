@@ -80,7 +80,21 @@ const LandingPage = () => {
         <div className="flex items-center">
           <CuerLogo className="h-8 w-auto" />
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-6 text-white">
+            <button 
+              onClick={() => document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              Features
+            </button>
+            <button 
+              onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              Pricing
+            </button>
+          </div>
           {user ? (
             <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
               Dashboard
@@ -176,7 +190,7 @@ const LandingPage = () => {
       </div>
 
       {/* Features Grid */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
             Everything you need for 
@@ -500,7 +514,7 @@ const LandingPage = () => {
       </div>
 
       {/* Pricing Section */}
-      <div className="relative z-10 w-full pb-24">
+      <div id="pricing-section" className="relative z-10 w-full pb-24">
         <div className="text-center mb-16 max-w-7xl mx-auto px-6">
           <h2 className="text-4xl font-bold mb-4 text-white">
             Choose the perfect plan for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">your team</span>
