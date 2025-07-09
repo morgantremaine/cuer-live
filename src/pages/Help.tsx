@@ -81,6 +81,7 @@ const Help = () => {
                   <li>Click any cell to edit content</li>
                   <li>Press Tab to move to next cell</li>
                   <li>Use Enter to save and move down</li>
+                  <li>Use Cmd+Enter (Mac) or Ctrl+Enter (Windows) to insert line breaks in cells</li>
                   <li>Right-click rows to color them or float/unfloat items</li>
                 </ul>
               </div>
