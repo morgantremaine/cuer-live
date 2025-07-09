@@ -407,16 +407,20 @@ const RundownIndexContent = () => {
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
-        onShowNotes={() => setShowNotesWindow(true)}
+        onShowNotes={() => {
+          // Temporarily disabled for debugging
+          console.log('Notes disabled for debugging');
+          // setShowNotesWindow(true)
+        }}
       />
       
-      {/* Floating Notes Window */}
-      {showNotesWindow && rundownId && (
+      {/* Floating Notes Window - Temporarily disabled for debugging */}
+      {/* {showNotesWindow && rundownId && (
         <FloatingNotesWindow
           rundownId={rundownId}
           onClose={() => setShowNotesWindow(false)}
         />
-      )}
+      )} */}
       
       <CuerChatButton rundownData={rundownData} />
     </RealtimeConnectionProvider>
