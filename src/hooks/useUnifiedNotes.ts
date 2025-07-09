@@ -50,7 +50,7 @@ export const useUnifiedNotes = (rundownId: string) => {
     return cleaned.trim();
   };
 
-  // Initialize notes from blueprint context (simplified)
+  // Initialize notes from either blueprint context or direct database access
   useEffect(() => {
     if (isInitialized) return;
     
@@ -58,9 +58,25 @@ export const useUnifiedNotes = (rundownId: string) => {
       try {
         let rawNotes = '';
         
-        // Always try to get notes from blueprint context if available
-        if (blueprintContext?.state?.notes) {
+        // Try to get notes from blueprint context first (if available and initialized)
+        if (blueprintContext?.state?.notes && blueprintContext.state.isInitialized) {
           rawNotes = blueprintContext.state.notes;
+        } else if (blueprintContext?.state?.isInitialized === false) {
+          // Blueprint context is available but not initialized yet, wait for it
+          return;
+        } else {
+          // Fall back to direct database access
+          const { data, error } = await supabase
+            .from('blueprints')
+            .select('notes')
+            .eq('rundown_id', rundownId)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error loading notes from database:', error);
+          } else {
+            rawNotes = data?.notes || '';
+          }
         }
 
         let parsedNotes: Note[] = [];
@@ -144,7 +160,7 @@ export const useUnifiedNotes = (rundownId: string) => {
     };
 
     initializeNotes();
-  }, [rundownId, blueprintContext?.state?.notes, isInitialized]);
+  }, [rundownId, blueprintContext?.state?.notes, blueprintContext?.state?.isInitialized, isInitialized]);
 
   // Save notes using appropriate method (context or direct database)
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
@@ -159,9 +175,63 @@ export const useUnifiedNotes = (rundownId: string) => {
       try {
         const notesJson = JSON.stringify(notesToSave);
         
-        // Always use blueprint context for saving (simplified)
-        if (blueprintContext?.updateNotes) {
+        if (blueprintContext?.updateNotes && blueprintContext.state.isInitialized) {
+          // Use blueprint context if available and initialized
           blueprintContext.updateNotes(notesJson);
+        } else {
+          // Fall back to direct database save
+          const { data: existingBlueprint } = await supabase
+            .from('blueprints')
+            .select('id, rundown_title')
+            .eq('rundown_id', rundownId)
+            .maybeSingle();
+
+          if (!existingBlueprint) {
+            // Get rundown title for blueprint
+            const { data: rundownData } = await supabase
+              .from('rundowns')
+              .select('title')
+              .eq('id', rundownId)
+              .single();
+
+            // Create blueprint record following the same pattern as blueprint loading
+            const insertData: any = {
+              rundown_id: rundownId,
+              rundown_title: rundownData?.title || 'Untitled',
+              lists: [],
+              notes: notesJson
+            };
+
+            // Add user_id and team_id based on team presence
+            if (team?.id) {
+              insertData.user_id = user?.id;
+              insertData.team_id = team.id;
+            } else {
+              insertData.user_id = user?.id;
+              // team_id will be null by default
+            }
+
+            const { error: createError } = await supabase
+              .from('blueprints')
+              .insert(insertData);
+
+            if (createError) {
+              console.error('Error creating blueprint:', createError);
+            }
+          } else {
+            // Update existing blueprint
+            const { error: updateError } = await supabase
+              .from('blueprints')
+              .update({
+                notes: notesJson,
+                updated_at: new Date().toISOString()
+              })
+              .eq('rundown_id', rundownId);
+
+            if (updateError) {
+              console.error('Error saving notes:', updateError);
+            }
+          }
         }
       } catch (error) {
         console.error('Error saving unified notes:', error);

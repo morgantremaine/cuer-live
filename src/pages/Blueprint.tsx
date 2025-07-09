@@ -383,9 +383,72 @@ const BlueprintContent = () => {
 };
 
 const Blueprint = () => {
-  // Since BlueprintProvider is now at the RundownWithTabs level,
-  // we can directly render BlueprintContent
-  return <BlueprintContent />;
+  const { id } = useParams<{ id: string }>();
+  const { savedRundowns, loading } = useRundownStorage();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // Find the rundown - but only search if we have data loaded
+  const rundown = React.useMemo(() => {
+    if (loading || !savedRundowns.length) return null;
+    return savedRundowns.find(r => r.id === id) || undefined;
+  }, [savedRundowns, id, loading]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      navigate('/login')
+    } catch (error) {
+      navigate('/login')
+    }
+  }
+
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+
+  // Show loading state while fetching rundowns
+  if (loading) {
+    return <BlueprintLoadingSkeleton />;
+  }
+
+  // Show error state if rundown not found after loading is complete
+  if (!loading && rundown === undefined) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <DashboardHeader 
+          userEmail={user?.email} 
+          onSignOut={handleSignOut} 
+          showBackButton={true}
+          onBack={handleBack}
+        />
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">Rundown Not Found</h1>
+            <Button onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading skeleton if rundown data is still null (being loaded)
+  if (!rundown) {
+    return <BlueprintLoadingSkeleton />;
+  }
+
+  // Only wrap in provider when we have a valid rundown - now passing rundown items
+  return (
+    <BlueprintProvider 
+      rundownId={id || ''} 
+      rundownTitle={rundown.title || 'Unknown Rundown'}
+      rundownItems={rundown.items || []}
+    >
+      <BlueprintContent />
+    </BlueprintProvider>
+  );
 };
 
 export default Blueprint;

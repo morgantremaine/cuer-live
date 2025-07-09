@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useRealtimeRundown } from './useRealtimeRundown';
 import { useStableRealtimeCollaboration } from './useStableRealtimeCollaboration';
 
@@ -20,67 +20,43 @@ export const useOptimizedRealtime = ({
 }) => {
   const connectionKey = rundownId || 'none';
   const isActiveRef = useRef(true);
-  const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
   
-  // Handle tab visibility to prevent unnecessary operations
+  // Mark component as active
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      const isVisible = !document.hidden;
-      setIsTabVisible(isVisible);
-      
-      console.log('🔄 Tab visibility changed:', isVisible ? 'visible' : 'hidden');
-      
-      // When tab becomes visible, mark as active for processing updates
-      if (isVisible) {
-        isActiveRef.current = true;
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-  
-  // Mark component as active (enhanced with tab visibility)
-  useEffect(() => {
-    isActiveRef.current = isTabVisible;
+    isActiveRef.current = true;
     return () => {
       isActiveRef.current = false;
     };
-  }, [isTabVisible]);
+  }, []);
 
   // Optimized realtime rundown with connection reuse awareness
   const realtimeRundown = useRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((data) => {
-      // Only process updates if component is still active and tab is visible
-      if (isActiveRef.current && isTabVisible) {
+      // Only process updates if component is still active
+      if (isActiveRef.current) {
         onRundownUpdate(data);
-      } else {
-        console.log('🚫 Skipping rundown update - tab not visible or component inactive');
       }
-    }, [onRundownUpdate, isTabVisible]),
-    enabled: enabled && isTabVisible, // Only enable when tab is visible
+    }, [onRundownUpdate]),
+    enabled,
     hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp) => {
-      if (isActiveRef.current && isTabVisible) {
+      if (isActiveRef.current) {
         trackOwnUpdate(timestamp);
       }
-    }, [trackOwnUpdate, isTabVisible])
+    }, [trackOwnUpdate])
   });
 
   // Stable collaboration with activity awareness
   const stableRealtime = useStableRealtimeCollaboration({
     rundownId,
     onRemoteUpdate: useCallback(() => {
-      // Only notify if component is active and tab is visible
-      if (isActiveRef.current && isTabVisible) {
+      // Only notify if component is active
+      if (isActiveRef.current) {
         // Remote update notification
       }
-    }, [isTabVisible]),
-    enabled: enabled && !!rundownId && isTabVisible // Only enable when tab is visible
+    }, []),
+    enabled: enabled && !!rundownId
   });
 
   // Cache connection status
@@ -98,7 +74,6 @@ export const useOptimizedRealtime = ({
     stableCollaboration: stableRealtime,
     isConnected: realtimeRundown.isConnected || stableRealtime.isConnected,
     isProcessingUpdate: realtimeRundown.isProcessingContentUpdate,
-    isTabVisible,
     // Add connection pool access if needed
     hasPooledConnection: connectionPool.has(connectionKey)
   };
