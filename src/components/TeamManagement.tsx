@@ -369,7 +369,7 @@ const TeamManagement = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <User className="h-5 w-5" />
-            Team Members ({teamMembers.length} of {max_team_members})
+            Team Members
           </CardTitle>
         </CardHeader>
         <CardContent>
