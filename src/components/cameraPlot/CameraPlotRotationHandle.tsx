@@ -5,16 +5,17 @@ import { RotateCw } from 'lucide-react';
 interface CameraPlotRotationHandleProps {
   onRotationStart: (e: React.MouseEvent) => void;
   isRotating: boolean;
+  elementRotation?: number; // Add element rotation to counter-rotate the handle
 }
 
-const CameraPlotRotationHandle = ({ onRotationStart, isRotating }: CameraPlotRotationHandleProps) => {
+const CameraPlotRotationHandle = ({ onRotationStart, isRotating, elementRotation = 0 }: CameraPlotRotationHandleProps) => {
   return (
     <div
       className={`absolute -top-8 left-1/2 w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-lg cursor-pointer hover:bg-blue-600 transition-colors flex items-center justify-center ${
         isRotating ? 'bg-blue-600' : ''
       }`}
       style={{
-        transform: 'translateX(-50%)', // Use CSS transform instead of Tailwind to prevent inheritance
+        transform: `translateX(-50%) rotate(${-elementRotation}deg)`, // Counter-rotate to stay fixed
         transformOrigin: 'center'
       }}
       onMouseDown={onRotationStart}
