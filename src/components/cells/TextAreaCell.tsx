@@ -112,13 +112,13 @@ const TextAreaCell = ({
 
   // Handle keyboard navigation and line breaks
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // For Shift+Enter, allow line break (don't prevent default)
-    if (e.key === 'Enter' && e.shiftKey) {
+    // For Cmd+Enter (Mac) or Ctrl+Enter (Windows), allow line break (don't prevent default)
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       // Allow the default behavior to insert a line break
       return;
     }
     
-    // For Enter (without Shift) and arrow keys, navigate to next/previous cell
+    // For Enter (without Cmd/Ctrl) and arrow keys, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       onKeyDown(e, itemId, cellRefKey);
       return;
