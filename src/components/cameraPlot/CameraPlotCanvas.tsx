@@ -51,7 +51,10 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     handleDoubleClick,
     isDrawingWall,
     currentPath,
-    previewPoint
+    previewPoint,
+    isSelecting,
+    selectionStart,
+    selectionEnd
   } = useCameraPlotCanvasHandlers({
     selectedTool,
     onAddElement,
@@ -110,6 +113,20 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           previewPoint={previewPoint}
           mousePos={mousePos}
         />
+
+        {/* Selection box */}
+        {isSelecting && (
+          <div
+            className="absolute border-2 border-blue-500 bg-blue-500 bg-opacity-20 pointer-events-none"
+            style={{
+              left: Math.min(selectionStart.x, selectionEnd.x),
+              top: Math.min(selectionStart.y, selectionEnd.y),
+              width: Math.abs(selectionEnd.x - selectionStart.x),
+              height: Math.abs(selectionEnd.y - selectionStart.y),
+              zIndex: 1000
+            }}
+          />
+        )}
 
         {/* Render all elements */}
         {scene?.elements.map((element) => (

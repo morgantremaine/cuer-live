@@ -33,6 +33,9 @@ export const useCameraPlotCanvasHandlers = ({
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isRightClickPanning, setIsRightClickPanning] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+  const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
 
   const wallHandlers = useWallCanvasHandlers({
@@ -78,8 +81,13 @@ export const useCameraPlotCanvasHandlers = ({
       if (e.button === 2) { // Right click
         setIsRightClickPanning(true);
         setLastPanPoint({ x: e.clientX, y: e.clientY });
+      } else if (e.button === 0) { // Left click
+        const rect = e.currentTarget.getBoundingClientRect();
+        const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
+        setIsSelecting(true);
+        setSelectionStart({ x, y });
+        setSelectionEnd({ x, y });
       }
-      // Left click will be handled for selection box (to be implemented)
     }
   };
 
@@ -88,6 +96,12 @@ export const useCameraPlotCanvasHandlers = ({
     const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
     const snappedPos = snapToGrid(x, y);
     setMousePos(snappedPos);
+
+    // Handle selection box dragging
+    if (isSelecting && selectedTool === 'select') {
+      setSelectionEnd({ x, y });
+      return;
+    }
 
     // Handle panning (right-click drag only)
     if (isRightClickPanning && selectedTool === 'select') {
@@ -103,8 +117,44 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleMouseUp = () => {
+    // Handle selection box completion
+    if (isSelecting && selectedTool === 'select' && scene) {
+      const minX = Math.min(selectionStart.x, selectionEnd.x);
+      const maxX = Math.max(selectionStart.x, selectionEnd.x);
+      const minY = Math.min(selectionStart.y, selectionEnd.y);
+      const maxY = Math.max(selectionStart.y, selectionEnd.y);
+
+      // Only process selection if there's a meaningful drag (at least 5 pixels)
+      const dragDistance = Math.abs(selectionEnd.x - selectionStart.x) + Math.abs(selectionEnd.y - selectionStart.y);
+      
+      if (dragDistance > 5) {
+        // Find elements that intersect with the selection box
+        const selectedElementIds = scene.elements
+          .filter(element => {
+            const elementLeft = element.x;
+            const elementRight = element.x + element.width;
+            const elementTop = element.y;
+            const elementBottom = element.y + element.height;
+
+            // Check if element intersects with selection box
+            return !(elementRight < minX || elementLeft > maxX || elementBottom < minY || elementTop > maxY);
+          })
+          .map(element => element.id);
+
+        // Select all intersecting elements
+        if (selectedElementIds.length > 0) {
+          selectedElementIds.forEach((elementId, index) => {
+            onSelectElement(elementId, index > 0); // Multi-select for all but the first
+          });
+        } else {
+          onSelectElement('', false); // Clear selection if no elements found
+        }
+      }
+    }
+
     setIsPanning(false);
     setIsRightClickPanning(false);
+    setIsSelecting(false);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -124,6 +174,10 @@ export const useCameraPlotCanvasHandlers = ({
     // Expose wall drawing state for preview rendering
     isDrawingWall: wallHandlers.isDrawing,
     currentPath: wallHandlers.currentPath,
-    previewPoint: wallHandlers.previewPoint
+    previewPoint: wallHandlers.previewPoint,
+    // Expose selection box state
+    isSelecting,
+    selectionStart,
+    selectionEnd
   };
 };
