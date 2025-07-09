@@ -39,7 +39,15 @@ export const useRundownStorage = () => {
 
   // Debounced load function
   const debouncedLoadRundowns = useCallback(async () => {
-    if (!user || !teamId || isLoadingRef.current) {
+    if (!user || isLoadingRef.current) {
+      return;
+    }
+
+    // For new users without a team, don't try to load rundowns yet
+    if (!teamId) {
+      console.log('No teamId yet, waiting for team to be created...');
+      setLoading(false);
+      isLoadingRef.current = false;
       return;
     }
 

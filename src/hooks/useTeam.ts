@@ -157,6 +157,9 @@ export const useTeam = () => {
           if (createError) {
             console.error('Error creating team:', createError);
             setError('Failed to create team');
+            // Set loading to false even on error so UI doesn't hang
+            setIsLoading(false);
+            isLoadingRef.current = false;
           } else if (newTeamData) {
             console.log('Team created, reloading data...');
             // Reload team data after team creation
@@ -166,6 +169,12 @@ export const useTeam = () => {
               loadTeamData();
             }, 1000);
             return;
+          } else {
+            // If team creation returns null/undefined, still mark as complete
+            console.log('Team creation returned null, marking as complete');
+            setError('Team creation failed');
+            setIsLoading(false);
+            isLoadingRef.current = false;
           }
         }
       }

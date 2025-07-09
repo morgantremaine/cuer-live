@@ -36,6 +36,7 @@ export const useSubscription = () => {
     }
 
     try {
+      console.log('Checking subscription for user:', user.id);
       setStatus(prev => ({ ...prev, loading: true, error: null }));
       
       // First sync with Stripe to ensure our database is up to date

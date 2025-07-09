@@ -116,8 +116,8 @@ export const useInvitationHandler = () => {
       }
     };
 
-    // Use a longer delay to ensure auth state is fully established
-    const timer = setTimeout(handlePendingInvitation, 2000);
+    // Use a shorter delay to ensure auth state is fully established
+    const timer = setTimeout(handlePendingInvitation, 1000);
     return () => {
       clearTimeout(timer);
     };

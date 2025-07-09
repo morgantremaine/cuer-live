@@ -54,18 +54,19 @@ const Dashboard = () => {
 
   // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && !teamLoading && !hasInitiallyLoaded && user && teamId) {
-      // Only mark as initially loaded if we have user/teamId (actual data fetch attempt)
+    if (!loading && !teamLoading && !hasInitiallyLoaded && user) {
+      // Mark as initially loaded even if there's no team yet (for new users)
+      console.log('Dashboard: Marking as initially loaded - user:', !!user, 'teamId:', !!teamId, 'loading:', loading, 'teamLoading:', teamLoading);
       setHasInitiallyLoaded(true);
     }
-  }, [loading, teamLoading, hasInitiallyLoaded, user, teamId]);
+  }, [loading, teamLoading, hasInitiallyLoaded, user]);
 
-  // Reset loading state when user/team changes
+  // Reset loading state when user changes (but not team - team creation is part of the process)
   useEffect(() => {
-    if (user && teamId) {
+    if (user?.id) {
       setHasInitiallyLoaded(false);
     }
-  }, [user?.id, teamId]);
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     await signOut();
