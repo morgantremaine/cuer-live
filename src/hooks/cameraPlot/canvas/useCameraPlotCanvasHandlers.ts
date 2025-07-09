@@ -32,6 +32,7 @@ export const useCameraPlotCanvasHandlers = ({
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isRightClickPanning, setIsRightClickPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
 
   const wallHandlers = useWallCanvasHandlers({
@@ -50,12 +51,7 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {
-    if (isPanning) return;
-
-    if (selectedTool === 'grab') {
-      // Grab tool just handles panning, no element interaction
-      return;
-    }
+    if (isPanning || isRightClickPanning) return;
 
     if (selectedTool === 'select') {
       if (e.target === e.currentTarget) {
@@ -78,9 +74,12 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((selectedTool === 'grab' || selectedTool === 'select') && e.target === e.currentTarget) {
-      setIsPanning(true);
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
+    if (selectedTool === 'select' && e.target === e.currentTarget) {
+      if (e.button === 2) { // Right click
+        setIsRightClickPanning(true);
+        setLastPanPoint({ x: e.clientX, y: e.clientY });
+      }
+      // Left click will be handled for selection box (to be implemented)
     }
   };
 
@@ -90,8 +89,8 @@ export const useCameraPlotCanvasHandlers = ({
     const snappedPos = snapToGrid(x, y);
     setMousePos(snappedPos);
 
-    // Handle panning
-    if (isPanning && (selectedTool === 'grab' || selectedTool === 'select')) {
+    // Handle panning (right-click drag only)
+    if (isRightClickPanning && selectedTool === 'select') {
       const deltaX = e.clientX - lastPanPoint.x;
       const deltaY = e.clientY - lastPanPoint.y;
       updatePan(deltaX, deltaY);
@@ -105,6 +104,7 @@ export const useCameraPlotCanvasHandlers = ({
 
   const handleMouseUp = () => {
     setIsPanning(false);
+    setIsRightClickPanning(false);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {

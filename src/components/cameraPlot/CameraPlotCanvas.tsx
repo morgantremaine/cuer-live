@@ -92,10 +92,11 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onDoubleClick={handleDoubleClick}
+        onContextMenu={(e) => e.preventDefault()} // Prevent context menu on right click
         style={{ 
           width: '2000px', 
           height: '2000px',
-          cursor: selectedTool === 'grab' ? 'grab' : selectedTool === 'select' ? 'default' : 'crosshair',
+          cursor: selectedTool === 'select' ? 'default' : 'crosshair',
           transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
           transformOrigin: '0 0'
         }}
