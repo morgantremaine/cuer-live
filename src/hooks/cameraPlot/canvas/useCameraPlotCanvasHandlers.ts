@@ -52,6 +52,11 @@ export const useCameraPlotCanvasHandlers = ({
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (isPanning) return;
 
+    if (selectedTool === 'grab') {
+      // Grab tool just handles panning, no element interaction
+      return;
+    }
+
     if (selectedTool === 'select') {
       if (e.target === e.currentTarget) {
         onSelectElement('', false);
@@ -73,7 +78,7 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (selectedTool === 'select' && e.target === e.currentTarget) {
+    if ((selectedTool === 'grab' || selectedTool === 'select') && e.target === e.currentTarget) {
       setIsPanning(true);
       setLastPanPoint({ x: e.clientX, y: e.clientY });
     }
@@ -86,7 +91,7 @@ export const useCameraPlotCanvasHandlers = ({
     setMousePos(snappedPos);
 
     // Handle panning
-    if (isPanning && selectedTool === 'select') {
+    if (isPanning && (selectedTool === 'grab' || selectedTool === 'select')) {
       const deltaX = e.clientX - lastPanPoint.x;
       const deltaY = e.clientY - lastPanPoint.y;
       updatePan(deltaX, deltaY);

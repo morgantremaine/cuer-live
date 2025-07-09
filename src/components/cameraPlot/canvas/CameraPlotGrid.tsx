@@ -43,7 +43,7 @@ const CameraPlotGrid = ({ showGrid }: CameraPlotGridProps) => {
   
   return (
     <svg
-      className="absolute inset-0 pointer-events-none"
+      className="absolute inset-0 pointer-events-none grid-pattern"
       style={{ width: '100%', height: '100%' }}
     >
       {lines}

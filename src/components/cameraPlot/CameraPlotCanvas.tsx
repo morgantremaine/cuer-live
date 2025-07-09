@@ -95,7 +95,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         style={{ 
           width: '2000px', 
           height: '2000px',
-          cursor: selectedTool === 'select' ? 'grab' : 'crosshair',
+          cursor: selectedTool === 'grab' ? 'grab' : selectedTool === 'select' ? 'default' : 'crosshair',
           transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
           transformOrigin: '0 0'
         }}

@@ -13,6 +13,7 @@ export interface CameraElement {
   label: string;
   labelOffsetX?: number;
   labelOffsetY?: number;
+  labelHidden?: boolean;
   cameraNumber?: number;
   color?: string;
 }

@@ -165,24 +165,26 @@ const CameraPlotEditor = () => {
 
           {/* Main Canvas Area */}
           <div className="flex-1 relative overflow-hidden">
-            <CameraPlotCanvas
-              ref={canvasRef}
-              scene={activeScene}
-              selectedTool={selectedTool}
-              selectedElements={selectedElements}
-              showGrid={showGrid}
-              zoom={zoom}
-              pan={pan}
-              updatePan={updatePan}
-              onAddElement={addElement}
-              onUpdateElement={updateElement}
-              onDeleteElement={deleteElement}
-              onDuplicateElement={duplicateElement}
-              onSelectElement={selectElement}
-              snapToGrid={snapToGrid}
-              updatePlot={updatePlot}
-              setSelectedTool={setSelectedTool}
-            />
+        <div className="camera-plot-canvas">
+          <CameraPlotCanvas
+            ref={canvasRef}
+            scene={activeScene}
+            selectedTool={selectedTool}
+            selectedElements={selectedElements}
+            showGrid={showGrid}
+            zoom={zoom}
+            pan={pan}
+            updatePan={updatePan}
+            onAddElement={addElement}
+            onUpdateElement={updateElement}
+            onDeleteElement={deleteElement}
+            onDuplicateElement={duplicateElement}
+            onSelectElement={selectElement}
+            snapToGrid={snapToGrid}
+            updatePlot={updatePlot}
+            setSelectedTool={setSelectedTool}
+          />
+        </div>
           </div>
         </div>
       </div>

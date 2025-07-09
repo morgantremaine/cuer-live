@@ -84,103 +84,119 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const labelX = elementX + elementWidth / 2 + labelOffsetX;
   const labelY = elementY + elementHeight + labelOffsetY;
 
-  // Calculate distance from element center to label center - this is the key fix
+  // Calculate center points
   const elementCenterX = elementX + elementWidth / 2;
   const elementCenterY = elementY + elementHeight / 2;
-  const distanceFromCenter = Math.sqrt(
-    Math.pow(labelX - elementCenterX, 2) + Math.pow(labelY - elementCenterY, 2)
+  const labelCenterX = labelX;
+  const labelCenterY = labelY;
+
+  // Calculate distance between element center and label center
+  const distance = Math.sqrt(
+    Math.pow(elementCenterX - labelCenterX, 2) + 
+    Math.pow(elementCenterY - labelCenterY, 2)
   );
-  
-  // Use type-specific threshold for line appearance - now based on actual distance from element
-  const lineThreshold = getLineThreshold();
-  const needsDottedLine = distanceFromCenter > lineThreshold;
-  
-  // Type-specific padding to keep lines away from icons
-  const iconPadding = element.type === 'furniture' ? 25 : 30; // Reduced for furniture
-  const labelPadding = 15;
-  const dx = labelX - elementCenterX;
-  const dy = labelY - elementCenterY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  // Only calculate line coordinates if distance is valid and greater than 0
+
+  // Show line if distance exceeds threshold
+  const threshold = getLineThreshold();
+  const showLine = distance > threshold;
+
+  // Calculate line start and end points with consistent padding
   let lineStartX = elementCenterX;
   let lineStartY = elementCenterY;
-  let lineEndX = labelX;
-  let lineEndY = labelY;
-  
-  if (distance > 0 && !isNaN(distance)) {
-    // Calculate padded endpoints
-    const unitX = dx / distance;
-    const unitY = dy / distance;
-    
-    lineStartX = elementCenterX + unitX * iconPadding;
-    lineStartY = elementCenterY + unitY * iconPadding;
-    lineEndX = labelX - unitX * labelPadding;
-    lineEndY = labelY - unitY * labelPadding;
-  }
+  let lineEndX = labelCenterX;
+  let lineEndY = labelCenterY;
 
-  // Validate all line coordinates before rendering
-  const isValidCoordinate = (coord: number) => typeof coord === 'number' && !isNaN(coord) && isFinite(coord);
-  const canRenderLine = isValidCoordinate(lineStartX) && isValidCoordinate(lineStartY) && 
-                       isValidCoordinate(lineEndX) && isValidCoordinate(lineEndY);
+  if (showLine) {
+    // Calculate direction vector
+    const dirX = (labelCenterX - elementCenterX) / distance;
+    const dirY = (labelCenterY - elementCenterY) / distance;
+    
+    // Smart element padding based on actual element dimensions and position
+    const elementHalfWidth = elementWidth / 2;
+    const elementHalfHeight = elementHeight / 2;
+    
+    // Calculate intersection point with element rectangle
+    const absX = Math.abs(dirX);
+    const absY = Math.abs(dirY);
+    
+    let elementPadding;
+    if (absX > absY) {
+      // More horizontal direction
+      elementPadding = elementHalfWidth / absX + 4;
+    } else {
+      // More vertical direction  
+      elementPadding = elementHalfHeight / absY + 4;
+    }
+    
+    lineStartX = elementCenterX + dirX * elementPadding;
+    lineStartY = elementCenterY + dirY * elementPadding;
+    
+    // Consistent label padding
+    const labelPadding = 12;
+    lineEndX = labelCenterX - dirX * labelPadding;
+    lineEndY = labelCenterY - dirY * labelPadding;
+  }
 
   return (
     <>
-      {/* Dotted line connection with type-specific padding and thresholds */}
-      {needsDottedLine && canRenderLine && (
-        <svg 
+      {/* Dotted line - only show if label is not hidden */}
+      {showLine && !element.labelHidden && (
+        <svg
           className="absolute pointer-events-none"
-          style={{ 
-            left: 0, 
-            top: 0, 
-            width: '100%', 
-            height: '100%',
-            zIndex: 1
+          style={{
+            left: Math.min(lineStartX, lineEndX) - 1,
+            top: Math.min(lineStartY, lineEndY) - 1,
+            width: Math.abs(lineEndX - lineStartX) + 2,
+            height: Math.abs(lineEndY - lineStartY) + 2,
+            zIndex: 5
           }}
         >
           <line
-            x1={lineStartX}
-            y1={lineStartY}
-            x2={lineEndX}
-            y2={lineEndY}
-            stroke="white"
+            x1={lineStartX - Math.min(lineStartX, lineEndX) + 1}
+            y1={lineStartY - Math.min(lineStartY, lineEndY) + 1}
+            x2={lineEndX - Math.min(lineStartX, lineEndX) + 1}
+            y2={lineEndY - Math.min(lineStartY, lineEndY) + 1}
+            stroke="#6b7280"
             strokeWidth="1"
-            strokeDasharray="3,3"
-            opacity="0.7"
+            strokeDasharray="3,2"
           />
         </svg>
       )}
-      
-      {/* Label with user-select prevention */}
-      <div
-        className={`absolute text-sm text-white bg-black bg-opacity-75 px-2 py-1 rounded pointer-events-auto cursor-move select-none ${
-          isSelected ? 'z-10' : 'z-5'
-        }`}
-        style={{
-          left: labelX,
-          top: labelY,
-          transform: 'translateX(-50%)',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          MozUserSelect: 'none',
-          msUserSelect: 'none'
-        }}
-        onMouseDown={onMouseDown}
-        onDoubleClick={handleDoubleClick}
-      >
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleEditSubmit}
-            onKeyDown={handleKeyPress}
-            className="bg-white text-black px-1 text-sm min-w-16 rounded"
-          />
-        ) : (
-          element.label
-        )}
-      </div>
+
+      {/* Label - only show if not hidden */}
+      {!element.labelHidden && (
+        <div
+          className={`absolute inline-block px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded border select-none ${
+            isSelected ? 'border-blue-400' : 'border-gray-600'
+          }`}
+          style={{
+            left: labelX,
+            top: labelY,
+            cursor: 'move',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'auto',
+            zIndex: 10
+          }}
+          onMouseDown={onMouseDown}
+          onDoubleClick={handleDoubleClick}
+        >
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleEditSubmit}
+              onKeyPress={handleKeyPress}
+              className="bg-transparent text-white outline-none min-w-16"
+              style={{ fontSize: '12px' }}
+              autoFocus
+            />
+          ) : (
+            element.label || `${element.type.charAt(0).toUpperCase()}${element.type.slice(1)} ${element.id.slice(0, 4)}`
+          )}
+        </div>
+      )}
     </>
   );
 };

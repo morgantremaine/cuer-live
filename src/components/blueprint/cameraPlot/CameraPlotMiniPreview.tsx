@@ -176,7 +176,7 @@ const CameraPlotMiniPreview = ({
 
   return (
     <div 
-      className="relative bg-gray-800 border border-gray-600 overflow-hidden"
+      className="relative bg-white border border-gray-600 overflow-hidden"
       style={{ 
         width: containerWidth, 
         height: containerHeight,

@@ -37,6 +37,7 @@ const CameraPlotToolbar = ({
   onResetZoom
 }: CameraPlotToolbarProps) => {
   const tools = [
+    { id: 'grab', icon: MousePointer2, label: 'Grab' },
     { id: 'select', icon: MousePointer2, label: 'Select' },
     { id: 'camera', icon: Camera, label: 'Camera' },
     { id: 'person', icon: User, label: 'Person' },

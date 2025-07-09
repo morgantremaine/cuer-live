@@ -73,6 +73,16 @@ const CameraPlotElementContextMenu = ({
           Duplicate
         </button>
         
+        <button
+          className="block w-full px-4 py-2 text-left text-white hover:bg-gray-700 border-t border-gray-600"
+          onClick={() => {
+            onUpdate(element.id, { labelHidden: !element.labelHidden });
+            onClose();
+          }}
+        >
+          {element.labelHidden ? 'Show Label' : 'Hide Label'}
+        </button>
+        
         {isFurniture && (
           <div className="px-4 py-2 border-t border-gray-600">
             <div className="flex items-center justify-between">
