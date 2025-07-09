@@ -1,6 +1,7 @@
 
 import { CameraElement } from '@/hooks/useCameraPlot';
 import { useCameraPlotElementDrag } from './interactions/useCameraPlotElementDrag';
+import { useCameraPlotMultiElementDrag } from './interactions/useCameraPlotMultiElementDrag';
 import { useCameraPlotElementRotation } from './interactions/useCameraPlotElementRotation';
 import { useCameraPlotElementScaling } from './interactions/useCameraPlotElementScaling';
 import { useCameraPlotElementLabel } from './interactions/useCameraPlotElementLabel';
@@ -8,6 +9,7 @@ import { useCameraPlotElementLabel } from './interactions/useCameraPlotElementLa
 interface UseCameraPlotElementInteractionsProps {
   element: CameraElement;
   isSelected: boolean;
+  selectedElements: CameraElement[];
   onUpdate: (elementId: string, updates: Partial<CameraElement>) => void;
   onSelect: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
@@ -16,6 +18,7 @@ interface UseCameraPlotElementInteractionsProps {
 export const useCameraPlotElementInteractions = ({
   element,
   isSelected,
+  selectedElements,
   onUpdate,
   onSelect,
   snapToGrid
@@ -24,12 +27,23 @@ export const useCameraPlotElementInteractions = ({
   const canRotate = element.type === 'camera' || element.type === 'person' || element.type === 'furniture';
   const canScale = element.type === 'furniture';
 
-  // Individual interaction hooks
-  const { isDragging, startDrag } = useCameraPlotElementDrag({
+  // Individual interaction hooks - choose between single and multi-element drag
+  const shouldUseMultiDrag = selectedElements.length > 1 && selectedElements.some(el => el.id === element.id);
+  
+  const { isDragging: singleDragging, startDrag: startSingleDrag } = useCameraPlotElementDrag({
     element,
     onUpdate,
     snapToGrid
   });
+
+  const { isDragging: multiDragging, startDrag: startMultiDrag } = useCameraPlotMultiElementDrag({
+    elements: selectedElements,
+    onUpdate,
+    snapToGrid
+  });
+
+  const isDragging = shouldUseMultiDrag ? multiDragging : singleDragging;
+  const startDrag = shouldUseMultiDrag ? startMultiDrag : startSingleDrag;
 
   const { isRotating, startRotation } = useCameraPlotElementRotation({
     element,

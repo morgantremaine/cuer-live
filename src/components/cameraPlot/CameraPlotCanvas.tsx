@@ -140,6 +140,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
             onSelect={onSelectElement}
             snapToGrid={snapToGrid}
             allElements={scene.elements}
+            selectedElements={scene.elements.filter(el => selectedElements.includes(el.id))}
           />
         ))}
 

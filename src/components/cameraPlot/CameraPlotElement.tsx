@@ -16,6 +16,7 @@ interface CameraPlotElementProps {
   onSelect: (elementId: string, multiSelect?: boolean) => void;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   allElements?: CameraElement[];
+  selectedElements?: CameraElement[];
 }
 
 const CameraPlotElement = ({ 
@@ -26,7 +27,8 @@ const CameraPlotElement = ({
   onDuplicate,
   onSelect, 
   snapToGrid,
-  allElements = []
+  allElements = [],
+  selectedElements = []
 }: CameraPlotElementProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -45,6 +47,7 @@ const CameraPlotElement = ({
   } = useCameraPlotElementInteractions({
     element,
     isSelected,
+    selectedElements,
     onUpdate,
     onSelect,
     snapToGrid
