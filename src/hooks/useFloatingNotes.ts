@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useTeam } from '@/hooks/useTeam';
 
 interface Note {
   id: string;
@@ -10,6 +12,8 @@ interface Note {
 }
 
 export const useFloatingNotes = (rundownId: string) => {
+  const { user } = useAuth();
+  const { team } = useTeam();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +156,8 @@ export const useFloatingNotes = (rundownId: string) => {
           const { error: createError } = await supabase
             .from('blueprints')
             .insert({
+              user_id: user?.id,
+              team_id: team?.id,
               rundown_id: rundownId,
               rundown_title: rundownData?.title || 'Untitled',
               lists: [],
