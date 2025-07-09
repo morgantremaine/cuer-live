@@ -16,9 +16,8 @@ const ProtectedRoute = ({ children, requiresSubscription = false }: ProtectedRou
   // Show loading while auth or subscription is being checked
   if (authLoading || (user && subscriptionLoading)) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        <Footer />
       </div>
     )
   }
