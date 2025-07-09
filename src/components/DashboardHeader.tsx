@@ -60,13 +60,6 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                   Account Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => navigate('/subscription')}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Subscription
-                </DropdownMenuItem>
-                <DropdownMenuItem 
                   onClick={handleHelpClick}
                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
                 >

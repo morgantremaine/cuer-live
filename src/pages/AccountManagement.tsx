@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import DashboardHeader from '@/components/DashboardHeader'
 import TeamManagement from '@/components/TeamManagement'
 import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus'
+import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans'
+import { useSubscription } from '@/hooks/useSubscription'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -18,7 +20,9 @@ const AccountManagement = () => {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly')
   const { user, signOut, updatePassword, updateProfile } = useAuth()
+  const { access_type } = useSubscription()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -216,8 +220,15 @@ const AccountManagement = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="subscription">
+          <TabsContent value="subscription" className="space-y-6">
             <SubscriptionStatus />
+            {/* Only show subscription plans for users without team access */}
+            {access_type !== 'team_member' && (
+              <SubscriptionPlans 
+                interval={interval}
+                onIntervalChange={setInterval}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="team">

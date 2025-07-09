@@ -11,7 +11,6 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AccountManagement from "./pages/AccountManagement";
-import Subscription from "./pages/Subscription";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
 import JoinTeam from "./pages/JoinTeam";
@@ -78,14 +77,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute requiresSubscription={true}>
             <AccountManagement />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/subscription" 
-        element={
-          <ProtectedRoute>
-            <Subscription />
           </ProtectedRoute>
         } 
       />
