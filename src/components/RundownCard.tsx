@@ -41,7 +41,7 @@ const RundownCard = ({
 }: RundownCardProps) => {
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    window.location.href = `/blueprint/${rundown.id}`
+    window.location.href = `/rundown/${rundown.id}/blueprint`
   }
 
   const handleOpenClick = (e: React.MouseEvent) => {

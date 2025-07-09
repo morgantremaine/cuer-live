@@ -52,7 +52,7 @@ const CameraPlotEditor = () => {
   }, [scenes.length, createScene]);
 
   const handleBackToDashboard = () => {
-    navigate(`/blueprint/${id}`);
+    navigate(`/rundown/${id}/blueprint`);
   };
 
   const handlePrint = () => {

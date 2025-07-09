@@ -42,7 +42,7 @@ export const useIndexHandlers = ({
 
   const handleOpenTeleprompter = useCallback(() => {
     if (!rundownId) return;
-    navigate(`/teleprompter/${rundownId}`);
+    navigate(`/rundown/${rundownId}/teleprompter`);
   }, [navigate, rundownId]);
 
   const handleRowSelect = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {

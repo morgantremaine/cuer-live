@@ -22,6 +22,7 @@ import ADView from "./pages/ADView";
 import Teleprompter from "./pages/Teleprompter";
 import Blueprint from "./pages/Blueprint";
 import CameraPlotEditor from "./pages/CameraPlotEditor";
+import RundownLayout from "./components/RundownLayout";
 import LandingPage from "./components/LandingPage";
 import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
@@ -88,35 +89,12 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      {/* Unified rundown layout for all rundown-related routes */}
       <Route 
-        path="/rundown/:id" 
+        path="/rundown/:id/*" 
         element={
           <ProtectedRoute requiresSubscription={true}>
-            <Index />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/blueprint/:id" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <Blueprint />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/camera-plot-editor/:id" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <CameraPlotEditor />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/teleprompter/:id" 
-        element={
-          <ProtectedRoute requiresSubscription={true}>
-            <Teleprompter />
+            <RundownLayout />
           </ProtectedRoute>
         } 
       />

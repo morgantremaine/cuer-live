@@ -40,7 +40,7 @@ const CameraPlot = ({
   };
 
   const handleOpenEditor = () => {
-    navigate(`/camera-plot-editor/${rundownId}`);
+    navigate(`/rundown/${rundownId}/camera-plot-editor`);
   };
 
   if (isLoading) {

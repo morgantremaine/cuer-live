@@ -472,7 +472,7 @@ const DashboardRundownGrid = ({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => navigate(`/blueprint/${rundown.id}`)}
+                    onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />

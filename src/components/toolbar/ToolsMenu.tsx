@@ -51,7 +51,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       return;
     }
 
-    navigate(`/blueprint/${rundownId}`);
+    navigate(`/rundown/${rundownId}/blueprint`);
   };
 
   const handleOpenTeleprompter = () => {
@@ -75,7 +75,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     }
 
     // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/teleprompter/${rundownId}`;
+    const teleprompterUrl = `${window.location.origin}/rundown/${rundownId}/teleprompter`;
     window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   };
 
