@@ -156,10 +156,9 @@ export const useWallInteractions = ({
       nodeId: interactionState.selectedNodeId
     });
     
-    const snapped = snapToGrid(canvasX, canvasY);
-    
-    wallDrawing.updateNodePosition(interactionState.selectedNodeId, snapped.x, snapped.y);
-  }, [wallDrawing, snapToGrid, zoom, pan]);
+    // Use direct positioning without grid snapping for smooth dragging
+    wallDrawing.updateNodePosition(interactionState.selectedNodeId, canvasX, canvasY);
+  }, [wallDrawing, zoom, pan]);
 
   // Handle global mouse up to end dragging
   const handleGlobalMouseUp = useCallback(() => {
