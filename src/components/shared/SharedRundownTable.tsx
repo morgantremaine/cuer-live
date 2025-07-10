@@ -638,6 +638,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }
             
             .print-table th {
+              padding: 8px 4px !important;
+              height: 40px !important;
+            }
+            
+            .print-table th {
               font-size: 9px !important;
               font-weight: bold !important;
               background: #f0f0f0 !important;
