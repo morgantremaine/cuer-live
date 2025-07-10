@@ -164,6 +164,27 @@ export const useUnifiedNotes = (rundownId: string) => {
     initializeNotes();
   }, [rundownId, blueprintContext?.state?.notes, blueprintContext?.state?.isInitialized, isInitialized]);
 
+  // Listen for blueprint context updates to sync notes
+  useEffect(() => {
+    if (!blueprintContext?.state?.isInitialized || !isInitialized) return;
+    
+    const contextNotes = blueprintContext.state.notes;
+    if (contextNotes && typeof contextNotes === 'string') {
+      try {
+        const parsed = JSON.parse(contextNotes);
+        if (Array.isArray(parsed) && JSON.stringify(parsed) !== JSON.stringify(notes)) {
+          console.log('📝 Syncing notes from blueprint context');
+          setNotes(parsed);
+          if (parsed.length > 0 && !activeNoteId) {
+            setActiveNoteId(parsed[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing notes from blueprint context:', error);
+      }
+    }
+  }, [blueprintContext?.state?.notes, blueprintContext?.state?.isInitialized, isInitialized, notes, activeNoteId]);
+
   // Save notes using appropriate method (context or direct database)
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
     if (!isInitialized) return;
@@ -179,6 +200,7 @@ export const useUnifiedNotes = (rundownId: string) => {
         
         if (blueprintContext?.updateNotes && blueprintContext.state.isInitialized) {
           // Use blueprint context if available and initialized
+          console.log('📝 Saving notes via blueprint context');
           blueprintContext.updateNotes(notesJson);
         } else {
           // Fall back to direct database save - handle potential duplicates
