@@ -55,7 +55,8 @@ export const useWallDrawing = () => {
     if (newNodeId === lastNodeId) return;
 
     // Create segment between last node and new node
-    wallSystem.createSegment(lastNodeId, newNodeId);
+    const segmentId = wallSystem.createSegment(lastNodeId, newNodeId);
+    console.log('🔗 Created segment:', { segmentId, from: lastNodeId, to: newNodeId });
 
     // Update the current path
     setDrawingState(prev => ({
