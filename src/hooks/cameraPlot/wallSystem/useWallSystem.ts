@@ -91,7 +91,7 @@ export const useWallSystem = () => {
           connectedSegmentIds: node.connectedSegmentIds.filter(id => !segmentsToRemove.includes(id))
         }));
 
-      // Remove any nodes that are no longer connected to any segments (orphaned nodes)
+  // Remove any nodes that are no longer connected to any segments (orphaned nodes)
       const finalNodes = updatedNodes.filter(node => node.connectedSegmentIds.length > 0);
 
       return {
@@ -116,7 +116,7 @@ export const useWallSystem = () => {
         connectedSegmentIds: node.connectedSegmentIds.filter(id => id !== segmentId)
       }));
 
-      // Remove any nodes that are no longer connected to any segments
+  // Remove any nodes that are no longer connected to any segments
       const finalNodes = updatedNodes.filter(node => node.connectedSegmentIds.length > 0);
 
       return {
@@ -240,9 +240,28 @@ export const useWallSystem = () => {
     });
   }, []);
 
-  // Load wall system from data
+  // Load wall system from data and clean up orphaned nodes
   const loadWallSystem = useCallback((data: WallSystem) => {
-    setWallSystem(data);
+    // Clean up orphaned nodes when loading
+    const cleanedNodes = data.nodes.filter(node => 
+      node.connectedSegmentIds.length > 0 || 
+      data.segments.some(segment => segment.startNodeId === node.id || segment.endNodeId === node.id)
+    );
+    setWallSystem({
+      nodes: cleanedNodes,
+      segments: data.segments
+    });
+  }, []);
+
+  // Clean up orphaned nodes
+  const cleanupOrphanedNodes = useCallback(() => {
+    setWallSystem(prev => ({
+      ...prev,
+      nodes: prev.nodes.filter(node => 
+        node.connectedSegmentIds.length > 0 || 
+        prev.segments.some(segment => segment.startNodeId === node.id || segment.endNodeId === node.id)
+      )
+    }));
   }, []);
 
   return {
@@ -259,6 +278,7 @@ export const useWallSystem = () => {
     getNode,
     getSegment,
     clearWalls,
-    loadWallSystem
+    loadWallSystem,
+    cleanupOrphanedNodes
   };
 };

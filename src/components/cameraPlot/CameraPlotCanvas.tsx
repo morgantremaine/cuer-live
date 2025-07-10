@@ -96,6 +96,10 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   useEffect(() => {
     if (wallSystem.wallInteractions.wallDrawing.wallSystem.nodes.length > 0 || 
         wallSystem.wallInteractions.wallDrawing.wallSystem.segments.length > 0) {
+      // Clean up orphaned nodes before saving
+      if (wallSystem.wallInteractions.wallDrawing.cleanupOrphanedNodes) {
+        wallSystem.wallInteractions.wallDrawing.cleanupOrphanedNodes();
+      }
       wallSystem.handleWallSystemChange();
     }
   }, [wallSystem.wallInteractions.wallDrawing.wallSystem]);

@@ -82,6 +82,12 @@ export const useCameraPlotWallSystem = ({
     const wallSystemElement = getWallSystemElement();
     if (wallSystemElement && wallSystemElement.wallSystemData) {
       wallInteractions.wallDrawing.loadWallSystem(wallSystemElement.wallSystemData);
+      // Clean up any orphaned nodes immediately after loading
+      setTimeout(() => {
+        if (wallInteractions.wallDrawing.cleanupOrphanedNodes) {
+          wallInteractions.wallDrawing.cleanupOrphanedNodes();
+        }
+      }, 0);
     }
   }, [getWallSystemElement, wallInteractions.wallDrawing]);
 
