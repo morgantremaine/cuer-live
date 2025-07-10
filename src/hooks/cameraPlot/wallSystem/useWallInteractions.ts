@@ -126,8 +126,10 @@ export const useWallInteractions = ({
     // Convert screen coordinates to canvas coordinates accounting for zoom and pan
     const screenX = event.clientX - canvasRect.left;
     const screenY = event.clientY - canvasRect.top;
-    const canvasX = (screenX / zoom) - (pan.x / zoom);
-    const canvasY = (screenY / zoom) - (pan.y / zoom);
+    
+    // Apply inverse transform to get canvas coordinates
+    const canvasX = (screenX - pan.x) / zoom;
+    const canvasY = (screenY - pan.y) / zoom;
     
     const dragOffset = {
       x: canvasX - node.x,
@@ -154,12 +156,15 @@ export const useWallInteractions = ({
     // Convert screen coordinates to canvas coordinates accounting for zoom and pan
     const screenX = event.clientX - canvasRect.left;
     const screenY = event.clientY - canvasRect.top;
-    const canvasX = (screenX / zoom) - (pan.x / zoom) - interactionState.dragOffset.x;
-    const canvasY = (screenY / zoom) - (pan.y / zoom) - interactionState.dragOffset.y;
+    
+    // Apply inverse transform to get canvas coordinates (matching handleNodeMouseDown)
+    const canvasX = (screenX - pan.x) / zoom - interactionState.dragOffset.x;
+    const canvasY = (screenY - pan.y) / zoom - interactionState.dragOffset.y;
+    
     const snapped = snapToGrid(canvasX, canvasY);
     
     wallDrawing.updateNodePosition(interactionState.selectedNodeId, snapped.x, snapped.y);
-  }, [wallDrawing, snapToGrid]);
+  }, [wallDrawing, snapToGrid, zoom, pan]);
 
   // Handle global mouse up to end dragging
   const handleGlobalMouseUp = useCallback(() => {
