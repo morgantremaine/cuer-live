@@ -72,6 +72,18 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
   const startTime = Date.now();
   
   try {
+    console.log(`Sending webhook to: ${integration.endpoint_url}`);
+    
+    // Check for localhost URLs which won't work from edge functions
+    if (integration.endpoint_url?.includes('localhost') || integration.endpoint_url?.includes('127.0.0.1')) {
+      console.warn('Localhost URL detected - edge functions cannot reach localhost');
+      return {
+        success: false,
+        error: 'Cannot reach localhost URLs from edge functions. Use ngrok or a public URL for testing.',
+        responseTime: Date.now() - startTime,
+      };
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...integration.custom_headers,
@@ -87,6 +99,8 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
     const responseBody = await response.text();
     const responseTime = Date.now() - startTime;
 
+    console.log(`Webhook response: ${response.status} - ${responseBody.substring(0, 200)}`);
+
     return {
       success: response.ok,
       status: response.status,
@@ -95,6 +109,7 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
     };
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    console.error(`Webhook error: ${error.message}`);
     return {
       success: false,
       error: error.message,
