@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useWallDrawing } from './useWallDrawing';
 
 interface UseWallInteractionsProps {
@@ -11,6 +11,7 @@ export const useWallInteractions = ({
   snapToGrid
 }: UseWallInteractionsProps) => {
   const wallDrawing = useWallDrawing();
+  const canvasRef = useRef<HTMLElement | null>(null);
 
   // Handle mouse down on canvas for wall drawing
   const handleCanvasMouseDown = useCallback((x: number, y: number) => {
@@ -50,14 +51,17 @@ export const useWallInteractions = ({
     if (selectedTool !== 'select') return;
     
     event.stopPropagation();
-    const rect = (event.currentTarget as SVGElement).getBoundingClientRect();
-    const node = wallDrawing.getNode(nodeId);
+    const canvasElement = (event.currentTarget as SVGElement).closest('[data-canvas="true"]') as HTMLElement;
+    if (!canvasElement) return;
     
+    canvasRef.current = canvasElement;
+    const node = wallDrawing.getNode(nodeId);
     if (!node) return;
     
+    const canvasRect = canvasElement.getBoundingClientRect();
     const dragOffset = {
-      x: event.clientX - rect.left - node.x,
-      y: event.clientY - rect.top - node.y
+      x: event.clientX - canvasRect.left - node.x,
+      y: event.clientY - canvasRect.top - node.y
     };
     
     wallDrawing.setInteractionState(prev => ({
@@ -69,15 +73,16 @@ export const useWallInteractions = ({
   }, [selectedTool, wallDrawing]);
 
   // Handle global mouse move for node dragging
-  const handleGlobalMouseMove = useCallback((event: MouseEvent, containerRect: DOMRect) => {
+  const handleGlobalMouseMove = useCallback((event: MouseEvent) => {
     const { interactionState } = wallDrawing;
     
-    if (!interactionState.isDragging || !interactionState.selectedNodeId || !interactionState.dragOffset) {
+    if (!interactionState.isDragging || !interactionState.selectedNodeId || !interactionState.dragOffset || !canvasRef.current) {
       return;
     }
     
-    const x = event.clientX - containerRect.left - interactionState.dragOffset.x;
-    const y = event.clientY - containerRect.top - interactionState.dragOffset.y;
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - canvasRect.left - interactionState.dragOffset.x;
+    const y = event.clientY - canvasRect.top - interactionState.dragOffset.y;
     const snapped = snapToGrid(x, y);
     
     wallDrawing.updateNodePosition(interactionState.selectedNodeId, snapped.x, snapped.y);
@@ -91,7 +96,23 @@ export const useWallInteractions = ({
       dragOffset: null,
       isDragging: false
     }));
+    canvasRef.current = null;
   }, [wallDrawing]);
+
+  // Set up global mouse event listeners for dragging
+  useEffect(() => {
+    const { interactionState } = wallDrawing;
+    
+    if (interactionState.isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [wallDrawing.interactionState.isDragging, handleGlobalMouseMove, handleGlobalMouseUp]);
 
   // Handle node hover
   const handleNodeMouseEnter = useCallback((nodeId: string) => {
@@ -122,8 +143,6 @@ export const useWallInteractions = ({
     handleCanvasMouseMove,
     handleCanvasDoubleClick,
     handleNodeMouseDown,
-    handleGlobalMouseMove,
-    handleGlobalMouseUp,
     handleNodeMouseEnter,
     handleNodeMouseLeave,
     cancelWallDrawing

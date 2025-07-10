@@ -117,6 +117,7 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
       <div
         ref={ref}
         className="relative bg-gray-600"
+        data-canvas="true"
         onClick={handleCanvasClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
