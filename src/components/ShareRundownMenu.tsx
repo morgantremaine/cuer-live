@@ -80,7 +80,64 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return;
     }
 
-    // Add print styles to current page and trigger print
+    // Create a simplified print-only version
+    const printContent = document.createElement('div');
+    printContent.id = 'print-only-content';
+    printContent.style.display = 'none';
+    
+    // Build the print HTML
+    let printHTML = `
+      <div class="print-container">
+        <div class="print-header">
+          <h1>${rundownTitle}</h1>
+          <div class="print-info">
+            <span>Start Time: ${rundownData?.items?.[0]?.startTime || '00:00:00'}</span>
+            <span>Total Runtime: ${calculateTotalRuntime()}</span>
+          </div>
+        </div>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th style="width: 80px;">Time</th>
+              <th style="width: 80px;">Duration</th>
+              <th>Title</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    // Get rundown data from the page
+    if (rundownData?.items) {
+      rundownData.items.forEach((item, index) => {
+        const isHeader = item.type === 'header';
+        const rowClass = isHeader ? 'header-row' : 
+                        item.color && item.color !== '#FFFFFF' ? 'colored-row' : 
+                        item.isFloating ? 'floated-row' : 'regular-row';
+        
+        printHTML += `
+          <tr class="${rowClass}">
+            <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+            <td style="text-align: center; font-family: monospace;">${item.startTime || ''}</td>
+            <td style="text-align: center; font-family: monospace;">${item.duration || ''}</td>
+            <td style="font-weight: ${isHeader ? 'bold' : 'normal'};">${item.name || ''}</td>
+            <td>${(item as any).notes || ''}</td>
+          </tr>
+        `;
+      });
+    }
+
+    printHTML += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    printContent.innerHTML = printHTML;
+    document.body.appendChild(printContent);
+
+    // Add print styles
     const printStyles = document.createElement('style');
     printStyles.id = 'rundown-print-styles';
     printStyles.textContent = `
@@ -90,75 +147,60 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           size: auto;
         }
 
-        /* Hide everything except the rundown content */
         body * {
           visibility: hidden;
         }
-        
-        .rundown-print-container,
-        .rundown-print-container *,
-        .print-rundown-header,
-        .print-rundown-header *,
-        .print-rundown-table,
-        .print-rundown-table *,
-        table[data-rundown-table],
-        table[data-rundown-table] * {
+
+        #print-only-content,
+        #print-only-content * {
           visibility: visible !important;
         }
-        
-        .rundown-print-container {
+
+        #print-only-content {
           position: absolute !important;
           left: 0 !important;
           top: 0 !important;
           width: 100% !important;
+          display: block !important;
+        }
+
+        .print-container {
+          width: 100% !important;
           background: white !important;
           color: black !important;
         }
 
-        /* Force light mode colors */
-        * {
-          background: white !important;
-          color: black !important;
-        }
-
-        /* Print header styles */
-        .print-rundown-header {
+        .print-header {
           margin-bottom: 20px !important;
-          padding: 10px 0 !important;
+          padding-bottom: 10px !important;
           border-bottom: 2px solid #333 !important;
-          background: white !important;
         }
 
-        .print-rundown-title {
+        .print-header h1 {
           font-size: 24px !important;
           font-weight: bold !important;
-          margin-bottom: 8px !important;
+          margin: 0 0 10px 0 !important;
           color: black !important;
         }
 
-        .print-rundown-info {
+        .print-info {
           font-size: 12px !important;
           color: #333 !important;
           display: flex !important;
-          gap: 20px !important;
+          gap: 30px !important;
         }
 
-        /* Table styles for print */
-        .print-rundown-table, table[data-rundown-table] {
+        .print-table {
           width: 100% !important;
           border-collapse: collapse !important;
           font-size: 10px !important;
-          table-layout: auto !important;
           background: white !important;
-          visibility: visible !important;
-          display: table !important;
         }
 
-        .print-rundown-table th, .print-rundown-table thead th,
-        table[data-rundown-table] th, table[data-rundown-table] thead th {
+        .print-table th {
           background: #f5f5f5 !important;
           border: 1px solid #333 !important;
-          padding: 6px 4px !important;
+          padding: 8px 6px !important;
           font-weight: bold !important;
           font-size: 9px !important;
           text-align: left !important;
@@ -167,187 +209,64 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           print-color-adjust: exact !important;
         }
 
-        .print-rundown-table td, table[data-rundown-table] td {
+        .print-table td {
           border: 1px solid #666 !important;
-          padding: 4px !important;
+          padding: 6px !important;
           vertical-align: top !important;
           word-wrap: break-word !important;
           color: black !important;
           font-size: 9px !important;
-          line-height: 1.2 !important;
+          line-height: 1.3 !important;
           background: white !important;
         }
 
-        .print-rundown-table tbody, table[data-rundown-table] tbody {
-          display: table-row-group !important;
-          visibility: visible !important;
-        }
-
-        .print-rundown-table tr, table[data-rundown-table] tr {
-          display: table-row !important;
-          visibility: visible !important;
-        }
-
-        /* Header row styles */
-        .print-header-row td, tr[data-type="header"] td {
+        .header-row td {
           background: #e8e8e8 !important;
           font-weight: bold !important;
           font-size: 11px !important;
-          padding: 8px 4px !important;
+          padding: 10px 6px !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
-        /* Custom colored rows */
-        .print-custom-colored-row td, tr[data-custom-color="true"] td {
+        .colored-row td {
           background: #f0f8ff !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
-        /* Floated rows */
-        .print-floated-row td, tr[data-floated="true"] td {
+        .floated-row td {
           background: #fff8dc !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
-        /* Hide UI elements */
-        .print\\:hidden, button, .lucide, .hover\\:bg-gray-200, .cursor-pointer,
-        [role="button"], .dropdown, .context-menu {
-          display: none !important;
-          visibility: hidden !important;
-        }
-
-        /* Row number column */
-        .print-row-number {
-          width: 30px !important;
-          text-align: center !important;
-          background: #f9f9f9 !important;
-          font-weight: bold !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        /* Time columns */
-        .print-time-column {
-          width: 60px !important;
-          text-align: center !important;
-          font-family: monospace !important;
-        }
-
-        /* Content columns should auto-size */
-        .print-content-column {
-          width: auto !important;
-          max-width: none !important;
-        }
-
-        /* Make sure ScrollArea content is visible */
-        [data-radix-scroll-area-viewport] {
-          position: static !important;
-          overflow: visible !important;
-        }
-
-        /* Hide scroll elements */
-        [data-radix-scroll-area-scrollbar] {
-          display: none !important;
+        .regular-row td {
+          background: white !important;
         }
       }
     `;
 
-    // Add styles to head
     document.head.appendChild(printStyles);
 
-    // Create print container and mark current rundown table
-    const rundownContainer = document.querySelector('.rundown-container, [data-rundown-table], .table-container');
-    if (rundownContainer) {
-      rundownContainer.classList.add('rundown-print-container');
+    // Helper function to calculate total runtime
+    function calculateTotalRuntime() {
+      if (!rundownData?.items) return '00:00:00';
       
-      // Populate print header with rundown info
-      const printHeader = rundownContainer.querySelector('.print-rundown-title');
-      const printInfo = rundownContainer.querySelector('.print-rundown-info');
-      
-      if (printHeader) {
-        printHeader.textContent = rundownTitle;
-      }
-      
-      if (printInfo && rundownData) {
-        // Calculate total runtime if available
-        const totalRuntime = rundownData.items?.reduce((total, item) => {
-          if (item.duration) {
-            const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
-            if (timeMatch) {
-              return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
-            }
+      const totalSeconds = rundownData.items.reduce((total, item) => {
+        if (item.duration) {
+          const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
+          if (timeMatch) {
+            return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
           }
-          return total;
-        }, 0) || 0;
-        
-        const hours = Math.floor(totalRuntime / 3600);
-        const minutes = Math.floor((totalRuntime % 3600) / 60);
-        const seconds = totalRuntime % 60;
-        const runtimeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        const startTimeSpan = printInfo.querySelector('span:first-child');
-        const runtimeSpan = printInfo.querySelector('span:last-child');
-        
-        if (runtimeSpan) {
-          runtimeSpan.textContent = `Total Runtime: ${runtimeString}`;
         }
-      }
+        return total;
+      }, 0);
       
-      // Add print classes to table elements
-      const table = rundownContainer.querySelector('table');
-      if (table) {
-        table.classList.add('print-rundown-table');
-        
-        // Mark header and regular cells for print styling
-        const thElements = table.querySelectorAll('thead th');
-        thElements.forEach((th, index) => {
-          const thElement = th as HTMLElement;
-          if (index === 0) {
-            thElement.classList.add('print-row-number');
-          } else {
-            // Check if it's a time column based on content or data attributes
-            const columnContent = thElement.textContent?.toLowerCase() || '';
-            if (columnContent.includes('time') || columnContent.includes('duration')) {
-              thElement.classList.add('print-time-column');
-            } else {
-              thElement.classList.add('print-content-column');
-            }
-          }
-        });
-        
-        // Add row classes for styling
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach((row: Element) => {
-          const htmlRow = row as HTMLElement;
-          if (htmlRow.getAttribute('data-type') === 'header') {
-            htmlRow.classList.add('print-header-row');
-          } else if (htmlRow.getAttribute('data-custom-color') === 'true') {
-            htmlRow.classList.add('print-custom-colored-row');
-          } else if (htmlRow.getAttribute('data-floated') === 'true') {
-            htmlRow.classList.add('print-floated-row');
-          }
-          
-          // Add classes to cells for print styling
-          const cells = htmlRow.querySelectorAll('td');
-          cells.forEach((cell, index) => {
-            const cellElement = cell as HTMLElement;
-            if (index === 0) {
-              cellElement.classList.add('print-row-number');
-            } else {
-              // Check if it's a time column based on content pattern
-              const cellContent = cellElement.textContent?.trim() || '';
-              if (/^\d{2}:\d{2}:\d{2}$/.test(cellContent) || cellContent.includes(':')) {
-                cellElement.classList.add('print-time-column');
-              } else {
-                cellElement.classList.add('print-content-column');
-              }
-            }
-          });
-        });
-      }
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     // Trigger print
@@ -356,11 +275,9 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     // Clean up after print
     setTimeout(() => {
       const styles = document.getElementById('rundown-print-styles');
+      const content = document.getElementById('print-only-content');
       if (styles) styles.remove();
-      
-      if (rundownContainer) {
-        rundownContainer.classList.remove('rundown-print-container');
-      }
+      if (content) content.remove();
     }, 1000);
   };
 
