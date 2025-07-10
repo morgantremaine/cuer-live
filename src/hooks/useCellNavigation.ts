@@ -48,6 +48,13 @@ export const useCellNavigation = (
       
       if (targetElement && typeof targetElement.focus === 'function') {
         targetElement.focus();
+        
+        // Select all text in the cell after focusing
+        if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
+          setTimeout(() => {
+            targetElement.select();
+          }, 10);
+        }
       }
     }, 100);
   }, []);
@@ -83,8 +90,52 @@ export const useCellNavigation = (
         const prevItem = items[prevItemIndex];
         navigateToCell(prevItem.id, field);
       }
+    } else if (key === 'Tab') {
+      e.preventDefault();
+      const currentItemIndex = items.findIndex(item => item.id === itemId);
+      const currentColumnIndex = visibleColumns.findIndex(col => col.key === field);
+      
+      if (e.shiftKey) {
+        // Shift+Tab: Move to previous cell (left or up+right)
+        if (currentColumnIndex > 0) {
+          // Move left in same row
+          const prevColumn = visibleColumns[currentColumnIndex - 1];
+          navigateToCell(itemId, prevColumn.key);
+        } else {
+          // Move to last column of previous non-header row
+          let prevItemIndex = currentItemIndex - 1;
+          while (prevItemIndex >= 0 && isHeaderItem(items[prevItemIndex])) {
+            prevItemIndex--;
+          }
+          
+          if (prevItemIndex >= 0) {
+            const prevItem = items[prevItemIndex];
+            const lastColumn = visibleColumns[visibleColumns.length - 1];
+            navigateToCell(prevItem.id, lastColumn.key);
+          }
+        }
+      } else {
+        // Tab: Move to next cell (right or down+left)
+        if (currentColumnIndex < visibleColumns.length - 1) {
+          // Move right in same row
+          const nextColumn = visibleColumns[currentColumnIndex + 1];
+          navigateToCell(itemId, nextColumn.key);
+        } else {
+          // Move to first column of next non-header row
+          let nextItemIndex = currentItemIndex + 1;
+          while (nextItemIndex < items.length && isHeaderItem(items[nextItemIndex])) {
+            nextItemIndex++;
+          }
+          
+          if (nextItemIndex < items.length) {
+            const nextItem = items[nextItemIndex];
+            const firstColumn = visibleColumns[0];
+            navigateToCell(nextItem.id, firstColumn.key);
+          }
+        }
+      }
     }
-  }, [items, navigateToCell]);
+  }, [items, visibleColumns, navigateToCell]);
 
   const handleCellClick = useCallback((itemId: string, field: string) => {
     const cellKey = `${itemId}-${field}`;

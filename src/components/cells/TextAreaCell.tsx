@@ -138,8 +138,8 @@ const TextAreaCell = ({
       return;
     }
     
-    // For Enter (without Cmd/Ctrl) and arrow keys, navigate to next/previous cell
-    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    // For Enter (without Cmd/Ctrl), arrow keys, and Tab navigation, navigate to next/previous cell
+    if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
       onKeyDown(e, itemId, cellRefKey);
       return;
     }
