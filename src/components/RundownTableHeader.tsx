@@ -140,11 +140,21 @@ const RundownTableHeader = ({
         const lines = textValue.split('\n');
         let maxLineWidth = 0;
         
-        lines.forEach(line => {
-          measureElement.textContent = line.trim();
-          const lineWidth = measureElement.offsetWidth;
-          maxLineWidth = Math.max(maxLineWidth, lineWidth);
-        });
+        // If there are no explicit line breaks (single line), measure the entire text
+        // to prevent unnecessary wrapping during auto-resize
+        if (lines.length === 1) {
+          measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping for single line
+          measureElement.textContent = textValue;
+          maxLineWidth = measureElement.offsetWidth;
+        } else {
+          // For multi-line text with explicit line breaks, measure each line
+          measureElement.style.whiteSpace = 'pre-wrap'; // Allow wrapping for multi-line
+          lines.forEach(line => {
+            measureElement.textContent = line.trim();
+            const lineWidth = measureElement.offsetWidth;
+            maxLineWidth = Math.max(maxLineWidth, lineWidth);
+          });
+        }
         
         // Cap the width to prevent excessively wide columns for very long lines
         const cappedWidth = Math.min(maxLineWidth, 300); // Max 300px for readability
