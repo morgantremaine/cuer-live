@@ -54,7 +54,7 @@ export const useCameraPlotWallSystem = ({
         height: 0,
         rotation: 0,
         scale: 1,
-        label: 'Wall System',
+        label: '',
         wallSystemData: wallSystem
       } as WallSystemElement;
       
