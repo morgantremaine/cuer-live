@@ -161,7 +161,13 @@ export const useDragAndDrop = (
     }
 
     const activeIndex = items.findIndex(item => item.id === active.id);
-    const overIndex = items.findIndex(item => item.id === over.id);
+    let overIndex = items.findIndex(item => item.id === over.id);
+    
+    // Use the calculated dropTargetIndex if available (from legacy drag over)
+    // This provides more precise drop positioning, especially for headers
+    if (dropTargetIndex !== null && dropTargetIndex >= 0 && dropTargetIndex <= items.length) {
+      overIndex = dropTargetIndex;
+    }
     
     if (activeIndex === -1 || overIndex === -1) {
       resetDragState();
@@ -187,12 +193,22 @@ export const useDragAndDrop = (
         // Calculate the correct insertion point
         let adjustedDropIndex = overIndex;
         
-        // Find how many dragged items appear before the drop index
-        const removedItemsBeforeDropIndex = items.slice(0, overIndex).filter(item => 
-          draggedIds.includes(item.id)
-        ).length;
-        
-        adjustedDropIndex = overIndex - removedItemsBeforeDropIndex;
+        // If we're using dropTargetIndex, it's already the insertion index
+        if (dropTargetIndex !== null && dropTargetIndex >= 0 && dropTargetIndex <= items.length) {
+          // Find how many dragged items appear before the drop index
+          const removedItemsBeforeDropIndex = items.slice(0, dropTargetIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = dropTargetIndex - removedItemsBeforeDropIndex;
+        } else {
+          // Legacy calculation for @dnd-kit overIndex
+          const removedItemsBeforeDropIndex = items.slice(0, overIndex).filter(item => 
+            draggedIds.includes(item.id)
+          ).length;
+          
+          adjustedDropIndex = overIndex - removedItemsBeforeDropIndex;
+        }
         
         // Ensure we don't go out of bounds
         adjustedDropIndex = Math.max(0, Math.min(adjustedDropIndex, remainingItems.length));
@@ -205,8 +221,23 @@ export const useDragAndDrop = (
           `Reorder header group (${draggedItems.length} items)` : 
           `Reorder ${draggedItems.length} items`;
       } else {
-        // Single item using @dnd-kit's arrayMove
-        newItems = arrayMove(items, activeIndex, overIndex);
+        // Single item
+        if (dropTargetIndex !== null && dropTargetIndex >= 0 && dropTargetIndex <= items.length) {
+          // Use precise insertion index
+          const item = items[activeIndex];
+          const remainingItems = items.filter((_, index) => index !== activeIndex);
+          
+          let insertIndex = dropTargetIndex;
+          if (activeIndex < dropTargetIndex) {
+            insertIndex = dropTargetIndex - 1;
+          }
+          
+          newItems = [...remainingItems];
+          newItems.splice(insertIndex, 0, item);
+        } else {
+          // Fallback to @dnd-kit's arrayMove
+          newItems = arrayMove(items, activeIndex, overIndex);
+        }
         
         const draggedItem = items[activeIndex];
         hasHeaderMoved = draggedItem?.type === 'header';
@@ -228,7 +259,7 @@ export const useDragAndDrop = (
     } finally {
       resetDragState();
     }
-  }, [items, dragInfo, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
+  }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
@@ -263,14 +294,28 @@ export const useDragAndDrop = (
       const mouseY = e.clientY;
       const rowMiddle = rect.top + rect.height / 2;
       
-      const insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
+      // Check if the target is a header
+      const targetItem = items[targetIndex];
+      const isTargetHeader = targetItem?.type === 'header';
+      
+      let insertIndex: number;
+      
+      if (isTargetHeader) {
+        // For headers, be more generous about placing after
+        // Use 40% threshold instead of 50% to make it easier to drop after headers
+        const threshold = rect.top + rect.height * 0.4;
+        insertIndex = mouseY < threshold ? targetIndex : targetIndex + 1;
+      } else {
+        // For regular items, use normal logic
+        insertIndex = mouseY < rowMiddle ? targetIndex : targetIndex + 1;
+      }
       
       // Only update if different to avoid unnecessary re-renders
       if (insertIndex !== dropTargetIndex) {
         setDropTargetIndex(insertIndex);
       }
     }
-  }, [draggedItemIndex, dropTargetIndex]);
+  }, [draggedItemIndex, dropTargetIndex, items]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
