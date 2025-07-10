@@ -50,7 +50,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     snapToGrid,
     activeScene: scene,
     updatePlot,
-    setSelectedTool
+    setSelectedTool,
+    zoom,
+    pan
   });
 
   const {

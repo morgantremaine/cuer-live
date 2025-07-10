@@ -4,11 +4,15 @@ import { useWallDrawing } from './useWallDrawing';
 interface UseWallInteractionsProps {
   selectedTool: string;
   snapToGrid: (x: number, y: number) => { x: number; y: number };
+  zoom: number;
+  pan: { x: number; y: number };
 }
 
 export const useWallInteractions = ({
   selectedTool,
-  snapToGrid
+  snapToGrid,
+  zoom,
+  pan
 }: UseWallInteractionsProps) => {
   const wallDrawing = useWallDrawing();
   const canvasRef = useRef<HTMLElement | null>(null);
@@ -59,9 +63,15 @@ export const useWallInteractions = ({
     if (!node) return;
     
     const canvasRect = canvasElement.getBoundingClientRect();
+    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+    const screenX = event.clientX - canvasRect.left;
+    const screenY = event.clientY - canvasRect.top;
+    const canvasX = (screenX / zoom) - (pan.x / zoom);
+    const canvasY = (screenY / zoom) - (pan.y / zoom);
+    
     const dragOffset = {
-      x: event.clientX - canvasRect.left - node.x,
-      y: event.clientY - canvasRect.top - node.y
+      x: canvasX - node.x,
+      y: canvasY - node.y
     };
     
     wallDrawing.setInteractionState(prev => ({
@@ -81,9 +91,12 @@ export const useWallInteractions = ({
     }
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
-    const x = event.clientX - canvasRect.left - interactionState.dragOffset.x;
-    const y = event.clientY - canvasRect.top - interactionState.dragOffset.y;
-    const snapped = snapToGrid(x, y);
+    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+    const screenX = event.clientX - canvasRect.left;
+    const screenY = event.clientY - canvasRect.top;
+    const canvasX = (screenX / zoom) - (pan.x / zoom) - interactionState.dragOffset.x;
+    const canvasY = (screenY / zoom) - (pan.y / zoom) - interactionState.dragOffset.y;
+    const snapped = snapToGrid(canvasX, canvasY);
     
     wallDrawing.updateNodePosition(interactionState.selectedNodeId, snapped.x, snapped.y);
   }, [wallDrawing, snapToGrid]);

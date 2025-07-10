@@ -9,6 +9,8 @@ interface UseCameraPlotWallSystemProps {
   activeScene: CameraPlotScene | undefined;
   updatePlot: (plotId: string, updatedPlot: Partial<CameraPlotScene>) => void;
   setSelectedTool: (tool: string) => void;
+  zoom: number;
+  pan: { x: number; y: number };
 }
 
 export const useCameraPlotWallSystem = ({
@@ -16,11 +18,15 @@ export const useCameraPlotWallSystem = ({
   snapToGrid,
   activeScene,
   updatePlot,
-  setSelectedTool
+  setSelectedTool,
+  zoom,
+  pan
 }: UseCameraPlotWallSystemProps) => {
   const wallInteractions = useWallInteractions({
     selectedTool,
-    snapToGrid
+    snapToGrid,
+    zoom,
+    pan
   });
 
   // Get or create the wall system element in the scene
