@@ -50,18 +50,27 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add team custom columns that aren't already in user's layout
     teamColumns.forEach(teamCol => {
       if (!userColumnKeys.has(teamCol.column_key)) {
-        // Add as hidden column that user can choose to enable
-        mergedColumns.push({
+        // Add team columns as visible by default so teammates can see and use them immediately
+        // Insert after the "name" column (index 1) to keep them prominent
+        const newTeamColumn = {
           id: teamCol.column_key,
           name: teamCol.column_name,
           key: teamCol.column_key,
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: false, // Hidden by default
+          isVisible: true, // Visible by default so teammates can use them immediately
           isTeamColumn: true,
           createdBy: teamCol.created_by
-        } as Column & { isTeamColumn?: boolean; createdBy?: string });
+        } as Column & { isTeamColumn?: boolean; createdBy?: string };
+        
+        // Insert team columns after the name column to keep them prominent
+        const nameIndex = mergedColumns.findIndex(col => col.id === 'name');
+        if (nameIndex >= 0) {
+          mergedColumns.splice(nameIndex + 1, 0, newTeamColumn);
+        } else {
+          mergedColumns.push(newTeamColumn);
+        }
       }
     });
 
