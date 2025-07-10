@@ -179,6 +179,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
               snapToGrid={snapToGrid}
               allElements={scene.elements}
               selectedElements={selectedElementObjects}
+              zoom={zoom}
+              pan={pan}
             />
           );
         })}

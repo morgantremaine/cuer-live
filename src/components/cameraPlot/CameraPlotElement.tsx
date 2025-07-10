@@ -17,6 +17,8 @@ interface CameraPlotElementProps {
   snapToGrid: (x: number, y: number) => { x: number; y: number };
   allElements?: CameraElement[];
   selectedElements?: CameraElement[];
+  zoom?: number;
+  pan?: { x: number; y: number };
 }
 
 const CameraPlotElement = ({ 
@@ -28,7 +30,9 @@ const CameraPlotElement = ({
   onSelect, 
   snapToGrid,
   allElements = [],
-  selectedElements = []
+  selectedElements = [],
+  zoom = 1,
+  pan = { x: 0, y: 0 }
 }: CameraPlotElementProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -69,11 +73,24 @@ const CameraPlotElement = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Position context menu near the cursor
-    setContextMenuPos({ 
-      x: e.clientX, 
-      y: e.clientY 
-    });
+    // Get the canvas container to calculate proper positioning
+    const canvas = e.currentTarget.closest('[data-canvas="true"]');
+    const canvasRect = canvas?.getBoundingClientRect();
+    
+    if (canvasRect) {
+      // Position context menu next to the element, accounting for canvas position and zoom
+      // Note: zoom and pan are handled by CSS transforms, so we use the element's actual position
+      setContextMenuPos({ 
+        x: canvasRect.left + (element.x + element.width + 10) * zoom + pan.x, 
+        y: canvasRect.top + element.y * zoom + pan.y 
+      });
+    } else {
+      // Fallback to cursor position
+      setContextMenuPos({ 
+        x: e.clientX, 
+        y: e.clientY 
+      });
+    }
     setShowContextMenu(true);
   };
 
