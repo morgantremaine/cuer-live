@@ -149,6 +149,13 @@ export const useWallInteractions = ({
     const canvasX = (screenX - pan.x) / zoom;
     const canvasY = (screenY - pan.y) / zoom;
     
+    console.log('🖱️ Dragging node:', {
+      screenX, screenY,
+      canvasX, canvasY,
+      zoom, pan,
+      nodeId: interactionState.selectedNodeId
+    });
+    
     const snapped = snapToGrid(canvasX, canvasY);
     
     wallDrawing.updateNodePosition(interactionState.selectedNodeId, snapped.x, snapped.y);
