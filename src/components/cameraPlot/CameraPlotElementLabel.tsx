@@ -87,8 +87,12 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   // Calculate center points
   const elementCenterX = elementX + elementWidth / 2;
   const elementCenterY = elementY + elementHeight / 2;
+  
+  // Calculate actual label center - accounting for label height
   const labelCenterX = labelX;
-  const labelCenterY = labelY;
+  // Estimate label height (approximate) and center it
+  const estimatedLabelHeight = 24; // px-2 py-1 + text height
+  const labelCenterY = labelY + estimatedLabelHeight / 2;
 
   // Calculate distance between element center and label center
   const distance = Math.sqrt(
@@ -100,7 +104,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const threshold = getLineThreshold();
   const showLine = distance > threshold;
 
-  // Calculate line start and end points with consistent padding
+  // Calculate line start and end points with increased padding for more negative space
   let lineStartX = elementCenterX;
   let lineStartY = elementCenterY;
   let lineEndX = labelCenterX;
@@ -121,18 +125,18 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
     
     let elementPadding;
     if (absX > absY) {
-      // More horizontal direction
-      elementPadding = elementHalfWidth / absX + 4;
+      // More horizontal direction - increased padding for more negative space
+      elementPadding = elementHalfWidth / absX + 15; // Increased from 4 to 15
     } else {
-      // More vertical direction  
-      elementPadding = elementHalfHeight / absY + 4;
+      // More vertical direction - increased padding for more negative space
+      elementPadding = elementHalfHeight / absY + 15; // Increased from 4 to 15
     }
     
     lineStartX = elementCenterX + dirX * elementPadding;
     lineStartY = elementCenterY + dirY * elementPadding;
     
-    // Consistent label padding
-    const labelPadding = 12;
+    // Increased label padding for more negative space
+    const labelPadding = 25; // Increased from 12 to 25
     lineEndX = labelCenterX - dirX * labelPadding;
     lineEndY = labelCenterY - dirY * labelPadding;
   }
