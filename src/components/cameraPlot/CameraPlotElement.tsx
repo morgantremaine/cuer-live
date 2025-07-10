@@ -73,24 +73,14 @@ const CameraPlotElement = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Get the canvas container to calculate proper positioning
-    const canvas = e.currentTarget.closest('[data-canvas="true"]');
-    const canvasRect = canvas?.getBoundingClientRect();
+    // Get the actual bounding rect of the clicked element
+    const elementRect = e.currentTarget.getBoundingClientRect();
     
-    if (canvasRect) {
-      // Position context menu next to the element, accounting for canvas position and zoom
-      // Note: zoom and pan are handled by CSS transforms, so we use the element's actual position
-      setContextMenuPos({ 
-        x: canvasRect.left + (element.x + element.width + 10) * zoom + pan.x, 
-        y: canvasRect.top + element.y * zoom + pan.y 
-      });
-    } else {
-      // Fallback to cursor position
-      setContextMenuPos({ 
-        x: e.clientX, 
-        y: e.clientY 
-      });
-    }
+    // Position context menu to the right of the element
+    setContextMenuPos({ 
+      x: elementRect.right + 5, 
+      y: elementRect.top 
+    });
     setShowContextMenu(true);
   };
 
