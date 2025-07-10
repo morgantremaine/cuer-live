@@ -1,7 +1,19 @@
 
 import { useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
-import { useWallInteractions } from '../wallSystem/useWallInteractions';
+
+interface WallInteractions {
+  handleCanvasMouseDown: (x: number, y: number) => boolean;
+  handleCanvasMouseMove: (x: number, y: number) => void;
+  handleCanvasDoubleClick: () => boolean;
+  wallDrawing: {
+    drawingState: {
+      isDrawing: boolean;
+      currentPath: string[];
+      previewPoint: { x: number; y: number } | null;
+    };
+  };
+}
 
 interface UseCameraPlotCanvasHandlersProps {
   selectedTool: string;
@@ -15,6 +27,7 @@ interface UseCameraPlotCanvasHandlersProps {
   zoom: number;
   pan: { x: number; y: number };
   updatePan: (deltaX: number, deltaY: number) => void;
+  wallInteractions: WallInteractions;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -28,7 +41,8 @@ export const useCameraPlotCanvasHandlers = ({
   setSelectedTool,
   zoom,
   pan,
-  updatePan
+  updatePan,
+  wallInteractions
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -38,10 +52,8 @@ export const useCameraPlotCanvasHandlers = ({
   const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
 
-  const wallHandlers = useWallInteractions({
-    selectedTool,
-    snapToGrid
-  });
+  // Use the wall interactions passed from parent instead of creating new ones
+  const wallHandlers = wallInteractions;
 
   const getCanvasCoordinates = (clientX: number, clientY: number, rect: DOMRect) => {
     // Account for zoom and pan

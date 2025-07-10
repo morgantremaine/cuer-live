@@ -77,7 +77,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     setSelectedTool,
     zoom,
     pan,
-    updatePan
+    updatePan,
+    wallInteractions: wallSystem.wallInteractions
   });
 
   // Auto-save wall system changes and load on scene change
