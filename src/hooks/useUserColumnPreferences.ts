@@ -50,8 +50,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add team custom columns that aren't already in user's layout
     teamColumns.forEach(teamCol => {
       if (!userColumnKeys.has(teamCol.column_key)) {
-        // Add team columns as hidden by default at the bottom of the list
-        // This makes them available as options in the column manager
+        // Add team columns as visible by default - they're part of the team's workflow
         mergedColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -59,7 +58,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: false, // Hidden by default - available as options
+          isVisible: true, // Make team columns visible by default
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
@@ -225,7 +224,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Delete team custom columns from team_custom_columns table
     for (const deletedCol of deletedTeamColumns) {
       if (team?.id && user?.id) {
-        await deleteTeamColumn(deletedCol.key);
+        const deleteSuccess = await deleteTeamColumn(deletedCol.key);
+        if (deleteSuccess) {
+          // Also remove from local columns immediately to prevent it from reappearing
+          setColumns(prevColumns => prevColumns.filter(col => col.key !== deletedCol.key));
+        }
       }
     }
 

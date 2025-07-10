@@ -91,6 +91,19 @@ export const useTeamCustomColumns = () => {
         return false;
       }
 
+      // Clean up this column from all user column preferences for this team
+      // This prevents the column from reappearing after deletion
+      const { error: cleanupError } = await supabase
+        .rpc('cleanup_deleted_team_column', {
+          team_uuid: team.id,
+          column_key: columnKey
+        });
+
+      if (cleanupError) {
+        console.warn('Could not clean up user preferences for deleted column:', cleanupError);
+        // Don't fail the deletion if cleanup fails
+      }
+
       // Update local state immediately (realtime will also handle this)
       setTeamColumns(prev => prev.filter(col => col.column_key !== columnKey));
       return true;
