@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Plus, TestTube, Key, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Plus, TestTube, Key, Eye, EyeOff, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CueDebugPanel } from './CueDebugPanel';
@@ -48,6 +48,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
   const [showNewIntegration, setShowNewIntegration] = useState(false);
   const [showNewApiKey, setShowNewApiKey] = useState(false);
   const [visibleApiKeys, setVisibleApiKeys] = useState<Set<string>>(new Set());
+  const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
   const { toast } = useToast();
 
   // New integration form state
@@ -270,6 +271,126 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
     }
   };
 
+  const handleDeleteApiKey = async (apiKeyId: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_api_keys')
+        .delete()
+        .eq('id', apiKeyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "API key deleted successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete API key",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startEditIntegration = (integration: Integration) => {
+    setEditingIntegration(integration);
+    setNewIntegration({
+      name: integration.name,
+      integration_type: integration.integration_type,
+      endpoint_url: integration.endpoint_url || '',
+      http_method: integration.http_method || 'POST',
+      auth_headers: integration.auth_headers ? JSON.stringify(integration.auth_headers) : '',
+      custom_headers: integration.custom_headers ? JSON.stringify(integration.custom_headers) : '',
+      osc_host: integration.osc_host || '',
+      osc_port: integration.osc_port || 3333,
+      osc_path: integration.osc_path || '/cue',
+      rate_limit_per_minute: integration.rate_limit_per_minute,
+      retry_attempts: integration.retry_attempts,
+    });
+    setShowNewIntegration(true);
+  };
+
+  const handleUpdateIntegration = async () => {
+    if (!editingIntegration) return;
+
+    try {
+      const integrationData = {
+        name: newIntegration.name,
+        integration_type: newIntegration.integration_type,
+        rate_limit_per_minute: newIntegration.rate_limit_per_minute,
+        retry_attempts: newIntegration.retry_attempts,
+        ...(newIntegration.integration_type === 'webhook' ? {
+          endpoint_url: newIntegration.endpoint_url,
+          http_method: newIntegration.http_method,
+          auth_headers: newIntegration.auth_headers ? JSON.parse(newIntegration.auth_headers) : {},
+          custom_headers: newIntegration.custom_headers ? JSON.parse(newIntegration.custom_headers) : {},
+        } : {
+          osc_host: newIntegration.osc_host,
+          osc_port: newIntegration.osc_port,
+          osc_path: newIntegration.osc_path,
+        }),
+      };
+
+      const { error } = await supabase
+        .from('team_integrations')
+        .update(integrationData)
+        .eq('id', editingIntegration.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Integration updated successfully",
+      });
+
+      setShowNewIntegration(false);
+      setEditingIntegration(null);
+      setNewIntegration({
+        name: '',
+        integration_type: 'webhook',
+        endpoint_url: '',
+        http_method: 'POST',
+        auth_headers: '',
+        custom_headers: '',
+        osc_host: '',
+        osc_port: 3333,
+        osc_path: '/cue',
+        rate_limit_per_minute: 60,
+        retry_attempts: 3,
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating integration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update integration",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const cancelEditIntegration = () => {
+    setEditingIntegration(null);
+    setShowNewIntegration(false);
+    setNewIntegration({
+      name: '',
+      integration_type: 'webhook',
+      endpoint_url: '',
+      http_method: 'POST',
+      auth_headers: '',
+      custom_headers: '',
+      osc_host: '',
+      osc_port: 3333,
+      osc_path: '/cue',
+      rate_limit_per_minute: 60,
+      retry_attempts: 3,
+    });
+  };
+
   const toggleApiKeyVisibility = (keyId: string) => {
     const newVisible = new Set(visibleApiKeys);
     if (newVisible.has(keyId)) {
@@ -326,6 +447,13 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => startEditIntegration(integration)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleDeleteIntegration(integration.id)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -337,7 +465,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
           {showNewIntegration && (
             <Card>
               <CardHeader>
-                <CardTitle>New Integration</CardTitle>
+                <CardTitle>{editingIntegration ? 'Edit Integration' : 'New Integration'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -357,6 +485,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                       onValueChange={(value: 'webhook' | 'osc') => 
                         setNewIntegration({ ...newIntegration, integration_type: value })
                       }
+                      disabled={!!editingIntegration}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -437,8 +566,10 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                 )}
 
                 <div className="flex gap-2">
-                  <Button onClick={handleCreateIntegration}>Create Integration</Button>
-                  <Button variant="outline" onClick={() => setShowNewIntegration(false)}>
+                  <Button onClick={editingIntegration ? handleUpdateIntegration : handleCreateIntegration}>
+                    {editingIntegration ? 'Update Integration' : 'Create Integration'}
+                  </Button>
+                  <Button variant="outline" onClick={editingIntegration ? cancelEditIntegration : () => setShowNewIntegration(false)}>
                     Cancel
                   </Button>
                 </div>
@@ -499,6 +630,15 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                 <p className="text-xs text-muted-foreground mt-1">
                   Created {new Date(apiKey.created_at).toLocaleDateString()}
                 </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteApiKey(apiKey.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           ))}

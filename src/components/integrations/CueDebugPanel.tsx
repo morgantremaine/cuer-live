@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,6 +63,41 @@ export const CueDebugPanel: React.FC<CueDebugPanelProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearLogs = async () => {
+    try {
+      let query = supabase
+        .from('cue_logs')
+        .delete()
+        .eq('team_id', teamId);
+
+      if (rundownId) {
+        query = query.eq('rundown_id', rundownId);
+      } else {
+        // If no specific rundown, only clear logs older than 1 hour to be safe
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        query = query.lt('sent_at', oneHourAgo);
+      }
+
+      const { error } = await query;
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Logs cleared successfully",
+      });
+
+      setLogs([]);
+    } catch (error) {
+      console.error('Error clearing logs:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to clear logs",
+        variant: "destructive",
+      });
     }
   };
 
@@ -144,6 +179,14 @@ export const CueDebugPanel: React.FC<CueDebugPanelProps> = ({
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearLogs}
+              disabled={loading}
+            >
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
