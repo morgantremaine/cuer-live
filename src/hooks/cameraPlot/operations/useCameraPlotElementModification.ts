@@ -1,6 +1,6 @@
 
 import { CameraElement, CameraPlotScene } from '@/hooks/useCameraPlot';
-import { getNextCameraNumber } from '../utils/cameraUtils';
+
 
 export const useCameraPlotElementModification = (
   activeScene: CameraPlotScene | undefined,
@@ -40,9 +40,7 @@ export const useCameraPlotElementModification = (
     };
 
     if (elementToDuplicate.type === 'camera') {
-      const cameraNumber = getNextCameraNumber(activeScene.elements);
-      newElement.cameraNumber = cameraNumber;
-      newElement.label = `CAM ${cameraNumber}`;
+      newElement.label = 'CAM';
     }
 
     const updatedElements = [...activeScene.elements, newElement];
