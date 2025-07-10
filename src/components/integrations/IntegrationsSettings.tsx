@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Trash2, Plus, TestTube, Key, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CueDebugPanel } from './CueDebugPanel';
 
 interface Integration {
   id: string;
@@ -532,6 +533,21 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
             <Key className="h-4 w-4 mr-2" />
             Generate API Key
           </Button>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Debug Panel Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Integration Debug Panel</CardTitle>
+          <CardDescription>
+            Monitor cue triggers and integration logs in real-time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CueDebugPanel teamId={teamId} />
         </CardContent>
       </Card>
     </div>
