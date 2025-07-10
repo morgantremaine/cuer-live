@@ -69,10 +69,10 @@ const CameraPlotElement = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Position context menu very close to the element
+    // Position context menu near the cursor
     setContextMenuPos({ 
-      x: element.x + element.width + 5, 
-      y: element.y 
+      x: e.clientX, 
+      y: e.clientY 
     });
     setShowContextMenu(true);
   };
