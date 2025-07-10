@@ -148,8 +148,36 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     const headerCells = headerRow.querySelectorAll('th');
     headerCells.forEach(th => {
       const thElement = th as HTMLElement;
-      const content = thElement.textContent?.trim() || '';
-      printHTML += `<th>${content}</th>`;
+      // Get clean header text by looking for direct text or specific elements
+      let content = '';
+      
+      // Try to get text from direct text content first
+      const directText = thElement.childNodes[0]?.textContent?.trim();
+      if (directText && !directText.includes('undefined')) {
+        content = directText;
+      } else {
+        // Look for span or button elements that contain the actual column name
+        const span = thElement.querySelector('span:not(.lucide)');
+        const button = thElement.querySelector('button span:not(.lucide)');
+        if (span) {
+          content = span.textContent?.trim() || '';
+        } else if (button) {
+          content = button.textContent?.trim() || '';
+        } else {
+          // Fall back to full text content but clean it
+          content = thElement.textContent?.trim() || '';
+        }
+      }
+      
+      // Clean up the content
+      content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      
+      // Default to '#' for row number column if empty
+      if (!content && headerCells[0] === th) {
+        content = '#';
+      }
+      
+      printHTML += `<th>${content || ''}</th>`;
     });
 
     printHTML += `
@@ -182,12 +210,38 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       printHTML += `<tr class="${rowClass}" style="background-color: ${backgroundColor};">`;
       
       const cells = rowElement.querySelectorAll('td');
-      cells.forEach(cell => {
+      cells.forEach((cell, cellIndex) => {
         const cellElement = cell as HTMLElement;
-        const content = cellElement.textContent?.trim() || '';
+        
+        // Extract clean content from the cell
+        let content = '';
+        
+        // For first cell (row number), look for specific content
+        if (cellIndex === 0) {
+          const rowNumberSpan = cellElement.querySelector('span');
+          if (rowNumberSpan) {
+            content = rowNumberSpan.textContent?.trim() || '';
+          } else {
+            content = cellElement.textContent?.trim() || '';
+          }
+        } else {
+          // For other cells, look for input/textarea values first, then text content
+          const input = cellElement.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement;
+          if (input && input.value) {
+            content = input.value.trim();
+          } else {
+            // Get text content but exclude button text and icons
+            const clone = cellElement.cloneNode(true) as HTMLElement;
+            // Remove all buttons, icons, and interactive elements
+            clone.querySelectorAll('button, .lucide, [role="button"]').forEach(el => el.remove());
+            content = clone.textContent?.trim() || '';
+          }
+        }
+        
         // Clean up content by removing extra whitespace and control characters
-        const cleanContent = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '');
-        printHTML += `<td>${cleanContent}</td>`;
+        content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        
+        printHTML += `<td>${content}</td>`;
       });
       
       printHTML += `</tr>`;
