@@ -12,7 +12,9 @@ import DashboardHeader from '@/components/DashboardHeader'
 import TeamManagement from '@/components/TeamManagement'
 import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus'
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans'
+import { IntegrationsSettings } from '@/components/integrations/IntegrationsSettings'
 import { useSubscription } from '@/hooks/useSubscription'
+import { useTeam } from '@/hooks/useTeam'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -24,6 +26,7 @@ const AccountManagement = () => {
   const [showPlans, setShowPlans] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { access_type } = useSubscription()
+  const { team } = useTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -124,7 +127,7 @@ const AccountManagement = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-800">
             <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Profile
             </TabsTrigger>
@@ -133,6 +136,9 @@ const AccountManagement = () => {
             </TabsTrigger>
             <TabsTrigger value="subscription" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Subscription
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+              Integrations
             </TabsTrigger>
             <TabsTrigger value="team" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Team
@@ -250,6 +256,21 @@ const AccountManagement = () => {
                   </div>
                 )}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="integrations">
+            {team ? (
+              <IntegrationsSettings teamId={team.id} />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Team Integrations</CardTitle>
+                  <CardDescription>
+                    You need to be part of a team to manage integrations
+                  </CardDescription>
+                </CardHeader>
+              </Card>
             )}
           </TabsContent>
 
