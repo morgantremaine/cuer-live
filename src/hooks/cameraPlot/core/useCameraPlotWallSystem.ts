@@ -28,7 +28,10 @@ export const useCameraPlotWallSystem = ({
     if (!activeScene) return null;
     
     const wallElement = activeScene.elements.find(el => (el as any).type === 'wall-system');
-    return wallElement as WallSystemElement || null;
+    if (!wallElement) return null;
+    
+    // Use proper type casting through unknown first
+    return (wallElement as unknown) as WallSystemElement;
   }, [activeScene]);
 
   // Update the wall system in the scene
