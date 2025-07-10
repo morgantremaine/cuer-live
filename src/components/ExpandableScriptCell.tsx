@@ -283,7 +283,7 @@ const ExpandableScriptCell = ({
             }}
           />
         )}
-        {!effectiveExpanded && value && (
+        {!effectiveExpanded && value && !isNullScript(value) && (
           <div 
             className="absolute inset-0 flex items-center justify-start pointer-events-none"
             style={{ 
@@ -293,16 +293,10 @@ const ExpandableScriptCell = ({
             }}
           >
             <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
-              {isNullScript(value) ? (
-                <span className="text-gray-600 dark:text-gray-300 font-mono">
-                  [null]
-                </span>
-              ) : (
-                renderScriptWithBrackets(value, { 
-                  inlineDisplay: true, 
-                  fontSize: 14 
-                })
-              )}
+              {renderScriptWithBrackets(value, { 
+                inlineDisplay: true, 
+                fontSize: 14 
+              })}
             </div>
           </div>
         )}
