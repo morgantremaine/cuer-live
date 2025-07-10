@@ -156,8 +156,8 @@ const RundownTableHeader = ({
           });
         }
         
-        // Cap the width to prevent excessively wide columns for very long lines
-        const cappedWidth = Math.min(maxLineWidth, 300); // Max 300px for readability
+        // Cap the width to prevent excessively wide columns, but allow more space for longer text
+        const cappedWidth = Math.min(maxLineWidth, 500); // Increased from 300px to 500px for longer text
         maxWidth = Math.max(maxWidth, cappedWidth);
       }
     });
