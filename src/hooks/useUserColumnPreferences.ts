@@ -50,8 +50,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add team custom columns that aren't already in user's layout
     teamColumns.forEach(teamCol => {
       if (!userColumnKeys.has(teamCol.column_key)) {
-        // Add team columns as visible by default since they're part of the team's workflow
-        // Users can hide them if they don't want to see them
+        // Add team columns as hidden by default - users must explicitly enable them
         mergedColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -59,14 +58,27 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: true, // Visible by default for new team columns
+          isVisible: false, // Hidden by default for new team columns
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       }
     });
 
-    return mergedColumns;
+    // Ensure existing team columns retain their team metadata
+    const finalColumns = mergedColumns.map(col => {
+      const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
+      if (teamColumn && col.isCustom) {
+        return {
+          ...col,
+          isTeamColumn: true,
+          createdBy: teamColumn.created_by
+        };
+      }
+      return col;
+    });
+
+    return finalColumns;
   }, [teamColumns]);
 
   // Load user's column preferences for this rundown
@@ -118,7 +130,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           return col;
         });
         
-        // Merge with team columns
+        // Merge with team columns, preserving user's visibility preferences for team columns
         const mergedColumns = mergeColumnsWithTeamColumns(fixedColumns);
         
         setColumns(mergedColumns);
@@ -145,12 +157,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
 
     // Save personal columns + user's preferences for team columns (visibility, width, position)
-    // We need to save team columns with their user preferences, but without the team metadata
+    // We need to save team columns with their user preferences, including team metadata for restoration
     const personalColumns = columnsToSave.map(col => {
       if (col.isCustom && (col as any).isTeamColumn) {
-        // For team columns, save user's preferences but strip team metadata
-        const { isTeamColumn, createdBy, ...userPrefs } = col as any;
-        return userPrefs;
+        // For team columns, save user's preferences AND preserve team metadata
+        return col;
       }
       return col;
     });
