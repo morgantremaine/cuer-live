@@ -159,6 +159,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onClose={() => setShowFindReplace(false)}
         onUpdateItem={onUpdateItem}
         items={items || []}
+        columns={columns || []}
       />
     </div>
   );

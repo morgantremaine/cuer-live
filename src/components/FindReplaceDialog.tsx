@@ -12,9 +12,10 @@ interface FindReplaceDialogProps {
   onClose: () => void;
   onUpdateItem?: (id: string, field: string, value: string) => void;
   items: any[]; // Current rundown items
+  columns?: any[]; // Column definitions to determine searchable fields
 }
 
-const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplaceDialogProps) => {
+const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: FindReplaceDialogProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
@@ -28,8 +29,35 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items }: FindReplace
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Fields to search in
-  const searchFields = ['name', 'script', 'talent', 'notes', 'customFields.location', 'customFields.graphics'];
+  // Generate searchable fields dynamically from all built-in fields and custom columns
+  const searchFields = React.useMemo(() => {
+    const builtInFields = ['name', 'script', 'talent', 'notes', 'startTime', 'duration', 'endTime', 'elapsedTime', 'gfx', 'video', 'images'];
+    const customFields: string[] = [];
+    
+    // Add custom fields from columns if available
+    if (columns) {
+      columns.forEach(column => {
+        if (column.isCustom && column.key) {
+          customFields.push(`customFields.${column.key}`);
+        }
+      });
+    }
+    
+    // If no columns provided, try to extract custom fields from items
+    if (!columns && items.length > 0) {
+      const customFieldKeys = new Set<string>();
+      items.forEach(item => {
+        if (item.customFields) {
+          Object.keys(item.customFields).forEach(key => {
+            customFieldKeys.add(`customFields.${key}`);
+          });
+        }
+      });
+      customFields.push(...Array.from(customFieldKeys));
+    }
+    
+    return [...builtInFields, ...customFields];
+  }, [columns, items]);
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
