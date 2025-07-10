@@ -146,6 +146,8 @@ export const useCameraPlotCanvasHandlers = ({
     // Expose selection box state
     isSelecting,
     selectionStart,
-    selectionEnd
+    selectionEnd,
+    // Expose panning state for cursor
+    isRightClickPanning
   };
 };

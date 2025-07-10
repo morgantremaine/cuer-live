@@ -68,7 +68,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     previewPoint,
     isSelecting,
     selectionStart,
-    selectionEnd
+    selectionEnd,
+    isRightClickPanning
   } = useCameraPlotCanvasHandlers({
     selectedTool,
     onAddElement,
@@ -130,7 +131,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         style={{ 
           width: '2000px', 
           height: '2000px',
-          cursor: selectedTool === 'select' ? 'default' : 'crosshair',
+          cursor: selectedTool === 'select' ? 
+            (isRightClickPanning ? 'grabbing' : 'default') : 
+            'crosshair',
           transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
           transformOrigin: '0 0'
         }}

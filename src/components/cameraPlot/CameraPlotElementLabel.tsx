@@ -97,7 +97,7 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const estimatedLabelWidth = labelText.length * 7 + 16; // 7px per char + padding (px-2 = 8px each side)
   const estimatedLabelHeight = 24; // px-2 py-1 + text height
   
-  const labelCenterX = labelX + estimatedLabelWidth / 2; // Center by adding half width
+  const labelCenterX = labelX; // With translateX(-50%), labelX is already the center
   const labelCenterY = labelY + estimatedLabelHeight / 2; // Center by adding half height
 
   // Calculate distance between element center and label center
@@ -193,7 +193,8 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
             cursor: 'move',
             whiteSpace: 'nowrap',
             pointerEvents: 'auto',
-            zIndex: 10
+            zIndex: 10,
+            transform: 'translateX(-50%)' // Center the label horizontally
           }}
           onMouseDown={onMouseDown}
           onDoubleClick={handleDoubleClick}
