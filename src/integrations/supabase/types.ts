@@ -718,6 +718,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_deleted_team_column: {
+        Args: { team_uuid: string; column_key: string }
+        Returns: undefined
+      }
       cleanup_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined

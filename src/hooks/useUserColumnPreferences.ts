@@ -50,7 +50,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add team custom columns that aren't already in user's layout
     teamColumns.forEach(teamCol => {
       if (!userColumnKeys.has(teamCol.column_key)) {
-        // Add team columns as visible by default - they're part of the team's workflow
+        // Add team columns as visible by default since they're part of the team's workflow
+        // Users can hide them if they don't want to see them
         mergedColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -58,7 +59,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: true, // Make team columns visible by default
+          isVisible: true, // Visible by default for new team columns
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
