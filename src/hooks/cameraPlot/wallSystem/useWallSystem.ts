@@ -99,14 +99,27 @@ export const useWallSystem = () => {
 
   // Delete a segment
   const deleteSegment = useCallback((segmentId: string) => {
-    setWallSystem(prev => ({
-      ...prev,
-      segments: prev.segments.filter(s => s.id !== segmentId),
-      nodes: prev.nodes.map(node => ({
+    setWallSystem(prev => {
+      const segmentToDelete = prev.segments.find(s => s.id === segmentId);
+      if (!segmentToDelete) return prev;
+
+      // Remove the segment
+      const remainingSegments = prev.segments.filter(s => s.id !== segmentId);
+      
+      // Update nodes to remove reference to deleted segment
+      const updatedNodes = prev.nodes.map(node => ({
         ...node,
         connectedSegmentIds: node.connectedSegmentIds.filter(id => id !== segmentId)
-      }))
-    }));
+      }));
+
+      // Remove any nodes that are no longer connected to any segments
+      const finalNodes = updatedNodes.filter(node => node.connectedSegmentIds.length > 0);
+
+      return {
+        nodes: finalNodes,
+        segments: remainingSegments
+      };
+    });
   }, []);
 
   // Split a segment by adding a new node in the middle
