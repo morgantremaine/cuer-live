@@ -47,7 +47,7 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
         y1={startNode.y}
         x2={endNode.x}
         y2={endNode.y}
-        stroke="hsl(var(--foreground))"
+        stroke="#000000"
         strokeWidth={segment.thickness * scale}
         strokeLinecap="round"
         className="pointer-events-none"
@@ -59,7 +59,7 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
   const renderNode = (node: WallNode) => {
     const isSelected = selectedNodeId === node.id;
     const isHovered = hoveredNodeId === node.id;
-    const radius = (isSelected || isHovered) ? 8 : 6;
+    const radius = (isSelected || isHovered) ? 5 : 4; // Smaller control points
     
     return (
       <circle
@@ -67,9 +67,9 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
         cx={node.x}
         cy={node.y}
         r={radius * scale}
-        fill={isSelected ? "hsl(var(--primary))" : "hsl(var(--background))"}
-        stroke={isSelected ? "hsl(var(--primary-foreground))" : "hsl(var(--border))"}
-        strokeWidth={2 * scale}
+        fill={isSelected ? "#4f46e5" : "#6b7280"} // Grey fill, blue when selected
+        stroke={isSelected ? "#3730a3" : "#4b5563"} // Darker grey stroke, darker blue when selected
+        strokeWidth={1.5 * scale}
         className={`cursor-pointer transition-all duration-150 ${
           isHovered ? 'drop-shadow-lg' : ''
         }`}
