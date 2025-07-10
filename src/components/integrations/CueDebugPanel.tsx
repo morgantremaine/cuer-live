@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, AlertCircle, CheckCircle, Clock, Trash2 } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle, Clock, Eraser } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -75,11 +75,8 @@ export const CueDebugPanel: React.FC<CueDebugPanelProps> = ({
 
       if (rundownId) {
         query = query.eq('rundown_id', rundownId);
-      } else {
-        // If no specific rundown, only clear logs older than 1 hour to be safe
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-        query = query.lt('sent_at', oneHourAgo);
       }
+      // Remove the time restriction - clear all logs for the team/rundown
 
       const { error } = await query;
 
@@ -186,7 +183,7 @@ export const CueDebugPanel: React.FC<CueDebugPanelProps> = ({
               onClick={clearLogs}
               disabled={loading}
             >
-              <Trash2 className="h-4 w-4" />
+              <Eraser className="h-4 w-4" />
             </Button>
           </div>
         </div>
