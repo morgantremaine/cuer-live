@@ -226,15 +226,18 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
 
   const handleTestIntegration = async (integration: Integration) => {
     try {
+      const testRundownId = crypto.randomUUID();
+      const testSegmentId = crypto.randomUUID();
+      
       const testPayload = {
         event: "test_cue",
         timestamp: new Date().toISOString(),
         rundown: {
-          id: "test-rundown",
+          id: testRundownId,
           title: "Test Rundown",
         },
         current_segment: {
-          id: "test-segment",
+          id: testSegmentId,
           name: "Test Segment",
           slug: "test_segment",
         },
@@ -246,7 +249,7 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
       const { error } = await supabase.functions.invoke('send-cue-trigger', {
         body: {
           teamId,
-          rundownId: 'test-rundown',
+          rundownId: testRundownId,
           payload: testPayload,
         },
       });
