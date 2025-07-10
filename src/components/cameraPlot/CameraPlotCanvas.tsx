@@ -80,6 +80,21 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     updatePan
   });
 
+  // Auto-save wall system changes and load on scene change
+  useEffect(() => {
+    if (scene) {
+      wallSystem.loadWallSystemFromScene();
+    }
+  }, [scene?.id]);
+
+  // Auto-save when wall system changes
+  useEffect(() => {
+    if (wallSystem.wallInteractions.wallDrawing.wallSystem.nodes.length > 0 || 
+        wallSystem.wallInteractions.wallDrawing.wallSystem.segments.length > 0) {
+      wallSystem.handleWallSystemChange();
+    }
+  }, [wallSystem.wallInteractions.wallDrawing.wallSystem]);
+
   // Add keyboard event listener for delete key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
-import { useWallCanvasHandlers } from '../wallDrawing/useWallCanvasHandlers';
+import { useWallInteractions } from '../wallSystem/useWallInteractions';
 
 interface UseCameraPlotCanvasHandlersProps {
   selectedTool: string;
@@ -38,12 +38,9 @@ export const useCameraPlotCanvasHandlers = ({
   const [selectionEnd, setSelectionEnd] = useState({ x: 0, y: 0 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
 
-  const wallHandlers = useWallCanvasHandlers({
+  const wallHandlers = useWallInteractions({
     selectedTool,
-    snapToGrid,
-    activeScene: scene,
-    updatePlot,
-    setSelectedTool
+    snapToGrid
   });
 
   const getCanvasCoordinates = (clientX: number, clientY: number, rect: DOMRect) => {
@@ -67,7 +64,7 @@ export const useCameraPlotCanvasHandlers = ({
     const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
 
     // Handle wall tool clicks
-    if (wallHandlers.handleWallClick(x, y)) {
+    if (wallHandlers.handleCanvasMouseDown(x, y)) {
       return;
     }
 
@@ -106,7 +103,7 @@ export const useCameraPlotCanvasHandlers = ({
     }
 
     // Handle wall tool mouse movement with canvas coordinates
-    wallHandlers.handleWallMouseMove(x, y);
+    wallHandlers.handleCanvasMouseMove(x, y);
   };
 
   const handleMouseUp = () => {
@@ -118,7 +115,7 @@ export const useCameraPlotCanvasHandlers = ({
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     // Handle wall tool double click
-    if (wallHandlers.handleWallDoubleClick()) {
+    if (wallHandlers.handleCanvasDoubleClick()) {
       return;
     }
   };
@@ -131,9 +128,9 @@ export const useCameraPlotCanvasHandlers = ({
     handleMouseUp,
     handleDoubleClick,
     // Expose wall drawing state for preview rendering
-    isDrawingWall: wallHandlers.isDrawing,
-    currentPath: wallHandlers.currentPath,
-    previewPoint: wallHandlers.previewPoint,
+    isDrawingWall: wallHandlers.wallDrawing.drawingState.isDrawing,
+    currentPath: wallHandlers.wallDrawing.drawingState.currentPath,
+    previewPoint: wallHandlers.wallDrawing.drawingState.previewPoint,
     // Expose selection box state
     isSelecting,
     selectionStart,

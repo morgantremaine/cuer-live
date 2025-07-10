@@ -17,6 +17,7 @@ export const useWallDrawing = () => {
 
   // Start drawing walls
   const startDrawing = useCallback((x: number, y: number) => {
+    console.log('🏗️ Starting new wall drawing at:', { x, y });
     // Snap to existing node if close enough, otherwise create new node
     const existingNode = wallSystem.findClosestNode(x, y, 15);
     let startNodeId: string;
@@ -36,6 +37,7 @@ export const useWallDrawing = () => {
 
   // Add a point to the current drawing path
   const addPoint = useCallback((x: number, y: number) => {
+    console.log('🏗️ Adding wall point at:', { x, y });
     if (!drawingState.isDrawing || drawingState.currentPath.length === 0) return;
 
     // Snap to existing node if close enough, otherwise create new node

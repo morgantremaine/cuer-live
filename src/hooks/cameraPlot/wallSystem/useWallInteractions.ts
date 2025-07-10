@@ -14,6 +14,7 @@ export const useWallInteractions = ({
 
   // Handle mouse down on canvas for wall drawing
   const handleCanvasMouseDown = useCallback((x: number, y: number) => {
+    console.log('🖱️ Wall tool canvas click:', { selectedTool, x, y });
     if (selectedTool !== 'wall') return false;
 
     const snapped = snapToGrid(x, y);
