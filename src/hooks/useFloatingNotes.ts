@@ -26,6 +26,8 @@ export const useFloatingNotes = (rundownId: string) => {
         .from('blueprints')
         .select('notes')
         .eq('rundown_id', rundownId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -142,6 +144,8 @@ export const useFloatingNotes = (rundownId: string) => {
           .from('blueprints')
           .select('id, rundown_title')
           .eq('rundown_id', rundownId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (!existingBlueprint) {

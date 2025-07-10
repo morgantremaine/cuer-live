@@ -65,11 +65,13 @@ export const useUnifiedNotes = (rundownId: string) => {
           // Blueprint context is available but not initialized yet, wait for it
           return;
         } else {
-          // Fall back to direct database access
+          // Fall back to direct database access - handle potential duplicates
           const { data, error } = await supabase
             .from('blueprints')
             .select('notes')
             .eq('rundown_id', rundownId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
           if (error) {
@@ -179,11 +181,13 @@ export const useUnifiedNotes = (rundownId: string) => {
           // Use blueprint context if available and initialized
           blueprintContext.updateNotes(notesJson);
         } else {
-          // Fall back to direct database save
+          // Fall back to direct database save - handle potential duplicates
           const { data: existingBlueprint } = await supabase
             .from('blueprints')
             .select('id, rundown_title')
             .eq('rundown_id', rundownId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
           if (!existingBlueprint) {
