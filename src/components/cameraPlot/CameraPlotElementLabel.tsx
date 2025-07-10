@@ -70,12 +70,15 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const getLineThreshold = () => {
     switch (element.type) {
       case 'furniture':
-        return 35; // Lower threshold for furniture (was 100)
+        return 80; // Increased threshold for furniture - line appears when far away
       case 'camera':
+        return 60; // Increased threshold for cameras
       case 'person':
-        return 25; // Lower threshold for cameras and people
+        return 60; // Increased threshold for people  
+      case 'wall':
+        return 50; // Threshold for walls
       default:
-        return 25;
+        return 60;
     }
   };
 
@@ -106,6 +109,14 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   // Show line if distance exceeds threshold
   const threshold = getLineThreshold();
   const showLine = distance > threshold;
+  
+  // Debug logging to see if threshold system is working
+  console.log(`📏 Label distance check for ${element.type} (${element.id.slice(0, 4)}):`, {
+    distance: Math.round(distance),
+    threshold,
+    showLine,
+    labelText: labelText.slice(0, 10) + '...'
+  });
 
   // Calculate line start and end points with increased padding for more negative space
   let lineStartX = elementCenterX;
