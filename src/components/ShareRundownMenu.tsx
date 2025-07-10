@@ -96,8 +96,14 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         }
         
         .rundown-print-container,
-        .rundown-print-container * {
-          visibility: visible;
+        .rundown-print-container *,
+        .print-rundown-header,
+        .print-rundown-header *,
+        .print-rundown-table,
+        .print-rundown-table *,
+        table[data-rundown-table],
+        table[data-rundown-table] * {
+          visibility: visible !important;
         }
         
         .rundown-print-container {
@@ -109,11 +115,18 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           color: black !important;
         }
 
+        /* Force light mode colors */
+        * {
+          background: white !important;
+          color: black !important;
+        }
+
         /* Print header styles */
         .print-rundown-header {
           margin-bottom: 20px !important;
           padding: 10px 0 !important;
           border-bottom: 2px solid #333 !important;
+          background: white !important;
         }
 
         .print-rundown-title {
@@ -131,14 +144,18 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         }
 
         /* Table styles for print */
-        .print-rundown-table {
+        .print-rundown-table, table[data-rundown-table] {
           width: 100% !important;
           border-collapse: collapse !important;
           font-size: 10px !important;
           table-layout: auto !important;
+          background: white !important;
+          visibility: visible !important;
+          display: table !important;
         }
 
-        .print-rundown-table th {
+        .print-rundown-table th, .print-rundown-table thead th,
+        table[data-rundown-table] th, table[data-rundown-table] thead th {
           background: #f5f5f5 !important;
           border: 1px solid #333 !important;
           padding: 6px 4px !important;
@@ -150,7 +167,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           print-color-adjust: exact !important;
         }
 
-        .print-rundown-table td {
+        .print-rundown-table td, table[data-rundown-table] td {
           border: 1px solid #666 !important;
           padding: 4px !important;
           vertical-align: top !important;
@@ -158,10 +175,21 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           color: black !important;
           font-size: 9px !important;
           line-height: 1.2 !important;
+          background: white !important;
+        }
+
+        .print-rundown-table tbody, table[data-rundown-table] tbody {
+          display: table-row-group !important;
+          visibility: visible !important;
+        }
+
+        .print-rundown-table tr, table[data-rundown-table] tr {
+          display: table-row !important;
+          visibility: visible !important;
         }
 
         /* Header row styles */
-        .print-header-row td {
+        .print-header-row td, tr[data-type="header"] td {
           background: #e8e8e8 !important;
           font-weight: bold !important;
           font-size: 11px !important;
@@ -171,22 +199,24 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         }
 
         /* Custom colored rows */
-        .print-custom-colored-row td {
+        .print-custom-colored-row td, tr[data-custom-color="true"] td {
           background: #f0f8ff !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
         /* Floated rows */
-        .print-floated-row td {
+        .print-floated-row td, tr[data-floated="true"] td {
           background: #fff8dc !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
         /* Hide UI elements */
-        .print\\:hidden {
+        .print\\:hidden, button, .lucide, .hover\\:bg-gray-200, .cursor-pointer,
+        [role="button"], .dropdown, .context-menu {
           display: none !important;
+          visibility: hidden !important;
         }
 
         /* Row number column */
@@ -212,8 +242,14 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           max-width: none !important;
         }
 
-        /* Hide interactive elements */
-        button, .lucide, .hover\\:bg-gray-200, .cursor-pointer {
+        /* Make sure ScrollArea content is visible */
+        [data-radix-scroll-area-viewport] {
+          position: static !important;
+          overflow: visible !important;
+        }
+
+        /* Hide scroll elements */
+        [data-radix-scroll-area-scrollbar] {
           display: none !important;
         }
       }
