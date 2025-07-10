@@ -120,24 +120,23 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     const headerRow = existingTable.querySelector('thead tr');
     const bodyRows = existingTable.querySelectorAll('tbody tr');
     
-    // Get start time from the rundown container or first time cell
+    // Get start time from DOM or props
     function getStartTime() {
-      const startTimeElement = document.querySelector('[data-start-time]');
-      if (startTimeElement) {
-        return startTimeElement.getAttribute('data-start-time') || '';
+      // Look for start time input in the rundown header
+      const startTimeInput = document.querySelector('input[type="time"]') as HTMLInputElement;
+      if (startTimeInput && startTimeInput.value) {
+        return startTimeInput.value + ':00'; // Ensure format includes seconds
       }
       
-      // Fall back to first time cell in the table
-      const firstTimeCell = existingTable.querySelector('tbody tr td input[type="time"], tbody tr td[data-time]');
-      if (firstTimeCell) {
-        const input = firstTimeCell.querySelector('input') as HTMLInputElement;
-        if (input && input.value) {
-          return input.value + ':00'; // Add seconds if not present
+      // Fall back to first item's start time
+      if (rundownData?.items && rundownData.items.length > 0) {
+        const firstItem = rundownData.items[0];
+        if (firstItem.startTime) {
+          return firstItem.startTime;
         }
-        return firstTimeCell.textContent?.trim() || '00:00:00';
       }
       
-      return rundownData?.items?.[0]?.startTime || '00:00:00';
+      return '00:00:00';
     }
     
     if (!headerRow || bodyRows.length === 0) {
@@ -258,21 +257,21 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           }
         }
         
-        // For header rows (dataType === 'header'), show duration even if empty in regular rows
+        // For header rows, extract duration properly from inputs or calculated values
         if (dataType === 'header') {
-          // Check if this is a duration column and ensure it shows duration for headers
-          const headerCellIndex = Array.from(headerCells).findIndex(th => {
-            const headerText = th.textContent?.toLowerCase() || '';
-            return headerText.includes('duration') || headerText.includes('dur');
-          });
-          
-          if (cellIndex === headerCellIndex && (!content || content === '')) {
-            // Get duration from the input or default formatting
-            const durationInput = cellElement.querySelector('input[type="text"]') as HTMLInputElement;
-            if (durationInput && durationInput.value) {
+          // Check if this is a duration column
+          const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
+          if (headerText.includes('duration') || headerText.includes('dur')) {
+            // Look for duration input in the cell
+            const durationInput = cellElement.querySelector('input[type="text"], input[value*=":"]') as HTMLInputElement;
+            if (durationInput && durationInput.value && durationInput.value !== '00:00:00') {
               content = durationInput.value;
             } else {
-              content = '00:00:00'; // Default duration format for headers
+              // Try to extract from calculated duration display
+              const durationDisplay = cellElement.querySelector('[class*="duration"], [class*="time"]');
+              if (durationDisplay && durationDisplay.textContent && durationDisplay.textContent !== '00:00:00') {
+                content = durationDisplay.textContent.trim();
+              }
             }
           }
         }
