@@ -704,6 +704,20 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               white-space: normal !important;
             }
             
+            /* Force script columns to wrap text in print */
+            .print-content-column .truncate {
+              white-space: normal !important;
+              overflow: visible !important;
+              text-overflow: clip !important;
+            }
+            
+            /* Ensure script content doesn't get cut off */
+            .print-content-column div {
+              white-space: pre-wrap !important;
+              word-break: break-word !important;
+              overflow-wrap: break-word !important;
+            }
+            
             /* Force sticky elements to be static for printing */
             .print-sticky-header {
               position: static !important;
