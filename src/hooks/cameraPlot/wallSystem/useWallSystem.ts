@@ -91,8 +91,11 @@ export const useWallSystem = () => {
           connectedSegmentIds: node.connectedSegmentIds.filter(id => !segmentsToRemove.includes(id))
         }));
 
+      // Remove any nodes that are no longer connected to any segments (orphaned nodes)
+      const finalNodes = updatedNodes.filter(node => node.connectedSegmentIds.length > 0);
+
       return {
-        nodes: updatedNodes,
+        nodes: finalNodes,
         segments: remainingSegments
       };
     });
