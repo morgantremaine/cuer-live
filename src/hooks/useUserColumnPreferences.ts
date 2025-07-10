@@ -33,7 +33,7 @@ const defaultColumns: Column[] = [
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const { team } = useTeam();
-  const { teamColumns, addTeamColumn } = useTeamCustomColumns();
+  const { teamColumns, addTeamColumn, deleteTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -196,7 +196,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }, saveDelay);
   }, [user?.id, rundownId]);
 
-  // Enhanced column update function that handles team column creation
+  // Enhanced column update function that handles team column creation and deletion
   const updateColumns = useCallback(async (newColumns: Column[], isImmediate = false) => {
     // Check if any new custom columns were added
     const existingCustomKeys = new Set(
@@ -207,10 +207,25 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       col.isCustom && !existingCustomKeys.has(col.key)
     );
 
+    // Check if any team custom columns were deleted
+    const newColumnKeys = new Set(newColumns.map(col => col.key));
+    const deletedTeamColumns = columns.filter(col => 
+      col.isCustom && 
+      (col as any).isTeamColumn && 
+      !newColumnKeys.has(col.key)
+    );
+
     // Add new custom columns to team_custom_columns table
     for (const newCol of newCustomColumns) {
       if (team?.id && user?.id) {
         await addTeamColumn(newCol.key, newCol.name);
+      }
+    }
+
+    // Delete team custom columns from team_custom_columns table
+    for (const deletedCol of deletedTeamColumns) {
+      if (team?.id && user?.id) {
+        await deleteTeamColumn(deletedCol.key);
       }
     }
 
@@ -219,7 +234,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     if (!isLoadingRef.current) {
       saveColumnPreferences(newColumns, isImmediate);
     }
-  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id]);
+  }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id]);
 
   // Special handler for column width updates during resize
   const updateColumnWidth = useCallback((columnId: string, width: string) => {

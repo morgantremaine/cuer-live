@@ -75,6 +75,31 @@ export const useTeamCustomColumns = () => {
     }
   }, [team?.id, user]);
 
+  // Delete a team custom column
+  const deleteTeamColumn = useCallback(async (columnKey: string) => {
+    if (!team?.id || !user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('team_custom_columns')
+        .delete()
+        .eq('team_id', team.id)
+        .eq('column_key', columnKey);
+
+      if (error) {
+        console.error('Error deleting team custom column:', error);
+        return false;
+      }
+
+      // Update local state immediately (realtime will also handle this)
+      setTeamColumns(prev => prev.filter(col => col.column_key !== columnKey));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete team custom column:', error);
+      return false;
+    }
+  }, [team?.id, user]);
+
   // Set up realtime subscription for team custom columns
   useEffect(() => {
     if (!team?.id) return;
@@ -123,6 +148,7 @@ export const useTeamCustomColumns = () => {
     teamColumns,
     loading,
     addTeamColumn,
+    deleteTeamColumn,
     reloadTeamColumns: loadTeamColumns
   };
 };
