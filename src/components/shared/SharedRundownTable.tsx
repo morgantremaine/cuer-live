@@ -617,7 +617,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               width: 100% !important;
               table-layout: auto !important;
               font-size: 10px !important;
-              height: auto !important;
+              height: 100vh !important;
               max-height: none !important;
               overflow: visible !important;
             }
@@ -638,12 +638,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }
             
             .print-table th {
-              padding: 8px 4px !important;
-              height: 40px !important;
-            }
-            
-            .print-table th {
-              font-size: 9px !important;
+              padding: 12px 6px !important;
+              height: 60px !important;
+              font-size: 11px !important;
               font-weight: bold !important;
               background: #f0f0f0 !important;
               -webkit-print-color-adjust: exact !important;
@@ -729,11 +726,24 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               top: auto !important;
             }
             
-            /* Force table body and rows to be visible */
-            tbody, tr {
+            /* Force table body and rows to be visible and auto-resize to fit page */
+            tbody {
+              height: calc(100vh - 60px) !important;
+              display: table-row-group !important;
+            }
+            
+            tbody tr {
               height: auto !important;
+              min-height: auto !important;
               max-height: none !important;
               overflow: visible !important;
+            }
+            
+            /* Make table cells auto-resize to fit content and page */
+            .print-table td {
+              height: auto !important;
+              min-height: 20px !important;
+              max-height: none !important;
             }
             
             /* Remove any height constraints on the main container */
