@@ -3,8 +3,10 @@ import React, { forwardRef, useEffect } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElement from './CameraPlotElement';
 import CameraPlotGrid from './canvas/CameraPlotGrid';
-import CameraPlotWallPreview from './canvas/CameraPlotWallPreview';
+import WallSystemRenderer from './wallSystem/WallSystemRenderer';
+import WallDrawingPreview from './wallSystem/WallDrawingPreview';
 import CameraPlotEmptyState from './canvas/CameraPlotEmptyState';
+import { useCameraPlotWallSystem } from '@/hooks/cameraPlot/core/useCameraPlotWallSystem';
 import { useCameraPlotCanvasHandlers } from '@/hooks/cameraPlot/canvas/useCameraPlotCanvasHandlers';
 
 interface CameraPlotCanvasProps {
@@ -42,6 +44,15 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   updatePlot,
   setSelectedTool
 }, ref) => {
+  // Wall system integration
+  const wallSystem = useCameraPlotWallSystem({
+    selectedTool,
+    snapToGrid,
+    activeScene: scene,
+    updatePlot,
+    setSelectedTool
+  });
+
   const {
     mousePos,
     handleCanvasClick,
@@ -107,11 +118,25 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
       >
         
 
-        <CameraPlotWallPreview
-          isDrawingWall={isDrawingWall}
-          currentPath={currentPath}
-          previewPoint={previewPoint}
-          mousePos={mousePos}
+        {/* New Wall System Rendering */}
+        <WallSystemRenderer
+          wallSystem={wallSystem.wallSystemElement?.wallSystemData || { nodes: [], segments: [] }}
+          selectedNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.selectedNodeId}
+          hoveredNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.hoveredNodeId}
+          isDragging={wallSystem.wallInteractions.wallDrawing.interactionState.isDragging}
+          onNodeMouseDown={wallSystem.wallInteractions.handleNodeMouseDown}
+          onNodeMouseEnter={wallSystem.wallInteractions.handleNodeMouseEnter}
+          onNodeMouseLeave={wallSystem.wallInteractions.handleNodeMouseLeave}
+          scale={zoom}
+        />
+
+        {/* Wall Drawing Preview */}
+        <WallDrawingPreview
+          isDrawing={wallSystem.wallInteractions.wallDrawing.drawingState.isDrawing}
+          currentPath={wallSystem.wallInteractions.wallDrawing.drawingState.currentPath}
+          previewPoint={wallSystem.wallInteractions.wallDrawing.drawingState.previewPoint}
+          wallSystem={wallSystem.wallInteractions.wallDrawing.wallSystem}
+          scale={zoom}
         />
 
         {/* Removed selection box */}
