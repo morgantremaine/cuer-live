@@ -53,10 +53,9 @@ const TextAreaCell = ({
     measurementDiv.style.padding = computedStyle.padding;
     measurementDiv.style.border = computedStyle.border;
     measurementDiv.style.boxSizing = computedStyle.boxSizing;
-    // Only wrap if the text contains explicit line breaks
-    const hasLineBreaks = (value || '').includes('\n');
-    measurementDiv.style.wordWrap = hasLineBreaks ? 'break-word' : 'normal';
-    measurementDiv.style.whiteSpace = hasLineBreaks ? 'pre-wrap' : 'nowrap';
+    // Always allow normal text wrapping in the measurement div
+    measurementDiv.style.wordWrap = 'break-word';
+    measurementDiv.style.whiteSpace = 'pre-wrap';
     
     // Set the content
     measurementDiv.textContent = value || ' '; // Use space for empty content
@@ -187,9 +186,7 @@ const TextAreaCell = ({
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
-  // Determine if text should wrap based on line breaks
-  const hasLineBreaks = (value || '').includes('\n');
-  const whiteSpaceClass = hasLineBreaks ? 'whitespace-pre-wrap' : 'whitespace-nowrap';
+  // Always allow text wrapping for proper display
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -223,7 +220,7 @@ const TextAreaCell = ({
         onBlur={handleBlur}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} ${whiteSpaceClass} border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         }`}
         style={{ 
