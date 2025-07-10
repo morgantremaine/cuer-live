@@ -88,11 +88,14 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   const elementCenterX = elementX + elementWidth / 2;
   const elementCenterY = elementY + elementHeight / 2;
   
-  // Calculate actual label center - accounting for label height
-  const labelCenterX = labelX;
-  // Estimate label height (approximate) and center it
+  // Calculate actual label center - accounting for label dimensions
+  // Estimate label width based on text content (approximate: 8px per character + padding)
+  const labelText = element.label || `${element.type.charAt(0).toUpperCase()}${element.type.slice(1)} ${element.id.slice(0, 4)}`;
+  const estimatedLabelWidth = labelText.length * 7 + 16; // 7px per char + padding (px-2 = 8px each side)
   const estimatedLabelHeight = 24; // px-2 py-1 + text height
-  const labelCenterY = labelY + estimatedLabelHeight / 2;
+  
+  const labelCenterX = labelX + estimatedLabelWidth / 2; // Center by adding half width
+  const labelCenterY = labelY + estimatedLabelHeight / 2; // Center by adding half height
 
   // Calculate distance between element center and label center
   const distance = Math.sqrt(
