@@ -69,13 +69,13 @@ export const SharedRundownHeader = ({
 
   return (
     <div className={`${isDark ? 'bg-gray-900' : 'bg-gray-200'}`}>
-      <div className="px-4 py-3 print:px-2 print:py-1">
-        <div className="flex flex-col space-y-3 print:space-y-1">
+      <div className="px-4 py-3 print:px-4 print:py-4">
+        <div className="flex flex-col space-y-3 print:space-y-4">
           {/* Title and Controls Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <CuerLogo 
-                className="h-8 w-auto print:block hidden"
+                className="h-8 w-auto print:h-12 print:block hidden"
                 isDark={true}
               />
               <CuerLogo 
@@ -83,7 +83,7 @@ export const SharedRundownHeader = ({
                 isDark={isDark}
               />
               <div>
-                <h1 className={`text-xl font-bold print:text-base ${
+                <h1 className={`text-xl font-bold print:text-3xl print:font-bold ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}>
                   {title}

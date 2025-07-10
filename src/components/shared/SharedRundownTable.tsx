@@ -615,9 +615,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             
             .print-table {
               width: 100% !important;
-              table-layout: auto !important;
-              font-size: 10px !important;
-              height: 100vh !important;
+              table-layout: fixed !important;
+              font-size: 9px !important;
+              height: auto !important;
               max-height: none !important;
               overflow: visible !important;
             }
@@ -638,9 +638,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }
             
             .print-table th {
-              padding: 12px 6px !important;
-              height: 60px !important;
-              font-size: 11px !important;
+              padding: 8px 4px !important;
+              height: 40px !important;
+              font-size: 9px !important;
               font-weight: bold !important;
               background: #f0f0f0 !important;
               -webkit-print-color-adjust: exact !important;
@@ -726,24 +726,24 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               top: auto !important;
             }
             
-            /* Force table body and rows to be visible and auto-resize to fit page */
-            tbody {
-              height: calc(100vh - 60px) !important;
-              display: table-row-group !important;
+            /* Auto-resize table to fit page */
+            .print-table {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             
             tbody tr {
               height: auto !important;
-              min-height: auto !important;
-              max-height: none !important;
-              overflow: visible !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
             
-            /* Make table cells auto-resize to fit content and page */
             .print-table td {
+              font-size: 8px !important;
+              padding: 2px 3px !important;
+              line-height: 1.2 !important;
               height: auto !important;
-              min-height: 20px !important;
-              max-height: none !important;
+              vertical-align: top !important;
             }
             
             /* Remove any height constraints on the main container */
