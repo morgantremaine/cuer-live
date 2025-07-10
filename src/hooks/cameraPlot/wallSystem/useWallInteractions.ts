@@ -122,24 +122,11 @@ export const useWallInteractions = ({
     const node = wallDrawing.getNode(nodeId);
     if (!node) return;
     
-    const canvasRect = canvasElement.getBoundingClientRect();
-    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
-    const screenX = event.clientX - canvasRect.left;
-    const screenY = event.clientY - canvasRect.top;
-    
-    // Apply inverse transform to get canvas coordinates
-    const canvasX = (screenX - pan.x) / zoom;
-    const canvasY = (screenY - pan.y) / zoom;
-    
-    const dragOffset = {
-      x: canvasX - node.x,
-      y: canvasY - node.y
-    };
-    
+    // Store simple flag - no complex offset calculation needed
     wallDrawing.setInteractionState(prev => ({
       ...prev,
       selectedNodeId: nodeId,
-      dragOffset,
+      dragOffset: { x: 0, y: 0 }, // Simple placeholder
       isDragging: true
     }));
   }, [selectedTool, wallDrawing]);
@@ -148,18 +135,19 @@ export const useWallInteractions = ({
   const handleGlobalMouseMove = useCallback((event: MouseEvent) => {
     const { interactionState } = wallDrawing;
     
-    if (!interactionState.isDragging || !interactionState.selectedNodeId || !interactionState.dragOffset || !canvasRef.current) {
+    if (!interactionState.isDragging || !interactionState.selectedNodeId || !canvasRef.current) {
       return;
     }
     
     const canvasRect = canvasRef.current.getBoundingClientRect();
-    // Convert screen coordinates to canvas coordinates accounting for zoom and pan
+    
+    // Convert screen coordinates directly to canvas coordinates
     const screenX = event.clientX - canvasRect.left;
     const screenY = event.clientY - canvasRect.top;
     
-    // Apply inverse transform to get canvas coordinates (matching handleNodeMouseDown)
-    const canvasX = (screenX - pan.x) / zoom - interactionState.dragOffset.x;
-    const canvasY = (screenY - pan.y) / zoom - interactionState.dragOffset.y;
+    // Apply inverse transform (matching the canvas transform in CameraPlotCanvas)
+    const canvasX = (screenX - pan.x) / zoom;
+    const canvasY = (screenY - pan.y) / zoom;
     
     const snapped = snapToGrid(canvasX, canvasY);
     
