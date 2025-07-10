@@ -9,7 +9,7 @@ interface WallSystemRendererProps {
   onNodeMouseDown: (nodeId: string, event: React.MouseEvent) => void;
   onNodeMouseEnter: (nodeId: string) => void;
   onNodeMouseLeave: () => void;
-  onNodeContextMenu?: (nodeId: string, event: React.MouseEvent) => void;
+  onNodeContextMenu?: (segmentId: string, event: React.MouseEvent) => void;
   onSegmentContextMenu?: (segmentId: string, event: React.MouseEvent) => void;
   scale?: number;
 }
@@ -70,6 +70,7 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
   const renderNode = (node: WallNode) => {
     const isSelected = selectedNodeId === node.id;
     const isHovered = hoveredNodeId === node.id;
+    const isBeingDragged = isDragging && isSelected;
     const radius = (isSelected || isHovered) ? 5 : 4; // Smaller control points
     
     return (
@@ -81,9 +82,9 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
         fill={isSelected ? "#4f46e5" : "#6b7280"} // Grey fill, blue when selected
         stroke={isSelected ? "#3730a3" : "#4b5563"} // Darker grey stroke, darker blue when selected
         strokeWidth={1.5 * scale}
-        className={`cursor-pointer transition-all duration-150 ${
+        className={`cursor-pointer ${
           isHovered ? 'drop-shadow-lg' : ''
-        }`}
+        } ${isBeingDragged ? '' : 'transition-all duration-150'}`}
         onMouseDown={(e) => onNodeMouseDown(node.id, e)}
         onMouseEnter={() => onNodeMouseEnter(node.id)}
         onMouseLeave={onNodeMouseLeave}
