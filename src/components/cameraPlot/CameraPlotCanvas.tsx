@@ -133,9 +133,9 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
       >
         
 
-        {/* New Wall System Rendering */}
+        {/* New Wall System Rendering - Show live wall system during drawing */}
         <WallSystemRenderer
-          wallSystem={wallSystem.wallSystemElement?.wallSystemData || { nodes: [], segments: [] }}
+          wallSystem={wallSystem.wallInteractions.wallDrawing.wallSystem}
           selectedNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.selectedNodeId}
           hoveredNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.hoveredNodeId}
           isDragging={wallSystem.wallInteractions.wallDrawing.interactionState.isDragging}
