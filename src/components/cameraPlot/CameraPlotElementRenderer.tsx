@@ -38,10 +38,14 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       const personColor = element.personColor || 'blue';
       const personImages = {
         blue: "/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png",
-        green: "/uploads/person-green.png",
-        red: "/uploads/person-red.png",
-        yellow: "/uploads/person-yellow.png"
+        green: "/lovable-uploads/7cef3c07-b97e-4c4d-9e76-c82887e6daca.png",
+        red: "/lovable-uploads/015d9013-eab5-4289-9d5c-4eb40acf8f85.png",
+        yellow: "/lovable-uploads/dc66e775-442f-4da6-b615-e79e7ad9ef2f.png"
       };
+      
+      console.log('🎨 Rendering person with color:', personColor);
+      console.log('🎨 Using image path:', personImages[personColor]);
+      console.log('🎨 Element data:', element);
       
       return (
         <div 
@@ -52,6 +56,8 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             src={personImages[personColor]} 
             alt={`Person (${personColor})`}
             className="w-12 h-12 object-contain"
+            onLoad={() => console.log('✅ Image loaded successfully:', personImages[personColor])}
+            onError={(e) => console.error('❌ Image failed to load:', personImages[personColor], e)}
           />
         </div>
       );

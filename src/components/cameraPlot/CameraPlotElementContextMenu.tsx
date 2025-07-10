@@ -58,7 +58,10 @@ const CameraPlotElementContextMenu = ({
   const isPerson = element.type === 'person';
 
   const handlePersonColorChange = (color: 'blue' | 'green' | 'red' | 'yellow') => {
+    console.log('🎨 Changing person color to:', color);
+    console.log('🎨 Element before update:', element);
     onUpdate(element.id, { personColor: color });
+    console.log('🎨 Called onUpdate with personColor:', color);
     onClose();
   };
 
