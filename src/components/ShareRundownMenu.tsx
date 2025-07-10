@@ -80,12 +80,56 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return;
     }
 
+    // Find the actual rundown table to extract its structure
+    const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table');
+    if (!existingTable) {
+      toast({
+        title: 'Print failed',
+        description: 'Could not find rundown table to print',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Create a simplified print-only version
     const printContent = document.createElement('div');
     printContent.id = 'print-only-content';
     printContent.style.display = 'none';
     
-    // Build the print HTML
+    // Calculate total runtime
+    function calculateTotalRuntime() {
+      if (!rundownData?.items) return '00:00:00';
+      
+      const totalSeconds = rundownData.items.reduce((total, item) => {
+        if (item.duration) {
+          const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
+          if (timeMatch) {
+            return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
+          }
+        }
+        return total;
+      }, 0);
+      
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Extract actual table structure
+    const headerRow = existingTable.querySelector('thead tr');
+    const bodyRows = existingTable.querySelectorAll('tbody tr');
+    
+    if (!headerRow || bodyRows.length === 0) {
+      toast({
+        title: 'Print failed',
+        description: 'No rundown content found to print',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Build the print HTML using actual table structure
     let printHTML = `
       <div class="print-container">
         <div class="print-header">
@@ -98,35 +142,56 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         <table class="print-table">
           <thead>
             <tr>
-              <th style="width: 40px;">#</th>
-              <th style="width: 80px;">Time</th>
-              <th style="width: 80px;">Duration</th>
-              <th>Title</th>
-              <th>Notes</th>
+    `;
+
+    // Copy header structure
+    const headerCells = headerRow.querySelectorAll('th');
+    headerCells.forEach(th => {
+      const thElement = th as HTMLElement;
+      const content = thElement.textContent?.trim() || '';
+      printHTML += `<th>${content}</th>`;
+    });
+
+    printHTML += `
             </tr>
           </thead>
           <tbody>
     `;
 
-    // Get rundown data from the page
-    if (rundownData?.items) {
-      rundownData.items.forEach((item, index) => {
-        const isHeader = item.type === 'header';
-        const rowClass = isHeader ? 'header-row' : 
-                        item.color && item.color !== '#FFFFFF' ? 'colored-row' : 
-                        item.isFloating ? 'floated-row' : 'regular-row';
-        
-        printHTML += `
-          <tr class="${rowClass}">
-            <td style="text-align: center; font-weight: bold;">${index + 1}</td>
-            <td style="text-align: center; font-family: monospace;">${item.startTime || ''}</td>
-            <td style="text-align: center; font-family: monospace;">${item.duration || ''}</td>
-            <td style="font-weight: ${isHeader ? 'bold' : 'normal'};">${item.name || ''}</td>
-            <td>${(item as any).notes || ''}</td>
-          </tr>
-        `;
+    // Copy body structure with proper styling
+    bodyRows.forEach(row => {
+      const rowElement = row as HTMLElement;
+      const dataType = rowElement.getAttribute('data-type');
+      const customColor = rowElement.getAttribute('data-custom-color') === 'true';
+      const isFloated = rowElement.getAttribute('data-floated') === 'true';
+      
+      let rowClass = 'regular-row';
+      let backgroundColor = '#ffffff';
+      
+      if (dataType === 'header') {
+        rowClass = 'header-row';
+        backgroundColor = '#e8e8e8';
+      } else if (customColor) {
+        rowClass = 'colored-row';
+        backgroundColor = rowElement.style.backgroundColor || '#f0f8ff';
+      } else if (isFloated) {
+        rowClass = 'floated-row';
+        backgroundColor = '#fff8dc';
+      }
+
+      printHTML += `<tr class="${rowClass}" style="background-color: ${backgroundColor};">`;
+      
+      const cells = rowElement.querySelectorAll('td');
+      cells.forEach(cell => {
+        const cellElement = cell as HTMLElement;
+        const content = cellElement.textContent?.trim() || '';
+        // Clean up content by removing extra whitespace and control characters
+        const cleanContent = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '');
+        printHTML += `<td>${cleanContent}</td>`;
       });
-    }
+      
+      printHTML += `</tr>`;
+    });
 
     printHTML += `
           </tbody>
@@ -195,12 +260,13 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           border-collapse: collapse !important;
           font-size: 10px !important;
           background: white !important;
+          table-layout: auto !important;
         }
 
         .print-table th {
           background: #f5f5f5 !important;
           border: 1px solid #333 !important;
-          padding: 8px 6px !important;
+          padding: 6px 4px !important;
           font-weight: bold !important;
           font-size: 9px !important;
           text-align: left !important;
@@ -211,32 +277,29 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
 
         .print-table td {
           border: 1px solid #666 !important;
-          padding: 6px !important;
+          padding: 4px !important;
           vertical-align: top !important;
           word-wrap: break-word !important;
           color: black !important;
           font-size: 9px !important;
           line-height: 1.3 !important;
-          background: white !important;
-        }
-
-        .header-row td {
-          background: #e8e8e8 !important;
-          font-weight: bold !important;
-          font-size: 11px !important;
-          padding: 10px 6px !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
+        .header-row td {
+          font-weight: bold !important;
+          font-size: 11px !important;
+          padding: 8px 4px !important;
+        }
+
+        /* Preserve custom colors */
         .colored-row td {
-          background: #f0f8ff !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
         .floated-row td {
-          background: #fff8dc !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -248,26 +311,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     `;
 
     document.head.appendChild(printStyles);
-
-    // Helper function to calculate total runtime
-    function calculateTotalRuntime() {
-      if (!rundownData?.items) return '00:00:00';
-      
-      const totalSeconds = rundownData.items.reduce((total, item) => {
-        if (item.duration) {
-          const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
-          if (timeMatch) {
-            return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
-          }
-        }
-        return total;
-      }, 0);
-      
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
 
     // Trigger print
     window.print();
