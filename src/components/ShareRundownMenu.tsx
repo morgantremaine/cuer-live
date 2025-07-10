@@ -80,22 +80,252 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return;
     }
 
-    // Open the shared rundown in a new window for printing
-    const printWindow = window.open(permanentUrl, '_blank');
-    if (printWindow) {
-      // Wait for the page to load, then trigger print
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
-        }, 1000); // Give it a moment to fully render
-      };
-    } else {
-      toast({
-        title: 'Print failed',
-        description: 'Please allow popups and try again',
-        variant: 'destructive',
-      });
+    // Add print styles to current page and trigger print
+    const printStyles = document.createElement('style');
+    printStyles.id = 'rundown-print-styles';
+    printStyles.textContent = `
+      @media print {
+        @page {
+          margin: 0.5in;
+          size: auto;
+        }
+
+        /* Hide everything except the rundown content */
+        body * {
+          visibility: hidden;
+        }
+        
+        .rundown-print-container,
+        .rundown-print-container * {
+          visibility: visible;
+        }
+        
+        .rundown-print-container {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          background: white !important;
+          color: black !important;
+        }
+
+        /* Print header styles */
+        .print-rundown-header {
+          margin-bottom: 20px !important;
+          padding: 10px 0 !important;
+          border-bottom: 2px solid #333 !important;
+        }
+
+        .print-rundown-title {
+          font-size: 24px !important;
+          font-weight: bold !important;
+          margin-bottom: 8px !important;
+          color: black !important;
+        }
+
+        .print-rundown-info {
+          font-size: 12px !important;
+          color: #333 !important;
+          display: flex !important;
+          gap: 20px !important;
+        }
+
+        /* Table styles for print */
+        .print-rundown-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          font-size: 10px !important;
+          table-layout: auto !important;
+        }
+
+        .print-rundown-table th {
+          background: #f5f5f5 !important;
+          border: 1px solid #333 !important;
+          padding: 6px 4px !important;
+          font-weight: bold !important;
+          font-size: 9px !important;
+          text-align: left !important;
+          color: black !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .print-rundown-table td {
+          border: 1px solid #666 !important;
+          padding: 4px !important;
+          vertical-align: top !important;
+          word-wrap: break-word !important;
+          color: black !important;
+          font-size: 9px !important;
+          line-height: 1.2 !important;
+        }
+
+        /* Header row styles */
+        .print-header-row td {
+          background: #e8e8e8 !important;
+          font-weight: bold !important;
+          font-size: 11px !important;
+          padding: 8px 4px !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Custom colored rows */
+        .print-custom-colored-row td {
+          background: #f0f8ff !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Floated rows */
+        .print-floated-row td {
+          background: #fff8dc !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Hide UI elements */
+        .print\\:hidden {
+          display: none !important;
+        }
+
+        /* Row number column */
+        .print-row-number {
+          width: 30px !important;
+          text-align: center !important;
+          background: #f9f9f9 !important;
+          font-weight: bold !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Time columns */
+        .print-time-column {
+          width: 60px !important;
+          text-align: center !important;
+          font-family: monospace !important;
+        }
+
+        /* Content columns should auto-size */
+        .print-content-column {
+          width: auto !important;
+          max-width: none !important;
+        }
+
+        /* Hide interactive elements */
+        button, .lucide, .hover\\:bg-gray-200, .cursor-pointer {
+          display: none !important;
+        }
+      }
+    `;
+
+    // Add styles to head
+    document.head.appendChild(printStyles);
+
+    // Create print container and mark current rundown table
+    const rundownContainer = document.querySelector('.rundown-container, [data-rundown-table], .table-container');
+    if (rundownContainer) {
+      rundownContainer.classList.add('rundown-print-container');
+      
+      // Populate print header with rundown info
+      const printHeader = rundownContainer.querySelector('.print-rundown-title');
+      const printInfo = rundownContainer.querySelector('.print-rundown-info');
+      
+      if (printHeader) {
+        printHeader.textContent = rundownTitle;
+      }
+      
+      if (printInfo && rundownData) {
+        // Calculate total runtime if available
+        const totalRuntime = rundownData.items?.reduce((total, item) => {
+          if (item.duration) {
+            const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
+            if (timeMatch) {
+              return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
+            }
+          }
+          return total;
+        }, 0) || 0;
+        
+        const hours = Math.floor(totalRuntime / 3600);
+        const minutes = Math.floor((totalRuntime % 3600) / 60);
+        const seconds = totalRuntime % 60;
+        const runtimeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        const startTimeSpan = printInfo.querySelector('span:first-child');
+        const runtimeSpan = printInfo.querySelector('span:last-child');
+        
+        if (runtimeSpan) {
+          runtimeSpan.textContent = `Total Runtime: ${runtimeString}`;
+        }
+      }
+      
+      // Add print classes to table elements
+      const table = rundownContainer.querySelector('table');
+      if (table) {
+        table.classList.add('print-rundown-table');
+        
+        // Mark header and regular cells for print styling
+        const thElements = table.querySelectorAll('thead th');
+        thElements.forEach((th, index) => {
+          const thElement = th as HTMLElement;
+          if (index === 0) {
+            thElement.classList.add('print-row-number');
+          } else {
+            // Check if it's a time column based on content or data attributes
+            const columnContent = thElement.textContent?.toLowerCase() || '';
+            if (columnContent.includes('time') || columnContent.includes('duration')) {
+              thElement.classList.add('print-time-column');
+            } else {
+              thElement.classList.add('print-content-column');
+            }
+          }
+        });
+        
+        // Add row classes for styling
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row: Element) => {
+          const htmlRow = row as HTMLElement;
+          if (htmlRow.getAttribute('data-type') === 'header') {
+            htmlRow.classList.add('print-header-row');
+          } else if (htmlRow.getAttribute('data-custom-color') === 'true') {
+            htmlRow.classList.add('print-custom-colored-row');
+          } else if (htmlRow.getAttribute('data-floated') === 'true') {
+            htmlRow.classList.add('print-floated-row');
+          }
+          
+          // Add classes to cells for print styling
+          const cells = htmlRow.querySelectorAll('td');
+          cells.forEach((cell, index) => {
+            const cellElement = cell as HTMLElement;
+            if (index === 0) {
+              cellElement.classList.add('print-row-number');
+            } else {
+              // Check if it's a time column based on content pattern
+              const cellContent = cellElement.textContent?.trim() || '';
+              if (/^\d{2}:\d{2}:\d{2}$/.test(cellContent) || cellContent.includes(':')) {
+                cellElement.classList.add('print-time-column');
+              } else {
+                cellElement.classList.add('print-content-column');
+              }
+            }
+          });
+        });
+      }
     }
+
+    // Trigger print
+    window.print();
+
+    // Clean up after print
+    setTimeout(() => {
+      const styles = document.getElementById('rundown-print-styles');
+      if (styles) styles.remove();
+      
+      if (rundownContainer) {
+        rundownContainer.classList.remove('rundown-print-container');
+      }
+    }, 1000);
   };
 
   const handleExportCSV = () => {

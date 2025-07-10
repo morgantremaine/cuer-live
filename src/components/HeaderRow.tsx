@@ -144,6 +144,9 @@ const HeaderRow = (props: HeaderRowProps) => {
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
         style={{ backgroundColor }}
         data-item-id={item.id}
+        data-type="header"
+        data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
+        data-floated={item.isFloating ? 'true' : 'false'}
         draggable
         onDragStart={handleDragStart}
         onDragOver={onDragOver}

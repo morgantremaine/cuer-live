@@ -143,18 +143,33 @@ const RundownContent = React.memo<RundownContentProps>(({
   }, [visibleColumns, getColumnWidth]);
 
   return (
-    <div className="bg-background h-full">
+    <div className="bg-background h-full rundown-container" data-rundown-table="true">
+      {/* Print-only header */}
+      <div className="print:block hidden print-rundown-header">
+        <div className="print-rundown-title">
+          {/* Title will be populated by print script */}
+        </div>
+        <div className="print-rundown-info">
+          <span>Start Time: {startTime}</span>
+          <span>Total Runtime: {/* Runtime will be populated by print script */}</span>
+        </div>
+      </div>
+      
       {/* Scrollable Content with Header Inside */}
-      <ScrollArea className="w-full h-full bg-background" ref={scrollContainerRef}>
+      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
         <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
           {/* Single Table Structure for Perfect Alignment */}
-          <table className="border-collapse" style={{ 
-            tableLayout: 'fixed', 
-            width: `${totalTableWidth}px`,
-            minWidth: `${totalTableWidth}px`,
-            margin: 0,
-            padding: 0
-          }}>
+          <table 
+            className="border-collapse table-container" 
+            style={{ 
+              tableLayout: 'fixed', 
+              width: `${totalTableWidth}px`,
+              minWidth: `${totalTableWidth}px`,
+              margin: 0,
+              padding: 0
+            }}
+            data-rundown-table="main"
+          >
             {/* Sticky Header */}
             <RundownTableHeader 
               visibleColumns={visibleColumns}

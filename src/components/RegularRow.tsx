@@ -172,6 +172,9 @@ const RegularRow = (props: RegularRowProps) => {
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}
         style={{ backgroundColor }}
         data-item-id={item.id}
+        data-type="regular"
+        data-custom-color={item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'true' : 'false'}
+        data-floated={item.isFloating ? 'true' : 'false'}
         draggable
         onDragStart={handleDragStart}
         onDragOver={onDragOver}
