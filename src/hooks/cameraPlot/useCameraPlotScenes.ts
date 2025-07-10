@@ -1,9 +1,14 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCameraPlot, CameraPlotScene } from '@/hooks/useCameraPlot';
+import { useRundownData } from '@/hooks/useRundownData';
 
 export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
   const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  
+  // Get rundown data to access the title
+  const { data: rundownData } = useRundownData();
+  const rundownTitle = rundownData?.title || 'Camera Plot';
   
   const {
     plots: scenes,
@@ -13,7 +18,7 @@ export const useCameraPlotScenes = (rundownId: string, readOnly = false) => {
     updatePlot,
     updateSceneName,
     reloadPlots
-  } = useCameraPlot(rundownId, 'Camera Plot', readOnly);
+  } = useCameraPlot(rundownId, rundownTitle, readOnly);
 
   // Set active scene to first available scene and handle scene changes
   useEffect(() => {
