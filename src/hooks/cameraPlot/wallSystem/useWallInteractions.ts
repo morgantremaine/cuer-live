@@ -61,8 +61,6 @@ export const useWallInteractions = ({
 
   // Handle node context menu
   const handleNodeContextMenu = useCallback((nodeId: string, event: React.MouseEvent) => {
-    if (selectedTool !== 'select') return;
-    
     event.preventDefault();
     event.stopPropagation();
     
@@ -72,12 +70,10 @@ export const useWallInteractions = ({
       y: event.clientY,
       nodeId
     });
-  }, [selectedTool]);
+  }, []);
 
   // Handle segment context menu
   const handleSegmentContextMenu = useCallback((segmentId: string, event: React.MouseEvent) => {
-    if (selectedTool !== 'select') return;
-    
     event.preventDefault();
     event.stopPropagation();
     
@@ -87,7 +83,7 @@ export const useWallInteractions = ({
       y: event.clientY,
       segmentId
     });
-  }, [selectedTool]);
+  }, []);
 
   // Handle delete node
   const handleDeleteNode = useCallback((nodeId: string) => {
