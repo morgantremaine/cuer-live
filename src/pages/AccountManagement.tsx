@@ -138,7 +138,7 @@ const AccountManagement = () => {
               Subscription
             </TabsTrigger>
             <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
-              Integrations
+              Integrations (beta)
             </TabsTrigger>
             <TabsTrigger value="team" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Team
