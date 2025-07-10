@@ -148,7 +148,7 @@ const RundownTableHeader = ({
           maxLineWidth = measureElement.offsetWidth;
         } else {
           // For multi-line text with explicit line breaks, measure each line
-          measureElement.style.whiteSpace = 'pre-wrap'; // Allow wrapping for multi-line
+          measureElement.style.whiteSpace = 'nowrap'; // Prevent wrapping when measuring individual lines
           lines.forEach(line => {
             measureElement.textContent = line.trim();
             const lineWidth = measureElement.offsetWidth;
