@@ -111,6 +111,54 @@ export type Database = {
           },
         ]
       }
+      cue_logs: {
+        Row: {
+          endpoint_url: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          integration_id: string | null
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          response_time_ms: number | null
+          rundown_id: string
+          segment_id: string
+          sent_at: string
+          team_id: string
+        }
+        Insert: {
+          endpoint_url?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          integration_id?: string | null
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          rundown_id: string
+          segment_id: string
+          sent_at?: string
+          team_id: string
+        }
+        Update: {
+          endpoint_url?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          integration_id?: string | null
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          rundown_id?: string
+          segment_id?: string
+          sent_at?: string
+          team_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -357,6 +405,45 @@ export type Database = {
         }
         Relationships: []
       }
+      team_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string
+          permissions: Json | null
+          team_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name: string
+          permissions?: Json | null
+          team_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string
+          permissions?: Json | null
+          team_id?: string
+        }
+        Relationships: []
+      }
       team_conversations: {
         Row: {
           assistant_response: string
@@ -412,6 +499,66 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_integrations: {
+        Row: {
+          auth_headers: Json | null
+          created_at: string
+          created_by: string
+          custom_headers: Json | null
+          endpoint_url: string | null
+          http_method: string | null
+          id: string
+          integration_type: string
+          is_active: boolean | null
+          name: string
+          osc_host: string | null
+          osc_path: string | null
+          osc_port: number | null
+          rate_limit_per_minute: number | null
+          retry_attempts: number | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          auth_headers?: Json | null
+          created_at?: string
+          created_by: string
+          custom_headers?: Json | null
+          endpoint_url?: string | null
+          http_method?: string | null
+          id?: string
+          integration_type: string
+          is_active?: boolean | null
+          name: string
+          osc_host?: string | null
+          osc_path?: string | null
+          osc_port?: number | null
+          rate_limit_per_minute?: number | null
+          retry_attempts?: number | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          auth_headers?: Json | null
+          created_at?: string
+          created_by?: string
+          custom_headers?: Json | null
+          endpoint_url?: string | null
+          http_method?: string | null
+          id?: string
+          integration_type?: string
+          is_active?: boolean | null
+          name?: string
+          osc_host?: string | null
+          osc_path?: string | null
+          osc_port?: number | null
+          rate_limit_per_minute?: number | null
+          retry_attempts?: number | null
           team_id?: string
           updated_at?: string
         }

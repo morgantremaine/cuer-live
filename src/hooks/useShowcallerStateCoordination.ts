@@ -2,21 +2,36 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
+import { useCueIntegration } from './useCueIntegration';
 import { RundownItem } from '@/types/rundown';
 
 interface UseShowcallerStateCoordinationProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
+  teamId?: string | null;
+  rundownTitle?: string;
+  rundownStartTime?: string;
 }
 
-export const useShowcallerStateCoordination = ({
-  items,
-  rundownId,
-  userId
+export const useShowcallerStateCoordination = ({ 
+  items, 
+  rundownId, 
+  userId,
+  teamId,
+  rundownTitle = '',
+  rundownStartTime
 }: UseShowcallerStateCoordinationProps) => {
   const initializationRef = useRef<boolean>(false);
   const lastProcessedTimestampRef = useRef<string | null>(null);
+
+  // Initialize cue integration
+  const { sendCueTrigger } = useCueIntegration(
+    rundownId,
+    teamId,
+    rundownTitle,
+    rundownStartTime
+  );
 
   // Visual state management with precision timing
   const {
@@ -91,7 +106,23 @@ export const useShowcallerStateCoordination = ({
     enabled: isInitialized
   });
 
-  // Enhanced control functions with better coordination
+  // Helper to get current and next segments
+  const getCurrentSegment = useCallback(() => {
+    if (!currentSegmentId) return null;
+    return items.find(item => item.id === currentSegmentId) || null;
+  }, [items, currentSegmentId]);
+
+  const getNextSegment = useCallback(() => {
+    const current = getCurrentSegment();
+    if (!current) return null;
+    
+    const currentIndex = items.findIndex(item => item.id === current.id);
+    if (currentIndex === -1 || currentIndex === items.length - 1) return null;
+    
+    return items[currentIndex + 1] || null;
+  }, [items, getCurrentSegment]);
+
+  // Enhanced control functions with better coordination and cue triggers
   const coordinatedPlay = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Coordinated play called:', { selectedSegmentId, userId, isController });
     
@@ -101,7 +132,16 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     play(selectedSegmentId);
-  }, [play, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for play event
+    const current = selectedSegmentId ? items.find(item => item.id === selectedSegmentId) : getCurrentSegment();
+    const next = getNextSegment();
+    sendCueTrigger('cue_advance', current, next, {
+      isPlaying: true,
+      timeRemaining,
+      playbackStartTime: Date.now(),
+    });
+  }, [play, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, getCurrentSegment, getNextSegment, sendCueTrigger, timeRemaining]);
 
   const coordinatedPause = useCallback(() => {
     console.log('📺 Coordinated pause called:', { userId, isController });
@@ -111,7 +151,15 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     pause();
-  }, [pause, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for pause event
+    const current = getCurrentSegment();
+    const next = getNextSegment();
+    sendCueTrigger('playback_stop', current, next, {
+      isPlaying: false,
+      timeRemaining,
+    });
+  }, [pause, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, timeRemaining]);
 
   const coordinatedForward = useCallback(() => {
     console.log('📺 Coordinated forward called:', { userId, isController });
@@ -121,7 +169,15 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     forward();
-  }, [forward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for forward event
+    const current = getCurrentSegment();
+    const next = getNextSegment();
+    sendCueTrigger('cue_advance', current, next, {
+      isPlaying,
+      timeRemaining,
+    });
+  }, [forward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, isPlaying, timeRemaining]);
 
   const coordinatedBackward = useCallback(() => {
     console.log('📺 Coordinated backward called:', { userId, isController });
@@ -131,7 +187,15 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     backward();
-  }, [backward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for backward event
+    const current = getCurrentSegment();
+    const next = getNextSegment();
+    sendCueTrigger('cue_advance', current, next, {
+      isPlaying,
+      timeRemaining,
+    });
+  }, [backward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, isPlaying, timeRemaining]);
 
   const coordinatedReset = useCallback(() => {
     console.log('📺 Coordinated reset called:', { userId, isController });
@@ -141,7 +205,15 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     reset();
-  }, [reset, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for reset event
+    const current = items[0] || null;
+    const next = items[1] || null;
+    sendCueTrigger('playback_reset', current, next, {
+      isPlaying: false,
+      timeRemaining: 0,
+    });
+  }, [reset, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, sendCueTrigger]);
 
   const coordinatedJumpToSegment = useCallback((segmentId: string) => {
     console.log('📺 Coordinated jump to segment called:', { segmentId, userId, isController });
@@ -151,7 +223,16 @@ export const useShowcallerStateCoordination = ({
     trackOwnVisualUpdate(timestamp);
     
     jumpToSegment(segmentId);
-  }, [jumpToSegment, userId, isController, trackOwnUpdate, trackOwnVisualUpdate]);
+    
+    // Send cue trigger for jump event
+    const current = items.find(item => item.id === segmentId) || null;
+    const currentIndex = current ? items.findIndex(item => item.id === segmentId) : -1;
+    const next = currentIndex !== -1 && currentIndex < items.length - 1 ? items[currentIndex + 1] : null;
+    sendCueTrigger('cue_jump', current, next, {
+      isPlaying,
+      timeRemaining,
+    });
+  }, [jumpToSegment, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, sendCueTrigger, isPlaying, timeRemaining]);
 
   // Initialization coordination
   useEffect(() => {

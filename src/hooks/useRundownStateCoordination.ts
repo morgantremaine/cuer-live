@@ -48,7 +48,10 @@ export const useRundownStateCoordination = () => {
   const showcallerCoordination = useShowcallerStateCoordination({
     items: simplifiedState.items,
     rundownId: simplifiedState.rundownId,
-    userId: userId
+    userId: userId,
+    teamId: null, // Will be populated when team context is available
+    rundownTitle: simplifiedState.rundownTitle,
+    rundownStartTime: simplifiedState.rundownStartTime,
   });
 
   // Helper function to calculate end time - memoized for performance
