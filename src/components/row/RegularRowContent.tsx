@@ -79,7 +79,7 @@ const RegularRowContent = ({
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
-              backgroundColor,
+              backgroundColor: isCurrentSegmentName ? '#3b82f6' : backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}
           >
@@ -87,8 +87,8 @@ const RegularRowContent = ({
               column={column}
               item={item}
               cellRefs={cellRefs}
-              textColor={textColor}
-              backgroundColor={backgroundColor}
+              textColor={isCurrentSegmentName ? '#ffffff' : textColor}
+              backgroundColor="transparent"
               currentSegmentId={currentSegmentId}
               columnExpandState={columnExpandState}
               onUpdateItem={onUpdateItem}

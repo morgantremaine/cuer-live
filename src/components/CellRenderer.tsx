@@ -149,35 +149,6 @@ const CellRenderer = ({
     );
   }
 
-  // For showcaller highlighting on segment name, just use the background color directly
-  if (isCurrentSegmentName) {
-    return (
-      <TextAreaCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={showcallerTextColor}
-        backgroundColor={showcallerBackgroundColor}
-        isDuration={column.key === 'duration'}
-        onUpdateValue={(newValue) => {
-          // Handle custom fields vs built-in fields
-          if (column.isCustom) {
-            const field = `customFields.${column.key}`;
-            onUpdateItem(item.id, field, newValue);
-          } else {
-            // For segmentName column, always update the 'name' field
-            // For name column, also update the 'name' field
-            const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-            onUpdateItem(item.id, field, newValue);
-          }
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
-
   // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (
     <TextAreaCell
@@ -185,8 +156,8 @@ const CellRenderer = ({
       itemId={item.id}
       cellRefKey={column.key}
       cellRefs={cellRefs}
-      textColor={showcallerTextColor}
-      backgroundColor={showcallerBackgroundColor}
+      textColor={textColor}
+      backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
