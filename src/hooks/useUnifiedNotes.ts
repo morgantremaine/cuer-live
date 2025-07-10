@@ -192,7 +192,7 @@ export const useUnifiedNotes = (rundownId: string) => {
               .from('rundowns')
               .select('title')
               .eq('id', rundownId)
-              .single();
+              .maybeSingle();
 
             // Create blueprint record following the same pattern as blueprint loading
             const insertData: any = {
