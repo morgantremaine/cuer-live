@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWallDrawing } from './useWallDrawing';
 
 interface UseWallInteractionsProps {
@@ -16,6 +16,15 @@ export const useWallInteractions = ({
 }: UseWallInteractionsProps) => {
   const wallDrawing = useWallDrawing();
   const canvasRef = useRef<HTMLElement | null>(null);
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    type: 'node' | 'segment';
+    x: number;
+    y: number;
+    nodeId?: string;
+    segmentId?: string;
+  } | null>(null);
 
   // Handle mouse down on canvas for wall drawing
   const handleCanvasMouseDown = useCallback((x: number, y: number) => {
@@ -50,7 +59,58 @@ export const useWallInteractions = ({
     return false;
   }, [selectedTool, wallDrawing]);
 
-  // Handle node dragging
+  // Handle node context menu
+  const handleNodeContextMenu = useCallback((nodeId: string, event: React.MouseEvent) => {
+    if (selectedTool !== 'select') return;
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setContextMenu({
+      type: 'node',
+      x: event.clientX,
+      y: event.clientY,
+      nodeId
+    });
+  }, [selectedTool]);
+
+  // Handle segment context menu
+  const handleSegmentContextMenu = useCallback((segmentId: string, event: React.MouseEvent) => {
+    if (selectedTool !== 'select') return;
+    
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setContextMenu({
+      type: 'segment',
+      x: event.clientX,
+      y: event.clientY,
+      segmentId
+    });
+  }, [selectedTool]);
+
+  // Handle delete node
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    wallDrawing.deleteNode(nodeId);
+    setContextMenu(null);
+  }, [wallDrawing]);
+
+  // Handle delete segment
+  const handleDeleteSegment = useCallback((segmentId: string) => {
+    wallDrawing.deleteSegment(segmentId);
+    setContextMenu(null);
+  }, [wallDrawing]);
+
+  // Handle split segment
+  const handleSplitSegment = useCallback((segmentId: string) => {
+    wallDrawing.splitSegment(segmentId);
+    setContextMenu(null);
+  }, [wallDrawing]);
+
+  // Close context menu
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
   const handleNodeMouseDown = useCallback((nodeId: string, event: React.MouseEvent) => {
     if (selectedTool !== 'select') return;
     
@@ -152,12 +212,19 @@ export const useWallInteractions = ({
 
   return {
     wallDrawing,
+    contextMenu,
     handleCanvasMouseDown,
     handleCanvasMouseMove,
     handleCanvasDoubleClick,
     handleNodeMouseDown,
     handleNodeMouseEnter,
     handleNodeMouseLeave,
+    handleNodeContextMenu,
+    handleSegmentContextMenu,
+    handleDeleteNode,
+    handleDeleteSegment,
+    handleSplitSegment,
+    closeContextMenu,
     cancelWallDrawing
   };
 };

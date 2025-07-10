@@ -9,6 +9,8 @@ interface WallSystemRendererProps {
   onNodeMouseDown: (nodeId: string, event: React.MouseEvent) => void;
   onNodeMouseEnter: (nodeId: string) => void;
   onNodeMouseLeave: () => void;
+  onNodeContextMenu?: (nodeId: string, event: React.MouseEvent) => void;
+  onSegmentContextMenu?: (segmentId: string, event: React.MouseEvent) => void;
   scale?: number;
 }
 
@@ -20,6 +22,8 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
   onNodeMouseDown,
   onNodeMouseEnter,
   onNodeMouseLeave,
+  onNodeContextMenu,
+  onSegmentContextMenu,
   scale = 1
 }) => {
   console.log('🎨 WallSystemRenderer render:', {
@@ -50,7 +54,14 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
         stroke="#000000"
         strokeWidth={segment.thickness * scale}
         strokeLinecap="round"
-        className="pointer-events-none"
+        className="pointer-events-auto cursor-pointer"
+        onContextMenu={(e) => {
+          if (onSegmentContextMenu) {
+            e.preventDefault();
+            e.stopPropagation();
+            onSegmentContextMenu(segment.id, e);
+          }
+        }}
       />
     );
   };
@@ -76,6 +87,13 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
         onMouseDown={(e) => onNodeMouseDown(node.id, e)}
         onMouseEnter={() => onNodeMouseEnter(node.id)}
         onMouseLeave={onNodeMouseLeave}
+        onContextMenu={(e) => {
+          if (onNodeContextMenu) {
+            e.preventDefault();
+            e.stopPropagation();
+            onNodeContextMenu(node.id, e);
+          }
+        }}
         style={{
           filter: isHovered ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : undefined
         }}

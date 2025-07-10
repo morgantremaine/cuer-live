@@ -5,6 +5,7 @@ import CameraPlotElement from './CameraPlotElement';
 import CameraPlotGrid from './canvas/CameraPlotGrid';
 import WallSystemRenderer from './wallSystem/WallSystemRenderer';
 import WallDrawingPreview from './wallSystem/WallDrawingPreview';
+import { WallNodeContextMenu, WallSegmentContextMenu } from './wallSystem/WallContextMenu';
 import CameraPlotEmptyState from './canvas/CameraPlotEmptyState';
 import { useCameraPlotWallSystem } from '@/hooks/cameraPlot/core/useCameraPlotWallSystem';
 import { useCameraPlotCanvasHandlers } from '@/hooks/cameraPlot/canvas/useCameraPlotCanvasHandlers';
@@ -146,6 +147,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           onNodeMouseDown={wallSystem.wallInteractions.handleNodeMouseDown}
           onNodeMouseEnter={wallSystem.wallInteractions.handleNodeMouseEnter}
           onNodeMouseLeave={wallSystem.wallInteractions.handleNodeMouseLeave}
+          onNodeContextMenu={wallSystem.wallInteractions.handleNodeContextMenu}
+          onSegmentContextMenu={wallSystem.wallInteractions.handleSegmentContextMenu}
           scale={zoom}
         />
 
@@ -184,6 +187,28 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           hasElements={!!scene?.elements.length}
           isDrawingWall={isDrawingWall}
         />
+
+        {/* Context Menus */}
+        {wallSystem.wallInteractions.contextMenu && wallSystem.wallInteractions.contextMenu.type === 'node' && (
+          <WallNodeContextMenu
+            x={wallSystem.wallInteractions.contextMenu.x}
+            y={wallSystem.wallInteractions.contextMenu.y}
+            nodeId={wallSystem.wallInteractions.contextMenu.nodeId!}
+            onDeleteNode={wallSystem.wallInteractions.handleDeleteNode}
+            onClose={wallSystem.wallInteractions.closeContextMenu}
+          />
+        )}
+
+        {wallSystem.wallInteractions.contextMenu && wallSystem.wallInteractions.contextMenu.type === 'segment' && (
+          <WallSegmentContextMenu
+            x={wallSystem.wallInteractions.contextMenu.x}
+            y={wallSystem.wallInteractions.contextMenu.y}
+            segmentId={wallSystem.wallInteractions.contextMenu.segmentId!}
+            onDeleteSegment={wallSystem.wallInteractions.handleDeleteSegment}
+            onSplitSegment={wallSystem.wallInteractions.handleSplitSegment}
+            onClose={wallSystem.wallInteractions.closeContextMenu}
+          />
+        )}
       </div>
     </div>
   );

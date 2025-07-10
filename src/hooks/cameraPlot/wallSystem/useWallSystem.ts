@@ -109,6 +109,83 @@ export const useWallSystem = () => {
     }));
   }, []);
 
+  // Split a segment by adding a new node in the middle
+  const splitSegment = useCallback((segmentId: string) => {
+    setWallSystem(prev => {
+      const segment = prev.segments.find(s => s.id === segmentId);
+      if (!segment) return prev;
+
+      const startNode = prev.nodes.find(n => n.id === segment.startNodeId);
+      const endNode = prev.nodes.find(n => n.id === segment.endNodeId);
+      if (!startNode || !endNode) return prev;
+
+      // Calculate middle point
+      const midX = (startNode.x + endNode.x) / 2;
+      const midY = (startNode.y + endNode.y) / 2;
+      
+      // Create new node
+      const newNodeId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newNode = {
+        id: newNodeId,
+        x: midX,
+        y: midY,
+        connectedSegmentIds: []
+      };
+
+      // Create two new segments
+      const segment1Id = `segment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const segment2Id = `segment_${Date.now() + 1}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const segment1 = {
+        id: segment1Id,
+        startNodeId: segment.startNodeId,
+        endNodeId: newNodeId,
+        thickness: segment.thickness
+      };
+
+      const segment2 = {
+        id: segment2Id,
+        startNodeId: newNodeId,
+        endNodeId: segment.endNodeId,
+        thickness: segment.thickness
+      };
+
+      // Update node connections
+      const updatedNodes = prev.nodes.map(node => {
+        if (node.id === segment.startNodeId) {
+          return {
+            ...node,
+            connectedSegmentIds: node.connectedSegmentIds
+              .filter(id => id !== segmentId)
+              .concat(segment1Id)
+          };
+        }
+        if (node.id === segment.endNodeId) {
+          return {
+            ...node,
+            connectedSegmentIds: node.connectedSegmentIds
+              .filter(id => id !== segmentId)
+              .concat(segment2Id)
+          };
+        }
+        return node;
+      }).concat({
+        ...newNode,
+        connectedSegmentIds: [segment1Id, segment2Id]
+      });
+
+      // Remove old segment and add new segments
+      const updatedSegments = prev.segments
+        .filter(s => s.id !== segmentId)
+        .concat(segment1, segment2);
+
+      return {
+        nodes: updatedNodes,
+        segments: updatedSegments
+      };
+    });
+  }, []);
+
   // Find the closest node to a given point (for snapping)
   const findClosestNode = useCallback((x: number, y: number, maxDistance = 20): WallNode | null => {
     let closestNode: WallNode | null = null;
@@ -160,6 +237,7 @@ export const useWallSystem = () => {
     updateNodePosition,
     deleteNode,
     deleteSegment,
+    splitSegment,
     findClosestNode,
     getNode,
     getSegment,
