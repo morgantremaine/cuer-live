@@ -64,66 +64,28 @@ export const useWallInteractions = ({
     event.preventDefault();
     event.stopPropagation();
     
-    // Get the canvas container to calculate proper positioning
-    const canvas = event.currentTarget.closest('[data-canvas="true"]');
-    const canvasRect = canvas?.getBoundingClientRect();
-    
-    let menuX = event.clientX;
-    let menuY = event.clientY;
-    
-    if (canvasRect) {
-      // Find the node to get its position
-      const node = wallDrawing.wallSystem.nodes.find(n => n.id === nodeId);
-      if (node) {
-        // Position context menu next to the node, accounting for canvas position and transformations
-        menuX = canvasRect.left + (node.x + 10) * zoom + pan.x;
-        menuY = canvasRect.top + node.y * zoom + pan.y;
-      }
-    }
-    
+    // Use raw mouse coordinates - always viewport-relative
     setContextMenu({
       type: 'node',
-      x: menuX,
-      y: menuY,
+      x: event.clientX + 5,
+      y: event.clientY + 5,
       nodeId
     });
-  }, [wallDrawing.wallSystem.nodes, zoom, pan]);
+  }, []);
 
   // Handle segment context menu
   const handleSegmentContextMenu = useCallback((segmentId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     
-    // Get the canvas container to calculate proper positioning
-    const canvas = event.currentTarget.closest('[data-canvas="true"]');
-    const canvasRect = canvas?.getBoundingClientRect();
-    
-    let menuX = event.clientX;
-    let menuY = event.clientY;
-    
-    if (canvasRect) {
-      // Find the segment to get its midpoint position
-      const segment = wallDrawing.wallSystem.segments.find(s => s.id === segmentId);
-      if (segment) {
-        const startNode = wallDrawing.wallSystem.nodes.find(n => n.id === segment.startNodeId);
-        const endNode = wallDrawing.wallSystem.nodes.find(n => n.id === segment.endNodeId);
-        if (startNode && endNode) {
-          // Position context menu at the midpoint of the segment
-          const midX = (startNode.x + endNode.x) / 2;
-          const midY = (startNode.y + endNode.y) / 2;
-          menuX = canvasRect.left + (midX + 10) * zoom + pan.x;
-          menuY = canvasRect.top + midY * zoom + pan.y;
-        }
-      }
-    }
-    
+    // Use raw mouse coordinates - always viewport-relative
     setContextMenu({
       type: 'segment',
-      x: menuX,
-      y: menuY,
+      x: event.clientX + 5,
+      y: event.clientY + 5,
       segmentId
     });
-  }, [wallDrawing.wallSystem.segments, wallDrawing.wallSystem.nodes, zoom, pan]);
+  }, []);
 
   // Handle delete node
   const handleDeleteNode = useCallback((nodeId: string) => {

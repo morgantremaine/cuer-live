@@ -73,21 +73,11 @@ const CameraPlotElement = ({
     e.preventDefault();
     e.stopPropagation();
     
-    // Debug: Log all the positioning data
-    const elementRect = e.currentTarget.getBoundingClientRect();
-    console.log('🐛 Context menu debug:', {
-      elementRect,
-      clientX: e.clientX,
-      clientY: e.clientY,
-      elementPos: { x: element.x, y: element.y },
-      zoom,
-      pan
-    });
-    
-    // Use the mouse cursor position directly - this should always be accurate
+    // Use raw mouse coordinates - these are always viewport-relative
+    // Add small offset so menu doesn't appear directly under cursor
     setContextMenuPos({ 
-      x: e.clientX + 10, 
-      y: e.clientY 
+      x: e.clientX + 5, 
+      y: e.clientY + 5 
     });
     setShowContextMenu(true);
   };
