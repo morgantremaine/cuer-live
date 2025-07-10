@@ -199,10 +199,6 @@ const CameraPlotEditor = () => {
             <CameraPlotToolbar
               selectedTool={selectedTool}
               onToolSelect={setSelectedTool}
-              zoom={zoom}
-              onZoomIn={zoomIn}
-              onZoomOut={zoomOut}
-              onResetZoom={resetZoom}
             />
             
             <div className="mt-8">

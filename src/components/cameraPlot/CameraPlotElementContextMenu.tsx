@@ -55,6 +55,12 @@ const CameraPlotElementContextMenu = ({
   };
 
   const isFurniture = element.type === 'furniture';
+  const isPerson = element.type === 'person';
+
+  const handlePersonColorChange = (color: 'blue' | 'green' | 'red' | 'yellow') => {
+    onUpdate(element.id, { personColor: color });
+    onClose();
+  };
 
   return (
     <>
@@ -82,6 +88,32 @@ const CameraPlotElementContextMenu = ({
         >
           {element.labelHidden ? 'Show Label' : 'Hide Label'}
         </button>
+        
+        {isPerson && (
+          <div className="px-4 py-2 border-t border-gray-600">
+            <div className="mb-2">
+              <span className="text-white text-sm">Color</span>
+            </div>
+            <div className="flex gap-2">
+              {(['blue', 'green', 'red', 'yellow'] as const).map((color) => (
+                <button
+                  key={color}
+                  className={`w-6 h-6 rounded-full border-2 ${
+                    element.personColor === color || (!element.personColor && color === 'blue')
+                      ? 'border-white' 
+                      : 'border-gray-400'
+                  }`}
+                  style={{ 
+                    backgroundColor: color === 'blue' ? '#3b82f6' : 
+                                   color === 'green' ? '#22c55e' : 
+                                   color === 'red' ? '#ef4444' : '#eab308' 
+                  }}
+                  onClick={() => handlePersonColorChange(color)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         
         {isFurniture && (
           <div className="px-4 py-2 border-t border-gray-600">

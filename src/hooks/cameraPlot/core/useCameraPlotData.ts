@@ -16,6 +16,7 @@ export interface CameraElement {
   labelHidden?: boolean;
   cameraNumber?: number;
   color?: string;
+  personColor?: 'blue' | 'green' | 'red' | 'yellow';
 }
 
 export interface CameraPlotScene {

@@ -35,14 +35,22 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       );
       
     case 'person':
+      const personColor = element.personColor || 'blue';
+      const personImages = {
+        blue: "/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png",
+        green: "/uploads/person-green.png",
+        red: "/uploads/person-red.png",
+        yellow: "/uploads/person-yellow.png"
+      };
+      
       return (
         <div 
           className="relative"
           style={baseStyle}
         >
           <img 
-            src="/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png" 
-            alt="Person"
+            src={personImages[personColor]} 
+            alt={`Person (${personColor})`}
             className="w-12 h-12 object-contain"
           />
         </div>
