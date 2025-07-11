@@ -2,19 +2,6 @@
 import { useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
 
-interface WallInteractions {
-  handleCanvasMouseDown: (x: number, y: number) => boolean;
-  handleCanvasMouseMove: (x: number, y: number) => void;
-  handleCanvasDoubleClick: () => boolean;
-  wallDrawing: {
-    drawingState: {
-      isDrawing: boolean;
-      currentPath: string[];
-      previewPoint: { x: number; y: number } | null;
-    };
-  };
-}
-
 interface UseCameraPlotCanvasHandlersProps {
   selectedTool: string;
   onAddElement: (type: string, x: number, y: number) => void;
@@ -27,7 +14,6 @@ interface UseCameraPlotCanvasHandlersProps {
   zoom: number;
   pan: { x: number; y: number };
   updatePan: (deltaX: number, deltaY: number) => void;
-  wallInteractions: WallInteractions;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -41,16 +27,12 @@ export const useCameraPlotCanvasHandlers = ({
   setSelectedTool,
   zoom,
   pan,
-  updatePan,
-  wallInteractions
+  updatePan
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [isRightClickPanning, setIsRightClickPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-
-  // Use the wall interactions passed from parent
-  const wallHandlers = wallInteractions;
 
   const getCanvasCoordinates = (clientX: number, clientY: number, rect: DOMRect) => {
     // Account for zoom and pan
@@ -71,13 +53,6 @@ export const useCameraPlotCanvasHandlers = ({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
-
-    // Handle wall tool clicks
-    if (wallHandlers.handleCanvasMouseDown(x, y)) {
-      return;
-    }
-
-    // Handle other tools
     const snapped = snapToGrid(x, y);
     onAddElement(selectedTool, snapped.x, snapped.y);
   };
@@ -105,9 +80,6 @@ export const useCameraPlotCanvasHandlers = ({
       setLastPanPoint({ x: e.clientX, y: e.clientY });
       return;
     }
-
-    // Handle wall tool mouse movement with canvas coordinates
-    wallHandlers.handleCanvasMouseMove(x, y);
   };
 
   const handleMouseUp = () => {
@@ -116,10 +88,7 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Handle wall tool double click
-    if (wallHandlers.handleCanvasDoubleClick()) {
-      return;
-    }
+    // Simple double click handling if needed in the future
   };
 
   return {
@@ -129,11 +98,6 @@ export const useCameraPlotCanvasHandlers = ({
     handleMouseMove,
     handleMouseUp,
     handleDoubleClick,
-    // Expose wall drawing state for preview rendering
-    isDrawingWall: wallHandlers.wallDrawing.drawingState.isDrawing,
-    currentPath: wallHandlers.wallDrawing.drawingState.currentPath,
-    previewPoint: wallHandlers.wallDrawing.drawingState.previewPoint,
-    // Expose panning state for cursor
     isRightClickPanning
   };
 };
