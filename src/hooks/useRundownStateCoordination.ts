@@ -4,6 +4,7 @@ import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
+import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
@@ -102,6 +103,9 @@ export const useRundownStateCoordination = () => {
     }
   };
 
+  // Get header collapse functions from useHeaderCollapse
+  const { getHeaderGroupItemIds, isHeaderCollapsed } = useHeaderCollapse(performanceOptimization.calculatedItems);
+
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
   const interactions = useRundownGridInteractions(
@@ -160,7 +164,9 @@ export const useRundownStateCoordination = () => {
     // Pass undo-related parameters - use the correct property name now available
     simplifiedState.saveUndoState,
     simplifiedState.columns,
-    simplifiedState.rundownTitle
+    simplifiedState.rundownTitle,
+    getHeaderGroupItemIds,
+    isHeaderCollapsed
   );
 
   // Get UI state with enhanced navigation - use performance-optimized data
