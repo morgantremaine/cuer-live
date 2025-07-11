@@ -24,24 +24,32 @@ export const useCameraPlotMultiElementDrag = ({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
-    // Cancel any pending RAF
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
     
-    rafRef.current = requestAnimationFrame(() => {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
+    // Only update if there's meaningful movement
+    if (!lastUpdateRef.current || 
+        Math.abs(lastUpdateRef.current.x - deltaX) > 0.5 || 
+        Math.abs(lastUpdateRef.current.y - deltaY) > 0.5) {
       
-      // Update all selected elements
-      dragStart.elementPositions.forEach(elementStart => {
-        const newPos = snapToGrid(elementStart.x + deltaX, elementStart.y + deltaY);
-        onUpdate(elementStart.id, {
-          x: newPos.x,
-          y: newPos.y
+      // Cancel any pending RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      
+      rafRef.current = requestAnimationFrame(() => {
+        lastUpdateRef.current = { x: deltaX, y: deltaY };
+        
+        // Update all selected elements in batch
+        dragStart.elementPositions.forEach(elementStart => {
+          const newPos = snapToGrid(elementStart.x + deltaX, elementStart.y + deltaY);
+          onUpdate(elementStart.id, {
+            x: newPos.x,
+            y: newPos.y
+          });
         });
       });
-    });
+    }
   }, [isDragging, dragStart, onUpdate, snapToGrid]);
 
   const handleMouseUp = useCallback(() => {

@@ -26,27 +26,28 @@ export const useCameraPlotElementDrag = ({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     
-    // Cancel any pending RAF
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+    const newPos = snapToGrid(dragStart.elementX + deltaX, dragStart.elementY + deltaY);
     
-    rafRef.current = requestAnimationFrame(() => {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      const newPos = snapToGrid(dragStart.elementX + deltaX, dragStart.elementY + deltaY);
+    // Only update if position has actually changed by at least 1 pixel
+    if (!lastUpdateRef.current || 
+        Math.abs(lastUpdateRef.current.x - newPos.x) > 0.5 || 
+        Math.abs(lastUpdateRef.current.y - newPos.y) > 0.5) {
       
-      // Only update if position has actually changed
-      if (!lastUpdateRef.current || 
-          lastUpdateRef.current.x !== newPos.x || 
-          lastUpdateRef.current.y !== newPos.y) {
+      // Cancel any pending RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      
+      rafRef.current = requestAnimationFrame(() => {
         lastUpdateRef.current = newPos;
         onUpdate(element.id, {
           x: newPos.x,
           y: newPos.y
         });
-      }
-    });
+      });
+    }
   }, [isDragging, dragStart, element.id, onUpdate, snapToGrid]);
 
   const handleMouseUp = useCallback(() => {

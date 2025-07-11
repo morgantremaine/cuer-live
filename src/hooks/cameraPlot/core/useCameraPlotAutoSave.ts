@@ -40,7 +40,7 @@ export const useCameraPlotAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
       
-      // Debounce the save operation
+      // Debounce the save operation - longer delay during active editing
       saveTimeoutRef.current = setTimeout(async () => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
@@ -54,7 +54,7 @@ export const useCameraPlotAutoSave = (
             isSavingRef.current = false;
           }
         }
-      }, 1000);
+      }, 2000);
     }
 
     return () => {
