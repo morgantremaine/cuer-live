@@ -14,36 +14,20 @@ export const useCameraPlotElementCreation = (
       return;
     }
 
+    // Skip wall elements - they are handled by the wall drawing system
+    if (type === 'wall') {
+      return;
+    }
+
     // Convert tool types to element types
-    const getElementType = (toolType: string): "camera" | "person" | "wall" | "furniture" => {
+    const getElementType = (toolType: string): "camera" | "person" | "furniture" => {
       if (toolType === 'furniture-rect' || toolType === 'furniture-circle') {
         return 'furniture';
       }
-      return toolType as "camera" | "person" | "wall" | "furniture";
+      return toolType as "camera" | "person" | "furniture";
     };
 
     const elementType = getElementType(type);
-
-    // Special handling for wall tool - create simple wall elements
-    if (type === 'wall') {
-      const wallElement: CameraElement = {
-        id: uuidv4(),
-        type: 'wall',
-        x: x - 50, // Start 50px left of click
-        y: y,
-        width: 100, // 100px wide wall segment
-        height: 4,  // 4px thick
-        rotation: 0,
-        scale: 1,
-        label: 'Wall'
-      };
-
-      console.log('Creating wall element:', wallElement);
-      const updatedElements = [...activeScene.elements, wallElement];
-      updatePlot(activeScene.id, { elements: updatedElements });
-      setSelectedTool('select');
-      return;
-    }
 
     const baseElement: Omit<CameraElement, 'id'> = {
       type: elementType,

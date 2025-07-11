@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
+import { WallPoint } from '@/hooks/cameraPlot/wallDrawing/useSimpleWallDrawing';
 
 interface UseCameraPlotCanvasHandlersProps {
   selectedTool: string;
@@ -14,6 +15,13 @@ interface UseCameraPlotCanvasHandlersProps {
   zoom: number;
   pan: { x: number; y: number };
   updatePan: (deltaX: number, deltaY: number) => void;
+  // Wall drawing props
+  isDrawingWall: boolean;
+  startWallDrawing: (point: WallPoint) => void;
+  addWallPoint: (point: WallPoint) => void;
+  updatePreview: (point: WallPoint) => void;
+  finishWallDrawing: () => CameraElement[];
+  cancelWallDrawing: () => void;
 }
 
 export const useCameraPlotCanvasHandlers = ({
@@ -27,7 +35,14 @@ export const useCameraPlotCanvasHandlers = ({
   setSelectedTool,
   zoom,
   pan,
-  updatePan
+  updatePan,
+  // Wall drawing props
+  isDrawingWall,
+  startWallDrawing,
+  addWallPoint,
+  updatePreview,
+  finishWallDrawing,
+  cancelWallDrawing
 }: UseCameraPlotCanvasHandlersProps) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -44,6 +59,21 @@ export const useCameraPlotCanvasHandlers = ({
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (isPanning || isRightClickPanning) return;
 
+    const rect = e.currentTarget.getBoundingClientRect();
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
+    const snapped = snapToGrid(x, y);
+
+    // Handle wall drawing
+    if (selectedTool === 'wall') {
+      if (!isDrawingWall) {
+        startWallDrawing(snapped);
+      } else {
+        addWallPoint(snapped);
+      }
+      return;
+    }
+
+    // Handle selection
     if (selectedTool === 'select') {
       if (e.target === e.currentTarget) {
         onSelectElement('', false);
@@ -51,9 +81,7 @@ export const useCameraPlotCanvasHandlers = ({
       return;
     }
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY, rect);
-    const snapped = snapToGrid(x, y);
+    // Handle other tools
     onAddElement(selectedTool, snapped.x, snapped.y);
   };
 
@@ -72,6 +100,11 @@ export const useCameraPlotCanvasHandlers = ({
     const snappedPos = snapToGrid(x, y);
     setMousePos(snappedPos);
 
+    // Update wall drawing preview
+    if (isDrawingWall && selectedTool === 'wall') {
+      updatePreview(snappedPos);
+    }
+
     // Handle panning (right-click drag only)
     if (isRightClickPanning && selectedTool === 'select') {
       const deltaX = e.clientX - lastPanPoint.x;
@@ -88,7 +121,15 @@ export const useCameraPlotCanvasHandlers = ({
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    // Simple double click handling if needed in the future
+    // Finish wall drawing on double click
+    if (isDrawingWall && selectedTool === 'wall') {
+      const wallElements = finishWallDrawing();
+      if (wallElements.length > 0 && scene) {
+        const updatedElements = [...scene.elements, ...wallElements];
+        updatePlot(scene.id, { elements: updatedElements });
+      }
+      setSelectedTool('select');
+    }
   };
 
   return {

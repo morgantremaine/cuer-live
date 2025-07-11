@@ -4,7 +4,9 @@ import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
 import CameraPlotElement from './CameraPlotElement';
 import CameraPlotGrid from './canvas/CameraPlotGrid';
 import CameraPlotEmptyState from './canvas/CameraPlotEmptyState';
+import SimpleWallDrawingOverlay from './canvas/SimpleWallDrawingOverlay';
 import { useCameraPlotCanvasHandlers } from '@/hooks/cameraPlot/canvas/useCameraPlotCanvasHandlers';
+import { useSimpleWallDrawing } from '@/hooks/cameraPlot/wallDrawing/useSimpleWallDrawing';
 
 interface CameraPlotCanvasProps {
   scene: CameraPlotScene | undefined;
@@ -41,6 +43,18 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   updatePlot,
   setSelectedTool
 }, ref) => {
+  // Wall drawing system
+  const {
+    isDrawing: isDrawingWall,
+    wallPoints,
+    previewPoint,
+    startWallDrawing,
+    addWallPoint,
+    updatePreview,
+    finishWallDrawing,
+    cancelWallDrawing
+  } = useSimpleWallDrawing();
+
   const {
     mousePos,
     handleCanvasClick,
@@ -60,10 +74,17 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     setSelectedTool,
     zoom,
     pan,
-    updatePan
+    updatePan,
+    // Wall drawing callbacks
+    isDrawingWall,
+    startWallDrawing,
+    addWallPoint,
+    updatePreview,
+    finishWallDrawing,
+    cancelWallDrawing
   });
 
-  // Add keyboard event listener for delete key
+  // Add keyboard event listener for delete key and wall drawing controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -71,13 +92,30 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           onDeleteElement(elementId);
         });
       }
+      
+      // Wall drawing controls
+      if (isDrawingWall) {
+        if (e.key === 'Enter') {
+          // Finish wall drawing
+          const wallElements = finishWallDrawing();
+          if (wallElements.length > 0 && scene) {
+            const updatedElements = [...scene.elements, ...wallElements];
+            updatePlot(scene.id, { elements: updatedElements });
+          }
+          setSelectedTool('select');
+        } else if (e.key === 'Escape') {
+          // Cancel wall drawing
+          cancelWallDrawing();
+          setSelectedTool('select');
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedElements, onDeleteElement]);
+  }, [selectedElements, onDeleteElement, isDrawingWall, finishWallDrawing, cancelWallDrawing, scene, updatePlot, setSelectedTool]);
 
   return (
     <div className="flex-1 relative overflow-auto bg-gray-600">
@@ -126,7 +164,14 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
 
         <CameraPlotEmptyState 
           hasElements={!!scene?.elements.length}
-          isDrawingWall={false}
+          isDrawingWall={isDrawingWall}
+        />
+
+        {/* Wall drawing overlay */}
+        <SimpleWallDrawingOverlay
+          isDrawing={isDrawingWall}
+          wallPoints={wallPoints}
+          previewPoint={previewPoint}
         />
       </div>
     </div>
