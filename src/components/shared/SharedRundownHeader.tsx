@@ -3,6 +3,7 @@ import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import CuerLogo from '@/components/common/CuerLogo';
+import { handleSharedRundownPrint } from '@/utils/sharedRundownPrint';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -114,7 +115,10 @@ export const SharedRundownHeader = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.print()}
+                onClick={() => {
+                  // Use the same print logic as the main rundown
+                  handleSharedRundownPrint(title, items);
+                }}
                 className={`${
                   isDark 
                     ? 'border-gray-600 hover:bg-gray-700' 
