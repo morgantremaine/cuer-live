@@ -3,7 +3,7 @@ import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersisten
 
 export interface CameraElement {
   id: string;
-  type: 'camera' | 'person' | 'wall' | 'furniture';
+  type: 'camera' | 'person' | 'wall' | 'furniture' | 'microphone';
   x: number;
   y: number;
   width: number;

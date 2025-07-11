@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { useCameraPlotEditor } from '@/hooks/useCameraPlotEditor';
 import { useCameraPlotZoom } from '@/hooks/cameraPlot/useCameraPlotZoom';
-import CameraPlotCanvas from '@/components/cameraPlot/CameraPlotCanvas';
+import SimpleCameraPlotCanvas from '@/components/cameraPlot/core/SimpleCameraPlotCanvas';
 import CameraPlotToolbar from '@/components/cameraPlot/CameraPlotToolbar';
 import CameraPlotSceneManager from '@/components/cameraPlot/CameraPlotSceneManager';
 
@@ -217,12 +217,11 @@ const CameraPlotEditor = () => {
           {/* Main Canvas Area */}
           <div className="flex-1 relative overflow-hidden print-content">
         <div className="camera-plot-canvas print-canvas">
-          <CameraPlotCanvas
+          <SimpleCameraPlotCanvas
             ref={canvasRef}
             scene={activeScene}
             selectedTool={selectedTool}
             selectedElements={selectedElements}
-            showGrid={false}
             zoom={zoom}
             pan={pan}
             updatePan={updatePan}
@@ -232,8 +231,6 @@ const CameraPlotEditor = () => {
             onDuplicateElement={duplicateElement}
             onSelectElement={selectElement}
             snapToGrid={snapToGrid}
-            updatePlot={updatePlot}
-            setSelectedTool={setSelectedTool}
           />
         </div>
           </div>
