@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import { useCameraPlotScenes } from '../useCameraPlotScenes';
 import { CameraPlotScene, CameraElement } from '@/hooks/useCameraPlot';
@@ -18,7 +19,6 @@ export const useCameraPlotStateUnified = (rundownId: string) => {
     previewPoint: null as { x: number; y: number } | null
   });
 
-  // Clear conflicts by removing old wall state completely
   const resetSelection = useCallback(() => {
     setSelectedElements([]);
   }, []);
@@ -68,7 +68,7 @@ export const useCameraPlotStateUnified = (rundownId: string) => {
     const fullPath = finalPoint ? [...currentPath, finalPoint] : currentPath;
     
     if (fullPath.length >= 2) {
-      // Create wall elements for each segment
+      // Create simple wall line elements
       const newElements: CameraElement[] = [];
       const timestamp = Date.now();
       
@@ -76,16 +76,18 @@ export const useCameraPlotStateUnified = (rundownId: string) => {
         const start = fullPath[i];
         const end = fullPath[i + 1];
         
+        // Create a simple wall line element
         newElements.push({
           id: `wall-${timestamp}-${i}`,
           type: 'wall',
           x: start.x,
           y: start.y,
-          width: Math.abs(end.x - start.x),
-          height: Math.abs(end.y - start.y),
-          rotation: Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI),
+          width: 4, // Fixed wall thickness
+          height: 4, // Fixed wall thickness
+          rotation: 0,
           scale: 1,
           label: '',
+          // Store end coordinates for wall rendering
           endX: end.x,
           endY: end.y
         } as any);
