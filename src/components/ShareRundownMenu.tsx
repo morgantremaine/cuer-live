@@ -262,29 +262,27 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           }
         }
         
-        // For header rows, extract duration from the actual header display
+        // For header rows, extract duration from next to the header name
         if (dataType === 'header') {
           // Check if this is a duration column
           const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
           if (headerText.includes('duration') || headerText.includes('dur')) {
-            // For headers, look for the calculated duration that appears next to the header name
-            // This is usually displayed as text next to the header in the main rundown
-            const headerNameCell = cellElement.closest('tr')?.querySelector('td:first-child');
+            // For headers, the duration is displayed next to the header name, not in the duration column
+            // Look for the header name cell (usually first cell) and extract duration from there
+            const headerRow = cellElement.closest('tr');
+            const headerNameCell = headerRow?.querySelector('td:first-child, th:first-child');
+            
             if (headerNameCell) {
-              // Look for duration text pattern in the header name cell or nearby elements
-              const headerText = headerNameCell.textContent || '';
-              const durationMatch = headerText.match(/(\d{2}:\d{2}:\d{2})/);
+              const headerNameText = headerNameCell.textContent || '';
+              // Look for duration pattern in the header name cell (e.g., "Header Name (01:23:45)")
+              const durationMatch = headerNameText.match(/\((\d{2}:\d{2}:\d{2})\)/);
               if (durationMatch) {
                 content = durationMatch[1];
               } else {
-                // Look for duration input or calculated display in the duration cell itself
-                const durationInput = cellElement.querySelector('input[type="text"]') as HTMLInputElement;
-                const durationDisplay = cellElement.querySelector('span, div');
-                
-                if (durationInput && durationInput.value && durationInput.value !== '00:00:00') {
-                  content = durationInput.value;
-                } else if (durationDisplay && durationDisplay.textContent && durationDisplay.textContent !== '00:00:00') {
-                  content = durationDisplay.textContent.trim();
+                // Look for duration displayed as separate text/span within the header name cell
+                const durationSpan = headerNameCell.querySelector('span, .duration, [class*="duration"]');
+                if (durationSpan && durationSpan.textContent && durationSpan.textContent.match(/\d{2}:\d{2}:\d{2}/)) {
+                  content = durationSpan.textContent.trim();
                 } else {
                   content = '00:00:00';
                 }
