@@ -262,31 +262,32 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           }
         }
         
-        // For header rows, extract duration from next to the header name
+        // For header rows, extract duration from next to the header name (not duration column)
         if (dataType === 'header') {
           // Check if this is a duration column
           const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
           if (headerText.includes('duration') || headerText.includes('dur')) {
-            // For headers, the duration is displayed next to the header name, not in the duration column
-            // Look for the header name cell (usually first cell) and extract duration from there
+            // For headers, the duration is displayed next to the header name in the FIRST column
+            // The duration column is intentionally empty for headers
             const headerRow = cellElement.closest('tr');
-            const headerNameCell = headerRow?.querySelector('td:first-child, th:first-child');
+            const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
             
-            if (headerNameCell) {
-              const headerNameText = headerNameCell.textContent || '';
-              // Look for duration pattern in the header name cell (e.g., "Header Name (01:23:45)")
-              const durationMatch = headerNameText.match(/\((\d{2}:\d{2}:\d{2})\)/);
+            if (firstCell) {
+              const firstCellText = firstCell.textContent || '';
+              console.log('Header first cell text:', firstCellText);
+              
+              // Look for duration pattern like "(01:23:45)" in the header name cell
+              const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
               if (durationMatch) {
+                console.log('Found header duration:', durationMatch[1]);
                 content = durationMatch[1];
               } else {
-                // Look for duration displayed as separate text/span within the header name cell
-                const durationSpan = headerNameCell.querySelector('span, .duration, [class*="duration"]');
-                if (durationSpan && durationSpan.textContent && durationSpan.textContent.match(/\d{2}:\d{2}:\d{2}/)) {
-                  content = durationSpan.textContent.trim();
-                } else {
-                  content = '00:00:00';
-                }
+                console.log('No duration found in header text, defaulting to 00:00:00');
+                content = '00:00:00';
               }
+            } else {
+              console.log('Could not find first cell for header duration');
+              content = '00:00:00';
             }
           }
         }

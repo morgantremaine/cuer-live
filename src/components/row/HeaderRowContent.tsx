@@ -152,6 +152,7 @@ const HeaderRowContent = ({
           );
         } else if (column.key === 'duration') {
           // Don't show duration in duration column for headers since it's now part of the header name
+          // BUT show it for print view
           return (
             <td
               key={column.id}
@@ -161,7 +162,12 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-6"></div>
+              <div className="px-2 py-6">
+                {/* Show duration in print only */}
+                <span className="hidden print:inline-block font-medium">
+                  {headerDuration}
+                </span>
+              </div>
             </td>
           );
         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
