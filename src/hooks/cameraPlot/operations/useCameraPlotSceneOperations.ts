@@ -7,7 +7,9 @@ export const useCameraPlotSceneOperations = (
   readOnly: boolean
 ) => {
   const createNewPlot = (name: string) => {
+    console.log('🎬 Creating new plot:', name, 'readOnly:', readOnly, 'current plots:', plots.length);
     if (readOnly) {
+      console.log('🚫 Cannot create plot - read only mode');
       return null;
     }
     
@@ -17,17 +19,23 @@ export const useCameraPlotSceneOperations = (
       elements: []
     };
     
+    const newPlots = [newPlot, ...plots];
+    console.log('🎬 Setting new plots array:', newPlots.length, 'items');
     // Add new plot at the beginning of the array (newest first)
-    setPlots([newPlot, ...plots]);
+    setPlots(newPlots);
     return newPlot;
   };
 
   const deletePlot = (plotId: string) => {
+    console.log('🎬 Deleting plot:', plotId, 'readOnly:', readOnly, 'current plots:', plots.length);
     if (readOnly) {
+      console.log('🚫 Cannot delete plot - read only mode');
       return;
     }
     
-    setPlots(plots.filter(plot => plot.id !== plotId));
+    const newPlots = plots.filter(plot => plot.id !== plotId);
+    console.log('🎬 Setting filtered plots array:', newPlots.length, 'items');
+    setPlots(newPlots);
   };
 
   const duplicatePlot = (plotId: string) => {
