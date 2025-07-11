@@ -131,12 +131,15 @@ export const useDragAndDrop = (
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
+      console.log('🎯 Dragging collapsed header group:', item.id, 'with', draggedIds.length, 'items:', draggedIds);
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(selectedRows);
+      console.log('🎯 Dragging multiple selected items:', draggedIds.length, 'items');
     } else {
       // Single item
       draggedIds = [item.id];
+      console.log('🎯 Dragging single item:', item.id);
     }
     
     setActiveId(active.id);
@@ -176,6 +179,7 @@ export const useDragAndDrop = (
 
     try {
       const { draggedIds, isHeaderGroup } = dragInfo;
+      console.log('🎯 Processing drop for:', draggedIds.length, 'items, isHeaderGroup:', isHeaderGroup);
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';

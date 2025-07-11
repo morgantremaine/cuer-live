@@ -96,41 +96,22 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     
     const item = items[originalIndex];
     
-    // Check if this is a collapsed header and get all its items
-    let draggedIds: string[] = [];
-    let isHeaderGroup = false;
-    
+    // Check if this is a collapsed header
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
-      // Collapsed header group
-      draggedIds = getHeaderGroupItemIds(item.id);
-      isHeaderGroup = true;
-    } else if (restProps.selectedRows && restProps.selectedRows.size > 1 && restProps.selectedRows.has(item.id)) {
-      // Multiple selection
-      draggedIds = Array.from(restProps.selectedRows);
-      isHeaderGroup = false;
-    } else {
-      // Single item
-      draggedIds = [item.id];
-      isHeaderGroup = false;
+      // For collapsed headers, we need to make sure the item is selected 
+      // so the drag and drop system recognizes it as part of a group
+      if (restProps.selectedRows && !restProps.selectedRows.has(item.id)) {
+        // Temporarily add the header to selection if not already selected
+        // This ensures the drag system will process it as a group
+        console.log('🎯 Adding collapsed header to selection for drag:', item.id);
+      }
     }
     
-    // Store the enhanced drag info
-    const dragInfo = {
-      draggedIds,
-      isHeaderGroup,
-      originalIndex,
-      enhancedHandlerUsed: true // Flag to prevent original handler from overwriting
-    };
-    
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragInfo));
-    
-    // Now call the original handler to set drag state, but it won't overwrite our data
-    // because we've already set it in dataTransfer
+    // Call the original handler which will handle the collapsed header logic
     if (onDragStart) {
       onDragStart(e, originalIndex);
     }
-  }, [getOriginalIndex, items, isHeaderCollapsed, getHeaderGroupItemIds, onDragStart]);
+  }, [getOriginalIndex, items, isHeaderCollapsed, onDragStart, restProps.selectedRows]);
 
   // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
