@@ -7,6 +7,7 @@ import WallSystemRenderer from './wallSystem/WallSystemRenderer';
 import WallDrawingPreview from './wallSystem/WallDrawingPreview';
 import { WallNodeContextMenu, WallSegmentContextMenu } from './wallSystem/WallContextMenu';
 import CameraPlotEmptyState from './canvas/CameraPlotEmptyState';
+import { useCameraPlotWallSystem } from '@/hooks/cameraPlot/core/useCameraPlotWallSystem';
 import { useCameraPlotCanvasHandlers } from '@/hooks/cameraPlot/canvas/useCameraPlotCanvasHandlers';
 
 interface CameraPlotCanvasProps {
@@ -44,6 +45,17 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
   updatePlot,
   setSelectedTool
 }, ref) => {
+  // Wall system integration
+  const wallSystem = useCameraPlotWallSystem({
+    selectedTool,
+    snapToGrid,
+    activeScene: scene,
+    updatePlot,
+    setSelectedTool,
+    zoom,
+    pan
+  });
+
   const {
     mousePos,
     handleCanvasClick,
@@ -63,8 +75,28 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
     setSelectedTool,
     zoom,
     pan,
-    updatePan
+    updatePan,
+    wallInteractions: wallSystem.wallInteractions
   });
+
+  // Auto-save wall system changes and load on scene change
+  useEffect(() => {
+    if (scene) {
+      wallSystem.loadWallSystemFromScene();
+    }
+  }, [scene?.id]);
+
+  // Auto-save when wall system changes
+  useEffect(() => {
+    if (wallSystem.wallInteractions.wallDrawing.wallSystem.nodes.length > 0 || 
+        wallSystem.wallInteractions.wallDrawing.wallSystem.segments.length > 0) {
+      // Clean up orphaned nodes before saving
+      if (wallSystem.wallInteractions.wallDrawing.cleanupOrphanedNodes) {
+        wallSystem.wallInteractions.wallDrawing.cleanupOrphanedNodes();
+      }
+      wallSystem.handleWallSystemChange();
+    }
+  }, [wallSystem.wallInteractions.wallDrawing.wallSystem]);
 
   // Add keyboard event listener for delete key
   useEffect(() => {
@@ -109,6 +141,29 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
           <CameraPlotGrid showGrid={showGrid} />
         )}
 
+        {/* Wall System Rendering */}
+        <WallSystemRenderer
+          wallSystem={wallSystem.wallInteractions.wallDrawing.wallSystem}
+          selectedNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.selectedNodeId}
+          hoveredNodeId={wallSystem.wallInteractions.wallDrawing.interactionState.hoveredNodeId}
+          isDragging={wallSystem.wallInteractions.wallDrawing.interactionState.isDragging}
+          onNodeMouseDown={wallSystem.wallInteractions.handleNodeMouseDown}
+          onNodeMouseEnter={wallSystem.wallInteractions.handleNodeMouseEnter}
+          onNodeMouseLeave={wallSystem.wallInteractions.handleNodeMouseLeave}
+          onNodeContextMenu={wallSystem.wallInteractions.handleNodeContextMenu}
+          onSegmentContextMenu={wallSystem.wallInteractions.handleSegmentContextMenu}
+          scale={zoom}
+        />
+
+        {/* Wall Drawing Preview */}
+        <WallDrawingPreview
+          isDrawing={wallSystem.wallInteractions.wallDrawing.drawingState.isDrawing}
+          currentPath={wallSystem.wallInteractions.wallDrawing.drawingState.currentPath}
+          previewPoint={wallSystem.wallInteractions.wallDrawing.drawingState.previewPoint}
+          wallSystem={wallSystem.wallInteractions.wallDrawing.wallSystem}
+          scale={zoom}
+        />
+
         {/* Render all elements - optimized for performance */}
         {scene?.elements.map((element) => (
           <CameraPlotElement
@@ -129,8 +184,30 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
 
         <CameraPlotEmptyState 
           hasElements={!!scene?.elements.length}
-          isDrawingWall={false}
+          isDrawingWall={wallSystem.wallInteractions.wallDrawing.drawingState.isDrawing}
         />
+
+        {/* Context Menus */}
+        {wallSystem.wallInteractions.contextMenu && wallSystem.wallInteractions.contextMenu.type === 'node' && (
+          <WallNodeContextMenu
+            x={wallSystem.wallInteractions.contextMenu.x}
+            y={wallSystem.wallInteractions.contextMenu.y}
+            nodeId={wallSystem.wallInteractions.contextMenu.nodeId!}
+            onDeleteNode={wallSystem.wallInteractions.handleDeleteNode}
+            onClose={wallSystem.wallInteractions.closeContextMenu}
+          />
+        )}
+
+        {wallSystem.wallInteractions.contextMenu && wallSystem.wallInteractions.contextMenu.type === 'segment' && (
+          <WallSegmentContextMenu
+            x={wallSystem.wallInteractions.contextMenu.x}
+            y={wallSystem.wallInteractions.contextMenu.y}
+            segmentId={wallSystem.wallInteractions.contextMenu.segmentId!}
+            onDeleteSegment={wallSystem.wallInteractions.handleDeleteSegment}
+            onSplitSegment={wallSystem.wallInteractions.handleSplitSegment}
+            onClose={wallSystem.wallInteractions.closeContextMenu}
+          />
+        )}
       </div>
     </div>
   );
