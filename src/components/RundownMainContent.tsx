@@ -37,6 +37,8 @@ const RundownMainContent = ({
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
         onReorderColumns={handleReorderColumns}
+        title={contentProps.rundownTitle}
+        totalRuntime={totalDuration}
       />
       
       {showColumnManager && (

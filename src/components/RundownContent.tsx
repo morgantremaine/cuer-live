@@ -9,6 +9,8 @@ import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 
 interface RundownContentProps {
+  title?: string;
+  totalRuntime?: string;
   items: RundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
@@ -69,6 +71,8 @@ const RundownContent = React.memo<RundownContentProps>(({
   isPlaying = false,
   autoScrollEnabled = false,
   startTime = '00:00:00',
+  title = 'Untitled Rundown',
+  totalRuntime = '00:00:00',
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
@@ -147,11 +151,11 @@ const RundownContent = React.memo<RundownContentProps>(({
       {/* Print-only header */}
       <div className="print:block hidden print-rundown-header">
         <div className="print-rundown-title">
-          {/* Title will be populated by print script */}
+          {title}
         </div>
         <div className="print-rundown-info">
           <span>Start Time: {startTime}</span>
-          <span>Total Runtime: {/* Runtime will be populated by print script */}</span>
+          <span>Total Runtime: {totalRuntime}</span>
         </div>
       </div>
       

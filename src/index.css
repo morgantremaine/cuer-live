@@ -221,3 +221,39 @@
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* Print styles for rundown */
+@media print {
+  .print-rundown-header {
+    padding: 20px 0;
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+  }
+  
+  .print-rundown-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .print-rundown-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+  
+  /* Ensure header durations are visible in print */
+  .table-container [data-type="header"] .duration-display {
+    font-weight: bold !important;
+    color: #000 !important;
+  }
+  
+  /* Hide interactive elements in print */
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  .print\\:block {
+    display: block !important;
+  }
+}
