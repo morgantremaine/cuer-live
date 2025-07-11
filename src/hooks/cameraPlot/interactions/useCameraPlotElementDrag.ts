@@ -30,10 +30,10 @@ export const useCameraPlotElementDrag = ({
     const deltaY = e.clientY - dragStart.y;
     const newPos = snapToGrid(dragStart.elementX + deltaX, dragStart.elementY + deltaY);
     
-    // Only update if position has actually changed by at least 1 pixel
+    // Only update if position has actually changed by at least 2 pixels
     if (!lastUpdateRef.current || 
-        Math.abs(lastUpdateRef.current.x - newPos.x) > 0.5 || 
-        Math.abs(lastUpdateRef.current.y - newPos.y) > 0.5) {
+        Math.abs(lastUpdateRef.current.x - newPos.x) >= 2 || 
+        Math.abs(lastUpdateRef.current.y - newPos.y) >= 2) {
       
       // Cancel any pending RAF
       if (rafRef.current) {

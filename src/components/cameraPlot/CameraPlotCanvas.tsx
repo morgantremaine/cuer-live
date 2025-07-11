@@ -133,8 +133,8 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
         onDoubleClick={handleDoubleClick}
         onContextMenu={(e) => e.preventDefault()} // Prevent context menu on right click
         style={{ 
-          width: '2000px', 
-          height: '2000px',
+          width: '1200px', 
+          height: '800px',
           cursor: selectedTool === 'select' ? 
             (isRightClickPanning ? 'grabbing' : 'default') : 
             'crosshair',
@@ -170,27 +170,23 @@ const CameraPlotCanvas = forwardRef<HTMLDivElement, CameraPlotCanvasProps>(({
 
         {/* Removed selection box */}
 
-        {/* Render all elements */}
-        {scene?.elements.map((element) => {
-          const selectedElementObjects = scene.elements.filter(el => selectedElements.includes(el.id));
-          
-          return (
-            <CameraPlotElement
-              key={element.id}
-              element={element}
-              isSelected={selectedElements.includes(element.id)}
-              onUpdate={onUpdateElement}
-              onDelete={onDeleteElement}
-              onDuplicate={onDuplicateElement}
-              onSelect={onSelectElement}
-              snapToGrid={snapToGrid}
-              allElements={scene.elements}
-              selectedElements={selectedElementObjects}
-              zoom={zoom}
-              pan={pan}
-            />
-          );
-        })}
+        {/* Render all elements - optimized for performance */}
+        {scene?.elements.map((element) => (
+          <CameraPlotElement
+            key={element.id}
+            element={element}
+            isSelected={selectedElements.includes(element.id)}
+            onUpdate={onUpdateElement}
+            onDelete={onDeleteElement}
+            onDuplicate={onDuplicateElement}
+            onSelect={onSelectElement}
+            snapToGrid={snapToGrid}
+            allElements={scene.elements}
+            selectedElements={scene.elements.filter(el => selectedElements.includes(el.id))}
+            zoom={zoom}
+            pan={pan}
+          />
+        ))}
 
         <CameraPlotEmptyState 
           hasElements={!!scene?.elements.length}

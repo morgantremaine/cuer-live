@@ -8,45 +8,39 @@ interface CameraPlotGridProps {
 const CameraPlotGrid = ({ showGrid }: CameraPlotGridProps) => {
   if (!showGrid) return null;
   
-  const gridSize = 20;
-  const lines = [];
+  const gridSize = 40; // Larger grid for fewer lines
+  const canvasWidth = 1200;
+  const canvasHeight = 800;
   
-  for (let x = 0; x <= 2000; x += gridSize) {
-    lines.push(
-      <line
-        key={`v-${x}`}
-        x1={x}
-        y1={0}
-        x2={x}
-        y2={2000}
-        stroke="#374151"
-        strokeWidth={0.5}
-        opacity={0.3}
-      />
-    );
-  }
-  
-  for (let y = 0; y <= 2000; y += gridSize) {
-    lines.push(
-      <line
-        key={`h-${y}`}
-        x1={0}
-        y1={y}
-        x2={2000}
-        y2={y}
-        stroke="#374151"
-        strokeWidth={0.5}
-        opacity={0.3}
-      />
-    );
-  }
+  // Create grid using CSS pattern instead of individual SVG lines for better performance
+  const patternId = 'camera-plot-grid';
   
   return (
     <svg
-      className="absolute inset-0 pointer-events-none grid-pattern"
+      className="absolute inset-0 pointer-events-none"
       style={{ width: '100%', height: '100%' }}
     >
-      {lines}
+      <defs>
+        <pattern 
+          id={patternId} 
+          width={gridSize} 
+          height={gridSize} 
+          patternUnits="userSpaceOnUse"
+        >
+          <path 
+            d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} 
+            fill="none" 
+            stroke="#374151" 
+            strokeWidth="0.5"
+            opacity="0.3"
+          />
+        </pattern>
+      </defs>
+      <rect 
+        width={canvasWidth} 
+        height={canvasHeight} 
+        fill={`url(#${patternId})`}
+      />
     </svg>
   );
 };

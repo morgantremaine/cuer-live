@@ -29,8 +29,8 @@ export const useCameraPlotMultiElementDrag = ({
     
     // Only update if there's meaningful movement
     if (!lastUpdateRef.current || 
-        Math.abs(lastUpdateRef.current.x - deltaX) > 0.5 || 
-        Math.abs(lastUpdateRef.current.y - deltaY) > 0.5) {
+        Math.abs(lastUpdateRef.current.x - deltaX) >= 2 || 
+        Math.abs(lastUpdateRef.current.y - deltaY) >= 2) {
       
       // Cancel any pending RAF
       if (rafRef.current) {
