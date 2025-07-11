@@ -24,6 +24,27 @@ export const useCameraPlotElementCreation = (
 
     const elementType = getElementType(type);
 
+    // Special handling for wall tool - create wall elements directly
+    if (type === 'wall') {
+      const wallElement: CameraElement = {
+        id: uuidv4(),
+        type: 'wall',
+        x: x - 50, // Start 50px left of click
+        y: y,
+        width: 100, // 100px wide wall segment
+        height: 4,  // 4px thick
+        rotation: 0,
+        scale: 1,
+        label: 'Wall'
+      };
+
+      console.log('Creating wall element:', wallElement);
+      const updatedElements = [...activeScene.elements, wallElement];
+      updatePlot(activeScene.id, { elements: updatedElements });
+      setSelectedTool('select');
+      return;
+    }
+
     const baseElement: Omit<CameraElement, 'id'> = {
       type: elementType,
       x,

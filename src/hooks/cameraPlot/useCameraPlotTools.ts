@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 export const useCameraPlotTools = () => {
@@ -7,23 +6,28 @@ export const useCameraPlotTools = () => {
   const [showGrid, setShowGrid] = useState(true);
 
   const selectElement = (elementId: string, multiSelect = false) => {
+    if (!elementId) {
+      setSelectedElements([]);
+      return;
+    }
+
     if (multiSelect) {
       setSelectedElements(prev => 
-        prev.includes(elementId) 
+        prev.includes(elementId)
           ? prev.filter(id => id !== elementId)
           : [...prev, elementId]
       );
     } else {
-      setSelectedElements(elementId ? [elementId] : []);
+      setSelectedElements([elementId]);
     }
-  };
-
-  const toggleGrid = () => {
-    setShowGrid(!showGrid);
   };
 
   const resetSelection = () => {
     setSelectedElements([]);
+  };
+
+  const toggleGrid = () => {
+    setShowGrid(prev => !prev);
   };
 
   return {
@@ -32,7 +36,7 @@ export const useCameraPlotTools = () => {
     showGrid,
     setSelectedTool,
     selectElement,
-    toggleGrid,
-    resetSelection
+    resetSelection,
+    toggleGrid
   };
 };
