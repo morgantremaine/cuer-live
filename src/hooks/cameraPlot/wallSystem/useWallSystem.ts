@@ -18,7 +18,6 @@ export const useWallSystem = () => {
   // Create a new node at the given position
   const createNode = useCallback((x: number, y: number): string => {
     const nodeId = uuidv4();
-    console.log('📍 Creating node:', { nodeId, x, y });
     const newNode: WallNode = {
       id: nodeId,
       x,
@@ -37,7 +36,6 @@ export const useWallSystem = () => {
   // Create a wall segment between two nodes
   const createSegment = useCallback((startNodeId: string, endNodeId: string, thickness = 4): string => {
     const segmentId = uuidv4();
-    console.log('🔗 Creating segment:', { segmentId, startNodeId, endNodeId, thickness });
     const newSegment: WallSegment = {
       id: segmentId,
       startNodeId,
@@ -64,7 +62,6 @@ export const useWallSystem = () => {
 
   // Update node position
   const updateNodePosition = useCallback((nodeId: string, x: number, y: number) => {
-    console.log('📍 Updating node position:', { nodeId, x, y });
     setWallSystem(prev => ({
       ...prev,
       nodes: prev.nodes.map(node =>

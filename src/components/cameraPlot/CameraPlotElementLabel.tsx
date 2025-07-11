@@ -109,14 +109,6 @@ const CameraPlotElementLabel = ({ element, isSelected, onUpdate, onMouseDown }: 
   // Show line if distance exceeds threshold
   const threshold = getLineThreshold();
   const showLine = distance > threshold;
-  
-  // Debug logging to see if threshold system is working
-  console.log(`📏 Label distance check for ${element.type} (${element.id.slice(0, 4)}):`, {
-    distance: Math.round(distance),
-    threshold,
-    showLine,
-    labelText: labelText.slice(0, 10) + '...'
-  });
 
   // Calculate line start and end points with increased padding for more negative space
   let lineStartX = elementCenterX;

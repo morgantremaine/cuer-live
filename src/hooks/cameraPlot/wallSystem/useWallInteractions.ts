@@ -28,7 +28,6 @@ export const useWallInteractions = ({
 
   // Handle mouse down on canvas for wall drawing
   const handleCanvasMouseDown = useCallback((x: number, y: number) => {
-    console.log('🖱️ Wall tool canvas click:', { selectedTool, x, y });
     if (selectedTool !== 'wall') return false;
 
     const snapped = snapToGrid(x, y);
@@ -147,12 +146,6 @@ export const useWallInteractions = ({
     const canvasX = (screenX - pan.x) / zoom;
     const canvasY = (screenY - pan.y) / zoom;
     
-    console.log('🖱️ Dragging node:', {
-      screenX, screenY,
-      canvasX, canvasY,
-      zoom, pan,
-      nodeId: interactionState.selectedNodeId
-    });
     
     // Use direct positioning without grid snapping for smooth dragging
     wallDrawing.updateNodePosition(interactionState.selectedNodeId, canvasX, canvasY);

@@ -46,11 +46,10 @@ export const useCameraPlotAutoSave = (
           isSavingRef.current = true;
           
           try {
-            console.log('📷 Auto-saving camera plots only:', plots.length);
             // Use partial save to only update camera plots
             await saveCameraPlotsOnly(plots);
           } catch (error) {
-            console.error('📷 Error auto-saving camera plots:', error);
+            // Silent error handling to avoid noise
           } finally {
             isSavingRef.current = false;
           }

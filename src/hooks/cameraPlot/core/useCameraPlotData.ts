@@ -60,7 +60,6 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
             setPlots([]);
           }
         } catch (error) {
-          console.error('Error loading camera plots:', error);
           setPlots([]);
         } finally {
           setIsInitialized(true);
@@ -78,7 +77,7 @@ export const useCameraPlotData = (rundownId: string, rundownTitle: string, readO
         setPlots(blueprintData.camera_plots);
       }
     } catch (error) {
-      console.error('Error reloading camera plots:', error);
+      // Silent error handling
     }
   };
 

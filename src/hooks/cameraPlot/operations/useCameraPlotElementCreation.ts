@@ -10,10 +10,7 @@ export const useCameraPlotElementCreation = (
   setSelectedTool: (tool: string) => void
 ) => {
   const addElement = useCallback((type: string, x: number, y: number) => {
-    console.log('useCameraPlotElementCreation - addElement called:', { type, x, y, activeSceneId: activeScene?.id });
-    
     if (!activeScene) {
-      console.log('No active scene available for element creation');
       return;
     }
 

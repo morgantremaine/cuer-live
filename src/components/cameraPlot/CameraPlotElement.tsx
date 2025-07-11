@@ -57,11 +57,7 @@ const CameraPlotElement = ({
     snapToGrid
   });
 
-  console.log(`🔍 Element ${element.id} render:`, { 
-    isSelected, 
-    selectedElementsLength: selectedElements.length,
-    selectedElementIds: selectedElements.map(el => el.id)
-  });
+  // Element interactions
   const handleElementMouseDown = (e: React.MouseEvent) => {
     const result = handleMouseDown(e);
     if (result?.isDoubleClick) {
@@ -89,11 +85,8 @@ const CameraPlotElement = ({
   };
 
   const handleDuplicateElement = (elementId: string) => {
-    console.log('CameraPlotElement - handleDuplicateElement called with elementId:', elementId);
     if (onDuplicate) {
       onDuplicate(elementId);
-    } else {
-      console.error('onDuplicate prop not provided to CameraPlotElement');
     }
   };
 

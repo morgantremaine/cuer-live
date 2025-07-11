@@ -31,8 +31,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
     stopDrawingWalls
   } = useCameraPlotState(rundownId);
 
-  // Remove the noisy log that was running constantly
-  // console.log('useCameraPlotEditor - activeScene:', activeScene?.id, 'scenes:', scenes.length);
+  // Removed noisy logging that was running constantly
 
   // Element interactions - only initialize if we have an active scene
   const {

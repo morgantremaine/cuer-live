@@ -301,15 +301,12 @@ export const useBlueprintPersistence = (
       }
       if (partialUpdate.crewData !== undefined) {
         updateData.crew_data = partialUpdate.crewData;
-        console.log('📋 PARTIAL SAVE - Updating crew_data:', partialUpdate.crewData.length);
       }
       if (partialUpdate.cameraPlots !== undefined) {
         updateData.camera_plots = partialUpdate.cameraPlots;
-        console.log('📋 PARTIAL SAVE - Updating camera_plots:', partialUpdate.cameraPlots.length);
       }
       if (partialUpdate.componentOrder !== undefined) {
         updateData.component_order = partialUpdate.componentOrder;
-        console.log('📋 PARTIAL SAVE - Updating component_order:', partialUpdate.componentOrder);
       }
 
       let data, error;

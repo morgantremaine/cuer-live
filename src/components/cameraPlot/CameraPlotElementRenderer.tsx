@@ -43,10 +43,6 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
         yellow: "/lovable-uploads/dc66e775-442f-4da6-b615-e79e7ad9ef2f.png"
       };
       
-      console.log('🎨 Rendering person with color:', personColor);
-      console.log('🎨 Using image path:', personImages[personColor]);
-      console.log('🎨 Element data:', element);
-      
       return (
         <div 
           className="relative"
@@ -56,8 +52,6 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
             src={personImages[personColor]} 
             alt={`Person (${personColor})`}
             className="w-12 h-12 object-contain"
-            onLoad={() => console.log('✅ Image loaded successfully:', personImages[personColor])}
-            onError={(e) => console.error('❌ Image failed to load:', personImages[personColor], e)}
           />
         </div>
       );

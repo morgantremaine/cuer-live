@@ -26,12 +26,6 @@ const WallSystemRenderer: React.FC<WallSystemRendererProps> = ({
   onSegmentContextMenu,
   scale = 1
 }) => {
-  console.log('🎨 WallSystemRenderer render:', {
-    nodeCount: wallSystem.nodes.length,
-    segmentCount: wallSystem.segments.length,
-    nodes: wallSystem.nodes,
-    segments: wallSystem.segments
-  });
   // Helper function to get node by ID
   const getNode = (nodeId: string): WallNode | undefined => {
     return wallSystem.nodes.find(n => n.id === nodeId);

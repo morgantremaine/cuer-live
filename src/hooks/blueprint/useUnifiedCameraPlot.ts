@@ -10,7 +10,6 @@ export const useUnifiedCameraPlot = () => {
   const reloadPlots = async () => {
     // The plots are automatically synced through the context
     // This function exists for compatibility but doesn't need to do anything
-    console.log('📷 Camera plots are automatically synced');
   };
 
   return {

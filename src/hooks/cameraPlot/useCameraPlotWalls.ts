@@ -7,7 +7,6 @@ export const useCameraPlotWalls = () => {
 
   const startWallDrawing = (x: number, y: number) => {
     const point = { x, y };
-    console.log('Starting wall drawing at:', point);
     setIsDrawingWall(true);
     setWallStart(point);
     setWallPreview(null);
@@ -20,8 +19,6 @@ export const useCameraPlotWalls = () => {
   };
 
   const completeWall = () => {
-    console.log('Completing wall drawing');
-    
     // Reset state but keep drawing mode active for continuous wall drawing
     setIsDrawingWall(false);
     setWallStart(null);
@@ -29,7 +26,6 @@ export const useCameraPlotWalls = () => {
   };
 
   const stopDrawingWalls = () => {
-    console.log('Stopping wall drawing');
     setIsDrawingWall(false);
     setWallStart(null);
     setWallPreview(null);

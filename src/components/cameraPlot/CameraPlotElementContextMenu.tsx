@@ -34,12 +34,8 @@ const CameraPlotElementContextMenu = ({
   if (!isVisible) return null;
 
   const handleDuplicate = () => {
-    console.log('Duplicate button clicked for element:', element.id);
-    
     if (onDuplicate) {
       onDuplicate(element.id);
-    } else {
-      console.error('onDuplicate callback not provided');
     }
     onClose();
   };
@@ -58,10 +54,7 @@ const CameraPlotElementContextMenu = ({
   const isPerson = element.type === 'person';
 
   const handlePersonColorChange = (color: 'blue' | 'green' | 'red' | 'yellow') => {
-    console.log('🎨 Changing person color to:', color);
-    console.log('🎨 Element before update:', element);
     onUpdate(element.id, { personColor: color });
-    console.log('🎨 Called onUpdate with personColor:', color);
     onClose();
   };
 
