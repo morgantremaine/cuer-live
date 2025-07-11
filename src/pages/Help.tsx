@@ -266,10 +266,13 @@ const Help = () => {
                   <p className="text-sm">Auto-generate checklists from rundown columns with real-time updates and progress tracking.</p>
                 </div>
 
+                {/* Camera Plot Editor temporarily disabled */}
+                {/*
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Camera Plot Editor</h3>
                   <p className="text-sm">Visual set design with drag-and-drop elements, camera positioning, and scene management.</p>
                 </div>
+                */}
 
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Collaboration Tools</h3>

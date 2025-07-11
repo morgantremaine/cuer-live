@@ -385,7 +385,8 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Camera Plot Editor */}
+        {/* Camera Plot Editor - Temporarily Disabled */}
+        {/* 
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="group fade-up">
             <img 
@@ -411,6 +412,7 @@ const LandingPage = () => {
             </div>
           </div>
         </div>
+        */}
         
         {/* Rich Notes & Documentation */}
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">

@@ -162,8 +162,8 @@ const BlueprintContent = () => {
       return;
     }
 
-    // Handle special components reordering (removed crew-list references)
-    if (draggedId === 'camera-plot' || draggedId === 'scratchpad') {
+    // Handle special components reordering (camera plot temporarily disabled)
+    if (draggedId === 'scratchpad') {
       const currentComponentOrder = [...state.componentOrder];
       const draggedIndex = currentComponentOrder.indexOf(draggedId);
       
@@ -266,29 +266,30 @@ const BlueprintContent = () => {
 
   // Create component mapping for rendering in the correct order (removed crew-list)
   const componentMap = {
-    'camera-plot': (
-      <div 
-        key="camera-plot"
-        className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
-        draggable
-        onDragStart={(e) => handleDragStart(e, 'camera-plot')}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          const componentIndex = state.lists.length + state.componentOrder.indexOf('camera-plot');
-          handleDragEnterContainer(e, componentIndex);
-        }}
-        onDragEnd={handleDragEnd}
-      >
-        <CameraPlot
-          rundownId={id || ''}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-          isDragging={draggedListId === 'camera-plot'}
-          onDragStart={handleDragStart}
-          onDragEnterContainer={handleDragEnterContainer}
-          onDragEnd={handleDragEnd}
-        />
-      </div>
-    ),
+    // Temporarily disabled camera plot
+    // 'camera-plot': (
+    //   <div 
+    //     key="camera-plot"
+    //     className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
+    //     draggable
+    //     onDragStart={(e) => handleDragStart(e, 'camera-plot')}
+    //     onDragEnter={(e) => {
+    //       e.preventDefault();
+    //       const componentIndex = state.lists.length + state.componentOrder.indexOf('camera-plot');
+    //       handleDragEnterContainer(e, componentIndex);
+    //     }}
+    //     onDragEnd={handleDragEnd}
+    //   >
+    //     <CameraPlot
+    //       rundownId={id || ''}
+    //       rundownTitle={rundown?.title || 'Unknown Rundown'}
+    //       isDragging={draggedListId === 'camera-plot'}
+    //       onDragStart={handleDragStart}
+    //       onDragEnterContainer={handleDragEnterContainer}
+    //       onDragEnd={handleDragEnd}
+    //     />
+    //   </div>
+    // ),
     'scratchpad': (
       <div 
         key="scratchpad"
