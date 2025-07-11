@@ -1,10 +1,11 @@
 
-import { useCameraPlotStateUnified } from './cameraPlot/core/useCameraPlotStateUnified';
-import { useCameraPlotElements } from './cameraPlot/useCameraPlotElements';
-import { snapToGrid } from './cameraPlot/utils/gridUtils';
+import { useCameraPlotState } from './cameraPlot/core/useCameraPlotState';
+import { useCameraPlotInteractions } from './cameraPlot/interactions/useCameraPlotInteractions';
+import { useCameraPlotEnhancedOperations } from './cameraPlot/operations/useCameraPlotEnhancedOperations';
+import { useCameraPlotStateCoordination } from './cameraPlot/coordination/useCameraPlotStateCoordination';
 
 export const useCameraPlotEditor = (rundownId: string) => {
-  // Unified state management - eliminates conflicts
+  // Core state management
   const {
     scenes,
     activeScene,
@@ -28,15 +29,43 @@ export const useCameraPlotEditor = (rundownId: string) => {
     updateWallPreview,
     completeWall,
     stopDrawingWalls
-  } = useCameraPlotStateUnified(rundownId);
+  } = useCameraPlotState(rundownId);
 
-  // Element operations - simplified and direct
+  // Removed noisy logging that was running constantly
+
+  // Element interactions - only initialize if we have an active scene
   const {
-    addElement: baseAddElement,
+    snapToGrid,
+    baseAddElement,
     updateElement,
     deleteElement,
     duplicateElement
-  } = useCameraPlotElements(activeScene, updatePlot, setSelectedTool);
+  } = useCameraPlotInteractions(activeScene, scenes, updateSceneName, updatePlot, setSelectedTool);
+
+  // Enhanced operations with setSelectedTool integration - only if active scene exists
+  const { addElement } = useCameraPlotEnhancedOperations({
+    selectedTool,
+    isDrawingWall,
+    wallStart,
+    baseAddElement,
+    startWallDrawing,
+    completeWall,
+    snapToGrid,
+    activeScene,
+    updatePlot,
+    setSelectedTool
+  });
+
+  // State coordination
+  const {
+    handleSetActiveScene,
+    handleSetSelectedTool
+  } = useCameraPlotStateCoordination({
+    setActiveScene,
+    setSelectedTool,
+    resetSelection,
+    stopDrawingWalls
+  });
 
   // Safe wrapper for addElement that checks for active scene
   const safeAddElement = (type: string, x: number, y: number) => {
@@ -44,22 +73,7 @@ export const useCameraPlotEditor = (rundownId: string) => {
       console.log('No active scene available for element creation');
       return;
     }
-    baseAddElement(type, x, y);
-  };
-
-  // Safe scene switching with cleanup
-  const handleSetActiveScene = (sceneId: string) => {
-    stopDrawingWalls(); // Clean wall state
-    resetSelection(); // Clear selections
-    setActiveScene(sceneId);
-  };
-
-  // Safe tool switching with cleanup
-  const handleSetSelectedTool = (tool: string) => {
-    if (tool !== 'wall') {
-      stopDrawingWalls(); // Clean wall state when switching away
-    }
-    setSelectedTool(tool);
+    addElement(type, x, y);
   };
 
   return {
@@ -83,12 +97,9 @@ export const useCameraPlotEditor = (rundownId: string) => {
     setActiveScene: handleSetActiveScene,
     updateSceneName,
     updatePlot,
-    toggleGrid,
-    snapToGrid,
-    // Wall drawing functions
-    startWallDrawing,
     updateWallPreview,
-    completeWall,
-    stopDrawingWalls
+    stopDrawingWalls,
+    toggleGrid,
+    snapToGrid
   };
 };
