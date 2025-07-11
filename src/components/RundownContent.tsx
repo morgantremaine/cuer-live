@@ -129,11 +129,20 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   // Enhanced drag over handler that includes auto-scroll
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
-    // Handle auto-scroll first
-    handleDragAutoScroll(e);
+    // Only handle auto-scroll for row dragging, not column dragging
+    // Check if this is a column drag by looking for @dnd-kit data attributes
+    const target = e.target as HTMLElement;
+    const isColumnDrag = target.closest('[data-sortable-item]') || 
+                        target.closest('.dnd-context') ||
+                        e.dataTransfer?.types.includes('application/x-dnd-kit-sortable');
+    
+    if (!isColumnDrag && isDragging) {
+      handleDragAutoScroll(e);
+    }
+    
     // Then handle regular drag over logic
     onDragOver(e, index);
-  }, [handleDragAutoScroll, onDragOver]);
+  }, [handleDragAutoScroll, onDragOver, isDragging]);
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
