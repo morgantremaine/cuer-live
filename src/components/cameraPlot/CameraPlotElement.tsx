@@ -58,8 +58,7 @@ const CameraPlotElement: React.FC<CameraPlotElementProps> = ({
   }, [handleLabelSave, element.label]);
 
   // Special rendering for wall elements
-  if (element.type === 'wall' && (element as any).endX !== undefined && (element as any).endY !== undefined) {
-    const wallElement = element as any;
+  if (element.type === 'wall' && element.endX !== undefined && element.endY !== undefined) {
     return (
       <svg
         className="absolute pointer-events-none"
@@ -72,10 +71,10 @@ const CameraPlotElement: React.FC<CameraPlotElementProps> = ({
         }}
       >
         <line
-          x1={element.x}
-          y1={element.y}
-          x2={wallElement.endX}
-          y2={wallElement.endY}
+          x1={element.startX || element.x}
+          y1={element.startY || element.y}
+          x2={element.endX}
+          y2={element.endY}
           stroke={isSelected ? "#3b82f6" : "#000000"}
           strokeWidth={isSelected ? 6 : 4}
           strokeLinecap="round"
@@ -87,15 +86,15 @@ const CameraPlotElement: React.FC<CameraPlotElementProps> = ({
         {isSelected && (
           <>
             <circle
-              cx={element.x}
-              cy={element.y}
+              cx={element.startX || element.x}
+              cy={element.startY || element.y}
               r="4"
               fill="#3b82f6"
               className="pointer-events-auto cursor-pointer"
             />
             <circle
-              cx={wallElement.endX}
-              cy={wallElement.endY}
+              cx={element.endX}
+              cy={element.endY}
               r="4"
               fill="#3b82f6"
               className="pointer-events-auto cursor-pointer"
@@ -106,8 +105,8 @@ const CameraPlotElement: React.FC<CameraPlotElementProps> = ({
         {/* Label for wall */}
         {element.label && (
           <text
-            x={(element.x + wallElement.endX) / 2}
-            y={(element.y + wallElement.endY) / 2 - 10}
+            x={(element.startX || element.x + element.endX) / 2}
+            y={(element.startY || element.y + element.endY) / 2 - 10}
             textAnchor="middle"
             className="text-xs fill-gray-700 pointer-events-none"
           >
@@ -167,6 +166,14 @@ const CameraPlotElement: React.FC<CameraPlotElementProps> = ({
             isSelected ? 'bg-purple-500 border-purple-400' : 'bg-purple-600 border-purple-500'
           }`}>
             📦
+          </div>
+        );
+      case 'furniture':
+        return (
+          <div className={`w-full h-full rounded flex items-center justify-center text-white text-xs font-bold border-2 ${
+            isSelected ? 'bg-brown-500 border-brown-400' : 'bg-brown-600 border-brown-500'
+          }`}>
+            🪑
           </div>
         );
       default:

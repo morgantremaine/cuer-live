@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CameraElement {
   id: string;
-  type: 'camera' | 'person' | 'wall' | 'furniture';
+  type: "camera" | "person" | "wall" | "furniture" | "light" | "prop";
   x: number;
   y: number;
   width: number;
@@ -11,82 +12,91 @@ export interface CameraElement {
   rotation: number;
   scale: number;
   label: string;
-  labelOffsetX?: number;
-  labelOffsetY?: number;
-  labelHidden?: boolean;
-  cameraNumber?: number;
-  color?: string;
-  personColor?: 'blue' | 'green' | 'red' | 'yellow';
+  // Additional properties for wall elements
+  startX?: number;
+  startY?: number;
+  endX?: number;
+  endY?: number;
 }
 
 export interface CameraPlotScene {
   id: string;
   name: string;
   elements: CameraElement[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CameraPlotData {
-  id: string;
   scenes: CameraPlotScene[];
-  activeSceneId: string;
+  activeSceneId: string | null;
 }
 
-export const useCameraPlotData = (rundownId: string, rundownTitle: string, readOnly = false) => {
-  const [plots, setPlots] = useState<CameraPlotScene[]>([]);
+export const useCameraPlotData = (rundownId: string, rundownTitle: string, readOnly: boolean = false) => {
+  const [plots, setPlots] = useState<CameraPlotData>({ scenes: [], activeSceneId: null });
   const [isInitialized, setIsInitialized] = useState(false);
-  const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
-  const initializationRef = useRef(false);
 
-  // Get blueprint persistence functions - this now handles team vs user blueprints automatically
-  const { loadBlueprint, saveBlueprint } = useBlueprintPersistence(
-    rundownId,
-    rundownTitle,
-    '', // showDate not needed for camera plots
-    savedBlueprint,
-    setSavedBlueprint
-  );
-
-  // Load saved plot data when blueprint is loaded
-  useEffect(() => {
-    if (!initializationRef.current && rundownId && rundownTitle) {
-      initializationRef.current = true;
-      
-      const initializePlots = async () => {
-        try {
-          const blueprintData = await loadBlueprint();
-          if (blueprintData?.camera_plots && Array.isArray(blueprintData.camera_plots)) {
-            setPlots(blueprintData.camera_plots);
-          } else {
-            setPlots([]);
-          }
-        } catch (error) {
-          setPlots([]);
-        } finally {
-          setIsInitialized(true);
-        }
-      };
-      
-      initializePlots();
-    }
-  }, [rundownId, rundownTitle, loadBlueprint]);
-
-  const reloadPlots = async () => {
+  const loadPlots = async () => {
     try {
-      const blueprintData = await loadBlueprint();
-      if (blueprintData?.camera_plots && Array.isArray(blueprintData.camera_plots)) {
-        setPlots(blueprintData.camera_plots);
+      const { data, error } = await supabase
+        .from('blueprints')
+        .select('camera_plots')
+        .eq('rundown_id', rundownId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading camera plots:', error);
+        return;
+      }
+
+      if (data?.camera_plots) {
+        const parsedPlots = data.camera_plots as CameraPlotData;
+        setPlots(parsedPlots);
+        
+        // Set first scene as active if none is set
+        if (!parsedPlots.activeSceneId && parsedPlots.scenes.length > 0) {
+          setPlots(prev => ({
+            ...prev,
+            activeSceneId: parsedPlots.scenes[0].id
+          }));
+        }
+      } else {
+        // Initialize with default scene
+        const defaultScene: CameraPlotScene = {
+          id: `scene-${Date.now()}`,
+          name: 'Scene 1',
+          elements: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        const initialPlots: CameraPlotData = {
+          scenes: [defaultScene],
+          activeSceneId: defaultScene.id
+        };
+        
+        setPlots(initialPlots);
       }
     } catch (error) {
-      // Silent error handling
+      console.error('Error in loadPlots:', error);
+    } finally {
+      setIsInitialized(true);
     }
   };
+
+  const reloadPlots = () => {
+    setIsInitialized(false);
+    loadPlots();
+  };
+
+  useEffect(() => {
+    loadPlots();
+  }, [rundownId]);
 
   return {
     plots,
     setPlots,
     isInitialized,
-    reloadPlots,
-    savedBlueprint,
-    saveBlueprint
+    reloadPlots
   };
 };
