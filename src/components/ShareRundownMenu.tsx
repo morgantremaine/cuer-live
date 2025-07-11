@@ -262,32 +262,47 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           }
         }
         
-        // For header rows, extract duration from next to the header name (not duration column)
+        // For header rows, extract duration from appropriate source
         if (dataType === 'header') {
           // Check if this is a duration column
           const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
           if (headerText.includes('duration') || headerText.includes('dur')) {
-            // For headers, the duration is displayed next to the header name in the FIRST column
-            // The duration column is intentionally empty for headers
-            const headerRow = cellElement.closest('tr');
-            const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
+            // First try to get duration from the current duration column (which has print-only span)
+            let foundContent = false;
             
-            if (firstCell) {
-              const firstCellText = firstCell.textContent || '';
-              console.log('Header first cell text:', firstCellText);
+            // Look for print-only content in the current duration cell
+            const printOnlySpan = cellElement.querySelector('.print\\:inline-block, [class*="print:inline-block"]');
+            if (printOnlySpan && printOnlySpan.textContent) {
+              const spanText = printOnlySpan.textContent.trim();
+              if (spanText && spanText.match(/\d{2}:\d{2}:\d{2}/)) {
+                content = spanText;
+                foundContent = true;
+                console.log('Found header duration in duration column:', spanText);
+              }
+            }
+            
+            // Fallback: extract duration from header name in first column
+            if (!foundContent) {
+              const headerRow = cellElement.closest('tr');
+              const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
               
-              // Look for duration pattern like "(01:23:45)" in the header name cell
-              const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
-              if (durationMatch) {
-                console.log('Found header duration:', durationMatch[1]);
-                content = durationMatch[1];
+              if (firstCell) {
+                const firstCellText = firstCell.textContent || '';
+                console.log('Header first cell text:', firstCellText);
+                
+                // Look for duration pattern like "(01:23:45)" in the header name cell
+                const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
+                if (durationMatch) {
+                  console.log('Found header duration in first cell:', durationMatch[1]);
+                  content = durationMatch[1];
+                } else {
+                  console.log('No duration found in header text, defaulting to 00:00:00');
+                  content = '00:00:00';
+                }
               } else {
-                console.log('No duration found in header text, defaulting to 00:00:00');
+                console.log('Could not find first cell for header duration');
                 content = '00:00:00';
               }
-            } else {
-              console.log('Could not find first cell for header duration');
-              content = '00:00:00';
             }
           }
         }
