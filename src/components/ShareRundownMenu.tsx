@@ -15,6 +15,7 @@ import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
+import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface ShareRundownMenuProps {
@@ -96,50 +97,47 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     printContent.id = 'print-only-content';
     printContent.style.display = 'none';
     
-    // Calculate total runtime by extracting actual durations from the table
+    // Calculate total runtime from DOM
     function calculateTotalRuntime() {
-      if (!rundownData?.items) return '00:00:00';
-      
-      const totalSeconds = rundownData.items.reduce((total, item) => {
-        if (item.duration) {
-          const timeMatch = item.duration.match(/(\d+):(\d+):(\d+)/);
-          if (timeMatch) {
-            return total + parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
+      // Look for the runtime text in the header
+      const runtimeTexts = document.querySelectorAll('*');
+      for (const element of runtimeTexts) {
+        const text = element.textContent?.trim();
+        if (text && text.includes('Runtime:') && text.includes(':')) {
+          const match = text.match(/Runtime:\s*(\d{2}:\d{2}:\d{2})/);
+          if (match) {
+            return match[1];
           }
         }
-        return total;
-      }, 0);
+      }
       
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      // Fallback: calculate from actual duration inputs in the table
+      if (rundownData?.items) {
+        const totalSeconds = rundownData.items.reduce((total, item) => {
+          if (item.duration) {
+            return total + timeToSeconds(item.duration);
+          }
+          return total;
+        }, 0);
+        
+        return secondsToTime(totalSeconds);
+      }
+      
+      return '00:00:00';
     }
 
     // Extract actual table structure and start time
     const headerRow = existingTable.querySelector('thead tr');
     const bodyRows = existingTable.querySelectorAll('tbody tr');
     
-    // Get start time from the actual rundown header input
+    // Get start time from the actual rundown header
     function getStartTime() {
-      // Look for the actual start time input in the rundown header
-      const startTimeInputs = document.querySelectorAll('input[type="time"]');
+      // Look for the start time input in the rundown header (placeholder = HH:MM:SS)
+      const startTimeInputs = document.querySelectorAll('input[type="text"]');
       for (const input of startTimeInputs) {
         const htmlInput = input as HTMLInputElement;
-        if (htmlInput.value && htmlInput.value !== '00:00') {
-          // Convert HH:MM to HH:MM:SS format
-          return htmlInput.value.includes(':') && htmlInput.value.split(':').length === 2 
-            ? htmlInput.value + ':00' 
-            : htmlInput.value;
-        }
-      }
-      
-      // Also check for any element that might contain start time
-      const timeElements = document.querySelectorAll('[class*="time"], [class*="start"]');
-      for (const element of timeElements) {
-        const text = element.textContent?.trim();
-        if (text && /^\d{2}:\d{2}(:\d{2})?$/.test(text)) {
-          return text.includes(':') && text.split(':').length === 2 ? text + ':00' : text;
+        if (htmlInput.placeholder === 'HH:MM:SS' && htmlInput.value) {
+          return htmlInput.value;
         }
       }
       
