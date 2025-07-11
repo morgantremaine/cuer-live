@@ -32,7 +32,14 @@ const CameraPlotEditor = () => {
     updateSceneName,
     updatePlot,
     toggleGrid,
-    snapToGrid
+    snapToGrid,
+    // Wall drawing state
+    isDrawingWall,
+    wallStart,
+    wallPreview,
+    startWallDrawing,
+    updateWallPreview,
+    completeWall
   } = useCameraPlotEditor(id || '');
 
   const {
@@ -234,6 +241,12 @@ const CameraPlotEditor = () => {
             snapToGrid={snapToGrid}
             updatePlot={updatePlot}
             setSelectedTool={setSelectedTool}
+            isDrawingWall={isDrawingWall}
+            wallStart={wallStart}
+            wallPreview={wallPreview}
+            startWallDrawing={startWallDrawing}
+            updateWallPreview={updateWallPreview}
+            completeWall={completeWall}
           />
         </div>
           </div>
