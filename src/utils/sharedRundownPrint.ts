@@ -113,20 +113,18 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return;
   }
 
-  // Build the print HTML using actual table structure
-  let printHTML = `
-    <div class="print-container">
-      <div class="print-header">
-        <h1>${rundownTitle}</h1>
-        <div class="print-info">
-          <span>Start Time: ${getStartTime()}</span>
-          <span>Total Runtime: ${calculateTotalRuntime()}</span>
-        </div>
-      </div>
-      <table class="print-table">
-        <thead>
-          <tr>
-  `;
+  // Build the print HTML using actual table structure - keep it minimal
+  let printHTML = `<div class="print-container">
+<div class="print-header">
+<h1>${rundownTitle}</h1>
+<div class="print-info">
+<span>Start Time: ${getStartTime()}</span>
+<span>Total Runtime: ${calculateTotalRuntime()}</span>
+</div>
+</div>
+<table class="print-table">
+<thead>
+<tr>`;
 
   // Copy header structure with proper column sizing
   const headerCells = headerRow.querySelectorAll('th');
@@ -171,11 +169,9 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     printHTML += `<th style="${columnStyle}">${content || ''}</th>`;
   });
 
-  printHTML += `
-          </tr>
-        </thead>
-        <tbody>
-  `;
+  printHTML += `</tr>
+</thead>
+<tbody>`;
 
   // Copy body structure with proper styling
   bodyRows.forEach(row => {
@@ -298,7 +294,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     </div>
   `;
 
-  printContent.innerHTML = printHTML;
+  printContent.innerHTML = printHTML.trim();
   document.body.appendChild(printContent);
 
   // Add print styles
@@ -468,8 +464,10 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
   document.head.appendChild(printStyles);
 
-  // Trigger print
-  window.print();
+  // Trigger print immediately
+  setTimeout(() => {
+    window.print();
+  }, 50);
 
   // Clean up after print
   setTimeout(() => {
@@ -477,5 +475,5 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     const content = document.getElementById('shared-print-only-content');
     if (styles) styles.remove();
     if (content) content.remove();
-  }, 1000);
+  }, 2000);
 };
