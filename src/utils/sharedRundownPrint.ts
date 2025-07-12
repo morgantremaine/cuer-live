@@ -364,7 +364,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         background: white !important;
         table-layout: auto !important;
         page-break-before: avoid !important;
-        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
       }
 
       .print-table th {
@@ -433,6 +433,16 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
       .regular-row td {
         background: white !important;
+      }
+      
+      /* Prevent extra pages */
+      .print-container::after {
+        content: '' !important;
+        display: block !important;
+        page-break-after: avoid !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
     }
   `;
