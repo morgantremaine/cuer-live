@@ -338,12 +338,6 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         width: 100% !important;
         background: white !important;
         color: black !important;
-        page-break-inside: avoid !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        height: auto !important;
-        min-height: auto !important;
-        max-height: none !important;
       }
 
       .print-header {
