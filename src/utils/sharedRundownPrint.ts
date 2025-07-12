@@ -12,8 +12,8 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     existingPrintStyles.remove();
   }
 
-  // Find the actual rundown table to extract its structure
-  const existingTable = document.querySelector('.print-table, table');
+  // Find the actual rundown table to extract its structure (use same selectors as main rundown)
+  const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table, table');
   if (!existingTable) {
     console.error('Could not find rundown table to print');
     return;
@@ -45,8 +45,21 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate total runtime from items
+  // Calculate total runtime (use same logic as main rundown)
   const calculateTotalRuntime = () => {
+    // Look for the runtime text in the header first
+    const runtimeTexts = document.querySelectorAll('*');
+    for (const element of runtimeTexts) {
+      const text = element.textContent?.trim();
+      if (text && text.includes('Runtime:') && text.includes(':')) {
+        const match = text.match(/Runtime:\s*(\d{2}:\d{2}:\d{2})/);
+        if (match) {
+          return match[1];
+        }
+      }
+    }
+    
+    // Fallback: calculate from items if provided
     if (items?.length) {
       const totalSeconds = items.reduce((total, item) => {
         // Skip floated items - they don't count towards runtime
@@ -65,9 +78,18 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return '00:00:00';
   };
 
-  // Get start time from the rundown header or default
+  // Get start time from the rundown header (use same logic as main rundown)
   const getStartTime = () => {
-    // Try to find start time from the visible header
+    // Look for the start time input in the rundown header
+    const startTimeInputs = document.querySelectorAll('input[type="text"]');
+    for (const input of startTimeInputs) {
+      const htmlInput = input as HTMLInputElement;
+      if (htmlInput.placeholder === 'HH:MM:SS' && htmlInput.value) {
+        return htmlInput.value;
+      }
+    }
+    
+    // Try to find start time from the visible header text
     const startTimeElements = document.querySelectorAll('*');
     for (const element of startTimeElements) {
       const text = element.textContent?.trim();
@@ -273,98 +295,86 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        background: white !important;
+        display: block !important;
       }
 
       .print-container {
         width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
         background: white !important;
+        color: black !important;
       }
 
       .print-header {
         margin-bottom: 20px !important;
-        border-bottom: 2px solid #333 !important;
         padding-bottom: 10px !important;
+        border-bottom: 2px solid #333 !important;
       }
 
       .print-header h1 {
         font-size: 24px !important;
         font-weight: bold !important;
         margin: 0 0 10px 0 !important;
-        color: #000 !important;
+        color: black !important;
       }
 
       .print-info {
+        font-size: 12px !important;
+        color: #333 !important;
         display: flex !important;
-        justify-content: space-between !important;
-        font-size: 14px !important;
-        color: #000 !important;
+        gap: 30px !important;
       }
 
       .print-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        font-size: 11px !important;
-        color: #000 !important;
+        font-size: 10px !important;
         background: white !important;
-      }
-
-      .print-table th,
-      .print-table td {
-        border: 1px solid #333 !important;
-        padding: 6px 4px !important;
-        text-align: left !important;
-        vertical-align: top !important;
-        word-wrap: break-word !important;
-        background: inherit !important;
-        color: #000 !important;
+        table-layout: auto !important;
       }
 
       .print-table th {
-        background: #e8e8e8 !important;
+        background: #f5f5f5 !important;
+        border: 1px solid #333 !important;
+        padding: 6px 4px !important;
         font-weight: bold !important;
-        text-align: center !important;
+        font-size: 9px !important;
+        text-align: left !important;
+        color: black !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
-      .header-row {
-        background: #e8e8e8 !important;
+      .print-table td {
+        border: 1px solid #666 !important;
+        padding: 4px !important;
+        vertical-align: top !important;
+        word-wrap: break-word !important;
+        color: black !important;
+        font-size: 9px !important;
+        line-height: 1.3 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
       .header-row td {
         font-weight: bold !important;
-        background: #e8e8e8 !important;
-        color: #000 !important;
+        font-size: 11px !important;
+        padding: 8px 4px !important;
       }
 
-      .colored-row {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-
-      .floated-row {
-        background: #fff8dc !important;
+      /* Preserve custom colors */
+      .colored-row td {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
       .floated-row td {
-        background: #fff8dc !important;
-        color: #000 !important;
-      }
-
-      .regular-row {
-        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
       .regular-row td {
         background: white !important;
-        color: #000 !important;
       }
     }
   `;
@@ -372,15 +382,13 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
   document.head.appendChild(printStyles);
 
   // Trigger print
+  window.print();
+
+  // Clean up after print
   setTimeout(() => {
-    window.print();
-    
-    // Clean up after print
-    setTimeout(() => {
-      const content = document.getElementById('shared-print-only-content');
-      const styles = document.getElementById('shared-rundown-print-styles');
-      if (content) content.remove();
-      if (styles) styles.remove();
-    }, 100);
-  }, 100);
+    const styles = document.getElementById('shared-rundown-print-styles');
+    const content = document.getElementById('shared-print-only-content');
+    if (styles) styles.remove();
+    if (content) content.remove();
+  }, 1000);
 };
