@@ -128,9 +128,9 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
           <tr>
   `;
 
-  // Copy header structure
+  // Copy header structure with proper column sizing
   const headerCells = headerRow.querySelectorAll('th');
-  headerCells.forEach(th => {
+  headerCells.forEach((th, index) => {
     const thElement = th as HTMLElement;
     // Get clean header text
     let content = '';
@@ -156,7 +156,19 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       content = '#';
     }
     
-    printHTML += `<th>${content || ''}</th>`;
+    // Determine column width based on content type
+    let columnStyle = '';
+    const lowerContent = content.toLowerCase();
+    
+    if (content === '#' || index === 0) {
+      columnStyle = 'width: 30px; max-width: 30px;';
+    } else if (lowerContent.includes('duration') || lowerContent.includes('start') || lowerContent.includes('end') || lowerContent.includes('elapsed')) {
+      columnStyle = 'width: 60px; max-width: 60px;';
+    } else if (lowerContent.includes('talent') || lowerContent.includes('stage') || lowerContent.includes('source') || lowerContent.includes('gfx')) {
+      columnStyle = 'width: 80px; max-width: 80px;';
+    }
+    
+    printHTML += `<th style="${columnStyle}">${content || ''}</th>`;
   });
 
   printHTML += `
@@ -178,20 +190,26 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     if (dataType === 'header') {
       rowClass = 'header-row';
       backgroundColor = '#e8e8e8';
-    } else if (customColor) {
+    } else if (customColor || rowElement.style.backgroundColor) {
       rowClass = 'colored-row';
       // Get the actual background color from the row element
       const computedStyle = window.getComputedStyle(rowElement);
-      backgroundColor = computedStyle.backgroundColor || rowElement.style.backgroundColor || '#f0f8ff';
-      // Convert RGB to hex if needed for better print support
-      if (backgroundColor.startsWith('rgb')) {
-        const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      backgroundColor = rowElement.style.backgroundColor || computedStyle.backgroundColor;
+      
+      // Convert RGB/RGBA to hex if needed for better print support
+      if (backgroundColor && backgroundColor.startsWith('rgb')) {
+        const rgbMatch = backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
         if (rgbMatch) {
           const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
           const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
           const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
           backgroundColor = `#${r}${g}${b}`;
         }
+      }
+      
+      // If still no color found, check for any background color on the element
+      if (!backgroundColor || backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
+        backgroundColor = '#f0f8ff'; // fallback light blue
       }
     } else if (isFloated) {
       rowClass = 'floated-row';
@@ -314,13 +332,15 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         width: 100% !important;
         background: white !important;
         color: black !important;
+        page-break-inside: avoid !important;
       }
 
       .print-header {
-        margin-bottom: 20px !important;
-        padding-bottom: 10px !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 8px !important;
         border-bottom: 2px solid #333 !important;
         page-break-after: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       .print-header h1 {
