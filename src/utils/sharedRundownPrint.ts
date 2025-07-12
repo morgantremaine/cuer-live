@@ -311,6 +311,11 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         size: auto;
       }
 
+      * {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       body * {
         visibility: hidden;
       }
@@ -326,6 +331,11 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         top: 0 !important;
         width: 100% !important;
         display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
       }
 
       .print-container {
@@ -333,6 +343,11 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         background: white !important;
         color: black !important;
         page-break-inside: avoid !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
       }
 
       .print-header {
@@ -435,14 +450,18 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         background: white !important;
       }
       
-      /* Prevent extra pages */
-      .print-container::after {
-        content: '' !important;
-        display: block !important;
-        page-break-after: avoid !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+      /* Prevent extra content and pages */
+      body {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: hidden !important;
+      }
+      
+      html {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
       }
     }
   `;
