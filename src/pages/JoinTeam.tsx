@@ -32,6 +32,7 @@ const JoinTeam = () => {
   const [userExists, setUserExists] = useState(false);
   const [profileError, setProfileError] = useState(false);
   const [invitationProcessed, setInvitationProcessed] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { user, signUp, signIn } = useAuth();
   const { acceptInvitation } = useTeam();
   const { toast } = useToast();
@@ -275,10 +276,8 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Account created successfully');
-      toast({
-        title: 'Account Created',
-        description: 'Please check your email to verify your account, then return to this page to join the team.',
-      });
+      setShowEmailConfirmation(true);
+      setIsProcessing(false);
     }
   };
 
@@ -384,128 +383,147 @@ const JoinTeam = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-gray-700">
-                <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
-                  Create Account
-                </TabsTrigger>
-                <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
-                  Sign In
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="signup" className="space-y-4 mt-4">
-                <form onSubmit={handleCreateAccount} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      disabled
-                      className="bg-gray-600 border-gray-500 text-gray-400"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-300">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Create a password"
-                    />
-                  </div>
-                  <div className="flex items-start space-x-2">
-                    <input
-                      type="checkbox"
-                      id="agree-terms-join"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
-                      required
-                    />
-                    <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
-                      By creating an account, you agree to the{' '}
-                      <a 
-                        href="/terms" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline"
-                      >
-                        Terms of Service
-                      </a>
-                      {' '}and{' '}
-                      <a 
-                        href="/privacy" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline"
-                      >
-                        Privacy Policy
-                      </a>
-                      .
-                    </label>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
-                  </Button>
-                </form>
-              </TabsContent>
+            {showEmailConfirmation ? (
+              <div className="text-center space-y-4">
+                <div className="text-white text-lg font-semibold">Check Your Email</div>
+                <p className="text-gray-400">
+                  We've sent a verification link to your email address. Please check your inbox and click the link to verify your account, then return to this page to join the team.
+                </p>
+                <p className="text-sm text-gray-500">
+                  After verifying your email, simply return to this page and you'll automatically join {getInviterDisplayName()}'s team.
+                </p>
+                <Button 
+                  onClick={() => setShowEmailConfirmation(false)}
+                  variant="outline"
+                  className="text-gray-300 border-gray-600 hover:bg-gray-700"
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            ) : (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-700">
+                  <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
+                    Create Account
+                  </TabsTrigger>
+                  <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
+                    Sign In
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="signup" className="space-y-4 mt-4">
+                  <form onSubmit={handleCreateAccount} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-300">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        disabled
+                        className="bg-gray-600 border-gray-500 text-gray-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-gray-300">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Create a password"
+                      />
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id="agree-terms-join"
+                        checked={agreeToTerms}
+                        onChange={(e) => setAgreeToTerms(e.target.checked)}
+                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
+                        required
+                      />
+                      <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
+                        By creating an account, you agree to the{' '}
+                        <a 
+                          href="/terms" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 underline"
+                        >
+                          Terms of Service
+                        </a>
+                        {' '}and{' '}
+                        <a 
+                          href="/privacy" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 underline"
+                        >
+                          Privacy Policy
+                        </a>
+                        .
+                      </label>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
+                    </Button>
+                  </form>
+                </TabsContent>
 
-              <TabsContent value="signin" className="space-y-4 mt-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      value={email}
-                      disabled
-                      className="bg-gray-600 border-gray-500 text-gray-400"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                      placeholder="Enter your password"
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="signin" className="space-y-4 mt-4">
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        value={email}
+                        disabled
+                        className="bg-gray-600 border-gray-500 text-gray-400"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Enter your password"
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>
