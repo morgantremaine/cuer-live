@@ -180,7 +180,19 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       backgroundColor = '#e8e8e8';
     } else if (customColor) {
       rowClass = 'colored-row';
-      backgroundColor = rowElement.style.backgroundColor || '#f0f8ff';
+      // Get the actual background color from the row element
+      const computedStyle = window.getComputedStyle(rowElement);
+      backgroundColor = computedStyle.backgroundColor || rowElement.style.backgroundColor || '#f0f8ff';
+      // Convert RGB to hex if needed for better print support
+      if (backgroundColor.startsWith('rgb')) {
+        const rgbMatch = backgroundColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (rgbMatch) {
+          const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+          const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+          const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+          backgroundColor = `#${r}${g}${b}`;
+        }
+      }
     } else if (isFloated) {
       rowClass = 'floated-row';
       backgroundColor = '#fff8dc';
@@ -308,6 +320,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         margin-bottom: 20px !important;
         padding-bottom: 10px !important;
         border-bottom: 2px solid #333 !important;
+        page-break-after: avoid !important;
       }
 
       .print-header h1 {
@@ -330,6 +343,8 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         font-size: 10px !important;
         background: white !important;
         table-layout: auto !important;
+        page-break-before: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       .print-table th {
@@ -356,19 +371,42 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         print-color-adjust: exact !important;
       }
 
+      .header-row {
+        background: #e8e8e8 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       .header-row td {
         font-weight: bold !important;
         font-size: 11px !important;
         padding: 8px 4px !important;
+        background: #e8e8e8 !important;
+        color: black !important;
       }
 
       /* Preserve custom colors */
+      .colored-row {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       .colored-row td {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: inherit !important;
+        color: black !important;
+      }
+
+      .floated-row {
+        background: #fff8dc !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
       .floated-row td {
+        background: #fff8dc !important;
+        color: black !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
