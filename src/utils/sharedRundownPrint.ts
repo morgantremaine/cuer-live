@@ -2,12 +2,12 @@ import { RundownItem } from '@/types/rundown';
 
 export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
   // Remove any existing print content
-  const existingPrintContent = document.getElementById('print-only-content');
+  const existingPrintContent = document.getElementById('shared-print-only-content');
   if (existingPrintContent) {
     existingPrintContent.remove();
   }
 
-  const existingPrintStyles = document.getElementById('rundown-print-styles');
+  const existingPrintStyles = document.getElementById('shared-rundown-print-styles');
   if (existingPrintStyles) {
     existingPrintStyles.remove();
   }
@@ -21,7 +21,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
   // Create a simplified print-only version
   const printContent = document.createElement('div');
-  printContent.id = 'print-only-content';
+  printContent.id = 'shared-print-only-content';
   printContent.style.display = 'none';
   
   // Helper functions
@@ -299,7 +299,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
   // Add print styles
   const printStyles = document.createElement('style');
-  printStyles.id = 'rundown-print-styles';
+  printStyles.id = 'shared-rundown-print-styles';
   printStyles.textContent = `
     @media print {
       @page {
@@ -307,33 +307,51 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         size: auto;
       }
 
+      * {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
       body * {
         visibility: hidden;
       }
 
-      #print-only-content,
-      #print-only-content * {
+      #shared-print-only-content,
+      #shared-print-only-content * {
         visibility: visible !important;
       }
 
-      #print-only-content {
+      #shared-print-only-content {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
         display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
       }
 
       .print-container {
         width: 100% !important;
         background: white !important;
         color: black !important;
+        page-break-inside: avoid !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
       }
 
       .print-header {
-        margin-bottom: 20px !important;
-        padding-bottom: 10px !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 8px !important;
         border-bottom: 2px solid #333 !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
       }
 
       .print-header h1 {
@@ -356,6 +374,8 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         font-size: 10px !important;
         background: white !important;
         table-layout: auto !important;
+        page-break-before: avoid !important;
+        page-break-after: avoid !important;
       }
 
       .print-table th {
@@ -382,19 +402,42 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         print-color-adjust: exact !important;
       }
 
+      .header-row {
+        background: #e8e8e8 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       .header-row td {
         font-weight: bold !important;
         font-size: 11px !important;
         padding: 8px 4px !important;
+        background: #e8e8e8 !important;
+        color: black !important;
       }
 
       /* Preserve custom colors */
+      .colored-row {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
       .colored-row td {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background: inherit !important;
+        color: black !important;
+      }
+
+      .floated-row {
+        background: #fff8dc !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
       .floated-row td {
+        background: #fff8dc !important;
+        color: black !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -402,19 +445,30 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       .regular-row td {
         background: white !important;
       }
+      
+      /* Prevent extra content and pages */
+      body {
+        overflow: visible !important;
+      }
+      
+      html {
+        overflow: visible !important;
+      }
     }
   `;
 
   document.head.appendChild(printStyles);
 
-  // Trigger print
-  window.print();
+  // Trigger print immediately
+  setTimeout(() => {
+    window.print();
+  }, 50);
 
   // Clean up after print
   setTimeout(() => {
-    const styles = document.getElementById('rundown-print-styles');
-    const content = document.getElementById('print-only-content');
+    const styles = document.getElementById('shared-rundown-print-styles');
+    const content = document.getElementById('shared-print-only-content');
     if (styles) styles.remove();
     if (content) content.remove();
-  }, 1000);
+  }, 2000);
 };
