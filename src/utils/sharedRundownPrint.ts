@@ -448,16 +448,11 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       
       /* Prevent extra content and pages */
       body {
-        height: auto !important;
-        min-height: auto !important;
-        max-height: none !important;
-        overflow: hidden !important;
+        overflow: visible !important;
       }
       
       html {
-        height: auto !important;
-        min-height: auto !important;
-        max-height: none !important;
+        overflow: visible !important;
       }
     }
   `;
