@@ -92,12 +92,23 @@ const RundownGrid = React.memo(() => {
       uiState.selectColor(id, color);
     },
     handleEnhancedRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-      if (isShiftClick || isCtrlClick) {
+      console.log('🎯 handleEnhancedRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+      
+      // For header groups or any multi-row selection, use the grid handlers
+      if (headerGroupItemIds && headerGroupItemIds.length > 1) {
+        console.log('🎯 Using interactions.handleRowSelection for header group');
+        interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
+        if (selectedRowId !== null) {
+          clearRowSelection();
+        }
+      } else if (isShiftClick || isCtrlClick) {
+        console.log('🎯 Using interactions.handleRowSelection for multi-select');
         interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
         if (selectedRowId !== null) {
           clearRowSelection();
         }
       } else {
+        console.log('🎯 Using single row selection');
         handleRowSelection(itemId);
         if (interactions.selectedRows.size > 0) {
           interactions.clearSelection();
