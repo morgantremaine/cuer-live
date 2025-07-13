@@ -6,10 +6,14 @@ export const useMultiRowSelection = () => {
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
 
   const selectHeaderGroup = (headerGroupItemIds: string[]) => {
+    console.log('🎯 selectHeaderGroup called with:', headerGroupItemIds);
     setSelectedRows(new Set(headerGroupItemIds));
+    setLastSelectedIndex(null);
   };
 
   const toggleRowSelection = (itemId: string, index: number, isShiftClick = false, isCtrlClick = false, allItems: any[], headerGroupItemIds?: string[]) => {
+    console.log('🎯 toggleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+    
     setSelectedRows(prev => {
       const newSelection = new Set(prev);
       
@@ -34,8 +38,8 @@ export const useMultiRowSelection = () => {
         setLastSelectedIndex(index);
       } else {
         // Single selection logic - check if clicking on already selected row(s)
-        if (newSelection.has(itemId)) {
-          // If clicking on a selected row, clear all selections
+        if (newSelection.has(itemId) && newSelection.size === 1) {
+          // If clicking on the only selected row, clear selection
           newSelection.clear();
           setLastSelectedIndex(null);
         } else {
@@ -43,7 +47,7 @@ export const useMultiRowSelection = () => {
           newSelection.clear();
           if (headerGroupItemIds && headerGroupItemIds.length > 1) {
             // Select entire header group
-            console.log('🎯 Selecting header group:', headerGroupItemIds);
+            console.log('🎯 Selecting header group in toggleRowSelection:', headerGroupItemIds);
             headerGroupItemIds.forEach(id => newSelection.add(id));
           } else {
             newSelection.add(itemId);
@@ -52,11 +56,13 @@ export const useMultiRowSelection = () => {
         }
       }
       
+      console.log('🎯 New selection:', Array.from(newSelection));
       return newSelection;
     });
   };
 
   const clearSelection = () => {
+    console.log('🎯 Clearing selection');
     setSelectedRows(new Set());
     setLastSelectedIndex(null);
   };

@@ -167,8 +167,24 @@ export const useRundownGridHandlers = ({
   }, [items, selectedRows, copyItems]);
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
-  }, [toggleRowSelection, items]);
+    console.log('🎯 handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+    
+    // If this is a collapsed header with group items, select the entire group
+    if (headerGroupItemIds && headerGroupItemIds.length > 1 && !isShiftClick && !isCtrlClick) {
+      console.log('🎯 Selecting entire header group:', headerGroupItemIds);
+      // Clear existing selection and select the entire group
+      clearSelection();
+      headerGroupItemIds.forEach(id => {
+        const itemIndex = items.findIndex(item => item.id === id);
+        if (itemIndex !== -1) {
+          toggleRowSelection(id, itemIndex, false, true, items, headerGroupItemIds);
+        }
+      });
+    } else {
+      // Normal single/multi selection
+      toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
+    }
+  }, [items, toggleRowSelection, clearSelection]);
 
   const handleTitleChange = useCallback((title: string) => {
     setRundownTitle(title);
