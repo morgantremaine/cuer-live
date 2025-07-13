@@ -376,7 +376,7 @@ const RundownIndexContent = () => {
         onColorSelect={(id, color) => selectColor(id, color)}
         onDeleteRow={deleteRow}
         onToggleFloat={toggleFloatRow}
-        onRowSelect={() => {}} // Handled by RundownGrid's handleEnhancedRowSelection
+        onRowSelect={handleRowSelection} // Use the proper grid row selection handler
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
