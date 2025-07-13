@@ -188,7 +188,32 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       onToggleHeaderCollapse={toggleHeaderCollapse}
       isHeaderCollapsed={isHeaderCollapsed}
       getHeaderGroupItemIds={getHeaderGroupItemIds}
-      onRowSelect={handleEnhancedRowSelect}
+      onRowSelect={(itemId, visibleIndex, isShiftClick, isCtrlClick, passedHeaderGroupItemIds) => {
+        // Map visible index to original index first
+        const originalIndex = getOriginalIndex(visibleIndex);
+        if (originalIndex === -1) return;
+        
+        // Use OUR header collapse functions, not the passed ones
+        let actualHeaderGroupItemIds = passedHeaderGroupItemIds;
+        const item = visibleItems[visibleIndex];
+        
+        console.log('🎯 OptimizedWrapper onRowSelect:', { itemId, visibleIndex, originalIndex, isShiftClick, isCtrlClick });
+        console.log('🎯 Item type:', item?.type, 'Item ID:', item?.id);
+        
+        if (item?.type === 'header') {
+          const collapsed = isHeaderCollapsed(item.id);
+          console.log('🎯 Header collapsed state:', collapsed);
+          
+          if (collapsed) {
+            actualHeaderGroupItemIds = getHeaderGroupItemIds(item.id);
+            console.log('🎯 Generated header group IDs:', actualHeaderGroupItemIds);
+          }
+        }
+        
+        if (restProps.onRowSelect) {
+          restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick, actualHeaderGroupItemIds);
+        }
+      }}
       onDragStart={handleEnhancedDragStart}
       onDrop={handleEnhancedDrop}
       onDragOver={handleEnhancedDragOver}
