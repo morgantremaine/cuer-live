@@ -169,17 +169,34 @@ export const useRundownGridHandlers = ({
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
     console.log('🎯 handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
     
-    // If this is a collapsed header with group items, select the entire group
+    // If this is a collapsed header with group items, handle group selection/deselection
     if (headerGroupItemIds && headerGroupItemIds.length > 1 && !isShiftClick && !isCtrlClick) {
-      console.log('🎯 Selecting entire header group:', headerGroupItemIds);
-      // Clear existing selection and select the entire group
-      clearSelection();
-      headerGroupItemIds.forEach(id => {
-        const itemIndex = items.findIndex(item => item.id === id);
-        if (itemIndex !== -1) {
-          toggleRowSelection(id, itemIndex, false, true, items, headerGroupItemIds);
-        }
-      });
+      console.log('🎯 Handling header group:', headerGroupItemIds);
+      
+      // Check if all items in the group are currently selected
+      const allGroupItemsSelected = headerGroupItemIds.every(id => selectedRows.has(id));
+      
+      if (allGroupItemsSelected) {
+        // Deselect the entire group
+        console.log('🎯 Deselecting entire header group');
+        headerGroupItemIds.forEach(id => {
+          const itemIndex = items.findIndex(item => item.id === id);
+          if (itemIndex !== -1 && selectedRows.has(id)) {
+            toggleRowSelection(id, itemIndex, false, false, items, headerGroupItemIds);
+          }
+        });
+      } else {
+        // Select the entire group
+        console.log('🎯 Selecting entire header group');
+        // Clear existing selection first
+        clearSelection();
+        headerGroupItemIds.forEach(id => {
+          const itemIndex = items.findIndex(item => item.id === id);
+          if (itemIndex !== -1) {
+            toggleRowSelection(id, itemIndex, false, true, items, headerGroupItemIds);
+          }
+        });
+      }
     } else {
       // Normal single/multi selection
       console.log('🎯 Calling toggleRowSelection with headerGroupItemIds:', headerGroupItemIds);
