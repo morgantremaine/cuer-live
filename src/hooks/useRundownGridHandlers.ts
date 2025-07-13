@@ -168,14 +168,19 @@ export const useRundownGridHandlers = ({
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
     console.log('🎯 handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+    console.log('🎯 Current selectedRows state:', Array.from(selectedRows));
     
     // If this is a collapsed header with group items, handle group selection/deselection
     if (headerGroupItemIds && headerGroupItemIds.length > 1 && !isShiftClick && !isCtrlClick) {
       console.log('🎯 Handling header group:', headerGroupItemIds);
       
       // Check if all items in the group are currently selected
-      const allGroupItemsSelected = headerGroupItemIds.every(id => selectedRows.has(id));
-      console.log('🎯 Selection check:', { 
+      const allGroupItemsSelected = headerGroupItemIds.every(id => {
+        const isSelected = selectedRows.has(id);
+        console.log('🎯 Checking item:', id, 'isSelected:', isSelected);
+        return isSelected;
+      });
+      console.log('🎯 Selection check result:', { 
         headerGroupItemIds, 
         selectedRows: Array.from(selectedRows), 
         allGroupItemsSelected 
