@@ -189,12 +189,7 @@ export const useRundownGridHandlers = ({
       if (allGroupItemsSelected) {
         // Deselect the entire group
         console.log('🎯 Deselecting entire header group');
-        headerGroupItemIds.forEach(id => {
-          const itemIndex = items.findIndex(item => item.id === id);
-          if (itemIndex !== -1 && selectedRows.has(id)) {
-            toggleRowSelection(id, itemIndex, false, false, items, headerGroupItemIds);
-          }
-        });
+        clearSelection();
       } else {
         // Select the entire group
         console.log('🎯 Selecting entire header group');
