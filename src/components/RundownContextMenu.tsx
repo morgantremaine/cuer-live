@@ -127,7 +127,22 @@ const RundownContextMenu = memo(({
     <>
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          {children}
+          <div onContextMenu={(e) => {
+            const target = e.target as HTMLElement;
+            const activeElement = document.activeElement as HTMLElement;
+            const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+            const isContentEditable = target.contentEditable === 'true';
+            const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
+                                     activeElement?.tagName === 'INPUT' ||
+                                     activeElement?.contentEditable === 'true';
+            
+            // If user is editing text, prevent our context menu and allow browser's native menu
+            if (isTextInput || isContentEditable || isActivelyEditing) {
+              e.stopPropagation(); // Prevent the context menu from opening
+            }
+          }}>
+            {children}
+          </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
           {onAddRow && (
