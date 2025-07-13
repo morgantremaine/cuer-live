@@ -189,7 +189,10 @@ const RundownGrid = React.memo(() => {
       onColorSelect={stableCallbacks.handleColorSelect}
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
-      onRowSelect={stableCallbacks.handleEnhancedRowSelection}
+      onRowSelect={(itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
+        console.log('🎯 Direct onRowSelect called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+        stableCallbacks.handleEnhancedRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
+      }}
       onDragStart={interactions.handleDragStart}
       onDragOver={interactions.handleDragOver}
       onDragLeave={interactions.handleDragLeave}
