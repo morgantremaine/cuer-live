@@ -104,7 +104,7 @@ export const useRundownStateCoordination = () => {
   };
 
   // Get header collapse functions from useHeaderCollapse
-  const { getHeaderGroupItemIds, isHeaderCollapsed } = useHeaderCollapse(performanceOptimization.calculatedItems);
+  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
@@ -263,7 +263,13 @@ export const useRundownStateCoordination = () => {
       
       // Autoscroll state with enhanced debugging
       autoScrollEnabled,
-      toggleAutoScroll
+      toggleAutoScroll,
+      
+      // Header collapse functions
+      toggleHeaderCollapse,
+      isHeaderCollapsed,
+      getHeaderGroupItemIds,
+      visibleItems
     },
     interactions,
     uiState

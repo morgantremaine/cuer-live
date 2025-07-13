@@ -52,7 +52,12 @@ const RundownIndexContent = () => {
     isConnected,
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
-    toggleAutoScroll
+    toggleAutoScroll,
+    // Header collapse functions
+    toggleHeaderCollapse,
+    isHeaderCollapsed,
+    getHeaderGroupItemIds,
+    visibleItems
   } = coreState;
 
   // Use user column preferences for persistent column management
@@ -422,6 +427,11 @@ const RundownIndexContent = () => {
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
         onShowNotes={() => setShowNotesWindow(true)}
+        // Header collapse functions
+        toggleHeaderCollapse={toggleHeaderCollapse}
+        isHeaderCollapsed={isHeaderCollapsed}
+        getHeaderGroupItemIds={getHeaderGroupItemIds}
+        visibleItems={visibleItems}
       />
       
       {/* Floating Notes Window */}

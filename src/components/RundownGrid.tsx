@@ -207,6 +207,11 @@ const RundownGrid = React.memo(() => {
       onAddRow={interactions.handleAddRow}
       onAddHeader={interactions.handleAddHeader}
       onJumpToHere={stableCallbacks.handleJumpToHere}
+      // Header collapse functions
+      toggleHeaderCollapse={coreState.toggleHeaderCollapse}
+      isHeaderCollapsed={coreState.isHeaderCollapsed}
+      getHeaderGroupItemIds={coreState.getHeaderGroupItemIds}
+      visibleItems={coreState.visibleItems}
     />
   );
 });

@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownMemoization } from '@/hooks/useRundownMemoization';
-import { useHeaderCollapse } from '@/hooks/useHeaderCollapse';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
@@ -42,6 +41,11 @@ interface OptimizedRundownTableWrapperProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  // Header collapse functions (to ensure same state as drag system)
+  toggleHeaderCollapse: (headerId: string) => void;
+  isHeaderCollapsed: (headerId: string) => boolean;
+  getHeaderGroupItemIds: (headerId: string) => string[];
+  visibleItems: RundownItem[];
 }
 
 const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> = ({
@@ -55,15 +59,13 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   onDragLeave,
   onDrop,
   onDragEnd,
+  // Extract header collapse functions from props
+  toggleHeaderCollapse,
+  isHeaderCollapsed,
+  getHeaderGroupItemIds,
+  visibleItems,
   ...restProps
 }) => {
-  // Use header collapse functionality
-  const {
-    visibleItems,
-    toggleHeaderCollapse,
-    isHeaderCollapsed,
-    getHeaderGroupItemIds
-  } = useHeaderCollapse(items);
 
   // Use memoized calculations - use ORIGINAL items for correct calculations
   const {
@@ -96,13 +98,9 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     
     const item = items[originalIndex];
     
-    // Check if this is a collapsed header
+    // No need for auto-selection since drag system now uses same header collapse state
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
-      // For collapsed headers, the drag system should automatically handle the group
-      // Let's add some debug logging to help diagnose the issue
-      console.log('🎯 Drag starting on collapsed header:', item.id);
-      console.log('🎯 Header group items:', getHeaderGroupItemIds(item.id));
-      console.log('🎯 Is header collapsed?', isHeaderCollapsed(item.id));
+      console.log('🎯 Drag starting on collapsed header:', item.id, '- should auto-detect group');
     }
     
     // Call the original handler which will handle the collapsed header logic

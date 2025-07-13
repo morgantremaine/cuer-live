@@ -124,10 +124,6 @@ export const useDragAndDrop = (
     
     if (!item) return;
 
-    console.log('🎯 Drag start - item:', item.id, 'type:', item.type);
-    console.log('🎯 Drag start - isHeaderCollapsed function available:', !!isHeaderCollapsed);
-    console.log('🎯 Drag start - getHeaderGroupItemIds function available:', !!getHeaderGroupItemIds);
-
     let draggedIds: string[] = [];
     let isHeaderGroup = false;
     
@@ -144,19 +140,6 @@ export const useDragAndDrop = (
       // Single item
       draggedIds = [item.id];
       console.log('🎯 Dragging single item:', item.id);
-      
-      // Extra debug for headers
-      if (item.type === 'header') {
-        console.log('🎯 Header not collapsed or functions missing:');
-        console.log('  - isHeaderCollapsed available:', !!isHeaderCollapsed);
-        console.log('  - getHeaderGroupItemIds available:', !!getHeaderGroupItemIds);
-        if (isHeaderCollapsed) {
-          console.log('  - isHeaderCollapsed(', item.id, '):', isHeaderCollapsed(item.id));
-        }
-        if (getHeaderGroupItemIds) {
-          console.log('  - getHeaderGroupItemIds(', item.id, '):', getHeaderGroupItemIds(item.id));
-        }
-      }
     }
     
     setActiveId(active.id);

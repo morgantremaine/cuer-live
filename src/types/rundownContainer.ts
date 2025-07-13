@@ -86,4 +86,10 @@ export interface RundownContainerProps {
   
   // Notes window functionality
   onShowNotes?: () => void;
+  
+  // Header collapse functions
+  toggleHeaderCollapse: (headerId: string) => void;
+  isHeaderCollapsed: (headerId: string) => boolean;
+  getHeaderGroupItemIds: (headerId: string) => string[];
+  visibleItems: RundownItem[];
 }

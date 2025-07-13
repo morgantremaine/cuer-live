@@ -53,6 +53,11 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (itemId: string) => void;
+  // Header collapse functions
+  toggleHeaderCollapse: (headerId: string) => void;
+  isHeaderCollapsed: (headerId: string) => boolean;
+  getHeaderGroupItemIds: (headerId: string) => string[];
+  visibleItems: RundownItem[];
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -99,7 +104,12 @@ const RundownContent = React.memo<RundownContentProps>(({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onJumpToHere,
+  // Header collapse functions
+  toggleHeaderCollapse,
+  isHeaderCollapsed,
+  getHeaderGroupItemIds,
+  visibleItems
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -232,6 +242,11 @@ const RundownContent = React.memo<RundownContentProps>(({
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
             onJumpToHere={onJumpToHere}
+            // Header collapse functions
+            toggleHeaderCollapse={toggleHeaderCollapse}
+            isHeaderCollapsed={isHeaderCollapsed}
+            getHeaderGroupItemIds={getHeaderGroupItemIds}
+            visibleItems={visibleItems}
             />
           </table>
         </div>
