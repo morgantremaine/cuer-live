@@ -40,7 +40,7 @@ interface RundownContentProps {
   onColorSelect: (id: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;

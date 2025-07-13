@@ -91,9 +91,9 @@ const RundownGrid = React.memo(() => {
     handleColorSelect: (id: string, color: string) => {
       uiState.selectColor(id, color);
     },
-    handleEnhancedRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+    handleEnhancedRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
       if (isShiftClick || isCtrlClick) {
-        interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick);
+        interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
         if (selectedRowId !== null) {
           clearRowSelection();
         }

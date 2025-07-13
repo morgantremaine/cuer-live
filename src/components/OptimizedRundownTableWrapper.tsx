@@ -29,7 +29,7 @@ interface OptimizedRundownTableWrapperProps {
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
@@ -127,7 +127,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   }, [getOriginalIndex, onDrop]);
 
   // Enhanced row select that maps visible to original indexes
-  const handleEnhancedRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean) => {
+  const handleEnhancedRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
     const originalIndex = getOriginalIndex(visibleIndex);
     
     if (originalIndex === -1) {
@@ -135,7 +135,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     }
     
     if (restProps.onRowSelect) {
-      restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick);
+      restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick, headerGroupItemIds);
     }
   }, [getOriginalIndex, restProps.onRowSelect]);
 
@@ -187,6 +187,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       getHeaderDuration={getHeaderDuration}
       onToggleHeaderCollapse={toggleHeaderCollapse}
       isHeaderCollapsed={isHeaderCollapsed}
+      getHeaderGroupItemIds={getHeaderGroupItemIds}
       onRowSelect={handleEnhancedRowSelect}
       onDragStart={handleEnhancedDragStart}
       onDrop={handleEnhancedDrop}

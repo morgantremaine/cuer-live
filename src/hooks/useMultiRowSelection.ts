@@ -43,6 +43,7 @@ export const useMultiRowSelection = () => {
           newSelection.clear();
           if (headerGroupItemIds && headerGroupItemIds.length > 1) {
             // Select entire header group
+            console.log('🎯 Selecting header group:', headerGroupItemIds);
             headerGroupItemIds.forEach(id => newSelection.add(id));
           } else {
             newSelection.add(itemId);
