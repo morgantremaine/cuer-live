@@ -175,6 +175,11 @@ export const useRundownGridHandlers = ({
       
       // Check if all items in the group are currently selected
       const allGroupItemsSelected = headerGroupItemIds.every(id => selectedRows.has(id));
+      console.log('🎯 Selection check:', { 
+        headerGroupItemIds, 
+        selectedRows: Array.from(selectedRows), 
+        allGroupItemsSelected 
+      });
       
       if (allGroupItemsSelected) {
         // Deselect the entire group
