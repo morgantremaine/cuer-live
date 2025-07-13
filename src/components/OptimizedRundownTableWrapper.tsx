@@ -210,6 +210,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
           }
         }
         
+        console.log('🎯 Calling original onRowSelect with actualHeaderGroupItemIds:', actualHeaderGroupItemIds);
         if (restProps.onRowSelect) {
           restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick, actualHeaderGroupItemIds);
         }
