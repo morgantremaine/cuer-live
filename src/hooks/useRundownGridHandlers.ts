@@ -182,6 +182,7 @@ export const useRundownGridHandlers = ({
       });
     } else {
       // Normal single/multi selection
+      console.log('🎯 Calling toggleRowSelection with headerGroupItemIds:', headerGroupItemIds);
       toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
     }
   }, [items, toggleRowSelection, clearSelection]);
