@@ -67,6 +67,23 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Check if we're editing text - if so, allow browser context menu
+    const isEditingText = target.tagName === 'INPUT' || 
+                         target.tagName === 'TEXTAREA' || 
+                         target.isContentEditable ||
+                         document.activeElement === target ||
+                         (document.activeElement && 
+                          (document.activeElement.tagName === 'INPUT' || 
+                           document.activeElement.tagName === 'TEXTAREA' || 
+                           (document.activeElement as HTMLElement).isContentEditable));
+    
+    if (isEditingText) {
+      // Don't prevent default, don't select row - let browser handle it
+      return;
+    }
+    
     // Select the row if not already selected
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
