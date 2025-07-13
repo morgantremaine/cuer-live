@@ -123,44 +123,20 @@ const RundownContextMenu = memo(({
     }
   };
 
-  // Check if we're currently editing text
-  const isEditingText = () => {
-    const activeElement = document.activeElement as HTMLElement;
-    return activeElement && (
-      activeElement.tagName === 'INPUT' || 
-      activeElement.tagName === 'TEXTAREA' || 
-      activeElement.isContentEditable
-    );
-  };
-
-  // If editing text, render children without context menu wrapper
-  if (isEditingText()) {
-    return (
-      <>
-        {children}
-        {/* Color picker positioned outside the context menu */}
-        {showColorPicker === itemId && (
-          <div className="fixed z-[10000]" style={{ 
-            top: '50%', 
-            left: '50%', 
-            transform: 'translate(-50%, -50%)'
-          }}>
-            <ColorPicker
-              itemId={itemId}
-              showColorPicker={showColorPicker}
-              onToggle={onColorPicker}
-              onColorSelect={handleColorSelect}
-            />
-          </div>
-        )}
-      </>
-    );
-  }
-
   return (
     <>
       <ContextMenu>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger 
+          asChild 
+          disabled={(() => {
+            const activeElement = document.activeElement as HTMLElement;
+            return activeElement && (
+              activeElement.tagName === 'INPUT' || 
+              activeElement.tagName === 'TEXTAREA' || 
+              activeElement.isContentEditable
+            );
+          })()}
+        >
           {children}
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
