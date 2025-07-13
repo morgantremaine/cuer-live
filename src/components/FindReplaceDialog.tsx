@@ -204,41 +204,58 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
               if (selection) {
                 selection.removeAllRanges();
                 
-                // Find all text nodes within this div
-                const walker = document.createTreeWalker(
-                  divElement,
-                  NodeFilter.SHOW_TEXT
-                );
-                
-                let textNode;
-                let currentOffset = 0;
-                
-                // Walk through text nodes to find the match
-                while (textNode = walker.nextNode()) {
-                  const nodeText = textNode.textContent || '';
-                  const nodeStart = currentOffset;
-                  const nodeEnd = currentOffset + nodeText.length;
+                // Find the match in the full text content
+                const match = regex.exec(textContent);
+                if (match) {
+                  const matchStart = match.index;
+                  const matchEnd = matchStart + match[0].length;
                   
-                  // Check if our match is in this text node
-                  const matchIndex = textContent.search(regex);
-                  const matchEnd = matchIndex + searchTerm.length;
+                  // Find all text nodes within this div
+                  const walker = document.createTreeWalker(
+                    divElement,
+                    NodeFilter.SHOW_TEXT
+                  );
                   
-                  if (matchIndex >= nodeStart && matchIndex < nodeEnd) {
-                    // The match starts in this text node
-                    const range = document.createRange();
-                    const startOffset = matchIndex - nodeStart;
-                    const endOffset = Math.min(matchEnd - nodeStart, nodeText.length);
+                  let textNode;
+                  let currentOffset = 0;
+                  let startNode = null;
+                  let endNode = null;
+                  let startOffset = 0;
+                  let endOffset = 0;
+                  
+                  // Walk through text nodes to find where the match starts and ends
+                  while (textNode = walker.nextNode()) {
+                    const nodeText = textNode.textContent || '';
+                    const nodeStart = currentOffset;
+                    const nodeEnd = currentOffset + nodeText.length;
                     
-                    range.setStart(textNode, startOffset);
-                    range.setEnd(textNode, endOffset);
+                    // Check if match starts in this node
+                    if (!startNode && matchStart >= nodeStart && matchStart < nodeEnd) {
+                      startNode = textNode;
+                      startOffset = matchStart - nodeStart;
+                    }
+                    
+                    // Check if match ends in this node
+                    if (matchEnd > nodeStart && matchEnd <= nodeEnd) {
+                      endNode = textNode;
+                      endOffset = matchEnd - nodeStart;
+                      break;
+                    }
+                    
+                    currentOffset = nodeEnd;
+                  }
+                  
+                  // Create the selection if we found both start and end nodes
+                  if (startNode && endNode) {
+                    const range = document.createRange();
+                    range.setStart(startNode, startOffset);
+                    range.setEnd(endNode, endOffset);
                     selection.addRange(range);
                     
                     // Scroll to the selection
                     divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                   }
-                  
-                  currentOffset = nodeEnd;
                 }
               }
             }
