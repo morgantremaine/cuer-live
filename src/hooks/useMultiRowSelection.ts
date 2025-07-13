@@ -46,9 +46,17 @@ export const useMultiRowSelection = () => {
           // Clear others and select this one (or header group if provided)
           newSelection.clear();
           if (headerGroupItemIds && headerGroupItemIds.length > 1) {
-            // Select entire header group
-            console.log('🎯 Selecting header group in toggleRowSelection:', headerGroupItemIds);
-            headerGroupItemIds.forEach(id => newSelection.add(id));
+            // Check if all items in the header group are currently selected
+            const allHeaderItemsSelected = headerGroupItemIds.every(id => prev.has(id));
+            
+            if (allHeaderItemsSelected) {
+              // All items are selected, so we're deselecting the group (newSelection stays empty)
+              console.log('🎯 Deselecting header group in toggleRowSelection:', headerGroupItemIds);
+            } else {
+              // Select entire header group
+              console.log('🎯 Selecting header group in toggleRowSelection:', headerGroupItemIds);
+              headerGroupItemIds.forEach(id => newSelection.add(id));
+            }
           } else {
             newSelection.add(itemId);
           }
