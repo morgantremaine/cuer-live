@@ -80,7 +80,9 @@ export const useRundownMemoization = (
             totalSeconds += timeToSeconds(nextItem.duration || '00:00');
           }
         }
-        headerDurations.set(item.id, secondsToTime(totalSeconds));
+        const duration = secondsToTime(totalSeconds);
+        console.log(`🕒 Header duration calculation for ${item.id}:`, duration, 'totalSeconds:', totalSeconds);
+        headerDurations.set(item.id, duration);
       }
     });
 
