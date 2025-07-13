@@ -42,7 +42,9 @@ const HeaderRowContent = ({
   // Handle collapse toggle
   const handleToggleCollapse = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('🎯 Header collapse button clicked:', item.id, 'onToggleCollapse exists:', !!onToggleCollapse);
     if (onToggleCollapse) {
+      console.log('🎯 Calling onToggleCollapse for header:', item.id);
       onToggleCollapse(item.id);
     }
   };

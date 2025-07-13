@@ -72,13 +72,17 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
 
   // Toggle header collapse state
   const toggleHeaderCollapse = useCallback((headerId: string) => {
+    console.log('🎯 toggleHeaderCollapse called for header:', headerId);
     setCollapsedHeaders(prev => {
       const newSet = new Set(prev);
       if (newSet.has(headerId)) {
+        console.log('🎯 Expanding header:', headerId);
         newSet.delete(headerId);
       } else {
+        console.log('🎯 Collapsing header:', headerId);
         newSet.add(headerId);
       }
+      console.log('🎯 New collapsed headers:', Array.from(newSet));
       return newSet;
     });
   }, []);
