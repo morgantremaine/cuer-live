@@ -91,6 +91,7 @@ const RundownTable = ({
   getHeaderGroupItemIds,
   onJumpToHere
 }: RundownTableProps) => {
+  console.log('🎯 RundownTable onToggleHeaderCollapse exists:', !!onToggleHeaderCollapse);
 
   // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
