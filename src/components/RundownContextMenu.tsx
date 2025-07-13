@@ -123,29 +123,44 @@ const RundownContextMenu = memo(({
     }
   };
 
-  const handleContextMenuTrigger = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    
-    // Check if we're editing text - if so, prevent custom context menu
-    const isEditingText = target.tagName === 'INPUT' || 
-                         target.tagName === 'TEXTAREA' || 
-                         target.isContentEditable ||
-                         document.activeElement === target ||
-                         (document.activeElement && 
-                          (document.activeElement.tagName === 'INPUT' || 
-                           document.activeElement.tagName === 'TEXTAREA' || 
-                           (document.activeElement as HTMLElement).isContentEditable));
-    
-    if (isEditingText) {
-      e.preventDefault();
-      return false;
-    }
+  // Check if we're currently editing text
+  const isEditingText = () => {
+    const activeElement = document.activeElement as HTMLElement;
+    return activeElement && (
+      activeElement.tagName === 'INPUT' || 
+      activeElement.tagName === 'TEXTAREA' || 
+      activeElement.isContentEditable
+    );
   };
+
+  // If editing text, render children without context menu wrapper
+  if (isEditingText()) {
+    return (
+      <>
+        {children}
+        {/* Color picker positioned outside the context menu */}
+        {showColorPicker === itemId && (
+          <div className="fixed z-[10000]" style={{ 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)'
+          }}>
+            <ColorPicker
+              itemId={itemId}
+              showColorPicker={showColorPicker}
+              onToggle={onColorPicker}
+              onColorSelect={handleColorSelect}
+            />
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <>
       <ContextMenu>
-        <ContextMenuTrigger asChild onContextMenu={handleContextMenuTrigger}>
+        <ContextMenuTrigger asChild>
           {children}
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg">
