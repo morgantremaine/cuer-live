@@ -193,20 +193,13 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
         let actualHeaderGroupItemIds = passedHeaderGroupItemIds;
         const item = visibleItems[visibleIndex];
         
-        console.log('🎯 OptimizedWrapper onRowSelect:', { itemId, visibleIndex, originalIndex, isShiftClick, isCtrlClick });
-        console.log('🎯 Item type:', item?.type, 'Item ID:', item?.id);
-        
         if (item?.type === 'header') {
           const collapsed = isHeaderCollapsed(item.id);
-          console.log('🎯 Header collapsed state:', collapsed);
           
           if (collapsed) {
             actualHeaderGroupItemIds = getHeaderGroupItemIds(item.id);
-            console.log('🎯 Generated header group IDs:', actualHeaderGroupItemIds);
           }
         }
-        
-        console.log('🎯 Calling original onRowSelect with actualHeaderGroupItemIds:', actualHeaderGroupItemIds);
         if (restProps.onRowSelect) {
           restProps.onRowSelect(itemId, originalIndex, isShiftClick, isCtrlClick, actualHeaderGroupItemIds);
         }

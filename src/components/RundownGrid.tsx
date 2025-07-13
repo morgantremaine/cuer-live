@@ -92,23 +92,18 @@ const RundownGrid = React.memo(() => {
       uiState.selectColor(id, color);
     },
     handleEnhancedRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-      console.log('🎯 handleEnhancedRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
-      
       // For header groups or any multi-row selection, use the grid handlers
       if (headerGroupItemIds && headerGroupItemIds.length > 1) {
-        console.log('🎯 Using interactions.handleRowSelection for header group');
         interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
         if (selectedRowId !== null) {
           clearRowSelection();
         }
       } else if (isShiftClick || isCtrlClick) {
-        console.log('🎯 Using interactions.handleRowSelection for multi-select');
         interactions.handleRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
         if (selectedRowId !== null) {
           clearRowSelection();
         }
       } else {
-        console.log('🎯 Using single row selection');
         handleRowSelection(itemId);
         if (interactions.selectedRows.size > 0) {
           interactions.clearSelection();
@@ -116,20 +111,15 @@ const RundownGrid = React.memo(() => {
       }
     },
     handleJumpToHere: (segmentId: string) => {
-      logger.log('🎯 === COORDINATED JUMP TO HERE START ===');
-      logger.log('🎯 Target segment ID:', segmentId);
-      
       const targetSegment = items.find(item => item.id === segmentId);
       if (!targetSegment) {
-        logger.error('🎯 Target segment not found:', segmentId);
+        logger.error('Target segment not found:', segmentId);
         return;
       }
       
       if (isPlaying) {
-        logger.log('🎯 Showcaller is playing - jumping and continuing playback');
         play(segmentId);
       } else {
-        logger.log('🎯 Showcaller is paused - jumping but staying paused');
         jumpToSegment(segmentId);
       }
       
@@ -140,8 +130,6 @@ const RundownGrid = React.memo(() => {
       if (selectedRowId !== null) {
         clearRowSelection();
       }
-      
-      logger.log('🎯 === COORDINATED JUMP TO HERE END ===');
     }
   });
 
@@ -190,7 +178,6 @@ const RundownGrid = React.memo(() => {
       onDeleteRow={coreState.deleteRow}
       onToggleFloat={coreState.toggleFloatRow}
       onRowSelect={(itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-        console.log('🎯 Direct onRowSelect called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
         stableCallbacks.handleEnhancedRowSelection(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds);
       }}
       onDragStart={interactions.handleDragStart}

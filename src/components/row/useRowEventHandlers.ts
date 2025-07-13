@@ -55,10 +55,8 @@ export const useRowEventHandlers = ({
       let headerGroupItemIds: string[] | undefined;
       if (item.type === 'header' && isHeaderCollapsed && getHeaderGroupItemIds) {
         const isCollapsed = isHeaderCollapsed(item.id);
-        console.log('🎯 Header clicked:', item.id, 'isCollapsed:', isCollapsed);
         if (isCollapsed) {
           headerGroupItemIds = getHeaderGroupItemIds(item.id);
-          console.log('🎯 Collapsed header group items:', headerGroupItemIds);
         }
       }
       

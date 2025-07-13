@@ -54,15 +54,10 @@ const RundownRow = (props: RundownRowProps) => {
   // Only use multi-selection state for determining if selected
   const isActuallySelected = props.isSelected || false;
 
-  // Debug wrapper for onJumpToHere
-  const handleJumpToHereDebug = (segmentId: string) => {
-    console.log('🎯 RundownRow: onJumpToHere called with segmentId:', segmentId);
-    console.log('🎯 RundownRow: onJumpToHere function exists:', !!props.onJumpToHere);
+  // Handle Jump to here functionality
+  const handleJumpToHere = (segmentId: string) => {
     if (props.onJumpToHere) {
-      console.log('🎯 RundownRow: Calling parent onJumpToHere');
       props.onJumpToHere(segmentId);
-    } else {
-      console.log('🎯 RundownRow: onJumpToHere is undefined!');
     }
   };
 
@@ -107,7 +102,7 @@ const RundownRow = (props: RundownRowProps) => {
       onClearSelection={props.onClearSelection}
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
-      onJumpToHere={handleJumpToHereDebug}
+      onJumpToHere={handleJumpToHere}
       onDragEnd={props.onDragEnd}
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
