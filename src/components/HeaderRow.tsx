@@ -37,11 +37,14 @@ interface HeaderRowProps {
   onToggleCollapse?: (headerId: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  // Header collapse props
+  isHeaderCollapsed?: (headerId: string) => boolean;
+  getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
@@ -93,7 +96,10 @@ const HeaderRow = (props: HeaderRowProps) => {
     onCopySelectedRows: props.onCopySelectedRows,
     onToggleColorPicker: props.onToggleColorPicker,
     selectedRows,
-    onPasteRows: props.onPasteRows
+    onPasteRows: props.onPasteRows,
+    onClearSelection: props.onClearSelection,
+    isHeaderCollapsed: props.isHeaderCollapsed,
+    getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
   // Enhanced drag start handler with better text selection detection

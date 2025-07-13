@@ -19,7 +19,7 @@ interface UseRundownGridHandlersProps {
   copyItems: (items: RundownItem[]) => void;
   clipboardItems: RundownItem[];
   hasClipboardData: () => boolean;
-  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[]) => void;
+  toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, items: RundownItem[], headerGroupItemIds?: string[]) => void;
   items: RundownItem[];
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
@@ -166,8 +166,8 @@ export const useRundownGridHandlers = ({
     copyItems(selectedItems);
   }, [items, selectedRows, copyItems]);
 
-  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => {
-    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items);
+  const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
+    toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
   }, [toggleRowSelection, items]);
 
   const handleTitleChange = useCallback((title: string) => {

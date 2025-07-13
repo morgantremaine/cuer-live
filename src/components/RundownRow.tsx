@@ -30,7 +30,7 @@ interface RundownRowProps {
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat?: (id: string) => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -45,6 +45,9 @@ interface RundownRowProps {
   onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  // Header collapse props
+  isHeaderCollapsed?: (headerId: string) => boolean;
+  getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
 const RundownRow = (props: RundownRowProps) => {
@@ -81,6 +84,8 @@ const RundownRow = (props: RundownRowProps) => {
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
         onDragEnd={props.onDragEnd}
+        isHeaderCollapsed={props.isHeaderCollapsed}
+        getHeaderGroupItemIds={props.getHeaderGroupItemIds}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
       />
     );
@@ -104,6 +109,8 @@ const RundownRow = (props: RundownRowProps) => {
       onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHereDebug}
       onDragEnd={props.onDragEnd}
+      isHeaderCollapsed={props.isHeaderCollapsed}
+      getHeaderGroupItemIds={props.getHeaderGroupItemIds}
     />
   );
 };

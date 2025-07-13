@@ -2,11 +2,11 @@
 import React from 'react';
 
 interface UseRowEventHandlersProps {
-  item: { id: string };
+  item: { id: string; type?: string };
   index: number;
   isSelected?: boolean;
   selectedRowsCount?: number;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDeleteRow: (id: string) => void;
   onDeleteSelectedRows: () => void;
   onCopySelectedRows: () => void;
@@ -16,6 +16,9 @@ interface UseRowEventHandlersProps {
   onPasteRows?: (targetRowId?: string) => void;
   onClearSelection?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  // Header collapse props
+  isHeaderCollapsed?: (headerId: string) => boolean;
+  getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
 export const useRowEventHandlers = ({
@@ -32,7 +35,9 @@ export const useRowEventHandlers = ({
   selectedRows,
   onPasteRows,
   onClearSelection,
-  onJumpToHere
+  onJumpToHere,
+  isHeaderCollapsed,
+  getHeaderGroupItemIds
 }: UseRowEventHandlersProps) => {
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -46,7 +51,13 @@ export const useRowEventHandlers = ({
     e.stopPropagation();
     
     if (onRowSelect) {
-      onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey);
+      // Check if this is a collapsed header and get its group items
+      let headerGroupItemIds: string[] | undefined;
+      if (item.type === 'header' && isHeaderCollapsed && getHeaderGroupItemIds && isHeaderCollapsed(item.id)) {
+        headerGroupItemIds = getHeaderGroupItemIds(item.id);
+      }
+      
+      onRowSelect(item.id, index, e.shiftKey, e.ctrlKey || e.metaKey, headerGroupItemIds);
     }
   };
 

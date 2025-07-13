@@ -38,12 +38,15 @@ interface RegularRowProps {
   onColorSelect: (itemId: string, color: string) => void;
   onPasteRows?: () => void;
   onClearSelection?: () => void;
-  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  // Header collapse props
+  isHeaderCollapsed?: (headerId: string) => boolean;
+  getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
 const RegularRow = (props: RegularRowProps) => {
@@ -107,7 +110,9 @@ const RegularRow = (props: RegularRowProps) => {
     selectedRows,
     onPasteRows: props.onPasteRows,
     onClearSelection,
-    onJumpToHere
+    onJumpToHere,
+    isHeaderCollapsed: props.isHeaderCollapsed,
+    getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
   // Enhanced drag start handler with better text selection detection

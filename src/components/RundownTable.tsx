@@ -30,7 +30,7 @@ interface RundownTableProps {
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
   onToggleFloat: (id: string) => void;
-  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean) => void;
+  onRowSelect: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, targetIndex?: number) => void;
   onDragLeave: (e: React.DragEvent) => void;
@@ -44,6 +44,7 @@ interface RundownTableProps {
   onAddHeader: () => void;
   onToggleHeaderCollapse?: (headerId: string) => void;
   isHeaderCollapsed?: (headerId: string) => boolean;
+  getHeaderGroupItemIds?: (headerId: string) => string[];
   onJumpToHere?: (segmentId: string) => void;
 }
 
@@ -87,6 +88,7 @@ const RundownTable = ({
   onAddHeader,
   onToggleHeaderCollapse,
   isHeaderCollapsed,
+  getHeaderGroupItemIds,
   onJumpToHere
 }: RundownTableProps) => {
 
@@ -176,8 +178,10 @@ const RundownTable = ({
                   onClearSelection={onClearSelection}
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
-                  onJumpToHere={onJumpToHere}
-                  getColumnWidth={getColumnWidth}
+                   onJumpToHere={onJumpToHere}
+                   getColumnWidth={getColumnWidth}
+                   isHeaderCollapsed={isHeaderCollapsed}
+                   getHeaderGroupItemIds={getHeaderGroupItemIds}
                 />
                 
                 {/* Drop indicator AFTER the last row */}
