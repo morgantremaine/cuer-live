@@ -175,18 +175,10 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
           const flags = 'gi';
           const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
           
-          console.log('🔍 Find/Replace Debug - Looking for matches in row:', currentMatch.itemId);
-          console.log('🔍 Search term:', searchTerm);
-          console.log('🔍 Target field:', currentMatch.field);
-          
           // First try to find and select text in input/textarea elements
           for (const input of inputs) {
             const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
-            const cellId = inputElement.getAttribute('data-cell-id') || inputElement.getAttribute('data-cell-ref');
-            console.log('🔍 Checking input/textarea with cell-id:', cellId, 'value:', inputElement.value);
-            
             if (inputElement.value && regex.test(inputElement.value)) {
-              console.log('🔍 Match found in input/textarea!');
               const match = inputElement.value.match(regex);
               if (match) {
                 const matchIndex = inputElement.value.search(regex);
@@ -201,35 +193,56 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
           
           // If no match found in input/textarea, look for script/notes content in divs
           const allDivs = element.querySelectorAll('div');
-          console.log('🔍 Checking', allDivs.length, 'div elements for script/notes content');
           
           for (const div of allDivs) {
             const divElement = div as HTMLElement;
             const textContent = divElement.textContent || '';
-            const innerHTML = divElement.innerHTML || '';
             
-            // Check if this div contains script/notes content by looking for the field match
             if (textContent && regex.test(textContent)) {
-              console.log('🔍 Match found in div!', {
-                textContent: textContent.substring(0, 100),
-                innerHTML: innerHTML.substring(0, 100),
-                className: divElement.className
-              });
-              
-              // Add highlight and scroll to it
-              divElement.style.backgroundColor = 'hsl(45 100% 70%)';
-              divElement.style.transition = 'background-color 2s ease-out';
-              divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              
-              setTimeout(() => {
-                divElement.style.backgroundColor = '';
-              }, 2000);
-              
-              return;
+              // Create a text selection using the Selection API
+              const selection = window.getSelection();
+              if (selection) {
+                selection.removeAllRanges();
+                
+                // Find all text nodes within this div
+                const walker = document.createTreeWalker(
+                  divElement,
+                  NodeFilter.SHOW_TEXT
+                );
+                
+                let textNode;
+                let currentOffset = 0;
+                
+                // Walk through text nodes to find the match
+                while (textNode = walker.nextNode()) {
+                  const nodeText = textNode.textContent || '';
+                  const nodeStart = currentOffset;
+                  const nodeEnd = currentOffset + nodeText.length;
+                  
+                  // Check if our match is in this text node
+                  const matchIndex = textContent.search(regex);
+                  const matchEnd = matchIndex + searchTerm.length;
+                  
+                  if (matchIndex >= nodeStart && matchIndex < nodeEnd) {
+                    // The match starts in this text node
+                    const range = document.createRange();
+                    const startOffset = matchIndex - nodeStart;
+                    const endOffset = Math.min(matchEnd - nodeStart, nodeText.length);
+                    
+                    range.setStart(textNode, startOffset);
+                    range.setEnd(textNode, endOffset);
+                    selection.addRange(range);
+                    
+                    // Scroll to the selection
+                    divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                  }
+                  
+                  currentOffset = nodeEnd;
+                }
+              }
             }
           }
-          
-          console.log('🔍 No matches found in any elements');
         }, 100);
       }
     }
