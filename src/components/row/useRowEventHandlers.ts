@@ -67,7 +67,22 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Select the row if not already selected
+    const target = e.target as HTMLElement;
+    
+    // Check if user is actively editing text - allow browser spell check
+    const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+    const isContentEditable = target.contentEditable === 'true';
+    const activeElement = document.activeElement as HTMLElement;
+    const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
+                             activeElement?.tagName === 'INPUT' ||
+                             activeElement?.contentEditable === 'true';
+    
+    // If user is editing text, allow browser's native context menu (spell check)
+    if (isTextInput || isContentEditable || isActivelyEditing) {
+      return; // Don't prevent default or select row
+    }
+    
+    // Otherwise, show our custom context menu and select the row if not already selected
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
