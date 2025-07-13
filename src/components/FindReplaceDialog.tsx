@@ -191,71 +191,57 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
             }
           }
           
-          // If no match found in input/textarea, look for script/notes content in divs
-          const allDivs = element.querySelectorAll('div');
+          // If no match found in input/textarea, look for script cells
+          const scriptCells = element.querySelectorAll('.expandable-script-cell');
           
-          for (const div of allDivs) {
-            const divElement = div as HTMLElement;
-            const textContent = divElement.textContent || '';
+          for (const scriptCell of scriptCells) {
+            const scriptCellElement = scriptCell as HTMLElement;
             
-            if (textContent && regex.test(textContent)) {
-              // Create a text selection using the Selection API
-              const selection = window.getSelection();
-              if (selection) {
-                selection.removeAllRanges();
-                
-                // Find the match in the full text content
-                const match = regex.exec(textContent);
+            // Check if there's a textarea in editing mode
+            const textarea = scriptCellElement.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
+            if (textarea && textarea.offsetParent !== null) {
+              // Textarea is visible and editable
+              const textareaContent = textarea.value || '';
+              if (textareaContent && regex.test(textareaContent)) {
+                const match = textareaContent.match(regex);
                 if (match) {
-                  const matchStart = match.index;
-                  const matchEnd = matchStart + match[0].length;
-                  
-                  // Find all text nodes within this div
-                  const walker = document.createTreeWalker(
-                    divElement,
-                    NodeFilter.SHOW_TEXT
-                  );
-                  
-                  let textNode;
-                  let currentOffset = 0;
-                  let startNode = null;
-                  let endNode = null;
-                  let startOffset = 0;
-                  let endOffset = 0;
-                  
-                  // Walk through text nodes to find where the match starts and ends
-                  while (textNode = walker.nextNode()) {
-                    const nodeText = textNode.textContent || '';
-                    const nodeStart = currentOffset;
-                    const nodeEnd = currentOffset + nodeText.length;
-                    
-                    // Check if match starts in this node
-                    if (!startNode && matchStart >= nodeStart && matchStart < nodeEnd) {
-                      startNode = textNode;
-                      startOffset = matchStart - nodeStart;
-                    }
-                    
-                    // Check if match ends in this node
-                    if (matchEnd > nodeStart && matchEnd <= nodeEnd) {
-                      endNode = textNode;
-                      endOffset = matchEnd - nodeStart;
-                      break;
-                    }
-                    
-                    currentOffset = nodeEnd;
-                  }
-                  
-                  // Create the selection if we found both start and end nodes
-                  if (startNode && endNode) {
-                    const range = document.createRange();
-                    range.setStart(startNode, startOffset);
-                    range.setEnd(endNode, endOffset);
-                    selection.addRange(range);
-                    
-                    // Scroll to the selection
-                    divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  const matchIndex = textareaContent.search(regex);
+                  if (matchIndex !== -1) {
+                    textarea.focus();
+                    textarea.setSelectionRange(matchIndex, matchIndex + match[0].length);
+                    textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                   }
+                }
+              }
+            } else {
+              // Not in editing mode, look for clickable div that contains the text
+              const contentDiv = scriptCellElement.querySelector('div[style*="cursor"]') as HTMLDivElement;
+              if (contentDiv) {
+                const textContent = contentDiv.textContent || '';
+                if (textContent && regex.test(textContent)) {
+                  // Click to enter edit mode
+                  contentDiv.click();
+                  
+                  // Wait for edit mode to activate, then highlight
+                  setTimeout(() => {
+                    const newTextarea = scriptCellElement.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
+                    if (newTextarea) {
+                      const textareaContent = newTextarea.value || '';
+                      if (textareaContent && regex.test(textareaContent)) {
+                        const match = textareaContent.match(regex);
+                        if (match) {
+                          const matchIndex = textareaContent.search(regex);
+                          if (matchIndex !== -1) {
+                            newTextarea.focus();
+                            newTextarea.setSelectionRange(matchIndex, matchIndex + match[0].length);
+                            newTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        }
+                      }
+                    }
+                  }, 100);
+                  return;
                 }
               }
             }
