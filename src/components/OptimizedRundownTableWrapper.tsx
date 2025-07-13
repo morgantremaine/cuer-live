@@ -98,12 +98,15 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     
     // Check if this is a collapsed header
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
-      // For collapsed headers, we need to make sure the item is selected 
-      // so the drag and drop system recognizes it as part of a group
+      // For collapsed headers, automatically select the entire header group 
+      // so users can drag the whole group without needing to select first
       if (restProps.selectedRows && !restProps.selectedRows.has(item.id)) {
-        // Temporarily add the header to selection if not already selected
-        // This ensures the drag system will process it as a group
-        console.log('🎯 Adding collapsed header to selection for drag:', item.id);
+        console.log('🎯 Auto-selecting collapsed header group for drag:', item.id);
+        const headerGroupItemIds = getHeaderGroupItemIds(item.id);
+        if (headerGroupItemIds && headerGroupItemIds.length > 1) {
+          // Use the row selection handler to select the entire header group
+          restProps.onRowSelect(item.id, originalIndex, false, false, headerGroupItemIds);
+        }
       }
     }
     
