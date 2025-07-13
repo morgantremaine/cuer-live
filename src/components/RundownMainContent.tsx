@@ -39,7 +39,8 @@ const RundownMainContent = ({
         onReorderColumns={handleReorderColumns}
         title={contentProps.rundownTitle}
         totalRuntime={totalDuration}
-        items={contentProps.visibleItems} // Use visibleItems instead of items for collapsed headers
+        items={contentProps.items} // Pass original items for duration calculations
+        visibleItems={contentProps.visibleItems} // Pass visible items for display
       />
       
       {showColumnManager && (

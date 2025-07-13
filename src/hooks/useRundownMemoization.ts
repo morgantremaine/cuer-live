@@ -22,7 +22,6 @@ export const useRundownMemoization = (
   
   // Memoize expensive calculations that rarely change
   const memoizedCalculations = useMemo(() => {
-    console.log('🔄 useRundownMemoization recalculating with', items.length, 'items');
     const timeToSeconds = (timeStr: string): number => {
       const parts = timeStr.split(':').map(Number);
       if (parts.length === 2) return parts[0] * 60 + parts[1];
@@ -74,20 +73,14 @@ export const useRundownMemoization = (
     items.forEach((item, index) => {
       if (item.type === 'header') {
         let totalSeconds = 0;
-        let itemCount = 0;
         for (let i = index + 1; i < items.length; i++) {
           const nextItem = items[i];
           if (nextItem.type === 'header') break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
-            const itemDuration = timeToSeconds(nextItem.duration || '00:00');
-            totalSeconds += itemDuration;
-            itemCount++;
-            console.log(`  📝 Adding item ${nextItem.id} duration:`, nextItem.duration, '=', itemDuration, 'seconds');
+            totalSeconds += timeToSeconds(nextItem.duration || '00:00');
           }
         }
-        const duration = secondsToTime(totalSeconds);
-        console.log(`🕒 Header ${item.name} (${item.id}) duration: ${duration} from ${itemCount} items, totalSeconds: ${totalSeconds}`);
-        headerDurations.set(item.id, duration);
+        headerDurations.set(item.id, secondsToTime(totalSeconds));
       }
     });
 

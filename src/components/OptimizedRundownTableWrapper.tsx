@@ -100,7 +100,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     
     // No need for auto-selection since drag system now uses same header collapse state
     if (item?.type === 'header' && isHeaderCollapsed(item.id)) {
-      console.log('🎯 Drag starting on collapsed header:', item.id, '- should auto-detect group');
+      // Collapsed header group will be detected automatically by the drag system
     }
     
     // Call the original handler which will handle the collapsed header logic

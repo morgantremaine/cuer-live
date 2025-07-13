@@ -206,7 +206,8 @@ const RundownContent = React.memo<RundownContentProps>(({
             
             {/* Table Body - Content */}
             <OptimizedRundownTableWrapper
-            items={items}
+            items={items} // Pass original items for duration calculations
+            visibleItems={visibleItems} // Pass visible items for display
             visibleColumns={visibleColumns}
             currentTime={currentTime}
             showColorPicker={showColorPicker}
@@ -246,7 +247,6 @@ const RundownContent = React.memo<RundownContentProps>(({
             toggleHeaderCollapse={toggleHeaderCollapse}
             isHeaderCollapsed={isHeaderCollapsed}
             getHeaderGroupItemIds={getHeaderGroupItemIds}
-            visibleItems={visibleItems}
             />
           </table>
         </div>
