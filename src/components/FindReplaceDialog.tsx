@@ -169,12 +169,14 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Find and select the matching text in input fields
+        // Find and select the matching text in input fields, textareas, and script cells
         setTimeout(() => {
           const inputs = element.querySelectorAll('input, textarea');
+          const scriptDivs = element.querySelectorAll('[data-cell-id*="script"], [data-cell-id*="notes"]');
           const flags = 'gi';
           const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
           
+          // First try to find and select text in input/textarea elements
           for (const input of inputs) {
             const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
             if (inputElement.value && regex.test(inputElement.value)) {
@@ -186,9 +188,28 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
                   // Focus the input and select the matched text
                   inputElement.focus();
                   inputElement.setSelectionRange(matchIndex, matchIndex + match[0].length);
-                  break; // Only highlight the first match found
+                  return; // Exit early if we found a match in input/textarea
                 }
               }
+            }
+          }
+          
+          // If no match found in input/textarea, try script/notes divs
+          for (const div of scriptDivs) {
+            const divElement = div as HTMLElement;
+            const textContent = divElement.textContent || '';
+            if (textContent && regex.test(textContent)) {
+              // For div elements, we'll just scroll to them and add a visual highlight
+              // since we can't select text in non-editable divs the same way
+              divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              
+              // Add a temporary highlight class
+              divElement.classList.add('find-replace-highlight');
+              setTimeout(() => {
+                divElement.classList.remove('find-replace-highlight');
+              }, 2000); // Remove highlight after 2 seconds
+              
+              return; // Exit early if we found a match
             }
           }
         }, 100); // Small delay to ensure scroll completes
