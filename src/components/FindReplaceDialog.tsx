@@ -172,47 +172,65 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         // Find and select the matching text in input fields, textareas, and script cells
         setTimeout(() => {
           const inputs = element.querySelectorAll('input, textarea');
-          const scriptDivs = element.querySelectorAll('[data-cell-id*="script"], [data-cell-id*="notes"]');
           const flags = 'gi';
           const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+          
+          console.log('🔍 Find/Replace Debug - Looking for matches in row:', currentMatch.itemId);
+          console.log('🔍 Search term:', searchTerm);
+          console.log('🔍 Target field:', currentMatch.field);
           
           // First try to find and select text in input/textarea elements
           for (const input of inputs) {
             const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
+            const cellId = inputElement.getAttribute('data-cell-id') || inputElement.getAttribute('data-cell-ref');
+            console.log('🔍 Checking input/textarea with cell-id:', cellId, 'value:', inputElement.value);
+            
             if (inputElement.value && regex.test(inputElement.value)) {
-              // Find the first match in this input
+              console.log('🔍 Match found in input/textarea!');
               const match = inputElement.value.match(regex);
               if (match) {
                 const matchIndex = inputElement.value.search(regex);
                 if (matchIndex !== -1) {
-                  // Focus the input and select the matched text
                   inputElement.focus();
                   inputElement.setSelectionRange(matchIndex, matchIndex + match[0].length);
-                  return; // Exit early if we found a match in input/textarea
+                  return;
                 }
               }
             }
           }
           
-          // If no match found in input/textarea, try script/notes divs
-          for (const div of scriptDivs) {
+          // If no match found in input/textarea, look for script/notes content in divs
+          const allDivs = element.querySelectorAll('div');
+          console.log('🔍 Checking', allDivs.length, 'div elements for script/notes content');
+          
+          for (const div of allDivs) {
             const divElement = div as HTMLElement;
             const textContent = divElement.textContent || '';
+            const innerHTML = divElement.innerHTML || '';
+            
+            // Check if this div contains script/notes content by looking for the field match
             if (textContent && regex.test(textContent)) {
-              // For div elements, we'll just scroll to them and add a visual highlight
-              // since we can't select text in non-editable divs the same way
+              console.log('🔍 Match found in div!', {
+                textContent: textContent.substring(0, 100),
+                innerHTML: innerHTML.substring(0, 100),
+                className: divElement.className
+              });
+              
+              // Add highlight and scroll to it
+              divElement.style.backgroundColor = 'hsl(45 100% 70%)';
+              divElement.style.transition = 'background-color 2s ease-out';
               divElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
               
-              // Add a temporary highlight class
-              divElement.classList.add('find-replace-highlight');
               setTimeout(() => {
-                divElement.classList.remove('find-replace-highlight');
-              }, 2000); // Remove highlight after 2 seconds
+                divElement.style.backgroundColor = '';
+              }, 2000);
               
-              return; // Exit early if we found a match
+              return;
             }
           }
-        }, 100); // Small delay to ensure scroll completes
+          
+          console.log('🔍 No matches found in any elements');
+        }, 100);
       }
     }
   };
