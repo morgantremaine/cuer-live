@@ -48,7 +48,8 @@ export const useRundownClipboardOperations = ({
     const selectedItems = items.filter(item => selectedRows.has(item.id));
     if (selectedItems.length > 0) {
       copyItems(selectedItems);
-      clearSelection();
+      // Clear selection immediately after copy
+      setTimeout(() => clearSelection(), 0);
     }
   }, [items, selectedRows, copyItems, clearSelection]);
 
@@ -121,7 +122,7 @@ export const useRundownClipboardOperations = ({
       
       markAsChanged();
       // Clear selection after successful paste
-      clearSelection();
+      setTimeout(() => clearSelection(), 0);
     }
   }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
 
