@@ -192,7 +192,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
             console.log(`  - disabled: ${input.disabled}`);
             console.log(`  - visible: ${input.offsetParent !== null}`);
             
-            if (input.value && regex.test(input.value)) {
+            if (input.value && !input.disabled && !input.readOnly && regex.test(input.value)) {
               console.log(`  - MATCH FOUND in input ${i}!`);
               regex.lastIndex = 0; // Reset regex
               const match = regex.exec(input.value);
