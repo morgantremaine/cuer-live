@@ -169,76 +169,73 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Find and select the matching text in input fields, textareas, and script cells
         setTimeout(() => {
-          const inputs = element.querySelectorAll('input, textarea');
-          const flags = 'gi';
-          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+          const caseInsensitive = caseSensitive ? '' : 'i';
+          const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(escapedSearchTerm, `g${caseInsensitive}`);
           
-          // First try to find and select text in input/textarea elements
+          // First try to find and select text in regular input/textarea elements
+          const inputs = element.querySelectorAll('input, textarea') as NodeListOf<HTMLInputElement | HTMLTextAreaElement>;
           for (const input of inputs) {
-            const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
-            if (inputElement.value && regex.test(inputElement.value)) {
-              const match = inputElement.value.match(regex);
+            if (input.value && regex.test(input.value)) {
+              regex.lastIndex = 0; // Reset regex
+              const match = regex.exec(input.value);
               if (match) {
-                const matchIndex = inputElement.value.search(regex);
-                if (matchIndex !== -1) {
-                  inputElement.focus();
-                  inputElement.setSelectionRange(matchIndex, matchIndex + match[0].length);
-                  return;
-                }
+                input.focus();
+                input.setSelectionRange(match.index, match.index + match[0].length);
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
               }
             }
           }
           
-          // If no match found in input/textarea, look for script cells
-          const scriptCells = element.querySelectorAll('.expandable-script-cell');
-          
+          // If no match in regular inputs, check for script cells
+          const scriptCells = element.querySelectorAll('.expandable-script-cell') as NodeListOf<HTMLElement>;
           for (const scriptCell of scriptCells) {
-            const scriptCellElement = scriptCell as HTMLElement;
-            
-            // Check if there's a textarea in editing mode
-            const textarea = scriptCellElement.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
-            if (textarea && textarea.offsetParent !== null) {
-              // Textarea is visible and editable
-              const textareaContent = textarea.value || '';
-              if (textareaContent && regex.test(textareaContent)) {
-                const match = textareaContent.match(regex);
-                if (match) {
-                  const matchIndex = textareaContent.search(regex);
-                  if (matchIndex !== -1) {
+            // Look for the textarea with the data-cell-ref attribute that contains our search term
+            const textareas = scriptCell.querySelectorAll('textarea[data-cell-ref]') as NodeListOf<HTMLTextAreaElement>;
+            for (const textarea of textareas) {
+              if (textarea.value && regex.test(textarea.value)) {
+                regex.lastIndex = 0; // Reset regex
+                
+                // Check if this textarea is currently visible and editable
+                const isVisible = textarea.offsetParent !== null && !textarea.disabled;
+                
+                if (isVisible) {
+                  // Textarea is already visible, just select the text
+                  const match = regex.exec(textarea.value);
+                  if (match) {
                     textarea.focus();
-                    textarea.setSelectionRange(matchIndex, matchIndex + match[0].length);
+                    textarea.setSelectionRange(match.index, match.index + match[0].length);
                     textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                   }
-                }
-              }
-            } else {
-              // Not in editing mode, look for clickable div that contains the text
-              const contentDiv = scriptCellElement.querySelector('div[style*="cursor"]') as HTMLDivElement;
-              if (contentDiv) {
-                const textContent = contentDiv.textContent || '';
-                if (textContent && regex.test(textContent)) {
-                  // Click to enter edit mode
-                  contentDiv.click();
+                } else {
+                  // Need to activate editing mode first
+                  // Find the expand button (if collapsed)
+                  const expandButton = scriptCell.querySelector('button') as HTMLButtonElement;
+                  if (expandButton) {
+                    expandButton.click(); // Expand the cell
+                  }
                   
-                  // Wait for edit mode to activate, then highlight
+                  // Wait a bit, then find the clickable content div to enter edit mode
                   setTimeout(() => {
-                    const newTextarea = scriptCellElement.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
-                    if (newTextarea) {
-                      const textareaContent = newTextarea.value || '';
-                      if (textareaContent && regex.test(textareaContent)) {
-                        const match = textareaContent.match(regex);
-                        if (match) {
-                          const matchIndex = textareaContent.search(regex);
-                          if (matchIndex !== -1) {
-                            newTextarea.focus();
-                            newTextarea.setSelectionRange(matchIndex, matchIndex + match[0].length);
-                            newTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const contentDiv = scriptCell.querySelector('div[style*="cursor"]') as HTMLDivElement;
+                    if (contentDiv) {
+                      contentDiv.click(); // Enter edit mode
+                      
+                      // Wait for edit mode to activate, then select text
+                      setTimeout(() => {
+                        const editableTextarea = scriptCell.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
+                        if (editableTextarea && editableTextarea.offsetParent !== null) {
+                          const match = regex.exec(editableTextarea.value);
+                          if (match) {
+                            editableTextarea.focus();
+                            editableTextarea.setSelectionRange(match.index, match.index + match[0].length);
+                            editableTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
                           }
                         }
-                      }
+                      }, 150);
                     }
                   }, 100);
                   return;
