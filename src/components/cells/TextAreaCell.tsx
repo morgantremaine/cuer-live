@@ -153,8 +153,14 @@ const TextAreaCell = ({
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Stop propagation to prevent row drag events
-    e.stopPropagation();
+    // Only handle left-clicks - right-clicks should not start editing or stop propagation
+    if (e.button === 0) { // Left click
+      // Stop propagation to prevent row drag events
+      e.stopPropagation();
+    } else {
+      // For right-clicks, prevent focusing to avoid triggering edit mode
+      e.preventDefault();
+    }
   };
 
   // Enhanced focus handler to disable row dragging when editing
