@@ -67,20 +67,20 @@ export const useRowEventHandlers = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     
-    // Only allow browser context menu if user is actively editing text (focused input/textarea)
-    const activeElement = document.activeElement as HTMLElement;
-    const isActivelyEditing = activeElement && 
-                             (activeElement.tagName === 'INPUT' || 
-                              activeElement.tagName === 'TEXTAREA' || 
-                              activeElement.isContentEditable) &&
-                             target === activeElement;
+    // Only allow browser context menu if the target is currently the active/focused element
+    // (meaning user has actually clicked into it and is actively editing)
+    const isActivelyEditing = document.activeElement === target && 
+                             (target.tagName === 'INPUT' || 
+                              target.tagName === 'TEXTAREA' || 
+                              target.isContentEditable);
     
     if (isActivelyEditing) {
-      // Don't prevent default, don't select row - let browser handle it
+      // User is actively typing - let browser handle context menu
       return;
     }
     
-    // Select the row if not already selected (let the custom context menu handle the rest)
+    // For all other cases (hovering over editable areas, rest of row), 
+    // select the row and show custom context menu
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
