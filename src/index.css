@@ -257,27 +257,3 @@
     display: block !important;
   }
 }
-
-/* Find and Replace highlight animation */
-.find-replace-highlight {
-  background-color: hsl(45 100% 70%) !important;
-  animation: find-highlight 2s ease-out;
-}
-
-.dark .find-replace-highlight {
-  background-color: hsl(45 90% 60%) !important;
-}
-
-@keyframes find-highlight {
-  0% {
-    background-color: hsl(45 100% 80%) !important;
-    box-shadow: 0 0 10px hsl(45 100% 60%);
-  }
-  50% {
-    background-color: hsl(45 100% 70%) !important;
-  }
-  100% {
-    background-color: transparent !important;
-    box-shadow: none;
-  }
-}
