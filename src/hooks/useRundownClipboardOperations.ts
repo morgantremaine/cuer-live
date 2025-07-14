@@ -120,6 +120,7 @@ export const useRundownClipboardOperations = ({
       });
       
       markAsChanged();
+      // Clear selection after successful paste
       clearSelection();
     }
   }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
