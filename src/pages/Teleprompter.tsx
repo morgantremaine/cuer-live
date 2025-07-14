@@ -48,6 +48,20 @@ const Teleprompter = () => {
   // Use the scroll hook with reverse support
   useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
 
+  // Update browser tab title when rundown title changes
+  useEffect(() => {
+    if (rundownData?.title && rundownData.title !== 'Untitled Rundown') {
+      document.title = `${rundownData.title} - Teleprompter`;
+    } else {
+      document.title = 'Cuer Live';
+    }
+
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = 'Cuer Live';
+    };
+  }, [rundownData?.title]);
+
   // Enhanced save system
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
     rundownId: rundownId!,
