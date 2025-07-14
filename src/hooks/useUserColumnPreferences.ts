@@ -115,7 +115,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         
-        // Ensure images column has correct properties - fix any potential mismatches
+        // Ensure all default columns are present and fix any potential mismatches
         const fixedColumns = loadedColumns.map(col => {
           if (col.key === 'images' || col.id === 'images') {
             return {
@@ -130,8 +130,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           return col;
         });
         
+        // Ensure all default columns are present by merging with defaults
+        const userColumnKeys = new Set(fixedColumns.map(col => col.key));
+        const missingDefaultColumns = defaultColumns.filter(defaultCol => 
+          !userColumnKeys.has(defaultCol.key)
+        );
+        
+        // Add missing default columns at the end
+        const columnsWithDefaults = [...fixedColumns, ...missingDefaultColumns];
+        
         // Merge with team columns, preserving user's visibility preferences for team columns
-        const mergedColumns = mergeColumnsWithTeamColumns(fixedColumns);
+        const mergedColumns = mergeColumnsWithTeamColumns(columnsWithDefaults);
         
         setColumns(mergedColumns);
         lastSavedRef.current = JSON.stringify(fixedColumns); // Only save personal columns
