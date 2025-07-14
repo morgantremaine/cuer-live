@@ -569,6 +569,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             >
               View Changelog
             </a>
+            <div className="mt-2">
+              <a 
+                href="https://forms.gle/vhAmtxCULAipQ2kr7" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Report a Problem
+              </a>
+            </div>
           </div>
           <div className="mt-3 text-gray-400">
             By using this site, you agree to our{' '}
