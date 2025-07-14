@@ -170,69 +170,114 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
         setTimeout(() => {
+          console.log('=== FIND AND REPLACE DEBUG ===');
+          console.log('Current match:', currentMatch);
+          console.log('Element found:', element);
+          console.log('Search term:', searchTerm);
+          
           const caseInsensitive = caseSensitive ? '' : 'i';
           const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const regex = new RegExp(escapedSearchTerm, `g${caseInsensitive}`);
+          console.log('Regex:', regex);
           
           // First try to find and select text in regular input/textarea elements
           const inputs = element.querySelectorAll('input, textarea') as NodeListOf<HTMLInputElement | HTMLTextAreaElement>;
-          for (const input of inputs) {
+          console.log('Found inputs/textareas:', inputs.length);
+          
+          for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            console.log(`Input ${i}:`, input);
+            console.log(`  - value: "${input.value}"`);
+            console.log(`  - data-cell-ref: "${input.getAttribute('data-cell-ref')}"`);
+            console.log(`  - disabled: ${input.disabled}`);
+            console.log(`  - visible: ${input.offsetParent !== null}`);
+            
             if (input.value && regex.test(input.value)) {
+              console.log(`  - MATCH FOUND in input ${i}!`);
               regex.lastIndex = 0; // Reset regex
               const match = regex.exec(input.value);
               if (match) {
+                console.log(`  - Match details:`, match);
                 input.focus();
                 input.setSelectionRange(match.index, match.index + match[0].length);
                 input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                console.log('=== HIGHLIGHTING COMPLETED IN INPUT ===');
                 return;
               }
             }
+            regex.lastIndex = 0; // Reset regex for next iteration
           }
           
           // If no match in regular inputs, check for script cells
           const scriptCells = element.querySelectorAll('.expandable-script-cell') as NodeListOf<HTMLElement>;
-          for (const scriptCell of scriptCells) {
-            // Look for the textarea with the data-cell-ref attribute that contains our search term
-            const textareas = scriptCell.querySelectorAll('textarea[data-cell-ref]') as NodeListOf<HTMLTextAreaElement>;
-            for (const textarea of textareas) {
+          console.log('Found script cells:', scriptCells.length);
+          
+          for (let i = 0; i < scriptCells.length; i++) {
+            const scriptCell = scriptCells[i];
+            console.log(`Script cell ${i}:`, scriptCell);
+            
+            // Look for all textareas in this script cell
+            const textareas = scriptCell.querySelectorAll('textarea') as NodeListOf<HTMLTextAreaElement>;
+            console.log(`  - Found textareas: ${textareas.length}`);
+            
+            for (let j = 0; j < textareas.length; j++) {
+              const textarea = textareas[j];
+              console.log(`    Textarea ${j}:`, textarea);
+              console.log(`      - value: "${textarea.value}"`);
+              console.log(`      - disabled: ${textarea.disabled}`);
+              console.log(`      - visible: ${textarea.offsetParent !== null}`);
+              console.log(`      - data-cell-ref: "${textarea.getAttribute('data-cell-ref')}"`);
+              
               if (textarea.value && regex.test(textarea.value)) {
+                console.log(`      - MATCH FOUND in textarea ${j}!`);
                 regex.lastIndex = 0; // Reset regex
                 
-                // Check if this textarea is currently visible and editable
                 const isVisible = textarea.offsetParent !== null && !textarea.disabled;
+                console.log(`      - Is visible and enabled: ${isVisible}`);
                 
                 if (isVisible) {
                   // Textarea is already visible, just select the text
                   const match = regex.exec(textarea.value);
                   if (match) {
+                    console.log(`      - Selecting text at position ${match.index}-${match.index + match[0].length}`);
                     textarea.focus();
                     textarea.setSelectionRange(match.index, match.index + match[0].length);
                     textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    console.log('=== HIGHLIGHTING COMPLETED IN SCRIPT TEXTAREA ===');
                     return;
                   }
                 } else {
+                  console.log(`      - Textarea not visible, trying to activate it...`);
                   // Need to activate editing mode first
+                  
                   // Find the expand button (if collapsed)
                   const expandButton = scriptCell.querySelector('button') as HTMLButtonElement;
                   if (expandButton) {
+                    console.log(`      - Clicking expand button`);
                     expandButton.click(); // Expand the cell
                   }
                   
                   // Wait a bit, then find the clickable content div to enter edit mode
                   setTimeout(() => {
                     const contentDiv = scriptCell.querySelector('div[style*="cursor"]') as HTMLDivElement;
+                    console.log(`      - Found content div:`, contentDiv);
                     if (contentDiv) {
+                      console.log(`      - Clicking content div to enter edit mode`);
                       contentDiv.click(); // Enter edit mode
                       
                       // Wait for edit mode to activate, then select text
                       setTimeout(() => {
                         const editableTextarea = scriptCell.querySelector('textarea:not([disabled])') as HTMLTextAreaElement;
+                        console.log(`      - Found editable textarea after activation:`, editableTextarea);
                         if (editableTextarea && editableTextarea.offsetParent !== null) {
+                          regex.lastIndex = 0; // Reset regex
                           const match = regex.exec(editableTextarea.value);
                           if (match) {
+                            console.log(`      - Final selection at position ${match.index}-${match.index + match[0].length}`);
                             editableTextarea.focus();
                             editableTextarea.setSelectionRange(match.index, match.index + match[0].length);
                             editableTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            console.log('=== HIGHLIGHTING COMPLETED AFTER ACTIVATION ===');
                           }
                         }
                       }, 150);
@@ -241,8 +286,11 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
                   return;
                 }
               }
+              regex.lastIndex = 0; // Reset regex for next iteration
             }
           }
+          
+          console.log('=== NO MATCHES FOUND ===');
         }, 100);
       }
     }
