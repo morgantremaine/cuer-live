@@ -98,10 +98,6 @@ export const renderScriptWithBrackets = (
       }, formatText(bracketText))
     );
 
-    // Add line break after bracket only for teleprompter (when not inlineDisplay)
-    if (!inlineDisplay) {
-      parts.push(React.createElement('br', { key: `br-${match.index}` }));
-    }
 
     lastIndex = bracketRegex.lastIndex;
   }
