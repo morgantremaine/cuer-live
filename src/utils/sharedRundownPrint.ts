@@ -187,21 +187,27 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     const customColor = rowElement.getAttribute('data-custom-color') === 'true';
     const isFloated = rowElement.getAttribute('data-floated') === 'true';
     
+    // Check if this is a header row by CSS class (shared rundown uses classes instead of data attributes)
+    const isHeaderRow = rowElement.classList.contains('print-header-row') || 
+                       rowElement.querySelector('.print-header-row') ||
+                       dataType === 'header';
+    
     // Debug logging
     console.log('Processing row:', {
       dataType,
       customColor,
       isFloated,
+      isHeaderRow,
+      classList: Array.from(rowElement.classList),
       hasStyleBackground: !!rowElement.style.backgroundColor,
-      computedBackground: window.getComputedStyle(rowElement).backgroundColor,
-      classList: Array.from(rowElement.classList)
+      computedBackground: window.getComputedStyle(rowElement).backgroundColor
     });
     
     let rowClass = 'regular-row';
     let backgroundColor = '#ffffff';
     
     // Headers always get light background regardless of custom colors
-    if (dataType === 'header') {
+    if (isHeaderRow) {
       rowClass = 'header-row';
       backgroundColor = '#f5f5f5';
     } else if (customColor || rowElement.style.backgroundColor) {
