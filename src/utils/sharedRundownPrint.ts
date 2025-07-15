@@ -190,6 +190,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     let rowClass = 'regular-row';
     let backgroundColor = '#ffffff';
     
+    // Headers always get light background regardless of custom colors
     if (dataType === 'header') {
       rowClass = 'header-row';
       backgroundColor = '#f5f5f5';
