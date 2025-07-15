@@ -418,7 +418,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         border: 1px solid #999 !important;
       }
 
-      /* Preserve custom colors */
+      /* Preserve custom colors but lighten them */
       .colored-row {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -429,6 +429,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         print-color-adjust: exact !important;
         background: inherit !important;
         color: black !important;
+        filter: brightness(1.4) !important;
       }
 
       .floated-row {
