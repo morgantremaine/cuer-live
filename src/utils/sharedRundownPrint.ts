@@ -159,11 +159,16 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     const lowerContent = content.toLowerCase();
     
     if (content === '#' || index === 0) {
-      columnStyle = 'width: 30px; max-width: 30px;';
+      columnStyle = 'width: 25px; max-width: 25px; white-space: nowrap;';
     } else if (lowerContent.includes('duration') || lowerContent.includes('start') || lowerContent.includes('end') || lowerContent.includes('elapsed')) {
-      columnStyle = 'width: 60px; max-width: 60px;';
-    } else if (lowerContent.includes('talent') || lowerContent.includes('stage') || lowerContent.includes('source') || lowerContent.includes('gfx')) {
-      columnStyle = 'width: 80px; max-width: 80px;';
+      columnStyle = 'width: 50px; max-width: 50px; white-space: nowrap;';
+    } else if (lowerContent.includes('talent') || lowerContent.includes('stage') || lowerContent.includes('source') || lowerContent.includes('gfx') || lowerContent.includes('camera') || lowerContent.includes('audio') || lowerContent.includes('video')) {
+      columnStyle = 'width: 60px; max-width: 60px; white-space: nowrap;';
+    } else if (lowerContent.includes('script') || lowerContent.includes('content') || lowerContent.includes('notes') || lowerContent.includes('description')) {
+      columnStyle = 'min-width: 200px; width: auto;';
+    } else {
+      // For other columns, use minimal width
+      columnStyle = 'width: 40px; max-width: 40px; white-space: nowrap;';
     }
     
     printHTML += `<th style="${columnStyle}">${content || ''}</th>`;
