@@ -372,7 +372,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       .print-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        font-size: 10px !important;
+        font-size: 12px !important;
         background: white !important;
         table-layout: auto !important;
         page-break-before: avoid !important;
@@ -384,7 +384,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         border: 1px solid #333 !important;
         padding: 6px 4px !important;
         font-weight: bold !important;
-        font-size: 9px !important;
+        font-size: 11px !important;
         text-align: left !important;
         color: black !important;
         -webkit-print-color-adjust: exact !important;
@@ -397,7 +397,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         vertical-align: top !important;
         word-wrap: break-word !important;
         color: black !important;
-        font-size: 9px !important;
+        font-size: 11px !important;
         line-height: 1.3 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -411,7 +411,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
       .header-row td {
         font-weight: bold !important;
-        font-size: 11px !important;
+        font-size: 13px !important;
         padding: 8px 4px !important;
         background: #e8e8e8 !important;
         color: black !important;
