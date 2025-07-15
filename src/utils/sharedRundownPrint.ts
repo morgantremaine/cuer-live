@@ -192,7 +192,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     
     if (dataType === 'header') {
       rowClass = 'header-row';
-      backgroundColor = '#e8e8e8';
+      backgroundColor = '#f5f5f5';
     } else if (customColor || rowElement.style.backgroundColor) {
       rowClass = 'colored-row';
       // Get the actual background color from the row element
@@ -404,7 +404,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       }
 
       .header-row {
-        background: white !important;
+        background: #f5f5f5 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -413,7 +413,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         font-weight: bold !important;
         font-size: 18px !important;
         padding: 12px 8px !important;
-        background: white !important;
+        background: #f5f5f5 !important;
         color: black !important;
         border: 1px solid #999 !important;
       }
