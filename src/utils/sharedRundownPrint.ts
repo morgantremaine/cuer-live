@@ -380,7 +380,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       }
 
       #shared-print-only-content .print-table th {
-        background: #f5f5f5 !important;
+        background: #f9f9f9 !important;
         border: 1px solid #333 !important;
         padding: 10px 8px !important;
         font-weight: bold !important;
@@ -404,7 +404,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       }
 
       .header-row {
-        background: #e8e8e8 !important;
+        background: #f3f3f3 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -413,7 +413,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         font-weight: bold !important;
         font-size: 18px !important;
         padding: 12px 8px !important;
-        background: #e8e8e8 !important;
+        background: #f3f3f3 !important;
         color: black !important;
       }
 
