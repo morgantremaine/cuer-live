@@ -369,35 +369,35 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         gap: 30px !important;
       }
 
-      .print-table {
+      #shared-print-only-content .print-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        font-size: 16px !important;
+        font-size: 18px !important;
         background: white !important;
         table-layout: auto !important;
         page-break-before: avoid !important;
         page-break-after: avoid !important;
       }
 
-      .print-table th {
+      #shared-print-only-content .print-table th {
         background: #f5f5f5 !important;
         border: 1px solid #333 !important;
-        padding: 8px 6px !important;
+        padding: 10px 8px !important;
         font-weight: bold !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         text-align: left !important;
         color: black !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
-      .print-table td {
+      #shared-print-only-content .print-table td {
         border: 1px solid #666 !important;
-        padding: 6px !important;
+        padding: 8px !important;
         vertical-align: top !important;
         word-wrap: break-word !important;
         color: black !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         line-height: 1.4 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -409,10 +409,10 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         print-color-adjust: exact !important;
       }
 
-      .header-row td {
+      #shared-print-only-content .header-row td {
         font-weight: bold !important;
-        font-size: 17px !important;
-        padding: 10px 6px !important;
+        font-size: 18px !important;
+        padding: 12px 8px !important;
         background: #e8e8e8 !important;
         color: black !important;
       }
