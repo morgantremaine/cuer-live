@@ -166,6 +166,8 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       columnStyle = 'width: 60px; max-width: 60px; white-space: nowrap;';
     } else if (lowerContent.includes('script') || lowerContent.includes('content') || lowerContent.includes('notes') || lowerContent.includes('description')) {
       columnStyle = 'min-width: 200px; width: auto;';
+    } else if (lowerContent.includes('segment') || lowerContent.includes('name') || lowerContent.includes('title')) {
+      columnStyle = 'width: 120px; max-width: 120px;';
     } else {
       // For other columns, use minimal width
       columnStyle = 'width: 40px; max-width: 40px; white-space: nowrap;';
