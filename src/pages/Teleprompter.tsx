@@ -313,6 +313,11 @@ const Teleprompter = () => {
 
   // Updated helper function to check if item should be included in teleprompter
   const shouldIncludeInTeleprompter = (item: RundownItem) => {
+    // Exclude floated items from teleprompter
+    if (item.isFloating || item.isFloated) {
+      return false;
+    }
+    
     if (showAllSegments) {
       // Show all segments when toggle is on
       return true;
