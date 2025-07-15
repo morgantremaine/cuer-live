@@ -187,6 +187,16 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     const customColor = rowElement.getAttribute('data-custom-color') === 'true';
     const isFloated = rowElement.getAttribute('data-floated') === 'true';
     
+    // Debug logging
+    console.log('Processing row:', {
+      dataType,
+      customColor,
+      isFloated,
+      hasStyleBackground: !!rowElement.style.backgroundColor,
+      computedBackground: window.getComputedStyle(rowElement).backgroundColor,
+      classList: Array.from(rowElement.classList)
+    });
+    
     let rowClass = 'regular-row';
     let backgroundColor = '#ffffff';
     
