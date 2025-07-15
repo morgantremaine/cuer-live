@@ -192,17 +192,6 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
                        rowElement.querySelector('.print-header-row') ||
                        dataType === 'header';
     
-    // Debug logging
-    console.log('Processing row:', {
-      dataType,
-      customColor,
-      isFloated,
-      isHeaderRow,
-      classList: Array.from(rowElement.classList),
-      hasStyleBackground: !!rowElement.style.backgroundColor,
-      computedBackground: window.getComputedStyle(rowElement).backgroundColor
-    });
-    
     let rowClass = 'regular-row';
     let backgroundColor = '#ffffff';
     
