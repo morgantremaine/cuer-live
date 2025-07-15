@@ -649,13 +649,13 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }
             
             .print-header-row {
-              background: #e5e5e5 !important;
+              background: #f5f5f5 !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
             
             .print-header-row td {
-              background: #e5e5e5 !important;
+              background: #f5f5f5 !important;
               color: #000 !important;
               font-weight: bold !important;
             }
