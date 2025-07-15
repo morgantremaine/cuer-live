@@ -404,7 +404,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       }
 
       .header-row {
-        background: #fafafa !important;
+        background: white !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -413,8 +413,9 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         font-weight: bold !important;
         font-size: 18px !important;
         padding: 12px 8px !important;
-        background: #fafafa !important;
+        background: white !important;
         color: black !important;
+        border: 1px solid #999 !important;
       }
 
       /* Preserve custom colors */
