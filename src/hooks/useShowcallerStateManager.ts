@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerItemUpdates } from './useShowcallerItemUpdates';
+import { useUniversalTiming } from './useUniversalTiming';
 
 export interface ShowcallerState {
   isPlaying: boolean;
@@ -40,6 +41,7 @@ export const useShowcallerStateManager = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
+  const { getUniversalTime } = useUniversalTiming();
 
   const { updateItemSilent, clearCurrentStatusSilent } = useShowcallerItemUpdates({
     items,
@@ -146,7 +148,7 @@ export const useShowcallerStateManager = ({
       updateShowcallerState({
         currentSegmentId: segmentId,
         timeRemaining: duration,
-        playbackStartTime: Date.now(), // Use consistent Date.now()
+        playbackStartTime: getUniversalTime(), // Use synchronized universal time
         controllerId: userId
       }, true);
     }
@@ -178,7 +180,7 @@ export const useShowcallerStateManager = ({
                 ...prevState,
                 currentSegmentId: nextSegment.id,
                 timeRemaining: duration,
-                playbackStartTime: Date.now(), // Use consistent Date.now()
+                playbackStartTime: getUniversalTime(), // Use synchronized universal time
                 lastUpdate: new Date().toISOString()
               };
               
@@ -262,7 +264,7 @@ export const useShowcallerStateManager = ({
     
     updateShowcallerState({ 
       isPlaying: true,
-      playbackStartTime: Date.now(), // Use consistent Date.now()
+      playbackStartTime: getUniversalTime(), // Use synchronized universal time
       controllerId: userId
     }, true);
     
@@ -295,7 +297,7 @@ export const useShowcallerStateManager = ({
         updateShowcallerState({
           currentSegmentId: nextSegment.id,
           timeRemaining: duration,
-          playbackStartTime: showcallerState.isPlaying ? Date.now() : null, // Use consistent Date.now()
+          playbackStartTime: showcallerState.isPlaying ? getUniversalTime() : null, // Use synchronized universal time
           controllerId: userId
         }, true);
         
@@ -320,7 +322,7 @@ export const useShowcallerStateManager = ({
         updateShowcallerState({
           currentSegmentId: prevSegment.id,
           timeRemaining: duration,
-          playbackStartTime: showcallerState.isPlaying ? Date.now() : null, // Use consistent Date.now()
+          playbackStartTime: showcallerState.isPlaying ? getUniversalTime() : null, // Use synchronized universal time
           controllerId: userId
         }, true);
         
@@ -357,7 +359,7 @@ export const useShowcallerStateManager = ({
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
         const segmentDuration = timeToSeconds(segment.duration || '00:00');
-        const elapsedTime = Math.floor((Date.now() - externalState.playbackStartTime) / 1000); // Use consistent Date.now()
+        const elapsedTime = Math.floor((getUniversalTime() - externalState.playbackStartTime) / 1000); // Use synchronized universal time
         const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
         
         synchronizedState = {

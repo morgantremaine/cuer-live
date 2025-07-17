@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import { useUniversalTiming } from './useUniversalTiming';
 
 interface UseShowcallerTimingProps {
   items: RundownItem[];
@@ -27,6 +28,7 @@ export const useShowcallerTiming = ({
 }: UseShowcallerTimingProps): TimingStatus => {
   const stableDisplayRef = useRef<string>('00:00:00');
   const lastCalculationRef = useRef<number>(0);
+  const { getUniversalTime, isTimeSynced } = useUniversalTiming();
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -60,11 +62,18 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current real time in seconds - use consistent Date.now() approach
-    const now = new Date(Date.now());
+    // CRITICAL FIX: Use synchronized universal time to prevent discrepancies
+    // All users calculate timing based on the same synchronized time reference
+    const universalTime = getUniversalTime();
+    const now = new Date(universalTime);
     const currentTimeString = now.toTimeString().slice(0, 8);
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
+
+    // Show warning if time sync hasn't completed yet
+    if (!isTimeSynced) {
+      console.warn('⚠️ Timing calculation may be inaccurate - time sync not completed');
+    }
 
     // Calculate showcaller position: sum of all completed segments + elapsed in current segment
     let showcallerElapsedSeconds = 0;
@@ -82,7 +91,7 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = currentSegmentDuration - timeRemaining;
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Calculate real elapsed time since rundown start
+    // Calculate real elapsed time since rundown start using UTC to ensure consistency
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
     // Handle day boundary crossing more intelligently

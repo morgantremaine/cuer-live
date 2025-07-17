@@ -1,6 +1,7 @@
 
 import { useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { useUniversalTiming } from './useUniversalTiming';
 
 interface UseShowcallerPrecisionTimingProps {
   items: RundownItem[];
@@ -10,6 +11,7 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
   const baseTimeRef = useRef<number | null>(null);
   const driftCompensationRef = useRef<number>(0);
   const lastSyncTimeRef = useRef<number>(0);
+  const { getUniversalTime, isTimeSynced } = useUniversalTiming();
 
   // Convert time string to milliseconds for precision
   const timeToMilliseconds = useCallback((timeStr: string): number => {
@@ -26,10 +28,11 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
     return 0;
   }, []);
 
-  // Get high-precision current time
+  // Get high-precision synchronized time
   const getPreciseTime = useCallback((): number => {
-    return performance.now() + performance.timeOrigin;
-  }, []);
+    // Use universal timing when available, fallback to performance timing
+    return isTimeSynced ? getUniversalTime() : (performance.now() + performance.timeOrigin);
+  }, [getUniversalTime, isTimeSynced]);
 
   // Simplified precise time remaining calculation without drift compensation
   const calculatePreciseTimeRemaining = useCallback((
@@ -75,8 +78,8 @@ export const useShowcallerPrecisionTiming = ({ items }: UseShowcallerPrecisionTi
   const resetDriftCompensation = useCallback(() => {
     driftCompensationRef.current = 0;
     baseTimeRef.current = null;
-    lastSyncTimeRef.current = Date.now();
-  }, []);
+    lastSyncTimeRef.current = getPreciseTime();
+  }, [getPreciseTime]);
 
   // Enhanced external state synchronization with immediate precision
   const synchronizeWithExternalState = useCallback((
