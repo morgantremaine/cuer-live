@@ -77,6 +77,7 @@ const RundownHeader = ({
   const timingStatus = useShowcallerTiming({
     items,
     rundownStartTime,
+    timezone,
     isPlaying,
     currentSegmentId,
     timeRemaining

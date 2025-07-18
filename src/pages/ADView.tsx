@@ -39,6 +39,7 @@ const ADView = () => {
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
     rundownStartTime: rundownData?.startTime || '09:00:00',
+    timezone: rundownData?.timezone || 'UTC',
     isPlaying: isShowcallerPlaying,
     currentSegmentId: currentSegmentId || '',
     timeRemaining: timeRemaining || 0

@@ -70,6 +70,7 @@ const SharedRundown = () => {
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
     rundownStartTime: rundownData?.startTime || '09:00:00',
+    timezone: rundownData?.timezone || 'UTC',
     isPlaying,
     currentSegmentId,
     timeRemaining

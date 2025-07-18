@@ -3,10 +3,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 import { useUniversalTiming } from './useUniversalTiming';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface UseShowcallerTimingProps {
   items: RundownItem[];
   rundownStartTime: string;
+  timezone: string;
   isPlaying: boolean;
   currentSegmentId: string | null;
   timeRemaining: number;
@@ -22,6 +24,7 @@ interface TimingStatus {
 export const useShowcallerTiming = ({
   items,
   rundownStartTime,
+  timezone,
   isPlaying,
   currentSegmentId,
   timeRemaining
@@ -62,11 +65,13 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // CRITICAL FIX: Use synchronized universal time to prevent discrepancies
-    // All users calculate timing based on the same synchronized time reference
+    // CRITICAL FIX: Use synchronized universal time with proper timezone handling
+    // All users calculate timing based on the same universal time in the rundown's timezone
     const universalTime = getUniversalTime();
     const now = new Date(universalTime);
-    const currentTimeString = now.toTimeString().slice(0, 8);
+    
+    // Get current time in the rundown's timezone (never use device time)
+    const currentTimeString = formatInTimeZone(now, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
 

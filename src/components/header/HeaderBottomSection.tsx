@@ -8,6 +8,7 @@ import { RundownItem } from '@/types/rundown';
 interface HeaderBottomSectionProps {
   totalRuntime: string;
   rundownStartTime: string;
+  timezone: string;
   onRundownStartTimeChange: (startTime: string) => void;
   items?: RundownItem[];
   isPlaying?: boolean;
@@ -18,6 +19,7 @@ interface HeaderBottomSectionProps {
 const HeaderBottomSection = ({
   totalRuntime,
   rundownStartTime,
+  timezone,
   onRundownStartTimeChange,
   items = [],
   isPlaying = false,
@@ -32,6 +34,7 @@ const HeaderBottomSection = ({
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
     rundownStartTime,
+    timezone,
     isPlaying,
     currentSegmentId,
     timeRemaining // Pass the timeRemaining value
@@ -89,12 +92,6 @@ const HeaderBottomSection = ({
   // Display calculated total runtime with proper formatting
   const displayRuntime = totalRuntime && totalRuntime !== '00:00:00' ? totalRuntime : '00:00:00';
   
-  // Debug: Log what totalRuntime we received
-  console.log('🔍 HeaderBottomSection Runtime Debug:', {
-    totalRuntime,
-    displayRuntime,
-    runtimeExists: !!totalRuntime
-  });
 
   return (
     <div className="flex justify-between items-center text-sm">
