@@ -210,26 +210,31 @@ class UniversalTimeService {
    * Fetch server time from external API
    */
   private async fetchServerTime(url: string): Promise<number> {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(5000) // 5 second timeout
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-    const data = await response.json();
-    
-    // Handle different API response formats
-    if (url.includes('worldtimeapi.org')) {
-      return new Date(data.datetime).getTime();
-    } else if (url.includes('timeapi.io')) {
-      return new Date(data.dateTime).getTime();
+      const data = await response.json();
+      
+      // Handle different API response formats
+      if (url.includes('worldtimeapi.org')) {
+        return new Date(data.datetime).getTime();
+      } else if (url.includes('timeapi.io')) {
+        return new Date(data.dateTime).getTime();
+      }
+      
+      throw new Error('Unsupported time API format');
+    } catch (error) {
+      // Silently handle network errors since we have redundant APIs
+      throw error;
     }
-    
-    throw new Error('Unsupported time API format');
   }
 
   /**
