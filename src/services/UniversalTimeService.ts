@@ -1,0 +1,264 @@
+/**
+ * Universal Time Service - Centralized time management to prevent device time discrepancies
+ * This service replaces ALL direct Date.now() and new Date() calls across the application
+ */
+
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+
+interface TimeSyncState {
+  serverTimeOffset: number; // Difference between server time and local time
+  lastSyncTime: number; // When we last synced with server
+  syncAttempts: number; // Number of sync attempts
+  isTimeSynced: boolean; // Whether we have a reliable sync
+  syncErrors: string[]; // Recent sync errors
+}
+
+class UniversalTimeService {
+  private state: TimeSyncState = {
+    serverTimeOffset: 0,
+    lastSyncTime: 0,
+    syncAttempts: 0,
+    isTimeSynced: false,
+    syncErrors: []
+  };
+
+  private syncPromise: Promise<void> | null = null;
+  private syncRetryTimeout: NodeJS.Timeout | null = null;
+  private autoSyncInterval: NodeJS.Timeout | null = null;
+  private readonly MAX_SYNC_ERRORS = 5;
+  private readonly SYNC_RETRY_DELAY = 5000; // 5 seconds
+  private readonly AUTO_SYNC_INTERVAL = 300000; // 5 minutes
+
+  constructor() {
+    this.initializeAutoSync();
+  }
+
+  /**
+   * Get current universal time in milliseconds (synchronized with server)
+   * This replaces all Date.now() calls
+   */
+  public getUniversalTime(): number {
+    const localTime = Date.now();
+    
+    if (!this.state.isTimeSynced) {
+      // If we haven't synced yet, trigger sync and return local time
+      this.syncWithServer();
+      return localTime;
+    }
+
+    // Return server-synchronized time
+    return localTime + this.state.serverTimeOffset;
+  }
+
+  /**
+   * Get current universal Date object (synchronized with server)
+   * This replaces all new Date() calls
+   */
+  public getUniversalDate(): Date {
+    return new Date(this.getUniversalTime());
+  }
+
+  /**
+   * Get current time in specific timezone using universal time
+   * This ensures consistent timezone handling across all users
+   */
+  public getTimeInTimezone(timezone: string, format: string = 'yyyy-MM-dd HH:mm:ss'): string {
+    const universalTime = this.getUniversalTime();
+    return formatInTimeZone(universalTime, timezone, format);
+  }
+
+  /**
+   * Get current time drift between local and server time
+   */
+  public getTimeDrift(): number {
+    return this.state.serverTimeOffset;
+  }
+
+  /**
+   * Check if time is properly synchronized
+   */
+  public isTimeSynced(): boolean {
+    return this.state.isTimeSynced && this.state.lastSyncTime > 0;
+  }
+
+  /**
+   * Get sync status information
+   */
+  public getSyncStatus() {
+    return {
+      isTimeSynced: this.state.isTimeSynced,
+      timeDrift: this.state.serverTimeOffset,
+      lastSyncTime: this.state.lastSyncTime,
+      syncAttempts: this.state.syncAttempts,
+      recentErrors: this.state.syncErrors
+    };
+  }
+
+  /**
+   * Manually trigger time synchronization with server
+   */
+  public async syncWithServer(): Promise<void> {
+    // Prevent multiple simultaneous sync attempts
+    if (this.syncPromise) {
+      return this.syncPromise;
+    }
+
+    this.syncPromise = this.performSync();
+    
+    try {
+      await this.syncPromise;
+    } finally {
+      this.syncPromise = null;
+    }
+  }
+
+  /**
+   * Perform actual time synchronization
+   */
+  private async performSync(): Promise<void> {
+    try {
+      this.state.syncAttempts++;
+      
+      // Use multiple time APIs for redundancy
+      const timeAPIs = [
+        'https://worldtimeapi.org/api/timezone/UTC',
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+      ];
+
+      const syncResults = await Promise.allSettled(
+        timeAPIs.map(url => this.fetchServerTime(url))
+      );
+
+      // Find first successful result
+      const successfulResult = syncResults.find(
+        result => result.status === 'fulfilled' && result.value !== null
+      ) as PromiseFulfilledResult<number> | undefined;
+
+      if (successfulResult) {
+        const serverTime = successfulResult.value;
+        const localTime = Date.now();
+        
+        this.state.serverTimeOffset = serverTime - localTime;
+        this.state.lastSyncTime = localTime;
+        this.state.isTimeSynced = true;
+        
+        // Clear old errors on successful sync
+        this.state.syncErrors = [];
+        
+        console.log('🕐 Time synchronized successfully', {
+          serverTime: new Date(serverTime).toISOString(),
+          localTime: new Date(localTime).toISOString(),
+          offset: this.state.serverTimeOffset
+        });
+      } else {
+        throw new Error('All time sync APIs failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      this.state.syncErrors.push(errorMessage);
+      
+      // Keep only recent errors
+      if (this.state.syncErrors.length > this.MAX_SYNC_ERRORS) {
+        this.state.syncErrors = this.state.syncErrors.slice(-this.MAX_SYNC_ERRORS);
+      }
+
+      console.error('🕐 Time sync failed:', errorMessage);
+      
+      // Schedule retry with exponential backoff
+      this.scheduleRetry();
+    }
+  }
+
+  /**
+   * Fetch server time from external API
+   */
+  private async fetchServerTime(url: string): Promise<number> {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Handle different API response formats
+    if (url.includes('worldtimeapi.org')) {
+      return new Date(data.datetime).getTime();
+    } else if (url.includes('timeapi.io')) {
+      return new Date(data.dateTime).getTime();
+    }
+    
+    throw new Error('Unsupported time API format');
+  }
+
+  /**
+   * Schedule retry with exponential backoff
+   */
+  private scheduleRetry(): void {
+    if (this.syncRetryTimeout) {
+      clearTimeout(this.syncRetryTimeout);
+    }
+
+    const delay = Math.min(
+      this.SYNC_RETRY_DELAY * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
+      60000 // Max 1 minute delay
+    );
+
+    this.syncRetryTimeout = setTimeout(() => {
+      this.syncWithServer();
+    }, delay);
+  }
+
+  /**
+   * Initialize automatic periodic synchronization
+   */
+  private initializeAutoSync(): void {
+    // Initial sync
+    this.syncWithServer();
+
+    // Set up periodic sync
+    this.autoSyncInterval = setInterval(() => {
+      this.syncWithServer();
+    }, this.AUTO_SYNC_INTERVAL);
+
+    // Sync when page becomes visible (handle sleep/wake)
+    if (typeof window !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.syncWithServer();
+        }
+      });
+    }
+  }
+
+  /**
+   * Clean up resources
+   */
+  public destroy(): void {
+    if (this.syncRetryTimeout) {
+      clearTimeout(this.syncRetryTimeout);
+      this.syncRetryTimeout = null;
+    }
+    
+    if (this.autoSyncInterval) {
+      clearInterval(this.autoSyncInterval);
+      this.autoSyncInterval = null;
+    }
+  }
+}
+
+// Export singleton instance
+export const universalTimeService = new UniversalTimeService();
+
+// Export convenience functions to replace direct Date usage
+export const getUniversalTime = (): number => universalTimeService.getUniversalTime();
+export const getUniversalDate = (): Date => universalTimeService.getUniversalDate();
+export const getTimeInTimezone = (timezone: string, format?: string): string => 
+  universalTimeService.getTimeInTimezone(timezone, format);
+export const syncTime = (): Promise<void> => universalTimeService.syncWithServer();
+export const getTimeDrift = (): number => universalTimeService.getTimeDrift();
+export const isTimeSynced = (): boolean => universalTimeService.isTimeSynced();

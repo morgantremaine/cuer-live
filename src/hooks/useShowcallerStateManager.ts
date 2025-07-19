@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerItemUpdates } from './useShowcallerItemUpdates';
 import { useUniversalTiming } from './useUniversalTiming';
+import { getUniversalDate } from '@/services/UniversalTimeService';
+import { useUniversalTimer } from './useUniversalTimer';
 
 export interface ShowcallerState {
   isPlaying: boolean;
@@ -38,10 +40,11 @@ export const useShowcallerStateManager = ({
     controllerId: null
   });
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
   const { getUniversalTime } = useUniversalTiming();
+  const { setInterval: setManagedInterval, clearTimer } = useUniversalTimer('ShowcallerStateManager');
 
   const { updateItemSilent, clearCurrentStatusSilent } = useShowcallerItemUpdates({
     items,
@@ -162,7 +165,7 @@ export const useShowcallerStateManager = ({
 
     const isController = showcallerState.controllerId === userId;
     
-    timerRef.current = setInterval(() => {
+    timerRef.current = setManagedInterval(() => {
       setShowcallerState(prevState => {
         // Ensure we're working with integer seconds only
         const currentTimeRemaining = Math.floor(prevState.timeRemaining);
@@ -214,7 +217,7 @@ export const useShowcallerStateManager = ({
         const newState = {
           ...prevState,
           timeRemaining: newTimeRemaining,
-          lastUpdate: new Date().toISOString()
+          lastUpdate: getUniversalDate().toISOString()
         };
         
         // Sync every 10 seconds to reduce database load
@@ -229,10 +232,10 @@ export const useShowcallerStateManager = ({
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
-      clearInterval(timerRef.current);
+      clearTimer(timerRef.current);
       timerRef.current = null;
     }
-  }, []);
+  }, [clearTimer]);
 
   // Control functions
   const play = useCallback((selectedSegmentId?: string) => {
