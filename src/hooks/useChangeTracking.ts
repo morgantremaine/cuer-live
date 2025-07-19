@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
+import { useUniversalTimer } from './useUniversalTimer';
 
 export const useChangeTracking = (
   items: RundownItem[], 
@@ -16,13 +17,15 @@ export const useChangeTracking = (
   const [isLoading, setIsLoading] = useState(false);
   
   const lastSavedDataRef = useRef<string>('');
-  const initializationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializationTimeoutRef = useRef<string | null>(null);
   const isApplyingRemoteUpdateRef = useRef(false);
-  const realtimeCooldownRef = useRef<NodeJS.Timeout | null>(null);
+  const realtimeCooldownRef = useRef<string | null>(null);
   const isInRealtimeCooldown = useRef(false);
   const userActivelyTypingRef = useRef(false);
   const showcallerActiveRef = useRef(false);
-  const showcallerBlockTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const showcallerBlockTimeoutRef = useRef<string | null>(null);
+  
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('ChangeTracking');
 
   // Create content signature that COMPLETELY excludes showcaller fields
   const createContentSignature = useCallback(() => {
@@ -83,11 +86,11 @@ export const useChangeTracking = (
       
       // Clear any existing timeout
       if (showcallerBlockTimeoutRef.current) {
-        clearTimeout(showcallerBlockTimeoutRef.current);
+        clearTimer(showcallerBlockTimeoutRef.current);
       }
       
       // Set extended timeout to ensure showcaller operations complete
-      showcallerBlockTimeoutRef.current = setTimeout(() => {
+      showcallerBlockTimeoutRef.current = setManagedTimeout(() => {
         showcallerActiveRef.current = false;
         console.log('📺 Showcaller timeout expired - change detection can resume');
       }, 8000); // 8 seconds to handle complex showcaller sequences
@@ -97,20 +100,20 @@ export const useChangeTracking = (
       
       // Clear timeout since showcaller explicitly cleared
       if (showcallerBlockTimeoutRef.current) {
-        clearTimeout(showcallerBlockTimeoutRef.current);
+        clearTimer(showcallerBlockTimeoutRef.current);
         showcallerBlockTimeoutRef.current = null;
       }
     }
-  }, []);
+  }, [setManagedTimeout, clearTimer]);
 
   // Initialize tracking
   useEffect(() => {
     if (!isInitialized) {
       if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
+        clearTimer(initializationTimeoutRef.current);
       }
 
-      initializationTimeoutRef.current = setTimeout(() => {
+      initializationTimeoutRef.current = setManagedTimeout(() => {
         const currentSignature = createContentSignature();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
@@ -120,10 +123,10 @@ export const useChangeTracking = (
 
     return () => {
       if (initializationTimeoutRef.current) {
-        clearTimeout(initializationTimeoutRef.current);
+        clearTimer(initializationTimeoutRef.current);
       }
     };
-  }, [isInitialized, createContentSignature]);
+  }, [isInitialized, createContentSignature, setManagedTimeout, clearTimer]);
 
   // Enhanced change detection that completely ignores showcaller operations
   useEffect(() => {
@@ -248,12 +251,12 @@ export const useChangeTracking = (
     // Brief cooldown
     isInRealtimeCooldown.current = true;
     if (realtimeCooldownRef.current) {
-      clearTimeout(realtimeCooldownRef.current);
+      clearTimer(realtimeCooldownRef.current);
     }
-    realtimeCooldownRef.current = setTimeout(() => {
+    realtimeCooldownRef.current = setManagedTimeout(() => {
       isInRealtimeCooldown.current = false;
     }, 200);
-  }, []);
+    }, [clearTimer, setManagedTimeout]);
 
   const setApplyingRemoteUpdate = useCallback((applying: boolean) => {
     isApplyingRemoteUpdateRef.current = applying;
@@ -261,25 +264,25 @@ export const useChangeTracking = (
     if (!applying) {
       isInRealtimeCooldown.current = true;
       if (realtimeCooldownRef.current) {
-        clearTimeout(realtimeCooldownRef.current);
+        clearTimer(realtimeCooldownRef.current);
       }
-      realtimeCooldownRef.current = setTimeout(() => {
+      realtimeCooldownRef.current = setManagedTimeout(() => {
         isInRealtimeCooldown.current = false;
       }, 200);
     }
-  }, []);
+    }, [clearTimer, setManagedTimeout]);
 
   // Cleanup
   useEffect(() => {
     return () => {
       if (realtimeCooldownRef.current) {
-        clearTimeout(realtimeCooldownRef.current);
+        clearTimer(realtimeCooldownRef.current);
       }
       if (showcallerBlockTimeoutRef.current) {
-        clearTimeout(showcallerBlockTimeoutRef.current);
+        clearTimer(showcallerBlockTimeoutRef.current);
       }
     };
-  }, []);
+  }, [clearTimer]);
 
   return {
     hasUnsavedChanges,

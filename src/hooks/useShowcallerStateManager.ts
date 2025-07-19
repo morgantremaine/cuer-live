@@ -36,15 +36,15 @@ export const useShowcallerStateManager = ({
     currentSegmentId: null,
     timeRemaining: 0,
     playbackStartTime: null,
-    lastUpdate: new Date().toISOString(),
+    lastUpdate: getUniversalDate().toISOString(),
     controllerId: null
   });
 
   const timerRef = useRef<string | null>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<string | null>(null);
   const lastSyncedStateRef = useRef<string | null>(null);
   const { getUniversalTime } = useUniversalTiming();
-  const { setInterval: setManagedInterval, clearTimer } = useUniversalTimer('ShowcallerStateManager');
+  const { setInterval: setManagedInterval, setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('ShowcallerStateManager');
 
   const { updateItemSilent, clearCurrentStatusSilent } = useShowcallerItemUpdates({
     items,
@@ -76,7 +76,7 @@ export const useShowcallerStateManager = ({
         .from('rundowns')
         .update({
           showcaller_state: state,
-          updated_at: new Date().toISOString()
+          updated_at: getUniversalDate().toISOString()
         })
         .eq('id', rundownId);
 
@@ -93,20 +93,20 @@ export const useShowcallerStateManager = ({
   // Debounced save
   const debouncedSaveShowcallerState = useCallback((state: ShowcallerState) => {
     if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+      clearTimer(saveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setManagedTimeout(() => {
       saveShowcallerState(state);
     }, 500);
-  }, [saveShowcallerState]);
+  }, [saveShowcallerState, clearTimer, setManagedTimeout]);
 
   // Update showcaller state
   const updateShowcallerState = useCallback((newState: Partial<ShowcallerState>, shouldSync: boolean = false) => {
     const updatedState = {
       ...showcallerState,
       ...newState,
-      lastUpdate: new Date().toISOString()
+      lastUpdate: getUniversalDate().toISOString()
     };
     
     setShowcallerState(updatedState);
@@ -184,7 +184,7 @@ export const useShowcallerStateManager = ({
                 currentSegmentId: nextSegment.id,
                 timeRemaining: duration,
                 playbackStartTime: getUniversalTime(), // Use synchronized universal time
-                lastUpdate: new Date().toISOString()
+                lastUpdate: getUniversalDate().toISOString()
               };
               
               debouncedSaveShowcallerState(newState);
@@ -197,7 +197,7 @@ export const useShowcallerStateManager = ({
                 timeRemaining: 0,
                 playbackStartTime: null,
                 controllerId: null,
-                lastUpdate: new Date().toISOString()
+                lastUpdate: getUniversalDate().toISOString()
               };
               
               debouncedSaveShowcallerState(newState);
@@ -375,9 +375,9 @@ export const useShowcallerStateManager = ({
     setShowcallerState(synchronizedState);
     
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
-      setTimeout(() => startTimer(), 100);
+      setManagedTimeout(() => startTimer(), 100);
     }
-  }, [stopTimer, clearCurrentStatusSilent, items, updateItemSilent, timeToSeconds, startTimer]);
+  }, [stopTimer, clearCurrentStatusSilent, items, updateItemSilent, timeToSeconds, startTimer, setManagedTimeout]);
 
   // Initialize current segment
   useEffect(() => {
@@ -398,13 +398,13 @@ export const useShowcallerStateManager = ({
   useEffect(() => {
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearTimer(timerRef.current);
       }
       if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+        clearTimer(saveTimeoutRef.current);
       }
     };
-  }, []);
+  }, [clearTimer]);
 
   return {
     showcallerState,

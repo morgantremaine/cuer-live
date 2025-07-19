@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useTeamId } from './useTeamId';
@@ -30,10 +31,11 @@ export const useRundownStorage = () => {
   const { teamId } = useTeamId();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(false);
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('RundownStorage');
   
   // Use refs to prevent multiple simultaneous loads
   const isLoadingRef = useRef(false);
-  const loadTimeoutRef = useRef<NodeJS.Timeout>();
+  const loadTimeoutRef = useRef<string>();
   const lastLoadedUserRef = useRef<string | null>(null);
   const lastLoadedTeamRef = useRef<string | null>(null);
 
@@ -60,11 +62,11 @@ export const useRundownStorage = () => {
 
     // Clear any existing timeout
     if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
+      clearTimer(loadTimeoutRef.current);
     }
 
     // Set a debounce timeout
-    loadTimeoutRef.current = setTimeout(async () => {
+    loadTimeoutRef.current = setManagedTimeout(async () => {
       if (isLoadingRef.current) return;
       
       isLoadingRef.current = true;
@@ -98,7 +100,7 @@ export const useRundownStorage = () => {
         isLoadingRef.current = false;
       }
     }, 300); // Increased debounce timeout
-  }, [user, teamId]);
+  }, [user, teamId, setManagedTimeout, clearTimer]);
 
   // Load rundowns when user or team changes
   useEffect(() => {
@@ -115,10 +117,10 @@ export const useRundownStorage = () => {
   useEffect(() => {
     return () => {
       if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
+        clearTimer(loadTimeoutRef.current);
       }
     };
-  }, []);
+  }, [clearTimer]);
 
   const loadRundowns = useCallback(() => {
     lastLoadedUserRef.current = null;
@@ -225,7 +227,7 @@ export const useRundownStorage = () => {
             columns: columns !== undefined ? columns : rundown.columns,
             timezone: timezone !== undefined ? timezone : rundown.timezone,
             start_time: startTime !== undefined ? startTime : rundown.start_time,
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           }
         : rundown
     ));

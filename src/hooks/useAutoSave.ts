@@ -5,6 +5,8 @@ import { RundownItem } from './useRundownItems';
 import { Column } from './useColumnsManager';
 import { useAutoSaveOperations } from './useAutoSaveOperations';
 import { useChangeTracking } from './useChangeTracking';
+import { useUniversalTimer } from './useUniversalTimer';
+import { getCurrentTime } from '@/services/CriticalTimerReplacements';
 
 export const useAutoSave = (
   items: RundownItem[], 
@@ -15,14 +17,16 @@ export const useAutoSave = (
   isProcessingRealtimeUpdate?: boolean
 ) => {
   const { user } = useAuth();
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<string | null>(null);
   const lastSaveDataRef = useRef<string>('');
   const saveInProgressRef = useRef(false);
   const lastSaveTimestampRef = useRef<number>(0);
   const showcallerActiveRef = useRef(false);
   const undoActiveRef = useRef(false);
   const userTypingRef = useRef(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<string | null>(null);
+  
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('AutoSave');
 
   const { isSaving, performSave } = useAutoSaveOperations();
   const { 
@@ -46,17 +50,17 @@ export const useAutoSave = (
       console.log('⌨️ User started typing - pausing auto-save');
       // Clear existing timeout
       if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+        clearTimer(typingTimeoutRef.current);
       }
       
       // Set timeout to clear typing state after user stops
-      typingTimeoutRef.current = setTimeout(() => {
+      typingTimeoutRef.current = setManagedTimeout(() => {
         userTypingRef.current = false;
         setChangeTrackingUserTyping(false);
         console.log('⌨️ User stopped typing - auto-save can resume');
       }, 2500); // 2.5 seconds after stopping typing
     }
-  }, [setChangeTrackingUserTyping]);
+  }, [setChangeTrackingUserTyping, clearTimer, setManagedTimeout]);
 
   // Method to set showcaller active state
   const setShowcallerActive = useCallback((active: boolean) => {
@@ -114,7 +118,7 @@ export const useAutoSave = (
     }
 
     // Prevent rapid successive saves - increased interval
-    const now = Date.now();
+    const now = getCurrentTime();
     if (now - lastSaveTimestampRef.current < 2000) { // Increased from 1000ms
       console.log('💾 Save skipped - too soon after last save');
       return;
@@ -158,35 +162,35 @@ export const useAutoSave = (
 
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+      clearTimer(debounceTimeoutRef.current);
     }
 
     // Longer debounce times to prevent aggressive saving
     const delay = saveInProgressRef.current ? 5000 : 3000; // Increased delays
     console.log('💾 Auto-save scheduled in', delay, 'ms');
     
-    debounceTimeoutRef.current = setTimeout(() => {
+    debounceTimeoutRef.current = setManagedTimeout(() => {
       debouncedSave();
     }, delay);
 
     return () => {
       if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+        clearTimer(debounceTimeoutRef.current);
       }
     };
-  }, [hasUnsavedChanges, debouncedSave, isInitialized, isProcessingRealtimeUpdate]);
+  }, [hasUnsavedChanges, debouncedSave, isInitialized, isProcessingRealtimeUpdate, clearTimer, setManagedTimeout]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+        clearTimer(debounceTimeoutRef.current);
       }
       if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+        clearTimer(typingTimeoutRef.current);
       }
     };
-  }, []);
+  }, [clearTimer]);
 
   return {
     hasUnsavedChanges,
