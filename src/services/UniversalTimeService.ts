@@ -138,11 +138,17 @@ class UniversalTimeService {
           const serverTime = result.value;
           const offset = serverTime - localTime;
           
-          // Reject offsets greater than 30 minutes (likely timezone errors)
-          if (Math.abs(offset) < 30 * 60 * 1000) { // 30 minutes in ms
+          // Only reject truly absurd offsets (more than 12 hours - likely API errors)
+          // Timezone differences up to 12 hours are normal worldwide
+          if (Math.abs(offset) < 12 * 60 * 60 * 1000) { // 12 hours in ms
             validResults.push(serverTime);
+            console.log('🕐 Valid time sync result:', {
+              serverTime: new Date(serverTime).toISOString(),
+              localTime: new Date(localTime).toISOString(),
+              offset: offset
+            });
           } else {
-            console.warn('🕐 Rejected time sync with suspicious offset:', {
+            console.warn('🕐 Rejected time sync with absurd offset:', {
               serverTime: new Date(serverTime).toISOString(),
               localTime: new Date(localTime).toISOString(),
               offset: offset
