@@ -362,13 +362,30 @@ export const useShowcallerStateManager = ({
       const segment = items.find(item => item.id === externalState.currentSegmentId);
       if (segment) {
         const segmentDuration = timeToSeconds(segment.duration || '00:00');
-        const elapsedTime = Math.floor((getUniversalTime() - externalState.playbackStartTime) / 1000); // Use synchronized universal time
-        const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
+        const currentUniversalTime = getUniversalTime();
+        const elapsedTime = Math.floor((currentUniversalTime - externalState.playbackStartTime) / 1000);
         
-        synchronizedState = {
-          ...externalState,
-          timeRemaining: syncedTimeRemaining
-        };
+        // Add debug logging to catch timing issues
+        console.log('📺 Time sync calculation:', {
+          segmentDuration,
+          currentUniversalTime,
+          playbackStartTime: externalState.playbackStartTime,
+          elapsedTime,
+          originalTimeRemaining: externalState.timeRemaining
+        });
+        
+        // Validate elapsed time is reasonable (not negative or extremely large)
+        if (elapsedTime < 0 || elapsedTime > segmentDuration + 3600) { // Max 1 hour drift allowed
+          console.warn('📺 Suspicious elapsed time detected, using original timeRemaining:', elapsedTime);
+          // Use the original time remaining instead of calculated value
+          synchronizedState = { ...externalState };
+        } else {
+          const syncedTimeRemaining = Math.max(0, segmentDuration - elapsedTime);
+          synchronizedState = {
+            ...externalState,
+            timeRemaining: syncedTimeRemaining
+          };
+        }
       }
     }
     
