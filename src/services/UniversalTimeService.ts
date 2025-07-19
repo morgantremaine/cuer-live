@@ -129,16 +129,47 @@ class UniversalTimeService {
         timeAPIs.map(url => this.fetchServerTime(url))
       );
 
-      // Find first successful result
-      const successfulResult = syncResults.find(
-        result => result.status === 'fulfilled' && result.value !== null
-      ) as PromiseFulfilledResult<number> | undefined;
+      // Find all successful results and validate them
+      const validResults: number[] = [];
+      const localTime = Date.now();
+      
+      for (const result of syncResults) {
+        if (result.status === 'fulfilled' && result.value !== null) {
+          const serverTime = result.value;
+          const offset = serverTime - localTime;
+          
+          // Reject offsets greater than 30 minutes (likely timezone errors)
+          if (Math.abs(offset) < 30 * 60 * 1000) { // 30 minutes in ms
+            validResults.push(serverTime);
+          } else {
+            console.warn('🕐 Rejected time sync with suspicious offset:', {
+              serverTime: new Date(serverTime).toISOString(),
+              localTime: new Date(localTime).toISOString(),
+              offset: offset
+            });
+          }
+        }
+      }
 
-      if (successfulResult) {
-        const serverTime = successfulResult.value;
-        const localTime = Date.now();
+      if (validResults.length > 0) {
+        // Use the first valid result, or average if multiple
+        const serverTime = validResults.length === 1 
+          ? validResults[0] 
+          : Math.round(validResults.reduce((sum, time) => sum + time, 0) / validResults.length);
         
-        this.state.serverTimeOffset = serverTime - localTime;
+        const newOffset = serverTime - localTime;
+        
+        // Additional safety check: don't change offset dramatically unless it's the first sync
+        if (this.state.isTimeSynced && Math.abs(newOffset - this.state.serverTimeOffset) > 5 * 60 * 1000) {
+          console.warn('🕐 Rejected dramatic time offset change:', {
+            oldOffset: this.state.serverTimeOffset,
+            newOffset: newOffset,
+            difference: Math.abs(newOffset - this.state.serverTimeOffset)
+          });
+          return; // Don't update if the change is too dramatic
+        }
+        
+        this.state.serverTimeOffset = newOffset;
         this.state.lastSyncTime = localTime;
         this.state.isTimeSynced = true;
         
@@ -151,7 +182,7 @@ class UniversalTimeService {
           offset: this.state.serverTimeOffset
         });
       } else {
-        throw new Error('All time sync APIs failed');
+        throw new Error('All time sync APIs returned invalid offsets');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
