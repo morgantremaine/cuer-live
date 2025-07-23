@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 import JoinTeam from "./pages/JoinTeam";
 import NotFound from "./pages/NotFound";
 import Help from "./pages/Help";
+import Subscription from "./pages/Subscription";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SharedRundown from "./pages/SharedRundown";
 import ADView from "./pages/ADView";
@@ -77,7 +78,7 @@ const AppRoutes = () => {
         path="/subscription" 
         element={
           <ProtectedRoute requiresSubscription={false}>
-            <AccountManagement />
+            <Subscription />
           </ProtectedRoute>
         } 
       />
