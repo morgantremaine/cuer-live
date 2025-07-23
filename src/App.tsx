@@ -74,6 +74,14 @@ const AppRoutes = () => {
         } 
       />
       <Route 
+        path="/subscription" 
+        element={
+          <ProtectedRoute requiresSubscription={false}>
+            <AccountManagement />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/account" 
         element={
           <ProtectedRoute requiresSubscription={true}>
