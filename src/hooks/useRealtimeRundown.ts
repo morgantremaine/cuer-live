@@ -307,7 +307,7 @@ export const useRealtimeRundown = ({
       timeoutManagerRef.current.clearAll();
       setIsProcessingContentUpdate(false);
     };
-  }, [rundownId, user, enabled, handleRealtimeUpdate]);
+  }, [rundownId, user, enabled]);
 
   return {
     isConnected,
