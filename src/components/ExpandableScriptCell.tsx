@@ -257,22 +257,21 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-center"
+              className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-start"
               style={{ 
                 color: textColor || undefined,
-                height: '24px',
                 overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
                 <div 
-                  className="truncate"
                   style={{ 
                     maxWidth: '100%', 
                     overflow: 'hidden', 
-                    textOverflow: 'ellipsis', 
-                    whiteSpace: 'nowrap',
-                    width: '100%'
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    width: '100%',
+                    lineHeight: '1.2'
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
