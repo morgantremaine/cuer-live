@@ -257,10 +257,11 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full px-1 py-1 text-sm flex items-start h-full"
+              className="w-full px-1 py-1 text-sm flex items-start overflow-hidden"
               style={{ 
                 color: textColor || undefined,
-                minHeight: '24px'
+                minHeight: '24px',
+                height: '100%'
               }}
             >
               {value && !isNullScript(value) ? (
