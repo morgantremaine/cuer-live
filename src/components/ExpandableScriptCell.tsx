@@ -224,7 +224,7 @@ const ExpandableScriptCell = ({
             data-cell-id={cellKey}
             data-cell-ref={cellKey}
             placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none overflow-hidden`}
+            className="w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden"
             style={{ 
               color: textColor || undefined,
               minHeight: '24px',
