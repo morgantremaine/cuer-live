@@ -27,6 +27,7 @@ const ExpandableScriptCell = ({
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [rowHeight, setRowHeight] = useState<number>(0);
   
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
@@ -38,6 +39,7 @@ const ExpandableScriptCell = ({
   // Always use local state - column state just sets it initially
   const effectiveExpanded = isExpanded;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -166,11 +168,50 @@ const ExpandableScriptCell = ({
     }
   };
 
+  // Monitor row height changes for dynamic preview sizing
+  useEffect(() => {
+    if (!effectiveExpanded && containerRef.current) {
+      const updateRowHeight = () => {
+        const row = containerRef.current?.closest('tr');
+        if (row) {
+          const height = row.getBoundingClientRect().height;
+          setRowHeight(height);
+        }
+      };
+
+      // Initial measurement
+      updateRowHeight();
+
+      // Use ResizeObserver to monitor row height changes
+      const observer = new ResizeObserver(updateRowHeight);
+      const row = containerRef.current?.closest('tr');
+      if (row) {
+        observer.observe(row);
+      }
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [effectiveExpanded, value]);
+
+  // Calculate dynamic line clamp based on row height
+  const getDynamicLineClamp = () => {
+    if (rowHeight === 0) return 2; // Default fallback
+    
+    const lineHeight = 20; // 1.25rem (20px) as specified in the styling
+    const padding = 16; // Account for py-1 (8px top + 8px bottom)
+    const availableHeight = rowHeight - padding;
+    const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+    
+    return maxLines;
+  };
+
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
+    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -257,11 +298,10 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full px-1 py-1 text-sm flex items-start"
+              className="w-full px-1 py-1 text-sm flex items-start h-full"
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                maxHeight: '3em', // Limit to approximately 2 lines with padding
                 overflow: 'hidden'
               }}
             >
@@ -276,7 +316,7 @@ const ExpandableScriptCell = ({
                     fontSize: '0.875rem',
                     overflow: 'hidden',
                     display: '-webkit-box',
-                    WebkitLineClamp: 2,
+                    WebkitLineClamp: getDynamicLineClamp(),
                     WebkitBoxOrient: 'vertical'
                   }}
                 >
