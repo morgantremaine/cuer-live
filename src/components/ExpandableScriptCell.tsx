@@ -266,6 +266,7 @@ const ExpandableScriptCell = ({
             >
               {value && !isNullScript(value) ? (
                 <div 
+                  className="overflow-hidden"
                   style={{ 
                     maxWidth: '100%',
                     whiteSpace: 'pre-wrap',
@@ -273,8 +274,8 @@ const ExpandableScriptCell = ({
                     width: '100%',
                     lineHeight: '1.25rem',
                     fontSize: '0.875rem',
-                    overflow: 'hidden',
-                    height: '100%'
+                    height: '100%',
+                    maxHeight: '100%'
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
