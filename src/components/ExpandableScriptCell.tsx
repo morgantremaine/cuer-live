@@ -257,17 +257,15 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full px-1 py-1 text-sm flex items-start"
+              className="w-full px-1 py-1 text-sm flex items-start h-full overflow-hidden"
               style={{ 
                 color: textColor || undefined,
-                minHeight: '24px',
-                maxHeight: '3rem',
-                overflow: 'hidden'
+                minHeight: '24px'
               }}
             >
               {value && !isNullScript(value) ? (
                 <div 
-                  className="line-clamp-2"
+                  className="overflow-hidden h-full"
                   style={{ 
                     maxWidth: '100%',
                     whiteSpace: 'pre-wrap',
