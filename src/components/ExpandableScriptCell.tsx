@@ -183,82 +183,92 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        {/* Main textarea - always present and focusable */}
-        <textarea
-          ref={(el) => {
-            if (el) {
-              cellRefs.current[cellKey] = el;
-              textareaRef.current = el;
-            } else {
-              delete cellRefs.current[cellKey];
-            }
-          }}
-          value={value}
-          onChange={(e) => {
-            onUpdateValue(e.target.value);
-            // Trigger resize on content change
-            if (e.target) {
-              e.target.style.height = 'auto';
-              const scrollHeight = e.target.scrollHeight;
-              e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onMouseDown={(e) => e.stopPropagation()}
-          onDragStart={(e) => e.preventDefault()}
-          onDrag={(e) => e.preventDefault()}
-          onDragEnd={(e) => e.preventDefault()}
-          data-cell-id={cellKey}
-          data-cell-ref={cellKey}
-          placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
-          style={{ 
-            color: textColor || undefined,
-            minHeight: '24px',
-            height: 'auto',
-            overflow: 'hidden',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
-          }}
-        />
-
-        {/* Rendered overlay for display when not focused and expanded */}
-        {effectiveExpanded && !isFocused && value && !isNullScript(value) && (
-          <div 
-            className="absolute inset-0 pointer-events-none rounded px-1 py-1 text-sm"
+        {/* When expanded: show normal editable textarea */}
+        {effectiveExpanded && (
+          <textarea
+            ref={(el) => {
+              if (el) {
+                cellRefs.current[cellKey] = el;
+                textareaRef.current = el;
+              } else {
+                delete cellRefs.current[cellKey];
+              }
+            }}
+            value={value}
+            onChange={(e) => {
+              onUpdateValue(e.target.value);
+              // Trigger resize on content change
+              if (e.target) {
+                e.target.style.height = 'auto';
+                const scrollHeight = e.target.scrollHeight;
+                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onDragStart={(e) => e.preventDefault()}
+            onDrag={(e) => e.preventDefault()}
+            onDragEnd={(e) => e.preventDefault()}
+            data-cell-id={cellKey}
+            data-cell-ref={cellKey}
+            placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
             style={{ 
               color: textColor || undefined,
+              minHeight: '24px',
+              height: 'auto',
+              overflow: 'hidden',
               whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word',
-              minHeight: '24px'
+              wordWrap: 'break-word'
             }}
-          >
-            {renderScriptWithBrackets(value, { 
-              inlineDisplay: false, 
-              fontSize: 14 
-            })}
-          </div>
+          />
         )}
 
-        {/* Collapsed state overlay */}
-        {!effectiveExpanded && value && !isNullScript(value) && (
-          <div 
-            className="absolute inset-0 flex items-center justify-start pointer-events-none"
-            style={{ 
-              height: '100%',
-              overflow: 'hidden',
-              padding: '4px'
-            }}
-          >
-            <div className="truncate w-full text-sm" style={{ color: textColor || undefined }}>
-              {renderScriptWithBrackets(value, { 
-                inlineDisplay: true, 
-                fontSize: 14 
-              })}
+        {/* When collapsed: show read-only preview with teleprompter styling */}
+        {!effectiveExpanded && (
+          <>
+            {/* Hidden textarea for ref management when collapsed */}
+            <textarea
+              ref={(el) => {
+                if (el) {
+                  cellRefs.current[cellKey] = el;
+                } else {
+                  delete cellRefs.current[cellKey];
+                }
+              }}
+              value={value}
+              data-cell-id={cellKey}
+              data-cell-ref={cellKey}
+              tabIndex={-1}
+              readOnly
+              className="sr-only"
+              style={{ display: 'none' }}
+            />
+            {/* Visual preview with teleprompter styling */}
+            <div 
+              className="w-full rounded px-1 py-1 text-sm min-h-[24px] pointer-events-none"
+              style={{ 
+                color: textColor || undefined,
+                overflow: 'hidden',
+                height: '24px'
+              }}
+            >
+              {value && !isNullScript(value) ? (
+                <div className="truncate w-full">
+                  {renderScriptWithBrackets(value, { 
+                    inlineDisplay: true, 
+                    fontSize: 14 
+                  })}
+                </div>
+              ) : (
+                <span className="text-gray-400 text-sm">
+                  {!value ? (fieldType === 'notes' ? 'No notes' : 'No script') : '[null]'}
+                </span>
+              )}
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
