@@ -257,21 +257,24 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full px-1 py-1 text-sm h-full flex items-start overflow-hidden"
+              className="w-full px-1 py-1 text-sm flex items-start"
               style={{ 
-                color: textColor || undefined
+                color: textColor || undefined,
+                height: '100%',
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
                 <div 
-                  className="overflow-hidden"
                   style={{ 
                     maxWidth: '100%', 
+                    overflow: 'hidden',
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     width: '100%',
-                    lineHeight: '1.25rem', // Match exact line height of regular cells
-                    fontSize: '0.875rem' // Match text-sm exactly
+                    lineHeight: '1.25rem',
+                    fontSize: '0.875rem',
+                    maxHeight: '100%'
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
