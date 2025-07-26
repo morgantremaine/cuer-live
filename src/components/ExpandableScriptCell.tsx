@@ -260,7 +260,8 @@ const ExpandableScriptCell = ({
               className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-start"
               style={{ 
                 color: textColor || undefined,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                maxHeight: '3.6em' // Limit to ~3 lines
               }}
             >
               {value && !isNullScript(value) ? (
@@ -271,7 +272,10 @@ const ExpandableScriptCell = ({
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     width: '100%',
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical'
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
