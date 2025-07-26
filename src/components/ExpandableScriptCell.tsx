@@ -257,11 +257,10 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-start"
+              className="w-full px-1 py-1 text-sm min-h-[24px] flex items-start"
               style={{ 
                 color: textColor || undefined,
-                overflow: 'hidden',
-                maxHeight: '4.5em' // Limit to match typical row heights
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
@@ -272,10 +271,8 @@ const ExpandableScriptCell = ({
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     width: '100%',
-                    lineHeight: '1.5', // Match standard table cell line height
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical'
+                    lineHeight: '1.25rem', // Match exact line height of regular cells
+                    fontSize: '0.875rem' // Match text-sm exactly
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
