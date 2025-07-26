@@ -320,7 +320,7 @@ const ExpandableScriptCell = ({
                     WebkitBoxOrient: 'vertical'
                   }}
                 >
-                  {renderScriptWithBrackets(value, { 
+                  {renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
                     inlineDisplay: true, 
                     fontSize: 14 
                   })}
