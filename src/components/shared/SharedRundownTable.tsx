@@ -1,5 +1,5 @@
 
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useState, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
@@ -29,6 +29,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
   // State for managing column expand state (expand all cells in a column)
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+  // State for tracking row heights for dynamic line clamping
+  const [rowHeights, setRowHeights] = useState<{ [key: string]: number }>({});
+  const containerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -338,18 +341,74 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const isHeaderCollapsed = (headerId: string): boolean => {
     return collapsedHeaders.has(headerId);
   };
+  
+  // Calculate dynamic line clamp based on row height
+  const getDynamicLineClamp = (itemId: string): number => {
+    const rowHeight = rowHeights[itemId];
+    if (!rowHeight || rowHeight === 0) return 2; // Default fallback
+    
+    const lineHeight = 20; // 1.25rem (20px) as specified in the styling
+    const padding = 16; // Account for py-1 (8px top + 8px bottom)
+    const availableHeight = rowHeight - padding;
+    const maxLines = Math.max(1, Math.floor(availableHeight / lineHeight));
+    
+    return maxLines;
+  };
+
+  // Monitor row height changes for dynamic preview sizing
+  useEffect(() => {
+    const observers: ResizeObserver[] = [];
+
+    Object.keys(containerRefs.current).forEach(key => {
+      const container = containerRefs.current[key];
+      if (container) {
+        const updateRowHeight = () => {
+          const row = container.closest('tr');
+          if (row) {
+            const height = row.getBoundingClientRect().height;
+            setRowHeights(prev => ({ ...prev, [key]: height }));
+          }
+        };
+
+        // Initial measurement
+        updateRowHeight();
+
+        // Use ResizeObserver to monitor row height changes
+        const observer = new ResizeObserver(updateRowHeight);
+        const row = container.closest('tr');
+        if (row) {
+          observer.observe(row);
+          observers.push(observer);
+        }
+      }
+    });
+
+    return () => {
+      observers.forEach(observer => observer.disconnect());
+    };
+  }, [items, expandedCells]);
 
   // Helper function to render expandable cell content for script and notes
   const renderExpandableCell = (value: string, itemId: string, columnKey: string) => {
     const isExpanded = isCellExpanded(itemId, columnKey);
     const hasContent = value && value.trim() && !isNullScript(value);
+    const containerKey = `${itemId}-${columnKey}`;
     
     if (!hasContent) {
       return null;
     }
 
     return (
-      <div className="w-full">
+      <div 
+        className="w-full"
+        ref={(el) => {
+          if (el) {
+            containerRefs.current[containerKey] = el;
+          } else {
+            delete containerRefs.current[containerKey];
+          }
+        }}
+      >
         <div className="flex items-start gap-1">
           <button
             onClick={(e) => {
@@ -383,7 +442,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                   whiteSpace: 'normal',
                   wordWrap: 'break-word',
                   display: '-webkit-box',
-                  WebkitLineClamp: 2,
+                  WebkitLineClamp: getDynamicLineClamp(itemId),
                   WebkitBoxOrient: 'vertical'
                 }}
                 title={value}
