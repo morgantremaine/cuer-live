@@ -170,7 +170,7 @@ const ExpandableScriptCell = ({
   const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
-    <div className="flex items-start space-x-1 w-full expandable-script-cell">
+    <div className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -182,7 +182,7 @@ const ExpandableScriptCell = ({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
       </button>
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-w-0">
         {/* When expanded: show normal editable textarea */}
         {effectiveExpanded && (
           <textarea
@@ -190,6 +190,14 @@ const ExpandableScriptCell = ({
               if (el) {
                 cellRefs.current[cellKey] = el;
                 textareaRef.current = el;
+                // Auto-resize on mount
+                requestAnimationFrame(() => {
+                  if (el) {
+                    el.style.height = 'auto';
+                    const scrollHeight = el.scrollHeight;
+                    el.style.height = Math.max(scrollHeight, 24) + 'px';
+                  }
+                });
               } else {
                 delete cellRefs.current[cellKey];
               }
@@ -198,11 +206,13 @@ const ExpandableScriptCell = ({
             onChange={(e) => {
               onUpdateValue(e.target.value);
               // Trigger resize on content change
-              if (e.target) {
-                e.target.style.height = 'auto';
-                const scrollHeight = e.target.scrollHeight;
-                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-              }
+              requestAnimationFrame(() => {
+                if (e.target) {
+                  e.target.style.height = 'auto';
+                  const scrollHeight = e.target.scrollHeight;
+                  e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+                }
+              });
             }}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
@@ -214,12 +224,11 @@ const ExpandableScriptCell = ({
             data-cell-id={cellKey}
             data-cell-ref={cellKey}
             placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
+            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none overflow-hidden`}
             style={{ 
               color: textColor || undefined,
               minHeight: '24px',
               height: 'auto',
-              overflow: 'hidden',
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word'
             }}
@@ -248,14 +257,24 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-center overflow-hidden"
+              className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-center"
               style={{ 
                 color: textColor || undefined,
-                height: '24px'
+                height: '24px',
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
-                <div className="truncate" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div 
+                  className="truncate"
+                  style={{ 
+                    maxWidth: '100%', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap',
+                    width: '100%'
+                  }}
+                >
                   {renderScriptWithBrackets(value, { 
                     inlineDisplay: true, 
                     fontSize: 14 
