@@ -377,9 +377,19 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 }
               </div>
             ) : (
-              <div className="truncate text-sm" title={value}>
+              <div 
+                className="text-sm overflow-hidden"
+                style={{
+                  whiteSpace: 'normal',
+                  wordWrap: 'break-word',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical'
+                }}
+                title={value}
+              >
                 {columnKey === 'script' ? 
-                  renderScriptWithBrackets(value, { inlineDisplay: true, fontSize: 14 }) : 
+                  renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { inlineDisplay: true, fontSize: 14 }) : 
                   value
                 }
               </div>
