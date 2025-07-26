@@ -257,12 +257,10 @@ const ExpandableScriptCell = ({
             />
             {/* Visual preview with teleprompter styling */}
             <div 
-              className="w-full px-1 py-1 text-sm flex items-start"
+              className="w-full px-1 py-1 text-sm flex items-start h-full"
               style={{ 
                 color: textColor || undefined,
-                minHeight: '24px',
-                maxHeight: '3em', // Limit to approximately 2 lines with padding
-                overflow: 'hidden'
+                minHeight: '24px'
               }}
             >
               {value && !isNullScript(value) ? (
@@ -275,9 +273,7 @@ const ExpandableScriptCell = ({
                     lineHeight: '1.25rem',
                     fontSize: '0.875rem',
                     overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical'
+                    height: '100%'
                   }}
                 >
                   {renderScriptWithBrackets(value, { 
