@@ -309,7 +309,7 @@ const ExpandableScriptCell = ({
                 <div 
                   style={{ 
                     maxWidth: '100%',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
                     wordWrap: 'break-word',
                     width: '100%',
                     lineHeight: '1.25rem',
