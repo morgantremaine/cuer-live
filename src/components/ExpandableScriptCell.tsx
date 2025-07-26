@@ -26,7 +26,7 @@ const ExpandableScriptCell = ({
   onKeyDown
 }: ExpandableScriptCellProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
@@ -45,32 +45,23 @@ const ExpandableScriptCell = ({
     setIsExpanded(!isExpanded);
   };
 
-  // Handle clicking to enter edit mode
+  // Handle clicking to focus the textarea (no separate edit mode)
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row selection when clicking to edit
-    if (effectiveExpanded && !isEditing) {
-      setIsEditing(true);
-      // Focus the textarea after a brief delay to ensure it's ready
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 0);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
-  };
-
-  // Handle blur to exit edit mode
-  const handleBlur = () => {
-    setIsEditing(false);
   };
 
   // Auto-resize textarea based on content
   useEffect(() => {
-    if (textareaRef.current && isEditing) {
+    if (textareaRef.current) {
       const textarea = textareaRef.current;
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = Math.max(scrollHeight, 24) + 'px';
     }
-  }, [value, isEditing]);
+  }, [value]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -163,9 +154,14 @@ const ExpandableScriptCell = ({
       return;
     }
     
-    // For other navigation keys, use the provided handler
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
-      // Let these work normally in the textarea
+    // For Tab key, allow standard navigation
+    if (e.key === 'Tab') {
+      onKeyDown(e, itemId, cellRefKey);
+      return;
+    }
+    
+    // For other navigation keys, let textarea handle them
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       return;
     }
   };
@@ -187,102 +183,66 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative">
-        {/* Textarea for editing - only visible when in edit mode */}
-        {isEditing && (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-                textareaRef.current = el;
-              } else {
-                delete cellRefs.current[cellKey];
-              }
-            }}
-            value={value}
-            onChange={(e) => {
-              onUpdateValue(e.target.value);
-              // Trigger resize on content change
-              if (e.target) {
-                e.target.style.height = 'auto';
-                const scrollHeight = e.target.scrollHeight;
-                e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-              }
-            }}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            onMouseDown={(e) => e.stopPropagation()}
-            onDragStart={(e) => e.preventDefault()}
-            onDrag={(e) => e.preventDefault()}
-            onDragEnd={(e) => e.preventDefault()}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '24px',
-              height: 'auto',
-              overflow: 'hidden',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word'
-            }}
-          />
-        )}
+        {/* Main textarea - always present and focusable */}
+        <textarea
+          ref={(el) => {
+            if (el) {
+              cellRefs.current[cellKey] = el;
+              textareaRef.current = el;
+            } else {
+              delete cellRefs.current[cellKey];
+            }
+          }}
+          value={value}
+          onChange={(e) => {
+            onUpdateValue(e.target.value);
+            // Trigger resize on content change
+            if (e.target) {
+              e.target.style.height = 'auto';
+              const scrollHeight = e.target.scrollHeight;
+              e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onDragStart={(e) => e.preventDefault()}
+          onDrag={(e) => e.preventDefault()}
+          onDragEnd={(e) => e.preventDefault()}
+          data-cell-id={cellKey}
+          data-cell-ref={cellKey}
+          placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
+          className={`w-full border-none bg-transparent ${focusStyles} focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-400 rounded px-1 py-1 text-sm resize-none`}
+          style={{ 
+            color: textColor || undefined,
+            minHeight: '24px',
+            height: 'auto',
+            overflow: 'hidden',
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word'
+          }}
+        />
 
-        {/* Expanded view mode - shows rendered script with brackets */}
-        {effectiveExpanded && !isEditing && (
-          <div
-            onClick={handleClick}
-            onMouseDown={(e) => e.stopPropagation()}
-            onDragStart={(e) => e.preventDefault()}
-            className="w-full cursor-text rounded px-1 py-1 text-sm min-h-[24px]"
+        {/* Rendered overlay for display when not focused and expanded */}
+        {effectiveExpanded && !isFocused && value && !isNullScript(value) && (
+          <div 
+            className="absolute inset-0 pointer-events-none rounded px-1 py-1 text-sm"
             style={{ 
               color: textColor || undefined,
               whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word'
+              wordWrap: 'break-word',
+              minHeight: '24px'
             }}
           >
-            {value ? (
-              isNullScript(value) ? (
-                <span className="text-gray-600 dark:text-gray-300 font-mono">
-                  [null]
-                </span>
-              ) : (
-                renderScriptWithBrackets(value, { 
-                  inlineDisplay: false, 
-                  fontSize: 14 
-                })
-              )
-            ) : (
-              <span className="text-gray-400">
-                {fieldType === 'notes' ? 'Click to add notes...' : 'Click to add script...'}
-              </span>
-            )}
+            {renderScriptWithBrackets(value, { 
+              inlineDisplay: false, 
+              fontSize: 14 
+            })}
           </div>
         )}
 
-        {/* Invisible textarea for collapsed state to maintain ref */}
-        {!effectiveExpanded && (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-              } else {
-                delete cellRefs.current[cellKey];
-              }
-            }}
-            value={value}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            disabled
-            readOnly
-            className="w-full border-none bg-transparent text-transparent cursor-pointer rounded px-1 py-1 text-sm resize-none"
-            style={{ 
-              minHeight: '24px',
-              height: '24px',
-              overflow: 'hidden'
-            }}
-          />
-        )}
+        {/* Collapsed state overlay */}
         {!effectiveExpanded && value && !isNullScript(value) && (
           <div 
             className="absolute inset-0 flex items-center justify-start pointer-events-none"
