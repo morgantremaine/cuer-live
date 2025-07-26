@@ -260,8 +260,7 @@ const ExpandableScriptCell = ({
               className="w-full rounded px-1 py-1 text-sm min-h-[24px] flex items-start"
               style={{ 
                 color: textColor || undefined,
-                overflow: 'hidden',
-                maxHeight: '3.6em' // Limit to ~3 lines
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
@@ -272,9 +271,8 @@ const ExpandableScriptCell = ({
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     width: '100%',
-                    lineHeight: '1.2',
+                    lineHeight: '1.5', // Match standard table cell line height
                     display: '-webkit-box',
-                    WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical'
                   }}
                 >
