@@ -28,6 +28,7 @@ const ExpandableScriptCell = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [rowHeight, setRowHeight] = useState<number>(0);
+  const [showOverlay, setShowOverlay] = useState(true);
   
   // Always use local state - column state just sets it initially
   const effectiveExpanded = isExpanded;
@@ -237,56 +238,100 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative min-w-0">
-        {/* When expanded: show normal editable textarea */}
+        {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
-          <textarea
-            ref={(el) => {
-              if (el) {
-                cellRefs.current[cellKey] = el;
-                textareaRef.current = el;
-                // Auto-resize on mount
+          <div className="relative">
+            {/* Functional textarea (transparent when overlay is visible) */}
+            <textarea
+              ref={(el) => {
+                if (el) {
+                  cellRefs.current[cellKey] = el;
+                  textareaRef.current = el;
+                  // Auto-resize on mount
+                  requestAnimationFrame(() => {
+                    if (el) {
+                      el.style.height = 'auto';
+                      const scrollHeight = el.scrollHeight;
+                      el.style.height = Math.max(scrollHeight, 24) + 'px';
+                    }
+                  });
+                } else {
+                  delete cellRefs.current[cellKey];
+                }
+              }}
+              value={value}
+              onChange={(e) => {
+                onUpdateValue(e.target.value);
+                // Trigger resize on content change
                 requestAnimationFrame(() => {
-                  if (el) {
-                    el.style.height = 'auto';
-                    const scrollHeight = el.scrollHeight;
-                    el.style.height = Math.max(scrollHeight, 24) + 'px';
+                  if (e.target) {
+                    e.target.style.height = 'auto';
+                    const scrollHeight = e.target.scrollHeight;
+                    e.target.style.height = Math.max(scrollHeight, 24) + 'px';
                   }
                 });
-              } else {
-                delete cellRefs.current[cellKey];
-              }
-            }}
-            value={value}
-            onChange={(e) => {
-              onUpdateValue(e.target.value);
-              // Trigger resize on content change
-              requestAnimationFrame(() => {
-                if (e.target) {
-                  e.target.style.height = 'auto';
-                  const scrollHeight = e.target.scrollHeight;
-                  e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-                }
-              });
-            }}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onMouseDown={(e) => e.stopPropagation()}
-            onDragStart={(e) => e.preventDefault()}
-            onDrag={(e) => e.preventDefault()}
-            onDragEnd={(e) => e.preventDefault()}
-            data-cell-id={cellKey}
-            data-cell-ref={cellKey}
-            placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-            className="w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden"
-            style={{ 
-              color: textColor || undefined,
-              minHeight: '24px',
-              height: 'auto',
-              whiteSpace: 'pre-wrap',
-              wordWrap: 'break-word'
-            }}
-          />
+              }}
+              onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setIsFocused(true);
+                setShowOverlay(false); // Hide overlay when focused for native selection
+              }}
+              onBlur={() => {
+                setIsFocused(false);
+                setShowOverlay(true); // Show overlay when not focused
+              }}
+              onSelect={() => {
+                setShowOverlay(false); // Hide overlay when text is selected
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setShowOverlay(false); // Hide overlay when clicking to position cursor
+              }}
+              onDragStart={(e) => e.preventDefault()}
+              onDrag={(e) => e.preventDefault()}
+              onDragEnd={(e) => e.preventDefault()}
+              data-cell-id={cellKey}
+              data-cell-ref={cellKey}
+              placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
+              className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
+                showOverlay ? 'text-transparent caret-transparent' : ''
+              }`}
+              style={{ 
+                color: showOverlay ? 'transparent' : (textColor || undefined),
+                minHeight: '24px',
+                height: 'auto',
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                position: 'relative',
+                zIndex: 2
+              }}
+            />
+            
+            {/* Styled overlay with teleprompter styling */}
+            {showOverlay && (
+              <div 
+                className="absolute inset-0 px-1 py-1 text-sm pointer-events-none"
+                style={{ 
+                  color: textColor || undefined,
+                  minHeight: '24px',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  zIndex: 1
+                }}
+              >
+                {value && !isNullScript(value) ? (
+                  renderScriptWithBrackets(value, { 
+                    inlineDisplay: true, 
+                    fontSize: 14 
+                  })
+                ) : (
+                  <span className="text-muted-foreground">
+                    {fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {/* When collapsed: show read-only preview with teleprompter styling */}
