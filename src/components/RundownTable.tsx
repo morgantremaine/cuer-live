@@ -130,7 +130,7 @@ const RundownTable = ({
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
             return (
-              <React.Fragment key={item.id}>
+              <>
                 {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
                   <tr>
@@ -192,7 +192,7 @@ const RundownTable = ({
                     </td>
                   </tr>
                 )}
-              </React.Fragment>
+              </>
             );
           })}
       {items.length === 0 && (
