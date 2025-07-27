@@ -29,15 +29,28 @@ const ExpandableScriptCell = ({
   const [isFocused, setIsFocused] = useState(false);
   const [rowHeight, setRowHeight] = useState<number>(0);
   
+  // Always use local state - column state just sets it initially
+  const effectiveExpanded = isExpanded;
+  
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
     if (columnExpanded !== undefined) {
       setIsExpanded(columnExpanded);
     }
   }, [columnExpanded]);
-  
-  // Always use local state - column state just sets it initially
-  const effectiveExpanded = isExpanded;
+
+  // Auto-focus the real textarea when expanded via tab navigation
+  useEffect(() => {
+    if (effectiveExpanded && textareaRef.current) {
+      // Small delay to ensure the textarea is rendered
+      const timer = setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [effectiveExpanded]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -291,10 +304,19 @@ const ExpandableScriptCell = ({
               value={value}
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
-              tabIndex={-1}
+              tabIndex={0}
               readOnly
-              className="sr-only"
-              style={{ display: 'none' }}
+              onFocus={() => {
+                // Auto-expand when this hidden textarea receives focus
+                setIsExpanded(true);
+              }}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-text"
+              style={{ 
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                resize: 'none'
+              }}
             />
             {/* Visual preview with teleprompter styling */}
             <div 
