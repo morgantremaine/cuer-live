@@ -63,19 +63,36 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Get current time and calculate real elapsed time since rundown start
+    // DEBUGGING: Let's see exactly what's happening with timezone conversion
     const universalTime = getUniversalTime();
+    const universalTimeDate = new Date(universalTime);
+    
+    console.log('🕐 RAW DEBUG VALUES:');
+    console.log('  Universal timestamp:', universalTime);
+    console.log('  Universal as Date:', universalTimeDate.toISOString());
+    console.log('  Selected timezone:', timezone);
+    console.log('  Rundown start time:', rundownStartTime);
+    
+    // Test the timezone conversion
     const currentTimeString = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
+    console.log('  Converted current time:', currentTimeString);
+    console.log('  Current time in seconds:', currentTimeSeconds);
+    console.log('  Start time in seconds:', rundownStartSeconds);
+    
     // Real elapsed time = how much time has passed since the rundown started
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    console.log('  Raw difference (current - start):', realElapsedSeconds);
     
     // Handle day boundary (if we're "before" start time, might have crossed midnight)
     if (realElapsedSeconds < 0) {
+      console.log('  NEGATIVE TIME - adding 24 hours for day boundary');
       realElapsedSeconds += 24 * 3600; // Add 24 hours
     }
+    
+    console.log('  Final real elapsed seconds:', realElapsedSeconds);
 
     // Calculate showcaller elapsed time = where the showcaller thinks we are
     let showcallerElapsedSeconds = 0;
@@ -84,7 +101,9 @@ export const useShowcallerTiming = ({
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
-        showcallerElapsedSeconds += timeToSeconds(item.duration || '00:00');
+        const itemDuration = timeToSeconds(item.duration || '00:00');
+        showcallerElapsedSeconds += itemDuration;
+        console.log(`  Added completed segment ${i}: ${item.name} duration: ${itemDuration}s`);
       }
     }
     
@@ -92,25 +111,21 @@ export const useShowcallerTiming = ({
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = Math.max(0, currentSegmentDuration - timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
+    
+    console.log('  Current segment duration:', currentSegmentDuration);
+    console.log('  Time remaining in current:', timeRemaining);
+    console.log('  Elapsed in current segment:', elapsedInCurrentSegment);
+    console.log('  Total showcaller elapsed:', showcallerElapsedSeconds);
 
     // Calculate the difference
-    // If showcaller > real: showcaller is ahead (running fast) = "Under" 
-    // If showcaller < real: showcaller is behind (running slow) = "Over"
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    console.log('🕐 CORRECTED timing calculation:');
-    console.log('  Current time:', currentTimeString);
-    console.log('  Rundown start:', rundownStartTime);
-    console.log('  Real elapsed seconds:', realElapsedSeconds);
-    console.log('  Real elapsed time:', secondsToTime(realElapsedSeconds));
-    console.log('  Showcaller elapsed seconds:', showcallerElapsedSeconds);
-    console.log('  Showcaller elapsed time:', secondsToTime(showcallerElapsedSeconds));
-    console.log('  Difference seconds:', differenceSeconds);
-    console.log('  Difference time:', secondsToTime(Math.abs(differenceSeconds)));
+    console.log('  FINAL CALCULATION:');
+    console.log('  Showcaller position:', showcallerElapsedSeconds, 'seconds');
+    console.log('  Real elapsed time:', realElapsedSeconds, 'seconds');
+    console.log('  Difference:', differenceSeconds, 'seconds');
     console.log('  Showcaller is ahead:', differenceSeconds > 0);
-    console.log('  Current segment:', currentSegment.name);
-    console.log('  Time remaining in segment:', timeRemaining);
-    console.log('  Elapsed in current segment:', elapsedInCurrentSegment);
+    console.log('  Should show:', differenceSeconds > 0 ? 'Under' : 'Over', secondsToTime(Math.abs(differenceSeconds)));
 
     // Update display value
     const absSeconds = Math.abs(differenceSeconds);
