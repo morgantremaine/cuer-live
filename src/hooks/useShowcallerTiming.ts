@@ -63,15 +63,27 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // DEBUGGING: Let's see exactly what's happening with timezone conversion
+    // DEBUGGING: Compare universal time service vs browser time
     const universalTime = getUniversalTime();
+    const browserTime = Date.now();
     const universalTimeDate = new Date(universalTime);
+    const browserTimeDate = new Date(browserTime);
     
-    console.log('🕐 RAW DEBUG VALUES:');
-    console.log('  Universal timestamp:', universalTime);
+    console.log('🕐 TIME COMPARISON:');
+    console.log('  Universal time service:', universalTime);
+    console.log('  Browser Date.now():', browserTime);
     console.log('  Universal as Date:', universalTimeDate.toISOString());
+    console.log('  Browser as Date:', browserTimeDate.toISOString());
+    console.log('  Time difference (ms):', universalTime - browserTime);
     console.log('  Selected timezone:', timezone);
     console.log('  Rundown start time:', rundownStartTime);
+    
+    // Test both times in Riyadh timezone
+    const universalInRiyadh = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
+    const browserInRiyadh = formatInTimeZone(browserTime, timezone, 'HH:mm:ss');
+    
+    console.log('  Universal time in Riyadh:', universalInRiyadh);
+    console.log('  Browser time in Riyadh:', browserInRiyadh);
     
     // Test the timezone conversion
     const currentTimeString = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
