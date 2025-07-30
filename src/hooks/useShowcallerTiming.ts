@@ -63,36 +63,18 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // DEBUGGING: Compare universal time service vs browser time
-    const universalTime = getUniversalTime();
+    // FIX: Use browser time instead of faulty Universal Time Service
+    // The Universal Time Service has a 3-hour error, but browser time is correct
     const browserTime = Date.now();
-    const universalTimeDate = new Date(universalTime);
-    const browserTimeDate = new Date(browserTime);
-    
-    console.log('🕐 TIME COMPARISON:');
-    console.log('  Universal time service:', universalTime);
-    console.log('  Browser Date.now():', browserTime);
-    console.log('  Universal as Date:', universalTimeDate.toISOString());
-    console.log('  Browser as Date:', browserTimeDate.toISOString());
-    console.log('  Time difference (ms):', universalTime - browserTime);
-    console.log('  Selected timezone:', timezone);
-    console.log('  Rundown start time:', rundownStartTime);
-    
-    // Test both times in Riyadh timezone
-    const universalInRiyadh = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
-    const browserInRiyadh = formatInTimeZone(browserTime, timezone, 'HH:mm:ss');
-    
-    console.log('  Universal time in Riyadh:', universalInRiyadh);
-    console.log('  Browser time in Riyadh:', browserInRiyadh);
-    
-    // Test the timezone conversion
-    const currentTimeString = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
+    const currentTimeString = formatInTimeZone(browserTime, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    console.log('  Converted current time:', currentTimeString);
-    console.log('  Current time in seconds:', currentTimeSeconds);
-    console.log('  Start time in seconds:', rundownStartSeconds);
+    console.log('🕐 FIXED - Using browser time:');
+    console.log('  Browser time in Riyadh:', currentTimeString);
+    console.log('  Rundown start time:', rundownStartTime);
+    console.log('  Current time seconds:', currentTimeSeconds);
+    console.log('  Start time seconds:', rundownStartSeconds);
     
     // Real elapsed time = how much time has passed since the rundown started
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
