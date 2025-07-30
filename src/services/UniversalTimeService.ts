@@ -119,9 +119,8 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use more reliable NTP-synchronized time APIs
+      // Use reliable time APIs (removed worldclockapi.com due to certificate issues)
       const timeAPIs = [
-        'https://worldclockapi.com/api/json/utc/now',
         'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
         'https://worldtimeapi.org/api/timezone/UTC'
       ];
@@ -139,9 +138,9 @@ class UniversalTimeService {
           const serverTime = result.value;
           const offset = serverTime - localTime;
           
-          // Only reject truly absurd offsets (more than 12 hours - likely API errors)
-          // Timezone differences up to 12 hours are normal worldwide
-          if (Math.abs(offset) < 12 * 60 * 60 * 1000) { // 12 hours in ms
+          // Only reject truly absurd offsets (more than 6 hours - likely API errors)
+          // The APIs sometimes have discrepancies, but anything within 6 hours is acceptable
+          if (Math.abs(offset) < 6 * 60 * 60 * 1000) { // 6 hours in ms
             validResults.push(serverTime);
             console.log('🕐 Valid time sync result:', {
               serverTime: new Date(serverTime).toISOString(),
