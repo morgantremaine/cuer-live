@@ -69,15 +69,7 @@ export const useShowcallerTiming = ({
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
 
-    // Calculate real elapsed time since rundown start
-    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-    
-    // Handle day boundary crossing (if negative and > 12 hours, likely crossed midnight)
-    if (realElapsedSeconds < -12 * 3600) {
-      realElapsedSeconds += 24 * 3600;
-    }
-
-    // Calculate showcaller position: sum of completed segments + elapsed in current segment
+    // Calculate showcaller position first: sum of completed segments + elapsed in current segment
     let showcallerElapsedSeconds = 0;
     
     // Add durations of all completed segments
@@ -93,6 +85,25 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = Math.max(0, currentSegmentDuration - timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
+    // Calculate real elapsed time since rundown start
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    
+    // SMART TIMEZONE HANDLING: If elapsed time is very negative (more than 12 hours)
+    // it likely means the rundown start time was set in a different timezone
+    const isLikelyTimezoneIssue = realElapsedSeconds < -12 * 3600;
+    
+    if (isLikelyTimezoneIssue) {
+      console.log('🕐 Detected timezone issue - using showcaller position as reference');
+      // When there's a timezone mismatch, we can't rely on the start time
+      // Instead, assume the showcaller is at the correct position and calculate from there
+      realElapsedSeconds = showcallerElapsedSeconds;
+    } else {
+      // Handle normal day boundary crossing (if negative but < 12 hours, likely crossed midnight)
+      if (realElapsedSeconds < 0 && realElapsedSeconds > -12 * 3600) {
+        realElapsedSeconds += 24 * 3600;
+      }
+    }
+
     // Calculate difference: positive = showcaller ahead of real time, negative = showcaller behind
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
@@ -102,6 +113,7 @@ export const useShowcallerTiming = ({
       realElapsed: realElapsedSeconds,
       showcallerElapsed: showcallerElapsedSeconds,
       difference: differenceSeconds,
+      isTimezoneIssue: isLikelyTimezoneIssue,
       isShowcallerAhead: differenceSeconds > 0
     });
 
