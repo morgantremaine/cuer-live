@@ -63,18 +63,25 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // FIX: Use browser time instead of faulty Universal Time Service
-    // The Universal Time Service has a 3-hour error, but browser time is correct
+    // Use Universal Time Service (now with better APIs) but fallback to browser if sync failed
+    const universalTime = getUniversalTime();
     const browserTime = Date.now();
-    const currentTimeString = formatInTimeZone(browserTime, timezone, 'HH:mm:ss');
+    
+    // Check if Universal Time Service has a reasonable time (not more than 1 hour off from browser)
+    const timeDifference = Math.abs(universalTime - browserTime);
+    const useUniversalTime = isTimeSynced && timeDifference < 3600000; // 1 hour tolerance
+    
+    const timeToUse = useUniversalTime ? universalTime : browserTime;
+    const currentTimeString = formatInTimeZone(timeToUse, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    console.log('🕐 FIXED - Using browser time:');
-    console.log('  Browser time in Riyadh:', currentTimeString);
+    console.log('🕐 Time source selection:');
+    console.log('  Universal time synced:', isTimeSynced);
+    console.log('  Time difference (ms):', timeDifference);
+    console.log('  Using universal time:', useUniversalTime);
+    console.log('  Current time in', timezone + ':', currentTimeString);
     console.log('  Rundown start time:', rundownStartTime);
-    console.log('  Current time seconds:', currentTimeSeconds);
-    console.log('  Start time seconds:', rundownStartSeconds);
     
     // Real elapsed time = how much time has passed since the rundown started
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;

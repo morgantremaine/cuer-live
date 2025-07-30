@@ -119,9 +119,11 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use only the working time API since worldtimeapi.org keeps failing
+      // Use more reliable NTP-synchronized time APIs
       const timeAPIs = [
-        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+        'https://worldclockapi.com/api/json/utc/now',
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+        'https://worldtimeapi.org/api/timezone/UTC'
       ];
 
       const syncResults = await Promise.allSettled(
@@ -222,17 +224,28 @@ class UniversalTimeService {
       }
 
       const data = await response.json();
+      let serverTime: number | null = null;
       
-      // Handle different API response formats
-      if (url.includes('worldtimeapi.org')) {
-        return new Date(data.datetime).getTime();
+      // Handle different API response formats with enhanced parsing
+      if (url.includes('worldclockapi.com')) {
+        // WorldClockAPI format: { "currentDateTime": "2025-07-30T18:30:00.000Z" }
+        serverTime = data.currentDateTime ? new Date(data.currentDateTime).getTime() : null;
       } else if (url.includes('timeapi.io')) {
-        return new Date(data.dateTime).getTime();
+        // TimeAPI.io format: { "dateTime": "2025-07-30T18:30:00.000Z" }
+        serverTime = data.dateTime ? new Date(data.dateTime).getTime() : null;
+      } else if (url.includes('worldtimeapi.org')) {
+        // WorldTimeAPI format: { "datetime": "2025-07-30T18:30:00.000+00:00" }
+        serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
+      }
+
+      if (serverTime && !isNaN(serverTime)) {
+        console.log(`🕐 Successfully fetched time from ${url}:`, new Date(serverTime).toISOString());
+        return serverTime;
       }
       
-      throw new Error('Unsupported time API format');
+      throw new Error(`Invalid time response from ${url}: ${JSON.stringify(data)}`);
     } catch (error) {
-      // Silently handle network errors since we have redundant APIs
+      console.warn(`🕐 Failed to fetch time from ${url}:`, error);
       throw error;
     }
   }
