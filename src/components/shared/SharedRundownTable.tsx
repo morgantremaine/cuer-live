@@ -253,8 +253,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return url;
   };
 
-  // Helper function to get balanced column width
+  // Helper function to get column width - use saved layout width when available
   const getColumnWidth = (column: any): string => {
+    // Use the saved width from the layout if available
+    if (column.width) {
+      return column.width;
+    }
+    
+    // Fallback to default widths for backward compatibility
     const key = column.key || column.id;
     
     // Time-related columns should be narrow
