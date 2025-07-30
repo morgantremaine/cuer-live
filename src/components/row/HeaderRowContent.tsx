@@ -56,8 +56,7 @@ const HeaderRowContent = ({
           backgroundColor,
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px',
-          borderRight: '1px solid hsl(var(--border))'
+          maxWidth: '64px'
         }}
       >
         <div className="flex items-center space-x-1">
@@ -89,7 +88,7 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className="align-middle border-r border-border min-h-[96px] relative"
+                className="align-middle min-h-[96px] relative"
                 style={{ 
                   width: columnWidth, 
                   backgroundColor,
@@ -156,7 +155,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border-r border-border min-h-[96px]"
+              className="align-middle min-h-[96px]"
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
@@ -175,7 +174,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border-r border-border min-h-[96px]"
+              className="align-middle min-h-[96px]"
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
@@ -189,7 +188,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle border-r border-border min-h-[96px]"
+              className="align-middle min-h-[96px]"
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
