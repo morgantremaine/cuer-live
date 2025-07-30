@@ -25,8 +25,8 @@ export const useUniversalTiming = (): UseUniversalTimingReturn => {
     // Check initially
     checkSyncStatus();
 
-    // Set up periodic status checks (reduced frequency to avoid excessive polling)
-    const statusInterval = setInterval(checkSyncStatus, 5000);
+    // Set up periodic status checks
+    const statusInterval = setInterval(checkSyncStatus, 1000);
 
     return () => {
       clearInterval(statusInterval);
