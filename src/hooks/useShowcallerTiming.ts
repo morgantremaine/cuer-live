@@ -98,17 +98,19 @@ export const useShowcallerTiming = ({
     // If showcaller < real: showcaller is behind (running slow) = "Over"
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    console.log('🕐 CORRECTED timing calculation:', {
-      currentTime: currentTimeString,
-      rundownStart: rundownStartTime,
-      realElapsedSeconds: realElapsedSeconds,
-      realElapsedTime: secondsToTime(realElapsedSeconds),
-      showcallerElapsedSeconds: showcallerElapsedSeconds,
-      showcallerElapsedTime: secondsToTime(showcallerElapsedSeconds),
-      differenceSeconds: differenceSeconds,
-      differenceTime: secondsToTime(Math.abs(differenceSeconds)),
-      showcallerIsAhead: differenceSeconds > 0
-    });
+    console.log('🕐 CORRECTED timing calculation:');
+    console.log('  Current time:', currentTimeString);
+    console.log('  Rundown start:', rundownStartTime);
+    console.log('  Real elapsed seconds:', realElapsedSeconds);
+    console.log('  Real elapsed time:', secondsToTime(realElapsedSeconds));
+    console.log('  Showcaller elapsed seconds:', showcallerElapsedSeconds);
+    console.log('  Showcaller elapsed time:', secondsToTime(showcallerElapsedSeconds));
+    console.log('  Difference seconds:', differenceSeconds);
+    console.log('  Difference time:', secondsToTime(Math.abs(differenceSeconds)));
+    console.log('  Showcaller is ahead:', differenceSeconds > 0);
+    console.log('  Current segment:', currentSegment.name);
+    console.log('  Time remaining in segment:', timeRemaining);
+    console.log('  Elapsed in current segment:', elapsedInCurrentSegment);
 
     // Update display value
     const absSeconds = Math.abs(differenceSeconds);
