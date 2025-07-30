@@ -65,29 +65,25 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // CRITICAL FIX: Proper timezone handling without double-conversion
-    // The universal time service already gives us the correct UTC time
-    // We need to convert BOTH current time AND rundown start time consistently
+    // CRITICAL FIX: Both current time and rundown start time must be in the same timezone
+    // The rundown start time is always interpreted in the current timezone context
     const universalTime = getUniversalTime();
     
-    console.log('🕐 Showcaller timing debug:', {
-      universalTime: new Date(universalTime).toISOString(),
-      timezone,
-      rundownStartTime,
-      isTimeSynced
-    });
-    
-    // Convert both current time and rundown start time to the same timezone for comparison
+    // Get current time in the selected timezone
     const currentTimeInTimezone = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeInTimezone);
+    
+    // The rundown start time is always interpreted as being in the current timezone
+    // This makes sense because when someone changes timezone, they're changing their view,
+    // not changing when the show actually starts
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    console.log('🕐 Time comparison:', {
+    console.log('🕐 Fixed timezone comparison:', {
       currentTimeInTimezone,
       currentTimeSeconds,
-      rundownStartTime,
+      rundownStartTime: `${rundownStartTime} (interpreted as ${timezone})`,
       rundownStartSeconds,
-      rawDifference: currentTimeSeconds - rundownStartSeconds
+      timeDifference: currentTimeSeconds - rundownStartSeconds
     });
 
     // Show warning if time sync hasn't completed yet
