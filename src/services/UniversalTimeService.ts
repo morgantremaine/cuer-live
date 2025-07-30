@@ -166,7 +166,8 @@ class UniversalTimeService {
         const newOffset = serverTime - localTime;
         
         // Additional safety check: don't change offset dramatically unless it's the first sync
-        if (this.state.isTimeSynced && Math.abs(newOffset - this.state.serverTimeOffset) > 5 * 60 * 1000) {
+        // Increased threshold to 30 minutes to handle timezone/API inconsistencies better
+        if (this.state.isTimeSynced && Math.abs(newOffset - this.state.serverTimeOffset) > 30 * 60 * 1000) {
           console.warn('🕐 Rejected dramatic time offset change:', {
             oldOffset: this.state.serverTimeOffset,
             newOffset: newOffset,
