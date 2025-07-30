@@ -63,16 +63,24 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // SIMPLIFIED: Get current time in the rundown's timezone
+    // Get current time and calculate real elapsed time since rundown start
     const universalTime = getUniversalTime();
     const currentTimeString = formatInTimeZone(universalTime, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
+    
+    // Real elapsed time = how much time has passed since the rundown started
+    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
+    
+    // Handle day boundary (if we're "before" start time, might have crossed midnight)
+    if (realElapsedSeconds < 0) {
+      realElapsedSeconds += 24 * 3600; // Add 24 hours
+    }
 
-    // Calculate showcaller position first: sum of completed segments + elapsed in current segment
+    // Calculate showcaller elapsed time = where the showcaller thinks we are
     let showcallerElapsedSeconds = 0;
     
-    // Add durations of all completed segments
+    // Add durations of all completed segments (before current segment)
     for (let i = 0; i < currentSegmentIndex; i++) {
       const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
@@ -85,36 +93,21 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = Math.max(0, currentSegmentDuration - timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Calculate real elapsed time since rundown start
-    let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-    
-    // SMART TIMEZONE HANDLING: If elapsed time is very negative (more than 12 hours)
-    // it likely means the rundown start time was set in a different timezone
-    const isLikelyTimezoneIssue = realElapsedSeconds < -12 * 3600;
-    
-    if (isLikelyTimezoneIssue) {
-      console.log('🕐 Detected timezone issue - using showcaller position as reference');
-      // When there's a timezone mismatch, we can't rely on the start time
-      // Instead, assume the showcaller is at the correct position and calculate from there
-      realElapsedSeconds = showcallerElapsedSeconds;
-    } else {
-      // Handle normal day boundary crossing (if negative but < 12 hours, likely crossed midnight)
-      if (realElapsedSeconds < 0 && realElapsedSeconds > -12 * 3600) {
-        realElapsedSeconds += 24 * 3600;
-      }
-    }
-
-    // Calculate difference: positive = showcaller ahead of real time, negative = showcaller behind
+    // Calculate the difference
+    // If showcaller > real: showcaller is ahead (running fast) = "Under" 
+    // If showcaller < real: showcaller is behind (running slow) = "Over"
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
     
-    console.log('🕐 SIMPLE timing calculation:', {
+    console.log('🕐 CORRECTED timing calculation:', {
       currentTime: currentTimeString,
       rundownStart: rundownStartTime,
-      realElapsed: realElapsedSeconds,
-      showcallerElapsed: showcallerElapsedSeconds,
-      difference: differenceSeconds,
-      isTimezoneIssue: isLikelyTimezoneIssue,
-      isShowcallerAhead: differenceSeconds > 0
+      realElapsedSeconds: realElapsedSeconds,
+      realElapsedTime: secondsToTime(realElapsedSeconds),
+      showcallerElapsedSeconds: showcallerElapsedSeconds,
+      showcallerElapsedTime: secondsToTime(showcallerElapsedSeconds),
+      differenceSeconds: differenceSeconds,
+      differenceTime: secondsToTime(Math.abs(differenceSeconds)),
+      showcallerIsAhead: differenceSeconds > 0
     });
 
     // Update display value
