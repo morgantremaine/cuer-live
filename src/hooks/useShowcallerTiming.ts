@@ -63,7 +63,7 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Use Universal Time Service (now with better APIs) but fallback to browser if sync failed
+    // Use Universal Time Service with smart fallback to browser time
     const universalTime = getUniversalTime();
     const browserTime = Date.now();
     
@@ -76,24 +76,13 @@ export const useShowcallerTiming = ({
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
     
-    console.log('🕐 Time source selection:');
-    console.log('  Universal time synced:', isTimeSynced);
-    console.log('  Time difference (ms):', timeDifference);
-    console.log('  Using universal time:', useUniversalTime);
-    console.log('  Current time in', timezone + ':', currentTimeString);
-    console.log('  Rundown start time:', rundownStartTime);
-    
-    // Real elapsed time = how much time has passed since the rundown started
+    // Calculate real elapsed time since rundown start
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
-    console.log('  Raw difference (current - start):', realElapsedSeconds);
     
     // Handle day boundary (if we're "before" start time, might have crossed midnight)
     if (realElapsedSeconds < 0) {
-      console.log('  NEGATIVE TIME - adding 24 hours for day boundary');
       realElapsedSeconds += 24 * 3600; // Add 24 hours
     }
-    
-    console.log('  Final real elapsed seconds:', realElapsedSeconds);
 
     // Calculate showcaller elapsed time = where the showcaller thinks we are
     let showcallerElapsedSeconds = 0;
@@ -104,7 +93,6 @@ export const useShowcallerTiming = ({
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
         const itemDuration = timeToSeconds(item.duration || '00:00');
         showcallerElapsedSeconds += itemDuration;
-        console.log(`  Added completed segment ${i}: ${item.name} duration: ${itemDuration}s`);
       }
     }
     
@@ -112,21 +100,9 @@ export const useShowcallerTiming = ({
     const currentSegmentDuration = timeToSeconds(currentSegment.duration || '00:00');
     const elapsedInCurrentSegment = Math.max(0, currentSegmentDuration - timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
-    
-    console.log('  Current segment duration:', currentSegmentDuration);
-    console.log('  Time remaining in current:', timeRemaining);
-    console.log('  Elapsed in current segment:', elapsedInCurrentSegment);
-    console.log('  Total showcaller elapsed:', showcallerElapsedSeconds);
 
     // Calculate the difference
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
-    
-    console.log('  FINAL CALCULATION:');
-    console.log('  Showcaller position:', showcallerElapsedSeconds, 'seconds');
-    console.log('  Real elapsed time:', realElapsedSeconds, 'seconds');
-    console.log('  Difference:', differenceSeconds, 'seconds');
-    console.log('  Showcaller is ahead:', differenceSeconds > 0);
-    console.log('  Should show:', differenceSeconds > 0 ? 'Under' : 'Over', secondsToTime(Math.abs(differenceSeconds)));
 
     // Update display value
     const absSeconds = Math.abs(differenceSeconds);
