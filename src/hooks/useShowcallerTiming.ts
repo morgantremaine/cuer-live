@@ -68,10 +68,11 @@ export const useShowcallerTiming = ({
     // CRITICAL FIX: Use synchronized universal time with proper timezone handling
     // All users calculate timing based on the same universal time in the rundown's timezone
     const universalTime = getUniversalTime();
-    const now = new Date(universalTime);
     
-    // Get current time in the rundown's timezone (never use device time)
-    const currentTimeString = formatInTimeZone(now, timezone, 'HH:mm:ss');
+    // Create a UTC date from universal time, then format in the rundown's timezone
+    // This ensures we're using the synchronized time, not local device time
+    const utcDate = new Date(universalTime);
+    const currentTimeString = formatInTimeZone(utcDate, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
 
