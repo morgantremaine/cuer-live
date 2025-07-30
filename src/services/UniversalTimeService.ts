@@ -119,10 +119,9 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use reliable time APIs (removed worldclockapi.com due to certificate issues)
+      // Use single reliable time API (timeapi.io has been most consistent)
       const timeAPIs = [
-        'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
-        'https://worldtimeapi.org/api/timezone/UTC'
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
       ];
 
       const syncResults = await Promise.allSettled(
