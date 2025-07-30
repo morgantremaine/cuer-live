@@ -119,9 +119,8 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use multiple time APIs for redundancy
+      // Use only the working time API since worldtimeapi.org keeps failing
       const timeAPIs = [
-        'https://worldtimeapi.org/api/timezone/UTC',
         'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
       ];
 
