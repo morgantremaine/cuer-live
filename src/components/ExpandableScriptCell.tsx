@@ -30,6 +30,7 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,8 +71,11 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Always allow local toggle
+    setIsTransitioning(true);
     setIsExpanded(!isExpanded);
+    
+    // Reset transition state after animation completes
+    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   // Handle clicking to focus the textarea (no separate edit mode)
@@ -197,8 +201,11 @@ const ExpandableScriptCell = ({
 
   // Monitor row height changes for dynamic preview sizing
   useEffect(() => {
-    if (!effectiveExpanded && containerRef.current) {
+    if (!effectiveExpanded && !isTransitioning && containerRef.current) {
       const updateRowHeight = () => {
+        // Skip updates during transitions to prevent animation interference
+        if (isTransitioning) return;
+        
         const row = containerRef.current?.closest('tr');
         if (row) {
           const height = row.getBoundingClientRect().height;
@@ -211,8 +218,10 @@ const ExpandableScriptCell = ({
 
       // Use ResizeObserver to monitor row height changes
       const observer = new ResizeObserver(() => {
-        // Use requestAnimationFrame to avoid layout thrashing
-        requestAnimationFrame(updateRowHeight);
+        // Skip during transitions
+        if (!isTransitioning) {
+          requestAnimationFrame(updateRowHeight);
+        }
       });
       const row = containerRef.current?.closest('tr');
       if (row) {
@@ -223,7 +232,7 @@ const ExpandableScriptCell = ({
         observer.disconnect();
       };
     }
-  }, [effectiveExpanded, value]);
+  }, [effectiveExpanded, value, isTransitioning]);
 
   // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {
