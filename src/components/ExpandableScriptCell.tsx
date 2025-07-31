@@ -383,7 +383,8 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                height: rowHeight ? `${rowHeight - 16}px` : '24px' // Dynamic height based on row
               }}
             >
               {value && !isNullScript(value) ? (
@@ -396,9 +397,11 @@ const ExpandableScriptCell = ({
                     lineHeight: '1.25rem',
                     fontSize: '0.875rem',
                     overflow: 'hidden',
-                    height: '24px'
+                    display: '-webkit-box',
+                    WebkitLineClamp: getDynamicLineClamp(),
+                    WebkitBoxOrient: 'vertical'
                   }}
-                >
+                 >
                   {fieldType === 'script' ? (
                     renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
                       inlineDisplay: true, 
