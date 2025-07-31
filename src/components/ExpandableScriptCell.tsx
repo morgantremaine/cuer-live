@@ -29,6 +29,7 @@ const ExpandableScriptCell = ({
   const [isFocused, setIsFocused] = useState(false);
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,9 +47,9 @@ const ExpandableScriptCell = ({
     }
   }, [columnExpanded]);
 
-  // Auto-focus the real textarea when expanded via tab navigation
+  // Auto-focus the real textarea only when expanded via tab navigation (shouldAutoFocus = true)
   useEffect(() => {
-    if (effectiveExpanded) {
+    if (effectiveExpanded && shouldAutoFocus) {
       // Use a slight delay to ensure the expanded textarea is rendered
       const timer = setTimeout(() => {
         // Try to focus the textareaRef first, then fallback to cellRefs
@@ -60,10 +61,12 @@ const ExpandableScriptCell = ({
             element.focus();
           }
         }
+        // Reset the auto-focus flag after focusing
+        setShouldAutoFocus(false);
       }, 50); // Increased delay to ensure DOM update
       return () => clearTimeout(timer);
     }
-  }, [effectiveExpanded, cellKey]);
+  }, [effectiveExpanded, shouldAutoFocus, cellKey]);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -363,8 +366,9 @@ const ExpandableScriptCell = ({
               tabIndex={0}
               readOnly
               onFocus={() => {
-                // Auto-expand when this hidden textarea receives focus
+                // Auto-expand when this hidden textarea receives focus and set flag for auto-focus
                 setIsExpanded(true);
+                setShouldAutoFocus(true);
               }}
               className="absolute inset-0 opacity-0 w-full h-full cursor-text"
               style={{ 
