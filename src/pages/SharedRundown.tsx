@@ -313,14 +313,25 @@ const SharedRundown = () => {
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
       <div className={`h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Debug logging for timeRemaining display */}
+          {(() => {
+            console.log('🔍 SharedRundown display values:', {
+              currentTimeRemaining,
+              formattedTimeRemaining: typeof currentTimeRemaining === 'number' ? formatTimeRemaining(currentTimeRemaining) : currentTimeRemaining,
+              isPlaying,
+              realtimeShowcallerState: realtimeShowcallerState?.timeRemaining
+            });
+            return null;
+          })()}
+          
           <SharedRundownHeader
             title={rundownData.title}
             startTime={rundownData.startTime || '09:00:00'}
             timezone={rundownData.timezone || 'UTC'}
             layoutName={layoutName}
-            currentSegmentId={currentSegmentId}
+            currentSegmentId={realtimeCurrentSegmentId}
             isPlaying={isPlaying}
-            timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
+            timeRemaining={typeof currentTimeRemaining === 'number' ? formatTimeRemaining(currentTimeRemaining) : currentTimeRemaining}
             isDark={isDark}
             onToggleTheme={toggleTheme}
             autoScrollEnabled={autoScrollEnabled}
