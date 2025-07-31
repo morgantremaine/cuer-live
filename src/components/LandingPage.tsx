@@ -163,21 +163,16 @@ const LandingPage = () => {
                 Try Demo
               </Button>
             </div>
-          </div>
-        </div>
 
-        {/* Promo Code Section */}
-        <div className="relative max-w-4xl mx-auto mb-16 text-center fade-up">
-          <div className="space-y-4">
-            <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-500/30 pulse-glow">
-              Limited Time Offer
-            </Badge>
-            <h3 className="text-2xl font-bold text-white">
-              Get Your First Month Free
-            </h3>
-            <p className="text-lg text-slate-300">
-              Use code <code className="bg-slate-800/50 text-blue-300 px-3 py-1 rounded font-mono text-xl border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
-            </p>
+            {/* Promo Code */}
+            <div className="text-center space-y-3 fade-up">
+              <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-500/30 pulse-glow">
+                Limited Time Offer
+              </Badge>
+              <p className="text-base text-slate-300">
+                Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
+              </p>
+            </div>
           </div>
         </div>
 
