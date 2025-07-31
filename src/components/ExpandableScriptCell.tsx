@@ -380,7 +380,8 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                transition: 'none' // Disable any inherited transitions
               }}
             >
               {value && !isNullScript(value) ? (
