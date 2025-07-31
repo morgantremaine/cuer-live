@@ -320,10 +320,14 @@ const ExpandableScriptCell = ({
                 }}
               >
                 {value && !isNullScript(value) ? (
-                  renderScriptWithBrackets(value, { 
-                    inlineDisplay: true, 
-                    fontSize: 14 
-                  })
+                  fieldType === 'script' ? (
+                    renderScriptWithBrackets(value, { 
+                      inlineDisplay: true, 
+                      fontSize: 14 
+                    })
+                  ) : (
+                    value
+                  )
                 ) : (
                   <span className="text-muted-foreground">
                     {fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
@@ -387,10 +391,14 @@ const ExpandableScriptCell = ({
                     WebkitBoxOrient: 'vertical'
                   }}
                 >
-                  {renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
-                    inlineDisplay: true, 
-                    fontSize: 14 
-                  })}
+                  {fieldType === 'script' ? (
+                    renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
+                      inlineDisplay: true, 
+                      fontSize: 14 
+                    })
+                  ) : (
+                    value.replace(/]\s*\n\s*/g, '] ')
+                  )}
                 </div>
               ) : (
                 <span></span>
