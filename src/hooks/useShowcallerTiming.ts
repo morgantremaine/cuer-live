@@ -79,10 +79,10 @@ export const useShowcallerTiming = ({
     // Calculate real elapsed time since rundown start
     let realElapsedSeconds = currentTimeSeconds - rundownStartSeconds;
     
-    // Handle day boundary (if we're "before" start time, might have crossed midnight)
-    if (realElapsedSeconds < 0) {
-      realElapsedSeconds += 24 * 3600; // Add 24 hours
-    }
+    // Store both day boundary options for smart selection
+    const originalRealElapsed = realElapsedSeconds;
+    const crossMidnightForward = realElapsedSeconds < 0 ? realElapsedSeconds + 24 * 3600 : realElapsedSeconds;
+    const crossMidnightBackward = realElapsedSeconds > 12 * 3600 ? realElapsedSeconds - 24 * 3600 : realElapsedSeconds;
 
     // Calculate showcaller elapsed time = where the showcaller thinks we are
     let showcallerElapsedSeconds = 0;
@@ -101,7 +101,21 @@ export const useShowcallerTiming = ({
     const elapsedInCurrentSegment = Math.max(0, currentSegmentDuration - timeRemaining);
     showcallerElapsedSeconds += elapsedInCurrentSegment;
 
-    // Calculate the difference
+    // Now choose the real elapsed time interpretation that gives the smallest absolute difference
+    const diff1 = Math.abs(showcallerElapsedSeconds - originalRealElapsed);
+    const diff2 = Math.abs(showcallerElapsedSeconds - crossMidnightForward);
+    const diff3 = Math.abs(showcallerElapsedSeconds - crossMidnightBackward);
+    
+    // Choose the interpretation with the smallest difference
+    if (diff1 <= diff2 && diff1 <= diff3) {
+      realElapsedSeconds = originalRealElapsed;
+    } else if (diff2 <= diff3) {
+      realElapsedSeconds = crossMidnightForward;
+    } else {
+      realElapsedSeconds = crossMidnightBackward;
+    }
+
+    // Calculate the final difference
     const differenceSeconds = showcallerElapsedSeconds - realElapsedSeconds;
 
     // Update display value
