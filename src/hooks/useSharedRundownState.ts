@@ -273,14 +273,24 @@ export const useSharedRundownState = () => {
 
   // Calculate live time remaining based on showcaller state
   const timeRemaining = (() => {
-    if (!rundownData?.showcallerState?.isPlaying || !rundownData?.showcallerState?.playbackStartTime || !currentSegmentId) {
-      return rundownData?.showcallerState?.timeRemaining || 0;
+    const showcallerState = rundownData?.showcallerState;
+    
+    if (!showcallerState?.isPlaying || !showcallerState?.playbackStartTime || !currentSegmentId) {
+      const fallbackValue = showcallerState?.timeRemaining || 0;
+      console.log('🔍 useSharedRundownState timeRemaining fallback:', {
+        isPlaying: showcallerState?.isPlaying,
+        playbackStartTime: showcallerState?.playbackStartTime,
+        currentSegmentId,
+        fallbackValue
+      });
+      return fallbackValue;
     }
 
     // Find current segment duration
     const currentSegment = rundownData.items.find(item => item.id === currentSegmentId);
     if (!currentSegment?.duration) {
-      return rundownData?.showcallerState?.timeRemaining || 0;
+      console.log('🔍 useSharedRundownState no segment duration found:', { currentSegmentId, currentSegment });
+      return showcallerState?.timeRemaining || 0;
     }
 
     // Calculate time remaining based on playback start time
@@ -296,8 +306,16 @@ export const useSharedRundownState = () => {
     };
 
     const segmentDuration = timeToSeconds(currentSegment.duration);
-    const elapsedTime = Math.floor((Date.now() - rundownData.showcallerState.playbackStartTime) / 1000);
+    const elapsedTime = Math.floor((Date.now() - showcallerState.playbackStartTime) / 1000);
     const remaining = Math.max(0, segmentDuration - elapsedTime);
+    
+    console.log('🔍 useSharedRundownState timeRemaining calculation:', {
+      segmentDuration,
+      elapsedTime,
+      remaining,
+      playbackStartTime: showcallerState.playbackStartTime,
+      currentTime: Date.now()
+    });
     
     return remaining;
   })();
