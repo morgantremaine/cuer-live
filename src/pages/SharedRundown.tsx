@@ -65,6 +65,12 @@ const SharedRundown = () => {
   // Use real-time showcaller state if available, otherwise fall back to stored state
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
+  
+  // Use timeRemaining from real-time state when available, otherwise from shared state
+  const currentTimeRemaining = realtimeShowcallerState?.timeRemaining ?? timeRemaining;
+  
+  // Use current segment from real-time state when available
+  const realtimeCurrentSegmentId = realtimeShowcallerState?.currentSegmentId || currentSegmentId;
 
   // Use the unified timing calculation from useShowcallerTiming hook (same as main showcaller)
   const timingStatus = useShowcallerTiming({
@@ -72,13 +78,13 @@ const SharedRundown = () => {
     rundownStartTime: rundownData?.startTime || '09:00:00',
     timezone: rundownData?.timezone || 'UTC',
     isPlaying,
-    currentSegmentId,
-    timeRemaining
+    currentSegmentId: realtimeCurrentSegmentId,
+    timeRemaining: currentTimeRemaining
   });
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
-    currentSegmentId,
+    currentSegmentId: realtimeCurrentSegmentId,
     isPlaying,
     autoScrollEnabled,
     items: rundownData?.items || []
