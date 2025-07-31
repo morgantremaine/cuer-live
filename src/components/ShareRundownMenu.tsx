@@ -414,6 +414,8 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           font-weight: bold !important;
           font-size: 11px !important;
           padding: 8px 4px !important;
+          border-left: none !important;
+          border-right: none !important;
         }
 
         /* Preserve custom colors */

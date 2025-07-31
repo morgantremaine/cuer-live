@@ -421,7 +421,10 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         padding: 12px 8px !important;
         background: #f5f5f5 !important;
         color: black !important;
-        border: 1px solid #999 !important;
+        border-top: 1px solid #999 !important;
+        border-bottom: 1px solid #999 !important;
+        border-left: none !important;
+        border-right: none !important;
       }
 
       /* Preserve custom colors */

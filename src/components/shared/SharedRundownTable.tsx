@@ -682,6 +682,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               background: #f5f5f5 !important;
               color: #000 !important;
               font-weight: bold !important;
+              border-left: none !important;
+              border-right: none !important;
             }
             
             /* Only preserve colors for rows that actually have custom colors */
