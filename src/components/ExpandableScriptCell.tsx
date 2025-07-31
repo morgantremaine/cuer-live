@@ -89,41 +89,22 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Auto-resize textarea based on content with animation support
+  // Auto-resize textarea based on content
   useEffect(() => {
     if (textareaRef.current && effectiveExpanded) {
       const textarea = textareaRef.current;
       
+      // Always allow CSS transition to handle the animation
+      textarea.style.height = 'auto';
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.max(scrollHeight, 24) + 'px';
+      
+      // Reset animation flag after content is sized
       if (isAnimatingExpand) {
-        // For expand animation: start from collapsed height, animate to full height
-        const previewHeight = Math.max(getDynamicLineClamp() * 20, 24); // Estimate collapsed height
-        textarea.style.height = previewHeight + 'px';
-        textarea.style.transition = 'height 0.2s ease-out';
-        
-        // Force reflow then set target height
-        textarea.offsetHeight;
-        textarea.style.height = 'auto';
-        const targetHeight = textarea.scrollHeight;
-        textarea.style.height = previewHeight + 'px';
-        
-        // Animate to target height
-        requestAnimationFrame(() => {
-          textarea.style.height = targetHeight + 'px';
-        });
-        
-        // Clean up after animation
         const timer = setTimeout(() => {
-          textarea.style.height = 'auto';
-          textarea.style.transition = '';
           setIsAnimatingExpand(false);
         }, 200);
-        
         return () => clearTimeout(timer);
-      } else {
-        // Normal resize without animation
-        textarea.style.height = 'auto';
-        const scrollHeight = textarea.scrollHeight;
-        textarea.style.height = Math.max(scrollHeight, 24) + 'px';
       }
     }
   }, [value, effectiveExpanded, isAnimatingExpand]);
@@ -295,7 +276,23 @@ const ExpandableScriptCell = ({
                   textareaRef.current = el;
                   // Auto-resize on mount
                   requestAnimationFrame(() => {
-                    if (el) {
+                    if (el && isAnimatingExpand) {
+                      // Start from collapsed height for smooth animation
+                      const collapsedHeight = Math.max(getDynamicLineClamp() * 20, 24);
+                      el.style.height = collapsedHeight + 'px';
+                      
+                      // Then animate to full height
+                      requestAnimationFrame(() => {
+                        el.style.height = 'auto';
+                        const targetHeight = el.scrollHeight;
+                        el.style.height = collapsedHeight + 'px';
+                        
+                        requestAnimationFrame(() => {
+                          el.style.height = targetHeight + 'px';
+                        });
+                      });
+                    } else if (el) {
+                      // Normal resize for non-animated cases
                       el.style.height = 'auto';
                       const scrollHeight = el.scrollHeight;
                       el.style.height = Math.max(scrollHeight, 24) + 'px';
