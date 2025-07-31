@@ -168,18 +168,16 @@ const LandingPage = () => {
 
         {/* Promo Code Section */}
         <div className="relative max-w-4xl mx-auto mb-16 text-center fade-up">
-          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm rounded-2xl border border-blue-500/30 p-8 glow-box">
-            <div className="space-y-4">
-              <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-500/30 pulse-glow">
-                Limited Time Offer
-              </Badge>
-              <h3 className="text-2xl font-bold text-white">
-                Get Your First Month Free
-              </h3>
-              <p className="text-lg text-slate-300">
-                Use code <code className="bg-slate-800/50 text-blue-300 px-3 py-1 rounded font-mono text-xl border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
-              </p>
-            </div>
+          <div className="space-y-4">
+            <Badge variant="secondary" className="bg-blue-600/20 text-blue-300 border-blue-500/30 pulse-glow">
+              Limited Time Offer
+            </Badge>
+            <h3 className="text-2xl font-bold text-white">
+              Get Your First Month Free
+            </h3>
+            <p className="text-lg text-slate-300">
+              Use code <code className="bg-slate-800/50 text-blue-300 px-3 py-1 rounded font-mono text-xl border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
+            </p>
           </div>
         </div>
 
