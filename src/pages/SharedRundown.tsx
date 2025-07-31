@@ -66,17 +66,11 @@ const SharedRundown = () => {
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
   
-  // Use timeRemaining from real-time state when available, otherwise from shared state
-  const currentTimeRemaining = realtimeShowcallerState?.timeRemaining ?? timeRemaining;
-  
-  // Debug logging to see what's happening with timeRemaining
-  console.log('🔍 SharedRundown timing debug:', {
-    realtimeShowcallerState,
-    realtimeTimeRemaining: realtimeShowcallerState?.timeRemaining,
-    sharedStateTimeRemaining: timeRemaining,
-    currentTimeRemaining,
-    isPlaying
-  });
+  // IMPORTANT: For shared rundown, always use real-time timeRemaining when available
+  // The shared state calculation can be stale due to wrong playback start times
+  const currentTimeRemaining = realtimeShowcallerState ? 
+    realtimeShowcallerState.timeRemaining : 
+    (rundownData?.showcallerState?.timeRemaining || 0);
   
   // Use current segment from real-time state when available
   const realtimeCurrentSegmentId = realtimeShowcallerState?.currentSegmentId || currentSegmentId;
