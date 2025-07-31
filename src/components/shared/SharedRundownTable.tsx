@@ -684,6 +684,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               font-weight: bold !important;
               border-left: none !important;
               border-right: none !important;
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
             }
             
             /* Only preserve colors for rows that actually have custom colors */
@@ -1027,7 +1030,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                       )}
                                     </button>
                                     <span className="text-lg font-bold flex-shrink-0 whitespace-nowrap">{item.name || ''}</span>
-                                    <span className="text-base font-medium whitespace-nowrap flex-shrink-0 ml-6">({headerDuration})</span>
+                                    <span className="text-base font-medium whitespace-nowrap flex-shrink-0 ml-6 print:hidden">({headerDuration})</span>
                                   </div>
                                </td>
                              );
