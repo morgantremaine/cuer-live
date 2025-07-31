@@ -385,6 +385,7 @@ const ExpandableScriptCell = ({
             >
               {value && !isNullScript(value) ? (
                 <div 
+                  className="relative"
                   style={{ 
                     maxWidth: '100%',
                     whiteSpace: 'pre-wrap',
@@ -405,6 +406,18 @@ const ExpandableScriptCell = ({
                   ) : (
                     value.replace(/]\s*\n\s*/g, '] ')
                   )}
+                  
+                  {/* Ellipsis overlay for truncated content */}
+                  <div 
+                    className="absolute bottom-0 right-0 bg-background pl-2"
+                    style={{
+                      background: 'linear-gradient(to right, transparent, var(--background) 4px, var(--background))',
+                      fontSize: '0.875rem',
+                      lineHeight: '1.25rem'
+                    }}
+                  >
+                    ...
+                  </div>
                 </div>
               ) : (
                 <span></span>
