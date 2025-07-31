@@ -120,13 +120,16 @@ const RundownContent = React.memo<RundownContentProps>(({
     const currentScrollTop = window.scrollY;
     const currentActiveElement = document.activeElement;
     
+    console.log(`Toggling column ${columnKey} expand state`);
+    
     setColumnExpandState(prev => ({
       ...prev,
       [columnKey]: !prev[columnKey]
     }));
 
-    // Restore scroll position and focus after state updates
-    requestAnimationFrame(() => {
+    // Remove the requestAnimationFrame that was causing the animation effect
+    // Restore scroll position immediately instead
+    setTimeout(() => {
       // Restore the scroll position
       window.scrollTo(0, currentScrollTop);
       
@@ -137,7 +140,7 @@ const RundownContent = React.memo<RundownContentProps>(({
           currentActiveElement.tabIndex >= 0) {
         currentActiveElement.focus();
       }
-    });
+    }, 0);
   }, []);
 
   // Initialize autoscroll functionality

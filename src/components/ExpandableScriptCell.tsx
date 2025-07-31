@@ -43,6 +43,7 @@ const ExpandableScriptCell = ({
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
     if (columnExpanded !== undefined) {
+      console.log(`[${cellKey}] Column expand changing from ${isExpanded} to ${columnExpanded}`);
       setIsExpanded(columnExpanded);
     }
   }, [columnExpanded]);
@@ -70,6 +71,7 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log(`[${cellKey}] Individual toggle from ${isExpanded} to ${!isExpanded}`);
     // Always allow local toggle
     setIsExpanded(!isExpanded);
   };
