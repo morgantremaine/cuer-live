@@ -235,7 +235,7 @@ const ExpandableScriptCell = ({
   };
 
   return (
-    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
+    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden" style={{ transition: 'none' }}>
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -247,7 +247,7 @@ const ExpandableScriptCell = ({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
       </button>
-      <div className="flex-1 relative min-w-0">
+      <div className="flex-1 relative min-w-0" style={{ transition: 'none' }}>
         {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
           <div className="relative">
