@@ -167,7 +167,7 @@ const LandingPage = () => {
             {/* Promo Code */}
             <div className="text-center fade-up">
               <p className="text-base text-slate-300">
-                Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free on any tier plan
+                Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
               </p>
             </div>
           </div>
@@ -541,7 +541,7 @@ const LandingPage = () => {
         {/* Promo Code */}
         <div className="text-center mt-8 fade-up">
           <p className="text-base text-slate-300">
-            Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free on any tier plan
+            Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free off any tier plan
           </p>
         </div>
       </div>
