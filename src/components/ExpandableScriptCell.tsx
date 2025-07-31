@@ -396,9 +396,7 @@ const ExpandableScriptCell = ({
                     lineHeight: '1.25rem',
                     fontSize: '0.875rem',
                     overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: getDynamicLineClamp(),
-                    WebkitBoxOrient: 'vertical'
+                    height: '24px'
                   }}
                 >
                   {fieldType === 'script' ? (
