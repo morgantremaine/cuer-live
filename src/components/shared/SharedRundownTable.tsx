@@ -911,17 +911,19 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 let textColor = isDark ? '#ffffff' : '#000000'; // Default text colors
                 let printRowClass = '';
                 
-                if (item.type === 'header') {
-                  rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
-                  printRowClass = 'print-header-row';
-                } else if (isFloated) {
+                if (isFloated) {
                   rowBackgroundColor = '#dc2626'; // red-600
                   textColor = '#ffffff';
                   printRowClass = 'print-floated-row';
                 } else if (item.color && item.color !== '#ffffff' && item.color !== '#FFFFFF' && item.color !== '') {
+                  // Custom color takes priority over header defaults
                   rowBackgroundColor = item.color;
                   textColor = getContrastTextColor(item.color);
                   printRowClass = 'print-custom-colored-row';
+                } else if (item.type === 'header') {
+                  // Default header color only if no custom color is set
+                  rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
+                  printRowClass = 'print-header-row';
                 } else {
                   // Default row - don't preserve colors in print
                   printRowClass = 'print-default-row';
@@ -1005,26 +1007,26 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                    } : {})
                                  }}
                                >
-                                 <div className="flex items-center gap-2">
-                                   <button
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       toggleHeaderCollapse(item.id);
-                                     }}
-                                     className={`flex-shrink-0 p-1 rounded transition-colors print:hidden ${
-                                       isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-                                     }`}
-                                     title={isCollapsed ? 'Expand header' : 'Collapse header'}
-                                   >
-                                     {isCollapsed ? (
-                                       <ChevronRight className="h-4 w-4" />
-                                     ) : (
-                                       <ChevronDown className="h-4 w-4" />
-                                     )}
-                                   </button>
-                                   <span className="text-lg font-bold">{item.name || ''}</span>
-                                   <span className="text-base font-medium ml-6">({headerDuration})</span>
-                                 </div>
+                                  <div className="flex items-center gap-2 w-full min-w-0">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleHeaderCollapse(item.id);
+                                      }}
+                                      className={`flex-shrink-0 p-1 rounded transition-colors print:hidden ${
+                                        isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                                      }`}
+                                      title={isCollapsed ? 'Expand header' : 'Collapse header'}
+                                    >
+                                      {isCollapsed ? (
+                                        <ChevronRight className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                    <span className="text-lg font-bold flex-shrink-0 whitespace-nowrap">{item.name || ''}</span>
+                                    <span className="text-base font-medium whitespace-nowrap flex-shrink-0 ml-6">({headerDuration})</span>
+                                  </div>
                                </td>
                              );
                            } else {
