@@ -195,19 +195,27 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Monitor row height changes for dynamic preview sizing
+  // Monitor row height changes for dynamic preview sizing (with debounce to prevent animation conflicts)
   useEffect(() => {
     if (!effectiveExpanded && containerRef.current) {
+      let timeoutId: NodeJS.Timeout;
+      
       const updateRowHeight = () => {
-        const row = containerRef.current?.closest('tr');
-        if (row) {
-          const height = row.getBoundingClientRect().height;
-          setRowHeight(height);
-        }
+        // Clear any pending updates
+        clearTimeout(timeoutId);
+        
+        // Debounce to avoid conflicts during animations
+        timeoutId = setTimeout(() => {
+          const row = containerRef.current?.closest('tr');
+          if (row) {
+            const height = row.getBoundingClientRect().height;
+            setRowHeight(height);
+          }
+        }, 100); // Small delay to let animations complete
       };
 
-      // Initial measurement
-      updateRowHeight();
+      // Initial measurement with delay
+      setTimeout(updateRowHeight, 50);
 
       // Use ResizeObserver to monitor row height changes
       const observer = new ResizeObserver(updateRowHeight);
@@ -217,6 +225,7 @@ const ExpandableScriptCell = ({
       }
 
       return () => {
+        clearTimeout(timeoutId);
         observer.disconnect();
       };
     }
