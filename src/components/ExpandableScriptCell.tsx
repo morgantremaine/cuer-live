@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, startTransition } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 
@@ -257,14 +257,12 @@ const ExpandableScriptCell = ({
                 if (el) {
                   cellRefs.current[cellKey] = el;
                   textareaRef.current = el;
-                  // Auto-resize on mount
-                  requestAnimationFrame(() => {
-                    if (el) {
-                      el.style.height = 'auto';
-                      const scrollHeight = el.scrollHeight;
-                      el.style.height = Math.max(scrollHeight, 24) + 'px';
-                    }
-                  });
+                  // Immediate resize on mount
+                  if (el) {
+                    el.style.height = 'auto';
+                    const scrollHeight = el.scrollHeight;
+                    el.style.height = Math.max(scrollHeight, 24) + 'px';
+                  }
                 } else {
                   delete cellRefs.current[cellKey];
                 }
@@ -272,14 +270,12 @@ const ExpandableScriptCell = ({
               value={value}
               onChange={(e) => {
                 onUpdateValue(e.target.value);
-                // Trigger resize on content change
-                requestAnimationFrame(() => {
-                  if (e.target) {
-                    e.target.style.height = 'auto';
-                    const scrollHeight = e.target.scrollHeight;
-                    e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-                  }
-                });
+                // Immediate resize on content change
+                if (e.target) {
+                  e.target.style.height = 'auto';
+                  const scrollHeight = e.target.scrollHeight;
+                  e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+                }
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
