@@ -195,13 +195,6 @@ const RundownTable = ({
               </>
             );
           })}
-      {items.length === 0 && (
-        <tr>
-          <td colSpan={visibleColumns.length + 1} className="p-4 text-center text-muted-foreground">
-            No items to display
-          </td>
-        </tr>
-      )}
     </tbody>
   );
 };
