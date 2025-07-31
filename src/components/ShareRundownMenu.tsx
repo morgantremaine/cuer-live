@@ -416,6 +416,9 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           padding: 8px 4px !important;
           border-left: none !important;
           border-right: none !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         }
 
         /* Preserve custom colors */

@@ -425,6 +425,9 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         border-bottom: 1px solid #999 !important;
         border-left: none !important;
         border-right: none !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       /* Preserve custom colors */
