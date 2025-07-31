@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, startTransition } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 
@@ -43,7 +43,6 @@ const ExpandableScriptCell = ({
   // Sync with column expanded state changes but maintain local control
   useEffect(() => {
     if (columnExpanded !== undefined) {
-      console.log(`[${cellKey}] Column expand changing from ${isExpanded} to ${columnExpanded}`);
       setIsExpanded(columnExpanded);
     }
   }, [columnExpanded]);
@@ -71,7 +70,6 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`[${cellKey}] Individual toggle from ${isExpanded} to ${!isExpanded}`);
     // Always allow local toggle
     setIsExpanded(!isExpanded);
   };
@@ -237,7 +235,7 @@ const ExpandableScriptCell = ({
   };
 
   return (
-    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden" style={{ transition: 'none' }}>
+    <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -249,7 +247,7 @@ const ExpandableScriptCell = ({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
       </button>
-      <div className="flex-1 relative min-w-0" style={{ transition: 'none' }}>
+      <div className="flex-1 relative min-w-0">
         {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
           <div className="relative">
@@ -382,8 +380,7 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                overflow: 'hidden',
-                transition: 'none'
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
