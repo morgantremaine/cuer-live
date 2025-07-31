@@ -126,7 +126,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     }));
 
     // Restore scroll position and focus after state updates
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       // Restore the scroll position
       window.scrollTo(0, currentScrollTop);
       
@@ -137,7 +137,7 @@ const RundownContent = React.memo<RundownContentProps>(({
           currentActiveElement.tabIndex >= 0) {
         currentActiveElement.focus();
       }
-    }, 0);
+    });
   }, []);
 
   // Initialize autoscroll functionality

@@ -30,7 +30,6 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,11 +70,8 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsTransitioning(true);
+    // Always allow local toggle
     setIsExpanded(!isExpanded);
-    
-    // Reset transition state after animation completes
-    setTimeout(() => setIsTransitioning(false), 300);
   };
 
   // Handle clicking to focus the textarea (no separate edit mode)
@@ -88,13 +84,13 @@ const ExpandableScriptCell = ({
 
   // Auto-resize textarea based on content
   useEffect(() => {
-    if (textareaRef.current && effectiveExpanded) {
+    if (textareaRef.current) {
       const textarea = textareaRef.current;
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = Math.max(scrollHeight, 24) + 'px';
     }
-  }, [value, effectiveExpanded]);
+  }, [value]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -201,11 +197,8 @@ const ExpandableScriptCell = ({
 
   // Monitor row height changes for dynamic preview sizing
   useEffect(() => {
-    if (!effectiveExpanded && !isTransitioning && containerRef.current) {
+    if (!effectiveExpanded && containerRef.current) {
       const updateRowHeight = () => {
-        // Skip updates during transitions to prevent animation interference
-        if (isTransitioning) return;
-        
         const row = containerRef.current?.closest('tr');
         if (row) {
           const height = row.getBoundingClientRect().height;
@@ -217,12 +210,7 @@ const ExpandableScriptCell = ({
       updateRowHeight();
 
       // Use ResizeObserver to monitor row height changes
-      const observer = new ResizeObserver(() => {
-        // Skip during transitions
-        if (!isTransitioning) {
-          requestAnimationFrame(updateRowHeight);
-        }
-      });
+      const observer = new ResizeObserver(updateRowHeight);
       const row = containerRef.current?.closest('tr');
       if (row) {
         observer.observe(row);
@@ -232,7 +220,7 @@ const ExpandableScriptCell = ({
         observer.disconnect();
       };
     }
-  }, [effectiveExpanded, value, isTransitioning]);
+  }, [effectiveExpanded, value]);
 
   // Calculate dynamic line clamp based on row height
   const getDynamicLineClamp = () => {
@@ -269,12 +257,14 @@ const ExpandableScriptCell = ({
                 if (el) {
                   cellRefs.current[cellKey] = el;
                   textareaRef.current = el;
-                  // Immediate resize on mount
-                  if (el) {
-                    el.style.height = 'auto';
-                    const scrollHeight = el.scrollHeight;
-                    el.style.height = Math.max(scrollHeight, 24) + 'px';
-                  }
+                  // Auto-resize on mount
+                  requestAnimationFrame(() => {
+                    if (el) {
+                      el.style.height = 'auto';
+                      const scrollHeight = el.scrollHeight;
+                      el.style.height = Math.max(scrollHeight, 24) + 'px';
+                    }
+                  });
                 } else {
                   delete cellRefs.current[cellKey];
                 }
@@ -282,12 +272,14 @@ const ExpandableScriptCell = ({
               value={value}
               onChange={(e) => {
                 onUpdateValue(e.target.value);
-                // Immediate resize on content change
-                if (e.target) {
-                  e.target.style.height = 'auto';
-                  const scrollHeight = e.target.scrollHeight;
-                  e.target.style.height = Math.max(scrollHeight, 24) + 'px';
-                }
+                // Trigger resize on content change
+                requestAnimationFrame(() => {
+                  if (e.target) {
+                    e.target.style.height = 'auto';
+                    const scrollHeight = e.target.scrollHeight;
+                    e.target.style.height = Math.max(scrollHeight, 24) + 'px';
+                  }
+                });
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
@@ -392,8 +384,7 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                overflow: 'hidden',
-                height: rowHeight ? `${rowHeight - 16}px` : '24px' // Dynamic height based on row
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
@@ -410,7 +401,7 @@ const ExpandableScriptCell = ({
                     WebkitLineClamp: getDynamicLineClamp(),
                     WebkitBoxOrient: 'vertical'
                   }}
-                 >
+                >
                   {fieldType === 'script' ? (
                     renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
                       inlineDisplay: true, 
