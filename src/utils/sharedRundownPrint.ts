@@ -248,10 +248,18 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
         if (input && input.value) {
           content = input.value.trim();
         } else {
-          // Get text content but exclude button text and icons
+          // Get text content but exclude button text, icons, and screen-only duration
           const clone = cellElement.cloneNode(true) as HTMLElement;
-          clone.querySelectorAll('button, .lucide, [role="button"]').forEach(el => el.remove());
+          clone.querySelectorAll('button, .lucide, [role="button"], .screen-only-duration').forEach(el => el.remove());
           content = clone.textContent?.trim() || '';
+          
+          // For header rows in name columns, also remove any duration in parentheses
+          if (dataType === 'header') {
+            const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
+            if (headerText.includes('segment') || headerText.includes('name')) {
+              content = content.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            }
+          }
         }
       }
       
