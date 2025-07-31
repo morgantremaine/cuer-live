@@ -66,10 +66,56 @@ const SharedRundown = () => {
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
   
-  // IMPORTANT: For shared rundown, always use real-time timeRemaining when available
-  // The shared state calculation can be stale due to wrong playback start times
-  const currentTimeRemaining = realtimeShowcallerState ? 
-    realtimeShowcallerState.timeRemaining : 
+  // Local countdown state for real-time display
+  const [localTimeRemaining, setLocalTimeRemaining] = useState<number>(0);
+  const localTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRealtimeUpdate = useRef<number>(0);
+  
+  // Update local countdown when real-time state changes
+  useEffect(() => {
+    if (realtimeShowcallerState?.timeRemaining !== undefined) {
+      const newTimeRemaining = realtimeShowcallerState.timeRemaining;
+      if (newTimeRemaining !== lastRealtimeUpdate.current) {
+        console.log('🔄 Updating local countdown from real-time:', newTimeRemaining);
+        setLocalTimeRemaining(newTimeRemaining);
+        lastRealtimeUpdate.current = newTimeRemaining;
+      }
+    }
+  }, [realtimeShowcallerState?.timeRemaining]);
+  
+  // Local countdown timer
+  useEffect(() => {
+    if (localTimerRef.current) {
+      clearInterval(localTimerRef.current);
+      localTimerRef.current = null;
+    }
+    
+    if (isPlaying && localTimeRemaining > 0) {
+      localTimerRef.current = setInterval(() => {
+        setLocalTimeRemaining(prev => {
+          const newValue = Math.max(0, prev - 1);
+          if (newValue === 0) {
+            if (localTimerRef.current) {
+              clearInterval(localTimerRef.current);
+              localTimerRef.current = null;
+            }
+          }
+          return newValue;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (localTimerRef.current) {
+        clearInterval(localTimerRef.current);
+        localTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, localTimeRemaining > 0]);
+  
+  // IMPORTANT: Use local countdown when playing, otherwise use stored state
+  const currentTimeRemaining = isPlaying && realtimeShowcallerState ? 
+    localTimeRemaining : 
     (rundownData?.showcallerState?.timeRemaining || 0);
   
   // Use current segment from real-time state when available
@@ -313,16 +359,6 @@ const SharedRundown = () => {
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
       <div className={`h-screen flex flex-col ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Debug logging for timeRemaining display */}
-          {(() => {
-            console.log('🔍 SharedRundown display values:', {
-              currentTimeRemaining,
-              formattedTimeRemaining: typeof currentTimeRemaining === 'number' ? formatTimeRemaining(currentTimeRemaining) : currentTimeRemaining,
-              isPlaying,
-              realtimeShowcallerState: realtimeShowcallerState?.timeRemaining
-            });
-            return null;
-          })()}
           
           <SharedRundownHeader
             title={rundownData.title}

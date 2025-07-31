@@ -173,14 +173,11 @@ export const SharedRundownHeader = ({
                     </span>
                   </div>
                   {timeRemaining && (
-                    <>
-                      {console.log('🔍 SharedRundownHeader timeRemaining:', { timeRemaining, isPlaying })}
-                      <span className={`text-sm font-mono px-2 py-1 rounded ${
-                        isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {timeRemaining}
-                      </span>
-                    </>
+                    <span className={`text-sm font-mono px-2 py-1 rounded ${
+                      isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {timeRemaining}
+                    </span>
                   )}
                 </div>
               )}
