@@ -789,6 +789,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               display: none !important;
             }
             
+            /* Hide screen-only duration in print */
+            .screen-only-duration {
+              display: none !important;
+            }
+            
             /* Remove showcaller highlighting from current segment name in print */
             .showcaller-highlight {
               background: transparent !important;
@@ -1029,11 +1034,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                         <ChevronDown className="h-4 w-4" />
                                       )}
                                     </button>
-                                    {/* Header name - show duration inline on screen, only name in print */}
-                                    <div className="flex items-center gap-6 min-w-0 flex-1">
-                                      <span className="text-lg font-bold whitespace-nowrap print:whitespace-normal print:break-words">{item.name || ''}</span>
-                                      <span className="text-base font-medium whitespace-nowrap flex-shrink-0 print:hidden">({headerDuration})</span>
-                                    </div>
+                                     {/* Header name - show duration inline on screen, only name in print */}
+                                     <div className="flex items-center gap-6 min-w-0 flex-1">
+                                       <span className="text-lg font-bold whitespace-nowrap print:whitespace-normal print:break-words">{item.name || ''}</span>
+                                       <span className="text-base font-medium whitespace-nowrap flex-shrink-0 screen-only-duration">({headerDuration})</span>
+                                     </div>
                                   </div>
                                </td>
                              );
