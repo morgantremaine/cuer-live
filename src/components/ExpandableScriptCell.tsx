@@ -30,6 +30,12 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
+  
   // Always use local state - column state just sets it initially
   const effectiveExpanded = isExpanded;
   
@@ -42,18 +48,22 @@ const ExpandableScriptCell = ({
 
   // Auto-focus the real textarea when expanded via tab navigation
   useEffect(() => {
-    if (effectiveExpanded && textareaRef.current) {
-      // Small delay to ensure the textarea is rendered
+    if (effectiveExpanded) {
+      // Use a slight delay to ensure the expanded textarea is rendered
       const timer = setTimeout(() => {
+        // Try to focus the textareaRef first, then fallback to cellRefs
         if (textareaRef.current) {
           textareaRef.current.focus();
+        } else if (cellRefs.current[cellKey]) {
+          const element = cellRefs.current[cellKey];
+          if (element instanceof HTMLTextAreaElement) {
+            element.focus();
+          }
         }
-      }, 0);
+      }, 50); // Increased delay to ensure DOM update
       return () => clearTimeout(timer);
     }
-  }, [effectiveExpanded]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  }, [effectiveExpanded, cellKey]);
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -220,9 +230,6 @@ const ExpandableScriptCell = ({
     
     return maxLines;
   };
-
-  // Create the proper cell ref key
-  const cellKey = `${itemId}-${cellRefKey}`;
 
   return (
     <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
