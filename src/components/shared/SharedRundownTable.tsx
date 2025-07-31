@@ -948,7 +948,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     style={rowStyles}
                   >
                     <td 
-                      className={`px-2 ${item.type === 'header' ? 'py-6' : 'py-1'} whitespace-nowrap text-sm border-r print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
+                      className={`px-2 ${item.type === 'header' ? 'py-6' : 'py-1'} whitespace-nowrap text-sm ${item.type === 'header' ? '' : 'border-r'} print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
                         isDark ? 'border-gray-600' : 'border-gray-200'
                       }`}
                       style={{ 
@@ -980,60 +980,80 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       const isCurrentSegmentName = isShowcallerCurrent && 
                         (column.key === 'segmentName' || column.key === 'name');
                       
-                      // For headers, handle special cases
+                       // For headers, handle special cases
                        if (item.type === 'header') {
                          if (column.key === 'segmentName' || column.key === 'name') {
-                           // Show the header name for both segmentName and name columns with collapse button
+                           // Show the header name with collapse button and duration - first column only
                            const isCollapsed = isHeaderCollapsed(item.id);
-                           return (
-                             <td 
-                               key={column.id} 
-                               className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
-                                 isDark ? 'border-gray-600' : 'border-gray-200'
-                               }`}
-                               style={{ 
-                                 width: columnWidth, 
-                                 minWidth: columnWidth, 
-                                 maxWidth: columnWidth,
-                                 ...(itemHasCustomColor ? {
-                                   backgroundColor: rowBackgroundColor,
-                                   color: textColor,
-                                   WebkitPrintColorAdjust: 'exact',
-                                   printColorAdjust: 'exact'
-                                 } : {})
-                               }}
-                             >
-                               <div className="flex items-start gap-1">
-                                 <button
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     toggleHeaderCollapse(item.id);
-                                   }}
-                                   className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
-                                     isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-                                   }`}
-                                   title={isCollapsed ? 'Expand header' : 'Collapse header'}
-                                 >
-                                   {isCollapsed ? (
-                                     <ChevronRight className="h-3 w-3" />
-                                   ) : (
-                                     <ChevronDown className="h-3 w-3" />
-                                   )}
-                                 </button>
-                                 <div className="break-words whitespace-pre-wrap overflow-hidden">{item.name || ''}</div>
-                               </div>
-                             </td>
-                           );
+                           const isFirstNameColumn = visibleColumns.findIndex(col => col.key === 'segmentName' || col.key === 'name') === visibleColumns.findIndex(col => col.id === column.id);
+                           
+                           if (isFirstNameColumn) {
+                             const headerDuration = calculateHeaderDuration(originalIndex);
+                             return (
+                               <td 
+                                 key={column.id} 
+                                 className={`px-2 py-6 text-lg font-bold print-content-column print:h-auto print:max-h-none print:overflow-visible`}
+                                 style={{ 
+                                   width: columnWidth, 
+                                   minWidth: columnWidth, 
+                                   maxWidth: columnWidth,
+                                   ...(itemHasCustomColor ? {
+                                     backgroundColor: rowBackgroundColor,
+                                     color: textColor,
+                                     WebkitPrintColorAdjust: 'exact',
+                                     printColorAdjust: 'exact'
+                                   } : {})
+                                 }}
+                               >
+                                 <div className="flex items-center gap-2">
+                                   <button
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       toggleHeaderCollapse(item.id);
+                                     }}
+                                     className={`flex-shrink-0 p-1 rounded transition-colors print:hidden ${
+                                       isDark ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                                     }`}
+                                     title={isCollapsed ? 'Expand header' : 'Collapse header'}
+                                   >
+                                     {isCollapsed ? (
+                                       <ChevronRight className="h-4 w-4" />
+                                     ) : (
+                                       <ChevronDown className="h-4 w-4" />
+                                     )}
+                                   </button>
+                                   <span className="text-lg font-bold">{item.name || ''}</span>
+                                   <span className="text-base font-medium ml-6">({headerDuration})</span>
+                                 </div>
+                               </td>
+                             );
+                           } else {
+                             // Empty cell for other name columns
+                             return (
+                               <td 
+                                 key={column.id} 
+                                 className={`px-2 py-6 print-content-column print:h-auto print:max-h-none print:overflow-visible`}
+                                 style={{ 
+                                   width: columnWidth, 
+                                   minWidth: columnWidth, 
+                                   maxWidth: columnWidth,
+                                   ...(itemHasCustomColor ? {
+                                     backgroundColor: rowBackgroundColor,
+                                     color: textColor,
+                                     WebkitPrintColorAdjust: 'exact',
+                                     printColorAdjust: 'exact'
+                                   } : {})
+                                 }}
+                               >
+                               </td>
+                             );
+                           }
                         } else if (column.key === 'duration') {
-                          // Show the calculated header duration (excluding floated items)
+                          // Show duration in print only, hidden on screen since it's now part of header name
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
-                                isDark 
-                                  ? 'text-gray-400 border-gray-600' 
-                                  : 'text-gray-600 border-gray-200'
-                              }`}
+                              className={`px-2 py-6 text-sm print-time-column print:h-auto print:max-h-none print:overflow-visible`}
                               style={{ 
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
@@ -1046,17 +1066,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 } : {})
                               }}
                             >
-                              <div className="break-words whitespace-pre-wrap overflow-hidden">({calculateHeaderDuration(originalIndex)})</div>
+                              <div className="hidden print:block font-medium">
+                                {calculateHeaderDuration(originalIndex)}
+                              </div>
                             </td>
                           );
                         } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-                          // Don't show time fields for headers
+                          // Don't show time fields for headers - empty cells
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-time-column print:h-auto print:max-h-none print:overflow-visible ${
-                                isDark ? 'border-gray-600' : 'border-gray-200'
-                              }`}
+                              className={`px-2 py-6 text-sm print-time-column print:h-auto print:max-h-none print:overflow-visible`}
                               style={{ 
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
@@ -1069,7 +1089,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 } : {})
                               }}
                             >
-                              <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                             </td>
                           );
                         } else {
@@ -1077,9 +1096,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           return (
                             <td 
                               key={column.id} 
-                              className={`px-2 py-1 text-sm border-r print:border-gray-400 print-content-column print:h-auto print:max-h-none print:overflow-visible ${
-                                isDark ? 'border-gray-600' : 'border-gray-200'
-                              }`}
+                              className={`px-2 py-6 text-sm print-content-column print:h-auto print:max-h-none print:overflow-visible`}
                               style={{ 
                                 width: columnWidth, 
                                 minWidth: columnWidth, 
@@ -1092,7 +1109,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                                 } : {})
                               }}
                             >
-                              <div className="break-words whitespace-pre-wrap overflow-hidden"></div>
                             </td>
                           );
                         }
