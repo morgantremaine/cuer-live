@@ -30,6 +30,7 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
+  const [isAnimatingExpand, setIsAnimatingExpand] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,6 +71,12 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (!isExpanded) {
+      // Before expanding, trigger animation
+      setIsAnimatingExpand(true);
+    }
+    
     // Always allow local toggle
     setIsExpanded(!isExpanded);
   };
@@ -89,8 +96,16 @@ const ExpandableScriptCell = ({
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = Math.max(scrollHeight, 24) + 'px';
+      
+      // Reset animation flag after content is sized
+      if (isAnimatingExpand) {
+        const timer = setTimeout(() => {
+          setIsAnimatingExpand(false);
+        }, 200); // Match animation duration
+        return () => clearTimeout(timer);
+      }
     }
-  }, [value]);
+  }, [value, isAnimatingExpand]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -303,7 +318,7 @@ const ExpandableScriptCell = ({
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-              className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
+              className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden transition-all duration-200 ease-out ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
               }`}
               style={{ 
@@ -367,6 +382,7 @@ const ExpandableScriptCell = ({
               readOnly
               onFocus={() => {
                 // Auto-expand when this hidden textarea receives focus and set flag for auto-focus
+                setIsAnimatingExpand(true);
                 setIsExpanded(true);
                 setShouldAutoFocus(true);
               }}
