@@ -30,7 +30,6 @@ const ExpandableScriptCell = ({
   const [rowHeight, setRowHeight] = useState<number>(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [shouldAutoFocus, setShouldAutoFocus] = useState(false);
-  const [isAnimatingExpand, setIsAnimatingExpand] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,12 +70,6 @@ const ExpandableScriptCell = ({
 
   const toggleExpanded = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!isExpanded) {
-      // Before expanding, trigger animation
-      setIsAnimatingExpand(true);
-    }
-    
     // Always allow local toggle
     setIsExpanded(!isExpanded);
   };
@@ -93,21 +86,11 @@ const ExpandableScriptCell = ({
   useEffect(() => {
     if (textareaRef.current && effectiveExpanded) {
       const textarea = textareaRef.current;
-      
-      // Always allow CSS transition to handle the animation
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = Math.max(scrollHeight, 24) + 'px';
-      
-      // Reset animation flag after content is sized
-      if (isAnimatingExpand) {
-        const timer = setTimeout(() => {
-          setIsAnimatingExpand(false);
-        }, 200);
-        return () => clearTimeout(timer);
-      }
     }
-  }, [value, effectiveExpanded, isAnimatingExpand]);
+  }, [value, effectiveExpanded]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
@@ -276,23 +259,7 @@ const ExpandableScriptCell = ({
                   textareaRef.current = el;
                   // Auto-resize on mount
                   requestAnimationFrame(() => {
-                    if (el && isAnimatingExpand) {
-                      // Start from collapsed height for smooth animation
-                      const collapsedHeight = Math.max(getDynamicLineClamp() * 20, 24);
-                      el.style.height = collapsedHeight + 'px';
-                      
-                      // Then animate to full height
-                      requestAnimationFrame(() => {
-                        el.style.height = 'auto';
-                        const targetHeight = el.scrollHeight;
-                        el.style.height = collapsedHeight + 'px';
-                        
-                        requestAnimationFrame(() => {
-                          el.style.height = targetHeight + 'px';
-                        });
-                      });
-                    } else if (el) {
-                      // Normal resize for non-animated cases
+                    if (el) {
                       el.style.height = 'auto';
                       const scrollHeight = el.scrollHeight;
                       el.style.height = Math.max(scrollHeight, 24) + 'px';
@@ -336,7 +303,7 @@ const ExpandableScriptCell = ({
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-              className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden transition-all duration-200 ease-out ${
+              className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
               }`}
               style={{ 
@@ -400,7 +367,6 @@ const ExpandableScriptCell = ({
               readOnly
               onFocus={() => {
                 // Auto-expand when this hidden textarea receives focus and set flag for auto-focus
-                setIsAnimatingExpand(true);
                 setIsExpanded(true);
                 setShouldAutoFocus(true);
               }}
