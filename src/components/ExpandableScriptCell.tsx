@@ -89,23 +89,44 @@ const ExpandableScriptCell = ({
     }
   };
 
-  // Auto-resize textarea based on content
+  // Auto-resize textarea based on content with animation support
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && effectiveExpanded) {
       const textarea = textareaRef.current;
-      textarea.style.height = 'auto';
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = Math.max(scrollHeight, 24) + 'px';
       
-      // Reset animation flag after content is sized
       if (isAnimatingExpand) {
+        // For expand animation: start from collapsed height, animate to full height
+        const previewHeight = Math.max(getDynamicLineClamp() * 20, 24); // Estimate collapsed height
+        textarea.style.height = previewHeight + 'px';
+        textarea.style.transition = 'height 0.2s ease-out';
+        
+        // Force reflow then set target height
+        textarea.offsetHeight;
+        textarea.style.height = 'auto';
+        const targetHeight = textarea.scrollHeight;
+        textarea.style.height = previewHeight + 'px';
+        
+        // Animate to target height
+        requestAnimationFrame(() => {
+          textarea.style.height = targetHeight + 'px';
+        });
+        
+        // Clean up after animation
         const timer = setTimeout(() => {
+          textarea.style.height = 'auto';
+          textarea.style.transition = '';
           setIsAnimatingExpand(false);
-        }, 200); // Match animation duration
+        }, 200);
+        
         return () => clearTimeout(timer);
+      } else {
+        // Normal resize without animation
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = Math.max(scrollHeight, 24) + 'px';
       }
     }
-  }, [value, isAnimatingExpand]);
+  }, [value, effectiveExpanded, isAnimatingExpand]);
 
   // Get the appropriate focus styles for colored rows in dark mode
   const getFocusStyles = () => {
