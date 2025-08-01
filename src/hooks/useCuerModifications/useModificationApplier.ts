@@ -50,15 +50,26 @@ export const useModificationApplier = ({
           case 'add':
             if (mod.data) {
               console.log('➕ Adding new item:', mod.data);
+              console.log('📊 Items before add:', items.length);
               
               if (mod.data.type === 'header') {
+                console.log('🏷️ Adding header...');
                 addHeader();
+                console.log('✅ addHeader() called');
               } else {
+                console.log('📝 Adding regular row...');
                 addRow();
+                console.log('✅ addRow() called');
               }
+              
+              // Check if items actually increased after a short delay
+              setTimeout(() => {
+                console.log('📊 Items after add (delayed check):', items.length);
+              }, 100);
+              
               changesMade = true;
-              appliedChanges.push(`Added ${mod.data.type} item`);
-              console.log('✅ Item added successfully');
+              appliedChanges.push(`Added ${mod.data.type || 'regular'} item`);
+              console.log('✅ Item add process completed');
             } else {
               console.error('❌ Add modification missing data');
             }
