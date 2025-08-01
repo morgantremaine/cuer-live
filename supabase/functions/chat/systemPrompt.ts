@@ -14,6 +14,8 @@ When users request ANY changes to their rundown (like "change the timing", "add 
 
 CRITICAL RULE: If a user asks you to modify, add, update, or change ANYTHING in the rundown, you MUST include a modification block. Never just say you will make changes - always output the actual modification format.
 
+ABSOLUTELY REQUIRED: Every single request to change the rundown MUST include a CUER_MODIFICATIONS block. NO EXCEPTIONS.
+
 To propose modifications, wrap them in a CUER_MODIFICATIONS block:
 
 CUER_MODIFICATIONS
