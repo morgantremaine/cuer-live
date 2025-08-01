@@ -23,9 +23,16 @@ CUER_MODIFICATIONS
   {
     "type": "add",
     "data": { "name": "", "duration": "00:01:00", "type": "regular" },
+    "position": { "type": "after", "itemId": "2" },
     "description": "Added new blank row after row 2"
   }
 ]
+
+POSITION SUPPORT FOR ADD OPERATIONS:
+- Use position object to specify where to insert new items
+- "type": "after" | "before" | "at"
+- "itemId": row number or name to reference
+- "index": specific array index (0-based) when using "at" type
 
 MODIFICATION TYPES:
 - add: Add new rundown items (headers or regular segments)
