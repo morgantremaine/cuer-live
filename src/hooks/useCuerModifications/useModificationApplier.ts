@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface UseModificationApplierProps {
   items: RundownItem[];
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: (calculateEndTime: any) => void;
+  addRow: () => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
   calculateEndTime: any;
@@ -54,7 +54,7 @@ export const useModificationApplier = ({
               if (mod.data.type === 'header') {
                 addHeader();
               } else {
-                addRow(calculateEndTime);
+                addRow();
               }
               changesMade = true;
               appliedChanges.push(`Added ${mod.data.type} item`);
