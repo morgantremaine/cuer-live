@@ -34,6 +34,17 @@ export const useRundownAutoscroll = ({
       );
 
       if (targetElement) {
+        // Check if user is currently scrolling manually by detecting recent scroll events
+        const scrollContainer = scrollContainerRef.current;
+        const now = Date.now();
+        const lastUserScroll = (scrollContainer as any)._lastUserScroll || 0;
+        const timeSinceLastScroll = now - lastUserScroll;
+        
+        // If user scrolled recently (within 2 seconds), skip autoscroll to avoid interference
+        if (timeSinceLastScroll < 2000) {
+          return;
+        }
+
         targetElement.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
@@ -57,6 +68,23 @@ export const useRundownAutoscroll = ({
       return () => clearTimeout(timeoutId);
     }
   }, [currentSegmentId, autoScrollEnabled, scrollToCurrentSegment]);
+
+  // Track manual scrolling to prevent autoscroll interference
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleUserScroll = () => {
+      (scrollContainer as any)._lastUserScroll = Date.now();
+    };
+
+    // Listen for scroll events to detect manual scrolling
+    scrollContainer.addEventListener('scroll', handleUserScroll, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleUserScroll);
+    };
+  }, []);
 
   // Reset scroll tracking when autoscroll is disabled
   useEffect(() => {
