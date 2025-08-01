@@ -62,11 +62,6 @@ export const useModificationApplier = ({
                 console.log('✅ addRow() called');
               }
               
-              // Check if items actually increased after a short delay
-              setTimeout(() => {
-                console.log('📊 Items after add (delayed check):', items.length);
-              }, 100);
-              
               changesMade = true;
               appliedChanges.push(`Added ${mod.data.type || 'regular'} item`);
               console.log('✅ Item add process completed');
