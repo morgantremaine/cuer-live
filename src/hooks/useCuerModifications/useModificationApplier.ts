@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 interface UseModificationApplierProps {
   items: RundownItem[];
   updateItem: (id: string, field: string, value: string) => void;
-  addRow: () => void;
+  addRow: (calculateEndTime: any) => void;
   addHeader: () => void;
   deleteRow: (id: string) => void;
   calculateEndTime: any;
@@ -50,27 +50,15 @@ export const useModificationApplier = ({
           case 'add':
             if (mod.data) {
               console.log('➕ Adding new item:', mod.data);
-              console.log('📊 Items before add:', items.length);
               
               if (mod.data.type === 'header') {
-                console.log('🏷️ Adding header...');
                 addHeader();
-                console.log('✅ addHeader() called');
               } else {
-                console.log('📝 Adding regular row...');
-                console.log('📊 Current items before addRow:', items.map(item => ({ id: item.id, name: item.name || 'unnamed', rowNumber: item.rowNumber })));
-                addRow();
-                console.log('✅ addRow() called');
-                
-                // Force a small delay to check if the item was added
-                setTimeout(() => {
-                  console.log('📊 Checking for new items after delay...');
-                }, 200);
+                addRow(calculateEndTime);
               }
-              
               changesMade = true;
-              appliedChanges.push(`Added ${mod.data.type || 'regular'} item`);
-              console.log('✅ Item add process completed');
+              appliedChanges.push(`Added ${mod.data.type} item`);
+              console.log('✅ Item added successfully');
             } else {
               console.error('❌ Add modification missing data');
             }
