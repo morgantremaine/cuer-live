@@ -38,10 +38,13 @@ export const useRundownAutoscroll = ({
         const scrollContainer = scrollContainerRef.current;
         const now = Date.now();
         const lastUserScroll = (scrollContainer as any)._lastUserScroll || 0;
+        const userScrollingStopped = (scrollContainer as any)._userScrollingStopped || 0;
         const timeSinceLastScroll = now - lastUserScroll;
+        const timeSinceScrollingStopped = now - userScrollingStopped;
         
-        // If user scrolled recently (within 2 seconds), skip autoscroll to avoid interference
-        if (timeSinceLastScroll < 2000) {
+        // If user scrolled recently (within 3 seconds) OR if they're still actively scrolling, skip autoscroll
+        // This prevents autoscroll during manual scrolling and for a period after scrolling stops
+        if (timeSinceLastScroll < 3000 || timeSinceScrollingStopped < 1000) {
           return;
         }
 
@@ -74,8 +77,16 @@ export const useRundownAutoscroll = ({
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleUserScroll = () => {
       (scrollContainer as any)._lastUserScroll = Date.now();
+      
+      // Also set a longer timeout to detect when user stops scrolling
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        (scrollContainer as any)._userScrollingStopped = Date.now();
+      }, 500); // 500ms after scrolling stops
     };
 
     // Listen for scroll events to detect manual scrolling
@@ -83,6 +94,7 @@ export const useRundownAutoscroll = ({
     
     return () => {
       scrollContainer.removeEventListener('scroll', handleUserScroll);
+      clearTimeout(scrollTimeout);
     };
   }, []);
 
