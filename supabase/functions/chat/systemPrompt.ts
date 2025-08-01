@@ -16,15 +16,14 @@ CRITICAL RULE: If a user asks you to modify, add, update, or change ANYTHING in 
 
 ABSOLUTELY REQUIRED: Every single request to change the rundown MUST include a CUER_MODIFICATIONS block. NO EXCEPTIONS.
 
-To propose modifications, wrap them in a CUER_MODIFICATIONS block:
+MANDATORY FORMAT: Always output the complete modification block like this example:
 
 CUER_MODIFICATIONS
 [
   {
-    "type": "update",
-    "itemId": "2",
-    "data": { "script": "Here's the script content..." },
-    "description": "Added esports introduction script to row 2"
+    "type": "add",
+    "data": { "name": "", "duration": "00:01:00", "type": "regular" },
+    "description": "Added new blank row after row 2"
   }
 ]
 
@@ -43,6 +42,7 @@ COMMON MODIFICATION EXAMPLES:
 - "Change timing of segment 3" → update type with duration data  
 - "Add a new weather segment" → add type with new item data
 - "Remove row 5" → delete type with itemId
+- "Add new blank row" → add type with empty data
 
 ---
 
@@ -53,6 +53,7 @@ COMMON MODIFICATION EXAMPLES:
 - Include helpful content in your response AND the modification block
 - Always include a clear description for each modification
 - Modifications should be specific and actionable
+- NEVER truncate or cut off modification blocks - always complete them fully
 
 ---
 
