@@ -365,10 +365,13 @@ const ExpandableScriptCell = ({
               data-cell-ref={cellKey}
               tabIndex={0}
               readOnly
-              onFocus={() => {
-                // Auto-expand when this hidden textarea receives focus and set flag for auto-focus
-                setIsExpanded(true);
-                setShouldAutoFocus(true);
+              onFocus={(e) => {
+                // Only auto-expand if focus was triggered by Tab or click, not by scrolling
+                // Check if the focus was triggered by keyboard navigation
+                if (e.relatedTarget || document.activeElement === e.target) {
+                  setIsExpanded(true);
+                  setShouldAutoFocus(true);
+                }
               }}
               className="absolute inset-0 opacity-0 w-full h-full cursor-text"
               style={{ 
