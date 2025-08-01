@@ -6,11 +6,7 @@ export const useCuerModifications = () => {
   // Use direct state access instead of going through coordination layer
   const directState = useDirectRundownState();
 
-  console.log('🤖 useCuerModifications initialized with direct state:', {
-    itemCount: directState.items.length,
-    rundownId: directState.rundownId,
-    hasUnsavedChanges: directState.hasUnsavedChanges
-  });
+  // Debug logging removed for cleaner console output
 
   const { applyModifications } = useModificationApplier({
     items: directState.items,
