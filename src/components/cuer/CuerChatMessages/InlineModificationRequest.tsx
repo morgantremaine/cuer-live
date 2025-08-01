@@ -76,7 +76,7 @@ const InlineModificationRequest = ({
           variant="outline" 
           size="sm" 
           onClick={onCancel}
-          className="text-xs"
+          className="text-xs bg-gray-800 text-white border-gray-800 hover:bg-gray-700 hover:text-white"
         >
           <XCircle className="w-3 h-3 mr-1" />
           Decline
