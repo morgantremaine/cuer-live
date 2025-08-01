@@ -3,6 +3,7 @@ import React from 'react';
 import CuerChatPanelContainer from './CuerChatPanel/CuerChatPanelContainer';
 import ApiKeySetupSection from './CuerChatPanel/ApiKeySetupSection';
 import { useCuerChatPanelLogic } from './CuerChatPanel/useCuerChatPanelLogic';
+import { useCuerModifications } from '@/hooks/useCuerModifications';
 
 interface CuerChatPanelProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     handleSettingsClick,
     clearChat
   } = useCuerChatPanelLogic(isOpen, rundownData);
+  
+  const { applyModifications } = useCuerModifications();
 
   if (!isOpen) return null;
 
@@ -48,6 +51,7 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
           onSendMessage={handleSendMessage}
           onKeyDown={handleKeyDown}
           onAnalyzeRundown={handleAnalyzeRundown}
+          onApplyModifications={applyModifications}
         />
       )}
     </div>

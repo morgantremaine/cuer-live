@@ -1,27 +1,33 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Bot, User } from 'lucide-react';
 import { marked } from 'marked';
 import { sanitizeHtml } from '@/utils/sanitize';
+import { RundownModification } from '@/hooks/useCuerModifications/types';
+import ModificationDisplay from './CuerChatMessages/ModificationDisplay';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  modifications?: RundownModification[];
 }
 
 interface CuerChatMessagesProps {
   messages: ChatMessage[];
   isLoading: boolean;
   isConnected: boolean | null;
+  onApplyModifications?: (modifications: RundownModification[]) => void;
 }
 
 const CuerChatMessages = ({ 
   messages, 
   isLoading, 
-  isConnected
+  isConnected,
+  onApplyModifications
 }: CuerChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [pendingModifications, setPendingModifications] = useState<{ [messageId: string]: RundownModification[] }>({});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,6 +44,26 @@ const CuerChatMessages = ({
       gfm: true // GitHub Flavored Markdown
     });
   }, []);
+
+  const handleApplyModifications = (messageId: string, modifications: RundownModification[]) => {
+    if (onApplyModifications) {
+      onApplyModifications(modifications);
+      // Remove from pending modifications
+      setPendingModifications(prev => {
+        const updated = { ...prev };
+        delete updated[messageId];
+        return updated;
+      });
+    }
+  };
+
+  const handleCancelModifications = (messageId: string) => {
+    setPendingModifications(prev => {
+      const updated = { ...prev };
+      delete updated[messageId];
+      return updated;
+    });
+  };
 
   const renderMessageContent = (content: string, role: 'user' | 'assistant') => {
     if (role === 'assistant') {
@@ -97,6 +123,15 @@ const CuerChatMessages = ({
                 : 'bg-blue-100 text-blue-800'
             }`}>
               {renderMessageContent(message.content, message.role)}
+              
+              {/* Show modifications if present and not yet applied */}
+              {message.role === 'assistant' && message.modifications && message.modifications.length > 0 && (
+                <ModificationDisplay
+                  modifications={message.modifications}
+                  onApply={(modifications) => handleApplyModifications(message.id, modifications)}
+                  onCancel={() => handleCancelModifications(message.id)}
+                />
+              )}
             </div>
           </div>
         </div>

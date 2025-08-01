@@ -3,7 +3,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { OpenAIMessage } from './types.ts'
 import { getSystemPrompt } from './systemPrompt.ts'
 import { callOpenAI } from './openaiClient.ts'
-import { cleanMessage } from './modificationParser.ts'
+import { parseMessageWithModifications } from './modificationParser.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -94,10 +94,13 @@ serve(async (req) => {
     ]
 
     const aiMessage = await callOpenAI(messages, openaiApiKey)
-    const cleaned = cleanMessage(aiMessage)
+    const { content, modifications } = parseMessageWithModifications(aiMessage)
 
     return new Response(
-      JSON.stringify({ message: cleaned }),
+      JSON.stringify({ 
+        message: content, 
+        modifications: modifications 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

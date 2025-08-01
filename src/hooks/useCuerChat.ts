@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { RundownModification } from './useCuerModifications/types';
 
 // Define the types locally since we're not using the openaiService anymore
 interface OpenAIMessage {
@@ -13,6 +14,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  modifications?: RundownModification[];
 }
 
 export const useCuerChat = () => {
@@ -63,7 +65,8 @@ export const useCuerChat = () => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.message || 'Sorry, I could not generate a response.',
-        timestamp: new Date()
+        timestamp: new Date(),
+        modifications: data.modifications || []
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -120,6 +123,7 @@ export const useCuerChat = () => {
   const analyzeRundown = useCallback(async (rundownData: any) => {
     setIsLoading(true);
     try {
+      
       const { data, error } = await supabase.functions.invoke('chat', {
         body: {
           message: `Can you review the current rundown and suggest any improvements to spelling, grammar, timing, or structure in plain English?`,

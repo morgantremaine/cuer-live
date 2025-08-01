@@ -19,6 +19,7 @@ interface CuerChatPanelContainerProps {
   onSendMessage: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   onAnalyzeRundown: () => void;
+  onApplyModifications?: (modifications: any[]) => void;
 }
 
 const CuerChatPanelContainer = ({
@@ -34,7 +35,8 @@ const CuerChatPanelContainer = ({
   onClose,
   onSendMessage,
   onKeyDown,
-  onAnalyzeRundown
+  onAnalyzeRundown,
+  onApplyModifications
 }: CuerChatPanelContainerProps) => {
   return (
     <div className="fixed right-4 bottom-4 w-96 h-[600px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col">
@@ -65,6 +67,7 @@ const CuerChatPanelContainer = ({
           messages={messages}
           isLoading={isLoading}
           isConnected={isConnected}
+          onApplyModifications={onApplyModifications}
         />
         
         <CuerChatInput
