@@ -57,6 +57,14 @@ export const useDirectRundownState = () => {
       console.log('🔧 Direct state add header');
       return simplifiedState.addHeader();
     },
+    addRowAtIndex: (index: number) => {
+      console.log('🔧 Direct state add row at index:', index);
+      return simplifiedState.addRowAtIndex(index);
+    },
+    addHeaderAtIndex: (index: number) => {
+      console.log('🔧 Direct state add header at index:', index);
+      return simplifiedState.addHeaderAtIndex(index);
+    },
     deleteRow: debugDeleteRow,
     setItems: simplifiedState.setItems,
     

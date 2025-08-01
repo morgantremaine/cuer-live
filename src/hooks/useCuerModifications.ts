@@ -17,6 +17,8 @@ export const useCuerModifications = () => {
     updateItem: directState.updateItem,
     addRow: directState.addRow,
     addHeader: directState.addHeader,
+    addRowAtIndex: directState.addRowAtIndex,
+    addHeaderAtIndex: directState.addHeaderAtIndex,
     deleteRow: directState.deleteRow,
     calculateEndTime: directState.calculateEndTime,
     markAsChanged: directState.markAsChanged

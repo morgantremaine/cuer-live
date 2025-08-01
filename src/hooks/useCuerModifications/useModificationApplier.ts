@@ -10,6 +10,8 @@ interface UseModificationApplierProps {
   updateItem: (id: string, field: string, value: string) => void;
   addRow: (calculateEndTime: any) => void;
   addHeader: () => void;
+  addRowAtIndex: (index: number) => void;
+  addHeaderAtIndex: (index: number) => void;
   deleteRow: (id: string) => void;
   calculateEndTime: any;
   markAsChanged: () => void;
@@ -20,6 +22,8 @@ export const useModificationApplier = ({
   updateItem,
   addRow,
   addHeader,
+  addRowAtIndex,
+  addHeaderAtIndex,
   deleteRow,
   calculateEndTime,
   markAsChanged
@@ -50,14 +54,49 @@ export const useModificationApplier = ({
           case 'add':
             if (mod.data) {
               console.log('➕ Adding new item:', mod.data);
+              console.log('📍 Position info:', mod.position);
               
-              if (mod.data.type === 'header') {
-                addHeader();
-              } else {
-                addRow(calculateEndTime);
+              // Calculate insertion index if position is specified
+              let insertIndex: number | null = null;
+              
+              if (mod.position) {
+                if (mod.position.type === 'at' && typeof mod.position.index === 'number') {
+                  insertIndex = mod.position.index;
+                  console.log(`📍 Inserting at index: ${insertIndex}`);
+                } else if (mod.position.itemId && (mod.position.type === 'after' || mod.position.type === 'before')) {
+                  const referenceItem = findItemByReference(mod.position.itemId);
+                  if (referenceItem) {
+                    const referenceIndex = items.findIndex(item => item.id === referenceItem.id);
+                    if (referenceIndex !== -1) {
+                      insertIndex = mod.position.type === 'after' ? referenceIndex + 1 : referenceIndex;
+                      console.log(`📍 Inserting ${mod.position.type} item "${referenceItem.name}" at index: ${insertIndex}`);
+                    }
+                  } else {
+                    console.warn(`❌ Could not find reference item: ${mod.position.itemId}`);
+                  }
+                }
               }
+              
+              // Add the item at the specified position or at the end
+              if (mod.data.type === 'header') {
+                if (insertIndex !== null) {
+                  addHeaderAtIndex(insertIndex);
+                  appliedChanges.push(`Added header at position ${insertIndex + 1}`);
+                } else {
+                  addHeader();
+                  appliedChanges.push(`Added header at end`);
+                }
+              } else {
+                if (insertIndex !== null) {
+                  addRowAtIndex(insertIndex);
+                  appliedChanges.push(`Added row at position ${insertIndex + 1}`);
+                } else {
+                  addRow(calculateEndTime);
+                  appliedChanges.push(`Added row at end`);
+                }
+              }
+              
               changesMade = true;
-              appliedChanges.push(`Added ${mod.data.type} item`);
               console.log('✅ Item added successfully');
             } else {
               console.error('❌ Add modification missing data');
