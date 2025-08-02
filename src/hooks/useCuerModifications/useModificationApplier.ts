@@ -15,6 +15,7 @@ interface UseModificationApplierProps {
   deleteRow: (id: string) => void;
   calculateEndTime: any;
   markAsChanged: () => void;
+  saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void;
 }
 
 export const useModificationApplier = ({
@@ -26,11 +27,25 @@ export const useModificationApplier = ({
   addHeaderAtIndex,
   deleteRow,
   calculateEndTime,
-  markAsChanged
+  markAsChanged,
+  saveUndoState
 }: UseModificationApplierProps) => {
   const { findItemByReference } = useItemFinder(items);
 
   const applyModifications = useCallback((modifications: RundownModification[]) => {
+    if (!modifications || modifications.length === 0) {
+      console.log('No modifications to apply');
+      return;
+    }
+
+    // Save undo state before applying AI modifications
+    if (saveUndoState && modifications.length > 0) {
+      const actionDescription = modifications.length === 1 
+        ? `AI: ${modifications[0].description}`
+        : `AI: Applied ${modifications.length} changes`;
+      saveUndoState(items, [], '', actionDescription);
+    }
+
     console.log('🚀 === APPLYING MODIFICATIONS ===');
     console.log('📝 Modifications received:', modifications);
     console.log('📊 Current items count:', items.length);
