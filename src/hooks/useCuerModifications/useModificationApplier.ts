@@ -154,7 +154,12 @@ export const useModificationApplier = ({
                 });
               }
             } else {
-              console.error('❌ Update modification missing itemId or data:', mod);
+              console.error('❌ Update modification missing itemId or data:');
+              console.error('   Full modification object:', JSON.stringify(mod, null, 2));
+              console.error('   itemId present:', !!mod.itemId);
+              console.error('   data present:', !!mod.data);
+              console.error('   itemId value:', mod.itemId);
+              console.error('   data value:', mod.data);
             }
             break;
             
