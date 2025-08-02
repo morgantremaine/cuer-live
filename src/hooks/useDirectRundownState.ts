@@ -93,9 +93,6 @@ export const useDirectRundownState = () => {
       // This is handled internally by simplified state
     },
 
-    // Undo functionality
-    saveUndoState: simplifiedState.saveUndoState,
-
     // State info for debugging
     rundownId: simplifiedState.rundownId,
     hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
