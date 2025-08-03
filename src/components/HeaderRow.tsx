@@ -175,6 +175,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           isCollapsed={isCollapsed}
+          isNextItemCollapsedHeader={props.isNextItemCollapsedHeader}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

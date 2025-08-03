@@ -14,6 +14,7 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   isCollapsed?: boolean;
+  isNextItemCollapsedHeader?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -30,6 +31,7 @@ const HeaderRowContent = ({
   currentSegmentId,
   cellRefs,
   isCollapsed = false,
+  isNextItemCollapsedHeader = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -51,7 +53,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px] border-r border-border"
+        className={`px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px] border-r border-border ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
         style={{ 
           backgroundColor,
           width: '64px',
@@ -88,7 +90,7 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className={`align-middle min-h-[96px] relative ${!isLastColumn ? 'border-r border-border' : ''}`}
+                className={`align-middle min-h-[96px] relative ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
                 style={{ 
                   width: columnWidth, 
                   backgroundColor,
@@ -174,7 +176,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''}`}
+              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
@@ -188,7 +190,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''}`}
+              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
