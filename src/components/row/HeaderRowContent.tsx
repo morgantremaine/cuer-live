@@ -53,7 +53,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className={`px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px] border-r border-border ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
+        className={`px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[96px] ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
         style={{ 
           backgroundColor,
           width: '64px',
@@ -90,7 +90,7 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className={`align-middle min-h-[96px] relative ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
+                className={`align-middle min-h-[96px] relative ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
                 style={{ 
                   width: columnWidth, 
                   backgroundColor,
@@ -157,7 +157,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''}`}
+              className={`align-middle min-h-[96px] ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
@@ -176,7 +176,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
+              className={`align-middle min-h-[96px] ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
@@ -190,7 +190,7 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className={`align-middle min-h-[96px] ${!isLastColumn ? 'border-r border-border' : ''} ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
+              className={`align-middle min-h-[96px] ${isNextItemCollapsedHeader ? 'border-b border-border/60' : ''}`}
               style={{ 
                 width: columnWidth, 
                 backgroundColor 
