@@ -65,25 +65,10 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
+    // Let the RundownContextMenu component handle context menu logic
+    // It already has proper editable text detection built-in
     
-    // Only allow browser context menu if the target is currently the active/focused element
-    // (meaning user has actually clicked into it and is actively editing)
-    const isActivelyEditing = document.activeElement === target && 
-                             (target.tagName === 'INPUT' || 
-                              target.tagName === 'TEXTAREA' || 
-                              target.isContentEditable);
-    
-    if (isActivelyEditing) {
-      // User is actively typing - let browser handle context menu
-      return;
-    }
-    
-    // For all other cases, prevent browser context menu and show custom one
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Select the row and show custom context menu
+    // Just ensure the row is selected if not already
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
