@@ -188,8 +188,7 @@ const RundownTableHeader = ({
             borderRight: '1px solid hsl(var(--border))'
           }}
         >
-          <div className="flex items-center justify-between">
-            <span>#</span>
+          <div className="flex items-center space-x-1">
             {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
               <button
                 onClick={(e) => {
@@ -206,6 +205,7 @@ const RundownTableHeader = ({
                 )}
               </button>
             )}
+            <span>#</span>
           </div>
         </th>
         
