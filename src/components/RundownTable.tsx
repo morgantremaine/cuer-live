@@ -178,18 +178,10 @@ const RundownTable = ({
                   onClearSelection={onClearSelection}
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
-                  onJumpToHere={onJumpToHere}
-                  getColumnWidth={getColumnWidth}
-                  isHeaderCollapsed={isHeaderCollapsed}
-                  getHeaderGroupItemIds={getHeaderGroupItemIds}
-                  // Check if next item is also a collapsed header for separator styling
-                  isNextItemCollapsedHeader={
-                    isHeaderItem(item) && 
-                    isHeaderCollapsed && 
-                    index < items.length - 1 && 
-                    isHeaderItem(items[index + 1]) && 
-                    isHeaderCollapsed(items[index + 1].id)
-                  }
+                   onJumpToHere={onJumpToHere}
+                   getColumnWidth={getColumnWidth}
+                   isHeaderCollapsed={isHeaderCollapsed}
+                   getHeaderGroupItemIds={getHeaderGroupItemIds}
                 />
                 
                 {/* Drop indicator AFTER the last row */}

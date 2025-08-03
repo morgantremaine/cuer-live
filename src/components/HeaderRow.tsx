@@ -45,7 +45,6 @@ interface HeaderRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  isNextItemCollapsedHeader?: boolean;
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
@@ -148,7 +147,7 @@ const HeaderRow = (props: HeaderRowProps) => {
       onAddHeader={onAddHeader}
     >
       <tr 
-        className={`border-b ${props.isNextItemCollapsedHeader ? 'border-border/60' : 'border-border'} ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
+        className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-14 min-h-14`}
         style={{ backgroundColor }}
         data-item-id={item.id}
         data-type="header"
@@ -175,7 +174,6 @@ const HeaderRow = (props: HeaderRowProps) => {
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           isCollapsed={isCollapsed}
-          isNextItemCollapsedHeader={props.isNextItemCollapsedHeader}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
