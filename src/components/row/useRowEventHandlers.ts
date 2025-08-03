@@ -79,8 +79,11 @@ export const useRowEventHandlers = ({
       return;
     }
     
-    // For all other cases (hovering over editable areas, rest of row), 
-    // select the row and show custom context menu
+    // For all other cases, prevent browser context menu and show custom one
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Select the row and show custom context menu
     if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
