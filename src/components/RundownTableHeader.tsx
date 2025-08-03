@@ -33,6 +33,8 @@ interface RundownTableHeaderProps {
   items?: any[]; // For auto-sizing columns
   columnExpandState?: { [columnKey: string]: boolean };
   onToggleColumnExpand?: (columnKey: string) => void;
+  onToggleAllHeaders?: () => void;
+  isHeaderCollapsed?: (headerId: string) => boolean;
 }
 
 const RundownTableHeader = ({
@@ -42,7 +44,9 @@ const RundownTableHeader = ({
   onReorderColumns,
   items = [],
   columnExpandState = {},
-  onToggleColumnExpand
+  onToggleColumnExpand,
+  onToggleAllHeaders,
+  isHeaderCollapsed
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -184,7 +188,25 @@ const RundownTableHeader = ({
             borderRight: '1px solid hsl(var(--border))'
           }}
         >
-          #
+          <div className="flex items-center justify-between">
+            <span>#</span>
+            {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleAllHeaders();
+                }}
+                className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
+                title="Toggle all header groups"
+              >
+                {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
+                  <ChevronRight className="h-3 w-3 text-white" />
+                ) : (
+                  <ChevronDown className="h-3 w-3 text-white" />
+                )}
+              </button>
+            )}
+          </div>
         </th>
         
         {/* Draggable columns */}

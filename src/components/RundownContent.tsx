@@ -140,6 +140,30 @@ const RundownContent = React.memo<RundownContentProps>(({
     });
   }, []);
 
+  // Toggle all header groups expand/collapse state
+  const handleToggleAllHeaders = useCallback(() => {
+    // Find all headers in the items
+    const headerItems = items.filter(item => item.type === 'header');
+    
+    if (headerItems.length === 0) return;
+    
+    // Check if any headers are currently collapsed
+    const hasCollapsedHeaders = headerItems.some(header => isHeaderCollapsed(header.id));
+    
+    // If any headers are collapsed, expand all. If all are expanded, collapse all.
+    headerItems.forEach(header => {
+      const isCurrentlyCollapsed = isHeaderCollapsed(header.id);
+      
+      if (hasCollapsedHeaders && isCurrentlyCollapsed) {
+        // Expand this collapsed header
+        toggleHeaderCollapse(header.id);
+      } else if (!hasCollapsedHeaders && !isCurrentlyCollapsed) {
+        // Collapse this expanded header
+        toggleHeaderCollapse(header.id);
+      }
+    });
+  }, [items, isHeaderCollapsed, toggleHeaderCollapse]);
+
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
     currentSegmentId,
@@ -220,6 +244,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               items={items}
               columnExpandState={columnExpandState}
               onToggleColumnExpand={handleToggleColumnExpand}
+              onToggleAllHeaders={handleToggleAllHeaders}
+              isHeaderCollapsed={isHeaderCollapsed}
             />
             
             {/* Table Body - Content */}
