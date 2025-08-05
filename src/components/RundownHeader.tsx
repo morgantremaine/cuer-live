@@ -195,7 +195,7 @@ const RundownHeader = ({
                 onClick={handleTitleEdit}
                 className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
               >
-                {title || "Untitled Rundown"}
+                {title || ""}
               </span>
             )}
           </div>
@@ -236,7 +236,7 @@ const RundownHeader = ({
               {isDemoRundown ? (
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {title || "Untitled Rundown"}
+                    {title || ""}
                   </span>
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
                     <Eye className="h-3 w-3" />
@@ -270,7 +270,7 @@ const RundownHeader = ({
                     onClick={handleTitleEdit}
                     className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
                   >
-                    {title || "Untitled Rundown"}
+                    {title || ""}
                   </span>
                 )}
               </>
@@ -338,7 +338,7 @@ const RundownHeader = ({
             {isDemoRundown ? (
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {title || "Untitled Rundown"}
+                  {title || ""}
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
                   <Eye className="h-3 w-3" />
@@ -372,7 +372,7 @@ const RundownHeader = ({
                 onClick={handleTitleEdit}
                 className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
               >
-                {title || "Untitled Rundown"}
+                {title || ""}
               </span>
             )}
           </>

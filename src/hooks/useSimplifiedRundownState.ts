@@ -41,7 +41,7 @@ export const useSimplifiedRundownState = () => {
   } = useRundownState({
     items: [],
     columns: [], // Empty - will be managed separately
-    title: 'Untitled Rundown',
+    title: '', // Start with empty title to avoid flash
     startTime: '09:00:00',
     timezone: 'America/New_York'
   });
