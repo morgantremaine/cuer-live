@@ -29,7 +29,20 @@ import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // Data is fresh for 30 seconds
+      gcTime: 300000, // Keep in cache for 5 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 3,
+    },
+    mutations: {
+      retry: 2,
+    },
+  },
+});
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();

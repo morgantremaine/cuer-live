@@ -10,7 +10,7 @@ import CSVImportDialog from '@/components/CSVImportDialog';
 import { CSVImportResult } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
-import { useRundownStorage } from '@/hooks/useRundownStorage';
+import { useOptimizedRundownStorage } from '@/hooks/useOptimizedRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { OptimizedLoadingSkeleton } from '@/components/OptimizedLoadingSkeleton';
 import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -25,7 +26,7 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { team, teamMembers, isLoading: teamLoading } = useTeam();
   const teamId = team?.id;
-  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
+  const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useOptimizedRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
@@ -290,8 +291,8 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show loading skeleton if we haven't loaded data yet OR if actively loading
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
+  // Show loading skeleton only for initial load - use optimistic UI for subsequent loads
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded && (loading || teamLoading) && savedRundowns.length === 0;
 
   if (shouldShowLoadingSkeleton) {
     return (
@@ -302,31 +303,7 @@ const Dashboard = () => {
         />
         
         <div className="flex flex-1">
-          <div className="w-80 bg-gray-800 border-r border-gray-700 p-4">
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-full bg-gray-700" />
-              <Skeleton className="h-6 w-3/4 bg-gray-700" />
-              <Skeleton className="h-6 w-1/2 bg-gray-700" />
-               <Skeleton className="h-6 w-2/3 bg-gray-700" />
-            </div>
-          </div>
-          
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-              <div className="px-4 py-6 sm:px-0 space-y-6">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-40 bg-gray-700" />
-                  <Skeleton className="h-12 w-32 bg-gray-700" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-32 w-full bg-gray-700" />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </main>
+          <OptimizedLoadingSkeleton />
         </div>
       </div>
     );
