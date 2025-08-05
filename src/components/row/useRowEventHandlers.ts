@@ -65,8 +65,21 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    // Let the RundownContextMenu component handle context menu logic
-    // It already has proper editable text detection built-in
+    const target = e.target as HTMLElement;
+    
+    // Check if the target is editable content where browser context menu should be allowed
+    const isEditableContent = 
+      target.tagName === 'INPUT' || 
+      target.tagName === 'TEXTAREA' || 
+      target.contentEditable === 'true' ||
+      target.closest('[contenteditable="true"]') ||
+      target.closest('input') ||
+      target.closest('textarea');
+    
+    // Only allow browser context menu on editable content
+    if (!isEditableContent) {
+      e.preventDefault();
+    }
     
     // Just ensure the row is selected if not already
     if (onRowSelect && !isSelected) {
