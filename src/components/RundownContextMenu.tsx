@@ -123,7 +123,25 @@ const RundownContextMenu = memo(({
     <>
       <ContextMenu>
         <ContextMenuTrigger 
-          asChild
+          asChild 
+          onContextMenu={(e) => {
+            // Check if right-clicking on editable content
+            const target = e.target as HTMLElement;
+            const isEditableText = target.tagName === 'INPUT' || 
+                                  target.tagName === 'TEXTAREA' || 
+                                  target.isContentEditable ||
+                                  target.closest('input') ||
+                                  target.closest('textarea') ||
+                                  target.closest('[contenteditable="true"]');
+            
+            // If clicking on editable text, allow browser context menu by stopping our context menu
+            if (isEditableText) {
+              e.stopPropagation();
+              return;
+            }
+            
+            // For non-editable content, let our context menu handle it
+          }}
         >
           {children}
         </ContextMenuTrigger>
