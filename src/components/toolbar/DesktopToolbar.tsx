@@ -10,11 +10,8 @@ interface DesktopToolbarProps {
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string | null;
   rundownId: string | undefined;
   onOpenTeleprompter: () => void;
   selectedRowId: string | null;
@@ -39,11 +36,8 @@ const DesktopToolbar = ({
   onAddHeader,
   onShowColumnManager,
   onUndo,
-  onRedo,
   canUndo,
-  canRedo,
   lastAction,
-  nextAction,
   rundownId,
   onOpenTeleprompter,
   selectedRowId,
@@ -70,11 +64,8 @@ const DesktopToolbar = ({
           onAddHeader={onAddHeader}
           onShowColumnManager={onShowColumnManager}
           onUndo={onUndo}
-          onRedo={onRedo}
           canUndo={canUndo}
-          canRedo={canRedo}
           lastAction={lastAction}
-          nextAction={nextAction}
           rundownId={rundownId}
           onOpenTeleprompter={onOpenTeleprompter}
           selectedRowId={selectedRowId}

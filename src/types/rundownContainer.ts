@@ -70,11 +70,8 @@ export interface RundownContainerProps {
   onOpenTeleprompter: () => void;
   // Undo functionality
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string | null;
   
   // Realtime collaboration props
   isConnected?: boolean;
