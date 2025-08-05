@@ -61,9 +61,34 @@ const HyperlinkTextCell = ({
     measurementDiv.style.boxSizing = computedStyle.boxSizing;
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
+    measurementDiv.style.wordBreak = 'break-word';
+    measurementDiv.style.overflowWrap = 'anywhere';
     
-    // Set the content
-    measurementDiv.textContent = value || ' '; // Use space for empty content
+    // For hyperlink mode, create a more accurate measurement by rendering similar content
+    if (!isEditing && value && urlRegex.test(value)) {
+      // Clear the measurement div first
+      measurementDiv.innerHTML = '';
+      
+      // Split the text and create similar structure to the display
+      const parts = value.split(urlRegex);
+      parts.forEach((part) => {
+        if (part.match(urlRegex)) {
+          // Create a span that mimics the link styling for measurement
+          const linkSpan = document.createElement('span');
+          linkSpan.textContent = part;
+          linkSpan.style.wordBreak = 'break-all';
+          linkSpan.style.overflowWrap = 'anywhere';
+          measurementDiv.appendChild(linkSpan);
+        } else {
+          // Create a text node for regular text
+          const textNode = document.createTextNode(part);
+          measurementDiv.appendChild(textNode);
+        }
+      });
+    } else {
+      // For editing mode or plain text, use simple text content
+      measurementDiv.textContent = value || ' '; // Use space for empty content
+    }
     
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
@@ -228,8 +253,9 @@ const HyperlinkTextCell = ({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-blue-600 hover:text-blue-800 underline break-all"
             onClick={(e) => e.stopPropagation()}
+            style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}
           >
             {part}
           </a>
@@ -304,7 +330,7 @@ const HyperlinkTextCell = ({
           onMouseDown={handleMouseDown}
           data-cell-id={cellKey}
           data-cell-ref={cellKey}
-          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap cursor-text overflow-hidden ${
+          className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap break-words cursor-text overflow-hidden ${
             isDuration ? 'font-mono' : ''
           }`}
           style={{ 
