@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Undo, MapPin, Search } from 'lucide-react';
+import { Plus, Settings, Undo, Redo, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -13,8 +13,11 @@ interface MainActionButtonsProps {
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
+  onRedo: () => void;
   canUndo: boolean;
+  canRedo: boolean;
   lastAction: string | null;
+  nextAction: string | null;
   rundownId: string | undefined;
   onOpenTeleprompter: () => void;
   selectedRowId?: string | null;
@@ -41,8 +44,11 @@ const MainActionButtons = ({
   onAddHeader,
   onShowColumnManager,
   onUndo,
+  onRedo,
   canUndo,
+  canRedo,
   lastAction,
+  nextAction,
   rundownId,
   onOpenTeleprompter,
   selectedRowId,
@@ -95,7 +101,22 @@ const MainActionButtons = ({
             <Undo className="h-4 w-4" />
             <span>Undo</span>
           </Button>
-          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+          <Button 
+            onClick={onRedo} 
+            variant="outline" 
+            size={buttonSize}
+            disabled={!canRedo}
+            title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
+            className="flex items-center justify-start gap-2"
+          >
+            <Redo className="h-4 w-4" />
+            <span>Redo</span>
+          </Button>
+        </div>
+        
+        {/* Column manager button - separate row for mobile */}
+        <div className="w-full">
+          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="w-full flex items-center justify-start gap-2">
             <Settings className="h-4 w-4" />
             <span>Columns</span>
           </Button>
@@ -185,6 +206,17 @@ const MainActionButtons = ({
       >
         <Undo className="h-4 w-4" />
         <span>Undo</span>
+      </Button>
+      <Button 
+        onClick={onRedo} 
+        variant="outline" 
+        size={buttonSize}
+        disabled={!canRedo}
+        title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
+        className={buttonClass}
+      >
+        <Redo className="h-4 w-4" />
+        <span>Redo</span>
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Settings className="h-4 w-4" />

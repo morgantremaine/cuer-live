@@ -47,8 +47,11 @@ const RundownIndexContent = () => {
     setStartTime,
     setTimezone,
     undo,
+    redo,
     canUndo,
+    canRedo,
     lastAction,
+    nextAction,
     isConnected,
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
@@ -419,8 +422,11 @@ const RundownIndexContent = () => {
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={undo}
+        onRedo={redo}
         canUndo={canUndo}
+        canRedo={canRedo}
         lastAction={lastAction || ''}
+        nextAction={nextAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         onJumpToHere={handleJumpToHere}

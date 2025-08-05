@@ -487,7 +487,10 @@ export const useSimplifiedRundownState = () => {
     // Undo functionality - properly expose these including saveUndoState
     saveUndoState,
     undo,
+    redo,
     canUndo,
-    lastAction
+    canRedo,
+    lastAction,
+    nextAction
   };
 };
