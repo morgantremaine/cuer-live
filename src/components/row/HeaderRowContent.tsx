@@ -62,6 +62,10 @@ const HeaderRowContent = ({
         <div className="flex items-center space-x-1">
           <button
             onClick={handleToggleCollapse}
+            onContextMenu={(e) => {
+              // Allow context menu to bubble up to the row level
+              // Don't call preventDefault here so it can reach the row handler
+            }}
             className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors ml-2"
             title={isCollapsed ? 'Expand header' : 'Collapse header'}
           >
@@ -71,7 +75,15 @@ const HeaderRowContent = ({
               <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             )}
           </button>
-          <span style={{ color: textColor }}>{rowNumber}</span>
+          <span 
+            style={{ color: textColor }}
+            onContextMenu={(e) => {
+              // Allow context menu to bubble up to the row level
+              // Don't call preventDefault here so it can reach the row handler
+            }}
+          >
+            {rowNumber}
+          </span>
         </div>
       </td>
       {/* Dynamic columns */}
