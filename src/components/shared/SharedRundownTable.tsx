@@ -4,6 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
+import { useHeaderCollapse } from '@/hooks/useHeaderCollapse';
 import { Play, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface SharedRundownTableProps {
@@ -25,10 +26,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 }, ref) => {
   // State for managing expanded script/notes cells
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
-  // State for managing collapsed headers
-  const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
   // State for managing column expand state (expand all cells in a column)
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+  
+  // Use header collapse hook for proper header grouping and visibility
+  const { visibleItems, toggleHeaderCollapse, isHeaderCollapsed } = useHeaderCollapse(items);
   // Helper function to convert time string to seconds
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
@@ -345,23 +347,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     });
   };
 
-  // Helper function to toggle header collapse state
-  const toggleHeaderCollapse = (headerId: string) => {
-    setCollapsedHeaders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(headerId)) {
-        newSet.delete(headerId);
-      } else {
-        newSet.add(headerId);
-      }
-      return newSet;
-    });
-  };
-
-  // Helper function to check if a header is collapsed
-  const isHeaderCollapsed = (headerId: string): boolean => {
-    return collapsedHeaders.has(headerId);
-  };
 
   // Helper function to render expandable cell content for script and notes
   const renderExpandableCell = (value: string, itemId: string, columnKey: string) => {
@@ -889,25 +874,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 : 'bg-white divide-gray-200'
             }`}>
               {itemsWithTimes.filter(({ item }, index) => {
-                // Always show headers
-                if (item.type === 'header') return true;
-                
-                // Check if this item should be hidden due to a collapsed header
-                // Find the header this item belongs to
-                let headerIndex = -1;
-                for (let i = index - 1; i >= 0; i--) {
-                  if (itemsWithTimes[i].item.type === 'header') {
-                    headerIndex = i;
-                    break;
-                  }
-                }
-                
-                // If we found a header and it's collapsed, hide this item
-                if (headerIndex >= 0 && isHeaderCollapsed(itemsWithTimes[headerIndex].item.id)) {
-                  return false;
-                }
-                
-                return true;
+                // Use the hook's visibleItems logic for proper header collapse filtering
+                return visibleItems.some(visibleItem => visibleItem.id === item.id);
               }).map(({ item, calculatedStartTime }, filteredIndex) => {
                 // We need to find the original index for this item
                 const originalIndex = itemsWithTimes.findIndex(({ item: originalItem }) => originalItem.id === item.id);
