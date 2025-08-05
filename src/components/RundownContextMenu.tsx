@@ -124,14 +124,25 @@ const RundownContextMenu = memo(({
       <ContextMenu>
         <ContextMenuTrigger 
           asChild 
-          disabled={(() => {
-            const activeElement = document.activeElement as HTMLElement;
-            return activeElement && (
-              activeElement.tagName === 'INPUT' || 
-              activeElement.tagName === 'TEXTAREA' || 
-              activeElement.isContentEditable
-            );
-          })()}
+          onContextMenu={(e) => {
+            // Check if right-clicking on editable content
+            const target = e.target as HTMLElement;
+            const isEditableText = target.tagName === 'INPUT' || 
+                                  target.tagName === 'TEXTAREA' || 
+                                  target.isContentEditable ||
+                                  target.closest('input') ||
+                                  target.closest('textarea') ||
+                                  target.closest('[contenteditable="true"]');
+            
+            // Only prevent our context menu for editable text content
+            if (isEditableText) {
+              e.preventDefault();
+              return;
+            }
+            
+            // For non-editable content (like # column), prevent browser context menu
+            e.preventDefault();
+          }}
         >
           {children}
         </ContextMenuTrigger>
