@@ -224,58 +224,49 @@ const Teleprompter = () => {
             }
             * {
               box-sizing: border-box;
-              margin: 0;
-              padding: 0;
             }
             body {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.2;
-              font-size: 12px;
+              line-height: 1.4;
+              font-size: 14px;
+              margin: 0;
+              padding: 0;
             }
             .script-container {
               max-width: 100%;
             }
-            .script-segment {
-              margin-bottom: 1.5em;
+            .script-item {
+              margin-bottom: 2em;
               page-break-inside: avoid;
             }
             .segment-header {
               font-weight: bold;
-              font-size: 11px;
-              margin-bottom: 0.5em;
-              page-break-after: avoid;
-            }
-            .segment-content {
               font-size: 12px;
-              line-height: 1.2;
-              margin-bottom: 0.5em;
-              text-align: left;
-            }
-            .segment-content p {
-              margin: 0 0 0.3em 0;
-            }
-            .segment-content p:last-child {
-              margin-bottom: 0;
-            }
-            .header-segment {
-              margin: 1em 0;
+              margin-bottom: 0.75em;
               page-break-after: avoid;
+              color: #333;
             }
-            .header-segment .segment-header {
-              font-size: 13px;
+            .script-content {
+              font-size: 14px;
+              line-height: 1.4;
+              text-align: left;
+              white-space: pre-wrap;
+            }
+            .header-item {
+              margin: 2em 0 1.5em 0;
+            }
+            .header-item .segment-header {
+              font-size: 14px;
               font-weight: bold;
-            }
-            /* Remove forced page breaks to let content flow naturally */
-            .page-break {
-              margin-top: 2em;
+              color: #000;
             }
           </style>
         </head>
         <body>
           <div class="script-container">
-            ${itemsWithScript.map((item, index) => {
+            ${itemsWithScript.map((item) => {
               const rowNumber = getRowNumber(item.originalIndex);
               const isHeader = item.type === 'header';
               
@@ -286,16 +277,10 @@ const Teleprompter = () => {
               
               const scriptContent = processScriptForPrint(item.script || '');
               
-              // Only add spacing break every 15 segments to allow better flow
-              const needsSpacing = index > 0 && index % 15 === 0;
-              
               return `
-                <div class="script-segment ${isHeader ? 'header-segment' : ''} ${needsSpacing ? 'page-break' : ''}">
+                <div class="script-item ${isHeader ? 'header-item' : ''}">
                   <div class="segment-header">[${title}]</div>
-                  ${scriptContent ? `<div class="segment-content">${scriptContent.split('\n').map(line => {
-                    const trimmedLine = line.trim();
-                    return trimmedLine ? `<p>${trimmedLine}</p>` : '';
-                  }).filter(p => p).join('')}</div>` : ''}
+                  ${scriptContent ? `<div class="script-content">${scriptContent}</div>` : ''}
                 </div>
               `;
             }).join('')}
