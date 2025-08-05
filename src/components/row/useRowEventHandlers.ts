@@ -65,22 +65,11 @@ export const useRowEventHandlers = ({
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
+    // Let the RundownContextMenu component handle context menu logic
+    // It already has proper editable text detection built-in
     
-    // Check if the target is editable text (input, textarea, or contenteditable)
-    const isEditableText = target.tagName === 'INPUT' || 
-                          target.tagName === 'TEXTAREA' || 
-                          target.contentEditable === 'true' ||
-                          target.closest('input, textarea, [contenteditable="true"]');
-    
-    // Only allow browser's default context menu on editable text for spell check
-    if (!isEditableText) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    // Ensure the row is selected if not already (only if not on editable text)
-    if (onRowSelect && !isSelected && !isEditableText) {
+    // Just ensure the row is selected if not already
+    if (onRowSelect && !isSelected) {
       onRowSelect(item.id, index, false, false);
     }
   };

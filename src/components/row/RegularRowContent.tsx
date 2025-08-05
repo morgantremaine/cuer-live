@@ -57,13 +57,7 @@ const RegularRowContent = ({
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
-        <div 
-          className="flex items-center justify-center relative w-full"
-          onContextMenu={(e) => {
-            // Allow context menu to bubble up to the row level
-            // Don't call preventDefault here so it can reach the row handler
-          }}
-        >
+        <div className="flex items-center justify-center relative w-full">
           {isCurrentlyPlaying && (
             <Play 
               className="h-6 w-6 text-blue-500 fill-blue-500 absolute left-0" 
