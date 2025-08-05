@@ -52,6 +52,9 @@ export const useTeam = () => {
     loadedUserRef.current = user.id;
 
     try {
+      // Add a small delay to ensure auth state is fully established
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Get user's team membership with better error handling
       const { data: membershipData, error: membershipError } = await supabase
         .from('team_members')
@@ -136,15 +139,13 @@ export const useTeam = () => {
           setUserRole(membershipData.role);
           setError(null);
 
-          // Load team members and invitations in parallel
-          const loadPromises = [loadTeamMembers(teamData.id)];
+          // Load team members for ALL team members (not just admins)
+          await loadTeamMembers(teamData.id);
           
           // Load pending invitations only if user is admin
           if (membershipData.role === 'admin') {
-            loadPromises.push(loadPendingInvitations(teamData.id));
+            await loadPendingInvitations(teamData.id);
           }
-          
-          await Promise.all(loadPromises);
         } else {
           console.log('No team found, creating one...');
           // User has no team, create one
@@ -190,19 +191,10 @@ export const useTeam = () => {
 
   const loadTeamMembers = async (teamId: string) => {
     try {
-      // Optimized single query to get team members with profiles
+      // First get team members
       const { data: membersData, error: membersError } = await supabase
         .from('team_members')
-        .select(`
-          id, 
-          user_id, 
-          role, 
-          joined_at,
-          profiles:user_id (
-            email,
-            full_name
-          )
-        `)
+        .select('id, user_id, role, joined_at')
         .eq('team_id', teamId)
         .order('joined_at', { ascending: true });
 
@@ -211,9 +203,33 @@ export const useTeam = () => {
         return;
       }
 
-      // Transform the data to match expected structure
-      const transformedMembers: TeamMember[] = (membersData || []).map(member => {
-        const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+      // Then get profiles for each user
+      const userIds = membersData?.map(member => member.user_id) || [];
+      
+      if (userIds.length === 0) {
+        setTeamMembers([]);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+        // Still set members without profile data
+        const membersWithoutProfiles = membersData.map(member => ({
+          ...member,
+          profiles: undefined
+        }));
+        setTeamMembers(membersWithoutProfiles);
+        return;
+      }
+
+      // Combine the data
+      const transformedMembers: TeamMember[] = membersData.map(member => {
+        const profile = profilesData?.find(p => p.id === member.user_id);
         return {
           ...member,
           profiles: profile ? {
@@ -431,8 +447,8 @@ export const useTeam = () => {
       console.log('🔄 useTeam: Loading team data for user change:', user.id);
       loadedUserRef.current = null; // Reset to allow new load
       setIsLoading(true);
-      // Load immediately - auth state is stable when effect runs
-      loadTeamData();
+      // Add a small delay to ensure auth state is stable
+      setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
       console.log('🔄 useTeam: Clearing team data (no user)');
       setTeam(null);
