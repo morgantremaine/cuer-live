@@ -175,7 +175,9 @@ export const useRundownStateCoordination = () => {
     performanceOptimization.visibleColumns,
     simplifiedState.updateItem,
     simplifiedState.setColumns,
-    simplifiedState.columns
+    simplifiedState.columns,
+    simplifiedState.saveUndoState,
+    simplifiedState.rundownTitle
   );
 
   // NEW: Keep processing states separate - NO combination

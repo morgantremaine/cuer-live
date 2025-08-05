@@ -96,7 +96,9 @@ export const useCleanRundownState = () => {
     coreState.visibleColumns,
     coreState.updateItem,
     coreState.setColumns,
-    coreState.columns
+    coreState.columns,
+    coreState.saveUndoState,
+    coreState.rundownTitle
   );
 
   // Return unified interface
