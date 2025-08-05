@@ -363,6 +363,30 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return collapsedHeaders.has(headerId);
   };
 
+  // Toggle all header groups expand/collapse state
+  const handleToggleAllHeaders = () => {
+    // Find all headers in the items
+    const headerItems = items.filter(item => item.type === 'header');
+    
+    if (headerItems.length === 0) return;
+    
+    // Check if any headers are currently collapsed
+    const hasCollapsedHeaders = headerItems.some(header => isHeaderCollapsed(header.id));
+    
+    // If any headers are collapsed, expand all. If all are expanded, collapse all.
+    headerItems.forEach(header => {
+      const isCurrentlyCollapsed = isHeaderCollapsed(header.id);
+      
+      if (hasCollapsedHeaders && isCurrentlyCollapsed) {
+        // Expand this collapsed header
+        toggleHeaderCollapse(header.id);
+      } else if (!hasCollapsedHeaders && !isCurrentlyCollapsed) {
+        // Collapse this expanded header
+        toggleHeaderCollapse(header.id);
+      }
+    });
+  };
+
   // Helper function to render expandable cell content for script and notes
   const renderExpandableCell = (value: string, itemId: string, columnKey: string) => {
     const isExpanded = isCellExpanded(itemId, columnKey);
@@ -835,7 +859,29 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                   }`}
                   style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
                 >
-                  #
+                  <div className="flex items-center justify-center space-x-1">
+                    {items.some(item => item.type === 'header') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleAllHeaders();
+                        }}
+                        className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
+                          isDark 
+                            ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
+                            : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                        }`}
+                        title="Toggle all header groups"
+                      >
+                        {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
+                          <ChevronRight className="h-3 w-3" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
+                      </button>
+                    )}
+                    <span>#</span>
+                  </div>
                 </th>
                 {visibleColumns.map((column) => {
                   const columnWidth = getColumnWidth(column);
