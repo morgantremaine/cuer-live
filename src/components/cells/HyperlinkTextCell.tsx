@@ -229,12 +229,55 @@ const HyperlinkTextCell = ({
       return;
     }
     
+    // Calculate cursor position based on click coordinates
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    const rect = displayRef.current?.getBoundingClientRect();
+    
     setIsEditing(true);
     onCellClick(e);
     
-    // Focus the textarea after it's rendered
+    // Focus the textarea and set cursor position after it's rendered
     setTimeout(() => {
-      textareaRef.current?.focus();
+      if (textareaRef.current && rect) {
+        textareaRef.current.focus();
+        
+        // Calculate relative click position
+        const relativeX = clickX - rect.left;
+        const relativeY = clickY - rect.top;
+        
+        // Use document.caretPositionFromPoint or document.caretRangeFromPoint to get text position
+        let cursorPosition = 0;
+        
+        if ((document as any).caretPositionFromPoint) {
+          const caretPos = (document as any).caretPositionFromPoint(clickX, clickY);
+          if (caretPos && caretPos.offsetNode && caretPos.offsetNode.textContent) {
+            // Find the position in the full text
+            const clickedText = caretPos.offsetNode.textContent;
+            const fullText = value;
+            const textIndex = fullText.indexOf(clickedText);
+            if (textIndex !== -1) {
+              cursorPosition = textIndex + caretPos.offset;
+            }
+          }
+        } else if ((document as any).caretRangeFromPoint) {
+          const range = (document as any).caretRangeFromPoint(clickX, clickY);
+          if (range && range.startContainer && range.startContainer.textContent) {
+            const clickedText = range.startContainer.textContent;
+            const fullText = value;
+            const textIndex = fullText.indexOf(clickedText);
+            if (textIndex !== -1) {
+              cursorPosition = textIndex + range.startOffset;
+            }
+          }
+        }
+        
+        // Ensure cursor position is within bounds
+        cursorPosition = Math.max(0, Math.min(cursorPosition, value.length));
+        
+        // Set the cursor position
+        textareaRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
     }, 0);
   };
 
