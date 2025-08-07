@@ -8,8 +8,9 @@ export interface AvailableColumn {
   value: string;
 }
 
-export const getAvailableColumns = (items: RundownItem[]): AvailableColumn[] => {
+export const getAvailableColumns = (items: RundownItem[], availableCustomColumns?: { key: string; name: string }[]): AvailableColumn[] => {
   logger.blueprint('getAvailableColumns called with items:', { count: items.length });
+  logger.blueprint('Available custom columns passed:', availableCustomColumns);
   
   const columns: AvailableColumn[] = [];
   
@@ -41,22 +42,34 @@ export const getAvailableColumns = (items: RundownItem[]): AvailableColumn[] => 
     }
   });
   
-  // Check for custom fields
-  const customFields = new Set<string>();
+  // Check for custom fields in the data
+  const customFieldsFromData = new Set<string>();
   items.forEach(item => {
     if (!isHeaderItem(item) && item.customFields) {
       Object.keys(item.customFields).forEach(key => {
         if (item.customFields![key] && String(item.customFields![key]).trim() !== '') {
-          customFields.add(key);
+          customFieldsFromData.add(key);
         }
       });
     }
   });
   
-  customFields.forEach(field => {
-    logger.blueprint('Found custom field:', field);
+  customFieldsFromData.forEach(field => {
+    logger.blueprint('Found custom field from data:', field);
     columns.push({ name: field, value: `custom_${field}` });
   });
+  
+  // Add available custom columns from column configuration (even if they have no data yet)
+  if (availableCustomColumns) {
+    availableCustomColumns.forEach(column => {
+      // Only add if not already added from data
+      const alreadyExists = columns.some(col => col.value === `custom_${column.key}`);
+      if (!alreadyExists) {
+        logger.blueprint('Found custom column from config:', column.key);
+        columns.push({ name: column.name, value: `custom_${column.key}` });
+      }
+    });
+  }
   
   logger.blueprint('All found columns:', columns.map(col => col.value));
   logger.blueprint('Final available columns:', columns);
@@ -84,8 +97,19 @@ export const generateListFromColumn = (items: RundownItem[], sourceColumn: strin
     // Extract custom field data
     const customFieldKey = sourceColumn.replace('custom_', '');
     items.forEach(item => {
-      if (!isHeaderItem(item) && item.customFields && item.customFields[customFieldKey]) {
-        const value = String(item.customFields[customFieldKey]).trim();
+      if (!isHeaderItem(item)) {
+        // First try customFields
+        let value = '';
+        if (item.customFields && item.customFields[customFieldKey]) {
+          value = String(item.customFields[customFieldKey]).trim();
+        } else {
+          // If not in customFields, try direct property access (for newer data structure)
+          const directValue = (item as any)[customFieldKey];
+          if (directValue) {
+            value = String(directValue).trim();
+          }
+        }
+        
         if (value !== '') {
           list.push(value);
         }
@@ -114,10 +138,10 @@ export const getUniqueItems = (items: string[]): string[] => {
   return unique;
 };
 
-export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[]): BlueprintList[] => {
+export const generateDefaultBlueprint = (rundownId: string, rundownTitle: string, items: RundownItem[], customColumns?: { key: string; name: string }[]): BlueprintList[] => {
   logger.blueprint('generateDefaultBlueprint called', { rundownId, rundownTitle, itemCount: items.length });
   
-  const availableColumns = getAvailableColumns(items);
+  const availableColumns = getAvailableColumns(items, customColumns);
   const defaultLists: BlueprintList[] = [];
   
   // Generate a default list for each available column (up to 3 to avoid overwhelming)

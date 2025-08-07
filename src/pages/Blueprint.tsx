@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -50,6 +51,7 @@ const BlueprintContent = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { savedRundowns, loading } = useRundownStorage();
+  const { teamColumns } = useTeamCustomColumns();
   
   // Find the rundown - but only search if we have data loaded
   const rundown = React.useMemo(() => {
@@ -70,11 +72,18 @@ const BlueprintContent = () => {
     autoRefreshLists
   } = useBlueprintContext();
 
-  // Get available columns from rundown items
+  // Get available columns from rundown items and custom columns
   const availableColumns = React.useMemo(() => {
     if (!rundown?.items) return [];
-    return getAvailableColumns(rundown.items);
-  }, [rundown?.items]);
+    
+    // Convert team columns to the format expected by getAvailableColumns
+    const customColumnsForBlueprint = teamColumns.map(tc => ({
+      key: tc.column_key,
+      name: tc.column_name
+    }));
+    
+    return getAvailableColumns(rundown.items, customColumnsForBlueprint);
+  }, [rundown?.items, teamColumns]);
 
   // Add new list
   const addNewList = React.useCallback((name: string, sourceColumn: string) => {

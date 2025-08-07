@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { getAvailableColumns } from '@/utils/blueprintUtils';
 import { format } from 'date-fns';
 
-export const useBlueprintCore = (items: RundownItem[]) => {
+export const useBlueprintCore = (items: RundownItem[], customColumns?: { key: string; name: string }[]) => {
   const [lists, setLists] = useState<BlueprintList[]>([]);
   const [showDate, setShowDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [initialized, setInitialized] = useState(false);
@@ -17,7 +17,7 @@ export const useBlueprintCore = (items: RundownItem[]) => {
     isInitializing: false
   });
 
-  const availableColumns = useMemo(() => getAvailableColumns(items), [items]);
+  const availableColumns = useMemo(() => getAvailableColumns(items, customColumns), [items, customColumns]);
 
   const generateListId = (sourceColumn: string) => {
     return `${sourceColumn}_${Date.now()}_${Math.random()}`;
