@@ -19,7 +19,7 @@ export const getAvailableColumns = (items: RundownItem[], availableCustomColumns
   logger.blueprint('Has headers:', hasHeaders);
   
   if (hasHeaders) {
-    columns.push({ name: 'Headers/Segments', value: 'headers' });
+    columns.push({ name: 'Headers', value: 'headers' });
   }
   
   // Standard fields to check
