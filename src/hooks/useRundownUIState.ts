@@ -53,7 +53,6 @@ export const useRundownUIState = (
 
   // Enhanced navigation function
   const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
-    console.log('🔑 navigateToCell called:', { targetItemId, targetField });
     // Clear any existing timeout
     if (navigationTimeoutRef.current) {
       clearTimeout(navigationTimeoutRef.current);
@@ -61,17 +60,12 @@ export const useRundownUIState = (
 
     navigationTimeoutRef.current = setTimeout(() => {
       const targetCellKey = `${targetItemId}-${targetField}`;
-      console.log('🔑 looking for cell:', targetCellKey);
       
-      // Try multiple selection strategies - ensure we get input/textarea elements only
-      let targetElement: HTMLInputElement | HTMLTextAreaElement | null = null;
+      // Try multiple selection strategies
+      let targetElement: HTMLElement | null = null;
       
       // Strategy 1: Look for textarea/input with data attributes
-      const element1 = document.querySelector(`[data-cell-id="${targetCellKey}"]`);
-      if (element1 && (element1.tagName === 'TEXTAREA' || element1.tagName === 'INPUT')) {
-        targetElement = element1 as HTMLInputElement | HTMLTextAreaElement;
-      }
-      console.log('🔑 Strategy 1 result:', targetElement);
+      targetElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLElement;
       
       // Strategy 2: Look for elements that match the ref pattern
       if (!targetElement) {
@@ -83,40 +77,19 @@ export const useRundownUIState = (
             break;
           }
         }
-        console.log('🔑 Strategy 2 result:', targetElement);
       }
       
-      // Strategy 3: Use cellRefs as fallback (accept any element type, we'll handle it)
+      // Strategy 3: Use cellRefs as fallback
       if (!targetElement) {
-        const refElement = cellRefs.current[targetCellKey];
-        if (refElement) {
-          targetElement = refElement as any; // Accept div or input/textarea
-        }
-        console.log('🔑 Strategy 3 result:', targetElement);
+        targetElement = cellRefs.current[targetCellKey];
       }
       
       if (targetElement && typeof targetElement.focus === 'function') {
-        console.log('🔑 focusing element:', targetElement.tagName, targetElement);
         setEditingCell(targetCellKey);
-        
-        // If it's a div (display mode), click it to enter editing mode
-        if (targetElement.tagName === 'DIV') {
-          targetElement.click();
-          // Wait for the editing mode to activate, then focus the textarea
-          setTimeout(() => {
-            const textareaElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLTextAreaElement;
-            if (textareaElement && textareaElement.tagName === 'TEXTAREA') {
-              textareaElement.focus();
-              textareaElement.select();
-            }
-          }, 50);
-        } else {
-          // It's already an input/textarea, focus directly
-          targetElement.focus();
+        targetElement.focus();
+        if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
           targetElement.select();
         }
-      } else {
-        console.log('🔑 target element not found or not focusable:', { targetCellKey, targetElement });
       }
     }, 50);
   }, []);
@@ -148,7 +121,6 @@ export const useRundownUIState = (
     field: string,
     itemIndex: number
   ) => {
-    console.log('🔑 handleKeyDown called:', { key: event.key, itemId, field, itemIndex });
     const { key, shiftKey } = event;
     
     // Handle navigation keys
@@ -163,10 +135,7 @@ export const useRundownUIState = (
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
-        console.log('🔑 navigating to next cell:', { nextItemId, field, nextItemIndex });
         navigateToCell(nextItemId, field);
-      } else {
-        console.log('🔑 no next item found, at end of list');
       }
     } else if (key === 'ArrowUp') {
       event.preventDefault();
@@ -179,10 +148,7 @@ export const useRundownUIState = (
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
-        console.log('🔑 navigating to prev cell:', { prevItemId: prevItem.id, field, prevItemIndex });
         navigateToCell(prevItem.id, field);
-      } else {
-        console.log('🔑 no prev item found, at start of list');
       }
     } else if (key === 'Tab') {
       event.preventDefault();

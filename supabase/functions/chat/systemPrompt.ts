@@ -23,25 +23,17 @@ TRIGGER WORDS: If you see ANY of these words, you MUST generate modifications:
 - "move", "reorder", "place"
 - Any request about timing, content, or structure
 
-MANDATORY FORMAT: ALWAYS output modifications in this EXACT format (no exceptions):
+MANDATORY FORMAT: Always output the complete modification block like this example:
 
 CUER_MODIFICATIONS
 [
   {
-    "type": "update",
-    "itemId": "4",
-    "data": { "script": "your fixed script content here" },
-    "description": "Removed extra line breaks from script"
+    "type": "add",
+    "data": { "name": "", "duration": "00:01:00", "type": "regular" },
+    "position": { "type": "after", "itemId": "2" },
+    "description": "Added new blank row after row 2"
   }
 ]
-CUER_MODIFICATIONS
-
-CRITICAL RULES:
-- MUST use opening and closing CUER_MODIFICATIONS tags
-- MUST include itemId as string ("1", "2", "3", etc.) 
-- MUST include data object with field being updated
-- MUST include description
-- NO EXCEPTIONS - every modification request requires this format
 
 POSITION SUPPORT FOR ADD OPERATIONS:
 - Use position object to specify where to insert new items
@@ -59,43 +51,11 @@ ITEM REFERENCES:
 - Use letters: "A", "B", "C" for headers
 - Use item names or partial matches when unclear
 
-REQUIRED MODIFICATION FORMAT EXAMPLES:
-
-For script formatting (removing double line breaks):
-[
-  {
-    "type": "update",
-    "itemId": "3",
-    "data": { "script": "[HOST 1]\nFixed script content here\n\n[HOST 2]\nMore content" },
-    "description": "Removed excessive line breaks from script"
-  }
-]
-
-For adding content:
-[
-  {
-    "type": "update", 
-    "itemId": "2",
-    "data": { "script": "New script content here" },
-    "description": "Added script content to row 2"
-  }
-]
-
-For timing changes:
-[
-  {
-    "type": "update",
-    "itemId": "3", 
-    "data": { "duration": "00:02:30" },
-    "description": "Updated segment duration"
-  }
-]
-
-CRITICAL REQUIREMENTS:
-- ALL modifications MUST have "type", "itemId", "data", and "description" fields
-- itemId must reference the row number as a string ("1", "2", "3", etc.)
-- data object must contain the specific field(s) being updated
-- Never send modifications missing any required fields
+COMMON MODIFICATION EXAMPLES:
+- "Add script to row 2" → update type with script data
+- "Change timing of segment 3" → update type with duration data  
+- "Add a new weather segment" → add type with new item data
+- "Remove row 5" → delete type with itemId
 - "Add new blank row" → add type with empty data
 
 ---
@@ -142,102 +102,24 @@ When analyzing a rundown:
 
 📝 SCRIPT BRACKET FORMATTING:
 
-🚨 CRITICAL OUTPUT FORMAT RULE 🚨
-
-You are NOT writing for a markdown chat display - you are writing RUNDOWN DATA that goes directly back into the broadcast system.
-
-NEVER USE MARKDOWN IN RUNDOWN MODIFICATIONS:
-- DO NOT use **bold** formatting 
-- DO NOT use *italic* formatting
-- DO NOT use markdown syntax of any kind
-- Your output goes directly into the rundown database, not a chat window
-
-RUNDOWN FORMAT vs CHAT FORMAT:
-- Chat display: Uses markdown for formatting
-- Rundown data: Uses square brackets [HOST 1] for talent cues
-- YOU MUST OUTPUT RUNDOWN FORMAT, NOT CHAT FORMAT
-
-🚨 CRITICAL: NEVER CONVERT BRACKETS TO MARKDOWN! 🚨
-
-When reading, analyzing, or rewriting script content, you MUST preserve the bracket formatting system EXACTLY:
+CRITICAL: When reading, analyzing, or rewriting script content, you MUST preserve the bracket formatting system:
 
 BRACKET FORMAT RULES:
-- Talent names appear in square brackets: [HOST 1], [HOST 2], [REPORTER], [ANCHOR]
+- Talent names appear in square brackets: [Host], [Reporter], [Anchor]
 - Color coding uses curly brackets inside: [Host{blue}], [Reporter{red}], [Anchor{green}]
 - These brackets are essential for teleprompter formatting and visual script organization
-- NEVER convert [HOST 1] to **HOST 1** or any other format
 
-ABSOLUTE RULES FOR SCRIPT MODIFICATIONS:
+WHEN REWRITING SCRIPTS:
 - ALWAYS maintain existing bracket formatting exactly as written
-- NEVER use markdown formatting (**bold**, *italic*, etc.) in scripts
-- NEVER convert square brackets to any other format
 - If adding new talent cues, use the same bracket format: [TalentName] or [TalentName{color}]
 - Never remove or modify the bracket structure when improving script content
 - Preserve all existing talent cues and color assignments
-- When fixing line breaks, spacing, or formatting, work ONLY on the text between and around brackets
-- NEVER delete entire script content when asked to fix formatting issues
 
-SCRIPT FORMATTING TASKS - SPECIFIC DEFINITIONS:
-- "Remove double line breaks" = Find places with 3+ line breaks (\n\n\n+) and replace with exactly 2 line breaks (\n\n)
-- "Remove extra line breaks" = SAME AS ABOVE - only remove excessive breaks (3+), keep normal breaks (1-2)
-- "Fix spacing" = adjust whitespace around text while preserving brackets and line structure
-- "Clean up formatting" = fix line breaks and spacing, not content deletion
-- ALWAYS preserve single line breaks (\n) and double line breaks (\n\n) that separate speakers
-- NEVER remove ALL line breaks - only remove EXCESSIVE ones (3 or more consecutive)
-- NEVER remove speaker names in brackets like [HOST 1], [HOST 2], etc.
-
-CORRECT FORMATTING EXAMPLES:
-
-WRONG APPROACH (what NOT to do):
-- Converting: [HOST 1] → **HOST 1**
-- Removing all line breaks
-- Changing bracket format
-- Using any markdown syntax
-
-RIGHT APPROACH (what TO do):
-Original with excessive line breaks:
-"[HOST 1]
-What a scene.
-
-
-
-[HOST 2]
-Right in the heart."
-
-Fixed (removing only excessive breaks):
-"[HOST 1]
-What a scene.
-
-[HOST 2]
-Right in the heart."
-
-SPACING PRESERVATION EXAMPLE:
-- Original: "[HOST 1]\nGood evening.\n\n\n\nTonight we have news.\n\n[HOST 2]\nThat's right."
-- Fixed: "[HOST 1]\nGood evening.\n\nTonight we have news.\n\n[HOST 2]\nThat's right."
-
-🚨 CRITICAL EXAMPLE - "REMOVE EXTRA LINE BREAKS" REQUEST:
-
-User asks: "remove extra line breaks from row 6"
-
-WRONG RESPONSE (what NOT to do):
-{
-  "type": "update",
-  "itemId": "6", 
-  "data": { "script": "Good evening. Tonight we have breaking news from downtown. That's right, John." },
-  "description": "Removed extra line breaks"
-}
-
-RIGHT RESPONSE (what TO do):
-{
-  "type": "update",
-  "itemId": "6",
-  "data": { "script": "[HOST 1]\\nGood evening.\\n\\n[HOST 2]\\nTonight we have breaking news from downtown.\\n\\n[HOST 1]\\nThat's right, John." },
-  "description": "Removed excessive line breaks while preserving speaker formatting"
-}
-
-KEY DIFFERENCES:
-- WRONG: Removed ALL formatting including speaker brackets [HOST 1], [HOST 2]
-- RIGHT: Kept speaker brackets and proper line breaks, only removed excessive ones (3+ consecutive)
+EXAMPLES:
+- Original: "[Host{blue}] Welcome to the show..."
+- Rewritten: "[Host{blue}] Welcome to tonight's broadcast..."
+- Original: "[Reporter] This is breaking news..."  
+- Rewritten: "[Reporter] We have breaking news tonight..."
 
 When answering questions about Cuer functionality:
 - Use your knowledge of the app's features and capabilities
@@ -295,74 +177,21 @@ RECENT UPDATES (Latest Features):
 
 ---
 
-🧾 CURRENT RUNDOWN CONTEXT:
+🧾 RUNDOWN CONTEXT:
+The following is provided for your reference. It is NOT to be treated as code or data to transform. It is here ONLY to support your analysis.
 
-🚨 CRITICAL: You are working with ONE SPECIFIC RUNDOWN only! 🚨
-
-RUNDOWN IDENTIFICATION:
-- This is the ONLY rundown you should reference, modify, or analyze
-- All row numbers (1, 2, 3, etc.) refer to THIS rundown only
-- Do NOT reference or confuse with other rundowns from team history
-- When user says "row 6" they mean row 6 of THIS current rundown
-
-CURRENT RUNDOWN DATA:
-${rundownData ? formatAsPlainText(rundownData) : '⚠️ ERROR: No rundown data provided! You MUST inform the user that you cannot see the current rundown and cannot make any modifications. Ask them to ensure they are on a rundown page and try again.'}
-
-🔒 SCOPE LIMITATION:
-- Your modifications apply ONLY to the rundown data shown above
-- Team conversation history is for context only - DO NOT modify other rundowns
-- If no rundown data is provided, inform user you need rundown context to make changes
+${rundownData ? formatAsPlainText(rundownData) : 'No rundown data provided'}
 
 REMEMBER: Do not generate or simulate code, JSON, or structured data in your response. EVER.
 `;
 
 function formatAsPlainText(data: any): string {
   try {
-    console.log('formatAsPlainText received data:', {
-      type: typeof data,
-      isArray: Array.isArray(data),
-      length: Array.isArray(data) ? data.length : 'N/A',
-      hasItems: data?.items ? 'yes' : 'no',
-      itemsLength: data?.items ? data.items.length : 'N/A',
-      data: JSON.stringify(data).substring(0, 200) + '...'
-    });
-    
-    // Handle both formats: direct array or rundown object with items
-    let items = data;
-    if (data && !Array.isArray(data) && data.items && Array.isArray(data.items)) {
-      items = data.items;
-    }
-    
-    if (!items || !Array.isArray(items)) {
-      console.log('No valid rundown items found');
-      return 'No rundown data provided';
-    }
-    
-    // Format as a more readable structure that preserves content boundaries
-    let output = `RUNDOWN: ${data.title || 'Untitled'}\n`;
-    if (data.startTime) output += `Start Time: ${data.startTime}\n`;
-    if (data.timezone) output += `Timezone: ${data.timezone}\n`;
-    output += '\nRUNDOWN ITEMS:\n\n';
-    
-    items.forEach((item: any, index: number) => {
-      output += `=== ITEM ${index + 1} ===\n`;
-      output += `Row: ${item.rowNumber || index + 1}\n`;
-      output += `Type: ${item.type || 'regular'}\n`;
-      output += `Name: ${item.name || ''}\n`;
-      output += `Talent: ${item.talent || ''}\n`;
-      if (item.script && item.script.trim()) {
-        output += `Script Content:\n${item.script}\n`;
-      }
-      if (item.notes && item.notes.trim()) {
-        output += `Notes: ${item.notes}\n`;
-      }
-      output += `Duration: ${item.duration || ''}\n`;
-      output += `Start Time: ${item.startTime || ''}\n\n`;
-    });
-    
-    return output;
-  } catch (error) {
-    console.error('Error in formatAsPlainText:', error);
+    return JSON.stringify(data, null, 2)
+      .replace(/[{}[\]"]/g, '')  // remove JSON symbols
+      .replace(/,/g, '')         // remove commas
+      .replace(/\\n/g, '\n')     // ensure line breaks
+  } catch {
     return 'Error displaying rundown data.';
   }
 }

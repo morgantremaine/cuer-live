@@ -19,14 +19,6 @@ serve(async (req) => {
 
   try {
     const { message, rundownData } = await req.json()
-    
-    // Log what we received for debugging
-    console.log('Chat function received:', {
-      message: message?.substring(0, 100) + '...',
-      hasRundownData: !!rundownData,
-      rundownDataType: typeof rundownData,
-      rundownDataLength: Array.isArray(rundownData) ? rundownData.length : 'not array'
-    })
 
     if (!message) {
       return new Response(

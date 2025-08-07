@@ -170,7 +170,7 @@ const HyperlinkTextCell = ({
     
     // For Enter (without Cmd/Ctrl), arrow keys, and Tab navigation, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
-      console.log('🔑 HyperlinkTextCell calling onKeyDown:', { key: e.key, itemId, cellRefKey });
+      setIsEditing(false);
       onKeyDown(e, itemId, cellRefKey);
       return;
     }

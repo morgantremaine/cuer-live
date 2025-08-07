@@ -139,7 +139,6 @@ const TextAreaCell = ({
     
     // For Enter (without Cmd/Ctrl), arrow keys, and Tab navigation, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
-      console.log('🔑 TextAreaCell calling onKeyDown:', { key: e.key, itemId, cellRefKey });
       onKeyDown(e, itemId, cellRefKey);
       return;
     }
