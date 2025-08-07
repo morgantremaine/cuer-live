@@ -56,7 +56,10 @@ export const getAvailableColumns = (items: RundownItem[], availableCustomColumns
   
   customFieldsFromData.forEach(field => {
     logger.blueprint('Found custom field from data:', field);
-    columns.push({ name: field, value: `custom_${field}` });
+    // Try to find the proper name from availableCustomColumns first
+    const columnConfig = availableCustomColumns?.find(col => col.key === field);
+    const displayName = columnConfig ? columnConfig.name : field;
+    columns.push({ name: displayName, value: `custom_${field}` });
   });
   
   // Add available custom columns from column configuration (even if they have no data yet)
