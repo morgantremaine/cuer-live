@@ -143,6 +143,8 @@ export const useSimplifiedRundownState = () => {
       }, 1000);
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
+    } else if (field === 'color') {
+      saveUndoState(state.items, [], state.title, 'Change row color');
     }
     
     if (field.startsWith('customFields.')) {
