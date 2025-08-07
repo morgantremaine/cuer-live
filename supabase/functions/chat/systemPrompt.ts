@@ -51,11 +51,43 @@ ITEM REFERENCES:
 - Use letters: "A", "B", "C" for headers
 - Use item names or partial matches when unclear
 
-COMMON MODIFICATION EXAMPLES:
-- "Add script to row 2" → update type with script data
-- "Change timing of segment 3" → update type with duration data  
-- "Add a new weather segment" → add type with new item data
-- "Remove row 5" → delete type with itemId
+REQUIRED MODIFICATION FORMAT EXAMPLES:
+
+For script formatting (removing double line breaks):
+[
+  {
+    "type": "update",
+    "itemId": "3",
+    "data": { "script": "[HOST 1]\nFixed script content here\n\n[HOST 2]\nMore content" },
+    "description": "Removed excessive line breaks from script"
+  }
+]
+
+For adding content:
+[
+  {
+    "type": "update", 
+    "itemId": "2",
+    "data": { "script": "New script content here" },
+    "description": "Added script content to row 2"
+  }
+]
+
+For timing changes:
+[
+  {
+    "type": "update",
+    "itemId": "3", 
+    "data": { "duration": "00:02:30" },
+    "description": "Updated segment duration"
+  }
+]
+
+CRITICAL REQUIREMENTS:
+- ALL modifications MUST have "type", "itemId", "data", and "description" fields
+- itemId must reference the row number as a string ("1", "2", "3", etc.)
+- data object must contain the specific field(s) being updated
+- Never send modifications missing any required fields
 - "Add new blank row" → add type with empty data
 
 ---
