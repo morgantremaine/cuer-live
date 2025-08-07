@@ -220,24 +220,20 @@ SPACING PRESERVATION EXAMPLE:
 User asks: "remove extra line breaks from row 6"
 
 WRONG RESPONSE (what NOT to do):
-```
 {
   "type": "update",
   "itemId": "6", 
   "data": { "script": "Good evening. Tonight we have breaking news from downtown. That's right, John." },
   "description": "Removed extra line breaks"
 }
-```
 
 RIGHT RESPONSE (what TO do):
-```
 {
   "type": "update",
   "itemId": "6",
-  "data": { "script": "[HOST 1]\nGood evening.\n\n[HOST 2]\nTonight we have breaking news from downtown.\n\n[HOST 1]\nThat's right, John." },
+  "data": { "script": "[HOST 1]\\nGood evening.\\n\\n[HOST 2]\\nTonight we have breaking news from downtown.\\n\\n[HOST 1]\\nThat's right, John." },
   "description": "Removed excessive line breaks while preserving speaker formatting"
 }
-```
 
 KEY DIFFERENCES:
 - WRONG: Removed ALL formatting including speaker brackets [HOST 1], [HOST 2]
