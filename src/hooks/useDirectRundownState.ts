@@ -89,8 +89,10 @@ export const useDirectRundownState = () => {
     },
     
     markAsChanged: () => {
-      console.log('🔧 Direct state mark as changed');
-      // This is handled internally by simplified state
+      console.log('🔧 Direct state mark as changed - triggering auto-save');
+      // Trigger a simple state update to mark changes without modifying actual data
+      // We'll update the lastChanged timestamp which will trigger auto-save
+      simplifiedState.setItems([...simplifiedState.items]);
     },
 
     // State info for debugging
