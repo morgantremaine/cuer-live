@@ -39,6 +39,14 @@ export const useCuerChat = () => {
   }, []);
 
   const sendMessage = useCallback(async (content: string, rundownData?: any) => {
+    console.log('useCuerChat sendMessage called with:', {
+      messageLength: content.length,
+      hasRundownData: !!rundownData,
+      rundownDataType: typeof rundownData,
+      rundownDataKeys: rundownData ? Object.keys(rundownData) : 'none',
+      itemsCount: rundownData?.items ? rundownData.items.length : 'no items'
+    });
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
