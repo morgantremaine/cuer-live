@@ -62,6 +62,20 @@ const SharedRundown = () => {
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
 
+  // Update browser tab title when rundown title changes
+  useEffect(() => {
+    if (rundownData?.title && rundownData.title !== 'Untitled Rundown') {
+      document.title = rundownData.title;
+    } else {
+      document.title = 'Cuer Live';
+    }
+
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = 'Cuer Live';
+    };
+  }, [rundownData?.title]);
+
   // Use real-time showcaller state if available, otherwise fall back to stored state
   const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
