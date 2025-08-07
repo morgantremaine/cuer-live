@@ -104,11 +104,13 @@ export const useModificationApplier = ({
             break;
             
           case 'update':
-            if (mod.itemId && mod.data) {
-              console.log(`🔄 Attempting to update item with reference: "${mod.itemId}"`);
+            // Handle itemId from either direct property or position object
+            const updateItemId = mod.itemId || mod.position?.itemId;
+            if (updateItemId && mod.data) {
+              console.log(`🔄 Attempting to update item with reference: "${updateItemId}"`);
               console.log('📝 Update data:', mod.data);
               
-              const targetItem = findItemByReference(mod.itemId);
+              const targetItem = findItemByReference(updateItemId);
               if (targetItem) {
                 console.log(`✅ Found target item:`, { 
                   id: targetItem.id, 
@@ -132,7 +134,7 @@ export const useModificationApplier = ({
                 changesMade = true;
                 appliedChanges.push(`Updated ${targetItem.name || targetItem.rowNumber}`);
               } else {
-                console.error(`❌ Could not find item with reference: ${mod.itemId}`);
+                console.error(`❌ Could not find item with reference: ${updateItemId}`);
                 console.log('💡 Available items for reference:');
                 items.forEach((item, idx) => {
                   console.log(`   ${idx + 1}. ID: ${item.id}, Row: ${item.rowNumber}, Name: "${item.name}", Type: ${item.type}`);
@@ -144,9 +146,10 @@ export const useModificationApplier = ({
             break;
             
           case 'delete':
-            if (mod.itemId) {
-              console.log(`🗑️ Attempting to delete item with reference: "${mod.itemId}"`);
-              const targetItem = findItemByReference(mod.itemId);
+            const deleteItemId = mod.itemId || mod.position?.itemId;
+            if (deleteItemId) {
+              console.log(`🗑️ Attempting to delete item with reference: "${deleteItemId}"`);
+              const targetItem = findItemByReference(deleteItemId);
               if (targetItem) {
                 console.log(`✅ Found item to delete:`, targetItem);
                 deleteRow(targetItem.id);
@@ -154,7 +157,7 @@ export const useModificationApplier = ({
                 appliedChanges.push(`Deleted ${targetItem.name || targetItem.rowNumber}`);
                 console.log('✅ Item deleted successfully');
               } else {
-                console.error(`❌ Could not find item to delete with reference: ${mod.itemId}`);
+                console.error(`❌ Could not find item to delete with reference: ${deleteItemId}`);
               }
             } else {
               console.error('❌ Delete modification missing itemId');
