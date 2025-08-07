@@ -26,6 +26,7 @@ const CustomFieldCell = ({
 }: CustomFieldCellProps) => {
   // Simple key navigation - call with Tab handling too
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('🔑 CustomFieldCell handleKeyDown:', { key: e.key, itemId, cellRefKey });
     // For Enter key, arrow keys, and Tab, navigate to next/previous cell
     if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Tab') {
       onKeyDown(e, itemId, cellRefKey);
