@@ -10,8 +10,8 @@ export async function callOpenAI(messages: OpenAIMessage[], apiKey: string): Pro
     body: JSON.stringify({
       model: 'gpt-4o-mini', // Optimized for fast responses
       messages,
-      temperature: 0.3,     // Low temperature = more consistent, editorial tone
-      max_tokens: 1500,
+      temperature: 0.7,     // Higher temperature for better text processing and creativity
+      max_tokens: 2000,     // More tokens for detailed script modifications
     }),
   });
 

@@ -109,17 +109,28 @@ BRACKET FORMAT RULES:
 - Color coding uses curly brackets inside: [Host{blue}], [Reporter{red}], [Anchor{green}]
 - These brackets are essential for teleprompter formatting and visual script organization
 
-WHEN REWRITING SCRIPTS:
+WHEN MODIFYING SCRIPTS FOR FORMATTING:
 - ALWAYS maintain existing bracket formatting exactly as written
 - If adding new talent cues, use the same bracket format: [TalentName] or [TalentName{color}]
 - Never remove or modify the bracket structure when improving script content
 - Preserve all existing talent cues and color assignments
+- When fixing line breaks, spacing, or formatting, work ONLY on the text between and around brackets
+- NEVER delete entire script content when asked to fix formatting issues
+
+SCRIPT FORMATTING TASKS:
+- "Remove double line breaks" = replace "\n\n" with "\n" between paragraphs
+- "Fix spacing" = adjust whitespace around text while preserving brackets
+- "Clean up formatting" = fix line breaks and spacing, not content deletion
 
 EXAMPLES:
 - Original: "[Host{blue}] Welcome to the show..."
 - Rewritten: "[Host{blue}] Welcome to tonight's broadcast..."
 - Original: "[Reporter] This is breaking news..."  
 - Rewritten: "[Reporter] We have breaking news tonight..."
+
+FORMATTING EXAMPLE:
+- Original: "[Host{blue}] Good evening.\n\n\nTonight we have breaking news.\n\n[Reporter{red}] That's right, host."
+- Fixed: "[Host{blue}] Good evening.\n\nTonight we have breaking news.\n\n[Reporter{red}] That's right, host."
 
 When answering questions about Cuer functionality:
 - Use your knowledge of the app's features and capabilities
@@ -187,10 +198,30 @@ REMEMBER: Do not generate or simulate code, JSON, or structured data in your res
 
 function formatAsPlainText(data: any): string {
   try {
-    return JSON.stringify(data, null, 2)
-      .replace(/[{}[\]"]/g, '')  // remove JSON symbols
-      .replace(/,/g, '')         // remove commas
-      .replace(/\\n/g, '\n')     // ensure line breaks
+    if (!data || !Array.isArray(data)) {
+      return 'No rundown data provided';
+    }
+    
+    // Format as a more readable structure that preserves content boundaries
+    let output = 'RUNDOWN ITEMS:\n\n';
+    
+    data.forEach((item: any, index: number) => {
+      output += `=== ITEM ${index + 1} ===\n`;
+      output += `Row: ${item.rowNumber || 'N/A'}\n`;
+      output += `Type: ${item.type || 'regular'}\n`;
+      output += `Name: ${item.name || ''}\n`;
+      output += `Talent: ${item.talent || ''}\n`;
+      if (item.script && item.script.trim()) {
+        output += `Script Content:\n${item.script}\n`;
+      }
+      if (item.notes && item.notes.trim()) {
+        output += `Notes: ${item.notes}\n`;
+      }
+      output += `Duration: ${item.duration || ''}\n`;
+      output += `Start Time: ${item.startTime || ''}\n\n`;
+    });
+    
+    return output;
   } catch {
     return 'Error displaying rundown data.';
   }
