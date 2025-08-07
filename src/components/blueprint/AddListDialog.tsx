@@ -39,11 +39,12 @@ const AddListDialog = ({ availableColumns, onAddList }: AddListDialogProps) => {
     }
   };
 
-  // Filter out custom columns and show meaningful column names
+  // Show all meaningful columns including custom ones
   const meaningfulColumns = availableColumns.filter(column => 
-    column.value && 
-    !column.value.startsWith('custom_') && 
-    ['headers', 'gfx', 'video', 'talent', 'script', 'notes'].includes(column.value)
+    column.value && (
+      ['headers', 'gfx', 'video', 'talent', 'script', 'notes'].includes(column.value) ||
+      column.value.startsWith('custom_')
+    )
   );
 
   return (
