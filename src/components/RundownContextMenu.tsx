@@ -125,10 +125,12 @@ const RundownContextMenu = memo(({
         <ContextMenuTrigger 
           asChild 
           disabled={(() => {
-            // Check if there's text selection - if so, allow browser context menu
-            const selection = window.getSelection();
-            const hasTextSelection = selection && selection.toString().length > 0;
-            return hasTextSelection;
+            const activeElement = document.activeElement as HTMLElement;
+            return activeElement && (
+              activeElement.tagName === 'INPUT' || 
+              activeElement.tagName === 'TEXTAREA' || 
+              activeElement.isContentEditable
+            );
           })()}
         >
           {children}
