@@ -42,6 +42,7 @@ const RundownIndexContent = () => {
     reset,
     hasUnsavedChanges,
     isSaving,
+    isLoading,
     totalRuntime,
     setTitle,
     setStartTime,
@@ -81,6 +82,9 @@ const RundownIndexContent = () => {
   } = useColumnsManager(() => {
     // Mark as changed - handled by auto-save
   });
+
+  // Check if we're still loading - show spinner until everything is ready
+  const isFullyLoading = isLoading || isLoadingPreferences || (!items || items.length === 0);
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
@@ -346,6 +350,15 @@ const RundownIndexContent = () => {
   const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
     handleDrop(e, targetIndex);
   };
+
+  // Show loading spinner until everything is ready
+  if (isFullyLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <RealtimeConnectionProvider
