@@ -36,9 +36,11 @@ const HeaderControls = ({
 
   const formatTime = (time: Date, tz: string) => {
     try {
+      // Map Las Vegas to Los Angeles timezone for display
+      const actualTimezone = tz === 'America/Las_Vegas' ? 'America/Los_Angeles' : tz;
       const timeString = time.toLocaleTimeString('en-US', { 
         hour12: false,
-        timeZone: tz
+        timeZone: actualTimezone
       });
       return timeString;
     } catch {

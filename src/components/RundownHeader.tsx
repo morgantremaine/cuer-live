@@ -86,7 +86,9 @@ const RundownHeader = ({
   // Format time in the selected timezone
   const formatTimeInTimezone = (time: Date, tz: string) => {
     try {
-      return formatInTimeZone(time, tz, 'HH:mm:ss');
+      // Map Las Vegas to Los Angeles timezone for display
+      const actualTimezone = tz === 'America/Las_Vegas' ? 'America/Los_Angeles' : tz;
+      return formatInTimeZone(time, actualTimezone, 'HH:mm:ss');
     } catch {
       // Fallback to local time if timezone is invalid
       return format(time, 'HH:mm:ss');
