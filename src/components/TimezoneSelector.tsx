@@ -73,7 +73,11 @@ const TimezoneSelector = ({
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
               {timezones.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
+                <SelectItem 
+                  key={tz.value} 
+                  value={tz.value}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                >
                   {tz.label}
                 </SelectItem>
               ))}
