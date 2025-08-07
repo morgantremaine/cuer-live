@@ -268,10 +268,23 @@ RECENT UPDATES (Latest Features):
 
 ---
 
-🧾 RUNDOWN CONTEXT:
-The following is provided for your reference. It is NOT to be treated as code or data to transform. It is here ONLY to support your analysis.
+🧾 CURRENT RUNDOWN CONTEXT:
 
-${rundownData ? formatAsPlainText(rundownData) : 'No rundown data provided'}
+🚨 CRITICAL: You are working with ONE SPECIFIC RUNDOWN only! 🚨
+
+RUNDOWN IDENTIFICATION:
+- This is the ONLY rundown you should reference, modify, or analyze
+- All row numbers (1, 2, 3, etc.) refer to THIS rundown only
+- Do NOT reference or confuse with other rundowns from team history
+- When user says "row 6" they mean row 6 of THIS current rundown
+
+CURRENT RUNDOWN DATA:
+${rundownData ? formatAsPlainText(rundownData) : 'No rundown data provided - you cannot make modifications without rundown context'}
+
+🔒 SCOPE LIMITATION:
+- Your modifications apply ONLY to the rundown data shown above
+- Team conversation history is for context only - DO NOT modify other rundowns
+- If no rundown data is provided, inform user you need rundown context to make changes
 
 REMEMBER: Do not generate or simulate code, JSON, or structured data in your response. EVER.
 `;
