@@ -68,6 +68,7 @@ export const useRundownUIState = (
       
       // Strategy 1: Look for textarea/input with data attributes
       targetElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLElement;
+      console.log('🔑 Strategy 1 result:', targetElement);
       
       // Strategy 2: Look for elements that match the ref pattern
       if (!targetElement) {
@@ -79,11 +80,13 @@ export const useRundownUIState = (
             break;
           }
         }
+        console.log('🔑 Strategy 2 result:', targetElement);
       }
       
       // Strategy 3: Use cellRefs as fallback
       if (!targetElement) {
         targetElement = cellRefs.current[targetCellKey];
+        console.log('🔑 Strategy 3 result:', targetElement);
       }
       
       if (targetElement && typeof targetElement.focus === 'function') {
