@@ -124,19 +124,12 @@ const RundownContextMenu = memo(({
       <ContextMenu>
         <ContextMenuTrigger 
           asChild 
-          onContextMenu={(e) => {
-            // Check if there's text selection
+          disabled={(() => {
+            // Check if there's text selection - if so, allow browser context menu
             const selection = window.getSelection();
             const hasTextSelection = selection && selection.toString().length > 0;
-            
-            // If there's text selection, allow browser context menu
-            if (hasTextSelection) {
-              return; // Let browser handle the context menu
-            }
-            
-            // Otherwise prevent browser context menu and show app's menu
-            e.preventDefault();
-          }}
+            return hasTextSelection;
+          })()}
         >
           {children}
         </ContextMenuTrigger>
