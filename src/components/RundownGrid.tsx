@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import RundownContent from './RundownContent';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
@@ -24,8 +24,23 @@ const RundownGrid = React.memo(() => {
     handleRowSelection,
     clearRowSelection,
     rundownId,
-    rundownStartTime
+    rundownStartTime,
+    rundownTitle
   } = coreState;
+
+  // Update browser tab title when rundown title changes
+  useEffect(() => {
+    if (rundownTitle && rundownTitle !== 'Untitled Rundown') {
+      document.title = rundownTitle;
+    } else {
+      document.title = 'Cuer Live';
+    }
+
+    // Cleanup: reset title when component unmounts
+    return () => {
+      document.title = 'Cuer Live';
+    };
+  }, [rundownTitle]);
 
   // Use coordinated showcaller state for better synchronization
   const {
