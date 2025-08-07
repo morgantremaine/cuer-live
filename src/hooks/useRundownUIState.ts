@@ -53,6 +53,7 @@ export const useRundownUIState = (
 
   // Enhanced navigation function
   const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
+    console.log('🔑 navigateToCell called:', { targetItemId, targetField });
     // Clear any existing timeout
     if (navigationTimeoutRef.current) {
       clearTimeout(navigationTimeoutRef.current);
@@ -60,6 +61,7 @@ export const useRundownUIState = (
 
     navigationTimeoutRef.current = setTimeout(() => {
       const targetCellKey = `${targetItemId}-${targetField}`;
+      console.log('🔑 looking for cell:', targetCellKey);
       
       // Try multiple selection strategies
       let targetElement: HTMLElement | null = null;
@@ -85,11 +87,14 @@ export const useRundownUIState = (
       }
       
       if (targetElement && typeof targetElement.focus === 'function') {
+        console.log('🔑 focusing element:', targetElement);
         setEditingCell(targetCellKey);
         targetElement.focus();
         if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
           targetElement.select();
         }
+      } else {
+        console.log('🔑 target element not found:', { targetCellKey, targetElement });
       }
     }, 50);
   }, []);
@@ -136,7 +141,10 @@ export const useRundownUIState = (
       
       if (nextItemIndex < items.length) {
         const nextItemId = items[nextItemIndex].id;
+        console.log('🔑 navigating to next cell:', { nextItemId, field, nextItemIndex });
         navigateToCell(nextItemId, field);
+      } else {
+        console.log('🔑 no next item found, at end of list');
       }
     } else if (key === 'ArrowUp') {
       event.preventDefault();
@@ -149,7 +157,10 @@ export const useRundownUIState = (
       
       if (prevItemIndex >= 0) {
         const prevItem = items[prevItemIndex];
+        console.log('🔑 navigating to prev cell:', { prevItemId: prevItem.id, field, prevItemIndex });
         navigateToCell(prevItem.id, field);
+      } else {
+        console.log('🔑 no prev item found, at start of list');
       }
     } else if (key === 'Tab') {
       event.preventDefault();
