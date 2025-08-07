@@ -86,11 +86,11 @@ export const useRundownUIState = (
         console.log('🔑 Strategy 2 result:', targetElement);
       }
       
-      // Strategy 3: Use cellRefs as fallback
+      // Strategy 3: Use cellRefs as fallback (accept any element type, we'll handle it)
       if (!targetElement) {
         const refElement = cellRefs.current[targetCellKey];
-        if (refElement && (refElement.tagName === 'TEXTAREA' || refElement.tagName === 'INPUT')) {
-          targetElement = refElement;
+        if (refElement) {
+          targetElement = refElement as any; // Accept div or input/textarea
         }
         console.log('🔑 Strategy 3 result:', targetElement);
       }
@@ -98,8 +98,23 @@ export const useRundownUIState = (
       if (targetElement && typeof targetElement.focus === 'function') {
         console.log('🔑 focusing element:', targetElement.tagName, targetElement);
         setEditingCell(targetCellKey);
-        targetElement.focus();
-        targetElement.select();
+        
+        // If it's a div (display mode), click it to enter editing mode first
+        if (targetElement.tagName === 'DIV') {
+          targetElement.click();
+          // Wait a bit for the editing mode to activate, then try to find the textarea
+          setTimeout(() => {
+            const textareaElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLTextAreaElement;
+            if (textareaElement && textareaElement.tagName === 'TEXTAREA') {
+              textareaElement.focus();
+              textareaElement.select();
+            }
+          }, 50);
+        } else {
+          // It's already an input/textarea, focus directly
+          targetElement.focus();
+          targetElement.select();
+        }
       } else {
         console.log('🔑 target element not found or not focusable:', { targetCellKey, targetElement });
       }
