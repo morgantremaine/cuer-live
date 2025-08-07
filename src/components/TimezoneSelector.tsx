@@ -20,6 +20,7 @@ interface TimezoneSelectorProps {
 
 const timezones = [
   { value: 'America/Los_Angeles', label: 'Los Angeles (UTC-8)' },
+  { value: 'America/Los_Angeles', label: 'Las Vegas (UTC-8)' },
   { value: 'America/Denver', label: 'Denver (UTC-7)' },
   { value: 'America/Chicago', label: 'Chicago (UTC-6)' },
   { value: 'America/New_York', label: 'New York (UTC-5)' },
