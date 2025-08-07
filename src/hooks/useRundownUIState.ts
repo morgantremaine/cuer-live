@@ -99,10 +99,10 @@ export const useRundownUIState = (
         console.log('🔑 focusing element:', targetElement.tagName, targetElement);
         setEditingCell(targetCellKey);
         
-        // If it's a div (display mode), click it to enter editing mode first
+        // If it's a div (display mode), click it to enter editing mode
         if (targetElement.tagName === 'DIV') {
           targetElement.click();
-          // Wait a bit for the editing mode to activate, then try to find the textarea
+          // Wait for the editing mode to activate, then focus the textarea
           setTimeout(() => {
             const textareaElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLTextAreaElement;
             if (textareaElement && textareaElement.tagName === 'TEXTAREA') {
