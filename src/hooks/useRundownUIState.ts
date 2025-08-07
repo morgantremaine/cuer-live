@@ -121,6 +121,7 @@ export const useRundownUIState = (
     field: string,
     itemIndex: number
   ) => {
+    console.log('🔑 handleKeyDown called:', { key: event.key, itemId, field, itemIndex });
     const { key, shiftKey } = event;
     
     // Handle navigation keys
