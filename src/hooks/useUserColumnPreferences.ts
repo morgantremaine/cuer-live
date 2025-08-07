@@ -227,18 +227,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       col.isCustom && !existingCustomKeys.has(col.key)
     );
 
-    // Check if any team custom columns were deleted (not just hidden)
-    // We should only delete team columns if they're actually being removed, not just hidden
+    // Check if any team custom columns were deleted
     const newColumnKeys = new Set(newColumns.map(col => col.key));
-    const hiddenColumnKeys = new Set(
-      columns.filter(col => col.isVisible === false).map(col => col.key)
-    );
-    
     const deletedTeamColumns = columns.filter(col => 
       col.isCustom && 
       (col as any).isTeamColumn && 
-      !newColumnKeys.has(col.key) &&
-      !hiddenColumnKeys.has(col.key) // Don't delete if it's just hidden
+      !newColumnKeys.has(col.key)
     );
 
     // Add new custom columns to team_custom_columns table

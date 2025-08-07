@@ -8,9 +8,7 @@ export const useRundownUIState = (
   visibleColumns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
   setColumns: (columns: Column[]) => void,
-  columns: Column[],
-  saveUndoState?: (items: RundownItem[], columns: Column[], title: string, action: string) => void,
-  title?: string
+  columns: Column[]
 ) => {
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<string | null>(null);
@@ -22,12 +20,9 @@ export const useRundownUIState = (
   }, []);
 
   const selectColor = useCallback((id: string, color: string) => {
-    if (saveUndoState && title !== undefined) {
-      saveUndoState(items, columns, title, 'Change row color');
-    }
     updateItem(id, 'color', color);
     setShowColorPicker(null);
-  }, [updateItem, saveUndoState, items, columns, title]);
+  }, [updateItem]);
 
   const getRowStatus = useCallback((item: RundownItem): 'upcoming' | 'current' | 'completed' | 'header' => {
     if (item.status) {

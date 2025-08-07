@@ -12,9 +12,7 @@ export const useRundownUIManager = (
   columns: Column[],
   updateItem: (id: string, field: string, value: string) => void,
   markAsChanged: () => void,
-  handleUpdateColumnWidth?: (columnId: string, width: number) => void,
-  saveUndoState?: (items: any[], columns: Column[], title: string, action: string) => void,
-  title?: string
+  handleUpdateColumnWidth?: (columnId: string, width: number) => void
 ) => {
   // Debounced markAsChanged to prevent rapid auto-save during resize
   const markAsChangedTimeoutRef = useRef<NodeJS.Timeout>();
@@ -79,13 +77,10 @@ export const useRundownUIManager = (
 
   // Color selection function
   const selectColor = useCallback((id: string, color: string) => {
-    if (saveUndoState && title !== undefined) {
-      saveUndoState(regularItems, columns, title, 'Change row color');
-    }
     updateItem(id, 'color', color);
     // Close the color picker after selection
     closeColorPicker();
-  }, [updateItem, closeColorPicker, saveUndoState, regularItems, columns, title]);
+  }, [updateItem, closeColorPicker]);
 
   // Cleanup timeout on unmount
   const cleanup = useCallback(() => {

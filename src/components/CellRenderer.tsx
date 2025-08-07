@@ -1,7 +1,6 @@
 
 import React from 'react';
 import TextAreaCell from './cells/TextAreaCell';
-import HyperlinkTextCell from './cells/HyperlinkTextCell';
 import TimeDisplayCell from './cells/TimeDisplayCell';
 import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
@@ -150,35 +149,16 @@ const CellRenderer = ({
     );
   }
 
-  // Use HyperlinkTextCell for fields that may contain URLs, TextAreaCell for duration
-  if (column.key === 'duration') {
-    return (
-      <TextAreaCell
-        value={value}
-        itemId={item.id}
-        cellRefKey={column.key}
-        cellRefs={cellRefs}
-        textColor={textColor}
-        backgroundColor={backgroundColor}
-        isDuration={true}
-        onUpdateValue={(newValue) => {
-          onUpdateItem(item.id, column.key, newValue);
-        }}
-        onCellClick={(e) => onCellClick(item.id, column.key)}
-        onKeyDown={onKeyDown}
-      />
-    );
-  }
-
-  // Use HyperlinkTextCell for ALL other editable fields to enable URL detection
+  // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (
-    <HyperlinkTextCell
+    <TextAreaCell
       value={value}
       itemId={item.id}
       cellRefKey={column.key}
       cellRefs={cellRefs}
-      textColor={showcallerTextColor}
-      backgroundColor={showcallerBackgroundColor}
+      textColor={textColor}
+      backgroundColor={backgroundColor}
+      isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

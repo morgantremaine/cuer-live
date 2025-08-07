@@ -294,17 +294,6 @@ const SharedRundown = () => {
     }
   }, [rundownId, rundownData]);
 
-  // Set document title based on rundown name
-  useEffect(() => {
-    if (rundownData?.title) {
-      document.title = rundownData.title;
-    }
-    
-    return () => {
-      document.title = 'Cuer Live'; // Reset to default when unmounting
-    };
-  }, [rundownData?.title]);
-
   // Enhanced cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;

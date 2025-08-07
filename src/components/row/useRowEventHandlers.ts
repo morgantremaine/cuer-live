@@ -44,13 +44,7 @@ export const useRowEventHandlers = ({
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
     const isResizeHandle = target.classList.contains('resize-handle') || target.closest('.resize-handle');
     
-    // Check if clicking on editable cell content (including display divs that can enter edit mode)
-    const isEditableCell = target.hasAttribute('data-cell-id') || 
-                          target.closest('[data-cell-id]') ||
-                          target.contentEditable === 'true' ||
-                          target.closest('[contenteditable="true"]');
-    
-    if (isInput || isResizeHandle || isEditableCell) {
+    if (isInput || isResizeHandle) {
       return;
     }
     

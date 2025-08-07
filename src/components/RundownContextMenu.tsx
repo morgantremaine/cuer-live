@@ -125,17 +125,12 @@ const RundownContextMenu = memo(({
         <ContextMenuTrigger 
           asChild 
           disabled={(() => {
-            // Check if we're currently focused on editable content
             const activeElement = document.activeElement as HTMLElement;
-            if (activeElement) {
-              return activeElement.tagName === 'INPUT' || 
-                     activeElement.tagName === 'TEXTAREA' || 
-                     activeElement.isContentEditable ||
-                     !!activeElement.closest('input') ||
-                     !!activeElement.closest('textarea') ||
-                     !!activeElement.closest('[contenteditable="true"]');
-            }
-            return false;
+            return activeElement && (
+              activeElement.tagName === 'INPUT' || 
+              activeElement.tagName === 'TEXTAREA' || 
+              activeElement.isContentEditable
+            );
           })()}
         >
           {children}
