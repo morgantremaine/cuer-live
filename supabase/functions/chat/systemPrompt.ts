@@ -279,7 +279,7 @@ RUNDOWN IDENTIFICATION:
 - When user says "row 6" they mean row 6 of THIS current rundown
 
 CURRENT RUNDOWN DATA:
-${rundownData ? formatAsPlainText(rundownData) : 'No rundown data provided - you cannot make modifications without rundown context'}
+${rundownData ? formatAsPlainText(rundownData) : '⚠️ ERROR: No rundown data provided! You MUST inform the user that you cannot see the current rundown and cannot make any modifications. Ask them to ensure they are on a rundown page and try again.'}
 
 🔒 SCOPE LIMITATION:
 - Your modifications apply ONLY to the rundown data shown above
@@ -291,7 +291,15 @@ REMEMBER: Do not generate or simulate code, JSON, or structured data in your res
 
 function formatAsPlainText(data: any): string {
   try {
+    console.log('formatAsPlainText received data:', {
+      type: typeof data,
+      isArray: Array.isArray(data),
+      length: Array.isArray(data) ? data.length : 'N/A',
+      data: JSON.stringify(data).substring(0, 200) + '...'
+    });
+    
     if (!data || !Array.isArray(data)) {
+      console.log('No valid rundown data - returning error message');
       return 'No rundown data provided';
     }
     
