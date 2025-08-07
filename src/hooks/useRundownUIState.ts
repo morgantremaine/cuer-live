@@ -63,11 +63,14 @@ export const useRundownUIState = (
       const targetCellKey = `${targetItemId}-${targetField}`;
       console.log('🔑 looking for cell:', targetCellKey);
       
-      // Try multiple selection strategies
-      let targetElement: HTMLElement | null = null;
+      // Try multiple selection strategies - ensure we get input/textarea elements only
+      let targetElement: HTMLInputElement | HTMLTextAreaElement | null = null;
       
       // Strategy 1: Look for textarea/input with data attributes
-      targetElement = document.querySelector(`[data-cell-id="${targetCellKey}"]`) as HTMLElement;
+      const element1 = document.querySelector(`[data-cell-id="${targetCellKey}"]`);
+      if (element1 && (element1.tagName === 'TEXTAREA' || element1.tagName === 'INPUT')) {
+        targetElement = element1 as HTMLInputElement | HTMLTextAreaElement;
+      }
       console.log('🔑 Strategy 1 result:', targetElement);
       
       // Strategy 2: Look for elements that match the ref pattern
@@ -85,19 +88,20 @@ export const useRundownUIState = (
       
       // Strategy 3: Use cellRefs as fallback
       if (!targetElement) {
-        targetElement = cellRefs.current[targetCellKey];
+        const refElement = cellRefs.current[targetCellKey];
+        if (refElement && (refElement.tagName === 'TEXTAREA' || refElement.tagName === 'INPUT')) {
+          targetElement = refElement;
+        }
         console.log('🔑 Strategy 3 result:', targetElement);
       }
       
       if (targetElement && typeof targetElement.focus === 'function') {
-        console.log('🔑 focusing element:', targetElement);
+        console.log('🔑 focusing element:', targetElement.tagName, targetElement);
         setEditingCell(targetCellKey);
         targetElement.focus();
-        if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
-          targetElement.select();
-        }
+        targetElement.select();
       } else {
-        console.log('🔑 target element not found:', { targetCellKey, targetElement });
+        console.log('🔑 target element not found or not focusable:', { targetCellKey, targetElement });
       }
     }, 50);
   }, []);
