@@ -124,25 +124,23 @@ const RundownContextMenu = memo(({
       <ContextMenu>
         <ContextMenuTrigger 
           asChild 
-          onContextMenu={(e) => {
-            // Only allow browser context menu if text is actually selected in editable content
+          disabled={(() => {
+            // Only disable if there's selected text in an editable element
             const selection = window.getSelection();
             const hasTextSelection = selection && selection.toString().length > 0;
-            const target = e.target as HTMLElement;
-            const isEditableElement = target && (
-              target.tagName === 'INPUT' || 
-              target.tagName === 'TEXTAREA' || 
-              target.isContentEditable
-            );
             
-            // If there's selected text in an editable element, allow browser menu
-            if (hasTextSelection && isEditableElement) {
-              return; // Allow default browser context menu
+            if (hasTextSelection) {
+              const activeElement = document.activeElement as HTMLElement;
+              return activeElement && (
+                activeElement.tagName === 'INPUT' || 
+                activeElement.tagName === 'TEXTAREA' || 
+                activeElement.isContentEditable
+              );
             }
             
-            // Otherwise, prevent default and show our custom menu
-            e.preventDefault();
-          }}
+            // Never disable for non-editable areas or when no text is selected
+            return false;
+          })()}
         >
           {children}
         </ContextMenuTrigger>
