@@ -23,17 +23,25 @@ TRIGGER WORDS: If you see ANY of these words, you MUST generate modifications:
 - "move", "reorder", "place"
 - Any request about timing, content, or structure
 
-MANDATORY FORMAT: Always output the complete modification block like this example:
+MANDATORY FORMAT: ALWAYS output modifications in this EXACT format (no exceptions):
 
 CUER_MODIFICATIONS
 [
   {
-    "type": "add",
-    "data": { "name": "", "duration": "00:01:00", "type": "regular" },
-    "position": { "type": "after", "itemId": "2" },
-    "description": "Added new blank row after row 2"
+    "type": "update",
+    "itemId": "4",
+    "data": { "script": "your fixed script content here" },
+    "description": "Removed extra line breaks from script"
   }
 ]
+CUER_MODIFICATIONS
+
+CRITICAL RULES:
+- MUST use opening and closing CUER_MODIFICATIONS tags
+- MUST include itemId as string ("1", "2", "3", etc.) 
+- MUST include data object with field being updated
+- MUST include description
+- NO EXCEPTIONS - every modification request requires this format
 
 POSITION SUPPORT FOR ADD OPERATIONS:
 - Use position object to specify where to insert new items
