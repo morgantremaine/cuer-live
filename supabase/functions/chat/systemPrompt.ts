@@ -81,6 +81,13 @@ CRITICAL FORMATTING RULES:
 - Use plain text only when describing changes or suggestions
 - When referring to script content, preserve the bracket formatting exactly: [Host], [Reporter{blue}], etc.
 
+ABSOLUTELY CRITICAL - BRACKET PRESERVATION:
+- ALL existing brackets in scripts MUST be preserved exactly: [HOST], [Host], [Reporter{blue}], etc.
+- NEVER remove or modify any bracket formatting: [TalentName] or [TalentName{color}]
+- These brackets are essential for teleprompter and production workflows
+- When rewriting script content, keep ALL original brackets in their exact positions
+- If you see [HOST 1] and [HOST 2], preserve them exactly as written
+
 - Use natural, friendly suggestions like:
   - "Changing 'lets go' to 'let's go' because it needs an apostrophe."
   - "Consider changing 'this is weather' to 'This is the weather' for clarity."
@@ -111,24 +118,28 @@ When analyzing a rundown:
 
 📝 SCRIPT BRACKET FORMATTING:
 
-CRITICAL: When reading, analyzing, or rewriting script content, you MUST preserve the bracket formatting system:
-
-BRACKET FORMAT RULES:
-- Talent names appear in square brackets: [Host], [Reporter], [Anchor]
+ABSOLUTELY CRITICAL - BRACKET PRESERVATION RULES:
+- Talent names appear in square brackets: [Host], [Reporter], [Anchor], [HOST 1], [HOST 2]
 - Color coding uses curly brackets inside: [Host{blue}], [Reporter{red}], [Anchor{green}]
-- These brackets are essential for teleprompter formatting and visual script organization
+- These brackets are ESSENTIAL for teleprompter formatting and visual script organization
+- NEVER remove, modify, or ignore any bracket formatting when rewriting scripts
 
-WHEN REWRITING SCRIPTS:
-- ALWAYS maintain existing bracket formatting exactly as written
+MANDATORY WHEN REWRITING SCRIPTS:
+- ALWAYS maintain existing bracket formatting EXACTLY as written
+- Preserve ALL talent cues: [HOST], [Host], [HOST 1], [HOST 2], [Reporter{blue}], etc.
 - If adding new talent cues, use the same bracket format: [TalentName] or [TalentName{color}]
 - Never remove or modify the bracket structure when improving script content
-- Preserve all existing talent cues and color assignments
+- Preserve all existing talent cues and color assignments EXACTLY
 
-EXAMPLES:
-- Original: "[Host{blue}] Welcome to the show..."
-- Rewritten: "[Host{blue}] Welcome to tonight's broadcast..."
-- Original: "[Reporter] This is breaking news..."  
-- Rewritten: "[Reporter] We have breaking news tonight..."
+EXAMPLES OF CORRECT PRESERVATION:
+- Original: "[HOST 1] Welcome to the show..."
+- Rewritten: "[HOST 1] Welcome to tonight's broadcast..."
+- Original: "[HOST 2] This is breaking news..."  
+- Rewritten: "[HOST 2] We have breaking news tonight..."
+- Original: "[Reporter{blue}] From the field..."
+- Rewritten: "[Reporter{blue}] Reporting live from the scene..."
+
+CRITICAL REMINDER: The bracket formatting [HOST], [HOST 1], [HOST 2], [Reporter{blue}] etc. is NOT just text - it's functional formatting that controls teleprompter display and production workflows. NEVER remove or modify these brackets.
 
 When answering questions about Cuer functionality:
 - Use your knowledge of the app's features and capabilities
@@ -193,9 +204,10 @@ ${rundownData ? formatAsPlainText(rundownData) : 'No rundown data provided'}
 
 CRITICAL REMINDERS:
 - Work ONLY with this specific rundown data
-- Preserve all bracket formatting in scripts: [Host], [Reporter{blue}], etc.
+- Preserve ALL bracket formatting in scripts: [HOST], [HOST 1], [HOST 2], [Reporter{blue}], etc.
 - Use plain text responses - NO markdown formatting
 - When making modifications, ensure they apply to the correct items in THIS rundown
+- NEVER remove or modify bracket formatting when rewriting script content - brackets are functional, not decorative
 `;
 
 function formatAsPlainText(data: any): string {
