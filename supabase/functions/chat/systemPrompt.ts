@@ -295,20 +295,31 @@ function formatAsPlainText(data: any): string {
       type: typeof data,
       isArray: Array.isArray(data),
       length: Array.isArray(data) ? data.length : 'N/A',
+      hasItems: data?.items ? 'yes' : 'no',
+      itemsLength: data?.items ? data.items.length : 'N/A',
       data: JSON.stringify(data).substring(0, 200) + '...'
     });
     
-    if (!data || !Array.isArray(data)) {
-      console.log('No valid rundown data - returning error message');
+    // Handle both formats: direct array or rundown object with items
+    let items = data;
+    if (data && !Array.isArray(data) && data.items && Array.isArray(data.items)) {
+      items = data.items;
+    }
+    
+    if (!items || !Array.isArray(items)) {
+      console.log('No valid rundown items found');
       return 'No rundown data provided';
     }
     
     // Format as a more readable structure that preserves content boundaries
-    let output = 'RUNDOWN ITEMS:\n\n';
+    let output = `RUNDOWN: ${data.title || 'Untitled'}\n`;
+    if (data.startTime) output += `Start Time: ${data.startTime}\n`;
+    if (data.timezone) output += `Timezone: ${data.timezone}\n`;
+    output += '\nRUNDOWN ITEMS:\n\n';
     
-    data.forEach((item: any, index: number) => {
+    items.forEach((item: any, index: number) => {
       output += `=== ITEM ${index + 1} ===\n`;
-      output += `Row: ${item.rowNumber || 'N/A'}\n`;
+      output += `Row: ${item.rowNumber || index + 1}\n`;
       output += `Type: ${item.type || 'regular'}\n`;
       output += `Name: ${item.name || ''}\n`;
       output += `Talent: ${item.talent || ''}\n`;
@@ -323,7 +334,8 @@ function formatAsPlainText(data: any): string {
     });
     
     return output;
-  } catch {
+  } catch (error) {
+    console.error('Error in formatAsPlainText:', error);
     return 'Error displaying rundown data.';
   }
 }
