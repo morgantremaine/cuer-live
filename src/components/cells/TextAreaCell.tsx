@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { linkify } from '@/utils/linkify';
 
 interface TextAreaCellProps {
   value: string;
@@ -30,8 +29,6 @@ const TextAreaCell = ({
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
-  const [isFocused, setIsFocused] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -158,7 +155,6 @@ const TextAreaCell = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only handle left-clicks - right-clicks should not start editing or stop propagation
     if (e.button === 0) { // Left click
-      setShowOverlay(false);
       // Stop propagation to prevent row drag events
       e.stopPropagation();
     } else {
@@ -169,8 +165,6 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
-    setIsFocused(true);
-    setShowOverlay(false);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -180,8 +174,6 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
-    setIsFocused(false);
-    setShowOverlay(true);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -232,66 +224,19 @@ const TextAreaCell = ({
         onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        onSelect={() => setShowOverlay(false)}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${showOverlay ? 'text-transparent caret-transparent' : ''}`}
+        }`}
         style={{ 
           backgroundColor: 'transparent',
-          color: showOverlay ? 'transparent' : (textColor || 'inherit'),
+          color: textColor || 'inherit',
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
-          textAlign: isDuration ? 'center' : 'left',
-          zIndex: 2,
-          position: 'relative'
+          textAlign: isDuration ? 'center' : 'left'
         }}
       />
-      
-      {/* Overlay with clickable links when not focused */}
-      {showOverlay && value && (
-        <div 
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap overflow-hidden ${
-            isDuration ? 'font-mono' : ''
-          }`}
-          style={{ 
-            color: textColor || 'inherit',
-            height: `${calculatedHeight}px`,
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left',
-            zIndex: 1,
-            pointerEvents: 'auto'
-          }}
-          onClick={(e) => {
-            // Check if clicked on a link or its children
-            const target = e.target as HTMLElement;
-            const linkElement = target.tagName === 'A' ? target : target.closest('a');
-            if (linkElement) {
-              // Don't hide overlay or focus textarea when clicking links
-              return;
-            }
-            // Otherwise focus the textarea
-            e.preventDefault();
-            e.stopPropagation();
-            setShowOverlay(false);
-            if (textareaRef.current) {
-              textareaRef.current.focus();
-            }
-          }}
-          onMouseDown={(e) => {
-            // Check if clicked on a link or its children
-            const target = e.target as HTMLElement;
-            if (target.tagName === 'A' || target.closest('a')) {
-              e.stopPropagation(); // Don't interfere with link clicks
-              e.preventDefault(); // Prevent default mouse down behavior
-              return;
-            }
-          }}
-        >
-          {linkify(value)}
-        </div>
-      )}
     </div>
   );
 };

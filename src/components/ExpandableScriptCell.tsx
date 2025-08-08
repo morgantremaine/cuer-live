@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
-import { linkify } from '@/utils/linkify';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -321,36 +320,13 @@ const ExpandableScriptCell = ({
             {/* Styled overlay with teleprompter styling */}
             {showOverlay && (
               <div 
-                className="absolute inset-0 px-1 py-1 text-sm"
+                className="absolute inset-0 px-1 py-1 text-sm pointer-events-none"
                 style={{ 
                   color: textColor || undefined,
                   minHeight: '24px',
                   whiteSpace: 'pre-wrap',
                   wordWrap: 'break-word',
-                  zIndex: 1,
-                  pointerEvents: 'auto'
-                }}
-                onClick={(e) => {
-                  // Check if clicked on a link or its children
-                  const target = e.target as HTMLElement;
-                  if (target.tagName === 'A' || target.closest('a')) {
-                    return; // Allow link to handle click
-                  }
-                  // Otherwise focus the textarea
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowOverlay(false);
-                  if (textareaRef.current) {
-                    textareaRef.current.focus();
-                  }
-                }}
-                onMouseDown={(e) => {
-                  // Check if clicked on a link or its children
-                  const target = e.target as HTMLElement;
-                  if (target.tagName === 'A' || target.closest('a')) {
-                    e.stopPropagation(); // Don't interfere with link clicks
-                    return;
-                  }
+                  zIndex: 1
                 }}
               >
                 {value && !isNullScript(value) ? (
@@ -360,7 +336,7 @@ const ExpandableScriptCell = ({
                       fontSize: 14 
                     })
                   ) : (
-                    linkify(value)
+                    value
                   )
                 ) : (
                   <span className="text-muted-foreground">
@@ -411,28 +387,7 @@ const ExpandableScriptCell = ({
               style={{ 
                 color: textColor || undefined,
                 minHeight: '24px',
-                overflow: 'hidden',
-                pointerEvents: 'auto'
-              }}
-              onClick={(e) => {
-                // Check if clicked on a link or its children
-                const target = e.target as HTMLElement;
-                if (target.tagName === 'A' || target.closest('a')) {
-                  return; // Allow link to handle click
-                }
-                // Otherwise expand the cell
-                e.preventDefault();
-                e.stopPropagation();
-                setIsExpanded(true);
-                setShouldAutoFocus(true);
-              }}
-              onMouseDown={(e) => {
-                // Check if clicked on a link or its children
-                const target = e.target as HTMLElement;
-                if (target.tagName === 'A' || target.closest('a')) {
-                  e.stopPropagation(); // Don't interfere with link clicks
-                  return;
-                }
+                overflow: 'hidden'
               }}
             >
               {value && !isNullScript(value) ? (
@@ -456,7 +411,7 @@ const ExpandableScriptCell = ({
                       fontSize: 14 
                     })
                   ) : (
-                    linkify(value.replace(/]\s*\n\s*/g, '] '))
+                    value.replace(/]\s*\n\s*/g, '] ')
                   )}
                 </div>
               ) : (
