@@ -44,9 +44,14 @@ export const linkify = (text: string): React.ReactNode => {
         href,
         target: '_blank',
         rel: 'noopener noreferrer',
-        className: 'text-blue-600 dark:text-blue-400 hover:underline',
+        className: 'text-blue-600 dark:text-blue-400 hover:underline cursor-pointer',
         onClick: (e: React.MouseEvent) => {
-          e.stopPropagation(); // Prevent cell selection when clicking links
+          e.preventDefault();
+          e.stopPropagation();
+          window.open(href, '_blank', 'noopener,noreferrer');
+        },
+        onMouseDown: (e: React.MouseEvent) => {
+          e.stopPropagation(); // Prevent cell mouse down events
         }
       }, url)
     );

@@ -252,7 +252,7 @@ const TextAreaCell = ({
       {/* Overlay with clickable links when not focused */}
       {showOverlay && value && (
         <div 
-          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-auto overflow-hidden ${
+          className={`absolute inset-0 px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap overflow-hidden ${
             isDuration ? 'font-mono' : ''
           }`}
           style={{ 
@@ -260,17 +260,29 @@ const TextAreaCell = ({
             height: `${calculatedHeight}px`,
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left',
-            zIndex: 1
+            zIndex: 1,
+            pointerEvents: 'auto'
           }}
           onClick={(e) => {
-            // Check if clicked on a link
+            // Check if clicked on a link or its children
             const target = e.target as HTMLElement;
-            if (target.tagName === 'A') {
+            if (target.tagName === 'A' || target.closest('a')) {
               return; // Allow link to handle click
             }
             // Otherwise focus the textarea
+            e.preventDefault();
+            e.stopPropagation();
+            setShowOverlay(false);
             if (textareaRef.current) {
               textareaRef.current.focus();
+            }
+          }}
+          onMouseDown={(e) => {
+            // Check if clicked on a link or its children
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'A' || target.closest('a')) {
+              e.stopPropagation(); // Don't interfere with link clicks
+              return;
             }
           }}
         >
