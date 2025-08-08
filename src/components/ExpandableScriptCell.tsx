@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
+import { linkify } from '@/utils/linkify';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -320,13 +321,24 @@ const ExpandableScriptCell = ({
             {/* Styled overlay with teleprompter styling */}
             {showOverlay && (
               <div 
-                className="absolute inset-0 px-1 py-1 text-sm pointer-events-none"
+                className="absolute inset-0 px-1 py-1 text-sm pointer-events-auto"
                 style={{ 
                   color: textColor || undefined,
                   minHeight: '24px',
                   whiteSpace: 'pre-wrap',
                   wordWrap: 'break-word',
                   zIndex: 1
+                }}
+                onClick={(e) => {
+                  // Check if clicked on a link
+                  const target = e.target as HTMLElement;
+                  if (target.tagName === 'A') {
+                    return; // Allow link to handle click
+                  }
+                  // Otherwise focus the textarea
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                  }
                 }}
               >
                 {value && !isNullScript(value) ? (
@@ -336,7 +348,7 @@ const ExpandableScriptCell = ({
                       fontSize: 14 
                     })
                   ) : (
-                    value
+                    linkify(value)
                   )
                 ) : (
                   <span className="text-muted-foreground">
@@ -411,7 +423,7 @@ const ExpandableScriptCell = ({
                       fontSize: 14 
                     })
                   ) : (
-                    value.replace(/]\s*\n\s*/g, '] ')
+                    linkify(value.replace(/]\s*\n\s*/g, '] '))
                   )}
                 </div>
               ) : (

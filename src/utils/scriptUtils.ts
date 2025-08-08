@@ -1,4 +1,5 @@
 import React from 'react';
+import { linkify } from './linkify';
 
 export const isNullScript = (script: string): boolean => {
   const trimmed = script.trim();
@@ -43,11 +44,12 @@ export const renderScriptWithBrackets = (
 
   while ((match = bracketRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
+      const textSegment = formatText(text.slice(lastIndex, match.index));
       parts.push(
         React.createElement('span', {
           key: `text-${lastIndex}`,
           className: getFontWeight()
-        }, formatText(text.slice(lastIndex, match.index)))
+        }, linkify(textSegment))
       );
     }
 
@@ -103,15 +105,16 @@ export const renderScriptWithBrackets = (
   }
 
   if (lastIndex < text.length) {
+    const textSegment = formatText(text.slice(lastIndex));
     parts.push(
       React.createElement('span', {
         key: `text-${lastIndex}`,
         className: getFontWeight()
-      }, formatText(text.slice(lastIndex)))
+      }, linkify(textSegment))
     );
   }
 
   return parts.length > 0 ? parts : React.createElement('span', {
     className: getFontWeight()
-  }, formatText(text));
+  }, linkify(formatText(text)));
 };
