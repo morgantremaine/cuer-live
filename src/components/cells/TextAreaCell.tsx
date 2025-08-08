@@ -267,6 +267,7 @@ const TextAreaCell = ({
             // Check if clicked on a link or its children
             const target = e.target as HTMLElement;
             if (target.tagName === 'A' || target.closest('a')) {
+              e.stopPropagation(); // Stop propagation to prevent cell focus
               return; // Allow link to handle click
             }
             // Otherwise focus the textarea
@@ -282,6 +283,7 @@ const TextAreaCell = ({
             const target = e.target as HTMLElement;
             if (target.tagName === 'A' || target.closest('a')) {
               e.stopPropagation(); // Don't interfere with link clicks
+              e.preventDefault(); // Prevent default mouse down behavior
               return;
             }
           }}
