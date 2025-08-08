@@ -48,10 +48,13 @@ export const linkify = (text: string): React.ReactNode => {
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
           e.stopPropagation();
+          (e.nativeEvent as Event).stopImmediatePropagation?.();
           window.open(href, '_blank', 'noopener,noreferrer');
         },
         onMouseDown: (e: React.MouseEvent) => {
-          e.stopPropagation(); // Prevent cell mouse down events
+          e.preventDefault();
+          e.stopPropagation();
+          (e.nativeEvent as Event).stopImmediatePropagation?.();
         }
       }, url)
     );

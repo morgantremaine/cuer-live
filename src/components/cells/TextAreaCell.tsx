@@ -266,9 +266,10 @@ const TextAreaCell = ({
           onClick={(e) => {
             // Check if clicked on a link or its children
             const target = e.target as HTMLElement;
-            if (target.tagName === 'A' || target.closest('a')) {
-              e.stopPropagation(); // Stop propagation to prevent cell focus
-              return; // Allow link to handle click
+            const linkElement = target.tagName === 'A' ? target : target.closest('a');
+            if (linkElement) {
+              // Don't hide overlay or focus textarea when clicking links
+              return;
             }
             // Otherwise focus the textarea
             e.preventDefault();
