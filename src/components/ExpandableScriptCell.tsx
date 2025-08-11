@@ -329,11 +329,12 @@ const ExpandableScriptCell = ({
                   zIndex: 1
                 }}
               >
-                {value && !isNullScript(value) ? (
+                {value ? (
                   fieldType === 'script' ? (
                     renderScriptWithBrackets(value, { 
                       inlineDisplay: true, 
-                      fontSize: 14 
+                      fontSize: 14,
+                      showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
                     value
@@ -390,7 +391,7 @@ const ExpandableScriptCell = ({
                 overflow: 'hidden'
               }}
             >
-              {value && !isNullScript(value) ? (
+              {value ? (
                 <div 
                   style={{ 
                     maxWidth: '100%',
@@ -408,14 +409,17 @@ const ExpandableScriptCell = ({
                   {fieldType === 'script' ? (
                     renderScriptWithBrackets(value.replace(/]\s*\n\s*/g, '] '), { 
                       inlineDisplay: true, 
-                      fontSize: 14 
+                      fontSize: 14,
+                      showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
                     value.replace(/]\s*\n\s*/g, '] ')
                   )}
                 </div>
               ) : (
-                <span></span>
+                <span className="text-muted-foreground">
+                  {fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
+                </span>
               )}
             </div>
           </>
