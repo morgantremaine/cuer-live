@@ -417,9 +417,8 @@ const ExpandableScriptCell = ({
                   )}
                 </div>
               ) : (
-                <span className="text-muted-foreground">
-                  {fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-                </span>
+                // Only show placeholder text when collapsed and truly empty (not [null])
+                <span></span>
               )}
             </div>
           </>
