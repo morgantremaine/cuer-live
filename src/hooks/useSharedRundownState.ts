@@ -67,7 +67,7 @@ export const useSharedRundownState = () => {
     try {
       // Use the public RPC function to get shared rundown data (works for anonymous users)
       const { data, error: queryError } = await supabase
-        .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
+        .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (!mountedRef.current) return;
 
@@ -105,7 +105,7 @@ export const useSharedRundownState = () => {
         }
         setError(null);
       } else {
-        setError('Rundown not found');
+        setError('Rundown not found or not shared publicly');
         setRundownData(null);
       }
     } catch (error) {

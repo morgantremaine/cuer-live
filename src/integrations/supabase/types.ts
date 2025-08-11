@@ -762,6 +762,10 @@ export type Database = {
         Args: { rundown_uuid: string; layout_uuid: string }
         Returns: Json
       }
+      get_public_rundown_data: {
+        Args: { rundown_uuid: string }
+        Returns: Json
+      }
       get_shared_layout_for_public_rundown: {
         Args: { rundown_uuid: string }
         Returns: Json
