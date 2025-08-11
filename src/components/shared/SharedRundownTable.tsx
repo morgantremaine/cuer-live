@@ -420,14 +420,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             {isExpanded ? (
               <div className="whitespace-pre-wrap break-words text-sm">
                 {columnKey === 'script' ? 
-                  renderScriptWithBrackets(value, { inlineDisplay: false, fontSize: 14 }) : 
+                  renderScriptWithBrackets(value, { inlineDisplay: false, fontSize: 14, showNullAsText: true }) : 
                   value
                 }
               </div>
             ) : (
               <div className="truncate text-sm" title={value}>
                 {columnKey === 'script' ? 
-                  renderScriptWithBrackets(value, { inlineDisplay: true, fontSize: 14 }) : 
+                  renderScriptWithBrackets(value, { inlineDisplay: true, fontSize: 14, showNullAsText: true }) : 
                   value
                 }
               </div>

@@ -10,6 +10,7 @@ export interface BracketParseOptions {
   isBold?: boolean;
   fontSize?: number;
   inlineDisplay?: boolean; // For script column vs teleprompter
+  showNullAsText?: boolean; // Show [null] as text instead of hiding it
 }
 
 export const renderScriptWithBrackets = (
@@ -20,10 +21,11 @@ export const renderScriptWithBrackets = (
     isUppercase = false, 
     isBold = false, 
     fontSize = 16, 
-    inlineDisplay = false 
+    inlineDisplay = false,
+    showNullAsText = false
   } = options;
 
-  if (isNullScript(text)) {
+  if (isNullScript(text) && !showNullAsText) {
     return null;
   }
 
