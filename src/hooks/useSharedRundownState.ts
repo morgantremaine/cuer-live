@@ -65,11 +65,9 @@ export const useSharedRundownState = () => {
     isLoadingRef.current = true;
 
     try {
+      // Use the public RPC function to get shared rundown data (works for anonymous users)
       const { data, error: queryError } = await supabase
-        .from('rundowns')
-        .select('id, title, items, columns, start_time, timezone, showcaller_state, created_at, updated_at, visibility')
-        .eq('id', rundownId)
-        .single();
+        .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
 
       if (!mountedRef.current) return;
 
