@@ -34,7 +34,7 @@ export const useShowcallerInitialState = ({
         .from('rundowns')
         .select('showcaller_state')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('📺 Error loading initial showcaller state:', error);

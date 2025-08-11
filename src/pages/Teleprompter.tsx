@@ -95,7 +95,7 @@ const Teleprompter = () => {
         .from('rundowns')
         .select('id, title, items, columns, created_at, updated_at')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (queryError) {
         console.error('Database error:', queryError);

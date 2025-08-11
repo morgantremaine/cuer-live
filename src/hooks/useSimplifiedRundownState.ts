@@ -217,7 +217,7 @@ export const useSimplifiedRundownState = () => {
             .from('rundowns')
             .select('*')
             .eq('id', rundownId)
-            .single();
+            .maybeSingle();
 
           if (error) {
             console.error('Error loading rundown:', error);

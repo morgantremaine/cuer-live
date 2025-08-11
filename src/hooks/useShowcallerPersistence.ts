@@ -66,7 +66,7 @@ export const useShowcallerPersistence = ({
         .from('rundowns')
         .select('showcaller_state')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('📺 Error loading showcaller state:', error);

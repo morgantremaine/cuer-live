@@ -39,7 +39,7 @@ export const useBlueprintPersistence = (
         .from('rundowns')
         .select('team_id')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (rundownError) {
         console.error('📋 Error fetching rundown data:', rundownError);
@@ -123,7 +123,7 @@ export const useBlueprintPersistence = (
         .from('rundowns')
         .select('team_id')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (rundownError) {
         console.error('📋 Error fetching rundown for save:', rundownError);
@@ -256,7 +256,7 @@ export const useBlueprintPersistence = (
         .from('rundowns')
         .select('team_id')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (rundownError) {
         console.error('📋 Error fetching rundown for partial save:', rundownError);

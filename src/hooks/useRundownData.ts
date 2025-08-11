@@ -45,7 +45,7 @@ export const useRundownData = () => {
         .from('rundowns')
         .select('id, title, items, columns, start_time, timezone, visibility')
         .eq('id', rundownId)
-        .single();
+        .maybeSingle();
 
       if (queryError) {
         if (queryError.code === 'PGRST116') {
@@ -65,6 +65,9 @@ export const useRundownData = () => {
           visibility: rundownData.visibility || 'private'
         });
         setError(null);
+      } else {
+        setError('Rundown not found');
+        setData(null);
       }
     } catch (error) {
       logger.error(`Failed to load rundown data: ${error instanceof Error ? error.message : 'Unknown error'}`);
