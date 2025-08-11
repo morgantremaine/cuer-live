@@ -72,6 +72,18 @@ export const useShowcallerTiming = ({
     const useUniversalTime = isTimeSynced && timeDifference < 3600000; // 1 hour tolerance
     
     const timeToUse = useUniversalTime ? universalTime : browserTime;
+    
+    // Validate timeToUse before using with formatInTimeZone (fix for date-fns-tz v3)
+    if (!timeToUse || isNaN(timeToUse) || timeToUse <= 0) {
+      console.warn('⚠️ Invalid time value in useShowcallerTiming:', timeToUse);
+      return {
+        isOnTime: false,
+        isAhead: false,
+        timeDifference: '00:00:00',
+        isVisible: false
+      };
+    }
+    
     const currentTimeString = formatInTimeZone(timeToUse, timezone, 'HH:mm:ss');
     const currentTimeSeconds = timeToSeconds(currentTimeString);
     const rundownStartSeconds = timeToSeconds(rundownStartTime);
