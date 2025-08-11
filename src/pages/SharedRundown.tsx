@@ -34,13 +34,6 @@ const checkSharedLayoutExists = async (rundownId: string) => {
     .select('*')
     .eq('rundown_id', rundownId);
   
-  // Additional debugging - check if rundown exists and its visibility
-  const { data: rundownData, error: rundownError } = await supabase
-    .from('rundowns')
-    .select('id, visibility, title')
-    .eq('id', rundownId)
-    .single();
-  
   return { data, error };
 };
 
