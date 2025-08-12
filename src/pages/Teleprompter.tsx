@@ -200,8 +200,8 @@ const Teleprompter = () => {
       if (text.trim().toLowerCase() === '[null]') {
         return '';
       }
-      // Remove bracket formatting for print - just keep the text inside brackets
-      const cleanText = text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, '$1');
+      // Keep brackets but remove color indicators: [Caster{blue}] becomes [Caster]
+      const cleanText = text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, '[$1]');
       return formatText(cleanText);
     };
 
