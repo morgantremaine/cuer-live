@@ -51,20 +51,15 @@ const JoinTeam = () => {
     return 'A team member';
   };
 
-  // Store invitation token in localStorage when page loads
+  // Store invitation token in localStorage and load invitation data
   useEffect(() => {
     console.log('Token from useParams:', token);
     console.log('Type of token:', typeof token);
     
-    if (token && token !== 'undefined') {
-      console.log('Storing invitation token in localStorage:', token);
-      localStorage.setItem('pendingInvitationToken', token);
-    } else {
+    if (!token || token === 'undefined') {
       console.error('Invalid token received:', token);
-      console.log('Removing any existing token from localStorage');
       localStorage.removeItem('pendingInvitationToken');
       
-      // If we have an invalid token, redirect to login with an error message
       toast({
         title: 'Invalid Invitation Link',
         description: 'The invitation link appears to be malformed. Please request a new invitation.',
@@ -76,15 +71,11 @@ const JoinTeam = () => {
       }, 3000);
       return;
     }
-  }, [token, navigate, toast]);
 
-  useEffect(() => {
+    console.log('Storing invitation token in localStorage:', token);
+    localStorage.setItem('pendingInvitationToken', token);
+
     const loadInvitation = async () => {
-      if (!token || token === 'undefined') {
-        console.log('No valid token provided, redirecting to login');
-        return;
-      }
-
       try {
         console.log('Loading invitation data for token:', token);
         
@@ -153,7 +144,7 @@ const JoinTeam = () => {
     };
 
     loadInvitation();
-  }, [token, navigate, toast]);
+  }, [token]); // Removed navigate and toast from dependencies to prevent loop
 
   const checkUserExists = async (emailToCheck: string) => {
     try {
@@ -195,7 +186,7 @@ const JoinTeam = () => {
       setInvitationProcessed(true);
       handleAcceptInvitation();
     }
-  }, [user, invitation, invitationProcessed, isProcessing]);
+  }, [user?.id, invitation?.id, invitationProcessed, isProcessing]); // Use specific IDs to prevent unnecessary re-renders
 
   const handleAcceptInvitation = async () => {
     if (!token || isProcessing) return;
