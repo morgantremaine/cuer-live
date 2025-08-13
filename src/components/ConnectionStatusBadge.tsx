@@ -21,54 +21,51 @@ const ConnectionStatusBadge = ({
     if (isProcessing) {
       return {
         color: 'text-blue-500',
-        bgColor: 'bg-blue-500/20 border border-blue-500/30',
+        bgColor: 'bg-blue-500/10',
         label: 'Syncing...',
-        title: 'Syncing changes with team',
-        useAnimated: true
+        title: 'Syncing changes with team'
       };
     } else if (isConnected) {
       return {
         icon: Wifi,
-        color: 'text-emerald-500',
-        bgColor: 'bg-emerald-500/15 border border-emerald-500/25',
+        color: 'text-green-500',
+        bgColor: 'bg-green-500/10',
         label: 'Live',
-        title: 'Connected - real-time collaboration active',
-        useAnimated: false
+        title: 'Connected - real-time collaboration active'
       };
     } else {
       return {
         icon: WifiOff,
-        color: 'text-red-500',
-        bgColor: 'bg-red-500/10 border border-red-500/20',
+        color: 'text-gray-500',
+        bgColor: 'bg-gray-500/10',
         label: 'Offline',
-        title: 'Disconnected - changes will not sync in real-time',
-        useAnimated: false
+        title: 'Disconnected - changes will not sync in real-time'
       };
     }
   };
 
-  const { icon: Icon, color, bgColor, label, title, useAnimated } = getStatusConfig();
+  const { icon: Icon, color, bgColor, label, title } = getStatusConfig();
 
   return (
     <div 
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all duration-300',
+        'flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all',
         bgColor,
         color,
         className
       )}
       title={title}
     >
-      {useAnimated ? (
+      {isProcessing ? (
         <AnimatedWifiIcon 
-          className={cn(color, "drop-shadow-sm")}
+          className={color}
           isAnimating={true}
         />
       ) : Icon ? (
-        <Icon className={cn("h-3 w-3 drop-shadow-sm", isConnected && "animate-pulse")} />
+        <Icon className="h-3 w-3" />
       ) : null}
       {showLabel && (
-        <span className="hidden sm:inline font-semibold">{label}</span>
+        <span className="hidden sm:inline">{label}</span>
       )}
     </div>
   );

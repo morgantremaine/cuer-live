@@ -32,8 +32,9 @@ export const useSimplifiedRundownState = () => {
   // Force re-render mechanism for realtime updates
   const [realtimeUpdateCounter, setRealtimeUpdateCounter] = useState(0);
   const forceRealtimeUpdate = useCallback(() => {
-    setRealtimeUpdateCounter(prev => prev + 1);
-    console.log('🔄 Force realtime update triggered:', Date.now());
+    const newCounter = Date.now();
+    console.log('🔄 Force realtime update triggered:', newCounter);
+    setRealtimeUpdateCounter(newCounter);
   }, []);
 
   // Typing session tracking
@@ -101,8 +102,14 @@ export const useSimplifiedRundownState = () => {
         
         // Force fresh state references to ensure React detects the change
         const freshItems = Array.isArray(updatedRundown.items) 
-          ? updatedRundown.items.map(item => ({ ...item })) // Deep clone items
+          ? updatedRundown.items.map((item, index) => ({ 
+              ...item, 
+              __realtimeKey: `${item.id}_${Date.now()}_${index}` // Force React re-render
+            }))
           : [];
+        
+        // Force re-render BEFORE state update to invalidate all memoized values
+        forceRealtimeUpdate();
         
         // Load state WITHOUT any showcaller data
         actions.loadState({
@@ -112,9 +119,6 @@ export const useSimplifiedRundownState = () => {
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
         });
-        
-        // Force re-render to ensure UI updates
-        forceRealtimeUpdate();
         
         console.log('🔄 Realtime update applied with fresh references, item count:', freshItems.length);
       } else {
@@ -313,15 +317,19 @@ export const useSimplifiedRundownState = () => {
       return [];
     }
     
+    console.log('🔄 calculatedItems: recalculating with', state.items.length, 'items, counter:', realtimeUpdateCounter);
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    console.log('🔄 calculatedItems: calculated', calculated.length, 'items');
     return calculated;
-  }, [state.items, state.startTime, realtimeUpdateCounter]);
+  }, [state.items, state.startTime, state.lastChanged, realtimeUpdateCounter]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
+    console.log('🔄 totalRuntime: recalculating with', state.items.length, 'items, counter:', realtimeUpdateCounter);
     const runtime = calculateTotalRuntime(state.items);
+    console.log('🔄 totalRuntime: calculated runtime:', runtime);
     return runtime;
-  }, [state.items, realtimeUpdateCounter]);
+  }, [state.items, state.lastChanged, realtimeUpdateCounter]);
 
   // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
@@ -374,12 +382,12 @@ export const useSimplifiedRundownState = () => {
   const getHeaderDuration = useCallback((index: number) => {
     if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
     return calculateHeaderDuration(state.items, index);
-  }, [state.items]);
+  }, [state.items, state.lastChanged, realtimeUpdateCounter]);
 
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
     return calculatedItems[index].calculatedRowNumber;
-  }, [calculatedItems]);
+  }, [calculatedItems, realtimeUpdateCounter]);
 
   const handleRowSelection = useCallback((itemId: string) => {
     setSelectedRowId(prev => {
@@ -486,9 +494,10 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
-    // Realtime connection status
+    // Realtime connection status and invalidation key
     isConnected,
     isProcessingRealtimeUpdate: optimizedRealtime.isProcessingUpdate,
+    realtimeUpdateCounter, // Critical: This forces React components to re-render
     
     // Calculations
     totalRuntime,
