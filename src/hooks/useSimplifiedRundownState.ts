@@ -85,8 +85,11 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
+      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
+      
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
+        console.log('📊 APPLYING realtime update to state');
         // Load state WITHOUT any showcaller data
         actions.loadState({
           items: updatedRundown.items || [],
@@ -95,6 +98,8 @@ export const useSimplifiedRundownState = () => {
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
         });
+      } else {
+        console.log('⏸️ SKIPPING realtime update due to active save operation');
       }
     }, [actions, isSaving]),
     enabled: !!rundownId,  // Enable as soon as we have a rundown ID
