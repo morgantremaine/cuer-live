@@ -81,6 +81,7 @@ export const useRealtimeRundown = ({
     const oldData = payload.old;
     
     if (!oldData || !newData) {
+      console.log('🔍 isShowcallerOnlyUpdate: Missing data, returning false', { hasOld: !!oldData, hasNew: !!newData });
       return false;
     }
 
@@ -96,11 +97,16 @@ export const useRealtimeRundown = ({
         const oldItemsStr = JSON.stringify(oldData.items || []);
         const newItemsStr = JSON.stringify(newData.items || []);
         if (oldItemsStr !== newItemsStr) {
+          console.log('🔍 Content change detected in items field');
           hasContentChanges = true;
           break;
         }
       } else {
         if (oldData[field] !== newData[field]) {
+          console.log(`🔍 Content change detected in ${field} field:`, {
+            old: oldData[field],
+            new: newData[field]
+          });
           hasContentChanges = true;
           break;
         }
@@ -109,7 +115,14 @@ export const useRealtimeRundown = ({
     
     const showcallerStateChanged = JSON.stringify(oldData.showcaller_state || {}) !== JSON.stringify(newData.showcaller_state || {});
     
-    return !hasContentChanges && showcallerStateChanged;
+    const result = !hasContentChanges && showcallerStateChanged;
+    console.log('🔍 isShowcallerOnlyUpdate result:', {
+      hasContentChanges,
+      showcallerStateChanged,
+      isShowcallerOnly: result
+    });
+    
+    return result;
   }, []);
 
   // Function to track our own updates with normalized timestamps
@@ -289,6 +302,12 @@ export const useRealtimeRundown = ({
             id: payload.new?.id,
             timestamp: payload.new?.updated_at,
             showcallerOnly: payload.new?.showcaller_state !== payload.old?.showcaller_state
+          });
+          console.log('📡 Full payload data:', {
+            old: payload.old ? Object.keys(payload.old) : 'null',
+            new: payload.new ? Object.keys(payload.new) : 'null',
+            hasItems: !!payload.new?.items,
+            itemsCount: payload.new?.items?.length || 0
           });
           handleRealtimeUpdate(payload);
         }
