@@ -67,13 +67,16 @@ export const useRundownStorage = () => {
 
     // Set a debounce timeout
     loadTimeoutRef.current = setManagedTimeout(async () => {
-      if (isLoadingRef.current) return;
+      if (isLoadingRef.current) {
+        console.log('🔒 useRundownStorage: Already loading, skipping');
+        return;
+      }
       
       isLoadingRef.current = true;
       lastLoadedUserRef.current = user.id;
       lastLoadedTeamRef.current = teamId;
       
-      console.log('Loading rundowns from database for user:', user.id);
+      console.log('Loading rundowns from database for user:', user.id, 'teamId:', teamId);
       setLoading(true);
 
       try {
@@ -91,11 +94,12 @@ export const useRundownStorage = () => {
         }));
 
         setSavedRundowns(rundowns);
-        console.log('Loaded rundowns from database:', rundowns.length);
+        console.log('✅ useRundownStorage: Loaded rundowns from database:', rundowns.length);
       } catch (error) {
-        console.error('Error loading rundowns:', error);
+        console.error('❌ useRundownStorage: Error loading rundowns:', error);
         setSavedRundowns([]);
       } finally {
+        console.log('✅ useRundownStorage: Setting loading to false');
         setLoading(false);
         isLoadingRef.current = false;
       }

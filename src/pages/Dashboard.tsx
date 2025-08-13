@@ -292,6 +292,16 @@ const Dashboard = () => {
 
   // Show loading skeleton if we haven't loaded data yet OR if actively loading
   const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
+  
+  console.log('🔍 Dashboard loading state check:', {
+    hasInitiallyLoaded,
+    loading,
+    savedRundownsLength: savedRundowns.length,
+    teamLoading,
+    shouldShowLoadingSkeleton,
+    user: !!user,
+    teamId: !!teamId
+  });
 
   if (shouldShowLoadingSkeleton) {
     return (
