@@ -15,6 +15,14 @@ export const useCleanRundownState = () => {
   // Core rundown state - the single source of truth
   const coreState = useSimplifiedRundownState();
   
+  console.log('🔄 useCleanRundownState render:', {
+    itemsLength: coreState.items.length,
+    rundownId: coreState.rundownId,
+    timestamp: Date.now(),
+    isLoading: coreState.isLoading,
+    isSaving: coreState.isSaving
+  });
+  
   // Showcaller visual state - completely separate system
   const showcallerVisual = useShowcallerVisualState({
     items: coreState.items,

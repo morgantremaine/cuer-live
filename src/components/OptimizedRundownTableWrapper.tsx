@@ -66,6 +66,12 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   visibleItems,
   ...restProps
 }) => {
+  console.log('🔄 OptimizedRundownTableWrapper render:', { 
+    itemsLength: items.length,
+    visibleItemsLength: visibleItems.length,
+    timestamp: Date.now()
+  });
+
   // Use memoized calculations - use ORIGINAL items for correct calculations
   const {
     itemsWithStatus,
