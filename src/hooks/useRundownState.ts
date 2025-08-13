@@ -130,12 +130,22 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, hasUnsavedChanges: false };
 
     case 'LOAD_STATE':
-      return {
+      console.log('🔥 LOAD_STATE action dispatched:', { 
+        payload: action.payload, 
+        currentItems: state.items.length,
+        newItems: action.payload.items?.length || 'unchanged'
+      });
+      const newState = {
         ...state,
         ...action.payload,
         hasUnsavedChanges: false,
-        lastChanged: 0
+        lastChanged: Date.now() // Force change detection
       };
+      console.log('🔥 LOAD_STATE new state:', { 
+        itemsCount: newState.items.length,
+        lastChanged: newState.lastChanged 
+      });
+      return newState;
 
     default:
       return state;
