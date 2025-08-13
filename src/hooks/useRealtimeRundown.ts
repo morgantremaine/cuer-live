@@ -161,6 +161,10 @@ export const useRealtimeRundown = ({
     // Skip if this update originated from this user (using normalized timestamp)
     const isOwnUpdate = ownUpdateTrackingRef.current.has(normalizedTimestamp);
     if (isOwnUpdate) {
+      console.log('⏭️ Skipping own realtime update (this is correct behavior):', {
+        timestamp: normalizedTimestamp,
+        userId: user?.id
+      });
       return;
     }
 
