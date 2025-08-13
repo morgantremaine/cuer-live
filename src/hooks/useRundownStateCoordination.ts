@@ -22,7 +22,8 @@ export const useRundownStateCoordination = () => {
   const performanceOptimization = useRundownPerformanceOptimization({
     items: simplifiedState.items,
     columns: simplifiedState.columns,
-    startTime: simplifiedState.rundownStartTime
+    startTime: simplifiedState.rundownStartTime,
+    realtimeUpdateCounter: simplifiedState.realtimeUpdateCounter
   });
 
   // Autoscroll state with localStorage persistence
