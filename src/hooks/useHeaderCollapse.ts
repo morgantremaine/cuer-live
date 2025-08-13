@@ -9,7 +9,7 @@ export interface HeaderGroup {
   endIndex: number;
 }
 
-export const useHeaderCollapse = (items: RundownItem[]) => {
+export const useHeaderCollapse = (items: RundownItem[], realtimeUpdateCounter?: number) => {
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
 
   // Group items by their headers
@@ -68,7 +68,7 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
       // If no group found or group is not collapsed, show the item
       return !group || !collapsedHeaders.has(group.header.id);
     });
-  }, [items, collapsedHeaders, headerGroups]);
+  }, [items, collapsedHeaders, headerGroups, realtimeUpdateCounter]);
 
   // Toggle header collapse state
   const toggleHeaderCollapse = useCallback((headerId: string) => {

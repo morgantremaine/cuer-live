@@ -104,7 +104,7 @@ export const useRundownStateCoordination = () => {
   };
 
   // Get header collapse functions from useHeaderCollapse
-  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
+  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems, simplifiedState.realtimeUpdateCounter);
 
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
