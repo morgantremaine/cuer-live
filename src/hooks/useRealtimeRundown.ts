@@ -223,6 +223,7 @@ export const useRealtimeRundown = ({
     }
 
     // Only set content processing state for REAL CONTENT CHANGES from OTHER USERS
+    console.log('🔥 APPLYING CONTENT UPDATE - Setting processing state and scheduling update');
     setIsProcessingContentUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
@@ -234,16 +235,26 @@ export const useRealtimeRundown = ({
       
       signalActivity();
       
+      console.log('🔥 EXECUTING RUNDOWN UPDATE with payload:', {
+        hasCallback: !!onRundownUpdateRef.current,
+        payloadId: payload.new?.id,
+        payloadItemsCount: payload.new?.items?.length || 0,
+        timestamp: updateData.timestamp
+      });
+      
       try {
         // Apply the rundown update (content changes only)
         onRundownUpdateRef.current(payload.new);
+        console.log('✅ Successfully called onRundownUpdate callback');
       } catch (error) {
+        console.error('❌ Error processing realtime update:', error);
         logger.error('Error processing realtime update:', error);
       }
       
       // Clear content processing state with mobile-optimized delay
       timeoutManagerRef.current.set('content-processing', () => {
         setIsProcessingContentUpdate(false);
+        console.log('🔥 Cleared content processing state');
       }, delays.contentProcessingDelay);
       
     }, delays.processingDelay);
