@@ -108,19 +108,19 @@ export const useSimplifiedRundownState = () => {
             }))
           : [];
         
-        // Force re-render BEFORE state update to invalidate all memoized values
-        forceRealtimeUpdate();
-        
-        // Load state WITHOUT any showcaller data
-        actions.loadState({
-          items: freshItems,
-          columns: [],
-          title: updatedRundown.title || 'Untitled Rundown',
-          startTime: updatedRundown.start_time || '09:00:00',
-          timezone: updatedRundown.timezone || 'America/New_York'
-        });
-        
-        console.log('🔄 Realtime update applied with fresh references, item count:', freshItems.length);
+         // Load state WITHOUT any showcaller data FIRST
+         actions.loadState({
+           items: freshItems,
+           columns: [],
+           title: updatedRundown.title || 'Untitled Rundown',
+           startTime: updatedRundown.start_time || '09:00:00',
+           timezone: updatedRundown.timezone || 'America/New_York'
+         });
+         
+         // THEN force re-render AFTER state update to ensure components see fresh data
+         forceRealtimeUpdate();
+         
+         console.log('🔄 Realtime update applied with fresh references, item count:', freshItems.length);
       } else {
         console.log('⏸️ SKIPPING realtime update due to active save operation');
       }
