@@ -33,7 +33,6 @@ class StateLoadingCoordinator {
     if (current) {
       console.log(`🔒 StateLoadingCoordinator: Queueing load from ${source} for rundown ${rundownId} (currently loading from ${current.source})`);
       this.loadingQueue.push({ rundownId, source, loader });
-      this.processQueue();
       return false;
     }
 
@@ -52,7 +51,8 @@ class StateLoadingCoordinator {
       console.error(`❌ StateLoadingCoordinator: Failed load from ${source} for rundown ${rundownId}:`, error);
     } finally {
       this.loadingStates.delete(rundownId);
-      this.processQueue();
+      // Process queue immediately after completing
+      setTimeout(() => this.processQueue(), 0);
     }
 
     return true;
@@ -64,18 +64,24 @@ class StateLoadingCoordinator {
     }
 
     this.isProcessingQueue = true;
+    console.log(`🔄 StateLoadingCoordinator: Processing queue with ${this.loadingQueue.length} items`);
 
     while (this.loadingQueue.length > 0) {
       const next = this.loadingQueue.shift();
       if (!next) break;
 
+      console.log(`🔄 StateLoadingCoordinator: Processing queued load from ${next.source} for ${next.rundownId}`);
+
       // Check if rundown is still loading
       if (!this.loadingStates.has(next.rundownId)) {
         await this.startLoading(next.rundownId, next.source, next.loader);
+      } else {
+        console.log(`⚠️ StateLoadingCoordinator: Skipping queued item - rundown ${next.rundownId} is still loading`);
       }
     }
 
     this.isProcessingQueue = false;
+    console.log(`✅ StateLoadingCoordinator: Queue processing complete`);
   }
 
   // Emergency cleanup for stuck loading states
