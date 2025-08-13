@@ -19,6 +19,7 @@ interface OptimizedRundownTableWrapperProps {
   selectedRowId: string | null;
   startTime: string;
   columnExpandState?: { [columnKey: string]: boolean };
+  realtimeUpdateCounter?: number;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
@@ -54,6 +55,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   startTime,
   currentSegmentId,
   columnExpandState,
+  realtimeUpdateCounter,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -72,7 +74,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     itemsWithStatus,
     headerDurations,
     totalCalculatedRuntime
-  } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime);
+  } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime, realtimeUpdateCounter);
 
   // Map visible item indexes to original item indexes
   const getOriginalIndex = React.useCallback((visibleIndex: number): number => {

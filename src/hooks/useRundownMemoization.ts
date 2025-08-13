@@ -17,7 +17,8 @@ export const useRundownMemoization = (
   items: RundownItem[],
   visibleColumns: Column[],
   currentSegmentId: string | null,
-  startTime: string
+  startTime: string,
+  realtimeUpdateCounter?: number
 ): MemoizedCalculations => {
   
   // Memoize expensive calculations that rarely change
@@ -104,7 +105,7 @@ export const useRundownMemoization = (
       headerDurations,
       totalCalculatedRuntime
     };
-  }, [items, currentSegmentId, startTime]);
+  }, [items, currentSegmentId, startTime, realtimeUpdateCounter]);
 
   return memoizedCalculations;
 };

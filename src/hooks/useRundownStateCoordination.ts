@@ -270,7 +270,10 @@ export const useRundownStateCoordination = () => {
       toggleHeaderCollapse,
       isHeaderCollapsed,
       getHeaderGroupItemIds,
-      visibleItems
+      visibleItems,
+      
+      // Force realtime UI updates
+      realtimeUpdateCounter: simplifiedState.realtimeUpdateCounter
     },
     interactions,
     uiState
