@@ -105,6 +105,17 @@ export const useSimplifiedRundownState = () => {
     }, [])
   });
 
+  // Debug realtime status
+  useEffect(() => {
+    console.log('🔍 Realtime Status Debug:', {
+      rundownId,
+      enabled: !!rundownId,
+      isConnected: optimizedRealtime.isConnected,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      isSaving
+    });
+  }, [rundownId, optimizedRealtime.isConnected, state.hasUnsavedChanges, isSaving]);
+
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
     if (optimizedRealtime.trackOwnUpdate) {

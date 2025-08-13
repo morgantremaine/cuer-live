@@ -243,6 +243,17 @@ export const useRealtimeRundown = ({
       hasAllRequirements: !!rundownId && !!user && enabled
     });
     
+    // Log more detailed info when connection should work but doesn't
+    if (!!rundownId && !!user && enabled) {
+      console.log('✅ All realtime requirements met - should connect');
+    } else {
+      console.log('❌ Missing realtime requirements:', {
+        missingRundownId: !rundownId,
+        missingUser: !user,
+        disabled: !enabled
+      });
+    }
+    
     // Clear any existing subscription
     if (subscriptionRef.current) {
       console.log('🔄 Clearing existing realtime subscription');
