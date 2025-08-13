@@ -465,25 +465,7 @@ export const useTeam = () => {
     }
   }, [user?.id]);
 
-  // Handle page visibility changes to prevent unnecessary reloads
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('🔄 useTeam: Page became visible - checking if reload needed');
-        // Only reload if we don't have team data and we should have it
-        if (user?.id && !team && !isCurrentlyLoading()) {
-          console.log('🔄 useTeam: Reloading team data after visibility change');
-          loadTeamData();
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user?.id, team]);
+  // REMOVED: Page visibility reload logic that was causing race conditions
 
   return {
     team,

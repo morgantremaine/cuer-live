@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
+import { useConsolidatedTeam } from '@/hooks/useConsolidatedTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 import { Column } from './useColumnsManager';
@@ -33,7 +33,7 @@ const defaultColumns: Column[] = [
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useConsolidatedTeam();
   const { teamColumns, addTeamColumn, deleteTeamColumn } = useTeamCustomColumns();
   const { startCoordinatedLoad } = useStateLoadingCoordinator(rundownId);
   const [columns, setColumns] = useState<Column[]>(defaultColumns);

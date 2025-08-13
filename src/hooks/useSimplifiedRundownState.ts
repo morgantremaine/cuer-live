@@ -4,7 +4,7 @@ import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
-import { useUserColumnPreferences } from './useUserColumnPreferences';
+import { useConsolidatedUserColumnPreferences } from './useConsolidatedUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 import { supabase } from '@/lib/supabase';
@@ -63,7 +63,7 @@ export const useSimplifiedRundownState = () => {
     setColumns,
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns
-  } = useUserColumnPreferences(rundownId);
+  } = useConsolidatedUserColumnPreferences(rundownId);
 
   // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
   const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
@@ -296,9 +296,10 @@ export const useSimplifiedRundownState = () => {
             const currentSource = getCurrentLoadingSource();
             console.log('🐛 DEBUG: Loading state from source:', currentSource, 'with items:', itemsToLoad.length);
             
-            // Alert if loading with empty items
+            // CRITICAL: Don't load empty state when we have valid items
             if (itemsToLoad.length === 0) {
-              console.warn('⚠️ WARNING: Loading rundown with empty items array! Source:', currentSource);
+              console.error('🚫 BLOCKED: Attempted to load empty rundown state! Source:', currentSource);
+              return; // Exit early, don't load empty state
             }
             
             actions.loadState({

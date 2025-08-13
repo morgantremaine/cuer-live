@@ -136,6 +136,12 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
         newItems: action.payload.items?.length || 'unchanged'
       });
       
+      // CRITICAL: Prevent empty state loads when we have valid data
+      if (action.payload.items && action.payload.items.length === 0 && state.items.length > 0) {
+        console.warn('🚫 BLOCKED: Attempted to load empty items over existing data. Current items:', state.items.length);
+        return state; // Don't change state
+      }
+      
       // Create completely fresh state references to force React re-render
       const newItems = action.payload.items ? [...action.payload.items] : [...state.items];
       const newColumns = action.payload.columns ? [...action.payload.columns] : [...state.columns];
