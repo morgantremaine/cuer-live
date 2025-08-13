@@ -4,6 +4,7 @@ interface LoadingState {
   isLoading: boolean;
   source: string;
   startedAt: number;
+  lastUpdatedAt?: string; // Track when data was last updated
 }
 
 // Global coordinator to prevent race conditions in state loading
@@ -21,12 +22,23 @@ class StateLoadingCoordinator {
     return state?.source || null;
   }
 
-  async startLoading(rundownId: string, source: string, loader: () => Promise<void>): Promise<boolean> {
+  async startLoading(rundownId: string, source: string, loader: () => Promise<void>, dataTimestamp?: string): Promise<boolean> {
     // If already loading from same source, skip
     const current = this.loadingStates.get(rundownId);
     if (current?.source === source) {
       console.log(`🔒 StateLoadingCoordinator: Skipping duplicate load from ${source} for rundown ${rundownId}`);
       return false;
+    }
+
+    // Check if we have stale data - if realtime data is newer than database load attempt, skip database load
+    if (source === 'useSimplifiedRundownState' && current?.source === 'realtime' && current.lastUpdatedAt && dataTimestamp) {
+      const realtimeTime = new Date(current.lastUpdatedAt).getTime();
+      const dbTime = new Date(dataTimestamp).getTime();
+      
+      if (realtimeTime > dbTime) {
+        console.log(`🚫 StateLoadingCoordinator: Skipping stale database load - realtime data is newer (${current.lastUpdatedAt} > ${dataTimestamp})`);
+        return false;
+      }
     }
 
     // If loading from different source, queue it
@@ -41,7 +53,8 @@ class StateLoadingCoordinator {
     this.loadingStates.set(rundownId, {
       isLoading: true,
       source,
-      startedAt: Date.now()
+      startedAt: Date.now(),
+      lastUpdatedAt: dataTimestamp
     });
 
     try {
@@ -90,6 +103,16 @@ class StateLoadingCoordinator {
     this.loadingStates.delete(rundownId);
     this.loadingQueue = this.loadingQueue.filter(item => item.rundownId !== rundownId);
   }
+
+  // Mark realtime update timestamp
+  markRealtimeUpdate(rundownId: string, timestamp: string) {
+    this.loadingStates.set(rundownId, {
+      isLoading: false,
+      source: 'realtime',
+      startedAt: Date.now(),
+      lastUpdatedAt: timestamp
+    });
+  }
 }
 
 // Global instance
@@ -100,7 +123,8 @@ export const useStateLoadingCoordinator = (rundownId: string | null) => {
 
   const startCoordinatedLoad = useCallback(async (
     source: string, 
-    loader: () => Promise<void>
+    loader: () => Promise<void>,
+    dataTimestamp?: string
   ): Promise<boolean> => {
     if (!rundownId) return false;
 
@@ -109,7 +133,7 @@ export const useStateLoadingCoordinator = (rundownId: string | null) => {
       clearTimeout(cleanupTimeoutRef.current);
     }
 
-    const wasStarted = await globalCoordinator.startLoading(rundownId, source, loader);
+    const wasStarted = await globalCoordinator.startLoading(rundownId, source, loader, dataTimestamp);
 
     // Schedule cleanup for stuck states (after 30 seconds)
     if (wasStarted) {
@@ -143,11 +167,18 @@ export const useStateLoadingCoordinator = (rundownId: string | null) => {
     }
   }, [rundownId]);
 
+  const markRealtimeUpdate = useCallback((timestamp: string) => {
+    if (rundownId) {
+      globalCoordinator.markRealtimeUpdate(rundownId, timestamp);
+    }
+  }, [rundownId]);
+
   return {
     startCoordinatedLoad,
     isLoadingFromSource,
     isCurrentlyLoading,
     getCurrentLoadingSource,
-    forceCleanup
+    forceCleanup,
+    markRealtimeUpdate
   };
 };

@@ -20,7 +20,7 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
-  const { startCoordinatedLoad, getCurrentLoadingSource, isCurrentlyLoading } = useStateLoadingCoordinator(rundownId);
+  const { startCoordinatedLoad, getCurrentLoadingSource, isCurrentlyLoading, markRealtimeUpdate } = useStateLoadingCoordinator(rundownId);
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -98,6 +98,11 @@ export const useSimplifiedRundownState = () => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
       console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
       
+      // Mark realtime data in coordinator to prevent stale database loads
+      const realtimeTimestamp = updatedRundown.updated_at || new Date().toISOString();
+      markRealtimeUpdate(realtimeTimestamp);
+      console.log('🕒 Marked realtime update timestamp:', realtimeTimestamp);
+      
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         console.log('📊 APPLYING realtime update to state');
@@ -126,7 +131,7 @@ export const useSimplifiedRundownState = () => {
       } else {
         console.log('⏸️ SKIPPING realtime update due to active save operation');
       }
-    }, [actions, isSaving, forceRealtimeUpdate]),
+    }, [actions, isSaving, forceRealtimeUpdate, markRealtimeUpdate]),
     enabled: !!rundownId,  // Enable as soon as we have a rundown ID
     hasUnsavedChanges: state.hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp: string) => {
@@ -235,7 +240,22 @@ export const useSimplifiedRundownState = () => {
         return;
       }
 
-      // Use coordinated loading to prevent race conditions
+      // First check database timestamp to avoid loading stale data
+      let dbTimestamp: string | undefined;
+      try {
+        const { data: timestampData } = await supabase
+          .from('rundowns')
+          .select('updated_at')
+          .eq('id', rundownId)
+          .maybeSingle();
+        
+        dbTimestamp = timestampData?.updated_at;
+        console.log('🕒 Database timestamp check:', dbTimestamp);
+      } catch (error) {
+        console.error('Error checking rundown timestamp:', error);
+      }
+
+      // Use coordinated loading to prevent race conditions with timestamp validation
       const wasStarted = await startCoordinatedLoad('useSimplifiedRundownState', async () => {
         setIsLoading(true);
         setCacheLoading(true);
@@ -305,7 +325,7 @@ export const useSimplifiedRundownState = () => {
         setCacheLoading(false);
         lastLoadedRundownId.current = rundownId;
       }
-      });
+      }, dbTimestamp); // Pass database timestamp for staleness check
 
       if (!wasStarted) {
         console.log('🔒 useSimplifiedRundownState: Load blocked by coordinator');
