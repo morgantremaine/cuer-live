@@ -166,11 +166,6 @@ const RundownHeader = ({
   // Helper function to render connection status icon
   const renderConnectionIcon = () => {
     // Debug logging for connection status
-    console.log('🔗 RundownHeader connection status:', {
-      isConnected,
-      isProcessingRealtimeUpdate,
-      isSaving
-    });
     
     if (isSaving) {
       return <LoaderCircle className="h-4 w-4 text-green-500 animate-spin" />;

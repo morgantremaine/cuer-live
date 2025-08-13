@@ -39,6 +39,7 @@ export const useSimplifiedRundownState = () => {
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastLoadedRundownId = useRef<string | null>(null);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -215,7 +216,7 @@ export const useSimplifiedRundownState = () => {
       if (!rundownId) return;
 
       // Check if we already have this rundown loaded to prevent reload
-      if (isInitialized && state.items.length > 0) {
+      if (isInitialized && state.items.length > 0 && lastLoadedRundownId.current === rundownId) {
         console.log('📋 Skipping reload - rundown already loaded:', rundownId);
         return;
       }
@@ -280,10 +281,11 @@ export const useSimplifiedRundownState = () => {
           startTime: '09:00:00',
           timezone: 'America/New_York'
         });
-      } finally {
+        } finally {
         setIsLoading(false);
         setIsInitialized(true);
         setCacheLoading(false);
+        lastLoadedRundownId.current = rundownId;
       }
     };
 
@@ -312,23 +314,12 @@ export const useSimplifiedRundownState = () => {
     }
     
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    console.log('🔄 calculatedItems recalculated:', { 
-      itemCount: state.items.length, 
-      calculatedCount: calculated.length,
-      realtimeCounter: realtimeUpdateCounter,
-      timestamp: Date.now()
-    });
     return calculated;
   }, [state.items, state.startTime, realtimeUpdateCounter]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
     const runtime = calculateTotalRuntime(state.items);
-    console.log('🔄 totalRuntime recalculated:', { 
-      itemCount: state.items.length, 
-      runtime,
-      realtimeCounter: realtimeUpdateCounter
-    });
     return runtime;
   }, [state.items, realtimeUpdateCounter]);
 
@@ -472,15 +463,6 @@ export const useSimplifiedRundownState = () => {
     };
   }, []);
 
-  // Debug state references on each render
-  useEffect(() => {
-    console.log('🔄 useSimplifiedRundownState render:', {
-      itemsLength: calculatedItems.length,
-      realtimeCounter: realtimeUpdateCounter,
-      timestamp: Date.now(),
-      itemsReference: calculatedItems === state.items ? 'SAME_REF' : 'NEW_REF'
-    });
-  });
 
   return {
     // Core state with calculated values
