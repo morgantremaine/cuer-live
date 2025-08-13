@@ -111,12 +111,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   getHeaderGroupItemIds,
   visibleItems
 }) => {
-  
-  console.log('🔄 RundownContent render:', { 
-    itemsLength: items.length,
-    visibleItemsLength: visibleItems.length,
-    timestamp: Date.now()
-  });
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
 

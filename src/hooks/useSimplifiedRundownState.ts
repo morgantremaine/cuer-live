@@ -28,6 +28,13 @@ export const useSimplifiedRundownState = () => {
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Force re-render mechanism for realtime updates
+  const [realtimeUpdateCounter, setRealtimeUpdateCounter] = useState(0);
+  const forceRealtimeUpdate = useCallback(() => {
+    setRealtimeUpdateCounter(prev => prev + 1);
+    console.log('🔄 Force realtime update triggered:', Date.now());
+  }, []);
 
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
@@ -90,18 +97,29 @@ export const useSimplifiedRundownState = () => {
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         console.log('📊 APPLYING realtime update to state');
+        
+        // Force fresh state references to ensure React detects the change
+        const freshItems = Array.isArray(updatedRundown.items) 
+          ? updatedRundown.items.map(item => ({ ...item })) // Deep clone items
+          : [];
+        
         // Load state WITHOUT any showcaller data
         actions.loadState({
-          items: updatedRundown.items || [],
+          items: freshItems,
           columns: [],
           title: updatedRundown.title || 'Untitled Rundown',
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
         });
+        
+        // Force re-render to ensure UI updates
+        forceRealtimeUpdate();
+        
+        console.log('🔄 Realtime update applied with fresh references, item count:', freshItems.length);
       } else {
         console.log('⏸️ SKIPPING realtime update due to active save operation');
       }
-    }, [actions, isSaving]),
+    }, [actions, isSaving, forceRealtimeUpdate]),
     enabled: !!rundownId,  // Enable as soon as we have a rundown ID
     hasUnsavedChanges: state.hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp: string) => {
@@ -286,20 +304,33 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, isInitialized, actions]);
 
-  // Calculate all derived values using pure functions - unchanged
+  // Calculate all derived values using pure functions with realtime invalidation
   const calculatedItems = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) {
+      console.log('🔄 calculatedItems: empty items array, returning []');
       return [];
     }
     
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    console.log('🔄 calculatedItems recalculated:', { 
+      itemCount: state.items.length, 
+      calculatedCount: calculated.length,
+      realtimeCounter: realtimeUpdateCounter,
+      timestamp: Date.now()
+    });
     return calculated;
-  }, [state.items, state.startTime]);
+  }, [state.items, state.startTime, realtimeUpdateCounter]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
-    return calculateTotalRuntime(state.items);
-  }, [state.items]);
+    const runtime = calculateTotalRuntime(state.items);
+    console.log('🔄 totalRuntime recalculated:', { 
+      itemCount: state.items.length, 
+      runtime,
+      realtimeCounter: realtimeUpdateCounter
+    });
+    return runtime;
+  }, [state.items, realtimeUpdateCounter]);
 
   // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
@@ -440,6 +471,16 @@ export const useSimplifiedRundownState = () => {
       }
     };
   }, []);
+
+  // Debug state references on each render
+  useEffect(() => {
+    console.log('🔄 useSimplifiedRundownState render:', {
+      itemsLength: calculatedItems.length,
+      realtimeCounter: realtimeUpdateCounter,
+      timestamp: Date.now(),
+      itemsReference: calculatedItems === state.items ? 'SAME_REF' : 'NEW_REF'
+    });
+  });
 
   return {
     // Core state with calculated values

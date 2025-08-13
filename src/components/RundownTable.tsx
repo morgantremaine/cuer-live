@@ -91,12 +91,6 @@ const RundownTable = ({
   getHeaderGroupItemIds,
   onJumpToHere
 }: RundownTableProps) => {
-  
-  console.log('🔄 RundownTable render:', { 
-    itemsLength: items.length,
-    timestamp: Date.now()
-  });
-
   // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
