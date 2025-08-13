@@ -6,6 +6,7 @@ import { useStandaloneUndo } from './useStandaloneUndo';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
+import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -19,6 +20,7 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
+  const { startCoordinatedLoad, getCurrentLoadingSource, isCurrentlyLoading } = useStateLoadingCoordinator(rundownId);
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -233,8 +235,10 @@ export const useSimplifiedRundownState = () => {
         return;
       }
 
-      setIsLoading(true);
-      setCacheLoading(true);
+      // Use coordinated loading to prevent race conditions
+      const wasStarted = await startCoordinatedLoad('useSimplifiedRundownState', async () => {
+        setIsLoading(true);
+        setCacheLoading(true);
       try {
         // Check if this is a demo rundown
         if (rundownId === DEMO_RUNDOWN_ID) {
@@ -265,8 +269,18 @@ export const useSimplifiedRundownState = () => {
               ? data.items 
               : createDefaultRundownItems();
 
-            // Load content only (columns handled by useUserColumnPreferences)
+             // Load content only (columns handled by useUserColumnPreferences)
             console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');
+            
+            // Debug: Log current loading source
+            const currentSource = getCurrentLoadingSource();
+            console.log('🐛 DEBUG: Loading state from source:', currentSource, 'with items:', itemsToLoad.length);
+            
+            // Alert if loading with empty items
+            if (itemsToLoad.length === 0) {
+              console.warn('⚠️ WARNING: Loading rundown with empty items array! Source:', currentSource);
+            }
+            
             actions.loadState({
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
@@ -291,10 +305,16 @@ export const useSimplifiedRundownState = () => {
         setCacheLoading(false);
         lastLoadedRundownId.current = rundownId;
       }
+      });
+
+      if (!wasStarted) {
+        console.log('🔒 useSimplifiedRundownState: Load blocked by coordinator');
+        setIsLoading(false);
+      }
     };
 
     loadRundown();
-  }, [rundownId]); // Remove isInitialized dependency to prevent reload
+  }, [rundownId, startCoordinatedLoad]); // Remove isInitialized dependency to prevent reload
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {

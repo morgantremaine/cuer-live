@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
+import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 
 interface Team {
   id: string;
@@ -27,6 +28,7 @@ interface PendingInvitation {
 
 export const useTeam = () => {
   const { user } = useAuth();
+  const { startCoordinatedLoad, isCurrentlyLoading } = useStateLoadingCoordinator('team');
   const [team, setTeam] = useState<Team | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
@@ -34,10 +36,9 @@ export const useTeam = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
-  const isLoadingRef = useRef(false);
 
   const loadTeamData = async () => {
-    if (!user?.id || isLoadingRef.current) {
+    if (!user?.id) {
       setIsLoading(false);
       return;
     }
@@ -48,8 +49,9 @@ export const useTeam = () => {
       return;
     }
 
-    isLoadingRef.current = true;
-    loadedUserRef.current = user.id;
+    // Use coordinated loading to prevent race conditions
+    const wasStarted = await startCoordinatedLoad('useTeam', async () => {
+      loadedUserRef.current = user.id;
 
     try {
       // Add a small delay to ensure auth state is fully established
@@ -91,7 +93,6 @@ export const useTeam = () => {
             // Retry loading team data
             setTimeout(() => {
               loadedUserRef.current = null;
-              isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
             return;
@@ -122,7 +123,6 @@ export const useTeam = () => {
             // Reload team data after successful invitation acceptance
             setTimeout(() => {
               loadedUserRef.current = null;
-              isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
             return;
@@ -159,13 +159,11 @@ export const useTeam = () => {
             setError('Failed to create team');
             // Set loading to false even on error so UI doesn't hang
             setIsLoading(false);
-            isLoadingRef.current = false;
           } else if (newTeamData) {
             console.log('Team created, reloading data...');
             // Reload team data after team creation
             setTimeout(() => {
               loadedUserRef.current = null;
-              isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
             return;
@@ -174,7 +172,6 @@ export const useTeam = () => {
             console.log('Team creation returned null, marking as complete');
             setError('Team creation failed');
             setIsLoading(false);
-            isLoadingRef.current = false;
           }
         }
       }
@@ -185,7 +182,12 @@ export const useTeam = () => {
       setUserRole(null);
     } finally {
       setIsLoading(false);
-      isLoadingRef.current = false;
+    }
+    });
+
+    if (!wasStarted) {
+      console.log('🔒 useTeam: Load blocked by coordinator');
+      setIsLoading(false);
     }
   };
 
@@ -469,7 +471,7 @@ export const useTeam = () => {
       if (document.visibilityState === 'visible') {
         console.log('🔄 useTeam: Page became visible - checking if reload needed');
         // Only reload if we don't have team data and we should have it
-        if (user?.id && !team && !isLoadingRef.current) {
+        if (user?.id && !team && !isCurrentlyLoading()) {
           console.log('🔄 useTeam: Reloading team data after visibility change');
           loadTeamData();
         }

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
+import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 import { Column } from './useColumnsManager';
 
 interface UserColumnPreferences {
@@ -34,12 +35,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const { team } = useTeam();
   const { teamColumns, addTeamColumn, deleteTeamColumn } = useTeamCustomColumns();
+  const { startCoordinatedLoad } = useStateLoadingCoordinator(rundownId);
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
-  const isLoadingRef = useRef(false);
   const loadedRundownRef = useRef<string | null>(null);
 
   // Merge team custom columns with user's column layout
@@ -83,7 +84,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
-    if (!user?.id || !rundownId || isLoadingRef.current) {
+    if (!user?.id || !rundownId) {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
       setColumns(mergedDefaults);
       setIsLoading(false);
@@ -96,8 +97,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    isLoadingRef.current = true;
-    loadedRundownRef.current = rundownId;
+    // Use coordinated loading to prevent race conditions
+    const wasStarted = await startCoordinatedLoad('useUserColumnPreferences', async () => {
+      loadedRundownRef.current = rundownId;
 
     try {
       const { data, error } = await supabase
@@ -155,9 +157,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
-      isLoadingRef.current = false;
     }
-  }, [user?.id, rundownId, mergeColumnsWithTeamColumns]);
+    });
+
+    if (!wasStarted) {
+      console.log('🔒 useUserColumnPreferences: Load blocked by coordinator');
+      setIsLoading(false);
+    }
+  }, [user?.id, rundownId, mergeColumnsWithTeamColumns, startCoordinatedLoad]);
 
   // Save column preferences with proper debouncing
   const saveColumnPreferences = useCallback(async (columnsToSave: Column[], isImmediate = false) => {
@@ -254,10 +261,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
 
     setColumns(newColumns);
-    // Only save if we're not currently loading
-    if (!isLoadingRef.current) {
-      saveColumnPreferences(newColumns, isImmediate);
-    }
+    // Always save column updates since they're user-initiated
+    saveColumnPreferences(newColumns, isImmediate);
   }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id]);
 
   // Special handler for column width updates during resize
@@ -268,9 +273,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       );
       
       // Save with debounce for resize operations
-      if (!isLoadingRef.current) {
-        saveColumnPreferences(updatedColumns, false);
-      }
+      saveColumnPreferences(updatedColumns, false);
       
       return updatedColumns;
     });
@@ -286,9 +289,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change, but only if not currently loading
+  // Update columns when team columns change
   useEffect(() => {
-    if (!isLoadingRef.current && teamColumns.length > 0 && loadedRundownRef.current) {
+    if (teamColumns.length > 0 && loadedRundownRef.current) {
       setColumns(prevColumns => mergeColumnsWithTeamColumns(prevColumns));
     }
   }, [teamColumns, mergeColumnsWithTeamColumns]);
