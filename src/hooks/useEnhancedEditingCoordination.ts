@@ -107,7 +107,13 @@ export const useEnhancedEditingCoordination = ({
   
   // Check if any field is currently being edited
   const hasActiveEditing = useCallback(() => {
-    return activeEditSessions.size > 0;
+    const hasActive = activeEditSessions.size > 0;
+    console.log('🔍 hasActiveEditing check:', { 
+      sessionCount: activeEditSessions.size, 
+      hasActive,
+      sessions: Array.from(activeEditSessions.keys()) 
+    });
+    return hasActive;
   }, [activeEditSessions]);
   
   // Set preparing save state

@@ -86,7 +86,11 @@ export const useSimplifiedRundownState = () => {
     }, 
     rundownId, 
     actions.markSaved,
-    editingCoordination
+    {
+      hasActiveEditing: editingCoordination.hasActiveEditing,
+      setPreparingSave: editingCoordination.setPreparingSave,
+      isPreparingSave: editingCoordination.isPreparingSave
+    }
   );
 
   // Standalone undo system - unchanged

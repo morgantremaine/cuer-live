@@ -13,6 +13,7 @@ export const useSimpleAutoSave = (
   editingCoordination?: {
     hasActiveEditing: () => boolean;
     setPreparingSave: (preparing: boolean) => void;
+    isPreparingSave: boolean;
   }
 ) => {
   const navigate = useNavigate();
@@ -96,22 +97,35 @@ export const useSimpleAutoSave = (
   }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
-    // Check if this is a demo rundown - skip saving but allow change detection
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      // Still mark as saved to prevent UI from showing "unsaved" state
-      if (state.hasUnsavedChanges) {
-        onSaved();
-      }
+    console.log('🔄 Auto-save effect triggered');
+    
+    if (!rundownId || rundownId === DEMO_RUNDOWN_ID) {
+      console.log('⏭️ Skipping auto-save (demo rundown)');
       return;
     }
-
+    
+    // Multi-layer blocking checks with detailed logging
+    const blockingFactors = {
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      undoActive: undoActiveRef.current,
+      userTyping: userTypingRef.current,
+      pendingSave: pendingSaveRef.current,
+      hasActiveEditing: editingCoordination?.hasActiveEditing?.() ?? false,
+      isPreparingSave: editingCoordination?.isPreparingSave ?? false,
+      hasActiveSaveOps: saveCoordination.hasActiveSaveOperations()
+    };
+    
+    console.log('🔍 Auto-save blocking check:', blockingFactors);
+    
     // Enhanced blocking conditions with editing coordination
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
         pendingSaveRef.current ||
         (editingCoordination?.hasActiveEditing?.() ?? false) ||
+        (editingCoordination?.isPreparingSave ?? false) ||
         saveCoordination.hasActiveSaveOperations()) {
+      console.log('🚫 Auto-save blocked, will retry later');
       return;
     }
 
@@ -149,6 +163,18 @@ export const useSimpleAutoSave = (
     editingCoordination?.setPreparingSave?.(true);
 
     saveTimeoutRef.current = setTimeout(async () => {
+      // Check what's blocking the save
+      const blockingFactors = {
+        isSaving,
+        undoActive: undoActiveRef.current,
+        userTyping: userTypingRef.current,
+        pendingSave: pendingSaveRef.current,
+        hasActiveEditing: editingCoordination?.hasActiveEditing?.() ?? false,
+        hasActiveSaveOps: saveCoordination.hasActiveSaveOperations()
+      };
+      
+      console.log('💾 Auto-save check:', blockingFactors);
+      
       // Final enhanced check before saving
       if (isSaving || 
           undoActiveRef.current || 
@@ -156,9 +182,12 @@ export const useSimpleAutoSave = (
           pendingSaveRef.current ||
           (editingCoordination?.hasActiveEditing?.() ?? false) ||
           saveCoordination.hasActiveSaveOperations()) {
+        console.log('🚫 Auto-save blocked by:', blockingFactors);
         editingCoordination?.setPreparingSave?.(false);
         return;
       }
+      
+      console.log('✅ Auto-save proceeding...');
       
       // Final signature check
       const finalSignature = createContentSignature();
