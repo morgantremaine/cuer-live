@@ -175,14 +175,12 @@ const RundownIndexContent = () => {
     if (isPlaying) {
       
       if (play) {
-        play(segmentId);
-        
+        play();
       }
     } else {
       
       if (coreState.jumpToSegment) {
-        coreState.jumpToSegment(segmentId);
-        
+        coreState.jumpToSegment();
       } else {
         console.error('🎯 IndexContent: jumpToSegment function not available');
       }

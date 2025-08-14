@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
-import { useOptimizedRealtime } from './useOptimizedRealtime';
+import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { supabase } from '@/lib/supabase';
@@ -80,13 +80,21 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Optimized realtime with connection persistence
-  const optimizedRealtime = useOptimizedRealtime({
+  // Track own updates for realtime filtering
+  const ownUpdateTimestampRef = useRef<string | null>(null);
+
+  // Enhanced realtime connection with simplified logic
+  const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
+      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
+      
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
+        console.log('🕒 Marked realtime update timestamp:', updatedRundown.updated_at);
+        console.log('📊 APPLYING realtime update to state');
+        
         // Load state WITHOUT any showcaller data
         actions.loadState({
           items: updatedRundown.items || [],
@@ -95,27 +103,30 @@ export const useSimplifiedRundownState = () => {
           startTime: updatedRundown.start_time || '09:00:00',
           timezone: updatedRundown.timezone || 'America/New_York'
         });
+        
+        console.log('🔄 Realtime update applied with fresh references, item count:', updatedRundown.items?.length || 0);
+      } else {
+        console.log('📊 Skipping realtime update - currently saving');
       }
     }, [actions, isSaving]),
-    enabled: !!rundownId,  // Enable as soon as we have a rundown ID
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    trackOwnUpdate: useCallback((timestamp: string) => {
-      // Track our own updates to prevent showing blue icon for our changes
+    enabled: !isLoading && !isSaving,
+    trackOwnUpdate: (timestamp: string) => {
       console.log('📝 Tracking own update in realtime:', timestamp);
-    }, [])
+      ownUpdateTimestampRef.current = timestamp;
+    }
   });
 
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
-    if (optimizedRealtime.trackOwnUpdate) {
-      setTrackOwnUpdate(optimizedRealtime.trackOwnUpdate);
+    if (realtimeConnection.trackOwnUpdate) {
+      setTrackOwnUpdate(realtimeConnection.trackOwnUpdate);
     }
-  }, [optimizedRealtime.trackOwnUpdate, setTrackOwnUpdate]);
+  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
 
-  // Update connection status from optimized realtime
+  // Update connection status from realtime
   useEffect(() => {
-    setIsConnected(optimizedRealtime.isConnected);
-  }, [optimizedRealtime.isConnected]);
+    setIsConnected(realtimeConnection.isConnected);
+  }, [realtimeConnection.isConnected]);
 
   // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -449,7 +460,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: optimizedRealtime.isProcessingUpdate,
+    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate,
     
     // Calculations
     totalRuntime,
