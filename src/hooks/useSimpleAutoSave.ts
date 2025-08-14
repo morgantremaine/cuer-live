@@ -4,11 +4,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/lib/supabase';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import { useSaveCoordination } from './useSaveCoordination';
 
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void
+  onSaved: () => void,
+  editingCoordination?: {
+    hasActiveEditing: () => boolean;
+    setPreparingSave: (preparing: boolean) => void;
+  }
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,6 +26,7 @@ export const useSimpleAutoSave = (
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
+  const saveCoordination = useSaveCoordination();
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -99,11 +105,13 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Simple blocking conditions - no showcaller interference possible
+    // Enhanced blocking conditions with editing coordination
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
-        pendingSaveRef.current) {
+        pendingSaveRef.current ||
+        (editingCoordination?.hasActiveEditing?.() ?? false) ||
+        saveCoordination.hasActiveSaveOperations()) {
       return;
     }
 
@@ -117,12 +125,19 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Rate limiting
+    // Enhanced rate limiting with adaptive debouncing
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 3000;
+    const minSaveInterval = 2000; // Reduced minimum interval
     
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
+    // Adaptive debounce based on editing activity
+    const hasRecentEditing = editingCoordination?.hasActiveEditing?.() ?? false;
+    let debounceTime = timeSinceLastSave < minSaveInterval ? 4000 : 1500; // Faster saves
+    
+    // Extend debounce if actively editing
+    if (hasRecentEditing) {
+      debounceTime = Math.max(debounceTime, 3000);
+    }
 
     
 
@@ -130,12 +145,18 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
+    // Signal that we're preparing to save
+    editingCoordination?.setPreparingSave?.(true);
+
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check before saving
+      // Final enhanced check before saving
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current ||
-          pendingSaveRef.current) {
+          pendingSaveRef.current ||
+          (editingCoordination?.hasActiveEditing?.() ?? false) ||
+          saveCoordination.hasActiveSaveOperations()) {
+        editingCoordination?.setPreparingSave?.(false);
         return;
       }
       
@@ -144,14 +165,16 @@ export const useSimpleAutoSave = (
       
       if (finalSignature === lastSavedRef.current) {
         // Mark as saved since there are no actual content changes
+        editingCoordination?.setPreparingSave?.(false);
         onSaved();
         return;
       }
       
-      
-      setIsSaving(true);
-      pendingSaveRef.current = true;
-      lastSaveTimeRef.current = Date.now();
+      // Use coordinated save for conflict resolution
+      const performSave = async () => {
+        setIsSaving(true);
+        pendingSaveRef.current = true;
+        lastSaveTimeRef.current = Date.now();
       
       try {
         // Track this as our own update before saving
@@ -226,18 +249,26 @@ export const useSimpleAutoSave = (
             onSaved();
           }
         }
-      } catch (error) {
-        console.error('❌ Save error:', error);
-      } finally {
-        
-        setIsSaving(false);
-        pendingSaveRef.current = false;
-      }
+        } catch (error) {
+          console.error('❌ Save error:', error);
+        } finally {
+          setIsSaving(false);
+          pendingSaveRef.current = false;
+          editingCoordination?.setPreparingSave?.(false);
+        }
+      };
+
+      // Execute save with coordination
+      await saveCoordination.coordinatedSave('rundown', performSave, {
+        waitForOtherSaves: true,
+        priority: 'normal'
+      });
     }, debounceTime);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+        editingCoordination?.setPreparingSave?.(false);
       }
     };
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state]);
