@@ -149,7 +149,8 @@ const TeleprompterItem = ({
     color: 'white',
     border: 'none',
     outline: 'none',
-    resize: 'none' as const
+    resize: 'none' as const,
+    minHeight: '1.5em' // Ensure consistent minimum height
   };
 
   return (
