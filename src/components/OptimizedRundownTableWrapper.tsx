@@ -19,7 +19,6 @@ interface OptimizedRundownTableWrapperProps {
   selectedRowId: string | null;
   startTime: string;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
@@ -42,9 +41,8 @@ interface OptimizedRundownTableWrapperProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
   // Header collapse functions (to ensure same state as drag system)
-  toggleHeaderCollapse: (hederId: string) => void;
+  toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
   visibleItems: RundownItem[];
@@ -56,12 +54,10 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   startTime,
   currentSegmentId,
   columnExpandState,
-  rundownId,
   onDragStart,
   onDragOver,
   onDragLeave,
   onDrop,
-  onShowConflict,
   onDragEnd,
   // Extract header collapse functions from props
   toggleHeaderCollapse,
@@ -182,12 +178,10 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       visibleColumns={visibleColumns}
       currentSegmentId={currentSegmentId}
       columnExpandState={columnExpandState}
-      rundownId={rundownId}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       getHeaderDuration={getHeaderDuration}
       onToggleHeaderCollapse={toggleHeaderCollapse}
-      onShowConflict={onShowConflict}
       isHeaderCollapsed={isHeaderCollapsed}
       getHeaderGroupItemIds={getHeaderGroupItemIds}
       onRowSelect={(itemId, visibleIndex, isShiftClick, isCtrlClick, passedHeaderGroupItemIds) => {

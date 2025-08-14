@@ -20,11 +20,9 @@ interface CellRendererProps {
   backgroundColor?: string;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
   width?: string;
 }
 
@@ -36,11 +34,9 @@ const CellRenderer = ({
   backgroundColor,
   currentSegmentId,
   columnExpandState = {},
-  rundownId = null,
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  onShowConflict,
   width
 }: CellRendererProps) => {
   // Get the current value for this cell
@@ -163,7 +159,6 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
-      rundownId={rundownId}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
@@ -178,7 +173,6 @@ const CellRenderer = ({
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
-      onShowConflict={onShowConflict}
     />
   );
 };

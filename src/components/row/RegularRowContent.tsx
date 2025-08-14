@@ -18,11 +18,9 @@ interface RegularRowContentProps {
   isSelected?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string | null;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
   getColumnWidth: (column: Column) => string;
 }
 
@@ -38,11 +36,9 @@ const RegularRowContent = ({
   isSelected = false,
   currentSegmentId,
   columnExpandState = {},
-  rundownId,
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  onShowConflict,
   getColumnWidth
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
@@ -95,10 +91,8 @@ const RegularRowContent = ({
               backgroundColor="transparent"
               currentSegmentId={currentSegmentId}
               columnExpandState={columnExpandState}
-              rundownId={rundownId}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
-              onShowConflict={onShowConflict}
               onKeyDown={onKeyDown}
               width={columnWidth}
             />

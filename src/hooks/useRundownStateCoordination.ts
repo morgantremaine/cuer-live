@@ -16,7 +16,7 @@ export const useRundownStateCoordination = () => {
   const userId = user?.id;
 
   // Single source of truth for all rundown state (with persistence)
-  const simplifiedState = useSimplifiedRundownState();
+  const simplifiedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
@@ -276,12 +276,7 @@ export const useRundownStateCoordination = () => {
       toggleHeaderCollapse,
       isHeaderCollapsed,
       getHeaderGroupItemIds,
-      visibleItems,
-      
-      // Collaboration features
-      showConflictDialog: simplifiedState.showConflictDialog,
-      conflictDialog: simplifiedState.conflictDialog,
-      handleConflictResolution: simplifiedState.handleConflictResolution
+      visibleItems
     },
     interactions,
     uiState

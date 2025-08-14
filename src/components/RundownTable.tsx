@@ -18,7 +18,6 @@ interface RundownTableProps {
   hasClipboardData: boolean;
   selectedRowId: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string | null;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   getRowNumber: (index: number) => string;
@@ -47,7 +46,6 @@ interface RundownTableProps {
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
   onJumpToHere?: (segmentId: string) => void;
-  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
 }
 
 const RundownTable = ({
@@ -64,7 +62,6 @@ const RundownTable = ({
   hasClipboardData,
   selectedRowId,
   columnExpandState,
-  rundownId,
   getColumnWidth,
   updateColumnWidth,
   getRowNumber,
@@ -92,8 +89,7 @@ const RundownTable = ({
   onToggleHeaderCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds,
-  onJumpToHere,
-  onShowConflict
+  onJumpToHere
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -163,7 +159,6 @@ const RundownTable = ({
                   isDragging={isDragging}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   columnExpandState={columnExpandState}
-                  rundownId={rundownId}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
@@ -187,7 +182,6 @@ const RundownTable = ({
                    getColumnWidth={getColumnWidth}
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
-                   onShowConflict={onShowConflict}
                 />
                 
                 {/* Drop indicator AFTER the last row */}
