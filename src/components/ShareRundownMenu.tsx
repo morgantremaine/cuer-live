@@ -11,11 +11,10 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Share2, Layout, Copy, Check, Printer, Download, FileText } from 'lucide-react';
+import { Share2, Layout, Copy, Check, Printer, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
-import { exportRundownAsPDF } from '@/utils/pdfExport';
 import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -486,21 +485,6 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }
   };
 
-  const handleExportPDF = async () => {
-    // Check if this is the demo rundown
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      toast({
-        title: "Subscribe to unlock full features",
-        description: "Print and export features are available with a subscription. Try the full experience!",
-        variant: "default"
-      });
-      return;
-    }
-
-    // Just trigger the same print dialog that already works perfectly
-    // Users can select "Save as PDF" from the print dialog
-    handlePrint();
-  };
 
   const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
     await updateSharedLayout(layoutId);
@@ -541,14 +525,9 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
           Export as CSV
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={handleExportPDF}>
-          <FileText className="h-4 w-4 mr-2" />
-          Export as PDF
-        </DropdownMenuItem>
-        
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-2" />
-          Print View
+          Print/PDF
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
