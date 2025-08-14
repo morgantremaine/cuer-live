@@ -87,6 +87,9 @@ export interface RundownContainerProps {
   // Notes window functionality
   onShowNotes?: () => void;
   
+  // Cuer AI functionality
+  onShowCuerAI?: () => void;
+  
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
