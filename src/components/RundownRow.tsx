@@ -48,14 +48,6 @@ interface RundownRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  // Collaboration features
-  getCellCollaborationState?: (itemId: string, fieldName: string) => {
-    isBeingEdited: boolean;
-    editingUserEmail?: string;
-    hasConflict: boolean;
-  };
-  onCellFocus?: (itemId: string, fieldName: string) => Promise<boolean>;
-  onCellBlur?: (itemId: string, fieldName: string) => void;
 }
 
 const RundownRow = (props: RundownRowProps) => {
@@ -114,9 +106,6 @@ const RundownRow = (props: RundownRowProps) => {
       onDragEnd={props.onDragEnd}
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
-      getCellCollaborationState={props.getCellCollaborationState}
-      onCellFocus={props.onCellFocus}
-      onCellBlur={props.onCellBlur}
     />
   );
 };

@@ -47,14 +47,6 @@ interface RegularRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  // Collaboration features
-  getCellCollaborationState?: (itemId: string, fieldName: string) => {
-    isBeingEdited: boolean;
-    editingUserEmail?: string;
-    hasConflict: boolean;
-  };
-  onCellFocus?: (itemId: string, fieldName: string) => Promise<boolean>;
-  onCellBlur?: (itemId: string, fieldName: string) => void;
 }
 
 const RegularRow = (props: RegularRowProps) => {
@@ -216,9 +208,6 @@ const RegularRow = (props: RegularRowProps) => {
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
-          getCellCollaborationState={props.getCellCollaborationState}
-          onCellFocus={props.onCellFocus}
-          onCellBlur={props.onCellBlur}
         />
       </tr>
     </RundownContextMenu>

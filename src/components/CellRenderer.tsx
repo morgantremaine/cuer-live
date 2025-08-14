@@ -24,12 +24,6 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
-  // Collaboration props
-  isBeingEdited?: boolean;
-  editingUserEmail?: string;
-  hasConflict?: boolean;
-  onCellFocus?: (itemId: string, fieldName: string) => Promise<boolean>;
-  onCellBlur?: (itemId: string, fieldName: string) => void;
 }
 
 const CellRenderer = ({
@@ -43,12 +37,7 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width,
-  isBeingEdited = false,
-  editingUserEmail,
-  hasConflict = false,
-  onCellFocus,
-  onCellBlur
+  width
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -184,11 +173,6 @@ const CellRenderer = ({
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
-      isBeingEdited={isBeingEdited}
-      editingUserEmail={editingUserEmail}
-      hasConflict={hasConflict}
-      onCellFocus={onCellFocus}
-      onCellBlur={onCellBlur}
     />
   );
 };
