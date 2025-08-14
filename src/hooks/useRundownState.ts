@@ -32,7 +32,8 @@ type RundownAction =
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
-  | { type: 'LOAD_STATE'; payload: Partial<RundownState> };
+  | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
+  | { type: 'MERGE_REALTIME_UPDATE'; payload: { items: RundownItem[]; title?: string; startTime?: string; timezone?: string; protectedFields?: Set<string> } };
 
 const initialState: RundownState = {
   items: [],
@@ -136,6 +137,59 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
         hasUnsavedChanges: false,
         lastChanged: 0
       };
+
+    case 'MERGE_REALTIME_UPDATE': {
+      const { items: newItems, title, startTime, timezone, protectedFields = new Set() } = action.payload;
+      
+      // Field-by-field comparison for items
+      const mergedItems = state.items.map(currentItem => {
+        const newItem = newItems.find(ni => ni.id === currentItem.id);
+        if (!newItem) return currentItem; // Item was deleted remotely, keep local version
+        
+        // Field-level merge - only update fields that aren't protected
+        const mergedItem = { ...currentItem };
+        
+        Object.keys(newItem).forEach(key => {
+          const fieldKey = `${currentItem.id}-${key}`;
+          if (!protectedFields.has(fieldKey) && newItem[key as keyof RundownItem] !== currentItem[key as keyof RundownItem]) {
+            (mergedItem as any)[key] = newItem[key as keyof RundownItem];
+          }
+        });
+        
+        return mergedItem;
+      });
+      
+      // Add any new items that don't exist locally
+      const localItemIds = new Set(state.items.map(item => item.id));
+      const newlyAddedItems = newItems.filter(item => !localItemIds.has(item.id));
+      const finalItems = [...mergedItems, ...newlyAddedItems];
+      
+      // Only update state fields that aren't being edited
+      const newState: Partial<RundownState> = { items: finalItems };
+      
+      if (title !== undefined && !protectedFields.has('title') && title !== state.title) {
+        newState.title = title;
+      }
+      if (startTime !== undefined && !protectedFields.has('startTime') && startTime !== state.startTime) {
+        newState.startTime = startTime;
+      }
+      if (timezone !== undefined && !protectedFields.has('timezone') && timezone !== state.timezone) {
+        newState.timezone = timezone;
+      }
+      
+      // Only mark as changed if we made actual updates
+      const hasActualChanges = finalItems !== state.items || 
+                              (newState.title && newState.title !== state.title) ||
+                              (newState.startTime && newState.startTime !== state.startTime) ||
+                              (newState.timezone && newState.timezone !== state.timezone);
+      
+      return {
+        ...state,
+        ...newState,
+        hasUnsavedChanges: hasActualChanges ? state.hasUnsavedChanges : state.hasUnsavedChanges,
+        lastChanged: hasActualChanges ? Date.now() : state.lastChanged
+      };
+    }
 
     default:
       return state;
@@ -290,7 +344,10 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     
     markSaved: () => dispatch({ type: 'MARK_SAVED' }),
     
-    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState })
+    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
+    
+    mergeRealtimeUpdate: (updates: { items: RundownItem[]; title?: string; startTime?: string; timezone?: string; protectedFields?: Set<string> }) => 
+      dispatch({ type: 'MERGE_REALTIME_UPDATE', payload: updates })
   }), []);
 
   // Helper functions for common operations
