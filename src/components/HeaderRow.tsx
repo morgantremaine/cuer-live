@@ -25,12 +25,6 @@ interface HeaderRowProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  // Enhanced editing coordination
-  editingCoordination?: {
-    startFieldEdit: (itemId: string, field: string) => void;
-    updateFieldActivity: (itemId: string, field: string) => void;
-    endFieldEdit: (itemId: string, field: string) => void;
-  };
   onDeleteRow: (id: string) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
@@ -185,9 +179,6 @@ const HeaderRow = (props: HeaderRowProps) => {
           onKeyDown={props.onKeyDown}
           onToggleCollapse={onToggleCollapse}
           getColumnWidth={props.getColumnWidth}
-          onFieldEditStart={props.editingCoordination?.startFieldEdit}
-          onFieldEditActivity={props.editingCoordination?.updateFieldActivity}
-          onFieldEditEnd={props.editingCoordination?.endFieldEdit}
         />
       </tr>
     </RundownContextMenu>

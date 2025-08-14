@@ -24,10 +24,6 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
-  // Enhanced editing coordination
-  onFieldEditStart?: (itemId: string, field: string) => void;
-  onFieldEditActivity?: (itemId: string, field: string) => void;
-  onFieldEditEnd?: (itemId: string, field: string) => void;
 }
 
 const CellRenderer = ({
@@ -41,10 +37,7 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width,
-  onFieldEditStart,
-  onFieldEditActivity,
-  onFieldEditEnd
+  width
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -180,9 +173,6 @@ const CellRenderer = ({
       }}
       onCellClick={(e) => onCellClick(item.id, column.key)}
       onKeyDown={onKeyDown}
-      onFieldEditStart={onFieldEditStart}
-      onFieldEditActivity={onFieldEditActivity}
-      onFieldEditEnd={onFieldEditEnd}
     />
   );
 };

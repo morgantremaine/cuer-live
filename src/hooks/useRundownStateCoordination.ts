@@ -270,10 +270,7 @@ export const useRundownStateCoordination = () => {
       toggleHeaderCollapse,
       isHeaderCollapsed,
       getHeaderGroupItemIds,
-      visibleItems,
-      
-      // Enhanced editing coordination
-      editingCoordination: simplifiedState.editingCoordination
+      visibleItems
     },
     interactions,
     uiState

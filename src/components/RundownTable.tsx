@@ -26,12 +26,6 @@ interface RundownTableProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  // Enhanced editing coordination
-  editingCoordination?: {
-    startFieldEdit: (itemId: string, field: string) => void;
-    updateFieldActivity: (itemId: string, field: string) => void;
-    endFieldEdit: (itemId: string, field: string) => void;
-  };
   onToggleColorPicker: (itemId: string) => void;
   onColorSelect: (itemId: string, color: string) => void;
   onDeleteRow: (id: string) => void;
@@ -76,7 +70,6 @@ const RundownTable = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  editingCoordination,
   onToggleColorPicker,
   onColorSelect,
   onDeleteRow,
@@ -147,50 +140,49 @@ const RundownTable = ({
                   </tr>
                 )}
                 
-                 <RundownRow
-                   item={item}
-                   index={index}
-                   rowNumber={rowNumber}
-                   status={status}
-                   showColorPicker={showColorPicker}
-                   cellRefs={cellRefs}
-                   columns={visibleColumns}
-                   isSelected={isActuallySelected}
-                   isCurrentlyPlaying={isCurrentlyPlaying}
-                   isDraggingMultiple={isDraggingMultiple}
-                   selectedRowsCount={selectedRows.size}
-                   selectedRows={selectedRows}
-                   headerDuration={headerDuration}
-                   hasClipboardData={hasClipboardData}
-                   currentSegmentId={currentSegmentId}
-                   isDragging={isDragging}
-                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
-                   columnExpandState={columnExpandState}
-                   onUpdateItem={onUpdateItem}
-                   onCellClick={onCellClick}
-                   onKeyDown={onKeyDown}
-                   editingCoordination={editingCoordination}
-                   onToggleColorPicker={onToggleColorPicker}
-                   onColorSelect={onColorSelect}
-                   onDeleteRow={onDeleteRow}
-                   onToggleFloat={onToggleFloat}
-                   onRowSelect={onRowSelect}
-                   onDragStart={onDragStart}
-                   onDragOver={(e) => handleRowDragOver(e, index)}
-                   onDrop={(e) => handleRowDrop(e, index)}
-                   onDragEnd={handleDragEnd}
-                   onCopySelectedRows={onCopySelectedRows}
-                   onDeleteSelectedRows={onDeleteSelectedRows}
-                   onToggleCollapse={onToggleHeaderCollapse}
-                   onPasteRows={onPasteRows}
-                   onClearSelection={onClearSelection}
-                   onAddRow={onAddRow}
-                   onAddHeader={onAddHeader}
-                    onJumpToHere={onJumpToHere}
-                    getColumnWidth={getColumnWidth}
-                    isHeaderCollapsed={isHeaderCollapsed}
-                    getHeaderGroupItemIds={getHeaderGroupItemIds}
-                 />
+                <RundownRow
+                  item={item}
+                  index={index}
+                  rowNumber={rowNumber}
+                  status={status}
+                  showColorPicker={showColorPicker}
+                  cellRefs={cellRefs}
+                  columns={visibleColumns}
+                  isSelected={isActuallySelected}
+                  isCurrentlyPlaying={isCurrentlyPlaying}
+                  isDraggingMultiple={isDraggingMultiple}
+                  selectedRowsCount={selectedRows.size}
+                  selectedRows={selectedRows}
+                  headerDuration={headerDuration}
+                  hasClipboardData={hasClipboardData}
+                  currentSegmentId={currentSegmentId}
+                  isDragging={isDragging}
+                  isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
+                  columnExpandState={columnExpandState}
+                  onUpdateItem={onUpdateItem}
+                  onCellClick={onCellClick}
+                  onKeyDown={onKeyDown}
+                  onToggleColorPicker={onToggleColorPicker}
+                  onColorSelect={onColorSelect}
+                  onDeleteRow={onDeleteRow}
+                  onToggleFloat={onToggleFloat}
+                  onRowSelect={onRowSelect}
+                  onDragStart={onDragStart}
+                  onDragOver={(e) => handleRowDragOver(e, index)}
+                  onDrop={(e) => handleRowDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  onCopySelectedRows={onCopySelectedRows}
+                  onDeleteSelectedRows={onDeleteSelectedRows}
+                  onToggleCollapse={onToggleHeaderCollapse}
+                  onPasteRows={onPasteRows}
+                  onClearSelection={onClearSelection}
+                  onAddRow={onAddRow}
+                  onAddHeader={onAddHeader}
+                   onJumpToHere={onJumpToHere}
+                   getColumnWidth={getColumnWidth}
+                   isHeaderCollapsed={isHeaderCollapsed}
+                   getHeaderGroupItemIds={getHeaderGroupItemIds}
+                />
                 
                 {/* Drop indicator AFTER the last row */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (

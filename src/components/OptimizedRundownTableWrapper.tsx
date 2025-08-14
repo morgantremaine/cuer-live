@@ -46,12 +46,6 @@ interface OptimizedRundownTableWrapperProps {
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
   visibleItems: RundownItem[];
-  // Enhanced editing coordination
-  editingCoordination?: {
-    startFieldEdit: (itemId: string, field: string) => void;
-    updateFieldActivity: (itemId: string, field: string) => void;
-    endFieldEdit: (itemId: string, field: string) => void;
-  };
 }
 
 const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> = ({
@@ -184,7 +178,6 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       visibleColumns={visibleColumns}
       currentSegmentId={currentSegmentId}
       columnExpandState={columnExpandState}
-      editingCoordination={restProps.editingCoordination}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       getHeaderDuration={getHeaderDuration}

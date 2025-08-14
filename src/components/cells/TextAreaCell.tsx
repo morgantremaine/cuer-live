@@ -11,10 +11,6 @@ interface TextAreaCellProps {
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  // Enhanced editing coordination
-  onFieldEditStart?: (itemId: string, field: string) => void;
-  onFieldEditActivity?: (itemId: string, field: string) => void;
-  onFieldEditEnd?: (itemId: string, field: string) => void;
 }
 
 const TextAreaCell = ({
@@ -27,10 +23,7 @@ const TextAreaCell = ({
   isDuration = false,
   onUpdateValue,
   onCellClick,
-  onKeyDown,
-  onFieldEditStart,
-  onFieldEditActivity,
-  onFieldEditEnd
+  onKeyDown
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -155,8 +148,6 @@ const TextAreaCell = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdateValue(e.target.value);
-    // Update activity timestamp for ongoing edit
-    onFieldEditActivity?.(itemId, cellRefKey);
     // Height will be recalculated by useEffect
   };
 
@@ -174,10 +165,6 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
-    // Start field editing session
-    onFieldEditStart?.(itemId, cellRefKey);
-    console.log('🖊️ Enhanced editing started:', `${itemId}-${cellRefKey}`);
-    
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -187,10 +174,6 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
-    // End field editing session
-    onFieldEditEnd?.(itemId, cellRefKey);
-    console.log('✋ Enhanced editing ended:', `${itemId}-${cellRefKey}`);
-    
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {

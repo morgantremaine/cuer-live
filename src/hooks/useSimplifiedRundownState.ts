@@ -7,8 +7,6 @@ import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
-import { useEnhancedEditingCoordination } from './useEnhancedEditingCoordination';
-import { useRealtimeConflictResolution } from './useRealtimeConflictResolution';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -60,37 +58,14 @@ export const useSimplifiedRundownState = () => {
   // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
   const teleprompterSync = useGlobalTeleprompterSync();
 
-  // Enhanced editing coordination for conflict resolution
-  const editingCoordination = useEnhancedEditingCoordination({
-    onEditingStateChange: (isEditing, fieldKey) => {
-      if (isEditing) {
-        console.log('🖊️ Enhanced editing started:', fieldKey);
-      } else {
-        console.log('✋ Enhanced editing stopped');
-      }
-    }
-  });
-
-  // Realtime conflict resolution
-  const conflictResolution = useRealtimeConflictResolution({
-    isFieldRecentlyEdited: editingCoordination.isFieldRecentlyEdited,
-    isPreparingSave: editingCoordination.isPreparingSave,
-    currentItems: state.items
-  });
-
-  // Auto-save functionality with enhanced coordination
+  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
   const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved,
-    {
-      hasActiveEditing: editingCoordination.hasActiveEditing,
-      setPreparingSave: editingCoordination.setPreparingSave,
-      isPreparingSave: editingCoordination.isPreparingSave
-    }
+    actions.markSaved
   );
 
   // Standalone undo system - unchanged
@@ -117,33 +92,27 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { isSaving, isPreparingSave: editingCoordination.isPreparingSave });
+      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
       
-      // Enhanced conflict resolution
-      const result = conflictResolution.processRealtimeUpdate(updatedRundown, isSaving);
-      
-      if (!result.shouldApply) {
-        console.log('📊 Blocking realtime update:', result.reason);
-        return;
+      // Only update if we're not currently saving to avoid conflicts
+      if (!isSaving) {
+        console.log('🕒 Marked realtime update timestamp:', updatedRundown.updated_at);
+        console.log('📊 APPLYING realtime update to state');
+        
+        // Load state WITHOUT any showcaller data
+        actions.loadState({
+          items: updatedRundown.items || [],
+          columns: [],
+          title: updatedRundown.title || 'Untitled Rundown',
+          startTime: updatedRundown.start_time || '09:00:00',
+          timezone: updatedRundown.timezone || 'America/New_York'
+        });
+        
+        console.log('🔄 Realtime update applied with fresh references, item count:', updatedRundown.items?.length || 0);
+      } else {
+        console.log('📊 Skipping realtime update - currently saving');
       }
-      
-      console.log('🕒 Marked realtime update timestamp:', updatedRundown.updated_at);
-      console.log('📊 APPLYING realtime update to state with conflict resolution');
-      
-      // Use resolved items if available, otherwise use incoming items
-      const itemsToApply = result.resolvedItems || updatedRundown.items || [];
-      
-      // Load state WITHOUT any showcaller data
-      actions.loadState({
-        items: itemsToApply,
-        columns: [],
-        title: updatedRundown.title || 'Untitled Rundown',
-        startTime: updatedRundown.start_time || '09:00:00',
-        timezone: updatedRundown.timezone || 'America/New_York'
-      });
-      
-      console.log('🔄 Realtime update applied with conflict resolution, item count:', itemsToApply.length);
-    }, [actions, isSaving, editingCoordination.isPreparingSave, conflictResolution]),
+    }, [actions, isSaving]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
       console.log('📝 Tracking own update in realtime:', timestamp);
@@ -163,7 +132,7 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
-  // Enhanced updateItem function with improved coordination
+  // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
@@ -172,19 +141,12 @@ export const useSimplifiedRundownState = () => {
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
       
-      // Enhanced editing coordination
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
         };
-        
-        // Start field edit tracking
-        editingCoordination.startFieldEdit(id, field);
-      } else {
-        // Update activity for existing session
-        editingCoordination.updateFieldActivity(id, field);
       }
       
       if (typingTimeoutRef.current) {
@@ -193,7 +155,6 @@ export const useSimplifiedRundownState = () => {
       
       typingTimeoutRef.current = setTimeout(() => {
         typingSessionRef.current = null;
-        editingCoordination.endFieldEdit(id, field);
       }, 1000);
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
@@ -219,7 +180,7 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, editingCoordination]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Update current time every second
   useEffect(() => {
@@ -503,7 +464,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving || editingCoordination.isPreparingSave,
+    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving,
     
     // Calculations
     totalRuntime,
@@ -522,13 +483,6 @@ export const useSimplifiedRundownState = () => {
     setTitle: enhancedActions.setTitle,
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
-    
-    // Enhanced editing coordination for cell components
-    editingCoordination: {
-      startFieldEdit: editingCoordination.startFieldEdit,
-      updateFieldActivity: editingCoordination.updateFieldActivity,
-      endFieldEdit: editingCoordination.endFieldEdit
-    },
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

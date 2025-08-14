@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useSaveCoordination } from './useSaveCoordination';
 
 interface SaveState {
   isSaving: boolean;
@@ -18,7 +17,6 @@ interface UseTeleprompterSaveProps {
 }
 
 export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd }: UseTeleprompterSaveProps) => {
-  const saveCoordination = useSaveCoordination();
   const [saveState, setSaveState] = useState<SaveState>({
     isSaving: false,
     lastSaved: null,
@@ -91,84 +89,73 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     }
   }, [rundownId]);
 
-  // Main save function with coordination
+  // Main save function
   const saveScript = useCallback(async (
     itemId: string, 
     newScript: string, 
     rundownData: any
   ): Promise<boolean> => {
-    // Create a promise to handle the result
-    let saveResult = false;
+    // Backup the change immediately
+    backupChange(itemId, newScript);
     
-    // Use coordinated save to prevent conflicts with main rundown saves
-    await saveCoordination.coordinatedSave('teleprompter', async () => {
-      // Backup the change immediately
-      backupChange(itemId, newScript);
-      
-      // Signal save start to parent (for blue Wi-Fi indicator)
-      onSaveStart?.();
-      
-      setSaveState(prev => ({ 
-        ...prev, 
-        isSaving: true, 
-        hasUnsavedChanges: true,
-        saveError: null 
-      }));
+    // Signal save start to parent (for blue Wi-Fi indicator)
+    onSaveStart?.();
+    
+    setSaveState(prev => ({ 
+      ...prev, 
+      isSaving: true, 
+      hasUnsavedChanges: true,
+      saveError: null 
+    }));
 
-      try {
-        const success = await retrySave(itemId, newScript, rundownData);
-        
-        if (success) {
-          // Clear backup and update state
-          clearBackup(itemId);
-          retryCountRef.current.delete(itemId);
-          
-          setSaveState(prev => ({
-            ...prev,
-            isSaving: false,
-            lastSaved: new Date(),
-            hasUnsavedChanges: false,
-            saveError: null
-          }));
-
-          // Signal save end to parent
-          onSaveEnd?.();
-          
-          // Call success callback
-          onSaveSuccess?.(itemId, newScript);
-          
-          saveResult = true;
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to save script';
-        
-        // Signal save end to parent (even on error)
-        onSaveEnd?.();
+    try {
+      const success = await retrySave(itemId, newScript, rundownData);
+      
+      if (success) {
+        // Clear backup and update state
+        clearBackup(itemId);
+        retryCountRef.current.delete(itemId);
         
         setSaveState(prev => ({
           ...prev,
           isSaving: false,
-          saveError: errorMessage
+          lastSaved: new Date(),
+          hasUnsavedChanges: false,
+          saveError: null
         }));
 
-        // Show error toast with retry option
-        toast.error(`Save failed: ${errorMessage}`, {
-          duration: 5000,
-          action: {
-            label: 'Retry',
-            onClick: () => saveScript(itemId, newScript, rundownData)
-          }
-        });
-
-        saveResult = false;
+        // Signal save end to parent
+        onSaveEnd?.();
+        
+        // Call success callback
+        onSaveSuccess?.(itemId, newScript);
+        
+        return true;
       }
-    }, {
-      waitForOtherSaves: true,
-      priority: 'normal'
-    });
-    
-    return saveResult;
-  }, [backupChange, clearBackup, retrySave, onSaveSuccess, onSaveStart, onSaveEnd, saveCoordination]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save script';
+      
+      // Signal save end to parent (even on error)
+      onSaveEnd?.();
+      
+      setSaveState(prev => ({
+        ...prev,
+        isSaving: false,
+        saveError: errorMessage
+      }));
+
+      // Show error toast with retry option
+      toast.error(`Save failed: ${errorMessage}`, {
+        duration: 5000,
+        action: {
+          label: 'Retry',
+          onClick: () => saveScript(itemId, newScript, rundownData)
+        }
+      });
+
+      return false;
+    }
+  }, [backupChange, clearBackup, retrySave, onSaveSuccess, onSaveStart, onSaveEnd]);
 
   // Debounced save function with faster default delay
   const debouncedSave = useCallback((
