@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import RundownContainer from '@/components/RundownContainer';
-import CuerChatPanel from '@/components/cuer/CuerChatPanel';
+import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
@@ -124,9 +124,6 @@ const RundownIndexContent = () => {
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
-  
-  // State for Cuer AI chat
-  const [showCuerAI, setShowCuerAI] = React.useState(false);
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
@@ -441,7 +438,6 @@ const RundownIndexContent = () => {
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
         onShowNotes={() => setShowNotesWindow(true)}
-        onShowCuerAI={() => setShowCuerAI(true)}
         // Header collapse functions
         toggleHeaderCollapse={toggleHeaderCollapse}
         isHeaderCollapsed={isHeaderCollapsed}
@@ -457,12 +453,7 @@ const RundownIndexContent = () => {
         />
       )}
       
-      {/* Cuer AI Chat Panel */}
-      <CuerChatPanel
-        isOpen={showCuerAI}
-        onClose={() => setShowCuerAI(false)}
-        rundownData={rundownData}
-      />
+      <CuerChatButton rundownData={rundownData} />
     </RealtimeConnectionProvider>
   );
 };
