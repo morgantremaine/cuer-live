@@ -129,8 +129,6 @@ export const useSimplifiedRundownState = () => {
   // Update connection status from realtime with stability during operations
   useEffect(() => {
     const newConnectionState = realtimeConnection.isConnected;
-    const now = Date.now();
-    const timeSinceLastChange = now - lastConnectionChangeRef.current;
     
     // If connection is establishing (false -> true), update immediately
     if (newConnectionState && !lastConnectionStateRef.current) {
@@ -141,35 +139,37 @@ export const useSimplifiedRundownState = () => {
       }
       setIsConnected(true);
       lastConnectionStateRef.current = true;
-      lastConnectionChangeRef.current = now;
+      lastConnectionChangeRef.current = Date.now();
       return;
     }
     
-    // If connection is dropping (true -> false), add stability delay
+    // If connection is dropping (true -> false), add minimal stability delay
     if (!newConnectionState && lastConnectionStateRef.current) {
-      // Only show disconnect if we've been connected for at least 2 seconds
-      // This prevents flicker during rapid reconnections
-      if (timeSinceLastChange < 2000) {
-        console.log('📡 Ignoring brief disconnect - too soon after last change');
-        return;
-      }
-      
-      console.log('📡 Scheduling disconnect indication with delay');
+      console.log('📡 Scheduling disconnect check with minimal delay');
       
       // Clear any existing timeout
       if (connectionStabilityTimeoutRef.current) {
         clearTimeout(connectionStabilityTimeoutRef.current);
       }
       
-      // Delay showing disconnect to avoid flicker
+      // Very short delay to avoid flicker, but check current state before applying
       connectionStabilityTimeoutRef.current = setTimeout(() => {
-        if (!realtimeConnection.isConnected) {
-          console.log('📡 Applying delayed disconnect after stability period');
+        // Double-check the actual connection state before disconnecting
+        const currentState = realtimeConnection.isConnected;
+        console.log('📡 Delayed disconnect check:', { 
+          currentState, 
+          willDisconnect: !currentState 
+        });
+        
+        if (!currentState) {
+          console.log('📡 Applying disconnect - connection is actually down');
           setIsConnected(false);
           lastConnectionStateRef.current = false;
           lastConnectionChangeRef.current = Date.now();
+        } else {
+          console.log('📡 Canceling disconnect - connection is back up');
         }
-      }, 1500);
+      }, 500); // Reduced from 1500ms to 500ms
       
       return;
     }
