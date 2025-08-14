@@ -497,21 +497,9 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return;
     }
 
-    try {
-      await exportRundownAsPDF(rundownTitle);
-      
-      toast({
-        title: 'PDF export successful!',
-        description: `${rundownTitle} exported as PDF`,
-      });
-    } catch (error) {
-      console.error('PDF export error:', error);
-      toast({
-        title: 'PDF export failed',
-        description: error instanceof Error ? error.message : 'Failed to export rundown as PDF',
-        variant: 'destructive',
-      });
-    }
+    // Just trigger the same print dialog that already works perfectly
+    // Users can select "Save as PDF" from the print dialog
+    handlePrint();
   };
 
   const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
