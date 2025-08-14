@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { CellEditingIndicator } from '@/components/collaboration/CellEditingIndicator';
+import { useCollaborativeCell } from '@/hooks/collaboration/useCollaborativeCell';
 
 interface TextAreaCellProps {
   value: string;
@@ -8,9 +10,11 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
+  rundownId?: string | null;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
 }
 
 const TextAreaCell = ({
@@ -21,14 +25,33 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
+  rundownId = null,
   onUpdateValue,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  onShowConflict
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
+
+  // Collaboration features
+  const {
+    isEditing,
+    isBeingEditedByOthers,
+    editors,
+    handleFocus: handleCollaborativeFocus,
+    handleBlur: handleCollaborativeBlur,
+    handleSave
+  } = useCollaborativeCell({
+    rundownId,
+    itemId,
+    field: cellRefKey,
+    value,
+    onUpdateValue,
+    onShowConflict
+  });
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -147,7 +170,7 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateValue(e.target.value);
+    handleSave(e.target.value);
     // Height will be recalculated by useEffect
   };
 
@@ -170,6 +193,9 @@ const TextAreaCell = ({
     if (row) {
       row.setAttribute('draggable', 'false');
     }
+    
+    // Track collaborative editing
+    handleCollaborativeFocus();
   };
 
   // Enhanced blur handler to re-enable row dragging
@@ -182,6 +208,9 @@ const TextAreaCell = ({
         row.setAttribute('draggable', 'true');
       }, 50);
     }
+    
+    // Stop tracking collaborative editing
+    handleCollaborativeBlur();
   };
 
   // Create the proper cell ref key
@@ -196,6 +225,11 @@ const TextAreaCell = ({
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
+      {/* Collaboration indicator */}
+      {isBeingEditedByOthers && (
+        <CellEditingIndicator editors={editors} />
+      )}
+      
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}

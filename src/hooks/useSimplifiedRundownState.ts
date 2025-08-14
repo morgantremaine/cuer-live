@@ -29,6 +29,21 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
+  // Conflict dialog state
+  const [conflictDialog, setConflictDialog] = useState<{
+    isOpen: boolean;
+    field: string;
+    yourValue: string;
+    theirValue: string;
+    lastModifiedAt?: string;
+    resolver?: (keepChanges: boolean) => void;
+  }>({
+    isOpen: false,
+    field: '',
+    yourValue: '',
+    theirValue: ''
+  });
+
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -366,6 +381,33 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Fixed addRowAtIndex that properly inserts at specified index
+  // Show conflict dialog
+  const showConflictDialog = useCallback((
+    field: string, 
+    yourValue: string, 
+    theirValue: string, 
+    lastModifiedAt?: string
+  ) => {
+    return new Promise<boolean>((resolve) => {
+      setConflictDialog({
+        isOpen: true,
+        field,
+        yourValue,
+        theirValue,
+        lastModifiedAt,
+        resolver: resolve
+      });
+    });
+  }, []);
+
+  // Handle conflict resolution
+  const handleConflictResolution = useCallback((keepChanges: boolean) => {
+    if (conflictDialog.resolver) {
+      conflictDialog.resolver(keepChanges);
+    }
+    setConflictDialog(prev => ({ ...prev, isOpen: false, resolver: undefined }));
+  }, [conflictDialog.resolver]);
+
   const addRowAtIndex = useCallback((insertIndex: number) => {
     saveUndoState(state.items, [], state.title, 'Add segment');
     
@@ -501,6 +543,11 @@ export const useSimplifiedRundownState = () => {
     saveUndoState,
     undo,
     canUndo,
-    lastAction
+    lastAction,
+    
+    // Collaboration features
+    showConflictDialog,
+    conflictDialog,
+    handleConflictResolution
   };
 };

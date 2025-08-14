@@ -1,11 +1,11 @@
 
 import React from 'react';
-import RundownIndexContent from '@/components/RundownIndexContent';
+import RundownWithCollaboration from '@/components/RundownWithCollaboration';
 
 const Index = () => {
   return (
     <div className="h-screen overflow-hidden">
-      <RundownIndexContent />
+      <RundownWithCollaboration />
     </div>
   );
 };
