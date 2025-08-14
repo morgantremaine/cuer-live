@@ -26,6 +26,7 @@ interface RundownContentProps {
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   startTime?: string;
+  rundownId?: string | null;
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -53,6 +54,7 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (itemId: string) => void;
+  onShowConflict?: (field: string, yourValue: string, theirValue: string, lastModifiedAt?: string) => void;
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
@@ -78,6 +80,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   startTime = '00:00:00',
   title = 'Untitled Rundown',
   totalRuntime = '00:00:00',
+  rundownId = null,
   onToggleAutoScroll,
   getColumnWidth,
   updateColumnWidth,
@@ -105,6 +108,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onAddRow,
   onAddHeader,
   onJumpToHere,
+  onShowConflict,
   // Header collapse functions
   toggleHeaderCollapse,
   isHeaderCollapsed,
@@ -252,6 +256,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             <OptimizedRundownTableWrapper
             items={items} // Pass original items for duration calculations
             visibleItems={visibleItems} // Pass visible items for display
+            rundownId={rundownId}
             visibleColumns={visibleColumns}
             currentTime={currentTime}
             showColorPicker={showColorPicker}
@@ -291,6 +296,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             toggleHeaderCollapse={toggleHeaderCollapse}
             isHeaderCollapsed={isHeaderCollapsed}
             getHeaderGroupItemIds={getHeaderGroupItemIds}
+            onShowConflict={onShowConflict}
             />
           </table>
         </div>

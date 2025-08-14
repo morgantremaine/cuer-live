@@ -104,8 +104,9 @@ export const useCellPresence = ({ rundownId, enabled = true }: UseCellPresencePr
         console.log('👋 User left cell presence:', leftPresences);
       })
       .subscribe(async (status) => {
+        console.log('🤝 Cell presence subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Cell presence connected');
+          console.log('✅ Cell presence connected for rundown:', rundownId);
           
           // Track initial presence
           await channel.track({

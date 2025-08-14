@@ -35,18 +35,21 @@ export const useCollaborativeCell = ({
 
   // Start editing - track presence
   const handleFocus = useCallback(() => {
+    console.log('🤝 Cell focus - starting to track editing:', itemId, field);
     setIsEditing(true);
     trackCellEdit(itemId, field);
   }, [trackCellEdit, itemId, field]);
 
   // Stop editing - stop tracking presence
   const handleBlur = useCallback(() => {
+    console.log('🤝 Cell blur - stopping editing tracking:', itemId, field);
     setIsEditing(false);
     stopCellEdit();
-  }, [stopCellEdit]);
+  }, [stopCellEdit, itemId, field]);
 
   // Enhanced save with conflict detection
   const handleSave = useCallback(async (newValue: string) => {
+    console.log('🤝 Cell save with collaboration check:', itemId, field, newValue);
     if (!rundownId) {
       onUpdateValue(newValue);
       return;
