@@ -6,6 +6,7 @@ import { useStandaloneUndo } from './useStandaloneUndo';
 import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
+import { useEditingState } from './useEditingState';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -54,14 +55,18 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
 
-  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
+  // Editing state for enhanced auto-save detection
+  const { isEditing, markAsEditing } = useEditingState();
+
+  // Auto-save functionality with enhanced editing detection
+  const { isSaving, setUndoActive, setTrackOwnUpdate, setUserTyping } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved
+    actions.markSaved,
+    isEditing // Pass editing state for better typing detection
   );
 
   // Standalone undo system - unchanged
@@ -501,6 +506,10 @@ export const useSimplifiedRundownState = () => {
     saveUndoState,
     undo,
     canUndo,
-    lastAction
+    lastAction,
+
+    // Editing state for enhanced auto-save detection
+    markAsEditing,
+    setUserTyping
   };
 };

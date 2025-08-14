@@ -24,6 +24,7 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
+  markAsEditing?: () => void;
 }
 
 const CellRenderer = ({
@@ -37,7 +38,8 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width
+  width,
+  markAsEditing
 }: CellRendererProps) => {
   // Get the current value for this cell
   const getCellValue = () => {
@@ -159,6 +161,7 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
+      markAsEditing={markAsEditing}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
