@@ -6,7 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
-import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { useConsolidatedUserColumnPreferences } from '@/hooks/useConsolidatedUserColumnPreferences';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -68,7 +68,7 @@ const RundownIndexContent = () => {
     updateColumnWidth: updateUserColumnWidth,
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences 
-  } = useUserColumnPreferences(rundownId);
+  } = useConsolidatedUserColumnPreferences(rundownId);
 
   // Use columns manager for operations only - don't use its state
   const {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
+import { useConsolidatedTeam } from '@/hooks/useConsolidatedTeam';
 
 // Check if we're in a blueprint context (optional dependency)
 const useBlueprintContextSafe = () => {
@@ -23,7 +23,7 @@ interface Note {
 
 export const useUnifiedNotes = (rundownId: string) => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useConsolidatedTeam();
   const blueprintContext = useBlueprintContextSafe();
   const [notes, setNotes] = useState<Note[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);

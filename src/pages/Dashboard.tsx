@@ -12,7 +12,7 @@ import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
-import { useTeam } from '@/hooks/useTeam';
+import { useConsolidatedTeam } from '@/hooks/useConsolidatedTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,7 +23,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, teamMembers, isLoading: teamLoading } = useTeam();
+  const { team, teamMembers, isLoading: teamLoading } = useConsolidatedTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);

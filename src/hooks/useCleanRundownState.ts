@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useSimplifiedRundownState } from './useSimplifiedRundownState';
+import { useSimplifiedRundownStateClean } from './useSimplifiedRundownStateClean';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
@@ -13,7 +13,7 @@ export const useCleanRundownState = () => {
   const userId = user?.id;
 
   // Core rundown state - the single source of truth
-  const coreState = useSimplifiedRundownState();
+  const coreState = useSimplifiedRundownStateClean();
   
   // Showcaller visual state - completely separate system
   const showcallerVisual = useShowcallerVisualState({

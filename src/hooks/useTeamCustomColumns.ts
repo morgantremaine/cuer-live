@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
-import { useTeam } from './useTeam';
+import { useConsolidatedTeam } from './useConsolidatedTeam';
 
 export interface TeamCustomColumn {
   id: string;
@@ -14,7 +14,7 @@ export interface TeamCustomColumn {
 
 export const useTeamCustomColumns = () => {
   const { user } = useAuth();
-  const { team } = useTeam();
+  const { team } = useConsolidatedTeam();
   const [teamColumns, setTeamColumns] = useState<TeamCustomColumn[]>([]);
   const [loading, setLoading] = useState(true);
 

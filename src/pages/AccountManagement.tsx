@@ -14,7 +14,7 @@ import { SubscriptionStatus } from '@/components/subscription/SubscriptionStatus
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans'
 import { IntegrationsSettings } from '@/components/integrations/IntegrationsSettings'
 import { useSubscription } from '@/hooks/useSubscription'
-import { useTeam } from '@/hooks/useTeam'
+import { useConsolidatedTeam } from '@/hooks/useConsolidatedTeam'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -26,7 +26,7 @@ const AccountManagement = () => {
   const [showPlans, setShowPlans] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { access_type } = useSubscription()
-  const { team } = useTeam()
+  const { team } = useConsolidatedTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
 

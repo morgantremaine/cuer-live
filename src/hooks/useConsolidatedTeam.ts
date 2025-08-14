@@ -146,6 +146,12 @@ export const useConsolidatedTeam = () => {
     isLoading: globalTeamState.isLoading,
     loading: globalTeamState.isLoading, // Alias
     error: globalTeamState.error,
-    loadTeamData
+    loadTeamData,
+    // Placeholder functions - not implemented in consolidated version
+    inviteTeamMember: async () => ({ error: 'Not implemented in consolidated team hook' }),
+    removeTeamMemberWithTransfer: async () => ({ error: 'Not implemented in consolidated team hook' }),
+    getTransferPreview: async () => ({ error: 'Not implemented in consolidated team hook' }),
+    revokeInvitation: async () => ({ error: 'Not implemented in consolidated team hook' }),
+    acceptInvitation: async () => ({ error: 'Not implemented in consolidated team hook' })
   };
 };
