@@ -227,6 +227,7 @@ export const useSimpleAutoSave = (
       } catch (error) {
         console.error('❌ Save error:', error);
       } finally {
+        console.log('💾 Save operation completed, setting isSaving to false');
         setIsSaving(false);
         pendingSaveRef.current = false;
       }
