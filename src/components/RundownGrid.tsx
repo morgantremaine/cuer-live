@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import RundownContent from './RundownContent';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
-import { useShowcallerStateCoordination } from '@/hooks/useShowcallerStateCoordination';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useStableCallbacks } from '@/hooks/useStableCallbacks';
 import { logger } from '@/utils/logger';
@@ -42,7 +42,7 @@ const RundownGrid = React.memo(() => {
     };
   }, [rundownTitle]);
 
-  // Use coordinated showcaller state for better synchronization
+  // Get showcaller state from coordination layer to ensure single source of truth
   const {
     isPlaying,
     currentSegmentId,
@@ -57,11 +57,7 @@ const RundownGrid = React.memo(() => {
     backward,
     reset,
     jumpToSegment
-  } = useShowcallerStateCoordination({
-    items,
-    rundownId,
-    userId
-  });
+  } = coreState;
 
   const {
     selectedRows,
