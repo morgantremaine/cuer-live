@@ -23,6 +23,7 @@ export const useSimpleRealtimeRundown = ({
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
+  const connectionStableRef = useRef(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -108,7 +109,10 @@ export const useSimpleRealtimeRundown = ({
       console.log('🔄 Clearing existing simple realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
-      setIsConnected(false);
+      // Don't immediately set disconnected - wait for the new connection to stabilize
+      if (!connectionStableRef.current) {
+        setIsConnected(false);
+      }
     }
 
     // Only set up subscription if we have the required data
@@ -138,15 +142,36 @@ export const useSimpleRealtimeRundown = ({
         console.log('🔗 Simple realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
+          connectionStableRef.current = true;
           console.log('✅ Simple realtime connected successfully');
         } else if (status === 'CHANNEL_ERROR') {
-          setIsConnected(false);
+          connectionStableRef.current = false;
+          // Add a small delay before showing disconnect to avoid flicker
+          setTimeout(() => {
+            if (!connectionStableRef.current) {
+              setIsConnected(false);
+            }
+          }, 1000);
           console.error('❌ Simple realtime channel error');
         } else if (status === 'TIMED_OUT') {
-          setIsConnected(false);
+          connectionStableRef.current = false;
+          // Add a small delay before showing disconnect to avoid flicker
+          setTimeout(() => {
+            if (!connectionStableRef.current) {
+              setIsConnected(false);
+            }
+          }, 1000);
           console.error('⏰ Simple realtime connection timed out');
         } else if (status === 'CLOSED') {
-          setIsConnected(false);
+          connectionStableRef.current = false;
+          // Only set disconnected if the connection was stable before
+          if (subscriptionRef.current) {
+            setTimeout(() => {
+              if (!connectionStableRef.current) {
+                setIsConnected(false);
+              }
+            }, 500);
+          }
           console.log('🔄 Simple realtime status:', status);
         }
       });
@@ -159,6 +184,7 @@ export const useSimpleRealtimeRundown = ({
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
       }
+      connectionStableRef.current = false;
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
