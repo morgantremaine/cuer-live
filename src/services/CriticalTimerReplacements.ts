@@ -34,7 +34,6 @@ export const getTimestamp = () => getUniversalDate().toISOString();
  * Priority replacement list - these hooks/components need immediate attention:
  * 
  * HIGH PRIORITY (Critical for core functionality):
- * - useAutoSave.ts - Main auto-save mechanism
  * - useChangeTracking.ts - Core state tracking  
  * - useBlueprintState.ts - Blueprint management
  * - useCellNavigation.ts - User interface navigation
@@ -52,7 +51,6 @@ export const getTimestamp = () => getUniversalDate().toISOString();
 
 export const TIMER_REPLACEMENT_PRIORITIES = {
   HIGH: [
-    'src/hooks/useAutoSave.ts',
     'src/hooks/useChangeTracking.ts', 
     'src/hooks/useBlueprintState.ts',
     'src/hooks/useCellNavigation.ts',

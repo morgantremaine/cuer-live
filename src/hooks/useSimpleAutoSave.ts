@@ -49,8 +49,6 @@ export const useSimpleAutoSave = (
 
   // Track own updates
   const trackMyUpdate = useCallback((timestamp: string) => {
-    console.log('💾 Tracking my own update:', timestamp);
-    
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
@@ -94,7 +92,6 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
     if (rundownId === DEMO_RUNDOWN_ID) {
-      console.log('💾 Demo rundown detected - skipping autosave but keeping UI feedback');
       // Still mark as saved to prevent UI from showing "unsaved" state
       if (state.hasUnsavedChanges) {
         onSaved();
@@ -115,7 +112,6 @@ export const useSimpleAutoSave = (
 
     // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
-      console.log('💾 No content changes detected - marking as saved');
       // Mark as saved since there are no actual content changes
       onSaved();
       return;
@@ -128,7 +124,7 @@ export const useSimpleAutoSave = (
     
     const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
 
-    console.log('💾 Scheduling autosave in', debounceTime, 'ms');
+    
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -140,7 +136,6 @@ export const useSimpleAutoSave = (
           undoActiveRef.current || 
           userTypingRef.current ||
           pendingSaveRef.current) {
-        console.log('🚫 Save cancelled - blocking condition active');
         return;
       }
       
@@ -148,13 +143,12 @@ export const useSimpleAutoSave = (
       const finalSignature = createContentSignature();
       
       if (finalSignature === lastSavedRef.current) {
-        console.log('💾 No changes in final check - marking as saved');
         // Mark as saved since there are no actual content changes
         onSaved();
         return;
       }
       
-      console.log('💾 Executing autosave...');
+      
       setIsSaving(true);
       pendingSaveRef.current = true;
       lastSaveTimeRef.current = Date.now();
@@ -162,7 +156,6 @@ export const useSimpleAutoSave = (
       try {
         // Track this as our own update before saving
         const updateTimestamp = new Date().toISOString();
-        console.log('💾 Tracking own update before save:', updateTimestamp);
         trackMyUpdate(updateTimestamp);
 
         if (!rundownId) {
@@ -180,7 +173,6 @@ export const useSimpleAutoSave = (
 
           // Get folder ID from location state if available
           const folderId = location.state?.folderId || null;
-          console.log('💾 Creating new rundown with folder ID:', folderId);
 
           const { data: newRundown, error: createError } = await supabase
             .from('rundowns')
@@ -202,11 +194,9 @@ export const useSimpleAutoSave = (
           } else {
             // Track the actual timestamp returned by the database
             if (newRundown?.updated_at) {
-              console.log('💾 Tracking actual DB timestamp for new rundown:', newRundown.updated_at);
               trackMyUpdate(newRundown.updated_at);
             }
             lastSavedRef.current = finalSignature;
-            console.log('✅ Successfully saved new rundown with folder ID:', folderId);
             onSaved();
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
@@ -230,18 +220,16 @@ export const useSimpleAutoSave = (
           } else {
             // Track the actual timestamp returned by the database
             if (updatedRundown?.updated_at) {
-              console.log('💾 Tracking actual DB timestamp for update:', updatedRundown.updated_at);
               trackMyUpdate(updatedRundown.updated_at);
             }
             lastSavedRef.current = finalSignature;
-            console.log('✅ Successfully saved rundown at', updateTimestamp);
             onSaved();
           }
         }
       } catch (error) {
         console.error('❌ Save error:', error);
       } finally {
-        console.log('💾 Save operation completed, setting isSaving to false');
+        
         setIsSaving(false);
         pendingSaveRef.current = false;
       }
