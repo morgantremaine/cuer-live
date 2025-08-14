@@ -103,7 +103,7 @@ export const useSimpleRealtimeRundown = ({
       hasAllRequirements: !!rundownId && !!user && enabled
     });
     
-    // Clear any existing subscription
+    // Clear any existing subscription FIRST
     if (subscriptionRef.current) {
       console.log('🔄 Clearing existing simple realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
@@ -119,8 +119,11 @@ export const useSimpleRealtimeRundown = ({
     
     console.log('🚀 Setting up simple realtime subscription for rundown:', rundownId);
     
+    // Create unique channel name to avoid conflicts
+    const channelName = `simple-realtime-${rundownId}-${user.id}-${Date.now()}`;
+    
     const channel = supabase
-      .channel(`simple-realtime-${rundownId}-${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -139,7 +142,10 @@ export const useSimpleRealtimeRundown = ({
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false);
           console.error('❌ Simple realtime channel error');
-        } else {
+        } else if (status === 'TIMED_OUT') {
+          setIsConnected(false);
+          console.error('⏰ Simple realtime connection timed out');
+        } else if (status === 'CLOSED') {
           setIsConnected(false);
           console.log('🔄 Simple realtime status:', status);
         }
@@ -152,11 +158,11 @@ export const useSimpleRealtimeRundown = ({
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
-        setIsConnected(false);
       }
+      setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
+  }, [rundownId, user?.id, enabled]);
 
   return {
     isConnected,
