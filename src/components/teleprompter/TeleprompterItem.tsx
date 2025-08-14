@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 
@@ -26,14 +26,25 @@ const TeleprompterItem = ({
   const [editText, setEditText] = useState(item.script || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const formatText = (text: string) => {
+  // Memoize formatting functions for better performance
+  const formatText = useCallback((text: string) => {
     return isUppercase ? text.toUpperCase() : text;
-  };
+  }, [isUppercase]);
 
-
-  const getFontWeight = () => {
+  const getFontWeight = useCallback(() => {
     return isBold ? 'font-bold' : 'font-normal';
-  };
+  }, [isBold]);
+
+  // Memoize rendered script content to prevent color glitches
+  const renderedScript = useMemo(() => {
+    if (!item.script) return null;
+    return renderScriptWithBrackets(item.script, { 
+      isUppercase, 
+      isBold, 
+      fontSize, 
+      inlineDisplay: false 
+    });
+  }, [item.script, isUppercase, isBold, fontSize]);
 
   // Auto-resize textarea to fit content
   const autoResizeTextarea = () => {
@@ -57,26 +68,27 @@ const TeleprompterItem = ({
   }, [isEditing]);
 
 
-  const handleScriptClick = () => {
+  // Memoize event handlers to prevent unnecessary re-renders
+  const handleScriptClick = useCallback(() => {
     if (canEdit && !isHeaderItem(item) && onUpdateScript) {
       setIsEditing(true);
       setEditText(item.script || '');
     }
-  };
+  }, [canEdit, item, onUpdateScript]);
 
-  const handleScriptSave = () => {
+  const handleScriptSave = useCallback(() => {
     if (onUpdateScript && editText !== item.script) {
       onUpdateScript(item.id, editText);
     }
     setIsEditing(false);
-  };
+  }, [onUpdateScript, editText, item.script, item.id]);
 
-  const handleScriptCancel = () => {
+  const handleScriptCancel = useCallback(() => {
     setEditText(item.script || '');
     setIsEditing(false);
-  };
+  }, [item.script]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.ctrlKey) {
       e.preventDefault();
       handleScriptSave();
@@ -84,15 +96,15 @@ const TeleprompterItem = ({
       e.preventDefault();
       handleScriptCancel();
     }
-  };
+  }, [handleScriptSave, handleScriptCancel]);
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditText(e.target.value);
     // Auto-resize as user types
     setTimeout(() => {
       autoResizeTextarea();
     }, 0);
-  };
+  }, []);
 
   if (isHeaderItem(item)) {
     const headerTitle = item.name || item.segmentName || 'HEADER';
@@ -184,12 +196,7 @@ const TeleprompterItem = ({
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             ) : item.script ? (
-              renderScriptWithBrackets(item.script, { 
-                isUppercase, 
-                isBold, 
-                fontSize, 
-                inlineDisplay: false 
-              })
+              renderedScript
             ) : (
               canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>

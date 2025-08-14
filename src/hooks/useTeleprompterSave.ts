@@ -146,12 +146,12 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
     }
   }, [backupChange, clearBackup, retrySave, onSaveSuccess]);
 
-  // Debounced save function
+  // Debounced save function with faster default delay
   const debouncedSave = useCallback((
     itemId: string, 
     newScript: string, 
     rundownData: any,
-    delay: number = 1500
+    delay: number = 500
   ) => {
     // Clear existing timeout
     if (saveTimeoutRef.current) {

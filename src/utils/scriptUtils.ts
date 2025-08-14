@@ -13,6 +13,9 @@ export interface BracketParseOptions {
   showNullAsText?: boolean; // Show [null] as text instead of hiding it
 }
 
+// Memoization for script rendering to prevent unnecessary re-renders
+const scriptCache = new Map<string, React.ReactNode>();
+
 export const renderScriptWithBrackets = (
   text: string, 
   options: BracketParseOptions = {}
@@ -29,6 +32,12 @@ export const renderScriptWithBrackets = (
     return null;
   }
 
+  // Create cache key for memoization
+  const cacheKey = `${text}-${isUppercase}-${isBold}-${fontSize}-${inlineDisplay}-${showNullAsText}`;
+  if (scriptCache.has(cacheKey)) {
+    return scriptCache.get(cacheKey);
+  }
+
   const formatText = (text: string) => {
     return isUppercase ? text.toUpperCase() : text;
   };
@@ -42,12 +51,13 @@ export const renderScriptWithBrackets = (
   const parts = [];
   let lastIndex = 0;
   let match;
+  let partIndex = 0;
 
   while ((match = bracketRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(
         React.createElement('span', {
-          key: `text-${lastIndex}`,
+          key: `${cacheKey}-text-${partIndex++}`,
           className: getFontWeight()
         }, formatText(text.slice(lastIndex, match.index)))
       );
@@ -60,7 +70,7 @@ export const renderScriptWithBrackets = (
     if (bracketText.toLowerCase() === 'null' && showNullAsText) {
       parts.push(
         React.createElement('span', {
-          key: `bracket-${match.index}`,
+          key: `${cacheKey}-bracket-${partIndex++}`,
           className: getFontWeight()
         }, formatText(`[${bracketText}]`))
       );
@@ -99,7 +109,7 @@ export const renderScriptWithBrackets = (
 
       parts.push(
         React.createElement('span', {
-          key: `bracket-${match.index}`,
+          key: `${cacheKey}-bracket-${partIndex++}`,
           className: `py-0.5 px-2 ${inlineDisplay ? 'inline' : 'inline-block'} rounded mx-1 ${getFontWeight()}`,
           style: { 
             backgroundColor,
@@ -117,13 +127,25 @@ export const renderScriptWithBrackets = (
   if (lastIndex < text.length) {
     parts.push(
       React.createElement('span', {
-        key: `text-${lastIndex}`,
+        key: `${cacheKey}-text-${partIndex++}`,
         className: getFontWeight()
       }, formatText(text.slice(lastIndex)))
     );
   }
 
-  return parts.length > 0 ? parts : React.createElement('span', {
+  const result = parts.length > 0 ? parts : React.createElement('span', {
+    key: `${cacheKey}-single`,
     className: getFontWeight()
   }, formatText(text));
+
+  // Cache the result
+  scriptCache.set(cacheKey, result);
+  
+  // Limit cache size to prevent memory leaks
+  if (scriptCache.size > 100) {
+    const firstKey = scriptCache.keys().next().value;
+    scriptCache.delete(firstKey);
+  }
+
+  return result;
 };

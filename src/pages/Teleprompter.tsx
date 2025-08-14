@@ -5,6 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
+import { useSimpleRealtimeRundown } from '@/hooks/useSimpleRealtimeRundown';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
@@ -22,7 +23,6 @@ const Teleprompter = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPollingPaused, setIsPollingPaused] = useState(false);
 
   const {
     fontSize,
@@ -62,7 +62,21 @@ const Teleprompter = () => {
     };
   }, [rundownData?.title]);
 
-  // Enhanced save system
+  // Add realtime updates for instant script synchronization
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useSimpleRealtimeRundown({
+    rundownId: rundownId!,
+    enabled: !!rundownId && !!user && !!rundownData,
+    onRundownUpdate: (updatedRundown) => {
+      if (updatedRundown && !saveState?.isSaving) {
+        setRundownData({
+          title: updatedRundown.title || 'Untitled Rundown',
+          items: updatedRundown.items || []
+        });
+      }
+    }
+  });
+
+  // Enhanced save system with realtime collaboration
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
     rundownId: rundownId!,
     onSaveSuccess: (itemId, script) => {
@@ -149,12 +163,9 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
-  // Enhanced script update with robust saving (only for authenticated users)
+  // Enhanced script update with realtime collaboration (only for authenticated users)
   const updateScriptContent = async (itemId: string, newScript: string) => {
     if (!rundownData || !user) return;
-
-    // Pause polling during edit to prevent conflicts
-    setIsPollingPaused(true);
     
     // Update local state immediately for responsiveness
     const updatedItems = rundownData.items.map(item =>
@@ -166,13 +177,8 @@ const Teleprompter = () => {
       items: updatedItems
     });
 
-    // Use debounced save to prevent rapid-fire saves
-    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems });
-    
-    // Resume polling after a delay
-    setTimeout(() => {
-      setIsPollingPaused(false);
-    }, 3000);
+    // Use faster debounced save (500ms instead of 1500ms)
+    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems }, 500);
   };
 
   // Print function with improved formatting
@@ -321,20 +327,8 @@ const Teleprompter = () => {
     loadRundownData();
   }, [rundownId]);
 
-  // Enhanced polling with pause support
-  useEffect(() => {
-    if (!rundownId || loading || isPollingPaused) return;
-    
-    const pollInterval = setInterval(() => {
-      if (!isPollingPaused && (!user || !saveState.isSaving)) {
-        loadRundownData();
-      }
-    }, 8000); // Increased interval to 8 seconds
-
-    return () => {
-      clearInterval(pollInterval);
-    };
-  }, [rundownId, loading, isPollingPaused, saveState.isSaving]);
+  // Remove polling - now using realtime updates for instant synchronization
+  // Polling is no longer needed with realtime collaboration
 
   const getRowNumber = (index: number) => {
     if (!rundownData?.items || index < 0 || index >= rundownData.items.length) {
