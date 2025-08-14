@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
+import { migrateTimezone } from '@/utils/timezoneMigration';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -55,8 +56,9 @@ export const useRundownDataLoader = ({
     // Set the rundown data using direct setters to avoid triggering auto-save
     setRundownTitle(rundown.title);
     
-    // Load timezone - use saved value or fallback to default
-    const timezoneToLoad = rundown.timezone || 'America/New_York';
+    // Load timezone - use saved value or fallback to default, with migration
+    const rawTimezone = rundown.timezone || 'America/New_York';
+    const timezoneToLoad = migrateTimezone(rawTimezone);
     console.log('🌍 Loading timezone directly:', timezoneToLoad);
     setTimezoneDirectly(timezoneToLoad);
     
