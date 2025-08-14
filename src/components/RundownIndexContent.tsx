@@ -180,7 +180,7 @@ const RundownIndexContent = () => {
     } else {
       
       if (coreState.jumpToSegment) {
-        coreState.jumpToSegment();
+        coreState.jumpToSegment(segmentId);
       } else {
         console.error('🎯 IndexContent: jumpToSegment function not available');
       }

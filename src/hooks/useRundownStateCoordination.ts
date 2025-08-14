@@ -45,22 +45,15 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Remove showcaller coordination temporarily to eliminate interference
-  const showcallerCoordination = {
-    currentSegmentId: null,
-    isPlaying: false,
-    timeRemaining: 0,
-    isController: false,
-    isConnected: false,
-    isProcessingVisualUpdate: false,
-    getItemVisualStatus: () => ({}),
-    play: () => {},
-    pause: () => {},
-    forward: () => {},
-    backward: () => {},
-    reset: () => {},
-    jumpToSegment: () => {}
-  };
+  // Showcaller coordination for playback controls and visual state
+  const showcallerCoordination = useShowcallerStateCoordination({
+    items: performanceOptimization.calculatedItems,
+    rundownId: simplifiedState.rundownId,
+    userId,
+    teamId: null,
+    rundownTitle: simplifiedState.rundownTitle,
+    rundownStartTime: simplifiedState.rundownStartTime
+  });
 
   // Helper function to calculate end time - memoized for performance
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
