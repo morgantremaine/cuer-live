@@ -11,7 +11,6 @@ interface TextAreaCellProps {
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
-  markAsEditing?: () => void;
 }
 
 const TextAreaCell = ({
@@ -24,8 +23,7 @@ const TextAreaCell = ({
   isDuration = false,
   onUpdateValue,
   onCellClick,
-  onKeyDown,
-  markAsEditing
+  onKeyDown
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -149,11 +147,6 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Notify auto-save system that user is actively editing
-    if (markAsEditing) {
-      markAsEditing();
-    }
-    
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
@@ -172,11 +165,6 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
-    // Notify auto-save system that user is actively editing
-    if (markAsEditing) {
-      markAsEditing();
-    }
-    
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {

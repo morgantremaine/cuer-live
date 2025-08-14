@@ -262,10 +262,6 @@ export const useRundownStateCoordination = () => {
       },
       addMultipleRows,
       
-      // Enhanced editing detection for improved auto-save
-      markAsEditing: simplifiedState.markAsEditing,
-      setUserTyping: simplifiedState.setUserTyping,
-      
       // Autoscroll state with enhanced debugging
       autoScrollEnabled,
       toggleAutoScroll,

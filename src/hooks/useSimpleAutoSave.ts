@@ -8,8 +8,7 @@ import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void,
-  isEditing?: boolean
+  onSaved: () => void
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,26 +27,18 @@ export const useSimpleAutoSave = (
     undoActiveRef.current = active;
   };
 
-  // Function to set user typing state with restart capability
+  // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
     userTypingRef.current = typing;
     
     if (typing) {
-      // Clear any existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      // If user starts typing during save delay, cancel and restart the save timer
-      if (saveTimeoutRef.current) {
-        console.log('🔄 User started typing during save delay - restarting timer');
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = undefined;
-      }
-      
       typingTimeoutRef.current = setTimeout(() => {
         userTypingRef.current = false;
-      }, 2000); // Reduced from 3000ms to 2000ms for faster response
+      }, 3000);
     }
   }, []);
 
@@ -108,11 +99,10 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Enhanced blocking conditions with editing state integration
+    // Simple blocking conditions - no showcaller interference possible
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
-        isEditing ||  // Also block if user is actively editing (from useEditingState)
         pendingSaveRef.current) {
       return;
     }
@@ -127,13 +117,12 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Improved rate limiting with faster response times
+    // Rate limiting
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 2000; // Reduced from 3000ms to 2000ms
+    const minSaveInterval = 3000;
     
-    // Faster debounce times - 1.5s base, 3s when rate limited (vs old 3s/8s)
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 3000 : 1500;
+    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
 
     
 
@@ -142,11 +131,10 @@ export const useSimpleAutoSave = (
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check before saving with editing state
+      // Final check before saving
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current ||
-          isEditing ||  // Also check editing state at save time
           pendingSaveRef.current) {
         return;
       }
