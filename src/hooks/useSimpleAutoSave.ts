@@ -160,7 +160,9 @@ export const useSimpleAutoSave = (
       lastSaveTimeRef.current = Date.now();
       
       try {
+        // Track this as our own update before saving
         const updateTimestamp = new Date().toISOString();
+        console.log('💾 Tracking own update before save:', updateTimestamp);
         trackMyUpdate(updateTimestamp);
 
         if (!rundownId) {
@@ -198,6 +200,11 @@ export const useSimpleAutoSave = (
           if (createError) {
             console.error('❌ Save failed:', createError);
           } else {
+            // Track the actual timestamp returned by the database
+            if (newRundown?.updated_at) {
+              console.log('💾 Tracking actual DB timestamp for new rundown:', newRundown.updated_at);
+              trackMyUpdate(newRundown.updated_at);
+            }
             lastSavedRef.current = finalSignature;
             console.log('✅ Successfully saved new rundown with folder ID:', folderId);
             onSaved();
@@ -205,7 +212,7 @@ export const useSimpleAutoSave = (
           }
         } else {
           // Save only main content - showcaller state handled completely separately
-          const { error } = await supabase
+          const { data: updatedRundown, error } = await supabase
             .from('rundowns')
             .update({
               title: state.title,
@@ -214,11 +221,18 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               updated_at: updateTimestamp
             })
-            .eq('id', rundownId);
+            .eq('id', rundownId)
+            .select('updated_at')
+            .single();
 
           if (error) {
             console.error('❌ Save failed:', error);
           } else {
+            // Track the actual timestamp returned by the database
+            if (updatedRundown?.updated_at) {
+              console.log('💾 Tracking actual DB timestamp for update:', updatedRundown.updated_at);
+              trackMyUpdate(updatedRundown.updated_at);
+            }
             lastSavedRef.current = finalSignature;
             console.log('✅ Successfully saved rundown at', updateTimestamp);
             onSaved();
