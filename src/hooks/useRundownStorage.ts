@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useTeamId } from './useTeamId';
+import { useConsolidatedTeam } from './useConsolidatedTeam';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 interface SavedRundown {
@@ -28,7 +28,8 @@ interface SavedRundown {
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
-  const { teamId } = useTeamId();
+  const { team } = useConsolidatedTeam();
+  const teamId = team?.id;
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(false);
   const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('RundownStorage');

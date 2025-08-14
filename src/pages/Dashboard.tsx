@@ -54,16 +54,17 @@ const Dashboard = () => {
 
   // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && !teamLoading && !hasInitiallyLoaded && user) {
-      // Mark as initially loaded even if there's no team yet (for new users)
+    if (!loading && !teamLoading && !hasInitiallyLoaded && user && teamId) {
+      // Only mark as initially loaded when we actually have a team ID and user
       console.log('Dashboard: Marking as initially loaded - user:', !!user, 'teamId:', !!teamId, 'loading:', loading, 'teamLoading:', teamLoading);
       setHasInitiallyLoaded(true);
     }
-  }, [loading, teamLoading, hasInitiallyLoaded, user]);
+  }, [loading, teamLoading, hasInitiallyLoaded, user, teamId]);
 
-  // Reset loading state when user changes (but not team - team creation is part of the process)
+  // Reset loading state when user changes (keep hasInitiallyLoaded more stable)
   useEffect(() => {
     if (user?.id) {
+      // Only reset if this is a completely different user
       setHasInitiallyLoaded(false);
     }
   }, [user?.id]);
@@ -290,8 +291,8 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show loading skeleton if we haven't loaded data yet OR if actively loading
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
+  // Show loading skeleton more conservatively
+  const shouldShowLoadingSkeleton = (!hasInitiallyLoaded && (loading || teamLoading)) || (loading && savedRundowns.length === 0 && teamLoading);
   
   console.log('🔍 Dashboard loading state check:', {
     hasInitiallyLoaded,
