@@ -165,14 +165,6 @@ const RundownHeader = ({
 
   // Helper function to render connection status icon with improved state handling
   const renderConnectionIcon = () => {
-    // Add debug logging to understand the state transitions
-    console.log('🔍 Icon render state:', { 
-      isSaving, 
-      isProcessingRealtimeUpdate, 
-      isConnected,
-      timestamp: new Date().toISOString()
-    });
-    
     // Priority 1: Show saving spinner if actively saving
     if (isSaving) {
       return <LoaderCircle className="h-4 w-4 text-green-500 animate-spin" />;
@@ -183,13 +175,12 @@ const RundownHeader = ({
       return <AnimatedWifiIcon className="text-blue-500" isAnimating={true} />;
     }
     
-    // Priority 3: Show connected state if connected (or if we just finished saving)
+    // Priority 3: Show connected state if connected
     if (isConnected) {
       return <Wifi className="h-4 w-4 text-green-500" />;
     }
     
-    // Only show disconnect if actually disconnected AND not in a saving/processing state
-    console.log('⚠️ Showing disconnect icon - all states false');
+    // Only show disconnect if actually disconnected
     return <WifiOff className="h-4 w-4 text-red-500" />;
   };
 
