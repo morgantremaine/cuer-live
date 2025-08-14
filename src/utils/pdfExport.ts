@@ -8,18 +8,18 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
     throw new Error('Could not find rundown table to export');
   }
 
-  // Create a simplified print-only version (reuse the print logic)
+  // Create a simplified version using the EXACT same logic as print view
   const printContent = document.createElement('div');
   printContent.id = 'pdf-export-content';
   printContent.style.position = 'absolute';
   printContent.style.top = '-9999px';
   printContent.style.left = '-9999px';
-  printContent.style.width = '1200px'; // Fixed width for consistent rendering
+  printContent.style.width = '1200px';
   printContent.style.backgroundColor = 'white';
   printContent.style.padding = '20px';
   printContent.style.fontFamily = 'Arial, sans-serif';
   
-  // Helper functions (copied from SharedRundownPrint for consistency)
+  // Helper functions - EXACT same as print view
   const timeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
     const parts = timeStr.split(':').map(Number);
@@ -40,8 +40,8 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate total runtime
-  const calculateTotalRuntime = () => {
+  // Calculate total runtime - EXACT same logic as print view
+  function calculateTotalRuntime() {
     const runtimeTexts = document.querySelectorAll('*');
     for (const element of runtimeTexts) {
       const text = element.textContent?.trim();
@@ -53,10 +53,10 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
       }
     }
     return '00:00:00';
-  };
+  }
 
-  // Get start time
-  const getStartTime = () => {
+  // Get start time - EXACT same logic as print view
+  function getStartTime() {
     const startTimeInputs = document.querySelectorAll('input[type="text"]');
     for (const input of startTimeInputs) {
       const htmlInput = input as HTMLInputElement;
@@ -64,8 +64,8 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
         return htmlInput.value;
       }
     }
-    return '09:00:00';
-  };
+    return '00:00:00';
+  }
 
   // Extract actual table structure
   const headerRow = existingTable.querySelector('thead tr');
@@ -75,27 +75,28 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
     throw new Error('No rundown content found to export');
   }
 
-  // Build the export HTML using actual table structure
+  // Build the export HTML using EXACT same structure as print view
   let exportHTML = `
-    <div style="width: 100%; background: white; color: black; font-family: Arial, sans-serif;">
-      <div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333;">
+    <div class="print-container" style="width: 100%; background: white; color: black; font-family: Arial, sans-serif;">
+      <div class="print-header" style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #333;">
         <h1 style="font-size: 24px; font-weight: bold; margin: 0 0 10px 0; color: black;">${rundownTitle}</h1>
-        <div style="font-size: 12px; color: #333; display: flex; gap: 30px;">
+        <div class="print-info" style="font-size: 12px; color: #333; display: flex; gap: 30px;">
           <span>Start Time: ${getStartTime()}</span>
           <span>Total Runtime: ${calculateTotalRuntime()}</span>
         </div>
       </div>
-      <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: white;">
+      <table class="print-table" style="width: 100%; border-collapse: collapse; font-size: 10px; background: white; table-layout: auto;">
         <thead>
           <tr>
   `;
 
-  // Copy header structure with proper column sizing
+  // Copy header structure - EXACT same logic as print view
   const headerCells = headerRow.querySelectorAll('th');
-  headerCells.forEach((th, index) => {
+  headerCells.forEach(th => {
     const thElement = th as HTMLElement;
     let content = '';
     
+    // EXACT same header text extraction logic
     const directText = thElement.childNodes[0]?.textContent?.trim();
     if (directText && !directText.includes('undefined')) {
       content = directText;
@@ -117,25 +118,7 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
       content = '#';
     }
     
-    // Determine column width based on content type
-    let columnStyle = '';
-    const lowerContent = content.toLowerCase();
-    
-    if (content === '#' || index === 0) {
-      columnStyle = 'width: 30px; max-width: 30px; white-space: nowrap;';
-    } else if (lowerContent.includes('duration') || lowerContent.includes('start') || lowerContent.includes('end') || lowerContent.includes('elapsed')) {
-      columnStyle = 'width: 60px; max-width: 60px; white-space: nowrap;';
-    } else if (lowerContent.includes('talent') || lowerContent.includes('stage') || lowerContent.includes('source') || lowerContent.includes('gfx') || lowerContent.includes('camera') || lowerContent.includes('audio') || lowerContent.includes('video')) {
-      columnStyle = 'width: 70px; max-width: 70px; white-space: nowrap;';
-    } else if (lowerContent.includes('script') || lowerContent.includes('content') || lowerContent.includes('notes') || lowerContent.includes('description')) {
-      columnStyle = 'min-width: 200px; width: auto;';
-    } else if (lowerContent.includes('segment') || lowerContent.includes('name') || lowerContent.includes('title')) {
-      columnStyle = 'width: 120px; max-width: 120px;';
-    } else {
-      columnStyle = 'width: 50px; max-width: 50px; white-space: nowrap;';
-    }
-    
-    exportHTML += `<th style="background: #f5f5f5; border: 1px solid #333; padding: 8px 6px; font-weight: bold; font-size: 10px; text-align: left; color: black; ${columnStyle}">${content || ''}</th>`;
+    exportHTML += `<th style="background: #f5f5f5; border: 1px solid #333; padding: 6px 4px; font-weight: bold; font-size: 9px; text-align: left; color: black;">${content || ''}</th>`;
   });
 
   exportHTML += `
@@ -144,43 +127,29 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
         <tbody>
   `;
 
-  // Copy body structure with proper styling
+  // Copy body structure - EXACT same logic as print view
   bodyRows.forEach(row => {
     const rowElement = row as HTMLElement;
     const dataType = rowElement.getAttribute('data-type');
     const customColor = rowElement.getAttribute('data-custom-color') === 'true';
     const isFloated = rowElement.getAttribute('data-floated') === 'true';
     
-    const isHeaderRow = rowElement.classList.contains('print-header-row') || 
-                       rowElement.querySelector('.print-header-row') ||
-                       dataType === 'header';
-    
+    let rowClass = 'regular-row';
     let backgroundColor = '#ffffff';
     
-    if (isHeaderRow) {
-      backgroundColor = '#f5f5f5';
-    } else if (customColor || rowElement.style.backgroundColor) {
-      const computedStyle = window.getComputedStyle(rowElement);
-      backgroundColor = rowElement.style.backgroundColor || computedStyle.backgroundColor;
-      
-      if (backgroundColor && backgroundColor.startsWith('rgb')) {
-        const rgbMatch = backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (rgbMatch) {
-          const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
-          const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
-          const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
-          backgroundColor = `#${r}${g}${b}`;
-        }
-      }
-      
-      if (!backgroundColor || backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
-        backgroundColor = '#f0f8ff';
-      }
+    // EXACT same background color logic as print view
+    if (dataType === 'header') {
+      rowClass = 'header-row';
+      backgroundColor = '#e8e8e8'; // This matches print view exactly
+    } else if (customColor) {
+      rowClass = 'colored-row';
+      backgroundColor = rowElement.style.backgroundColor || '#f0f8ff';
     } else if (isFloated) {
+      rowClass = 'floated-row';
       backgroundColor = '#fff8dc';
     }
 
-    exportHTML += `<tr style="background-color: ${backgroundColor};">`;
+    exportHTML += `<tr class="${rowClass}" style="background-color: ${backgroundColor};">`;
     
     const cells = rowElement.querySelectorAll('td');
     cells.forEach((cell, cellIndex) => {
@@ -188,6 +157,7 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
       
       let content = '';
       
+      // EXACT same cell content extraction logic
       if (cellIndex === 0) {
         const rowNumberSpan = cellElement.querySelector('span');
         if (rowNumberSpan) {
@@ -201,19 +171,12 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
           content = input.value.trim();
         } else {
           const clone = cellElement.cloneNode(true) as HTMLElement;
-          clone.querySelectorAll('button, .lucide, [role="button"], .screen-only-duration').forEach(el => el.remove());
+          clone.querySelectorAll('button, .lucide, [role="button"]').forEach(el => el.remove());
           content = clone.textContent?.trim() || '';
-          
-          if (dataType === 'header') {
-            const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
-            if (headerText.includes('segment') || headerText.includes('name')) {
-              content = content.replace(/\s*\([^)]*\)\s*$/, '').trim();
-            }
-          }
         }
       }
       
-      // For header rows, extract duration from appropriate source
+      // EXACT same header duration extraction logic
       if (dataType === 'header') {
         const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
         if (headerText.includes('duration') || headerText.includes('dur')) {
@@ -249,9 +212,12 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
       
       content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
       
-      const cellStyle = isHeaderRow ? 
-        'border: 1px solid #666; padding: 10px 6px; vertical-align: top; word-wrap: break-word; color: black; font-size: 12px; line-height: 1.4; font-weight: bold;' :
-        'border: 1px solid #666; padding: 6px; vertical-align: top; word-wrap: break-word; color: black; font-size: 10px; line-height: 1.4;';
+      // EXACT same cell styling as print view
+      let cellStyle = 'border: 1px solid #666; padding: 4px; vertical-align: top; word-wrap: break-word; color: black; font-size: 9px; line-height: 1.3;';
+      
+      if (dataType === 'header') {
+        cellStyle = 'border: 1px solid #666; padding: 8px 4px; vertical-align: top; word-wrap: break-word; color: black; font-size: 11px; line-height: 1.3; font-weight: bold; border-left: none; border-right: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+      }
       
       exportHTML += `<td style="${cellStyle}">${content}</td>`;
     });
@@ -271,7 +237,7 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
   try {
     // Generate canvas from the content
     const canvas = await html2canvas(printContent, {
-      scale: 2, // Higher quality
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -287,7 +253,7 @@ export const exportRundownAsPDF = async (rundownTitle: string): Promise<void> =>
     });
 
     const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 277; // A4 landscape width in mm (minus margins)
+    const imgWidth = 277;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
     // Add the image to PDF
