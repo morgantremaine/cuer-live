@@ -26,8 +26,10 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   
-  // Connection state will come from realtime hook
+  // Connection state with stability during saves
   const [isConnected, setIsConnected] = useState(false);
+  const lastConnectionStateRef = useRef(false);
+  const connectionStabilityTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
@@ -123,10 +125,48 @@ export const useSimplifiedRundownState = () => {
     }
   }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
 
-  // Update connection status from realtime
+  // Update connection status from realtime with stability during saves
   useEffect(() => {
-    setIsConnected(realtimeConnection.isConnected);
-  }, [realtimeConnection.isConnected]);
+    const newConnectionState = realtimeConnection.isConnected;
+    
+    // If we're saving and connection state would change to disconnected, delay the update
+    if (isSaving && !newConnectionState && lastConnectionStateRef.current) {
+      console.log('📡 Delaying disconnect indication during save operation');
+      
+      // Clear any existing timeout
+      if (connectionStabilityTimeoutRef.current) {
+        clearTimeout(connectionStabilityTimeoutRef.current);
+      }
+      
+      // Only update to disconnected after save completes or after a delay
+      connectionStabilityTimeoutRef.current = setTimeout(() => {
+        if (!isSaving && !realtimeConnection.isConnected) {
+          console.log('📡 Applying delayed disconnect after save stability period');
+          setIsConnected(false);
+          lastConnectionStateRef.current = false;
+        }
+      }, 2000);
+      
+      return;
+    }
+    
+    // Clear any pending disconnect timeout if we're connecting
+    if (newConnectionState && connectionStabilityTimeoutRef.current) {
+      clearTimeout(connectionStabilityTimeoutRef.current);
+      connectionStabilityTimeoutRef.current = undefined;
+    }
+    
+    // Immediate updates for connection establishment or when not saving
+    if (newConnectionState !== lastConnectionStateRef.current) {
+      console.log('📡 Connection state change:', { 
+        from: lastConnectionStateRef.current, 
+        to: newConnectionState,
+        isSaving 
+      });
+      setIsConnected(newConnectionState);
+      lastConnectionStateRef.current = newConnectionState;
+    }
+  }, [realtimeConnection.isConnected, isSaving]);
 
   // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -427,11 +467,14 @@ export const useSimplifiedRundownState = () => {
     actions.setItems(newItems);
   }, [state.items, state.title, saveUndoState, actions.setItems]);
 
-  // Clean up timeouts on unmount - unchanged
+  // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+      if (connectionStabilityTimeoutRef.current) {
+        clearTimeout(connectionStabilityTimeoutRef.current);
       }
     };
   }, []);
