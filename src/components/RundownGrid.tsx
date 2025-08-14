@@ -184,6 +184,7 @@ const RundownGrid = React.memo(() => {
       onUpdateItem={coreState.updateItem}
       onCellClick={stableCallbacks.handleCellClick}
       onKeyDown={stableCallbacks.handleKeyDown}
+      editingCoordination={coreState.editingCoordination}
       onToggleColorPicker={uiState.handleToggleColorPicker}
       onColorSelect={stableCallbacks.handleColorSelect}
       onDeleteRow={coreState.deleteRow}

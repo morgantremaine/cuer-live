@@ -58,6 +58,12 @@ interface RundownContentProps {
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
   visibleItems: RundownItem[];
+  // Enhanced editing coordination
+  editingCoordination?: {
+    startFieldEdit: (itemId: string, field: string) => void;
+    updateFieldActivity: (itemId: string, field: string) => void;
+    endFieldEdit: (itemId: string, field: string) => void;
+  };
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -109,7 +115,8 @@ const RundownContent = React.memo<RundownContentProps>(({
   toggleHeaderCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds,
-  visibleItems
+  visibleItems,
+  editingCoordination
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -270,6 +277,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}
+            editingCoordination={editingCoordination}
             onToggleColorPicker={onToggleColorPicker}
             onColorSelect={onColorSelect}
             onDeleteRow={onDeleteRow}
