@@ -25,8 +25,7 @@ const RundownGrid = React.memo(() => {
     clearRowSelection,
     rundownId,
     rundownStartTime,
-    rundownTitle,
-    realtimeUpdateCounter
+    rundownTitle
   } = coreState;
 
   // Update browser tab title when rundown title changes
@@ -215,7 +214,6 @@ const RundownGrid = React.memo(() => {
       isHeaderCollapsed={coreState.isHeaderCollapsed}
       getHeaderGroupItemIds={coreState.getHeaderGroupItemIds}
       visibleItems={coreState.visibleItems}
-      realtimeUpdateCounter={realtimeUpdateCounter}
     />
   );
 });

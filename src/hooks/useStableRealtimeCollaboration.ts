@@ -182,12 +182,6 @@ export const useStableRealtimeCollaboration = ({
     if (currentEnabled && currentUserId && currentRundownId && 
         (lastSetupRundownId.current !== currentRundownId || lastSetupUserId.current !== currentUserId)) {
       
-      console.log('🔄 StableRealtimeCollaboration setting up subscription:', {
-        rundownId: currentRundownId,
-        userId: currentUserId,
-        enabled: currentEnabled
-      });
-      
       // Cleanup existing
       cleanup();
       

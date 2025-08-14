@@ -4,9 +4,8 @@ import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useOptimizedRealtime } from './useOptimizedRealtime';
-import { useConsolidatedUserColumnPreferences } from './useConsolidatedUserColumnPreferences';
+import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
-import { useStateLoadingCoordinator } from './useStateLoadingCoordinator';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -20,7 +19,6 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
-  const { startCoordinatedLoad, getCurrentLoadingSource, isCurrentlyLoading, markRealtimeUpdate } = useStateLoadingCoordinator(rundownId);
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -30,19 +28,10 @@ export const useSimplifiedRundownState = () => {
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
-  
-  // Force re-render mechanism for realtime updates
-  const [realtimeUpdateCounter, setRealtimeUpdateCounter] = useState(0);
-  const forceRealtimeUpdate = useCallback(() => {
-    const newCounter = Date.now();
-    console.log('🔄 Force realtime update triggered:', newCounter);
-    setRealtimeUpdateCounter(newCounter);
-  }, []);
 
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastLoadedRundownId = useRef<string | null>(null);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -63,7 +52,7 @@ export const useSimplifiedRundownState = () => {
     setColumns,
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns
-  } = useConsolidatedUserColumnPreferences(rundownId);
+  } = useUserColumnPreferences(rundownId);
 
   // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
   const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
@@ -96,42 +85,18 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
-      
-      // Mark realtime data in coordinator to prevent stale database loads
-      const realtimeTimestamp = updatedRundown.updated_at || new Date().toISOString();
-      markRealtimeUpdate(realtimeTimestamp);
-      console.log('🕒 Marked realtime update timestamp:', realtimeTimestamp);
-      
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
-        console.log('📊 APPLYING realtime update to state');
-        
-        // Force fresh state references to ensure React detects the change
-        const freshItems = Array.isArray(updatedRundown.items) 
-          ? updatedRundown.items.map((item, index) => ({ 
-              ...item, 
-              __realtimeKey: `${item.id}_${Date.now()}_${index}` // Force React re-render
-            }))
-          : [];
-        
-         // Load state WITHOUT any showcaller data FIRST
-         actions.loadState({
-           items: freshItems,
-           columns: [],
-           title: updatedRundown.title || 'Untitled Rundown',
-           startTime: updatedRundown.start_time || '09:00:00',
-           timezone: updatedRundown.timezone || 'America/New_York'
-         });
-         
-         // THEN force re-render AFTER state update to ensure components see fresh data
-         forceRealtimeUpdate();
-         
-         console.log('🔄 Realtime update applied with fresh references, item count:', freshItems.length);
-      } else {
-        console.log('⏸️ SKIPPING realtime update due to active save operation');
+        // Load state WITHOUT any showcaller data
+        actions.loadState({
+          items: updatedRundown.items || [],
+          columns: [],
+          title: updatedRundown.title || 'Untitled Rundown',
+          startTime: updatedRundown.start_time || '09:00:00',
+          timezone: updatedRundown.timezone || 'America/New_York'
+        });
       }
-    }, [actions, isSaving, forceRealtimeUpdate, markRealtimeUpdate]),
+    }, [actions, isSaving]),
     enabled: !!rundownId,  // Enable as soon as we have a rundown ID
     hasUnsavedChanges: state.hasUnsavedChanges,
     trackOwnUpdate: useCallback((timestamp: string) => {
@@ -139,17 +104,6 @@ export const useSimplifiedRundownState = () => {
       console.log('📝 Tracking own update in realtime:', timestamp);
     }, [])
   });
-
-  // Debug realtime status
-  useEffect(() => {
-    console.log('🔍 Realtime Status Debug:', {
-      rundownId,
-      enabled: !!rundownId,
-      isConnected: optimizedRealtime.isConnected,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      isSaving
-    });
-  }, [rundownId, optimizedRealtime.isConnected, state.hasUnsavedChanges, isSaving]);
 
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
@@ -227,7 +181,7 @@ export const useSimplifiedRundownState = () => {
       if (!rundownId) return;
 
       // Check if we already have this rundown loaded to prevent reload
-      if (isInitialized && state.items.length > 0 && lastLoadedRundownId.current === rundownId) {
+      if (isInitialized && state.items.length > 0) {
         console.log('📋 Skipping reload - rundown already loaded:', rundownId);
         return;
       }
@@ -240,25 +194,8 @@ export const useSimplifiedRundownState = () => {
         return;
       }
 
-      // First check database timestamp to avoid loading stale data
-      let dbTimestamp: string | undefined;
-      try {
-        const { data: timestampData } = await supabase
-          .from('rundowns')
-          .select('updated_at')
-          .eq('id', rundownId)
-          .maybeSingle();
-        
-        dbTimestamp = timestampData?.updated_at;
-        console.log('🕒 Database timestamp check:', dbTimestamp);
-      } catch (error) {
-        console.error('Error checking rundown timestamp:', error);
-      }
-
-      // Use coordinated loading to prevent race conditions with timestamp validation
-      const wasStarted = await startCoordinatedLoad('useSimplifiedRundownState', async () => {
-        setIsLoading(true);
-        setCacheLoading(true);
+      setIsLoading(true);
+      setCacheLoading(true);
       try {
         // Check if this is a demo rundown
         if (rundownId === DEMO_RUNDOWN_ID) {
@@ -289,19 +226,8 @@ export const useSimplifiedRundownState = () => {
               ? data.items 
               : createDefaultRundownItems();
 
-             // Load content only (columns handled by useUserColumnPreferences)
+            // Load content only (columns handled by useUserColumnPreferences)
             console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');
-            
-            // Debug: Log current loading source
-            const currentSource = getCurrentLoadingSource();
-            console.log('🐛 DEBUG: Loading state from source:', currentSource, 'with items:', itemsToLoad.length);
-            
-            // CRITICAL: Don't load empty state when we have valid items
-            if (itemsToLoad.length === 0) {
-              console.error('🚫 BLOCKED: Attempted to load empty rundown state! Source:', currentSource);
-              return; // Exit early, don't load empty state
-            }
-            
             actions.loadState({
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
@@ -320,22 +246,15 @@ export const useSimplifiedRundownState = () => {
           startTime: '09:00:00',
           timezone: 'America/New_York'
         });
-        } finally {
+      } finally {
         setIsLoading(false);
         setIsInitialized(true);
         setCacheLoading(false);
-        lastLoadedRundownId.current = rundownId;
-      }
-      }, dbTimestamp); // Pass database timestamp for staleness check
-
-      if (!wasStarted) {
-        console.log('🔒 useSimplifiedRundownState: Load blocked by coordinator');
-        setIsLoading(false);
       }
     };
 
     loadRundown();
-  }, [rundownId, startCoordinatedLoad]); // Remove isInitialized dependency to prevent reload
+  }, [rundownId]); // Remove isInitialized dependency to prevent reload
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {
@@ -351,26 +270,20 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, isInitialized, actions]);
 
-  // Calculate all derived values using pure functions with realtime invalidation
+  // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) {
-      console.log('🔄 calculatedItems: empty items array, returning []');
       return [];
     }
     
-    console.log('🔄 calculatedItems: recalculating with', state.items.length, 'items, counter:', realtimeUpdateCounter);
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    console.log('🔄 calculatedItems: calculated', calculated.length, 'items');
     return calculated;
-  }, [state.items, state.startTime, state.lastChanged, realtimeUpdateCounter]);
+  }, [state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
-    console.log('🔄 totalRuntime: recalculating with', state.items.length, 'items, counter:', realtimeUpdateCounter);
-    const runtime = calculateTotalRuntime(state.items);
-    console.log('🔄 totalRuntime: calculated runtime:', runtime);
-    return runtime;
-  }, [state.items, state.lastChanged, realtimeUpdateCounter]);
+    return calculateTotalRuntime(state.items);
+  }, [state.items]);
 
   // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
@@ -423,12 +336,12 @@ export const useSimplifiedRundownState = () => {
   const getHeaderDuration = useCallback((index: number) => {
     if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
     return calculateHeaderDuration(state.items, index);
-  }, [state.items, state.lastChanged, realtimeUpdateCounter]);
+  }, [state.items]);
 
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
     return calculatedItems[index].calculatedRowNumber;
-  }, [calculatedItems, realtimeUpdateCounter]);
+  }, [calculatedItems]);
 
   const handleRowSelection = useCallback((itemId: string) => {
     setSelectedRowId(prev => {
@@ -512,7 +425,6 @@ export const useSimplifiedRundownState = () => {
     };
   }, []);
 
-
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -535,10 +447,9 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
-    // Realtime connection status and invalidation key
+    // Realtime connection status
     isConnected,
     isProcessingRealtimeUpdate: optimizedRealtime.isProcessingUpdate,
-    realtimeUpdateCounter, // Critical: This forces React components to re-render
     
     // Calculations
     totalRuntime,

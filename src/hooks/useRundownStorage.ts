@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useConsolidatedTeam } from './useConsolidatedTeam';
+import { useTeamId } from './useTeamId';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 interface SavedRundown {
@@ -28,8 +28,7 @@ interface SavedRundown {
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
-  const { team } = useConsolidatedTeam();
-  const teamId = team?.id;
+  const { teamId } = useTeamId();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(false);
   const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('RundownStorage');
@@ -68,16 +67,13 @@ export const useRundownStorage = () => {
 
     // Set a debounce timeout
     loadTimeoutRef.current = setManagedTimeout(async () => {
-      if (isLoadingRef.current) {
-        console.log('🔒 useRundownStorage: Already loading, skipping');
-        return;
-      }
+      if (isLoadingRef.current) return;
       
       isLoadingRef.current = true;
       lastLoadedUserRef.current = user.id;
       lastLoadedTeamRef.current = teamId;
       
-      console.log('Loading rundowns from database for user:', user.id, 'teamId:', teamId);
+      console.log('Loading rundowns from database for user:', user.id);
       setLoading(true);
 
       try {
@@ -95,12 +91,11 @@ export const useRundownStorage = () => {
         }));
 
         setSavedRundowns(rundowns);
-        console.log('✅ useRundownStorage: Loaded rundowns from database:', rundowns.length);
+        console.log('Loaded rundowns from database:', rundowns.length);
       } catch (error) {
-        console.error('❌ useRundownStorage: Error loading rundowns:', error);
+        console.error('Error loading rundowns:', error);
         setSavedRundowns([]);
       } finally {
-        console.log('✅ useRundownStorage: Setting loading to false');
         setLoading(false);
         isLoadingRef.current = false;
       }

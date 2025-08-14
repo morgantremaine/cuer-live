@@ -12,7 +12,7 @@ import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
-import { useConsolidatedTeam } from '@/hooks/useConsolidatedTeam';
+import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,7 +23,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, teamMembers, isLoading: teamLoading } = useConsolidatedTeam();
+  const { team, teamMembers, isLoading: teamLoading } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
@@ -54,17 +54,16 @@ const Dashboard = () => {
 
   // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && !teamLoading && !hasInitiallyLoaded && user && teamId) {
-      // Only mark as initially loaded when we actually have a team ID and user
+    if (!loading && !teamLoading && !hasInitiallyLoaded && user) {
+      // Mark as initially loaded even if there's no team yet (for new users)
       console.log('Dashboard: Marking as initially loaded - user:', !!user, 'teamId:', !!teamId, 'loading:', loading, 'teamLoading:', teamLoading);
       setHasInitiallyLoaded(true);
     }
-  }, [loading, teamLoading, hasInitiallyLoaded, user, teamId]);
+  }, [loading, teamLoading, hasInitiallyLoaded, user]);
 
-  // Reset loading state when user changes (keep hasInitiallyLoaded more stable)
+  // Reset loading state when user changes (but not team - team creation is part of the process)
   useEffect(() => {
     if (user?.id) {
-      // Only reset if this is a completely different user
       setHasInitiallyLoaded(false);
     }
   }, [user?.id]);
@@ -291,18 +290,8 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show loading skeleton more conservatively
-  const shouldShowLoadingSkeleton = (!hasInitiallyLoaded && (loading || teamLoading)) || (loading && savedRundowns.length === 0 && teamLoading);
-  
-  console.log('🔍 Dashboard loading state check:', {
-    hasInitiallyLoaded,
-    loading,
-    savedRundownsLength: savedRundowns.length,
-    teamLoading,
-    shouldShowLoadingSkeleton,
-    user: !!user,
-    teamId: !!teamId
-  });
+  // Show loading skeleton if we haven't loaded data yet OR if actively loading
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
 
   if (shouldShowLoadingSkeleton) {
     return (

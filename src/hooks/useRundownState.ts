@@ -130,40 +130,12 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, hasUnsavedChanges: false };
 
     case 'LOAD_STATE':
-      console.log('🔥 LOAD_STATE action dispatched:', { 
-        payload: action.payload, 
-        currentItems: state.items.length,
-        newItems: action.payload.items?.length || 'unchanged'
-      });
-      
-      // CRITICAL: Prevent empty state loads when we have valid data
-      if (action.payload.items && action.payload.items.length === 0 && state.items.length > 0) {
-        console.warn('🚫 BLOCKED: Attempted to load empty items over existing data. Current items:', state.items.length);
-        return state; // Don't change state
-      }
-      
-      // Create completely fresh state references to force React re-render
-      const newItems = action.payload.items ? [...action.payload.items] : [...state.items];
-      const newColumns = action.payload.columns ? [...action.payload.columns] : [...state.columns];
-      
-      const newState = {
-        items: newItems,
-        columns: newColumns,
-        title: action.payload.title !== undefined ? action.payload.title : state.title,
-        startTime: action.payload.startTime !== undefined ? action.payload.startTime : state.startTime,
-        timezone: action.payload.timezone !== undefined ? action.payload.timezone : state.timezone,
-        currentSegmentId: action.payload.currentSegmentId !== undefined ? action.payload.currentSegmentId : state.currentSegmentId,
-        isPlaying: action.payload.isPlaying !== undefined ? action.payload.isPlaying : state.isPlaying,
+      return {
+        ...state,
+        ...action.payload,
         hasUnsavedChanges: false,
-        lastChanged: Date.now() // Force change detection
+        lastChanged: 0
       };
-      
-      console.log('🔥 LOAD_STATE new state:', { 
-        itemsCount: newState.items.length,
-        lastChanged: newState.lastChanged,
-        stateRefreshForced: true
-      });
-      return newState;
 
     default:
       return state;

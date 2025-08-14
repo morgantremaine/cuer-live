@@ -22,8 +22,7 @@ export const useRundownStateCoordination = () => {
   const performanceOptimization = useRundownPerformanceOptimization({
     items: simplifiedState.items,
     columns: simplifiedState.columns,
-    startTime: simplifiedState.rundownStartTime,
-    realtimeUpdateCounter: simplifiedState.realtimeUpdateCounter
+    startTime: simplifiedState.rundownStartTime
   });
 
   // Autoscroll state with localStorage persistence
@@ -105,7 +104,7 @@ export const useRundownStateCoordination = () => {
   };
 
   // Get header collapse functions from useHeaderCollapse
-  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems, simplifiedState.realtimeUpdateCounter);
+  const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
@@ -270,10 +269,7 @@ export const useRundownStateCoordination = () => {
       toggleHeaderCollapse,
       isHeaderCollapsed,
       getHeaderGroupItemIds,
-      visibleItems,
-      
-      // Force realtime UI updates
-      realtimeUpdateCounter: simplifiedState.realtimeUpdateCounter
+      visibleItems
     },
     interactions,
     uiState

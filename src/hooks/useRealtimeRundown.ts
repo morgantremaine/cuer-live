@@ -81,7 +81,6 @@ export const useRealtimeRundown = ({
     const oldData = payload.old;
     
     if (!oldData || !newData) {
-      console.log('🔍 isShowcallerOnlyUpdate: Missing data, returning false', { hasOld: !!oldData, hasNew: !!newData });
       return false;
     }
 
@@ -97,16 +96,11 @@ export const useRealtimeRundown = ({
         const oldItemsStr = JSON.stringify(oldData.items || []);
         const newItemsStr = JSON.stringify(newData.items || []);
         if (oldItemsStr !== newItemsStr) {
-          console.log('🔍 Content change detected in items field');
           hasContentChanges = true;
           break;
         }
       } else {
         if (oldData[field] !== newData[field]) {
-          console.log(`🔍 Content change detected in ${field} field:`, {
-            old: oldData[field],
-            new: newData[field]
-          });
           hasContentChanges = true;
           break;
         }
@@ -115,14 +109,7 @@ export const useRealtimeRundown = ({
     
     const showcallerStateChanged = JSON.stringify(oldData.showcaller_state || {}) !== JSON.stringify(newData.showcaller_state || {});
     
-    const result = !hasContentChanges && showcallerStateChanged;
-    console.log('🔍 isShowcallerOnlyUpdate result:', {
-      hasContentChanges,
-      showcallerStateChanged,
-      isShowcallerOnly: result
-    });
-    
-    return result;
+    return !hasContentChanges && showcallerStateChanged;
   }, []);
 
   // Function to track our own updates with normalized timestamps
@@ -174,10 +161,6 @@ export const useRealtimeRundown = ({
     // Skip if this update originated from this user (using normalized timestamp)
     const isOwnUpdate = ownUpdateTrackingRef.current.has(normalizedTimestamp);
     if (isOwnUpdate) {
-      console.log('⏭️ Skipping own realtime update (this is correct behavior):', {
-        timestamp: normalizedTimestamp,
-        userId: user?.id
-      });
       return;
     }
 
@@ -223,7 +206,6 @@ export const useRealtimeRundown = ({
     }
 
     // Only set content processing state for REAL CONTENT CHANGES from OTHER USERS
-    console.log('🔥 APPLYING CONTENT UPDATE - Setting processing state and scheduling update');
     setIsProcessingContentUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
@@ -235,26 +217,16 @@ export const useRealtimeRundown = ({
       
       signalActivity();
       
-      console.log('🔥 EXECUTING RUNDOWN UPDATE with payload:', {
-        hasCallback: !!onRundownUpdateRef.current,
-        payloadId: payload.new?.id,
-        payloadItemsCount: payload.new?.items?.length || 0,
-        timestamp: updateData.timestamp
-      });
-      
       try {
         // Apply the rundown update (content changes only)
         onRundownUpdateRef.current(payload.new);
-        console.log('✅ Successfully called onRundownUpdate callback');
       } catch (error) {
-        console.error('❌ Error processing realtime update:', error);
         logger.error('Error processing realtime update:', error);
       }
       
       // Clear content processing state with mobile-optimized delay
       timeoutManagerRef.current.set('content-processing', () => {
         setIsProcessingContentUpdate(false);
-        console.log('🔥 Cleared content processing state');
       }, delays.contentProcessingDelay);
       
     }, delays.processingDelay);
@@ -270,17 +242,6 @@ export const useRealtimeRundown = ({
       enabled,
       hasAllRequirements: !!rundownId && !!user && enabled
     });
-    
-    // Log more detailed info when connection should work but doesn't
-    if (!!rundownId && !!user && enabled) {
-      console.log('✅ All realtime requirements met - should connect');
-    } else {
-      console.log('❌ Missing realtime requirements:', {
-        missingRundownId: !rundownId,
-        missingUser: !user,
-        disabled: !enabled
-      });
-    }
     
     // Clear any existing subscription
     if (subscriptionRef.current) {
@@ -313,12 +274,6 @@ export const useRealtimeRundown = ({
             id: payload.new?.id,
             timestamp: payload.new?.updated_at,
             showcallerOnly: payload.new?.showcaller_state !== payload.old?.showcaller_state
-          });
-          console.log('📡 Full payload data:', {
-            old: payload.old ? Object.keys(payload.old) : 'null',
-            new: payload.new ? Object.keys(payload.new) : 'null',
-            hasItems: !!payload.new?.items,
-            itemsCount: payload.new?.items?.length || 0
           });
           handleRealtimeUpdate(payload);
         }

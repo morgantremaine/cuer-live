@@ -1,14 +1,14 @@
 
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
-import { useConsolidatedTeam } from './useConsolidatedTeam';
+import { useTeam } from './useTeam';
 import { useRundownStorage } from './useRundownStorage';
 import { useToast } from './use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export const useInvitationHandler = () => {
   const { user } = useAuth();
-  const { loadTeamData } = useConsolidatedTeam();
+  const { loadTeamData } = useTeam();
   const { loadRundowns } = useRundownStorage();
   const { toast } = useToast();
   const navigate = useNavigate();

@@ -26,7 +26,6 @@ interface RundownContentProps {
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   startTime?: string;
-  realtimeUpdateCounter?: number;
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -74,7 +73,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   currentSegmentId,
   hasClipboardData = false,
   selectedRowId = null,
-  realtimeUpdateCounter,
   isPlaying = false,
   autoScrollEnabled = false,
   startTime = '00:00:00',
@@ -113,7 +111,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   getHeaderGroupItemIds,
   visibleItems
 }) => {
-  
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
 
@@ -268,7 +265,6 @@ const RundownContent = React.memo<RundownContentProps>(({
             selectedRowId={selectedRowId}
             startTime={startTime}
             columnExpandState={columnExpandState}
-            realtimeUpdateCounter={realtimeUpdateCounter}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             onUpdateItem={onUpdateItem}

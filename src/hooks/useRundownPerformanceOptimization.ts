@@ -8,20 +8,18 @@ interface UseRundownPerformanceOptimizationProps {
   items: RundownItem[];
   columns: Column[];
   startTime: string;
-  realtimeUpdateCounter?: number; // Add this to ensure recalculation
 }
 
 export const useRundownPerformanceOptimization = ({
   items,
   columns,
-  startTime,
-  realtimeUpdateCounter
+  startTime
 }: UseRundownPerformanceOptimizationProps) => {
   
   // Calculate all derived values with proper header numbering
   const calculatedItems = useMemo(() => {
     return calculateItemsWithTiming(items, startTime || '00:00:00');
-  }, [items, startTime, realtimeUpdateCounter]);
+  }, [items, startTime]);
 
   // Calculate visible columns (memoized to prevent unnecessary re-renders)
   const visibleColumns = useMemo(() => {
@@ -31,7 +29,7 @@ export const useRundownPerformanceOptimization = ({
   // Calculate total runtime
   const totalRuntime = useMemo(() => {
     return calculateTotalRuntime(items);
-  }, [items, realtimeUpdateCounter]);
+  }, [items]);
 
   // Create optimized getRowNumber function that uses calculated values
   const getRowNumber = useMemo(() => {
