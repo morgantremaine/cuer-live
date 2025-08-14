@@ -48,6 +48,12 @@ interface RundownRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
+  // Enhanced editing coordination
+  editingCoordination?: {
+    startFieldEdit: (itemId: string, field: string) => void;
+    updateFieldActivity: (itemId: string, field: string) => void;
+    endFieldEdit: (itemId: string, field: string) => void;
+  };
 }
 
 const RundownRow = (props: RundownRowProps) => {
@@ -81,7 +87,7 @@ const RundownRow = (props: RundownRowProps) => {
         onDragEnd={props.onDragEnd}
         isHeaderCollapsed={props.isHeaderCollapsed}
         getHeaderGroupItemIds={props.getHeaderGroupItemIds}
-        // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
+        editingCoordination={props.editingCoordination}
       />
     );
   }
@@ -106,6 +112,7 @@ const RundownRow = (props: RundownRowProps) => {
       onDragEnd={props.onDragEnd}
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
+      editingCoordination={props.editingCoordination}
     />
   );
 };

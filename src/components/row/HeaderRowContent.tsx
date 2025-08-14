@@ -19,6 +19,10 @@ interface HeaderRowContentProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleCollapse?: (headerId: string) => void;
   getColumnWidth: (column: Column) => string;
+  // Enhanced editing coordination
+  onFieldEditStart?: (itemId: string, field: string) => void;
+  onFieldEditActivity?: (itemId: string, field: string) => void;
+  onFieldEditEnd?: (itemId: string, field: string) => void;
 }
 
 const HeaderRowContent = ({
@@ -34,7 +38,10 @@ const HeaderRowContent = ({
   onCellClick,
   onKeyDown,
   onToggleCollapse,
-  getColumnWidth
+  getColumnWidth,
+  onFieldEditStart,
+  onFieldEditActivity,
+  onFieldEditEnd
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -118,11 +125,15 @@ const HeaderRowContent = ({
                     value={headerName}
                     onChange={(e) => {
                       onUpdateItem(item.id, 'name', e.target.value);
+                      // Update activity for enhanced editing coordination
+                      onFieldEditActivity?.(item.id, 'name');
                       // Auto-resize on change with buffer
                       const contentLength = e.target.value.length || 1;
                       const bufferWidth = contentLength + 3; // Add buffer for PC browsers
                       e.target.style.width = `${bufferWidth}ch`;
                     }}
+                    onFocus={() => onFieldEditStart?.(item.id, 'name')}
+                    onBlur={() => onFieldEditEnd?.(item.id, 'name')}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
                     className="bg-transparent border-none outline-none text-lg font-bold"

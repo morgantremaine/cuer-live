@@ -53,9 +53,20 @@ export const useEnhancedEditingCoordination = ({
           ...session,
           lastActivity: now
         });
+        console.log('⚡ Updated field activity:', fieldKey, 'at', now);
+        return newSessions;
+      } else {
+        // If no session exists, start one
+        const newSessions = new Map(prev);
+        newSessions.set(fieldKey, {
+          fieldKey,
+          itemId,
+          startTime: now,
+          lastActivity: now
+        });
+        console.log('⚡ Started new field session via activity:', fieldKey);
         return newSessions;
       }
-      return prev;
     });
   }, []);
   
@@ -77,10 +88,21 @@ export const useEnhancedEditingCoordination = ({
     const fieldKey = `${itemId}-${field}`;
     const session = activeEditSessions.get(fieldKey);
     
-    if (!session) return false;
+    if (!session) {
+      console.log('🔍 Field edit check - no session:', fieldKey);
+      return false;
+    }
     
     const now = Date.now();
-    return (now - session.lastActivity) < withinMs;
+    const isRecent = (now - session.lastActivity) < withinMs;
+    console.log('🔍 Field edit check:', fieldKey, { 
+      lastActivity: session.lastActivity, 
+      now, 
+      timeSince: now - session.lastActivity, 
+      withinMs, 
+      isRecent 
+    });
+    return isRecent;
   }, [activeEditSessions]);
   
   // Check if any field is currently being edited
@@ -103,7 +125,7 @@ export const useEnhancedEditingCoordination = ({
   useEffect(() => {
     const cleanup = () => {
       const now = Date.now();
-      const sessionTimeout = 8000; // 8 seconds
+      const sessionTimeout = 12000; // 12 seconds - extended timeout
       
       setActiveEditSessions(prev => {
         const newSessions = new Map();

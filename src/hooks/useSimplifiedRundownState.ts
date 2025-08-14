@@ -519,6 +519,13 @@ export const useSimplifiedRundownState = () => {
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
     
+    // Enhanced editing coordination for cell components
+    editingCoordination: {
+      startFieldEdit: editingCoordination.startFieldEdit,
+      updateFieldActivity: editingCoordination.updateFieldActivity,
+      endFieldEdit: editingCoordination.endFieldEdit
+    },
+    
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,
     addRowAtIndex,
