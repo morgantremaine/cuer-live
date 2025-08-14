@@ -26,11 +26,8 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   
-  // Connection state with stability during saves and realtime operations
+  // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
-  const lastConnectionStateRef = useRef(false);
-  const connectionStabilityTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastConnectionChangeRef = useRef<number>(0);
 
   // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
@@ -112,7 +109,7 @@ export const useSimplifiedRundownState = () => {
         console.log('📊 Skipping realtime update - currently saving');
       }
     }, [actions, isSaving]),
-    enabled: !isLoading && !isSaving,
+    enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
       console.log('📝 Tracking own update in realtime:', timestamp);
       ownUpdateTimestampRef.current = timestamp;
@@ -126,59 +123,9 @@ export const useSimplifiedRundownState = () => {
     }
   }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
 
-  // Update connection status from realtime with stability during operations
+  // Update connection status from realtime
   useEffect(() => {
-    const newConnectionState = realtimeConnection.isConnected;
-    
-    // If connection is establishing (false -> true), update immediately
-    if (newConnectionState && !lastConnectionStateRef.current) {
-      console.log('📡 Connection established immediately');
-      if (connectionStabilityTimeoutRef.current) {
-        clearTimeout(connectionStabilityTimeoutRef.current);
-        connectionStabilityTimeoutRef.current = undefined;
-      }
-      setIsConnected(true);
-      lastConnectionStateRef.current = true;
-      lastConnectionChangeRef.current = Date.now();
-      return;
-    }
-    
-    // If connection is dropping (true -> false), add minimal stability delay
-    if (!newConnectionState && lastConnectionStateRef.current) {
-      console.log('📡 Scheduling disconnect check with minimal delay');
-      
-      // Clear any existing timeout
-      if (connectionStabilityTimeoutRef.current) {
-        clearTimeout(connectionStabilityTimeoutRef.current);
-      }
-      
-      // Very short delay to avoid flicker, but check current state before applying
-      connectionStabilityTimeoutRef.current = setTimeout(() => {
-        // Double-check the actual connection state before disconnecting
-        const currentState = realtimeConnection.isConnected;
-        console.log('📡 Delayed disconnect check:', { 
-          currentState, 
-          willDisconnect: !currentState 
-        });
-        
-        if (!currentState) {
-          console.log('📡 Applying disconnect - connection is actually down');
-          setIsConnected(false);
-          lastConnectionStateRef.current = false;
-          lastConnectionChangeRef.current = Date.now();
-        } else {
-          console.log('📡 Canceling disconnect - connection is back up');
-        }
-      }, 500); // Reduced from 1500ms to 500ms
-      
-      return;
-    }
-    
-    // No state change needed
-    if (newConnectionState === lastConnectionStateRef.current) {
-      return;
-    }
-    
+    setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
   // Enhanced updateItem function - NO showcaller interference
@@ -485,9 +432,6 @@ export const useSimplifiedRundownState = () => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
-      }
-      if (connectionStabilityTimeoutRef.current) {
-        clearTimeout(connectionStabilityTimeoutRef.current);
       }
     };
   }, []);
