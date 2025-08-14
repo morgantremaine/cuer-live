@@ -12,9 +12,11 @@ interface SaveState {
 interface UseTeleprompterSaveProps {
   rundownId: string;
   onSaveSuccess?: (itemId: string, script: string) => void;
+  onSaveStart?: () => void;
+  onSaveEnd?: () => void;
 }
 
-export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompterSaveProps) => {
+export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd }: UseTeleprompterSaveProps) => {
   const [saveState, setSaveState] = useState<SaveState>({
     isSaving: false,
     lastSaved: null,
@@ -96,6 +98,9 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
     // Backup the change immediately
     backupChange(itemId, newScript);
     
+    // Signal save start to parent (for blue Wi-Fi indicator)
+    onSaveStart?.();
+    
     setSaveState(prev => ({ 
       ...prev, 
       isSaving: true, 
@@ -119,6 +124,9 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
           saveError: null
         }));
 
+        // Signal save end to parent
+        onSaveEnd?.();
+        
         // Call success callback
         onSaveSuccess?.(itemId, newScript);
         
@@ -126,6 +134,9 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save script';
+      
+      // Signal save end to parent (even on error)
+      onSaveEnd?.();
       
       setSaveState(prev => ({
         ...prev,
@@ -144,7 +155,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess }: UseTeleprompte
 
       return false;
     }
-  }, [backupChange, clearBackup, retrySave, onSaveSuccess]);
+  }, [backupChange, clearBackup, retrySave, onSaveSuccess, onSaveStart, onSaveEnd]);
 
   // Debounced save function with faster default delay
   const debouncedSave = useCallback((

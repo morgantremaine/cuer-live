@@ -10,12 +10,16 @@ import TeleprompterControls from '@/components/teleprompter/TeleprompterControls
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
 import { useAuth } from '@/hooks/useAuth';
+import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { toast } from 'sonner';
 
 const Teleprompter = () => {
   const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const rundownId = params.id;
+  
+  // Global teleprompter sync for blue Wi-Fi indicator in main rundown
+  const globalTeleprompterSync = useGlobalTeleprompterSync();
   
   const [rundownData, setRundownData] = useState<{
     title: string;
@@ -90,7 +94,9 @@ const Teleprompter = () => {
           items: updatedItems
         });
       }
-    }
+    },
+    onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
+    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd
   });
 
   // Load rundown data with optional authentication (read-only if not authenticated)

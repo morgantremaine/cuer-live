@@ -6,6 +6,7 @@ import { useStandaloneUndo } from './useStandaloneUndo';
 import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
+import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { supabase } from '@/lib/supabase';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -53,6 +54,9 @@ export const useSimplifiedRundownState = () => {
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
+
+  // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
+  const teleprompterSync = useGlobalTeleprompterSync();
 
   // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
   const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
@@ -460,7 +464,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate,
+    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving,
     
     // Calculations
     totalRuntime,
@@ -501,6 +505,12 @@ export const useSimplifiedRundownState = () => {
     saveUndoState,
     undo,
     canUndo,
-    lastAction
+    lastAction,
+    
+    // Teleprompter sync callbacks (exposed globally)
+    teleprompterSaveHandlers: {
+      onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
+      onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
+    }
   };
 };
