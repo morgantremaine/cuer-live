@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { EditingIndicator } from '@/components/collaboration/EditingIndicator';
 
 interface TextAreaCellProps {
   value: string;
@@ -11,6 +12,12 @@ interface TextAreaCellProps {
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  // Collaboration props
+  isBeingEdited?: boolean;
+  editingUserEmail?: string;
+  hasConflict?: boolean;
+  onCellFocus?: (itemId: string, fieldName: string) => Promise<boolean>;
+  onCellBlur?: (itemId: string, fieldName: string) => void;
 }
 
 const TextAreaCell = ({
@@ -23,7 +30,12 @@ const TextAreaCell = ({
   isDuration = false,
   onUpdateValue,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  isBeingEdited = false,
+  editingUserEmail,
+  hasConflict = false,
+  onCellFocus,
+  onCellBlur
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -164,11 +176,20 @@ const TextAreaCell = ({
   };
 
   // Enhanced focus handler to disable row dragging when editing
-  const handleFocus = (e: React.FocusEvent) => {
+  const handleFocus = async (e: React.FocusEvent) => {
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
       row.setAttribute('draggable', 'false');
+    }
+
+    // Check collaboration state
+    if (onCellFocus) {
+      const canEdit = await onCellFocus(itemId, cellRefKey);
+      if (!canEdit) {
+        (e.target as HTMLTextAreaElement).blur(); // Prevent editing if another user is editing
+        return;
+      }
     }
   };
 
@@ -181,6 +202,11 @@ const TextAreaCell = ({
       setTimeout(() => {
         row.setAttribute('draggable', 'true');
       }, 50);
+    }
+
+    // Notify collaboration system
+    if (onCellBlur) {
+      onCellBlur(itemId, cellRefKey);
     }
   };
 
@@ -196,6 +222,13 @@ const TextAreaCell = ({
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
+      {/* Editing/Conflict indicator */}
+      <EditingIndicator
+        isBeingEdited={isBeingEdited}
+        editingUserEmail={editingUserEmail}
+        hasConflict={hasConflict}
+      />
+      
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
