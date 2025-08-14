@@ -4,6 +4,7 @@ import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
+import { useCollaborationFeatures } from './collaboration/useCollaborationFeatures';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
 
@@ -29,6 +30,15 @@ export const useCleanRundownState = () => {
     enabled: !!coreState.rundownId
   });
 
+  // Collaboration features for real-time editing conflict resolution
+  const collaboration = useCollaborationFeatures({
+    rundownId: coreState.rundownId,
+    enabled: !!coreState.rundownId,
+    onFieldSaved: (itemId, fieldName, value) => {
+      logger.rundown('Field saved collaboratively:', { itemId, fieldName, value });
+    }
+  });
+
   // Memoized helper functions
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
     const startParts = startTime.split(':').map(Number);
@@ -48,6 +58,29 @@ export const useCleanRundownState = () => {
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
+
+  // Enhanced updateItem with collaboration features
+  const enhancedUpdateItem = useCallback(async (id: string, field: string, value: string) => {
+    // Use collaborative update for typing fields (debounced)
+    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || 
+                          field === 'notes' || field === 'gfx' || field === 'video' || 
+                          field === 'images' || field.startsWith('customFields.');
+
+    if (isTypingField) {
+      await collaboration.collaborativeUpdateItem(id, field, value, {
+        immediate: false,
+        debounceMs: 800
+      });
+    } else {
+      // Immediate save for critical fields like duration, color
+      await collaboration.collaborativeUpdateItem(id, field, value, {
+        immediate: true
+      });
+    }
+    
+    // Update local state immediately for responsiveness
+    coreState.updateItem(id, field, value);
+  }, [collaboration, coreState]);
 
   const addMultipleRows = useCallback((newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
     const itemsToAdd = newItems.map(item => ({
@@ -137,7 +170,7 @@ export const useCleanRundownState = () => {
     getHeaderDuration: coreState.getHeaderDuration,
     
     // Actions
-    updateItem: coreState.updateItem,
+    updateItem: enhancedUpdateItem, // Use collaboration-enhanced version
     deleteRow: coreState.deleteRow,
     toggleFloatRow: coreState.toggleFloat,
     deleteMultipleItems: coreState.deleteMultipleItems,
@@ -174,6 +207,22 @@ export const useCleanRundownState = () => {
     
     // Interactions and UI
     interactions,
-    uiState
+    uiState,
+    
+    // Collaboration features - simplified interface for easier integration
+    getCellCollaborationState: (itemId: string, fieldName: string) => ({
+      isBeingEdited: collaboration.isCellBeingEdited(itemId, fieldName),
+      editingUserEmail: collaboration.getCellEditingUser(itemId, fieldName)?.userEmail,
+      hasConflict: collaboration.hasConflict(itemId, fieldName)
+    }),
+    handleCellFocus: collaboration.handleCellFocus,
+    handleCellBlur: collaboration.handleCellBlur,
+    collaboration: {
+      conflictCount: collaboration.conflictCount,
+      isConflictDialogOpen: collaboration.isConflictDialogOpen,
+      currentConflict: collaboration.currentConflict,
+      handleConflictResolution: collaboration.handleConflictResolution,
+      dismissConflictDialog: collaboration.dismissConflictDialog
+    }
   };
 };

@@ -22,6 +22,14 @@ interface RegularRowContentProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   getColumnWidth: (column: Column) => string;
+  // Collaboration features
+  getCellCollaborationState?: (itemId: string, fieldName: string) => {
+    isBeingEdited: boolean;
+    editingUserEmail?: string;
+    hasConflict: boolean;
+  };
+  onCellFocus?: (itemId: string, fieldName: string) => Promise<boolean>;
+  onCellBlur?: (itemId: string, fieldName: string) => void;
 }
 
 const RegularRowContent = ({
@@ -39,7 +47,10 @@ const RegularRowContent = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  getColumnWidth
+  getColumnWidth,
+  getCellCollaborationState,
+  onCellFocus,
+  onCellBlur
 }: RegularRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
@@ -95,6 +106,9 @@ const RegularRowContent = ({
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               width={columnWidth}
+              {...(getCellCollaborationState ? getCellCollaborationState(item.id, column.key) : {})}
+              onCellFocus={onCellFocus}
+              onCellBlur={onCellBlur}
             />
           </td>
         );
