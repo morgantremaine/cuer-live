@@ -14,48 +14,23 @@ export interface CSVExportData {
 const getRowNumber = (index: number, items: RundownItem[]): string => {
   if (index < 0 || index >= items.length) return '';
   
-  const item = items[index];
-  if (!item) return '';
+  const currentItem = items[index];
+  if (!currentItem) return '';
   
-  // Calculate row numbers based purely on position and type, matching rundown display
-  
-  // For headers, count how many headers we've seen so far
-  if (isHeaderItem(item)) {
-    let headerCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (items[i] && isHeaderItem(items[i])) {
-        headerCount++;
-      }
-    }
-    return generateHeaderLabel(headerCount - 1);
+  // Headers don't have row numbers, return empty string
+  if (isHeaderItem(currentItem)) {
+    return '';
   }
   
-  // For regular items, find which segment they belong to and count within that segment
-  let currentSegmentLetter = 'A';
-  let itemCountInSegment = 0;
-  
-  // Go through items up to current index
+  // For regular items, count sequentially ignoring headers (matching main rundown display)
+  let regularItemCount = 0;
   for (let i = 0; i <= index; i++) {
-    const currentItem = items[i];
-    if (!currentItem) continue;
-    
-    if (isHeaderItem(currentItem)) {
-      // Update which segment we're in based on header count
-      let headerCount = 0;
-      for (let j = 0; j <= i; j++) {
-        if (items[j] && isHeaderItem(items[j])) {
-          headerCount++;
-        }
-      }
-      currentSegmentLetter = generateHeaderLabel(headerCount - 1);
-      itemCountInSegment = 0; // Reset count for new segment
-    } else {
-      // This is a regular item
-      itemCountInSegment++;
+    if (items[i] && !isHeaderItem(items[i])) {
+      regularItemCount++;
     }
   }
   
-  return `${currentSegmentLetter}${itemCountInSegment}`;
+  return regularItemCount.toString();
 };
 
 // Helper function to get cell value for CSV export, similar to SharedRundownTable logic
