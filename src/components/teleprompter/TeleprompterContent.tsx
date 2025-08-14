@@ -46,6 +46,7 @@ const TeleprompterContent = ({
 
       <div
         ref={containerRef}
+        data-teleprompter-container
         className="h-screen overflow-y-auto scrollbar-hide mx-20"
         style={{ 
           paddingTop: isFullscreen ? '20vh' : '120px', 
