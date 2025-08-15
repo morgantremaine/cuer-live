@@ -16,7 +16,7 @@ interface TimerInfo {
 class TimerManager {
   private timers = new Map<string, TimerInfo>();
   private static instance: TimerManager | null = null;
-  private cleanupTimeout: NodeJS.Timeout | null = null;
+  private cleanupTimeout: number | null = null;
   private idCounter = 0;
 
   constructor() {
@@ -198,7 +198,7 @@ class TimerManager {
    * Check for potential memory leaks (long-running timers)
    */
   public detectMemoryLeaks(): TimerInfo[] {
-    const leakThreshold = 5 * 60 * 1000; // 5 minutes
+    const leakThreshold = 30 * 60 * 1000; // 30 minutes (increased from 5)
     const now = Date.now();
     const potentialLeaks: TimerInfo[] = [];
 
@@ -208,7 +208,8 @@ class TimerManager {
       }
     }
 
-    if (potentialLeaks.length > 0) {
+    // Only warn if there are many potential leaks to reduce console noise
+    if (potentialLeaks.length > 3) {
       console.warn('🚨 Potential timer memory leaks detected:', potentialLeaks);
     }
 
@@ -226,19 +227,20 @@ class TimerManager {
     * Start periodic cleanup of completed timers and leak detection
     */
    private startPeriodicCleanup(): void {
-     this.cleanupTimeout = setTimeout(() => {
-       // Detect potential leaks
-       this.detectMemoryLeaks();
+     // Use managed timeout to prevent memory leaks in the manager itself
+     this.cleanupTimeout = window.setTimeout(() => {
+       // Detect potential leaks (reduce threshold to avoid excessive warnings)
+       const leaks = this.detectMemoryLeaks();
        
-       // Log stats if there are many timers
+       // Log stats only if there are significant issues
        const stats = this.getStats();
-       if (stats.total > 50) {
+       if (stats.total > 100) { // Increased threshold
          console.warn('🔥 High timer count detected:', stats);
        }
        
-       // Schedule next cleanup
+       // Schedule next cleanup (reduced frequency)
        this.startPeriodicCleanup();
-     }, 60000); // Check every minute
+     }, 300000); // Check every 5 minutes instead of every minute
    }
 
   /**
@@ -248,7 +250,7 @@ class TimerManager {
     this.clearAll();
     
     if (this.cleanupTimeout) {
-      clearTimeout(this.cleanupTimeout);
+      window.clearTimeout(this.cleanupTimeout);
       this.cleanupTimeout = null;
     }
   }

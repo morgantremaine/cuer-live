@@ -13,6 +13,7 @@ import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
+import { updateTimeFromServer } from '@/services/UniversalTimeService';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -286,6 +287,11 @@ export const useSimplifiedRundownState = () => {
             const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
               ? data.items 
               : createDefaultRundownItems();
+
+            // Sync time from server timestamp
+            if (data.updated_at) {
+              updateTimeFromServer(data.updated_at);
+            }
 
             // Load content only (columns handled by useUserColumnPreferences)
             console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');

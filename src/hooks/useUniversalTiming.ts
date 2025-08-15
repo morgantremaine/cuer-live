@@ -9,14 +9,14 @@ interface UseUniversalTimingReturn {
 }
 
 /**
- * Universal timing hook that provides synchronized time across all clients
- * This prevents timing discrepancies caused by different system clocks
- * Now uses centralized UniversalTimeService for consistency
+ * Simplified universal timing hook that provides synchronized time across all clients
+ * Now uses Supabase server timestamps as the single source of truth
+ * No more external API dependencies or complex retry logic
  */
 export const useUniversalTiming = (): UseUniversalTimingReturn => {
   const [syncStatus, setSyncStatus] = useState(() => universalTimeService.getSyncStatus());
 
-  // Update sync status when service state changes
+  // Update sync status when service state changes (much less frequently)
   useEffect(() => {
     const checkSyncStatus = () => {
       setSyncStatus(universalTimeService.getSyncStatus());
@@ -25,8 +25,8 @@ export const useUniversalTiming = (): UseUniversalTimingReturn => {
     // Check initially
     checkSyncStatus();
 
-    // Set up periodic status checks (reduced frequency to avoid excessive polling)
-    const statusInterval = setInterval(checkSyncStatus, 5000);
+    // Set up periodic status checks (much less frequent since we use server timestamps)
+    const statusInterval = setInterval(checkSyncStatus, 30000); // Every 30 seconds instead of 5
 
     return () => {
       clearInterval(statusInterval);

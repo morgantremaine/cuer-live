@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUniversalTimer } from './useUniversalTimer';
+import { updateTimeFromServer } from '@/services/UniversalTimeService';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -156,6 +157,11 @@ export const useSimpleRealtimeRundown = ({
     lastProcessedUpdateRef.current = updateTimestamp;
     
     try {
+      // Sync time from server timestamp
+      if (payload.new?.updated_at) {
+        updateTimeFromServer(payload.new.updated_at);
+      }
+      
       // Apply the update directly
       onRundownUpdateRef.current(payload.new);
     } catch (error) {
