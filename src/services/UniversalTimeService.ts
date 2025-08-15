@@ -119,8 +119,10 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use single reliable time API (timeapi.io has been most consistent)
+      // Use multiple reliable time APIs with fallbacks
       const timeAPIs = [
+        'https://worldtimeapi.org/api/timezone/UTC',
+        'https://api.timezonedb.com/v2.1/get-timezone?key=demo&format=json&by=zone&zone=UTC',
         'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
       ];
 
@@ -234,6 +236,9 @@ class UniversalTimeService {
       } else if (url.includes('worldtimeapi.org')) {
         // WorldTimeAPI format: { "datetime": "2025-07-30T18:30:00.000+00:00" }
         serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
+      } else if (url.includes('timezonedb.com')) {
+        // TimezoneDB format: { "timestamp": 1690742400 }
+        serverTime = data.timestamp ? data.timestamp * 1000 : null; // Convert to milliseconds
       }
 
       if (serverTime && !isNaN(serverTime)) {
