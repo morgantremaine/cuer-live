@@ -33,10 +33,16 @@ export const useSimpleRealtimeRundown = ({
 
   // Simple own update tracking
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
+    console.log('📝 trackOwnUpdateLocal called with:', timestamp);
+    console.log('📝 Current tracking set before:', Array.from(ownUpdateTrackingRef.current));
+    
     ownUpdateTrackingRef.current.add(timestamp);
+    
+    console.log('📝 Current tracking set after:', Array.from(ownUpdateTrackingRef.current));
     
     // Clean up old tracked updates after 5 seconds
     setManagedTimeout(() => {
+      console.log('🧹 Cleaning up tracked timestamp:', timestamp);
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 5000);
     
