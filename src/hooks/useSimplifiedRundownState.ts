@@ -328,14 +328,14 @@ export const useSimplifiedRundownState = () => {
       helpers.addRow();
       // Mark as changed to trigger autosave for row operations
       actions.markChanged();
-    }, [helpers.addRow, state.items, state.title, saveUndoState, actions]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState, actions.markChanged]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
       // Mark as changed to trigger autosave for row operations
       actions.markChanged();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, actions]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, actions.markChanged]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
