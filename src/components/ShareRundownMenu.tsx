@@ -485,6 +485,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     }
   };
 
+
   const handleSetSharedLayout = async (layoutId: string | null, layoutName: string) => {
     await updateSharedLayout(layoutId);
     toast({
@@ -526,7 +527,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
         
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-2" />
-          Print View
+          Print/PDF
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />

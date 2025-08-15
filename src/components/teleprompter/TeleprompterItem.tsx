@@ -71,8 +71,19 @@ const TeleprompterItem = ({
   // Memoize event handlers to prevent unnecessary re-renders
   const handleScriptClick = useCallback(() => {
     if (canEdit && !isHeaderItem(item) && onUpdateScript) {
+      // Store current scroll position to prevent jumping
+      const container = document.querySelector('[data-teleprompter-container]');
+      const currentScrollTop = container?.scrollTop || 0;
+      
       setIsEditing(true);
       setEditText(item.script || '');
+      
+      // Restore scroll position after state update
+      setTimeout(() => {
+        if (container) {
+          container.scrollTop = currentScrollTop;
+        }
+      }, 0);
     }
   }, [canEdit, item, onUpdateScript]);
 
@@ -149,7 +160,8 @@ const TeleprompterItem = ({
     color: 'white',
     border: 'none',
     outline: 'none',
-    resize: 'none' as const
+    resize: 'none' as const,
+    minHeight: '1.5em' // Ensure consistent minimum height
   };
 
   return (
@@ -172,23 +184,13 @@ const TeleprompterItem = ({
         </span>
       </div>
 
-      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed`}>
-        {/* Conditional rendering: show either display content OR textarea */}
-        {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            value={editText}
-            onChange={handleTextareaChange}
-            onKeyDown={handleKeyDown}
-            onBlur={handleScriptSave}
-            className={`${getFontWeight()} font-sans focus:ring-0 focus:border-none`}
-            style={scriptStyles}
-            placeholder="Enter script content..."
-          />
-        ) : (
+      <div className={`text-left ${getFontWeight()} font-sans leading-relaxed relative`}>
+        {/* Use absolute positioning to ensure no layout shift */}
+        <div className="relative">
+          {/* Display content - always rendered to maintain layout */}
           <div
             onClick={handleScriptClick}
-            className={`${canEdit ? 'cursor-text' : ''}`}
+            className={`${canEdit ? 'cursor-text' : ''} ${isEditing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
             style={scriptStyles}
           >
             {isNullItem ? (
@@ -203,7 +205,21 @@ const TeleprompterItem = ({
               ) : null
             )}
           </div>
-        )}
+          
+          {/* Textarea - positioned absolutely to overlay */}
+          {isEditing && (
+            <textarea
+              ref={textareaRef}
+              value={editText}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              onBlur={handleScriptSave}
+              className={`${getFontWeight()} font-sans focus:ring-0 focus:border-none absolute top-0 left-0`}
+              style={{...scriptStyles, zIndex: 10}}
+              placeholder="Enter script content..."
+            />
+          )}
+        </div>
       </div>
     </div>
   );
