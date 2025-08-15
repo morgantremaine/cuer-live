@@ -2,6 +2,7 @@
 import { useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isHeaderItem } from '@/types/rundown';
+import { useUniversalTimer } from './useUniversalTimer';
 
 export const useCellNavigation = (
   items: RundownItem[],
@@ -10,17 +11,18 @@ export const useCellNavigation = (
   editingCell: string | null,
   setEditingCell: (cell: string | null) => void
 ) => {
-  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const navigationTimeoutRef = useRef<string | null>(null);
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('CellNavigation');
 
   const navigateToCell = useCallback((targetItemId: string, targetField: string) => {
     // Clear any existing timeout
     if (navigationTimeoutRef.current) {
-      clearTimeout(navigationTimeoutRef.current);
+      clearTimer(navigationTimeoutRef.current);
     }
 
     // Use a more robust approach with querySelector
-    navigationTimeoutRef.current = setTimeout(() => {
+    navigationTimeoutRef.current = setManagedTimeout(() => {
       const targetCellKey = `${targetItemId}-${targetField}`;
       
       // Try multiple selection strategies
@@ -51,13 +53,13 @@ export const useCellNavigation = (
         
         // Select all text in the cell after focusing
         if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
-          setTimeout(() => {
+          setManagedTimeout(() => {
             targetElement.select();
           }, 10);
         }
       }
     }, 100);
-  }, []);
+  }, [clearTimer, setManagedTimeout]);
 
   const handleCellNavigation = useCallback((e: React.KeyboardEvent, itemId: string, field: string) => {
     const key = e.key;

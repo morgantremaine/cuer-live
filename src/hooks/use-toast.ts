@@ -1,4 +1,5 @@
 import * as React from "react"
+import { timerManager } from "@/services/TimerManager"
 
 import type {
   ToastActionElement,
@@ -53,22 +54,22 @@ interface State {
   toasts: ToasterToast[]
 }
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const toastTimeouts = new Map<string, string>()
 
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
 
-  const timeout = setTimeout(() => {
+  const timeoutId = timerManager.setTimeout(() => {
     toastTimeouts.delete(toastId)
     dispatch({
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, TOAST_REMOVE_DELAY, 'Toast')
 
-  toastTimeouts.set(toastId, timeout)
+  toastTimeouts.set(toastId, timeoutId)
 }
 
 export const reducer = (state: State, action: Action): State => {
