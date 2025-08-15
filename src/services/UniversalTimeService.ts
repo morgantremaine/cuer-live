@@ -119,11 +119,10 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use multiple reliable time APIs with fallbacks
+      // Use only reliable time APIs that work with CORS
       const timeAPIs = [
         'https://worldtimeapi.org/api/timezone/UTC',
-        'https://api.timezonedb.com/v2.1/get-timezone?key=demo&format=json&by=zone&zone=UTC',
-        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+        'https://worldclockapi.com/api/json/utc/now'
       ];
 
       const syncResults = await Promise.allSettled(
@@ -248,7 +247,8 @@ class UniversalTimeService {
       
       throw new Error(`Invalid time response from ${url}: ${JSON.stringify(data)}`);
     } catch (error) {
-      console.warn(`🕐 Failed to fetch time from ${url}:`, error);
+      // Don't log individual API failures since they're just fallbacks
+      // Only throw to let the caller handle logging if all APIs fail
       throw error;
     }
   }
