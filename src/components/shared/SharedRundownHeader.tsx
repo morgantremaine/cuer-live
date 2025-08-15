@@ -160,39 +160,6 @@ export const SharedRundownHeader = ({
               </div>
             </div>
             
-            {/* Playback Status */}
-            <div className="flex items-center space-x-3 print:hidden">
-              {isPlaying && (
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-1">
-                    <Play className="h-4 w-4 text-green-500 fill-green-500" />
-                    <span className={`text-sm font-medium ${
-                      isDark ? 'text-green-400' : 'text-green-600'
-                    }`}>
-                      Live
-                    </span>
-                  </div>
-                  {timeRemaining && (
-                    <span className={`text-sm font-mono px-2 py-1 rounded ${
-                      isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {timeRemaining}
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              {!isPlaying && (
-                <div className="flex items-center space-x-1">
-                  <Pause className="h-4 w-4 text-gray-400" />
-                  <span className={`text-sm ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Paused
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
