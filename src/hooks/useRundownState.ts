@@ -32,7 +32,8 @@ type RundownAction =
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
-  | { type: 'LOAD_STATE'; payload: Partial<RundownState> };
+  | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
+  | { type: 'MERGE_REALTIME_UPDATE'; payload: { remoteItems: RundownItem[]; title?: string; startTime?: string; timezone?: string } };
 
 const initialState: RundownState = {
   items: [],
@@ -137,6 +138,23 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
         lastChanged: 0
       };
 
+    case 'MERGE_REALTIME_UPDATE': {
+      const { remoteItems, title, startTime, timezone } = action.payload;
+      
+      // Smart merge strategy - preserve local unsaved text changes while applying structural changes
+      const mergedItems = mergeRealtimeItems(state.items, remoteItems, state.hasUnsavedChanges);
+      
+      return {
+        ...state,
+        items: clearHeaderNumbers(mergedItems),
+        ...(title !== undefined && { title }),
+        ...(startTime !== undefined && { startTime }),
+        ...(timezone !== undefined && { timezone }),
+        hasUnsavedChanges: false,
+        lastChanged: 0
+      };
+    }
+
     default:
       return state;
   }
@@ -150,6 +168,62 @@ function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
     }
     return item;
   });
+}
+
+// Smart merge function for realtime updates
+function mergeRealtimeItems(localItems: RundownItem[], remoteItems: RundownItem[], hasLocalChanges: boolean): RundownItem[] {
+  console.log('🔄 Merging realtime items:', {
+    localCount: localItems.length,
+    remoteCount: remoteItems.length,
+    hasLocalChanges
+  });
+
+  // If no local changes, just use remote items
+  if (!hasLocalChanges) {
+    console.log('📥 No local changes - using remote items');
+    return remoteItems;
+  }
+
+  // Create maps for efficient lookups
+  const localItemsMap = new Map(localItems.map(item => [item.id, item]));
+  const remoteItemsMap = new Map(remoteItems.map(item => [item.id, item]));
+  
+  // Start with remote structure (preserves adds/deletes/reorders)
+  const mergedItems = remoteItems.map(remoteItem => {
+    const localItem = localItemsMap.get(remoteItem.id);
+    
+    if (!localItem) {
+      // New item from remote - use as is
+      console.log('✨ New remote item:', remoteItem.id);
+      return remoteItem;
+    }
+    
+    // Item exists locally - merge content intelligently
+    const merged = { ...remoteItem };
+    
+    // Preserve local text changes in specific fields if they differ significantly from remote
+    const textFields = ['name', 'script', 'talent', 'notes', 'gfx', 'video', 'images'];
+    textFields.forEach(field => {
+      const localValue = (localItem as any)[field] || '';
+      const remoteValue = (remoteItem as any)[field] || '';
+      
+      // If local value is different and not empty, keep it (user might be typing)
+      if (localValue && localValue !== remoteValue) {
+        console.log(`📝 Preserving local ${field} for item ${remoteItem.id}:`, { local: localValue, remote: remoteValue });
+        (merged as any)[field] = localValue;
+      }
+    });
+    
+    // Preserve local custom fields if they exist
+    if (localItem.customFields && Object.keys(localItem.customFields).length > 0) {
+      merged.customFields = { ...remoteItem.customFields, ...localItem.customFields };
+    }
+    
+    return merged;
+  });
+  
+  console.log('✅ Merge complete:', { resultCount: mergedItems.length });
+  return mergedItems;
 }
 
 export const useRundownState = (initialData?: Partial<RundownState>) => {
@@ -290,8 +364,13 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     
     markSaved: () => dispatch({ type: 'MARK_SAVED' }),
     
-    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState })
-  }), []);
+    markChanged: () => dispatch({ type: 'SET_ITEMS', payload: state.items }),
+    
+    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
+    
+    mergeRealtimeUpdate: (remoteItems: RundownItem[], title?: string, startTime?: string, timezone?: string) =>
+      dispatch({ type: 'MERGE_REALTIME_UPDATE', payload: { remoteItems, title, startTime, timezone } })
+  }), [state.items]);
 
   // Helper functions for common operations
   const helpers = useMemo(() => ({

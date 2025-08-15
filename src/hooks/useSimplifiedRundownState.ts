@@ -97,18 +97,17 @@ export const useSimplifiedRundownState = () => {
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         console.log('🕒 Marked realtime update timestamp:', updatedRundown.updated_at);
-        console.log('📊 APPLYING realtime update to state');
+        console.log('📊 APPLYING realtime update with smart merge');
         
-        // Load state WITHOUT any showcaller data
-        actions.loadState({
-          items: updatedRundown.items || [],
-          columns: [],
-          title: updatedRundown.title || 'Untitled Rundown',
-          startTime: updatedRundown.start_time || '09:00:00',
-          timezone: updatedRundown.timezone || 'America/New_York'
-        });
+        // Use smart merge instead of complete state replacement
+        actions.mergeRealtimeUpdate(
+          updatedRundown.items || [],
+          updatedRundown.title || 'Untitled Rundown',
+          updatedRundown.start_time || '09:00:00',
+          updatedRundown.timezone || 'America/New_York'
+        );
         
-        console.log('🔄 Realtime update applied with fresh references, item count:', updatedRundown.items?.length || 0);
+        console.log('🔄 Realtime update merged smartly, item count:', updatedRundown.items?.length || 0);
       } else {
         console.log('📊 Skipping realtime update - currently saving');
       }
@@ -312,23 +311,31 @@ export const useSimplifiedRundownState = () => {
       const item = state.items.find(i => i.id === id);
       if (item) {
         actions.updateItem(id, { isFloating: !item.isFloating });
+        // Mark as changed to trigger autosave for row operations
+        actions.markChanged();
       }
-    }, [actions.updateItem, state.items, state.title, saveUndoState]),
+    }, [actions.updateItem, state.items, state.title, saveUndoState, actions]),
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.title, saveUndoState]),
+      // Mark as changed to trigger autosave for row operations
+      actions.markChanged();
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, actions]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
-    }, [helpers.addRow, state.items, state.title, saveUndoState]),
+      // Mark as changed to trigger autosave for row operations
+      actions.markChanged();
+    }, [helpers.addRow, state.items, state.title, saveUndoState, actions]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState]),
+      // Mark as changed to trigger autosave for row operations
+      actions.markChanged();
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, actions]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
@@ -398,7 +405,9 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newItem);
     
     actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    // Mark as changed to trigger autosave for row operations
+    actions.markChanged();
+  }, [state.items, state.title, saveUndoState, actions.setItems, actions]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
@@ -429,7 +438,9 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newHeader);
     
     actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    // Mark as changed to trigger autosave for row operations
+    actions.markChanged();
+  }, [state.items, state.title, saveUndoState, actions.setItems, actions]);
 
   // Clean up timeouts on unmount
   useEffect(() => {
@@ -483,6 +494,7 @@ export const useSimplifiedRundownState = () => {
     setTitle: enhancedActions.setTitle,
     setStartTime: actions.setStartTime,
     setTimezone: actions.setTimezone,
+    reorderItems: actions.reorderItems,
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

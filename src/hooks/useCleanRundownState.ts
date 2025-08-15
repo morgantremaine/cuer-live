@@ -87,7 +87,13 @@ export const useCleanRundownState = () => {
     () => {}, // markAsChanged handled internally
     coreState.setTitle,
     coreState.addRowAtIndex || coreState.addRow,
-    coreState.addHeaderAtIndex || coreState.addHeader
+    coreState.addHeaderAtIndex || coreState.addHeader,
+    undefined, // saveUndoState - handled internally
+    undefined, // columns 
+    undefined, // title
+    undefined, // getHeaderGroupItemIds
+    undefined, // isHeaderCollapsed
+    coreState.reorderItems // Pass reorderItems for proper autosave integration
   );
 
   // UI state
