@@ -21,6 +21,7 @@ export const useSimpleAutoSave = (
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
+  const structuralChangeRef = useRef(false);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -47,10 +48,22 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Track own updates
-  const trackMyUpdate = useCallback((timestamp: string) => {
+  // Function to mark structural changes (add/delete/move rows)
+  const markStructuralChange = useCallback(() => {
+    structuralChangeRef.current = true;
+    console.log('📊 Marked structural change - will not filter in realtime');
+  }, []);
+
+  // Track own updates with structural change awareness
+  const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
+    }
+    
+    // If this is a structural change, don't track it as own update to allow real-time propagation
+    if (isStructural) {
+      console.log('📊 Structural change - skipping own update tracking for realtime propagation');
+      structuralChangeRef.current = false; // Reset flag
     }
   }, []);
 
@@ -156,7 +169,8 @@ export const useSimpleAutoSave = (
       try {
         // Track this as our own update before saving
         const updateTimestamp = new Date().toISOString();
-        trackMyUpdate(updateTimestamp);
+        const isStructural = structuralChangeRef.current;
+        trackMyUpdate(updateTimestamp, isStructural);
 
         if (!rundownId) {
           const { data: teamData, error: teamError } = await supabase
@@ -194,7 +208,7 @@ export const useSimpleAutoSave = (
           } else {
             // Track the actual timestamp returned by the database
             if (newRundown?.updated_at) {
-              trackMyUpdate(newRundown.updated_at);
+              trackMyUpdate(newRundown.updated_at, isStructural);
             }
             lastSavedRef.current = finalSignature;
             onSaved();
@@ -220,7 +234,7 @@ export const useSimpleAutoSave = (
           } else {
             // Track the actual timestamp returned by the database
             if (updatedRundown?.updated_at) {
-              trackMyUpdate(updatedRundown.updated_at);
+              trackMyUpdate(updatedRundown.updated_at, isStructural);
             }
             lastSavedRef.current = finalSignature;
             onSaved();
@@ -255,6 +269,7 @@ export const useSimpleAutoSave = (
     isSaving,
     setUndoActive,
     setTrackOwnUpdate,
-    setUserTyping
+    setUserTyping,
+    markStructuralChange
   };
 };

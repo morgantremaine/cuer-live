@@ -23,6 +23,7 @@ export const useRundownInteractionHandlers = (
   addRowAtIndex: (insertIndex: number) => void,
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
+  markStructuralChange?: () => void,
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
@@ -55,7 +56,8 @@ export const useRundownInteractionHandlers = (
     columns,
     title,
     getHeaderGroupItemIds,
-    isHeaderCollapsed
+    isHeaderCollapsed,
+    markStructuralChange
   );
 
   // Clipboard functionality

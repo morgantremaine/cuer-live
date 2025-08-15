@@ -61,7 +61,7 @@ export const useSimplifiedRundownState = () => {
   const teleprompterSync = useGlobalTeleprompterSync();
 
   // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markStructuralChange } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -363,18 +363,21 @@ export const useSimplifiedRundownState = () => {
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
+      markStructuralChange(); // Mark this as a structural change
       actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.title, saveUndoState]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
+      markStructuralChange(); // Mark this as a structural change
       helpers.addRow();
-    }, [helpers.addRow, state.items, state.title, saveUndoState]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
+      markStructuralChange(); // Mark this as a structural change
       helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
@@ -429,6 +432,7 @@ export const useSimplifiedRundownState = () => {
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
     saveUndoState(state.items, [], state.title, 'Add segment');
+    markStructuralChange(); // Mark this as a structural change
     
     const newItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -455,11 +459,12 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newItem);
     
     actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+  }, [state.items, state.title, saveUndoState, actions.setItems, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     saveUndoState(state.items, [], state.title, 'Add header');
+    markStructuralChange(); // Mark this as a structural change
     
     const newHeader = {
       id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -486,7 +491,7 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newHeader);
     
     actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+  }, [state.items, state.title, saveUndoState, actions.setItems, markStructuralChange]);
 
   // Clean up timeouts on unmount
   useEffect(() => {
@@ -535,7 +540,11 @@ export const useSimplifiedRundownState = () => {
     deleteItem: enhancedActions.deleteRow,
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
-    deleteMultipleItems: actions.deleteMultipleItems,
+    deleteMultipleItems: useCallback((itemIds: string[]) => {
+      saveUndoState(state.items, [], state.title, 'Delete multiple items');
+      markStructuralChange(); // Mark this as a structural change
+      actions.deleteMultipleItems(itemIds);
+    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, markStructuralChange]),
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {

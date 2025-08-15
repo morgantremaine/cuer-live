@@ -34,7 +34,8 @@ export const useDragAndDrop = (
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
-  isHeaderCollapsed?: (headerId: string) => boolean
+  isHeaderCollapsed?: (headerId: string) => boolean,
+  markStructuralChange?: () => void
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -254,6 +255,11 @@ export const useDragAndDrop = (
       
       if (saveUndoState && columns && title) {
         saveUndoState(items, columns, title, actionDescription);
+      }
+      
+      // Mark as structural change before setting items
+      if (markStructuralChange) {
+        markStructuralChange();
       }
       
       setItems(newItems);

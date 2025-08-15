@@ -163,6 +163,7 @@ export const useRundownStateCoordination = () => {
     addHeaderAtIndex,
     // Pass undo-related parameters - use the correct property name now available
     simplifiedState.saveUndoState,
+    () => {}, // markStructuralChange - placeholder for now
     simplifiedState.columns,
     simplifiedState.rundownTitle,
     getHeaderGroupItemIds,

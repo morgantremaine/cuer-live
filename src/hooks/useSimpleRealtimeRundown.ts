@@ -35,12 +35,18 @@ export const useSimpleRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Global own update tracking to handle multiple subscriptions
-  const trackOwnUpdateLocal = useCallback((timestamp: string) => {
+  // Global own update tracking to handle multiple subscriptions - now structural change aware
+  const trackOwnUpdateLocal = useCallback((timestamp: string, isStructural: boolean = false) => {
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
     
-    // Track in global map for all subscriptions to this rundown
+    // Skip tracking structural changes as "own updates" to allow real-time propagation
+    if (isStructural) {
+      console.log('📊 Structural change detected - skipping own update tracking for real-time propagation');
+      return;
+    }
+    
+    // Track in global map for all subscriptions to this rundown (content changes only)
     const tracking = activeSubscriptions.get(subscriptionKey);
     if (tracking) {
       tracking.ownUpdates.add(timestamp);
@@ -77,6 +83,23 @@ export const useSimpleRealtimeRundown = ({
     return true;
   }, []);
 
+  // Helper function to detect structural changes (add/delete/move rows)
+  const isStructuralChange = useCallback((newData: any, oldData?: any) => {
+    if (!newData || !oldData || !newData.items || !oldData.items) return false;
+    
+    // Compare item IDs and order - if different, it's structural
+    const newItemIds = newData.items.map((item: any) => item.id);
+    const oldItemIds = oldData.items.map((item: any) => item.id);
+    
+    // Different number of items = structural change
+    if (newItemIds.length !== oldItemIds.length) {
+      return true;
+    }
+    
+    // Different order of items = structural change (row move)
+    return JSON.stringify(newItemIds) !== JSON.stringify(oldItemIds);
+  }, []);
+
   // Simplified update handler with global deduplication
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     const subscriptionKey = subscriptionKeyRef.current;
@@ -105,9 +128,12 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Check global own update tracking
-    if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
-      console.log('⏭️ Skipping - our own update');
+    // Check if this is a structural change (add/delete/move rows)
+    const isStructural = isStructuralChange(payload.new, payload.old);
+    
+    // Check global own update tracking - but skip for structural changes
+    if (!isStructural && tracking && tracking.ownUpdates.has(updateTimestamp)) {
+      console.log('⏭️ Skipping - our own update (content change)');
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
@@ -117,8 +143,12 @@ export const useSimpleRealtimeRundown = ({
     
     if (isShowcallerOnly) {
       console.log('📺 Processing showcaller-only update (no loading indicator)');
+    } else if (isStructural) {
+      console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
+      // Show processing state briefly for structural changes
+      setIsProcessingUpdate(true);
     } else {
-      console.log('✅ Processing realtime update from teammate');
+      console.log('✅ Processing realtime content update from teammate');
       // Show processing state briefly only for non-showcaller updates
       setIsProcessingUpdate(true);
     }
@@ -139,7 +169,7 @@ export const useSimpleRealtimeRundown = ({
       }, 500);
     }
     
-  }, [rundownId, isShowcallerOnlyUpdate]);
+  }, [rundownId, isShowcallerOnlyUpdate, isStructuralChange]);
 
   useEffect(() => {
     // Only set up subscription if we have the required data
