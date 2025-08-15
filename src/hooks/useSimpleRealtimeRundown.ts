@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useUniversalTimer } from './useUniversalTimer';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -16,6 +17,7 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
+  const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
@@ -34,7 +36,7 @@ export const useSimpleRealtimeRundown = ({
     ownUpdateTrackingRef.current.add(timestamp);
     
     // Clean up old tracked updates after 5 seconds
-    setTimeout(() => {
+    setManagedTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 5000);
     
@@ -87,22 +89,29 @@ export const useSimpleRealtimeRundown = ({
       console.error('Error processing realtime update:', error);
     }
     
-    // Clear processing state after short delay
-    setTimeout(() => {
+    // Clear processing state after short delay using managed timer
+    setManagedTimeout(() => {
       setIsProcessingUpdate(false);
     }, 500);
     
   }, [rundownId]);
 
   useEffect(() => {
-    console.log('🔧 Simple realtime dependency check:', {
-      rundownId: !!rundownId,
-      rundownIdValue: rundownId,
-      user: !!user,
-      userValue: user?.id,
-      enabled,
-      hasAllRequirements: !!rundownId && !!user && enabled
-    });
+    // Only log dependency check once per unique state combination to reduce console noise
+    const stateKey = `${!!rundownId}-${!!user}-${enabled}`;
+    const lastStateKeyRef = useRef<string>('');
+    
+    if (stateKey !== lastStateKeyRef.current) {
+      console.log('🔧 Simple realtime dependency check:', {
+        rundownId: !!rundownId,
+        rundownIdValue: rundownId,
+        user: !!user,
+        userValue: user?.id,
+        enabled,
+        hasAllRequirements: !!rundownId && !!user && enabled
+      });
+      lastStateKeyRef.current = stateKey;
+    }
     
     // Clear any existing subscription FIRST
     if (subscriptionRef.current) {
@@ -147,7 +156,7 @@ export const useSimpleRealtimeRundown = ({
         } else if (status === 'CHANNEL_ERROR') {
           connectionStableRef.current = false;
           // Add a small delay before showing disconnect to avoid flicker
-          setTimeout(() => {
+          setManagedTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -156,7 +165,7 @@ export const useSimpleRealtimeRundown = ({
         } else if (status === 'TIMED_OUT') {
           connectionStableRef.current = false;
           // Add a small delay before showing disconnect to avoid flicker
-          setTimeout(() => {
+          setManagedTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -166,7 +175,7 @@ export const useSimpleRealtimeRundown = ({
           connectionStableRef.current = false;
           // Only set disconnected if the connection was stable before
           if (subscriptionRef.current) {
-            setTimeout(() => {
+            setManagedTimeout(() => {
               if (!connectionStableRef.current) {
                 setIsConnected(false);
               }
