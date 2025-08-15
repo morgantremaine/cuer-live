@@ -82,16 +82,16 @@ export const useSimpleRealtimeRundown = ({
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
     
-    // Only lead subscription should log and process updates to avoid console spam
-    if (!isLeadSubscriptionRef.current) {
-      return;
-    }
+    // Only lead subscription should log to avoid console spam, but all should process
+    const shouldLog = isLeadSubscriptionRef.current;
 
-    console.log('📡 Simple realtime update received:', {
-      id: payload.new?.id,
-      timestamp: payload.new?.updated_at,
-      itemCount: payload.new?.items?.length
-    });
+    if (shouldLog) {
+      console.log('📡 Simple realtime update received:', {
+        id: payload.new?.id,
+        timestamp: payload.new?.updated_at,
+        itemCount: payload.new?.items?.length
+      });
+    }
 
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
@@ -107,7 +107,9 @@ export const useSimpleRealtimeRundown = ({
 
     // Check global own update tracking
     if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
-      console.log('⏭️ Skipping - our own update');
+      if (shouldLog) {
+        console.log('⏭️ Skipping - our own update');
+      }
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
@@ -116,9 +118,13 @@ export const useSimpleRealtimeRundown = ({
     const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
     
     if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update (no loading indicator)');
+      if (shouldLog) {
+        console.log('📺 Processing showcaller-only update (no loading indicator)');
+      }
     } else {
-      console.log('✅ Processing realtime update from teammate');
+      if (shouldLog) {
+        console.log('✅ Processing realtime update from teammate');
+      }
       // Show processing state briefly only for non-showcaller updates
       setIsProcessingUpdate(true);
     }
