@@ -11,6 +11,8 @@ interface TimeSyncState {
   syncAttempts: number; // Number of sync attempts
   isTimeSynced: boolean; // Whether we have a reliable sync
   syncErrors: string[]; // Recent sync errors
+  emergencyMode: boolean; // Disable external API calls if they consistently fail
+  consecutiveFailures: number; // Track consecutive failures for emergency mode
 }
 
 class UniversalTimeService {
@@ -19,7 +21,9 @@ class UniversalTimeService {
     lastSyncTime: 0,
     syncAttempts: 0,
     isTimeSynced: false,
-    syncErrors: []
+    syncErrors: [],
+    emergencyMode: false,
+    consecutiveFailures: 0
   };
 
   private syncPromise: Promise<void> | null = null;
@@ -28,6 +32,8 @@ class UniversalTimeService {
   private readonly MAX_SYNC_ERRORS = 5;
   private readonly SYNC_RETRY_DELAY = 5000; // 5 seconds
   private readonly AUTO_SYNC_INTERVAL = 300000; // 5 minutes
+  private readonly EMERGENCY_THRESHOLD = 5; // Enter emergency mode after 5 consecutive failures
+  private readonly EMERGENCY_COOLDOWN = 600000; // 10 minutes before retrying after emergency mode
 
   constructor() {
     this.initializeAutoSync();
@@ -40,13 +46,16 @@ class UniversalTimeService {
   public getUniversalTime(): number {
     const localTime = Date.now();
     
-    if (!this.state.isTimeSynced) {
-      // If we haven't synced yet, trigger sync and return local time
-      this.syncWithServer();
+    if (!this.state.isTimeSynced && !this.state.emergencyMode) {
+      // If we haven't synced yet and not in emergency mode, trigger sync and return local time
+      this.syncWithServer().catch(() => {
+        // Graceful degradation: if sync fails, just use local time
+        console.warn('🕐 Time sync failed, using local system time');
+      });
       return localTime;
     }
 
-    // Return server-synchronized time
+    // Return server-synchronized time if available, otherwise local time
     return localTime + this.state.serverTimeOffset;
   }
 
@@ -90,7 +99,9 @@ class UniversalTimeService {
       timeDrift: this.state.serverTimeOffset,
       lastSyncTime: this.state.lastSyncTime,
       syncAttempts: this.state.syncAttempts,
-      recentErrors: this.state.syncErrors
+      recentErrors: this.state.syncErrors,
+      emergencyMode: this.state.emergencyMode,
+      consecutiveFailures: this.state.consecutiveFailures
     };
   }
 
@@ -98,6 +109,20 @@ class UniversalTimeService {
    * Manually trigger time synchronization with server
    */
   public async syncWithServer(): Promise<void> {
+    // Check if we're in emergency mode
+    if (this.state.emergencyMode) {
+      const timeSinceLastAttempt = Date.now() - this.state.lastSyncTime;
+      if (timeSinceLastAttempt < this.EMERGENCY_COOLDOWN) {
+        console.warn('🕐 Emergency mode active, skipping sync attempt');
+        return;
+      } else {
+        // Try to exit emergency mode after cooldown
+        console.log('🕐 Attempting to exit emergency mode');
+        this.state.emergencyMode = false;
+        this.state.consecutiveFailures = 0;
+      }
+    }
+
     // Prevent multiple simultaneous sync attempts
     if (this.syncPromise) {
       return this.syncPromise;
@@ -119,9 +144,11 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use only the most reliable time API that works consistently
+      // Use multiple reliable time APIs with JSON responses and good CORS support
       const timeAPIs = [
-        'https://worldtimeapi.org/api/timezone/UTC'
+        'https://worldtimeapi.org/api/timezone/UTC',
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+        'https://api.ipgeolocation.io/timezone?apiKey=free&tz=UTC'
       ];
 
       const syncResults = await Promise.allSettled(
@@ -179,8 +206,15 @@ class UniversalTimeService {
         this.state.lastSyncTime = localTime;
         this.state.isTimeSynced = true;
         
-        // Clear old errors on successful sync
+        // Clear old errors and reset failure counter on successful sync
         this.state.syncErrors = [];
+        this.state.consecutiveFailures = 0;
+        
+        // Exit emergency mode if we were in it
+        if (this.state.emergencyMode) {
+          console.log('🕐 Exiting emergency mode - sync successful');
+          this.state.emergencyMode = false;
+        }
         
         console.log('🕐 Time synchronized successfully', {
           serverTime: new Date(serverTime).toISOString(),
@@ -193,16 +227,27 @@ class UniversalTimeService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
       this.state.syncErrors.push(errorMessage);
+      this.state.consecutiveFailures++;
       
       // Keep only recent errors
       if (this.state.syncErrors.length > this.MAX_SYNC_ERRORS) {
         this.state.syncErrors = this.state.syncErrors.slice(-this.MAX_SYNC_ERRORS);
       }
 
-      console.error('🕐 Time sync failed:', errorMessage);
-      
-      // Schedule retry with exponential backoff
-      this.scheduleRetry();
+      // Enter emergency mode after consecutive failures
+      if (this.state.consecutiveFailures >= this.EMERGENCY_THRESHOLD && !this.state.emergencyMode) {
+        this.state.emergencyMode = true;
+        this.state.lastSyncTime = Date.now(); // Track when we entered emergency mode
+        console.warn(`🕐 Entering emergency mode after ${this.state.consecutiveFailures} consecutive failures. Using local system time.`);
+        return; // Don't schedule retry in emergency mode
+      }
+
+      // Only log error if not in emergency mode to reduce spam
+      if (!this.state.emergencyMode) {
+        console.warn('🕐 Time sync failed, will retry:', errorMessage);
+        // Schedule retry with exponential backoff
+        this.scheduleRetry();
+      }
     }
   }
 
@@ -225,18 +270,15 @@ class UniversalTimeService {
       let serverTime: number | null = null;
       
       // Handle different API response formats with enhanced parsing
-      if (url.includes('worldclockapi.com')) {
-        // WorldClockAPI format: { "currentDateTime": "2025-07-30T18:30:00.000Z" }
-        serverTime = data.currentDateTime ? new Date(data.currentDateTime).getTime() : null;
+      if (url.includes('worldtimeapi.org')) {
+        // WorldTimeAPI format: { "datetime": "2025-07-30T18:30:00.000+00:00" }
+        serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
       } else if (url.includes('timeapi.io')) {
         // TimeAPI.io format: { "dateTime": "2025-07-30T18:30:00.000Z" }
         serverTime = data.dateTime ? new Date(data.dateTime).getTime() : null;
-      } else if (url.includes('worldtimeapi.org')) {
-        // WorldTimeAPI format: { "datetime": "2025-07-30T18:30:00.000+00:00" }
-        serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
-      } else if (url.includes('timezonedb.com')) {
-        // TimezoneDB format: { "timestamp": 1690742400 }
-        serverTime = data.timestamp ? data.timestamp * 1000 : null; // Convert to milliseconds
+      } else if (url.includes('ipgeolocation.io')) {
+        // IP Geolocation format: { "date_time_txt": "2025-07-30 18:30:00", "timezone": "UTC" }
+        serverTime = data.date_time_txt ? new Date(data.date_time_txt + 'Z').getTime() : null;
       }
 
       if (serverTime && !isNaN(serverTime)) {
@@ -246,8 +288,7 @@ class UniversalTimeService {
       
       throw new Error(`Invalid time response from ${url}: ${JSON.stringify(data)}`);
     } catch (error) {
-      // Don't log individual API failures since they're just fallbacks
-      // Only throw to let the caller handle logging if all APIs fail
+      // Silent failure for individual API calls - let the caller handle aggregate logging
       throw error;
     }
   }
@@ -260,13 +301,17 @@ class UniversalTimeService {
       clearTimeout(this.syncRetryTimeout);
     }
 
+    // Use longer delays for network-related errors to avoid spamming failing APIs
+    const baseDelay = this.state.consecutiveFailures >= 3 ? 30000 : this.SYNC_RETRY_DELAY; // 30s vs 5s
     const delay = Math.min(
-      this.SYNC_RETRY_DELAY * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
-      60000 // Max 1 minute delay
+      baseDelay * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
+      300000 // Max 5 minute delay for persistent issues
     );
 
     this.syncRetryTimeout = setTimeout(() => {
-      this.syncWithServer();
+      this.syncWithServer().catch(() => {
+        // Graceful degradation on retry failure
+      });
     }, delay);
   }
 
