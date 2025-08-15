@@ -67,9 +67,20 @@ export const useSimpleRealtimeRundown = ({
     }
 
     // Skip if this is our own update (simple check)
+    console.log('🔍 Checking own update tracking:', {
+      updateTimestamp,
+      trackedUpdates: Array.from(ownUpdateTrackingRef.current),
+      hasTimestamp: ownUpdateTrackingRef.current.has(updateTimestamp)
+    });
+    
     if (ownUpdateTrackingRef.current.has(updateTimestamp)) {
       console.log('⏭️ Skipping - our own update');
       lastProcessedUpdateRef.current = updateTimestamp;
+      // Clean up the tracked timestamp after processing
+      setTimeout(() => {
+        console.log('🧹 Cleaning up tracked timestamp:', updateTimestamp);
+        ownUpdateTrackingRef.current.delete(updateTimestamp);
+      }, 2000);
       return;
     }
 

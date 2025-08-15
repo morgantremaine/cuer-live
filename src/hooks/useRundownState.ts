@@ -141,28 +141,67 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     case 'MERGE_REALTIME_UPDATE': {
       const { items: newItems, title, startTime, timezone, protectedFields = new Set() } = action.payload;
       
-      // Field-by-field comparison for items
-      const mergedItems = state.items.map(currentItem => {
-        const newItem = newItems.find(ni => ni.id === currentItem.id);
-        if (!newItem) return currentItem; // Item was deleted remotely, keep local version
-        
-        // Field-level merge - only update fields that aren't protected
-        const mergedItem = { ...currentItem };
-        
-        Object.keys(newItem).forEach(key => {
-          const fieldKey = `${currentItem.id}-${key}`;
-          if (!protectedFields.has(fieldKey) && newItem[key as keyof RundownItem] !== currentItem[key as keyof RundownItem]) {
-            (mergedItem as any)[key] = newItem[key as keyof RundownItem];
-          }
-        });
-        
-        return mergedItem;
+      console.log('🔄 MERGE_REALTIME_UPDATE reducer called with:', {
+        newItemsCount: newItems.length,
+        currentItemsCount: state.items.length,
+        title,
+        startTime,
+        timezone,
+        protectedFieldsCount: protectedFields.size,
+        protectedFields: Array.from(protectedFields)
       });
       
-      // Add any new items that don't exist locally
-      const localItemIds = new Set(state.items.map(item => item.id));
-      const newlyAddedItems = newItems.filter(item => !localItemIds.has(item.id));
-      const finalItems = [...mergedItems, ...newlyAddedItems];
+      // Create a map of new items for efficient lookup
+      const newItemsMap = new Map(newItems.map(item => [item.id, item]));
+      
+      // Process existing items: update, keep, or remove based on remote state
+      const mergedItems: RundownItem[] = [];
+      
+      // First, handle all items that exist in the remote update
+      newItems.forEach(newItem => {
+        const currentItem = state.items.find(item => item.id === newItem.id);
+        
+        if (currentItem) {
+          // Item exists locally - merge fields that aren't protected
+          const mergedItem = { ...currentItem };
+          
+          Object.keys(newItem).forEach(key => {
+            const fieldKey = `${currentItem.id}-${key}`;
+            if (!protectedFields.has(fieldKey) && newItem[key as keyof RundownItem] !== currentItem[key as keyof RundownItem]) {
+              (mergedItem as any)[key] = newItem[key as keyof RundownItem];
+            }
+          });
+          
+          mergedItems.push(mergedItem);
+        } else {
+          // New item - add it
+          mergedItems.push(newItem);
+        }
+      });
+      
+      // Items that exist locally but not in the remote update were deleted remotely
+      // Only keep them if they have protected fields (being actively edited)
+      const itemsToKeep = state.items.filter(localItem => {
+        if (newItemsMap.has(localItem.id)) {
+          return false; // Already processed above
+        }
+        
+        // Check if any field of this item is protected
+        const hasProtectedField = Array.from(protectedFields).some(fieldKey => 
+          fieldKey.startsWith(`${localItem.id}-`)
+        );
+        
+        if (hasProtectedField) {
+          console.log('🛡️ Keeping locally deleted item due to protected fields:', localItem.id);
+          return true;
+        }
+        
+        console.log('🗑️ Removing item deleted remotely:', localItem.id);
+        return false;
+      });
+      
+      // Combine processed items with kept items, maintaining order from remote
+      const finalItems = [...mergedItems, ...itemsToKeep];
       
       // Only update state fields that aren't being edited
       const newState: Partial<RundownState> = { items: finalItems };
@@ -178,10 +217,22 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       }
       
       // Only mark as changed if we made actual updates
-      const hasActualChanges = finalItems !== state.items || 
+      const oldItemsCount = state.items.length;
+      const finalItemsCount = finalItems.length;
+      const itemsChanged = finalItems.length !== state.items.length || 
+                          finalItems.some((item, index) => state.items[index]?.id !== item.id);
+      
+      const hasActualChanges = itemsChanged || 
                               (newState.title && newState.title !== state.title) ||
                               (newState.startTime && newState.startTime !== state.startTime) ||
                               (newState.timezone && newState.timezone !== state.timezone);
+      
+      console.log('🔄 MERGE_REALTIME_UPDATE returning state:', {
+        oldItemsCount,
+        finalItemsCount,
+        hasActualChanges,
+        itemsChanged
+      });
       
       return {
         ...state,

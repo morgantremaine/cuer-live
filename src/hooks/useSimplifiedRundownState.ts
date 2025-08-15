@@ -154,7 +154,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions, isSaving, getProtectedFields]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
-      console.log('📝 Tracking own update in realtime:', timestamp);
+      console.log('📝 Tracking own update in realtime (callback):', timestamp);
       ownUpdateTimestampRef.current = timestamp;
     }
   });
