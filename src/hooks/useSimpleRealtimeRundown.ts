@@ -47,30 +47,6 @@ export const useSimpleRealtimeRundown = ({
     }
   }, []);
 
-  // Check if update is showcaller-only (no UI processing indicator needed)
-  const isShowcallerOnlyUpdate = useCallback((oldData: any, newData: any) => {
-    if (!oldData || !newData) return false;
-    
-    // Compare all fields except showcaller_state
-    const fieldsToCompare = ['items', 'name', 'start_time', 'notes', 'external_notes', 'columns'];
-    
-    for (const field of fieldsToCompare) {
-      const oldValue = JSON.stringify(oldData[field]);
-      const newValue = JSON.stringify(newData[field]);
-      if (oldValue !== newValue) {
-        return false; // Non-showcaller change detected
-      }
-    }
-    
-    // Check if only showcaller_state changed
-    const oldShowcaller = JSON.stringify(oldData.showcaller_state);
-    const newShowcaller = JSON.stringify(newData.showcaller_state);
-    return oldShowcaller !== newShowcaller;
-  }, []);
-
-  // Store previous data for comparison
-  const previousDataRef = useRef<any>(null);
-
   // Simplified update handler - NO complex filtering
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('📡 Simple realtime update received:', {
@@ -100,37 +76,26 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Check if this is a showcaller-only update
-    const isShowcallerOnly = previousDataRef.current && 
-      isShowcallerOnlyUpdate(previousDataRef.current, payload.new);
-
-    if (isShowcallerOnly) {
-      console.log('📺 Showcaller-only update - no processing indicator');
-    } else {
-      console.log('✅ Processing realtime update from teammate');
-      // Show processing state briefly for non-showcaller updates
-      setIsProcessingUpdate(true);
-    }
-    
+    // ALL OTHER UPDATES GO THROUGH - no complex filtering
+    console.log('✅ Processing realtime update from teammate');
     lastProcessedUpdateRef.current = updateTimestamp;
+    
+    // Show processing state briefly
+    setIsProcessingUpdate(true);
     
     try {
       // Apply the update directly
       onRundownUpdateRef.current(payload.new);
-      // Store current data for next comparison
-      previousDataRef.current = payload.new;
     } catch (error) {
       console.error('Error processing realtime update:', error);
     }
     
-    // Clear processing state after short delay using managed timer (only if we showed it)
-    if (!isShowcallerOnly) {
-      setManagedTimeout(() => {
-        setIsProcessingUpdate(false);
-      }, 500);
-    }
+    // Clear processing state after short delay using managed timer
+    setManagedTimeout(() => {
+      setIsProcessingUpdate(false);
+    }, 500);
     
-  }, [rundownId, isShowcallerOnlyUpdate]);
+  }, [rundownId]);
 
   useEffect(() => {
     // Only log dependency check once per unique state combination to reduce console noise
