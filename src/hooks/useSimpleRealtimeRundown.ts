@@ -106,8 +106,10 @@ export const useSimpleRealtimeRundown = ({
       console.log('📺 Processing showcaller-only update (no loading indicator)');
     } else {
       console.log('✅ Processing realtime update from teammate');
+      console.log('🔵 Setting isProcessingUpdate to TRUE');
       // Show processing state briefly only for non-showcaller updates
       setIsProcessingUpdate(true);
+      console.log('🔵 isProcessingUpdate state should now be TRUE');
     }
     
     lastProcessedUpdateRef.current = updateTimestamp;
@@ -127,7 +129,9 @@ export const useSimpleRealtimeRundown = ({
     
     // Clear processing state after short delay using managed timer (only if we set it)
     if (!isShowcallerOnly) {
+      console.log('🔵 Setting timeout to clear isProcessingUpdate in 500ms');
       setManagedTimeout(() => {
+        console.log('🔵 Clearing isProcessingUpdate - setting to FALSE');
         setIsProcessingUpdate(false);
       }, 500);
     }
