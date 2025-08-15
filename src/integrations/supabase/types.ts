@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -703,7 +703,7 @@ export type Database = {
         Returns: Json
       }
       accept_team_invitation: {
-        Args: { invitation_token: string; accepting_user_id: string }
+        Args: { accepting_user_id: string; invitation_token: string }
         Returns: Json
       }
       accept_team_invitation_safe: {
@@ -719,7 +719,7 @@ export type Database = {
         Returns: undefined
       }
       cleanup_deleted_team_column: {
-        Args: { team_uuid: string; column_key: string }
+        Args: { column_key: string; team_uuid: string }
         Returns: undefined
       }
       cleanup_expired_invitations: {
@@ -759,7 +759,7 @@ export type Database = {
         Returns: string
       }
       get_public_layout_for_rundown: {
-        Args: { rundown_uuid: string; layout_uuid: string }
+        Args: { layout_uuid: string; rundown_uuid: string }
         Returns: Json
       }
       get_public_rundown_data: {
@@ -773,11 +773,11 @@ export type Database = {
       get_team_custom_columns: {
         Args: { team_uuid: string }
         Returns: {
-          id: string
           column_key: string
           column_name: string
-          created_by: string
           created_at: string
+          created_by: string
+          id: string
         }[]
       }
       get_user_email_safe: {
@@ -785,7 +785,7 @@ export type Database = {
         Returns: string
       }
       get_user_role_in_team: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: string
       }
       get_user_subscription_access: {
@@ -807,9 +807,9 @@ export type Database = {
       get_user_team_memberships: {
         Args: { user_uuid: string }
         Returns: {
-          team_id: string
-          role: string
           joined_at: string
+          role: string
+          team_id: string
         }[]
       }
       get_user_teams: {
@@ -825,11 +825,11 @@ export type Database = {
         Returns: boolean
       }
       is_team_admin: {
-        Args: { user_id: string; team_id: string }
+        Args: { team_id: string; user_id: string }
         Returns: boolean
       }
       is_team_admin_check: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_team_admin_for_member_view: {
@@ -837,15 +837,15 @@ export type Database = {
         Returns: boolean
       }
       is_team_admin_safe: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_team_admin_simple: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_team_member: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_team_member_for_member_view: {
@@ -853,15 +853,15 @@ export type Database = {
         Returns: boolean
       }
       is_team_member_simple: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_user_team_admin: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_user_team_member: {
-        Args: { user_uuid: string; team_uuid: string }
+        Args: { team_uuid: string; user_uuid: string }
         Returns: boolean
       }
       migrate_existing_custom_columns: {
@@ -869,7 +869,7 @@ export type Database = {
         Returns: undefined
       }
       remove_team_member_with_transfer: {
-        Args: { member_id: string; admin_id: string; team_id_param: string }
+        Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
       }
       update_rundown_presence: {
