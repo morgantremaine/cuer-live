@@ -440,19 +440,17 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes, with better handling and debouncing
+  // Load team data when user changes, with better handling
   useEffect(() => {
     // Only load if we don't have a cached result for this user
-    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
-      // Reduce console noise - only log significant team changes
-      if (!loadedUserRef.current) {
-        console.log('🔄 useTeam: Initial team load for user:', user.id);
-      }
-      loadedUserRef.current = user.id; // Set immediately to prevent duplicates
+    if (user?.id && user.id !== loadedUserRef.current) {
+      console.log('🔄 useTeam: Loading team data for user change:', user.id);
+      loadedUserRef.current = null; // Reset to allow new load
       setIsLoading(true);
-      isLoadingRef.current = true;
+      // Add a small delay to ensure auth state is stable
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
+      console.log('🔄 useTeam: Clearing team data (no user)');
       setTeam(null);
       setTeamMembers([]);
       setPendingInvitations([]);
@@ -460,9 +458,9 @@ export const useTeam = () => {
       setIsLoading(false);
       setError(null);
       loadedUserRef.current = null;
-      isLoadingRef.current = false;
+    } else if (user?.id === loadedUserRef.current) {
+      console.log('🔄 useTeam: Skipping load - already loaded for user:', user.id);
     }
-    // Remove the else case to reduce console noise
   }, [user?.id]);
 
   // Handle page visibility changes to prevent unnecessary reloads

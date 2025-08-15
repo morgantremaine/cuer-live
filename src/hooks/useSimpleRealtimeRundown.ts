@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useUniversalTimer } from './useUniversalTimer';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -17,13 +16,11 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
-  const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
-  const lastStateKeyRef = useRef<string>(''); // Move this to top level
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
@@ -37,7 +34,7 @@ export const useSimpleRealtimeRundown = ({
     ownUpdateTrackingRef.current.add(timestamp);
     
     // Clean up old tracked updates after 5 seconds
-    setManagedTimeout(() => {
+    setTimeout(() => {
       ownUpdateTrackingRef.current.delete(timestamp);
     }, 5000);
     
@@ -45,26 +42,6 @@ export const useSimpleRealtimeRundown = ({
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
-  }, []);
-
-  // Helper function to detect if an update is showcaller-only
-  const isShowcallerOnlyUpdate = useCallback((newData: any, oldData?: any) => {
-    if (!newData || !oldData) return false;
-    
-    // Compare all fields except showcaller_visual_state
-    const fieldsToCheck = [
-      'items', 'title', 'description', 'external_notes', 'columns',
-      'archived', 'folder_id', 'created_at'
-    ];
-    
-    for (const field of fieldsToCheck) {
-      if (JSON.stringify(newData[field]) !== JSON.stringify(oldData[field])) {
-        return false; // Non-showcaller field changed
-      }
-    }
-    
-    // Only showcaller_visual_state changed (or no meaningful changes)
-    return true;
   }, []);
 
   // Simplified update handler - NO complex filtering
@@ -96,18 +73,12 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Check if this is a showcaller-only update and skip processing indicator
-    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
-    
-    if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update (no loading indicator)');
-    } else {
-      console.log('✅ Processing realtime update from teammate');
-      // Show processing state briefly only for non-showcaller updates
-      setIsProcessingUpdate(true);
-    }
-    
+    // ALL OTHER UPDATES GO THROUGH - no complex filtering
+    console.log('✅ Processing realtime update from teammate');
     lastProcessedUpdateRef.current = updateTimestamp;
+    
+    // Show processing state briefly
+    setIsProcessingUpdate(true);
     
     try {
       // Apply the update directly
@@ -116,31 +87,22 @@ export const useSimpleRealtimeRundown = ({
       console.error('Error processing realtime update:', error);
     }
     
-    // Clear processing state after short delay using managed timer (only if we set it)
-    if (!isShowcallerOnly) {
-      setManagedTimeout(() => {
-        setIsProcessingUpdate(false);
-      }, 500);
-    }
+    // Clear processing state after short delay
+    setTimeout(() => {
+      setIsProcessingUpdate(false);
+    }, 500);
     
-  }, [rundownId, isShowcallerOnlyUpdate]);
+  }, [rundownId]);
 
   useEffect(() => {
-    // Only log dependency check once per unique state combination to reduce console noise
-    const stateKey = `${!!rundownId}-${!!user}-${enabled}`;
-    
-    if (stateKey !== lastStateKeyRef.current) {
-      // Only log dependency changes, not every check
-      if (lastStateKeyRef.current) {
-        console.log('🔧 Simple realtime state changed:', {
-          rundownId: !!rundownId,
-          user: !!user,
-          enabled,
-          hasAllRequirements: !!rundownId && !!user && enabled
-        });
-      }
-      lastStateKeyRef.current = stateKey;
-    }
+    console.log('🔧 Simple realtime dependency check:', {
+      rundownId: !!rundownId,
+      rundownIdValue: rundownId,
+      user: !!user,
+      userValue: user?.id,
+      enabled,
+      hasAllRequirements: !!rundownId && !!user && enabled
+    });
     
     // Clear any existing subscription FIRST
     if (subscriptionRef.current) {
@@ -155,7 +117,7 @@ export const useSimpleRealtimeRundown = ({
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      // Reduce logging frequency for disabled state
+      console.log('⏸️ Simple realtime disabled:', { rundownId: !!rundownId, user: !!user, enabled });
       return;
     }
     
@@ -185,7 +147,7 @@ export const useSimpleRealtimeRundown = ({
         } else if (status === 'CHANNEL_ERROR') {
           connectionStableRef.current = false;
           // Add a small delay before showing disconnect to avoid flicker
-          setManagedTimeout(() => {
+          setTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -194,7 +156,7 @@ export const useSimpleRealtimeRundown = ({
         } else if (status === 'TIMED_OUT') {
           connectionStableRef.current = false;
           // Add a small delay before showing disconnect to avoid flicker
-          setManagedTimeout(() => {
+          setTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -204,7 +166,7 @@ export const useSimpleRealtimeRundown = ({
           connectionStableRef.current = false;
           // Only set disconnected if the connection was stable before
           if (subscriptionRef.current) {
-            setManagedTimeout(() => {
+            setTimeout(() => {
               if (!connectionStableRef.current) {
                 setIsConnected(false);
               }
