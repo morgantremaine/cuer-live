@@ -119,10 +119,9 @@ class UniversalTimeService {
     try {
       this.state.syncAttempts++;
       
-      // Use only reliable time APIs that work with CORS
+      // Use only the most reliable time API that works consistently
       const timeAPIs = [
-        'https://worldtimeapi.org/api/timezone/UTC',
-        'https://worldclockapi.com/api/json/utc/now'
+        'https://worldtimeapi.org/api/timezone/UTC'
       ];
 
       const syncResults = await Promise.allSettled(
