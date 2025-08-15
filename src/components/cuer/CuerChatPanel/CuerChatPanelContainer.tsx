@@ -39,7 +39,7 @@ const CuerChatPanelContainer = ({
   onApplyModifications
 }: CuerChatPanelContainerProps) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="fixed right-4 bottom-4 w-96 h-[600px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col">
       <CuerChatHeader
         isConnected={isConnected}
         needsApiKeySetup={needsApiKeySetup}

@@ -1,11 +1,9 @@
 
 import React from 'react';
-import { GripVertical } from 'lucide-react';
 import CuerChatPanelContainer from './CuerChatPanel/CuerChatPanelContainer';
 import ApiKeySetupSection from './CuerChatPanel/ApiKeySetupSection';
 import { useCuerChatPanelLogic } from './CuerChatPanel/useCuerChatPanelLogic';
 import { useCuerModifications } from '@/hooks/useCuerModifications';
-import { useDraggable } from '@/hooks/useDraggable';
 
 interface CuerChatPanelProps {
   isOpen: boolean;
@@ -31,32 +29,11 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
   } = useCuerChatPanelLogic(isOpen, rundownData);
   
   const { applyModifications } = useCuerModifications();
-  
-  const { position, isDragging, dragRef, startDrag } = useDraggable({
-    initialPosition: { x: window.innerWidth - 400, y: window.innerHeight - 620 },
-    storageKey: 'cuerChatPanelPosition'
-  });
 
   if (!isOpen) return null;
 
   return (
-    <div 
-      ref={dragRef}
-      className="fixed w-96 h-[600px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col"
-      style={{ 
-        left: position.x,
-        top: position.y,
-        cursor: isDragging ? 'grabbing' : 'default'
-      }}
-    >
-      {/* Drag Handle */}
-      <div 
-        className="flex items-center justify-center p-2 border-b border-gray-200 cursor-grab active:cursor-grabbing"
-        onMouseDown={startDrag}
-      >
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
-      
+    <div className="fixed right-4 bottom-4 w-96 h-[600px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col">
       {showApiKeySetup && needsApiKeySetup ? (
         <ApiKeySetupSection onClose={() => setShowApiKeySetup(false)} />
       ) : (

@@ -57,13 +57,8 @@ export const useBlueprintRealtimeCollaboration = ({
     console.log('✅ Processing remote blueprint update from teammate');
     
     try {
-      // Apply the blueprint update with granular support
-      const updateWithMetadata = {
-        ...payload.new,
-        isGranularUpdate: true,
-        timestamp: updateTimestamp
-      };
-      onBlueprintUpdatedRef.current(updateWithMetadata);
+      // Apply the blueprint update
+      onBlueprintUpdatedRef.current(payload.new);
     } catch (error) {
       console.error('Error processing blueprint realtime update:', error);
     }

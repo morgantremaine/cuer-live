@@ -49,12 +49,8 @@ export const useSimpleAutoSave = (
 
   // Track own updates
   const trackMyUpdate = useCallback((timestamp: string) => {
-    console.log('📝 trackMyUpdate called with:', timestamp);
     if (trackOwnUpdateRef.current) {
-      console.log('📝 Calling trackOwnUpdate with:', timestamp);
       trackOwnUpdateRef.current(timestamp);
-    } else {
-      console.log('⚠️ No trackOwnUpdate ref available');
     }
   }, []);
 

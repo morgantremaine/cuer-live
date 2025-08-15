@@ -30,11 +30,9 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced typing session tracking with field-level protection
+  // Typing session tracking
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
-  const PROTECTION_WINDOW_MS = 3000; // 3 second protection window
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -89,41 +87,7 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Create protected fields set for granular updates
-  const getProtectedFields = useCallback(() => {
-    const protectedFields = new Set<string>();
-    const now = Date.now();
-    
-    // Add currently typing field if any
-    if (typingSessionRef.current) {
-      protectedFields.add(typingSessionRef.current.fieldKey);
-    }
-    
-    // Add recently edited fields within protection window
-    recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < PROTECTION_WINDOW_MS) {
-        protectedFields.add(fieldKey);
-      } else {
-        // Clean up expired fields
-        recentlyEditedFieldsRef.current.delete(fieldKey);
-      }
-    });
-    
-    // Add global title/timing fields if they're being edited
-    if (typingSessionRef.current?.fieldKey === 'title') {
-      protectedFields.add('title');
-    }
-    if (typingSessionRef.current?.fieldKey === 'startTime') {
-      protectedFields.add('startTime');
-    }
-    if (typingSessionRef.current?.fieldKey === 'timezone') {
-      protectedFields.add('timezone');
-    }
-    
-    return protectedFields;
-  }, []);
-
-  // Enhanced realtime connection with granular update logic
+  // Enhanced realtime connection with simplified logic
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
@@ -132,29 +96,26 @@ export const useSimplifiedRundownState = () => {
       
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
-        console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
+        console.log('🕒 Marked realtime update timestamp:', updatedRundown.updated_at);
+        console.log('📊 APPLYING realtime update to state');
         
-        // Get currently protected fields
-        const protectedFields = getProtectedFields();
-        console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
-        
-        // Use granular merge instead of full state replacement
-        actions.mergeRealtimeUpdate({
+        // Load state WITHOUT any showcaller data
+        actions.loadState({
           items: updatedRundown.items || [],
-          title: updatedRundown.title,
-          startTime: updatedRundown.start_time,
-          timezone: updatedRundown.timezone,
-          protectedFields
+          columns: [],
+          title: updatedRundown.title || 'Untitled Rundown',
+          startTime: updatedRundown.start_time || '09:00:00',
+          timezone: updatedRundown.timezone || 'America/New_York'
         });
         
-        console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
+        console.log('🔄 Realtime update applied with fresh references, item count:', updatedRundown.items?.length || 0);
       } else {
         console.log('📊 Skipping realtime update - currently saving');
       }
-    }, [actions, isSaving, getProtectedFields]),
+    }, [actions, isSaving]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
-      console.log('📝 Tracking own update in realtime (callback):', timestamp);
+      console.log('📝 Tracking own update in realtime:', timestamp);
       ownUpdateTimestampRef.current = timestamp;
     }
   });
@@ -171,7 +132,7 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
-  // Enhanced updateItem function with field-level protection tracking
+  // Enhanced updateItem function - NO showcaller interference
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
@@ -179,9 +140,6 @@ export const useSimplifiedRundownState = () => {
     
     if (isTypingField) {
       const sessionKey = `${id}-${field}`;
-      
-      // Track this field as recently edited for protection window
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -199,12 +157,8 @@ export const useSimplifiedRundownState = () => {
         typingSessionRef.current = null;
       }, 1000);
     } else if (field === 'duration') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (field === 'color') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
     
@@ -378,19 +332,8 @@ export const useSimplifiedRundownState = () => {
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
-        // Track title editing for protection
-        recentlyEditedFieldsRef.current.set('title', Date.now());
-        typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
-        
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
-        
-        // Clear typing session after delay
-        setTimeout(() => {
-          if (typingSessionRef.current?.fieldKey === 'title') {
-            typingSessionRef.current = null;
-          }
-        }, 1000);
       }
     }, [actions.setTitle, state.items, state.title, saveUndoState])
   };
@@ -538,34 +481,8 @@ export const useSimplifiedRundownState = () => {
     deleteMultipleItems: actions.deleteMultipleItems,
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
-    setStartTime: useCallback((newStartTime: string) => {
-      // Track start time editing for protection
-      recentlyEditedFieldsRef.current.set('startTime', Date.now());
-      typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
-      
-      actions.setStartTime(newStartTime);
-      
-      // Clear typing session after delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'startTime') {
-          typingSessionRef.current = null;
-        }
-      }, 1000);
-    }, [actions.setStartTime]),
-    setTimezone: useCallback((newTimezone: string) => {
-      // Track timezone editing for protection
-      recentlyEditedFieldsRef.current.set('timezone', Date.now());
-      typingSessionRef.current = { fieldKey: 'timezone', startTime: Date.now() };
-      
-      actions.setTimezone(newTimezone);
-      
-      // Clear typing session after delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'timezone') {
-          typingSessionRef.current = null;
-        }
-      }, 1000);
-    }, [actions.setTimezone]),
+    setStartTime: actions.setStartTime,
+    setTimezone: actions.setTimezone,
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

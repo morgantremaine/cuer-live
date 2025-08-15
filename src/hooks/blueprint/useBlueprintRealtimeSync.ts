@@ -53,17 +53,14 @@ export const useBlueprintRealtimeSync = ({
     console.log('✅ Processing remote blueprint update from teammate');
     
     try {
-      // Convert database format to state format with granular protection
+      // Convert database format to state format
       const remoteState = {
         lists: payload.new?.lists || [],
         showDate: payload.new?.show_date || '',
         notes: payload.new?.notes || '',
         crewData: payload.new?.crew_data || [],
         cameraPlots: payload.new?.camera_plots || [],
-        componentOrder: payload.new?.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
-        // Flag this as a granular update
-        isGranularUpdate: true,
-        timestamp: updateTimestamp
+        componentOrder: payload.new?.component_order || ['crew-list', 'camera-plot', 'scratchpad']
       };
       
       onRemoteUpdateRef.current(remoteState);
