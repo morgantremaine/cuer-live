@@ -10,6 +10,9 @@ interface UseSimpleRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
 }
 
+// Global subscription tracking to prevent duplicates
+const activeSubscriptions = new Map<string, { count: number; ownUpdates: Set<string> }>();
+
 export const useSimpleRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
@@ -22,8 +25,8 @@ export const useSimpleRealtimeRundown = ({
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
-  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
-  const lastStateKeyRef = useRef<string>(''); // Move this to top level
+  const subscriptionKeyRef = useRef<string>('');
+  const isLeadSubscriptionRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
@@ -32,14 +35,21 @@ export const useSimpleRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Simple own update tracking
+  // Global own update tracking to handle multiple subscriptions
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
-    ownUpdateTrackingRef.current.add(timestamp);
+    const subscriptionKey = subscriptionKeyRef.current;
+    if (!subscriptionKey) return;
     
-    // Clean up old tracked updates after 5 seconds
-    setManagedTimeout(() => {
-      ownUpdateTrackingRef.current.delete(timestamp);
-    }, 5000);
+    // Track in global map for all subscriptions to this rundown
+    const tracking = activeSubscriptions.get(subscriptionKey);
+    if (tracking) {
+      tracking.ownUpdates.add(timestamp);
+      
+      // Clean up old tracked updates after 5 seconds
+      setManagedTimeout(() => {
+        tracking.ownUpdates.delete(timestamp);
+      }, 5000);
+    }
     
     // Also track via parent if available
     if (trackOwnUpdateRef.current) {
@@ -67,8 +77,16 @@ export const useSimpleRealtimeRundown = ({
     return true;
   }, []);
 
-  // Simplified update handler - NO complex filtering
+  // Simplified update handler with global deduplication
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    const subscriptionKey = subscriptionKeyRef.current;
+    const tracking = activeSubscriptions.get(subscriptionKey);
+    
+    // Only lead subscription should log and process updates to avoid console spam
+    if (!isLeadSubscriptionRef.current) {
+      return;
+    }
+
     console.log('📡 Simple realtime update received:', {
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
@@ -77,7 +95,6 @@ export const useSimpleRealtimeRundown = ({
 
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
-      console.log('⏭️ Skipping - different rundown');
       return;
     }
 
@@ -85,12 +102,11 @@ export const useSimpleRealtimeRundown = ({
     
     // Skip if this is exactly the same timestamp we just processed
     if (updateTimestamp === lastProcessedUpdateRef.current) {
-      console.log('⏭️ Skipping - same timestamp as last processed');
       return;
     }
 
-    // Skip if this is our own update (simple check)
-    if (ownUpdateTrackingRef.current.has(updateTimestamp)) {
+    // Check global own update tracking
+    if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
       console.log('⏭️ Skipping - our own update');
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
@@ -126,107 +142,102 @@ export const useSimpleRealtimeRundown = ({
   }, [rundownId, isShowcallerOnlyUpdate]);
 
   useEffect(() => {
-    // Only log dependency check once per unique state combination to reduce console noise
-    const stateKey = `${!!rundownId}-${!!user}-${enabled}`;
-    
-    if (stateKey !== lastStateKeyRef.current) {
-      // Only log dependency changes, not every check
-      if (lastStateKeyRef.current) {
-        console.log('🔧 Simple realtime state changed:', {
-          rundownId: !!rundownId,
-          user: !!user,
-          enabled,
-          hasAllRequirements: !!rundownId && !!user && enabled
-        });
-      }
-      lastStateKeyRef.current = stateKey;
-    }
-    
-    // Clear any existing subscription FIRST
-    if (subscriptionRef.current) {
-      console.log('🔄 Clearing existing simple realtime subscription');
-      supabase.removeChannel(subscriptionRef.current);
-      subscriptionRef.current = null;
-      // Don't immediately set disconnected - wait for the new connection to stabilize
-      if (!connectionStableRef.current) {
-        setIsConnected(false);
-      }
-    }
-
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      // Reduce logging frequency for disabled state
       return;
     }
+
+    const subscriptionKey = `${rundownId}-${user.id}`;
+    subscriptionKeyRef.current = subscriptionKey;
     
-    console.log('🚀 Setting up simple realtime subscription for rundown:', rundownId);
+    // Track this subscription instance
+    if (!activeSubscriptions.has(subscriptionKey)) {
+      activeSubscriptions.set(subscriptionKey, { count: 0, ownUpdates: new Set() });
+    }
     
-    // Create unique channel name to avoid conflicts
-    const channelName = `simple-realtime-${rundownId}-${user.id}-${Date.now()}`;
+    const tracking = activeSubscriptions.get(subscriptionKey)!;
+    tracking.count++;
     
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'rundowns',
-          filter: `id=eq.${rundownId}`
-        },
-        handleRealtimeUpdate
-      )
-      .subscribe((status) => {
-        console.log('🔗 Simple realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          setIsConnected(true);
-          connectionStableRef.current = true;
-          console.log('✅ Simple realtime connected successfully');
-        } else if (status === 'CHANNEL_ERROR') {
-          connectionStableRef.current = false;
-          // Add a small delay before showing disconnect to avoid flicker
-          setManagedTimeout(() => {
-            if (!connectionStableRef.current) {
-              setIsConnected(false);
-            }
-          }, 1000);
-          console.error('❌ Simple realtime channel error');
-        } else if (status === 'TIMED_OUT') {
-          connectionStableRef.current = false;
-          // Add a small delay before showing disconnect to avoid flicker
-          setManagedTimeout(() => {
-            if (!connectionStableRef.current) {
-              setIsConnected(false);
-            }
-          }, 1000);
-          console.error('⏰ Simple realtime connection timed out');
-        } else if (status === 'CLOSED') {
-          connectionStableRef.current = false;
-          // Only set disconnected if the connection was stable before
-          if (subscriptionRef.current) {
+    // Only the first subscription instance becomes the lead
+    const isLead = tracking.count === 1;
+    isLeadSubscriptionRef.current = isLead;
+    
+    if (isLead) {
+      console.log('🚀 Setting up lead realtime subscription for rundown:', rundownId);
+      
+      const channel = supabase
+        .channel(`simple-realtime-${subscriptionKey}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'rundowns',
+            filter: `id=eq.${rundownId}`
+          },
+          handleRealtimeUpdate
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+            connectionStableRef.current = true;
+            console.log('✅ Simple realtime connected successfully');
+          } else if (status === 'CHANNEL_ERROR') {
+            connectionStableRef.current = false;
             setManagedTimeout(() => {
               if (!connectionStableRef.current) {
                 setIsConnected(false);
               }
-            }, 500);
+            }, 1000);
+            console.error('❌ Simple realtime channel error');
+          } else if (status === 'TIMED_OUT') {
+            connectionStableRef.current = false;
+            setManagedTimeout(() => {
+              if (!connectionStableRef.current) {
+                setIsConnected(false);
+              }
+            }, 1000);
+            console.error('⏰ Simple realtime connection timed out');
+          } else if (status === 'CLOSED') {
+            connectionStableRef.current = false;
+            if (subscriptionRef.current) {
+              setManagedTimeout(() => {
+                if (!connectionStableRef.current) {
+                  setIsConnected(false);
+                }
+              }, 500);
+            }
           }
-          console.log('🔄 Simple realtime status:', status);
-        }
-      });
+        });
 
-    subscriptionRef.current = channel;
+      subscriptionRef.current = channel;
+    } else {
+      // Non-lead subscriptions still get connection status from lead
+      setIsConnected(true);
+    }
 
     return () => {
-      console.log('🧹 Cleaning up simple realtime subscription');
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
+      const tracking = activeSubscriptions.get(subscriptionKey);
+      if (tracking) {
+        tracking.count--;
+        
+        // Clean up if this was the last subscription
+        if (tracking.count <= 0) {
+          activeSubscriptions.delete(subscriptionKey);
+          
+          if (subscriptionRef.current) {
+            console.log('🧹 Cleaning up lead realtime subscription');
+            supabase.removeChannel(subscriptionRef.current);
+            subscriptionRef.current = null;
+          }
+        }
       }
+      
       connectionStableRef.current = false;
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [rundownId, user?.id, enabled]);
+  }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
 
   return {
     isConnected,
