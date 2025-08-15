@@ -467,9 +467,14 @@ export const useTeam = () => {
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
+    let lastVisibilityCheck = 0;
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('🔄 useTeam: Page became visible - checking if reload needed');
+        const now = Date.now();
+        // Throttle visibility checks to max once per 5 seconds
+        if (now - lastVisibilityCheck < 5000) return;
+        lastVisibilityCheck = now;
+        
         // Only reload if we don't have team data and we should have it
         if (user?.id && !team && !isLoadingRef.current) {
           console.log('🔄 useTeam: Reloading team data after visibility change');

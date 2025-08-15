@@ -228,9 +228,14 @@ export const useSubscription = () => {
 
   // Handle page visibility changes to prevent unnecessary subscription checks
   useEffect(() => {
+    let lastVisibilityCheck = 0;
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('🔄 useSubscription: Page became visible - checking if reload needed');
+        const now = Date.now();
+        // Throttle visibility checks to max once per 5 seconds
+        if (now - lastVisibilityCheck < 5000) return;
+        lastVisibilityCheck = now;
+        
         // Only reload if we don't have subscription data and we should have it
         if (user?.id && !isLoadingRef.current && status.loading) {
           console.log('🔄 useSubscription: Reloading subscription data after visibility change');
