@@ -102,14 +102,15 @@ export const useSimpleRealtimeRundown = ({
     const stateKey = `${!!rundownId}-${!!user}-${enabled}`;
     
     if (stateKey !== lastStateKeyRef.current) {
-      console.log('🔧 Simple realtime dependency check:', {
-        rundownId: !!rundownId,
-        rundownIdValue: rundownId,
-        user: !!user,
-        userValue: user?.id,
-        enabled,
-        hasAllRequirements: !!rundownId && !!user && enabled
-      });
+      // Only log dependency changes, not every check
+      if (lastStateKeyRef.current) {
+        console.log('🔧 Simple realtime state changed:', {
+          rundownId: !!rundownId,
+          user: !!user,
+          enabled,
+          hasAllRequirements: !!rundownId && !!user && enabled
+        });
+      }
       lastStateKeyRef.current = stateKey;
     }
     
@@ -126,7 +127,7 @@ export const useSimpleRealtimeRundown = ({
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      console.log('⏸️ Simple realtime disabled:', { rundownId: !!rundownId, user: !!user, enabled });
+      // Reduce logging frequency for disabled state
       return;
     }
     

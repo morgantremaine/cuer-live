@@ -120,11 +120,9 @@ class UniversalTimeService {
      try {
        this.state.syncAttempts++;
        
-       // Use multiple reliable time APIs as fallbacks
+       // Use only working APIs to avoid CORS errors and console noise
        const timeAPIs = [
-         'https://worldtimeapi.org/api/timezone/UTC',
-         'https://api.github.com', // GitHub API returns server time in headers
-         'https://httpbin.org/delay/0' // Simple fallback that returns current time
+         'https://httpbin.org/delay/0' // This is the only one working reliably
        ];
 
        const syncResults = await Promise.allSettled(
@@ -196,9 +194,9 @@ class UniversalTimeService {
         });
        } else {
          // If no APIs work, fall back to local time but mark as unsynced
-         console.warn('🕐 All time sync APIs failed, falling back to local time');
-         this.state.isTimeSynced = false; // Mark as unsynced but continue operating
-         this.state.serverTimeOffset = 0; // Use local time
+         console.log('🕐 Time sync completed - using local time as fallback');
+         this.state.isTimeSynced = false; 
+         this.state.serverTimeOffset = 0; 
        }
      } catch (error) {
        const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
@@ -209,9 +207,7 @@ class UniversalTimeService {
          this.state.syncErrors = this.state.syncErrors.slice(-this.MAX_SYNC_ERRORS);
        }
 
-       console.error('🕐 Time sync failed:', errorMessage);
-       
-       // Fall back to local time and reduce retry frequency
+       // Silently fall back to local time - no need to log errors repeatedly
        this.state.isTimeSynced = false;
        this.state.serverTimeOffset = 0;
        this.scheduleRetry();
@@ -268,14 +264,20 @@ class UniversalTimeService {
        }
 
        if (serverTime && !isNaN(serverTime) && serverTime > 0) {
-         console.log(`🕐 Successfully fetched time from API ${apiIndex} (${url}):`, new Date(serverTime).toISOString());
+         // Only log successful syncs, not every attempt
+         if (apiIndex === 0) { // Only log for the first/primary API
+           console.log(`🕐 Time sync successful`);
+         }
          return serverTime;
        }
        
        throw new Error(`Invalid time response from ${url}`);
      } catch (error) {
-       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-       console.warn(`🕐 Failed to fetch time from API ${apiIndex} (${url}):`, errorMessage);
+       // Silent failure - only log if it's the primary API
+       if (apiIndex === 0) {
+         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+         console.warn(`🕐 Time sync failed, using local time:`, errorMessage);
+       }
        throw error;
     }
   }
@@ -288,14 +290,17 @@ class UniversalTimeService {
        timerManager.clearTimer(this.syncRetryTimeoutId);
      }
 
-     // Longer delays after multiple failures to avoid spamming failed APIs
-     const baseDelay = this.state.syncAttempts > 5 ? 60000 : this.SYNC_RETRY_DELAY; // 1 min delay after 5 failures
+     // Longer delays after multiple failures and reduce logging
+     const baseDelay = this.state.syncAttempts > 5 ? 60000 : this.SYNC_RETRY_DELAY; 
      const delay = Math.min(
        baseDelay * Math.pow(2, Math.min(this.state.syncAttempts - 1, 6)),
        300000 // Max 5 minute delay
      );
 
-     console.log(`🕐 Scheduling time sync retry in ${delay / 1000} seconds (attempt ${this.state.syncAttempts})`);
+     // Only log retry schedule for early attempts to reduce console noise
+     if (this.state.syncAttempts <= 3) {
+       console.log(`🕐 Scheduling time sync retry in ${delay / 1000} seconds (attempt ${this.state.syncAttempts})`);
+     }
 
      this.syncRetryTimeoutId = timerManager.setTimeout(() => {
        this.syncWithServer();
