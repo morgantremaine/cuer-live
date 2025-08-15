@@ -4,6 +4,7 @@
  */
 
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { timerManager } from './TimerManager';
 
 interface TimeSyncState {
   serverTimeOffset: number; // Difference between server time and local time
@@ -23,8 +24,8 @@ class UniversalTimeService {
   };
 
   private syncPromise: Promise<void> | null = null;
-  private syncRetryTimeout: NodeJS.Timeout | null = null;
-  private autoSyncInterval: NodeJS.Timeout | null = null;
+  private syncRetryTimeoutId: string | null = null;
+  private autoSyncIntervalId: string | null = null;
   private readonly MAX_SYNC_ERRORS = 5;
   private readonly SYNC_RETRY_DELAY = 5000; // 5 seconds
   private readonly AUTO_SYNC_INTERVAL = 300000; // 5 minutes
@@ -248,60 +249,60 @@ class UniversalTimeService {
     }
   }
 
-  /**
-   * Schedule retry with exponential backoff
-   */
-  private scheduleRetry(): void {
-    if (this.syncRetryTimeout) {
-      clearTimeout(this.syncRetryTimeout);
-    }
+   /**
+    * Schedule retry with exponential backoff
+    */
+   private scheduleRetry(): void {
+     if (this.syncRetryTimeoutId) {
+       timerManager.clearTimer(this.syncRetryTimeoutId);
+     }
 
-    const delay = Math.min(
-      this.SYNC_RETRY_DELAY * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
-      60000 // Max 1 minute delay
-    );
+     const delay = Math.min(
+       this.SYNC_RETRY_DELAY * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
+       60000 // Max 1 minute delay
+     );
 
-    this.syncRetryTimeout = setTimeout(() => {
-      this.syncWithServer();
-    }, delay);
-  }
+     this.syncRetryTimeoutId = timerManager.setTimeout(() => {
+       this.syncWithServer();
+     }, delay, 'UniversalTimeService-retry');
+   }
 
-  /**
-   * Initialize automatic periodic synchronization
-   */
-  private initializeAutoSync(): void {
-    // Initial sync
-    this.syncWithServer();
+   /**
+    * Initialize automatic periodic synchronization
+    */
+   private initializeAutoSync(): void {
+     // Initial sync
+     this.syncWithServer();
 
-    // Set up periodic sync
-    this.autoSyncInterval = setInterval(() => {
-      this.syncWithServer();
-    }, this.AUTO_SYNC_INTERVAL);
+     // Set up periodic sync with managed timer
+     this.autoSyncIntervalId = timerManager.setInterval(() => {
+       this.syncWithServer();
+     }, this.AUTO_SYNC_INTERVAL, 'UniversalTimeService-autoSync');
 
-    // Sync when page becomes visible (handle sleep/wake)
-    if (typeof window !== 'undefined') {
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-          this.syncWithServer();
-        }
-      });
-    }
-  }
+     // Sync when page becomes visible (handle sleep/wake)
+     if (typeof window !== 'undefined') {
+       document.addEventListener('visibilitychange', () => {
+         if (!document.hidden) {
+           this.syncWithServer();
+         }
+       });
+     }
+   }
 
-  /**
-   * Clean up resources
-   */
-  public destroy(): void {
-    if (this.syncRetryTimeout) {
-      clearTimeout(this.syncRetryTimeout);
-      this.syncRetryTimeout = null;
-    }
-    
-    if (this.autoSyncInterval) {
-      clearInterval(this.autoSyncInterval);
-      this.autoSyncInterval = null;
-    }
-  }
+   /**
+    * Clean up resources
+    */
+   public destroy(): void {
+     if (this.syncRetryTimeoutId) {
+       timerManager.clearTimer(this.syncRetryTimeoutId);
+       this.syncRetryTimeoutId = null;
+     }
+     
+     if (this.autoSyncIntervalId) {
+       timerManager.clearTimer(this.autoSyncIntervalId);
+       this.autoSyncIntervalId = null;
+     }
+   }
 }
 
 // Export singleton instance

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CameraPlotScene } from './useCameraPlotData';
 import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
+import { useUniversalTimer } from '@/hooks/useUniversalTimer';
 
 export const useCameraPlotAutoSave = (
   plots: CameraPlotScene[],
@@ -11,9 +12,10 @@ export const useCameraPlotAutoSave = (
   readOnly: boolean
 ) => {
   const lastSaveRef = useRef<string>('');
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<string>();
   const isSavingRef = useRef(false);
   const [savedBlueprint, setSavedBlueprint] = useState<any>(null);
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('CameraPlotAutoSave');
 
   // Get partial save function for camera plots only
   const { saveCameraPlotsOnly } = useBlueprintPartialSave(
@@ -37,11 +39,11 @@ export const useCameraPlotAutoSave = (
       
       // Clear any existing timeout
       if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+        clearTimer(saveTimeoutRef.current);
       }
       
       // Debounce the save operation - longer delay during active editing
-      saveTimeoutRef.current = setTimeout(async () => {
+      saveTimeoutRef.current = setManagedTimeout(async () => {
         if (!isSavingRef.current) {
           isSavingRef.current = true;
           
@@ -59,8 +61,8 @@ export const useCameraPlotAutoSave = (
 
     return () => {
       if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+        clearTimer(saveTimeoutRef.current);
       }
     };
-  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, saveCameraPlotsOnly]);
+  }, [plots, isInitialized, rundownId, rundownTitle, readOnly, saveCameraPlotsOnly, setManagedTimeout, clearTimer]);
 };
