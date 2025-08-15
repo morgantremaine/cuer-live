@@ -10,6 +10,8 @@ interface UseSimpleRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
 }
 
+// Global own update tracking to persist across hook instances
+const globalOwnUpdateTracking = new Map<string, Set<string>>();
 export const useSimpleRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
@@ -22,7 +24,7 @@ export const useSimpleRealtimeRundown = ({
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
-  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const trackingKey = `${rundownId}-${user?.id}`;
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
@@ -31,26 +33,32 @@ export const useSimpleRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Simple own update tracking
+  // Get or create global tracking set for this rundown+user
+  if (!globalOwnUpdateTracking.has(trackingKey)) {
+    globalOwnUpdateTracking.set(trackingKey, new Set());
+  }
+  const ownUpdateTrackingSet = globalOwnUpdateTracking.get(trackingKey)!;
+
+  // Global own update tracking
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     console.log('📝 trackOwnUpdateLocal called with:', timestamp);
-    console.log('📝 Current tracking set before:', Array.from(ownUpdateTrackingRef.current));
+    console.log('📝 Current tracking set before:', Array.from(ownUpdateTrackingSet));
     
-    ownUpdateTrackingRef.current.add(timestamp);
+    ownUpdateTrackingSet.add(timestamp);
     
-    console.log('📝 Current tracking set after:', Array.from(ownUpdateTrackingRef.current));
+    console.log('📝 Current tracking set after:', Array.from(ownUpdateTrackingSet));
     
     // Clean up old tracked updates after 5 seconds
     setManagedTimeout(() => {
       console.log('🧹 Cleaning up tracked timestamp:', timestamp);
-      ownUpdateTrackingRef.current.delete(timestamp);
+      ownUpdateTrackingSet.delete(timestamp);
     }, 5000);
     
     // Also track via parent if available
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
-  }, []);
+  }, [trackingKey]);
 
   // Helper function to detect if an update is showcaller-only
   const isShowcallerOnlyUpdate = useCallback((newData: any, oldData?: any) => {
@@ -92,14 +100,15 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Skip if this is our own update
+    // Skip if this is our own update - use global tracking
     console.log('🔍 Checking own update tracking:', {
       updateTimestamp,
-      trackedUpdates: Array.from(ownUpdateTrackingRef.current),
-      hasTimestamp: ownUpdateTrackingRef.current.has(updateTimestamp)
+      trackingKey,
+      trackedUpdates: Array.from(ownUpdateTrackingSet),
+      hasTimestamp: ownUpdateTrackingSet.has(updateTimestamp)
     });
     
-    if (ownUpdateTrackingRef.current.has(updateTimestamp)) {
+    if (ownUpdateTrackingSet.has(updateTimestamp)) {
       console.log('⏭️ Skipping - our own update');
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
