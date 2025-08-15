@@ -153,10 +153,10 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions, isSaving, getProtectedFields]),
     enabled: !isLoading,
-    trackOwnUpdate: (timestamp: string) => {
-      console.log('📝 Tracking own update in realtime:', timestamp);
+    trackOwnUpdate: useCallback((timestamp: string) => {
+      console.log('📝 Tracking own update in realtime (callback):', timestamp);
       ownUpdateTimestampRef.current = timestamp;
-    }
+    }, [])
   });
 
   // Connect autosave tracking to realtime tracking
