@@ -23,6 +23,7 @@ export const useSimpleRealtimeRundown = ({
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
+  const lastStateKeyRef = useRef<string>(''); // Move this to top level
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
@@ -99,7 +100,6 @@ export const useSimpleRealtimeRundown = ({
   useEffect(() => {
     // Only log dependency check once per unique state combination to reduce console noise
     const stateKey = `${!!rundownId}-${!!user}-${enabled}`;
-    const lastStateKeyRef = useRef<string>('');
     
     if (stateKey !== lastStateKeyRef.current) {
       console.log('🔧 Simple realtime dependency check:', {
