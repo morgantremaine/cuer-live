@@ -73,17 +73,13 @@ export const useRundownGridHandlers = ({
         const insertIndex = insertAfterIndex + 1;
         console.log('🚀 Inserting row at index:', insertIndex);
         addRowAtIndex(insertIndex);
-        console.log('🎯 Clearing selection');
-        clearSelection();
         return;
       }
     }
     
     console.log('🚀 No selection, using default addRow');
     addRow();
-    console.log('🎯 Clearing selection');
-    clearSelection();
-  }, [addRowAtIndex, addRow, selectedRows, items, clearSelection]);
+  }, [addRowAtIndex, addRow, selectedRows, items]);
 
   // Enhanced addHeader that considers selection state and inserts after selected rows  
   const handleAddHeader = useCallback(() => {
@@ -103,17 +99,13 @@ export const useRundownGridHandlers = ({
         const insertIndex = insertAfterIndex + 1;
         console.log('🚀 Inserting header at index:', insertIndex);
         addHeaderAtIndex(insertIndex);
-        console.log('🎯 Clearing selection');
-        clearSelection();
         return;
       }
     }
     
     console.log('🚀 No selection, using default addHeader');
     addHeader();
-    console.log('🎯 Clearing selection');
-    clearSelection();
-  }, [addHeaderAtIndex, addHeader, selectedRows, items, clearSelection]);
+  }, [addHeaderAtIndex, addHeader, selectedRows, items]);
 
   const handleDeleteRow = useCallback((id: string) => {
     deleteRow(id);

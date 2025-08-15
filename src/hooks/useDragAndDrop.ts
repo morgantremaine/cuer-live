@@ -34,8 +34,7 @@ export const useDragAndDrop = (
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
-  isHeaderCollapsed?: (headerId: string) => boolean,
-  reorderItems?: (fromIndex: number, toIndex: number, count?: number) => void
+  isHeaderCollapsed?: (headerId: string) => boolean
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -257,19 +256,7 @@ export const useDragAndDrop = (
         saveUndoState(items, columns, title, actionDescription);
       }
       
-      // Use reorderItems if available (preferred for autosave integration)
-      if (reorderItems && draggedIds.length === 1) {
-        const fromIndex = activeIndex;
-        const toIndex = dropTargetIndex !== null ? 
-          (activeIndex < dropTargetIndex ? dropTargetIndex - 1 : dropTargetIndex) : 
-          overIndex;
-        console.log('🎯 Using reorderItems action:', { fromIndex, toIndex });
-        reorderItems(fromIndex, toIndex);
-      } else {
-        // Fallback to setItems for complex multi-item drags
-        console.log('🎯 Using setItems fallback for multi-item drag');
-        setItems(newItems);
-      }
+      setItems(newItems);
       
     } catch (error) {
       console.warn('@dnd-kit drag and drop error:', error);
