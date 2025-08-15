@@ -4,7 +4,6 @@
  */
 
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { timerManager } from './TimerManager';
 
 interface TimeSyncState {
   serverTimeOffset: number; // Difference between server time and local time
@@ -24,8 +23,8 @@ class UniversalTimeService {
   };
 
   private syncPromise: Promise<void> | null = null;
-  private syncRetryTimeoutId: string | null = null;
-  private autoSyncIntervalId: string | null = null;
+  private syncRetryTimeout: NodeJS.Timeout | null = null;
+  private autoSyncInterval: NodeJS.Timeout | null = null;
   private readonly MAX_SYNC_ERRORS = 5;
   private readonly SYNC_RETRY_DELAY = 5000; // 5 seconds
   private readonly AUTO_SYNC_INTERVAL = 300000; // 5 minutes
@@ -113,21 +112,21 @@ class UniversalTimeService {
     }
   }
 
-   /**
-    * Perform actual time synchronization
-    */
-   private async performSync(): Promise<void> {
-     try {
-       this.state.syncAttempts++;
-       
-       // Use only working APIs to avoid CORS errors and console noise
-       const timeAPIs = [
-         'https://httpbin.org/delay/0' // This is the only one working reliably
-       ];
+  /**
+   * Perform actual time synchronization
+   */
+  private async performSync(): Promise<void> {
+    try {
+      this.state.syncAttempts++;
+      
+      // Use single reliable time API (timeapi.io has been most consistent)
+      const timeAPIs = [
+        'https://timeapi.io/api/Time/current/zone?timeZone=UTC'
+      ];
 
-       const syncResults = await Promise.allSettled(
-         timeAPIs.map((url, index) => this.fetchServerTime(url, index))
-       );
+      const syncResults = await Promise.allSettled(
+        timeAPIs.map(url => this.fetchServerTime(url))
+      );
 
       // Find all successful results and validate them
       const validResults: number[] = [];
@@ -147,18 +146,14 @@ class UniversalTimeService {
               localTime: new Date(localTime).toISOString(),
               offset: offset
             });
-           } else {
-             console.warn('🕐 Rejected time sync with invalid data:', {
-               serverTime: result.value ? new Date(result.value).toISOString() : 'null',
-               localTime: new Date(localTime).toISOString()
-             });
-           }
           } else {
-            const errorMessage = result.status === 'rejected' 
-              ? (result.reason?.message || 'Unknown error') 
-              : 'Invalid response';
-            console.warn('🕐 Time sync API failed:', errorMessage);
+            console.warn('🕐 Rejected time sync with absurd offset:', {
+              serverTime: new Date(serverTime).toISOString(),
+              localTime: new Date(localTime).toISOString(),
+              offset: offset
+            });
           }
+        }
       }
 
       if (validResults.length > 0) {
@@ -192,157 +187,121 @@ class UniversalTimeService {
           localTime: new Date(localTime).toISOString(),
           offset: this.state.serverTimeOffset
         });
-       } else {
-         // If no APIs work, fall back to local time but mark as unsynced
-         console.log('🕐 Time sync completed - using local time as fallback');
-         this.state.isTimeSynced = false; 
-         this.state.serverTimeOffset = 0; 
-       }
-     } catch (error) {
-       const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
-       this.state.syncErrors.push(errorMessage);
-       
-       // Keep only recent errors
-       if (this.state.syncErrors.length > this.MAX_SYNC_ERRORS) {
-         this.state.syncErrors = this.state.syncErrors.slice(-this.MAX_SYNC_ERRORS);
-       }
+      } else {
+        throw new Error('All time sync APIs returned invalid offsets');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
+      this.state.syncErrors.push(errorMessage);
+      
+      // Keep only recent errors
+      if (this.state.syncErrors.length > this.MAX_SYNC_ERRORS) {
+        this.state.syncErrors = this.state.syncErrors.slice(-this.MAX_SYNC_ERRORS);
+      }
 
-       // Silently fall back to local time - no need to log errors repeatedly
-       this.state.isTimeSynced = false;
-       this.state.serverTimeOffset = 0;
-       this.scheduleRetry();
+      console.error('🕐 Time sync failed:', errorMessage);
+      
+      // Schedule retry with exponential backoff
+      this.scheduleRetry();
     }
   }
 
-   /**
-    * Fetch server time from external API with improved error handling
-    */
-   private async fetchServerTime(url: string, apiIndex: number = 0): Promise<number> {
-     try {
-       const controller = new AbortController();
-       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-       
-       const response = await fetch(url, {
-         method: 'GET',
-         headers: { 
-           'Accept': 'application/json',
-           'Cache-Control': 'no-cache'
-         },
-         signal: controller.signal
-       });
+  /**
+   * Fetch server time from external API
+   */
+  private async fetchServerTime(url: string): Promise<number> {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
 
-       clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-       if (!response.ok) {
-         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-       }
+      const data = await response.json();
+      let serverTime: number | null = null;
+      
+      // Handle different API response formats with enhanced parsing
+      if (url.includes('worldclockapi.com')) {
+        // WorldClockAPI format: { "currentDateTime": "2025-07-30T18:30:00.000Z" }
+        serverTime = data.currentDateTime ? new Date(data.currentDateTime).getTime() : null;
+      } else if (url.includes('timeapi.io')) {
+        // TimeAPI.io format: { "dateTime": "2025-07-30T18:30:00.000Z" }
+        serverTime = data.dateTime ? new Date(data.dateTime).getTime() : null;
+      } else if (url.includes('worldtimeapi.org')) {
+        // WorldTimeAPI format: { "datetime": "2025-07-30T18:30:00.000+00:00" }
+        serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
+      }
 
-       let serverTime: number | null = null;
-       
-       // Handle different API response formats
-       if (url.includes('worldtimeapi.org')) {
-         // WorldTimeAPI format: { "datetime": "2025-08-15T00:30:00.000+00:00" }
-         const data = await response.json();
-         serverTime = data.datetime ? new Date(data.datetime).getTime() : null;
-       } else if (url.includes('github.com')) {
-         // Use GitHub's Date header (more reliable than JSON response)
-         const dateHeader = response.headers.get('date');
-         if (dateHeader) {
-           serverTime = new Date(dateHeader).getTime();
-         }
-       } else if (url.includes('httpbin.org')) {
-         // HTTPBin returns current time in various formats
-         const data = await response.json();
-         serverTime = Date.now(); // Use current time as fallback
-       } else {
-         // Generic fallback - try to parse as JSON with common time fields
-         const data = await response.json();
-         serverTime = data.dateTime || data.datetime || data.currentDateTime || null;
-         if (serverTime && typeof serverTime === 'string') {
-           serverTime = new Date(serverTime).getTime();
-         }
-       }
-
-       if (serverTime && !isNaN(serverTime) && serverTime > 0) {
-         // Only log successful syncs, not every attempt
-         if (apiIndex === 0) { // Only log for the first/primary API
-           console.log(`🕐 Time sync successful`);
-         }
-         return serverTime;
-       }
-       
-       throw new Error(`Invalid time response from ${url}`);
-     } catch (error) {
-       // Silent failure - only log if it's the primary API
-       if (apiIndex === 0) {
-         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-         console.warn(`🕐 Time sync failed, using local time:`, errorMessage);
-       }
-       throw error;
+      if (serverTime && !isNaN(serverTime)) {
+        console.log(`🕐 Successfully fetched time from ${url}:`, new Date(serverTime).toISOString());
+        return serverTime;
+      }
+      
+      throw new Error(`Invalid time response from ${url}: ${JSON.stringify(data)}`);
+    } catch (error) {
+      console.warn(`🕐 Failed to fetch time from ${url}:`, error);
+      throw error;
     }
   }
 
-   /**
-    * Schedule retry with exponential backoff and reduced frequency after failures
-    */
-   private scheduleRetry(): void {
-     if (this.syncRetryTimeoutId) {
-       timerManager.clearTimer(this.syncRetryTimeoutId);
-     }
+  /**
+   * Schedule retry with exponential backoff
+   */
+  private scheduleRetry(): void {
+    if (this.syncRetryTimeout) {
+      clearTimeout(this.syncRetryTimeout);
+    }
 
-     // Longer delays after multiple failures and reduce logging
-     const baseDelay = this.state.syncAttempts > 5 ? 60000 : this.SYNC_RETRY_DELAY; 
-     const delay = Math.min(
-       baseDelay * Math.pow(2, Math.min(this.state.syncAttempts - 1, 6)),
-       300000 // Max 5 minute delay
-     );
+    const delay = Math.min(
+      this.SYNC_RETRY_DELAY * Math.pow(2, Math.min(this.state.syncAttempts - 1, 5)),
+      60000 // Max 1 minute delay
+    );
 
-     // Only log retry schedule for early attempts to reduce console noise
-     if (this.state.syncAttempts <= 3) {
-       console.log(`🕐 Scheduling time sync retry in ${delay / 1000} seconds (attempt ${this.state.syncAttempts})`);
-     }
+    this.syncRetryTimeout = setTimeout(() => {
+      this.syncWithServer();
+    }, delay);
+  }
 
-     this.syncRetryTimeoutId = timerManager.setTimeout(() => {
-       this.syncWithServer();
-     }, delay, 'UniversalTimeService-retry');
-   }
+  /**
+   * Initialize automatic periodic synchronization
+   */
+  private initializeAutoSync(): void {
+    // Initial sync
+    this.syncWithServer();
 
-   /**
-    * Initialize automatic periodic synchronization
-    */
-   private initializeAutoSync(): void {
-     // Initial sync
-     this.syncWithServer();
+    // Set up periodic sync
+    this.autoSyncInterval = setInterval(() => {
+      this.syncWithServer();
+    }, this.AUTO_SYNC_INTERVAL);
 
-     // Set up periodic sync with managed timer
-     this.autoSyncIntervalId = timerManager.setInterval(() => {
-       this.syncWithServer();
-     }, this.AUTO_SYNC_INTERVAL, 'UniversalTimeService-autoSync');
+    // Sync when page becomes visible (handle sleep/wake)
+    if (typeof window !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.syncWithServer();
+        }
+      });
+    }
+  }
 
-     // Sync when page becomes visible (handle sleep/wake)
-     if (typeof window !== 'undefined') {
-       document.addEventListener('visibilitychange', () => {
-         if (!document.hidden) {
-           this.syncWithServer();
-         }
-       });
-     }
-   }
-
-   /**
-    * Clean up resources
-    */
-   public destroy(): void {
-     if (this.syncRetryTimeoutId) {
-       timerManager.clearTimer(this.syncRetryTimeoutId);
-       this.syncRetryTimeoutId = null;
-     }
-     
-     if (this.autoSyncIntervalId) {
-       timerManager.clearTimer(this.autoSyncIntervalId);
-       this.autoSyncIntervalId = null;
-     }
-   }
+  /**
+   * Clean up resources
+   */
+  public destroy(): void {
+    if (this.syncRetryTimeout) {
+      clearTimeout(this.syncRetryTimeout);
+      this.syncRetryTimeout = null;
+    }
+    
+    if (this.autoSyncInterval) {
+      clearInterval(this.autoSyncInterval);
+      this.autoSyncInterval = null;
+    }
+  }
 }
 
 // Export singleton instance

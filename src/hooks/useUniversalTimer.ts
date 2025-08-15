@@ -1,50 +1,69 @@
-import { useEffect, useRef } from 'react';
+/**
+ * Universal Timer Hook - Memory-safe timer management for React components
+ * Automatically cleans up timers when component unmounts
+ */
+
+import { useCallback, useEffect, useRef } from 'react';
 import { timerManager } from '@/services/TimerManager';
 
-/**
- * Hook that provides managed timer functions with automatic cleanup
- * Replaces direct setTimeout/setInterval usage in components
- */
-export const useUniversalTimer = (componentName: string) => {
-  const activeTimersRef = useRef<Set<string>>(new Set());
+interface UseUniversalTimerReturn {
+  setTimeout: (callback: () => void, delay: number) => string;
+  setInterval: (callback: () => void, delay: number) => string;
+  clearTimer: (id: string) => boolean;
+  clearAllTimers: () => number;
+}
 
-  // Wrapped setTimeout with automatic tracking and cleanup
-  const setTimeout = (callback: () => void, delay: number): string => {
-    const timerId = timerManager.setTimeout(() => {
-      activeTimersRef.current.delete(timerId);
-      callback();
-    }, delay, componentName);
-    
-    activeTimersRef.current.add(timerId);
-    return timerId;
-  };
+export const useUniversalTimer = (componentName?: string): UseUniversalTimerReturn => {
+  const timerIdsRef = useRef<Set<string>>(new Set());
+  const componentId = componentName || 'UnknownComponent';
 
-  // Wrapped setInterval with automatic tracking and cleanup
-  const setInterval = (callback: () => void, delay: number): string => {
-    const timerId = timerManager.setInterval(callback, delay, componentName);
-    activeTimersRef.current.add(timerId);
-    return timerId;
-  };
-
-  // Clear specific timer
-  const clearTimer = (timerId: string): boolean => {
-    activeTimersRef.current.delete(timerId);
-    return timerManager.clearTimer(timerId);
-  };
-
-  // Clear all timers for this component
-  const clearAllTimers = (): void => {
-    activeTimersRef.current.forEach(timerId => {
-      timerManager.clearTimer(timerId);
-    });
-    activeTimersRef.current.clear();
-  };
-
-  // Cleanup on unmount
+  // Clean up all timers when component unmounts
   useEffect(() => {
     return () => {
-      clearAllTimers();
+      // Clear all timers created by this hook instance
+      const timersCleared = Array.from(timerIdsRef.current).reduce((count, id) => {
+        return timerManager.clearTimer(id) ? count + 1 : count;
+      }, 0);
+
+      if (timersCleared > 0) {
+        console.log(`🧹 Cleaned up ${timersCleared} timers for ${componentId}`);
+      }
     };
+  }, [componentId]);
+
+  const setTimeout = useCallback((callback: () => void, delay: number): string => {
+    const timerId = timerManager.setTimeout(() => {
+      // Remove from tracking after execution
+      timerIdsRef.current.delete(timerId);
+      callback();
+    }, delay, componentId);
+    
+    timerIdsRef.current.add(timerId);
+    return timerId;
+  }, [componentId]);
+
+  const setInterval = useCallback((callback: () => void, delay: number): string => {
+    const timerId = timerManager.setInterval(callback, delay, componentId);
+    timerIdsRef.current.add(timerId);
+    return timerId;
+  }, [componentId]);
+
+  const clearTimer = useCallback((id: string): boolean => {
+    timerIdsRef.current.delete(id);
+    return timerManager.clearTimer(id);
+  }, []);
+
+  const clearAllTimers = useCallback((): number => {
+    let clearedCount = 0;
+    
+    for (const id of timerIdsRef.current) {
+      if (timerManager.clearTimer(id)) {
+        clearedCount++;
+      }
+    }
+    
+    timerIdsRef.current.clear();
+    return clearedCount;
   }, []);
 
   return {

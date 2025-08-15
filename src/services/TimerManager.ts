@@ -222,24 +222,24 @@ class TimerManager {
     return `timer_${++this.idCounter}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-   /**
-    * Start periodic cleanup of completed timers and leak detection
-    */
-   private startPeriodicCleanup(): void {
-     this.cleanupTimeout = setTimeout(() => {
-       // Detect potential leaks
-       this.detectMemoryLeaks();
-       
-       // Log stats if there are many timers
-       const stats = this.getStats();
-       if (stats.total > 50) {
-         console.warn('🔥 High timer count detected:', stats);
-       }
-       
-       // Schedule next cleanup
-       this.startPeriodicCleanup();
-     }, 60000); // Check every minute
-   }
+  /**
+   * Start periodic cleanup of completed timers and leak detection
+   */
+  private startPeriodicCleanup(): void {
+    this.cleanupTimeout = setTimeout(() => {
+      // Detect potential leaks
+      this.detectMemoryLeaks();
+      
+      // Log stats if there are many timers
+      const stats = this.getStats();
+      if (stats.total > 50) {
+        console.warn('🔥 High timer count detected:', stats);
+      }
+      
+      // Schedule next cleanup
+      this.startPeriodicCleanup();
+    }, 60000); // Check every minute
+  }
 
   /**
    * Clean up the timer manager itself

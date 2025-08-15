@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useUniversalTimer } from './useUniversalTimer';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -10,8 +9,6 @@ interface UseSimpleRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
 }
 
-// Global own update tracking to persist across hook instances
-const globalOwnUpdateTracking = new Map<string, Set<string>>();
 export const useSimpleRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
@@ -19,12 +16,11 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
-  const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
-  const trackingKey = `${rundownId}-${user?.id}`;
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
@@ -33,54 +29,22 @@ export const useSimpleRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Get or create global tracking set for this rundown+user
-  if (!globalOwnUpdateTracking.has(trackingKey)) {
-    globalOwnUpdateTracking.set(trackingKey, new Set());
-  }
-  const ownUpdateTrackingSet = globalOwnUpdateTracking.get(trackingKey)!;
-
-  // Global own update tracking
+  // Simple own update tracking
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
-    console.log('📝 trackOwnUpdateLocal called with:', timestamp);
-    console.log('📝 Current tracking set before:', Array.from(ownUpdateTrackingSet));
-    
-    ownUpdateTrackingSet.add(timestamp);
-    
-    console.log('📝 Current tracking set after:', Array.from(ownUpdateTrackingSet));
+    ownUpdateTrackingRef.current.add(timestamp);
     
     // Clean up old tracked updates after 5 seconds
-    setManagedTimeout(() => {
-      console.log('🧹 Cleaning up tracked timestamp:', timestamp);
-      ownUpdateTrackingSet.delete(timestamp);
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(timestamp);
     }, 5000);
     
     // Also track via parent if available
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
-  }, [trackingKey]);
-
-  // Helper function to detect if an update is showcaller-only
-  const isShowcallerOnlyUpdate = useCallback((newData: any, oldData?: any) => {
-    if (!newData || !oldData) return false;
-    
-    // Compare all fields except showcaller_visual_state
-    const fieldsToCheck = [
-      'items', 'title', 'description', 'external_notes', 'columns',
-      'archived', 'folder_id', 'created_at'
-    ];
-    
-    for (const field of fieldsToCheck) {
-      if (JSON.stringify(newData[field]) !== JSON.stringify(oldData[field])) {
-        return false; // Non-showcaller field changed
-      }
-    }
-    
-    // Only showcaller_visual_state changed (or no meaningful changes)
-    return true;
   }, []);
 
-  // Simplified update handler
+  // Simplified update handler - NO complex filtering
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('📡 Simple realtime update received:', {
       id: payload.new?.id,
@@ -90,6 +54,7 @@ export const useSimpleRealtimeRundown = ({
 
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
+      console.log('⏭️ Skipping - different rundown');
       return;
     }
 
@@ -97,80 +62,72 @@ export const useSimpleRealtimeRundown = ({
     
     // Skip if this is exactly the same timestamp we just processed
     if (updateTimestamp === lastProcessedUpdateRef.current) {
+      console.log('⏭️ Skipping - same timestamp as last processed');
       return;
     }
 
-    // Skip if this is our own update - use global tracking
-    console.log('🔍 Checking own update tracking:', {
-      updateTimestamp,
-      trackingKey,
-      trackedUpdates: Array.from(ownUpdateTrackingSet),
-      hasTimestamp: ownUpdateTrackingSet.has(updateTimestamp)
-    });
-    
-    if (ownUpdateTrackingSet.has(updateTimestamp)) {
+    // Skip if this is our own update (simple check)
+    if (ownUpdateTrackingRef.current.has(updateTimestamp)) {
       console.log('⏭️ Skipping - our own update');
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
 
-    // Check if this is a showcaller-only update and skip processing indicator
-    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
-    
-    if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update (no loading indicator)');
-    } else {
-      console.log('✅ Processing realtime update from teammate');
-      console.log('🔵 Setting isProcessingUpdate to TRUE');
-      // Show processing state briefly only for non-showcaller updates
-      setIsProcessingUpdate(true);
-      console.log('🔵 isProcessingUpdate state should now be TRUE');
-    }
-    
+    // ALL OTHER UPDATES GO THROUGH - no complex filtering
+    console.log('✅ Processing realtime update from teammate');
     lastProcessedUpdateRef.current = updateTimestamp;
     
+    // Show processing state briefly
+    setIsProcessingUpdate(true);
+    
     try {
-      console.log('🔄 Calling onRundownUpdate with data:', {
-        itemCount: payload.new?.items?.length,
-        title: payload.new?.title,
-        hasItems: !!payload.new?.items
-      });
       // Apply the update directly
       onRundownUpdateRef.current(payload.new);
-      console.log('✅ onRundownUpdate completed successfully');
     } catch (error) {
-      console.error('❌ Error in onRundownUpdate callback:', error);
+      console.error('Error processing realtime update:', error);
     }
     
-    // Clear processing state after short delay using managed timer (only if we set it)
-    if (!isShowcallerOnly) {
-      console.log('🔵 Setting timeout to clear isProcessingUpdate in 500ms');
-      setManagedTimeout(() => {
-        console.log('🔵 Clearing isProcessingUpdate - setting to FALSE');
-        setIsProcessingUpdate(false);
-      }, 500);
-    }
+    // Clear processing state after short delay
+    setTimeout(() => {
+      setIsProcessingUpdate(false);
+    }, 500);
     
-  }, [rundownId, isShowcallerOnlyUpdate]);
+  }, [rundownId]);
 
   useEffect(() => {
-    // Clear any existing subscription
+    console.log('🔧 Simple realtime dependency check:', {
+      rundownId: !!rundownId,
+      rundownIdValue: rundownId,
+      user: !!user,
+      userValue: user?.id,
+      enabled,
+      hasAllRequirements: !!rundownId && !!user && enabled
+    });
+    
+    // Clear any existing subscription FIRST
     if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up existing simple realtime subscription');
+      console.log('🔄 Clearing existing simple realtime subscription');
       supabase.removeChannel(subscriptionRef.current);
       subscriptionRef.current = null;
-      setIsConnected(false);
+      // Don't immediately set disconnected - wait for the new connection to stabilize
+      if (!connectionStableRef.current) {
+        setIsConnected(false);
+      }
     }
 
     // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
+      console.log('⏸️ Simple realtime disabled:', { rundownId: !!rundownId, user: !!user, enabled });
       return;
     }
     
     console.log('🚀 Setting up simple realtime subscription for rundown:', rundownId);
     
+    // Create unique channel name to avoid conflicts
+    const channelName = `simple-realtime-${rundownId}-${user.id}-${Date.now()}`;
+    
     const channel = supabase
-      .channel(`simple-realtime-${rundownId}-${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -189,7 +146,8 @@ export const useSimpleRealtimeRundown = ({
           console.log('✅ Simple realtime connected successfully');
         } else if (status === 'CHANNEL_ERROR') {
           connectionStableRef.current = false;
-          setManagedTimeout(() => {
+          // Add a small delay before showing disconnect to avoid flicker
+          setTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -197,7 +155,8 @@ export const useSimpleRealtimeRundown = ({
           console.error('❌ Simple realtime channel error');
         } else if (status === 'TIMED_OUT') {
           connectionStableRef.current = false;
-          setManagedTimeout(() => {
+          // Add a small delay before showing disconnect to avoid flicker
+          setTimeout(() => {
             if (!connectionStableRef.current) {
               setIsConnected(false);
             }
@@ -205,13 +164,15 @@ export const useSimpleRealtimeRundown = ({
           console.error('⏰ Simple realtime connection timed out');
         } else if (status === 'CLOSED') {
           connectionStableRef.current = false;
+          // Only set disconnected if the connection was stable before
           if (subscriptionRef.current) {
-            setManagedTimeout(() => {
+            setTimeout(() => {
               if (!connectionStableRef.current) {
                 setIsConnected(false);
               }
             }, 500);
           }
+          console.log('🔄 Simple realtime status:', status);
         }
       });
 
@@ -227,7 +188,7 @@ export const useSimpleRealtimeRundown = ({
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
+  }, [rundownId, user?.id, enabled]);
 
   return {
     isConnected,

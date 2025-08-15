@@ -140,14 +140,6 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'MERGE_REALTIME_UPDATE': {
       const { items: newItems, title, startTime, timezone, protectedFields = new Set() } = action.payload;
-      console.log('🔄 MERGE_REALTIME_UPDATE reducer called with:', {
-        newItemsCount: newItems?.length,
-        title,
-        startTime,
-        timezone,
-        protectedFieldsCount: protectedFields.size,
-        currentItemsCount: state.items.length
-      });
       
       // Field-by-field comparison for items
       const mergedItems = state.items.map(currentItem => {
@@ -191,21 +183,12 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
                               (newState.startTime && newState.startTime !== state.startTime) ||
                               (newState.timezone && newState.timezone !== state.timezone);
       
-      const finalState = {
+      return {
         ...state,
         ...newState,
         hasUnsavedChanges: hasActualChanges ? state.hasUnsavedChanges : state.hasUnsavedChanges,
         lastChanged: hasActualChanges ? Date.now() : state.lastChanged
       };
-      
-      console.log('🔄 MERGE_REALTIME_UPDATE returning state:', {
-        finalItemsCount: finalState.items.length,
-        hasActualChanges,
-        oldItemsCount: state.items.length,
-        itemsChanged: finalItems !== state.items
-      });
-      
-      return finalState;
     }
 
     default:
