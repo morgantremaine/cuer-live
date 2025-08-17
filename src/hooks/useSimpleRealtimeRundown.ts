@@ -36,18 +36,12 @@ export const useSimpleRealtimeRundown = ({
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Global own update tracking to handle multiple subscriptions - now structural change aware
+  // Global own update tracking to handle multiple subscriptions
   const trackOwnUpdateLocal = useCallback((timestamp: string, isStructural: boolean = false) => {
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
     
-    // Skip tracking structural changes as "own updates" to allow real-time propagation
-    if (isStructural) {
-      console.log('📊 Structural change detected - skipping own update tracking for real-time propagation');
-      return;
-    }
-    
-    // Track in global map for all subscriptions to this rundown (content changes only)
+    // Always track own updates for deduplication, even structural ones
     const tracking = activeSubscriptions.get(subscriptionKey);
     if (tracking) {
       tracking.ownUpdates.add(timestamp);
@@ -143,17 +137,21 @@ export const useSimpleRealtimeRundown = ({
 
     const updateTimestamp = payload.new?.updated_at;
     
+    // Check if this is a structural change (add/delete/move rows)
+    const isStructural = isStructuralChange(payload.new, payload.old);
+    
     // Skip if this is exactly the same timestamp we just processed
     if (updateTimestamp === lastProcessedUpdateRef.current) {
       return;
     }
 
-    // Check if this is a structural change (add/delete/move rows)
-    const isStructural = isStructuralChange(payload.new, payload.old);
-    
-    // Check global own update tracking - but skip for structural changes
-    if (!isStructural && tracking && tracking.ownUpdates.has(updateTimestamp)) {
-      console.log('⏭️ Skipping - our own update (content change)');
+    // Check global own update tracking for all updates (including structural)
+    if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
+      if (isStructural) {
+        console.log('⏭️ Skipping - our own structural change');
+      } else {
+        console.log('⏭️ Skipping - our own update (content change)');
+      }
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
