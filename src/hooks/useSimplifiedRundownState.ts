@@ -35,7 +35,7 @@ export const useSimplifiedRundownState = () => {
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
-  const PROTECTION_WINDOW_MS = 3000; // 3 second protection window
+  const PROTECTION_WINDOW_MS = 10000; // 10 second protection window (extended for safety)
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {

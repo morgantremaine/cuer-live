@@ -52,16 +52,35 @@ export const useSimpleRealtimeRundown = ({
     if (tracking) {
       tracking.ownUpdates.add(timestamp);
       
-      // Clean up old tracked updates after 5 seconds
+      // Clean up old tracked updates after 15 seconds (extended window)
       setManagedTimeout(() => {
         tracking.ownUpdates.delete(timestamp);
-      }, 5000);
+      }, 15000);
     }
     
     // Also track via parent if available
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
+  }, []);
+
+  // Helper function to detect if an update has actual content changes
+  const isContentUpdate = useCallback((newData: any, oldData?: any) => {
+    if (!newData || !oldData) return true; // Assume content change if we can't compare
+    
+    // Only these fields count as "content" - changes to other fields are meta-only
+    const contentFields = [
+      'items', 'title', 'start_time', 'timezone', 'description', 'external_notes'
+    ];
+    
+    for (const field of contentFields) {
+      if (JSON.stringify(newData[field]) !== JSON.stringify(oldData[field])) {
+        console.log(`📝 Content change detected in field: ${field}`);
+        return true; // Actual content changed
+      }
+    }
+    
+    return false; // Only meta fields changed (folder_id, showcaller_state, etc.)
   }, []);
 
   // Helper function to detect if an update is showcaller-only
@@ -139,20 +158,32 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Check if this is a showcaller-only update and skip processing indicator
-    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
-    
-    if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update (no loading indicator)');
-    } else if (isStructural) {
-      console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
-      // Show processing state briefly for structural changes
-      setIsProcessingUpdate(true);
-    } else {
-      console.log('✅ Processing realtime content update from teammate');
-      // Show processing state briefly only for non-showcaller updates
-      setIsProcessingUpdate(true);
+  // Enhanced content filtering to prevent meta-only updates from merging
+  const isContentChange = isContentUpdate(payload.new, payload.old);
+  const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
+  
+    // Only process updates that have actual content changes
+    if (!isContentChange && !isStructural) {
+      console.log('⏭️ Skipping meta-only update (no content changes)', {
+        changedFields: Object.keys(payload.new || {}).filter(key => 
+          JSON.stringify(payload.new[key]) !== JSON.stringify(payload.old?.[key])
+        )
+      });
+      lastProcessedUpdateRef.current = updateTimestamp;
+      return;
     }
+  
+  if (isShowcallerOnly) {
+    console.log('📺 Processing showcaller-only update (no loading indicator)');
+  } else if (isStructural) {
+    console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
+    // Show processing state briefly for structural changes
+    setIsProcessingUpdate(true);
+  } else {
+    console.log('✅ Processing realtime content update from teammate');
+    // Show processing state briefly only for non-showcaller updates
+    setIsProcessingUpdate(true);
+  }
     
     lastProcessedUpdateRef.current = updateTimestamp;
     
@@ -175,7 +206,7 @@ export const useSimpleRealtimeRundown = ({
       }, 500);
     }
     
-  }, [rundownId, isShowcallerOnlyUpdate, isStructuralChange]);
+  }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
   useEffect(() => {
     // Only set up subscription if we have the required data

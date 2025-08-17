@@ -181,8 +181,8 @@ export const useRundownFolders = (teamId?: string) => {
       const { data, error } = await supabase
         .from('rundowns')
         .update({ 
-          folder_id: folderId,
-          updated_at: new Date().toISOString()
+          folder_id: folderId
+          // No manual updated_at to reduce spurious realtime notifications
         })
         .eq('id', rundownId)
         .select()
