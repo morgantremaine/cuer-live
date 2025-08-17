@@ -17,7 +17,7 @@ export const useSimpleAutoSave = (
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
   const lastSaveTimeRef = useRef<number>(0);
-  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
+  const trackOwnUpdateRef = useRef<((timestamp: string, isStructural?: boolean) => void) | null>(null);
   const userTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
@@ -44,7 +44,7 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
+  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string, isStructural?: boolean) => void) => {
     trackOwnUpdateRef.current = tracker;
   }, []);
 
@@ -54,15 +54,14 @@ export const useSimpleAutoSave = (
     console.log('📊 Marked structural change - will not filter in realtime');
   }, []);
 
-  // Track own updates with structural change awareness
+  // Track own updates including structural changes
   const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
     if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp);
+      trackOwnUpdateRef.current(timestamp, isStructural);
     }
     
-    // If this is a structural change, don't track it as own update to allow real-time propagation
+    // Always reset the structural change flag after tracking
     if (isStructural) {
-      console.log('📊 Structural change - skipping own update tracking for realtime propagation');
       structuralChangeRef.current = false; // Reset flag
     }
   }, []);

@@ -163,7 +163,9 @@ export const useSimplifiedRundownState = () => {
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
     if (realtimeConnection.trackOwnUpdate) {
-      setTrackOwnUpdate(realtimeConnection.trackOwnUpdate);
+      setTrackOwnUpdate((timestamp: string, isStructural?: boolean) => {
+        realtimeConnection.trackOwnUpdate(timestamp, isStructural);
+      });
     }
   }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
 
