@@ -619,6 +619,137 @@ export const useShowcallerVisualState = ({
     }
   }, [isInitialized, items.length, visualState.currentSegmentId, timeToSeconds]);
 
+  // Self-healing mechanism: Handle segment deletion/invalidation
+  useEffect(() => {
+    if (!isInitialized || !visualState.currentSegmentId) return;
+
+    // Check if current segment still exists and is valid (non-floated regular item)
+    const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
+    const isCurrentSegmentValid = currentSegment && 
+                                  currentSegment.type === 'regular' && 
+                                  !isFloated(currentSegment);
+
+    if (!isCurrentSegmentValid) {
+      console.log('🔧 Self-healing: Current segment invalid or deleted, finding fallback');
+      
+      // Only proceed if this client is the controller or there's no active controller
+      const isController = visualState.controllerId === userId;
+      if (!isController && visualState.controllerId) {
+        console.log('🔧 Self-healing: Not controller, skipping auto-healing');
+        return;
+      }
+      
+      // Find fallback segment: prefer next available, then previous, then clear
+      let fallbackSegment = null;
+      const wasPlaying = visualState.isPlaying;
+      
+      if (currentSegment) {
+        // Try to find next segment from current position
+        fallbackSegment = getNextSegment(visualState.currentSegmentId);
+        
+        // If no next segment, try previous
+        if (!fallbackSegment) {
+          fallbackSegment = getPreviousSegment(visualState.currentSegmentId);
+        }
+      }
+      
+      // If still no fallback, find first available segment
+      if (!fallbackSegment) {
+        fallbackSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      }
+      
+      if (fallbackSegment) {
+        console.log('🔧 Self-healing: Moving to fallback segment:', fallbackSegment.id);
+        
+        // Rebuild status map for the new current segment
+        const newStatuses = new Map();
+        const fallbackIndex = items.findIndex(item => item.id === fallbackSegment.id);
+        
+        items.forEach((item, index) => {
+          if (item.type === 'regular' && !isFloated(item)) {
+            if (index < fallbackIndex) {
+              newStatuses.set(item.id, 'completed');
+            } else if (index === fallbackIndex) {
+              newStatuses.set(item.id, 'current');
+            }
+            // Items after fallback remain as 'upcoming' (no status set)
+          }
+        });
+        
+        const duration = timeToSeconds(fallbackSegment.duration || '00:00');
+        const preciseStartTime = wasPlaying ? getPreciseTime() : null;
+        
+        updateVisualState({
+          currentSegmentId: fallbackSegment.id,
+          timeRemaining: duration,
+          playbackStartTime: preciseStartTime,
+          currentItemStatuses: newStatuses,
+          isPlaying: wasPlaying,
+          controllerId: userId
+        }, true, true); // Save changes if we're the controller
+        
+        // Restart timer if was playing
+        if (wasPlaying) {
+          resetDriftCompensation();
+          startPrecisionTimer();
+        }
+      } else {
+        console.log('🔧 Self-healing: No valid segments found, clearing state');
+        
+        // No valid segments exist, clear the showcaller state
+        updateVisualState({
+          currentSegmentId: null,
+          timeRemaining: 0,
+          playbackStartTime: null,
+          currentItemStatuses: new Map(),
+          isPlaying: false,
+          controllerId: null
+        }, true, true);
+        
+        stopPrecisionTimer();
+        resetDriftCompensation();
+      }
+    } else {
+      // Current segment is valid, but check if status map needs cleaning
+      const newStatuses = new Map();
+      let statusMapChanged = false;
+      
+      // Remove statuses for deleted/invalid items
+      visualState.currentItemStatuses.forEach((status, itemId) => {
+        const item = items.find(i => i.id === itemId);
+        if (item && item.type === 'regular' && !isFloated(item)) {
+          newStatuses.set(itemId, status);
+        } else {
+          statusMapChanged = true;
+          console.log('🔧 Self-healing: Removing status for deleted/invalid item:', itemId);
+        }
+      });
+      
+      // Update status map if any invalid items were removed
+      if (statusMapChanged) {
+        updateVisualState({
+          currentItemStatuses: newStatuses
+        }, visualState.controllerId === userId, false);
+      }
+    }
+  }, [
+    isInitialized, 
+    items, 
+    visualState.currentSegmentId, 
+    visualState.controllerId, 
+    visualState.isPlaying,
+    visualState.currentItemStatuses,
+    userId, 
+    getNextSegment, 
+    getPreviousSegment, 
+    timeToSeconds, 
+    getPreciseTime,
+    updateVisualState,
+    startPrecisionTimer,
+    stopPrecisionTimer,
+    resetDriftCompensation
+  ]);
+
   // Enhanced cleanup
   useEffect(() => {
     return () => {
