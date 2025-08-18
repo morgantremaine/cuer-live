@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUniversalTimer } from './useUniversalTimer';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
+import { normalizeTimestamp } from '@/utils/realtimeUtils';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -41,14 +42,21 @@ export const useSimpleRealtimeRundown = ({
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
     
+    // Normalize timestamp to ensure consistent format matching
+    const normalizedTimestamp = normalizeTimestamp(timestamp);
+    
     // Always track own updates for deduplication, even structural ones
     const tracking = activeSubscriptions.get(subscriptionKey);
     if (tracking) {
-      tracking.ownUpdates.add(timestamp);
+      tracking.ownUpdates.add(normalizedTimestamp);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏷️ Tracking own update:', { original: timestamp, normalized: normalizedTimestamp });
+      }
       
       // Clean up old tracked updates after 15 seconds (extended window)
       setManagedTimeout(() => {
-        tracking.ownUpdates.delete(timestamp);
+        tracking.ownUpdates.delete(normalizedTimestamp);
       }, 15000);
     }
     
@@ -56,7 +64,7 @@ export const useSimpleRealtimeRundown = ({
     if (trackOwnUpdateRef.current) {
       trackOwnUpdateRef.current(timestamp);
     }
-  }, []);
+  }, [setManagedTimeout]);
 
   // Helper function to detect if an update has actual content changes
   const isContentUpdate = useCallback((newData: any, oldData?: any) => {
@@ -136,23 +144,35 @@ export const useSimpleRealtimeRundown = ({
     }
 
     const updateTimestamp = payload.new?.updated_at;
+    const normalizedUpdateTimestamp = normalizeTimestamp(updateTimestamp);
     
     // Check if this is a structural change (add/delete/move rows)
     const isStructural = isStructuralChange(payload.new, payload.old);
     
-    // Skip if this is exactly the same timestamp we just processed
-    if (updateTimestamp === lastProcessedUpdateRef.current) {
+    // Skip if this is exactly the same timestamp we just processed (using normalized form)
+    if (normalizedUpdateTimestamp === lastProcessedUpdateRef.current) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⏭️ Skipping duplicate timestamp:', normalizedUpdateTimestamp);
+      }
       return;
     }
 
-    // Check global own update tracking for all updates (including structural)
-    if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
+    // Check global own update tracking for all updates (including structural) - BEFORE setting processing state
+    if (tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏷️ Own update detected:', { 
+          timestamp: normalizedUpdateTimestamp, 
+          isStructural,
+          trackedUpdates: Array.from(tracking.ownUpdates) 
+        });
+      }
+      
       if (isStructural) {
         console.log('⏭️ Skipping - our own structural change');
       } else {
         console.log('⏭️ Skipping - our own update (content change)');
       }
-      lastProcessedUpdateRef.current = updateTimestamp;
+      lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }
 
@@ -167,7 +187,7 @@ export const useSimpleRealtimeRundown = ({
           JSON.stringify(payload.new[key]) !== JSON.stringify(payload.old?.[key])
         )
       });
-      lastProcessedUpdateRef.current = updateTimestamp;
+      lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }
   
@@ -183,7 +203,7 @@ export const useSimpleRealtimeRundown = ({
     setIsProcessingUpdate(true);
   }
     
-    lastProcessedUpdateRef.current = updateTimestamp;
+    lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
     
     try {
       // Sync time from server timestamp
