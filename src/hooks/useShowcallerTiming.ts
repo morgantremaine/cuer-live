@@ -138,6 +138,18 @@ export const useShowcallerTiming = ({
     const isOnTime = Math.abs(differenceSeconds) <= 5;
     const isAhead = differenceSeconds > 5; // Showcaller ahead of real time
 
+    // Debug logging for timing status
+    const debugInfo = {
+      isPlaying,
+      currentSegmentId,
+      isOnTime,
+      isAhead,
+      timeDifference: stableDisplayRef.current,
+      isVisible: true
+    };
+    
+    console.log('🕐 ShowcallerTiming:', debugInfo);
+
     return {
       isOnTime,
       isAhead,

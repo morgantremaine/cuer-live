@@ -175,12 +175,13 @@ const RundownIndexContent = () => {
     
     // CRITICAL FIX: Check current playing state and act accordingly
     if (isPlaying) {
-      
+      console.log('🎯 IndexContent: Already playing, jumping to segment:', segmentId);
+      // FIXED: Pass segmentId when already playing to jump to specific segment
       if (play) {
-        play();
+        play(segmentId);
       }
     } else {
-      
+      console.log('🎯 IndexContent: Not playing, using jumpToSegment:', segmentId);
       if (coreState.jumpToSegment) {
         coreState.jumpToSegment(segmentId);
       } else {
