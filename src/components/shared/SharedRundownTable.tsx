@@ -4,6 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
+import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 import { Play, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface SharedRundownTableProps {
@@ -421,14 +422,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
               <div className="whitespace-pre-wrap break-words text-sm">
                 {columnKey === 'script' ? 
                   renderScriptWithBrackets(value, { inlineDisplay: false, fontSize: 14, showNullAsText: true }) : 
-                  value
+                  renderTextWithClickableUrls(value)
                 }
               </div>
             ) : (
               <div className="truncate text-sm" title={value}>
                 {columnKey === 'script' ? 
                   renderScriptWithBrackets(value, { inlineDisplay: true, fontSize: 14, showNullAsText: true }) : 
-                  value
+                  renderTextWithClickableUrls(value)
                 }
               </div>
             )}
@@ -572,7 +573,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       return renderExpandableCell(value, item.id, column.key);
     }
     
-    return value;
+    // For all other text content, render with clickable URLs
+    return renderTextWithClickableUrls(value);
   };
 
   // Helper function to determine if a row has a custom color that should be preserved in print

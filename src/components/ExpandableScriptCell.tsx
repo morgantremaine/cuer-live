@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
+import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -337,7 +338,7 @@ const ExpandableScriptCell = ({
                       showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
-                    value
+                    renderTextWithClickableUrls(value)
                   )
                 ) : (
                   <span className="text-muted-foreground">
@@ -413,7 +414,7 @@ const ExpandableScriptCell = ({
                       showNullAsText: true // Show [null] as text in main rundown
                     })
                   ) : (
-                    value.replace(/]\s*\n\s*/g, '] ')
+                    renderTextWithClickableUrls(value.replace(/]\s*\n\s*/g, '] '))
                   )}
                 </div>
               ) : (

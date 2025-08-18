@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
 
 interface TextAreaCellProps {
   value: string;
@@ -29,6 +30,7 @@ const TextAreaCell = ({
   const measurementRef = useRef<HTMLDivElement>(null);
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -165,6 +167,7 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
+    setIsFocused(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -174,6 +177,7 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
+    setIsFocused(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -192,7 +196,8 @@ const TextAreaCell = ({
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
   
-  // Always allow text wrapping for proper display
+  // Check if this cell contains URLs and should show clickable links when not focused
+  const shouldShowClickableUrls = !isFocused && containsUrls(value);
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -207,6 +212,21 @@ const TextAreaCell = ({
           zIndex: -1
         }}
       />
+      
+      {/* Clickable URL overlay when not focused */}
+      {shouldShowClickableUrls && (
+        <div
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-auto z-10`}
+          style={{ 
+            color: textColor || 'inherit',
+            lineHeight: '1.3',
+            textAlign: isDuration ? 'center' : 'left'
+          }}
+          onClick={onCellClick}
+        >
+          {renderTextWithClickableUrls(value)}
+        </div>
+      )}
       
       <textarea
         ref={(el) => {
@@ -228,7 +248,7 @@ const TextAreaCell = ({
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        }`}
+        } ${shouldShowClickableUrls ? 'opacity-0' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
           color: textColor || 'inherit',
