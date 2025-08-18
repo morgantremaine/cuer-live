@@ -4,13 +4,13 @@ import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRundownState } from './useRundownState';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
-import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useSmartAutoSave } from './useSmartAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useSmartFieldProtection } from './useSmartFieldProtection';
 import { useUnifiedUpdateTracking } from './useUnifiedUpdateTracking';
 import { useConflictResolution } from './useConflictResolution';
+import { useShowcallerSession } from './useShowcallerSession';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
@@ -52,6 +52,15 @@ export const useSimplifiedRundownState = () => {
     logConflicts: true
   });
 
+  // Showcaller session management (Phase 3)
+  const showcallerSession = useShowcallerSession({
+    rundownId,
+    enabled: !!rundownId && rundownId !== DEMO_RUNDOWN_ID
+  });
+
+  // Simple Showcaller save coordination
+  const showcallerSavingRef = useRef(false);
+
   // Unified update tracking
   const { trackOwnUpdate } = useUnifiedUpdateTracking({
     userId: user?.id || '',
@@ -80,10 +89,7 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
 
-  // Global teleprompter sync
-  const teleprompterSync = useGlobalTeleprompterSync();
-
-  // Smart auto-save with enhanced coordination
+  // Smart auto-save with enhanced coordination and Showcaller awareness
   const {
     isSaving,
     setUndoActive,
@@ -94,7 +100,10 @@ export const useSimplifiedRundownState = () => {
     isQueueProcessing
   } = useSmartAutoSave(state, rundownId, () => {
     actions.markSaved();
-  }, trackOwnUpdate);
+  }, trackOwnUpdate, {
+    // Block saves when Showcaller is saving
+    isBlocked: () => showcallerSavingRef.current
+  });
 
   // Standalone undo system
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
@@ -119,6 +128,12 @@ export const useSimplifiedRundownState = () => {
     queueUpdate: queueUpdate,
     onRundownUpdate: useCallback((updatedRundown: any) => {
       console.log('📥 [Enhanced] Realtime update received:', updatedRundown?.updated_at);
+      
+      // Check if this conflicts with Showcaller operations  
+      if (showcallerSavingRef.current) {
+        console.log('⏸️ [Phase3] Showcaller saving - queueing realtime update');
+        return;
+      }
       
       if (!isSaving && !isQueueProcessing) {
         console.log('🕒 Processing enhanced realtime update:', updatedRundown.updated_at);
@@ -436,7 +451,13 @@ export const useSimplifiedRundownState = () => {
     
     // Connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving,
+    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || showcallerSavingRef.current,
+    
+    // Showcaller session management (Phase 3)
+    showcallerSession: showcallerSession.isActiveSession,
+    showcallerActiveSessions: showcallerSession.activeSessions,
+    startShowcallerSession: showcallerSession.startSession,
+    endShowcallerSession: showcallerSession.endSession,
     
     // Actions
     ...enhancedActions,
@@ -456,10 +477,10 @@ export const useSimplifiedRundownState = () => {
       setColumns([...columns, column]);
     },
     
-    // Teleprompter sync
+    // Showcaller coordination handlers for backward compatibility
     teleprompterSaveHandlers: {
-      onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
-      onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
+      onSaveStart: () => { showcallerSavingRef.current = true; },
+      onSaveEnd: () => { showcallerSavingRef.current = false; }
     }
   };
 };

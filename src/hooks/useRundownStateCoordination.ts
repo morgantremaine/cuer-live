@@ -2,7 +2,7 @@ import { usePersistedRundownState } from './usePersistedRundownState';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
+import { useShowcallerSession } from './useShowcallerSession';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
@@ -45,14 +45,10 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Showcaller coordination for playback controls and visual state
-  const showcallerCoordination = useShowcallerStateCoordination({
-    items: performanceOptimization.calculatedItems,
+  // Showcaller session management (Phase 3)
+  const showcallerSession = useShowcallerSession({
     rundownId: simplifiedState.rundownId,
-    userId,
-    teamId: null,
-    rundownTitle: simplifiedState.rundownTitle,
-    rundownStartTime: simplifiedState.rundownStartTime
+    enabled: !!simplifiedState.rundownId
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -181,7 +177,7 @@ export const useRundownStateCoordination = () => {
 
   // NEW: Keep processing states separate - NO combination
   const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate; // Content updates only
-  const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
+  const showcallerProcessingState = false; // Placeholder for Phase 3
 
   return {
     coreState: {
@@ -199,19 +195,21 @@ export const useRundownStateCoordination = () => {
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
+      isConnected: simplifiedState.isConnected,
       isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
       
-      // Showcaller visual state from completely separate system
-      currentSegmentId: showcallerCoordination.currentSegmentId,
-      isPlaying: showcallerCoordination.isPlaying,
-      timeRemaining: showcallerCoordination.timeRemaining,
-      isController: showcallerCoordination.isController,
-      isInitialized: showcallerCoordination.isInitialized,
+      // Showcaller session state (Phase 3)
+      showcallerSession: showcallerSession.isActiveSession,
+      showcallerActiveSessions: showcallerSession.activeSessions,
       showcallerActivity: false, // No longer interferes with main state
       
-      // Visual status overlay function (doesn't touch main state)
-      getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
+      // Placeholder showcaller functions
+      currentSegmentId: '',
+      isPlaying: false,
+      timeRemaining: 0,
+      isController: false,
+      isInitialized: false,
+      getItemVisualStatus: () => ({}),
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -243,13 +241,13 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Showcaller visual controls (completely separate from main state)
-      play: showcallerCoordination.play,
-      pause: showcallerCoordination.pause,
-      forward: showcallerCoordination.forward,
-      backward: showcallerCoordination.backward,
-      reset: showcallerCoordination.reset,
-      jumpToSegment: showcallerCoordination.jumpToSegment,
+      // Placeholder showcaller controls
+      play: () => {},
+      pause: () => {},
+      forward: () => {},
+      backward: () => {},
+      reset: () => {},
+      jumpToSegment: () => {},
       
       // Undo functionality
       undo: simplifiedState.undo,

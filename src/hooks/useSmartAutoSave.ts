@@ -14,7 +14,8 @@ export const useSmartAutoSave = (
   state: RundownState,
   rundownId: string | null,
   onSaved: () => void,
-  trackOwnUpdate: (timestamp: string, type?: 'content' | 'showcaller' | 'structural') => void
+  trackOwnUpdate: (timestamp: string, type?: 'content' | 'showcaller' | 'structural') => void,
+  options: { isBlocked?: () => boolean } = {}
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -139,11 +140,12 @@ export const useSmartAutoSave = (
       return;
     }
 
-    // Enhanced blocking conditions
+    // Enhanced blocking conditions including external blocks
     if (!state.hasUnsavedChanges || 
         undoActiveRef.current || 
         userTypingRef.current ||
-        pendingSaveRef.current) {
+        pendingSaveRef.current ||
+        (options.isBlocked && options.isBlocked())) {
       return;
     }
 
