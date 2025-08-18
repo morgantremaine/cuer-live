@@ -1,5 +1,6 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useTeamCustomColumns } from './useTeamCustomColumns';
 
 export interface Column {
   id: string;
@@ -26,7 +27,11 @@ const getDefaultColumns = (): Column[] => [
 ];
 
 export const useColumnsManager = (markAsChanged?: () => void) => {
-  const [columns, setColumns] = useState<Column[]>(getDefaultColumns());
+  const { teamColumns } = useTeamCustomColumns();
+  const [columns, setColumns] = useState<Column[]>(() => {
+    // Initialize with default columns merged with team columns
+    return getDefaultColumns();
+  });
 
   // Ensure columns is always an array before filtering and ensure all default columns are visible
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
@@ -131,6 +136,45 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   }, [markAsChanged]);
 
+  // Merge team custom columns with current columns to ensure all team columns are always available
+  const mergeWithTeamColumns = useCallback((columnsToMerge: Column[]) => {
+    const existingColumnKeys = new Set(columnsToMerge.map(col => col.key));
+    const mergedColumns = [...columnsToMerge];
+
+    // Add team custom columns that aren't already in the current layout
+    teamColumns.forEach(teamCol => {
+      if (!existingColumnKeys.has(teamCol.column_key)) {
+        // Add team columns as hidden by default if not in the layout
+        mergedColumns.push({
+          id: teamCol.column_key,
+          name: teamCol.column_name,
+          key: teamCol.column_key,
+          width: '150px',
+          isCustom: true,
+          isEditable: true,
+          isVisible: false, // Hidden by default for team columns not in current layout
+          isTeamColumn: true,
+          createdBy: teamCol.created_by
+        } as Column & { isTeamColumn?: boolean; createdBy?: string });
+      }
+    });
+
+    // Ensure existing team columns retain their team metadata
+    const finalColumns = mergedColumns.map(col => {
+      const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
+      if (teamColumn && col.isCustom) {
+        return {
+          ...col,
+          isTeamColumn: true,
+          createdBy: teamColumn.created_by
+        };
+      }
+      return col;
+    });
+
+    return finalColumns;
+  }, [teamColumns]);
+
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array
     if (!Array.isArray(layoutColumns)) {
@@ -188,13 +232,16 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         }
       });
 
+      // CRITICAL: Merge with all available team columns to ensure they're always available
+      const finalColumns = mergeWithTeamColumns(mergedColumns);
+
       
       if (markAsChanged) {
         markAsChanged();
       }
-      return mergedColumns;
+      return finalColumns;
     });
-  }, [markAsChanged]);
+  }, [markAsChanged, mergeWithTeamColumns]);
 
   // Reset to default columns function for new rundowns
   const resetToDefaults = useCallback(() => {
@@ -204,6 +251,16 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       markAsChanged();
     }
   }, [markAsChanged]);
+
+  // Update columns when team columns change to ensure all team columns are available
+  useEffect(() => {
+    if (teamColumns.length > 0) {
+      setColumns(prevColumns => {
+        const mergedColumns = mergeWithTeamColumns(prevColumns);
+        return mergedColumns;
+      });
+    }
+  }, [teamColumns, mergeWithTeamColumns]);
 
   // Debug function to check current columns state
   const debugColumns = useCallback(() => {

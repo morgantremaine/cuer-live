@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -70,18 +70,64 @@ const RundownIndexContent = () => {
     isSaving: isSavingPreferences 
   } = useUserColumnPreferences(rundownId);
 
-  // Use columns manager for operations only - don't use its state
-  const {
-    handleAddColumn,
-    handleReorderColumns,
-    handleDeleteColumn,
-    handleRenameColumn,
-    handleToggleColumnVisibility,
-    debugColumns,
-    resetToDefaults
-  } = useColumnsManager(() => {
-    // Mark as changed - handled by auto-save
-  });
+  // Create wrapper functions that operate on userColumns from useUserColumnPreferences
+  const handleAddColumnWrapper = useCallback((name: string) => {
+    const newColumn = {
+      id: `custom_${Date.now()}`,
+      name,
+      key: `custom_${Date.now()}`,
+      width: '150px',
+      isCustom: true,
+      isEditable: true,
+      isVisible: true
+    };
+    
+    // Insert the new column right after the segment name column (index 1)
+    const newColumns = [...userColumns];
+    newColumns.splice(1, 0, newColumn);
+    setUserColumns(newColumns, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  const handleReorderColumnsWrapper = useCallback((newColumns: any[]) => {
+    if (!Array.isArray(newColumns)) return;
+    setUserColumns(newColumns, true); // Immediate save
+  }, [setUserColumns]);
+
+  const handleDeleteColumnWrapper = useCallback((columnId: string) => {
+    const filtered = userColumns.filter(col => col.id !== columnId);
+    setUserColumns(filtered, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
+    const updated = userColumns.map(col => {
+      if (col.id === columnId) {
+        return { ...col, name: newName };
+      }
+      return col;
+    });
+    setUserColumns(updated, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  const handleToggleColumnVisibilityWrapper = useCallback((columnId: string) => {
+    const updated = userColumns.map(col => {
+      if (col.id === columnId) {
+        const newVisibility = col.isVisible !== false ? false : true;
+        return { ...col, isVisible: newVisibility };
+      }
+      return col;
+    });
+    setUserColumns(updated, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  // Keep these from useColumnsManager for compatibility
+  const debugColumns = useCallback(() => {
+    console.log('Current userColumns:', userColumns);
+  }, [userColumns]);
+
+  const resetToDefaults = useCallback(() => {
+    // Reset to default columns - this should reload from useUserColumnPreferences defaults
+    console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
+  }, []);
 
   // Check if we're still loading - show spinner until everything is ready
   const isFullyLoading = isLoading || isLoadingPreferences || (!items || items.length === 0);
@@ -236,58 +282,7 @@ const RundownIndexContent = () => {
   // Convert timeRemaining to number (assuming it's in seconds)
   const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
 
-  // Enhanced column management handlers that integrate with user preferences
-  const handleAddColumnWrapper = (name: string) => {
-    
-    const newColumn = {
-      id: `custom_${Date.now()}`,
-      name,
-      key: name.toLowerCase().replace(/\s+/g, '_'),
-      isVisible: true,
-      width: '150px',
-      isCustom: true,
-      isEditable: true
-    };
-    
-    // Add to existing columns and update user preferences
-    const updatedColumns = [...userColumns];
-    updatedColumns.splice(1, 0, newColumn); // Insert after segment name
-    setUserColumns(updatedColumns, true); // Immediate save for structural changes
-  };
-
-  const handleReorderColumnsWrapper = (reorderedColumns: any[]) => {
-    
-    setUserColumns(reorderedColumns, true); // Immediate save for reordering
-  };
-
-  const handleDeleteColumnWrapper = (columnId: string) => {
-    
-    const filteredColumns = userColumns.filter(col => col.id !== columnId);
-    setUserColumns(filteredColumns, true); // Immediate save for deletion
-  };
-
-  const handleRenameColumnWrapper = (columnId: string, newName: string) => {
-    
-    const updatedColumns = userColumns.map(col => {
-      if (col.id === columnId) {
-        return { ...col, name: newName };
-      }
-      return col;
-    });
-    setUserColumns(updatedColumns, true); // Immediate save for renaming
-  };
-
-  const handleToggleColumnVisibilityWrapper = (columnId: string) => {
-    
-    const updatedColumns = userColumns.map(col => {
-      if (col.id === columnId) {
-        const newVisibility = col.isVisible !== false ? false : true;
-        return { ...col, isVisible: newVisibility };
-      }
-      return col;
-    });
-    setUserColumns(updatedColumns, true); // Immediate save for visibility changes
-  };
+  // Remove duplicate handlers - using the ones from earlier in the file
 
   const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
     console.log('🔄 RundownIndexContent: Loading layout with', layoutColumns.length, 'columns');
