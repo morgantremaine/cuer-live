@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 interface Team {
@@ -455,9 +455,7 @@ export const useTeam = () => {
       if (!loadedUserRef.current) {
         console.log('🔄 useTeam: Initial team load for user:', user.id);
       }
-      loadedUserRef.current = user.id; // Set immediately to prevent duplicates
       setIsLoading(true);
-      isLoadingRef.current = true;
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
       setTeam(null);
