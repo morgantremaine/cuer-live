@@ -4,6 +4,7 @@ import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerSession } from './useShowcallerSession';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
+import { usePlaybackControls } from './usePlaybackControls';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -45,11 +46,18 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Showcaller session management (Phase 3)
+// Showcaller session management (Phase 3)
   const showcallerSession = useShowcallerSession({
     rundownId: simplifiedState.rundownId,
     enabled: !!simplifiedState.rundownId
   });
+
+  // Showcaller playback controls integration
+  const playback = usePlaybackControls(
+    simplifiedState.items,
+    simplifiedState.updateItem,
+    simplifiedState.rundownId
+  );
 
   // Helper function to calculate end time - memoized for performance
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
@@ -203,13 +211,13 @@ export const useRundownStateCoordination = () => {
       showcallerActiveSessions: showcallerSession.activeSessions,
       showcallerActivity: false, // No longer interferes with main state
       
-      // Placeholder showcaller functions with correct signatures
-      currentSegmentId: '',
-      isPlaying: false,
-      timeRemaining: 0,
-      isController: false,
-      isInitialized: false,
-      getItemVisualStatus: (itemId: string) => 'upcoming' as 'upcoming' | 'current' | 'completed',
+      // Showcaller state
+      currentSegmentId: playback.currentSegmentId,
+      isPlaying: playback.isPlaying,
+      timeRemaining: playback.timeRemaining,
+      isController: playback.isController,
+      isInitialized: playback.isInitialized,
+      getItemVisualStatus: (itemId: string) => playback.visualState.currentItemStatuses.get(itemId) || 'upcoming',
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
