@@ -11,6 +11,8 @@ import { useSmartFieldProtection } from './useSmartFieldProtection';
 import { useUnifiedUpdateTracking } from './useUnifiedUpdateTracking';
 import { useConflictResolution } from './useConflictResolution';
 import { useShowcallerSession } from './useShowcallerSession';
+import { useAdvancedConflictDetection } from './useAdvancedConflictDetection';
+import { useEnhancedGranularMerge } from './useEnhancedGranularMerge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
@@ -51,6 +53,15 @@ export const useSimplifiedRundownState = () => {
     preserveUserEdits: true,
     logConflicts: true
   });
+
+  // Advanced conflict detection (Phase 4)
+  const conflictDetection = useAdvancedConflictDetection({
+    enabled: true,
+    maxConflictHistory: 50
+  });
+
+  // Enhanced granular merge (Phase 4)
+  const { performEnhancedMerge, hasStructuralDifferences } = useEnhancedGranularMerge();
 
   // Showcaller session management (Phase 3)
   const showcallerSession = useShowcallerSession({
@@ -142,30 +153,81 @@ export const useSimplifiedRundownState = () => {
         const protectedFields = getProtectedFields();
         console.log('🛡️ Smart protected fields during update:', Array.from(protectedFields));
         
-        // Check for conflicts and resolve them
+        // Check for structural differences (Phase 4)
         const incomingItems = updatedRundown.items || [];
-        const resolvedItems = resolveConflicts(state.items, incomingItems, protectedFields);
+        const hasStructuralChanges = hasStructuralDifferences(state.items, incomingItems);
         
-        // Log conflict resolution if any occurred
-        const conflictInfo = getConflictInfo();
-        if (conflictInfo.hasConflicts) {
-          console.log(`⚠️ [Phase2] Resolved ${conflictInfo.conflictCount} conflicts during realtime update`);
+        if (hasStructuralChanges) {
+          console.log('🔀 [Phase4] Structural changes detected, using enhanced merge');
+          
+          // Detect structural changes for conflict analysis
+          const structuralChanges = conflictDetection.detectStructuralChanges(
+            state.items,
+            incomingItems,
+            updatedRundown.updated_at
+          );
+          
+          // Perform enhanced merge with conflict detection
+          const mergeResult = performEnhancedMerge(
+            state.items,
+            incomingItems,
+            protectedFields,
+            {
+              conflictResolutionStrategy: 'merge',
+              preserveLocalOrder: true,
+              preferLocalAdditions: true
+            }
+          );
+          
+          // Add conflict indicators for any detected conflicts
+          mergeResult.conflicts.forEach(conflict => {
+            conflictDetection.addConflictIndicator({
+              id: `${conflict.type}-${conflict.itemId}-${Date.now()}`,
+              type: conflict.type === 'field' ? 'field' : 'structural',
+              severity: conflict.type === 'addition' ? 'medium' : 'low',
+              message: conflict.resolution,
+              affectedItems: [conflict.itemId],
+              timestamp: new Date().toISOString(),
+              resolved: true, // Auto-resolved by merge
+              resolutionStrategy: 'enhanced-merge'
+            });
+          });
+          
+          // Use granular merge with enhanced protection and conflict resolution
+          actions.mergeRealtimeUpdate({
+            items: mergeResult.items,
+            title: updatedRundown.title,
+            startTime: updatedRundown.start_time,
+            timezone: updatedRundown.timezone,
+            protectedFields
+          });
+          
+          console.log(`✅ [Phase4] Enhanced merge completed with ${mergeResult.conflicts.length} conflicts resolved`);
+        } else {
+          // Simple field-level conflict resolution for non-structural changes
+          const resolvedItems = resolveConflicts(state.items, incomingItems, protectedFields);
+          
+          // Log conflict resolution if any occurred
+          const conflictInfo = getConflictInfo();
+          if (conflictInfo.hasConflicts) {
+            console.log(`⚠️ [Phase4] Resolved ${conflictInfo.conflictCount} field conflicts during realtime update`);
+          }
+          
+          // Use standard merge for field-only changes
+          actions.mergeRealtimeUpdate({
+            items: resolvedItems,
+            title: updatedRundown.title,
+            startTime: updatedRundown.start_time,
+            timezone: updatedRundown.timezone,
+            protectedFields
+          });
         }
-        
-        // Use granular merge with enhanced protection and conflict resolution
-        actions.mergeRealtimeUpdate({
-          items: resolvedItems,
-          title: updatedRundown.title,
-          startTime: updatedRundown.start_time,
-          timezone: updatedRundown.timezone,
-          protectedFields
-        });
         
         console.log('🔄 Enhanced realtime update applied, item count:', updatedRundown.items?.length || 0);
       } else {
         console.log('⏸️ Save/queue processing in progress - update will be queued');
       }
-    }, [isSaving, isQueueProcessing, actions, getProtectedFields, resolveConflicts, state.items, getConflictInfo])
+    }, [isSaving, isQueueProcessing, actions, getProtectedFields, resolveConflicts, state.items, getConflictInfo, hasStructuralDifferences, conflictDetection, performEnhancedMerge])
   });
 
   // Connect queued update processing
@@ -175,19 +237,28 @@ export const useSimplifiedRundownState = () => {
       
       const protectedFields = getProtectedFields();
       
-      // Apply conflict resolution to queued updates too
+      // Apply enhanced conflict resolution to queued updates (Phase 4)
       const queuedItems = queuedUpdate.items || [];
-      const resolvedQueuedItems = resolveConflicts(state.items, queuedItems, protectedFields);
+      const hasStructuralChanges = hasStructuralDifferences(state.items, queuedItems);
+      
+      let finalItems: RundownItem[];
+      if (hasStructuralChanges) {
+        console.log('🔀 [Phase4] Processing queued structural changes');
+        const mergeResult = performEnhancedMerge(state.items, queuedItems, protectedFields);
+        finalItems = mergeResult.items;
+      } else {
+        finalItems = resolveConflicts(state.items, queuedItems, protectedFields);
+      }
       
       actions.mergeRealtimeUpdate({
-        items: resolvedQueuedItems,
+        items: finalItems,
         title: queuedUpdate.title,
         startTime: queuedUpdate.start_time,
         timezone: queuedUpdate.timezone,
         protectedFields
       });
     });
-  }, [setUpdateQueueCallback, actions, getProtectedFields, resolveConflicts, state.items]);
+  }, [setUpdateQueueCallback, actions, getProtectedFields, resolveConflicts, state.items, hasStructuralDifferences, performEnhancedMerge]);
 
   // Update connection status from realtime
   useEffect(() => {
@@ -458,6 +529,13 @@ export const useSimplifiedRundownState = () => {
     showcallerActiveSessions: showcallerSession.activeSessions,
     startShowcallerSession: showcallerSession.startSession,
     endShowcallerSession: showcallerSession.endSession,
+    
+    // Advanced conflict detection (Phase 4)
+    conflictIndicators: conflictDetection.conflictIndicators,
+    hasActiveConflicts: conflictDetection.hasActiveConflicts,
+    conflictStats: conflictDetection.conflictStats,
+    resolveConflict: conflictDetection.resolveConflictIndicator,
+    clearResolvedConflicts: conflictDetection.clearResolvedConflicts,
     
     // Actions
     ...enhancedActions,
