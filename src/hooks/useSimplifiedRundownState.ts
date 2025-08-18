@@ -1,56 +1,64 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import { RundownItem } from '@/types/rundown';
+import { Column } from '@/hooks/useColumnsManager';
 import { useRundownState } from './useRundownState';
-import { useSimpleAutoSave } from './useSimpleAutoSave';
+import { useUserColumnPreferences } from './useUserColumnPreferences';
+import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useSmartAutoSave } from './useSmartAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
-import { useUserColumnPreferences } from './useUserColumnPreferences';
-import { useRundownStateCache } from './useRundownStateCache';
-import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useSmartFieldProtection } from './useSmartFieldProtection';
+import { useUnifiedUpdateTracking } from './useUnifiedUpdateTracking';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from './useColumnsManager';
-import { createDefaultRundownItems } from '@/data/defaultRundownItems';
-import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
-import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
-import { updateTimeFromServer } from '@/services/UniversalTimeService';
+// Remove unused import
+import { v4 as uuidv4 } from 'uuid';
+import { useMemo } from 'react';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
-  const location = useLocation();
-  const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
-  
-  const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
+  const { user } = useAuth();
+  const rundownId = params.id === 'new' ? null : (params.id === 'demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(!shouldSkipLoading);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   
-  // Connection state will come from realtime hook
+  // Connection state
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced typing session tracking with field-level protection
-  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
-  const PROTECTION_WINDOW_MS = 10000; // 10 second protection window (extended for safety)
+  // Smart field protection
+  const { protectField, updateFieldActivity, getProtectedFields } = useSmartFieldProtection({
+    baseProtectionMs: 3000,
+    maxProtectionMs: 8000,
+    typingExtensionMs: 2000
+  });
 
-  // Initialize with default data (WITHOUT columns - they're now user-specific)
+  // Unified update tracking
+  const { trackOwnUpdate } = useUnifiedUpdateTracking({
+    userId: user?.id || '',
+    rundownId,
+    enabled: true
+  });
+
+  // Initialize with default data
   const {
     state,
     actions,
     helpers
   } = useRundownState({
     items: [],
-    columns: [], // Empty - will be managed separately
+    columns: [],
     title: 'Untitled Rundown',
     startTime: '09:00:00',
     timezone: 'America/New_York'
   });
 
-  // User-specific column preferences (separate from team sync)
+  // User-specific column preferences
   const {
     columns,
     setColumns,
@@ -58,20 +66,23 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);
 
-  // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
+  // Global teleprompter sync
   const teleprompterSync = useGlobalTeleprompterSync();
 
-  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markStructuralChange } = useSimpleAutoSave(
-    {
-      ...state,
-      columns: [] // Remove columns from team sync
-    }, 
-    rundownId, 
-    actions.markSaved
-  );
+  // Smart auto-save with enhanced coordination
+  const {
+    isSaving,
+    setUndoActive,
+    setUserTyping,
+    markStructuralChange,
+    queueUpdate,
+    setUpdateQueueCallback,
+    isQueueProcessing
+  } = useSmartAutoSave(state, rundownId, () => {
+    actions.markSaved();
+  }, trackOwnUpdate);
 
-  // Standalone undo system - unchanged
+  // Standalone undo system
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
@@ -87,59 +98,22 @@ export const useSimplifiedRundownState = () => {
     setUndoActive
   });
 
-  // Track own updates for realtime filtering
-  const ownUpdateTimestampRef = useRef<string | null>(null);
-
-  // Create protected fields set for granular updates
-  const getProtectedFields = useCallback(() => {
-    const protectedFields = new Set<string>();
-    const now = Date.now();
-    
-    // Add currently typing field if any
-    if (typingSessionRef.current) {
-      protectedFields.add(typingSessionRef.current.fieldKey);
-    }
-    
-    // Add recently edited fields within protection window
-    recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < PROTECTION_WINDOW_MS) {
-        protectedFields.add(fieldKey);
-      } else {
-        // Clean up expired fields
-        recentlyEditedFieldsRef.current.delete(fieldKey);
-      }
-    });
-    
-    // Add global title/timing fields if they're being edited
-    if (typingSessionRef.current?.fieldKey === 'title') {
-      protectedFields.add('title');
-    }
-    if (typingSessionRef.current?.fieldKey === 'startTime') {
-      protectedFields.add('startTime');
-    }
-    if (typingSessionRef.current?.fieldKey === 'timezone') {
-      protectedFields.add('timezone');
-    }
-    
-    return protectedFields;
-  }, []);
-
-  // Enhanced realtime connection with granular update logic
+  // Realtime updates with smart queuing and enhanced protection
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
-    onRundownUpdate: useCallback((updatedRundown) => {
-      console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
+    enabled: !!rundownId && rundownId !== DEMO_RUNDOWN_ID,
+    queueUpdate: queueUpdate,
+    onRundownUpdate: useCallback((updatedRundown: any) => {
+      console.log('📥 [Enhanced] Realtime update received:', updatedRundown?.updated_at);
       
-      // Only update if we're not currently saving to avoid conflicts
-      if (!isSaving) {
-        console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
+      if (!isSaving && !isQueueProcessing) {
+        console.log('🕒 Processing enhanced realtime update:', updatedRundown.updated_at);
         
-        // Get currently protected fields
+        // Get currently protected fields using smart protection
         const protectedFields = getProtectedFields();
-        console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
+        console.log('🛡️ Smart protected fields during update:', Array.from(protectedFields));
         
-        // Use granular merge instead of full state replacement
+        // Use granular merge with enhanced protection
         actions.mergeRealtimeUpdate({
           items: updatedRundown.items || [],
           title: updatedRundown.title,
@@ -148,88 +122,62 @@ export const useSimplifiedRundownState = () => {
           protectedFields
         });
         
-        console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
+        console.log('🔄 Enhanced realtime update applied, item count:', updatedRundown.items?.length || 0);
       } else {
-        console.log('📊 Skipping realtime update - currently saving');
+        console.log('⏸️ Save/queue processing in progress - update will be queued');
       }
-    }, [actions, isSaving, getProtectedFields]),
-    enabled: !isLoading,
-    trackOwnUpdate: (timestamp: string) => {
-      console.log('📝 Tracking own update in realtime:', timestamp);
-      ownUpdateTimestampRef.current = timestamp;
-    }
+    }, [isSaving, isQueueProcessing, actions, getProtectedFields])
   });
 
-  // Connect autosave tracking to realtime tracking
+  // Connect queued update processing
   useEffect(() => {
-    if (realtimeConnection.trackOwnUpdate) {
-      setTrackOwnUpdate((timestamp: string, isStructural?: boolean) => {
-        realtimeConnection.trackOwnUpdate(timestamp, isStructural);
+    setUpdateQueueCallback((queuedUpdate: any) => {
+      console.log('📤 Processing queued update:', queuedUpdate.updated_at);
+      
+      const protectedFields = getProtectedFields();
+      actions.mergeRealtimeUpdate({
+        items: queuedUpdate.items || [],
+        title: queuedUpdate.title,
+        startTime: queuedUpdate.start_time,
+        timezone: queuedUpdate.timezone,
+        protectedFields
       });
-    }
-  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
+    });
+  }, [setUpdateQueueCallback, actions, getProtectedFields]);
 
   // Update connection status from realtime
   useEffect(() => {
     setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
-  // Enhanced updateItem function with field-level protection tracking
+  // Enhanced updateItem function with smart field protection
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
     
-    if (isTypingField) {
-      const sessionKey = `${id}-${field}`;
-      
-      // Track this field as recently edited for protection window
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
-      
-      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
-        typingSessionRef.current = {
-          fieldKey: sessionKey,
-          startTime: Date.now()
-        };
-      }
-      
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        typingSessionRef.current = null;
-      }, 1000);
-    } else if (field === 'duration') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
-      saveUndoState(state.items, [], state.title, 'Edit duration');
-    } else if (field === 'color') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
-      saveUndoState(state.items, [], state.title, 'Change row color');
-    }
+    const fieldKey = `${id}-${field}`;
     
-    if (field.startsWith('customFields.')) {
-      const customFieldKey = field.replace('customFields.', '');
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        const currentCustomFields = item.customFields || {};
-        actions.updateItem(id, {
-          customFields: {
-            ...currentCustomFields,
-            [customFieldKey]: value
-          }
-        });
-      }
-    } else {
-      let updateField = field;
-      if (field === 'segmentName') updateField = 'name';
+    if (isTypingField) {
+      // Protect field with typing indication
+      protectField(fieldKey, true);
       
-      actions.updateItem(id, { [updateField]: value });
+      // Save undo state on first edit of this field
+      saveUndoState(state.items, [], state.title, `Edit ${field}`);
+      
+      // Set user typing with smart timeout
+      setUserTyping(true);
+      
+      // Update field activity for extended protection
+      updateFieldActivity(fieldKey);
+    } else {
+      // For non-typing fields, still protect briefly and save undo
+      protectField(fieldKey, false);
+      saveUndoState(state.items, [], state.title, `Edit ${field}`);
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState]);
+
+    actions.updateItem(id, { [field]: value });
+  }, [actions, state.items, state.title, saveUndoState, setUserTyping, protectField, updateFieldActivity]);
 
   // Update current time every second
   useEffect(() => {
@@ -239,33 +187,27 @@ export const useSimplifiedRundownState = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Load rundown data if we have an ID (content only, columns loaded separately)
+  // Load rundown data
   useEffect(() => {
     const loadRundown = async () => {
-      if (!rundownId) return;
-
-      // Check if we already have this rundown loaded to prevent reload
-      if (isInitialized && state.items.length > 0) {
-        console.log('📋 Skipping reload - rundown already loaded:', rundownId);
-        return;
-      }
-
-      // Don't show loading if we have cached state
-      if (shouldSkipLoading) {
-        console.log('📋 Skipping loading state - using cached data for:', rundownId);
+      if (!rundownId) {
+        // New rundown
+        actions.loadState({
+          items: [],
+          columns: [],
+          title: 'Untitled Rundown',
+          startTime: '09:00:00',
+          timezone: 'America/New_York'
+        });
         setIsLoading(false);
         setIsInitialized(true);
         return;
       }
 
       setIsLoading(true);
-      setCacheLoading(true);
       try {
-        // Check if this is a demo rundown
         if (rundownId === DEMO_RUNDOWN_ID) {
-          console.log('📋 Loading demo rundown data');
-          
-          // Load demo data instead of from database
+          // Load demo data
           actions.loadState({
             items: DEMO_RUNDOWN_DATA.items,
             columns: [],
@@ -273,33 +215,20 @@ export const useSimplifiedRundownState = () => {
             startTime: DEMO_RUNDOWN_DATA.start_time,
             timezone: DEMO_RUNDOWN_DATA.timezone
           });
-          
-          console.log('✅ Demo rundown loaded successfully');
         } else {
-          // Normal database loading for real rundowns
+          // Load from database
           const { data, error } = await supabase
             .from('rundowns')
             .select('*')
             .eq('id', rundownId)
-            .maybeSingle();
+            .single();
 
           if (error) {
             console.error('Error loading rundown:', error);
           } else if (data) {
-            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
-              ? data.items 
-              : createDefaultRundownItems();
-
-            // Sync time from server timestamp
-            if (data.updated_at) {
-              updateTimeFromServer(data.updated_at);
-            }
-
-            // Load content only (columns handled by useUserColumnPreferences)
-            console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');
             actions.loadState({
-              items: itemsToLoad,
-              columns: [], // Never load columns from rundown - use user preferences
+              items: data.items || [],
+              columns: [],
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
               timezone: data.timezone || 'America/New_York'
@@ -308,223 +237,167 @@ export const useSimplifiedRundownState = () => {
         }
       } catch (error) {
         console.error('Failed to load rundown:', error);
-        actions.loadState({
-          items: createDefaultRundownItems(),
-          columns: [],
-          title: 'Untitled Rundown',
-          startTime: '09:00:00',
-          timezone: 'America/New_York'
-        });
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
-        setCacheLoading(false);
       }
     };
 
     loadRundown();
-  }, [rundownId]); // Remove isInitialized dependency to prevent reload
+  }, [rundownId, actions]);
 
-  useEffect(() => {
-    if (!rundownId && !isInitialized) {
-      actions.loadState({
-        items: createDefaultRundownItems(),
-        columns: [],
-        title: 'Untitled Rundown',
-        startTime: '09:00:00',
-        timezone: 'America/New_York'
-      });
-      setIsLoading(false);
-      setIsInitialized(true);
-    }
-  }, [rundownId, isInitialized, actions]);
-
-  // Calculate all derived values using pure functions - unchanged
-  const calculatedItems = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) {
-      return [];
-    }
-    
-    const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    return calculated;
-  }, [state.items, state.startTime]);
-
+  // Calculate total runtime
   const totalRuntime = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) return '00:00:00';
-    return calculateTotalRuntime(state.items);
+    const timeToSeconds = (timeStr: string) => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+      } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+      }
+      return 0;
+    };
+
+    const secondsToTime = (seconds: number) => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    let totalSeconds = 0;
+    state.items.forEach(item => {
+      if (item.type === 'regular' && item.duration && !item.isFloating && !item.isFloated) {
+        totalSeconds += timeToSeconds(item.duration);
+      }
+    });
+
+    return secondsToTime(totalSeconds);
   }, [state.items]);
 
-  // Enhanced actions with undo state saving (content only)
+  // Enhanced actions with smart protection and missing methods
   const enhancedActions = {
     ...actions,
     ...helpers,
     
     updateItem: enhancedUpdateItem,
 
-    toggleFloatRow: useCallback((id: string) => {
-      saveUndoState(state.items, [], state.title, 'Toggle float');
-      const item = state.items.find(i => i.id === id);
-      if (item) {
-        actions.updateItem(id, { isFloating: !item.isFloating });
-      }
-    }, [actions.updateItem, state.items, state.title, saveUndoState]),
-
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
-      markStructuralChange(); // Mark this as a structural change
+      markStructuralChange();
       actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, markStructuralChange]),
+    }, [actions, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
-      markStructuralChange(); // Mark this as a structural change
+      markStructuralChange();
       helpers.addRow();
-    }, [helpers.addRow, state.items, state.title, saveUndoState, markStructuralChange]),
+    }, [helpers, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
-      markStructuralChange(); // Mark this as a structural change
+      markStructuralChange();
       helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, markStructuralChange]),
+    }, [helpers, state.items, state.title, saveUndoState, markStructuralChange]),
+
+    addRowAtIndex: useCallback((insertIndex: number) => {
+      saveUndoState(state.items, [], state.title, 'Add segment at index');
+      markStructuralChange();
+      const newItem: RundownItem = {
+        id: uuidv4(),
+        type: 'regular',
+        rowNumber: '',
+        name: '',
+        startTime: '00:00:00',
+        duration: '00:02:00',
+        endTime: '00:02:00',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: '',
+        isFloating: false,
+        elapsedTime: '00:00:00',
+        customFields: {}
+      };
+      actions.addItem(newItem, insertIndex);
+    }, [actions, state.items, state.title, saveUndoState, markStructuralChange]),
+
+    addHeaderAtIndex: useCallback((insertIndex: number) => {
+      saveUndoState(state.items, [], state.title, 'Add header at index');
+      markStructuralChange();
+      const newHeader: RundownItem = {
+        id: uuidv4(),
+        type: 'header',
+        rowNumber: '',
+        name: 'New Header',
+        startTime: '00:00:00',
+        duration: '00:00:00',
+        endTime: '00:00:00',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: '',
+        isFloating: false,
+        elapsedTime: '00:00:00',
+        customFields: {}
+      };
+      actions.addItem(newHeader, insertIndex);
+    }, [actions, state.items, state.title, saveUndoState, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
-        // Track title editing for protection
-        recentlyEditedFieldsRef.current.set('title', Date.now());
-        typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
-        
+        protectField('title', true);
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
-        
-        // Clear typing session after delay
-        setTimeout(() => {
-          if (typingSessionRef.current?.fieldKey === 'title') {
-            typingSessionRef.current = null;
-          }
-        }, 1000);
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState])
+    }, [actions, state.items, state.title, saveUndoState, protectField]),
+
+    updateColumnWidth: useCallback((columnId: string, width: string) => {
+      const updatedColumns = columns.map(col => 
+        col.id === columnId ? { ...col, width } : col
+      );
+      setColumns(updatedColumns);
+    }, [columns, setColumns])
   };
 
-  // Get visible columns from user preferences
-  const visibleColumns = useMemo(() => {
-    if (!columns || !Array.isArray(columns)) {
-      return [];
+  // Helper functions
+  const getRowNumber = useCallback((index: number) => {
+    let rowCount = 1;
+    for (let i = 0; i <= index && i < state.items.length; i++) {
+      if (state.items[i].type === 'regular') {
+        if (i === index) return rowCount.toString();
+        rowCount++;
+      } else if (i === index) {
+        return ''; // Headers don't have row numbers
+      }
     }
-    
-    const visible = columns.filter(col => col.isVisible !== false);
-    return visible;
-  }, [columns]);
-
-  const getHeaderDuration = useCallback((index: number) => {
-    if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
-    return calculateHeaderDuration(state.items, index);
+    return '';
   }, [state.items]);
 
-  const getRowNumber = useCallback((index: number) => {
-    if (index < 0 || index >= calculatedItems.length) return '';
-    return calculatedItems[index].calculatedRowNumber;
-  }, [calculatedItems]);
-
   const handleRowSelection = useCallback((itemId: string) => {
-    setSelectedRowId(prev => {
-      const newSelection = prev === itemId ? null : itemId;
-      return newSelection;
-    });
-  }, [selectedRowId]);
-
-  const clearRowSelection = useCallback(() => {
-    setSelectedRowId(null);
-  }, []);
-
-  // Fixed addRowAtIndex that properly inserts at specified index
-  const addRowAtIndex = useCallback((insertIndex: number) => {
-    saveUndoState(state.items, [], state.title, 'Add segment');
-    markStructuralChange(); // Mark this as a structural change
-    
-    const newItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular' as const,
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-      startTime: '00:00:00',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-      endTime: '00:30:00',
-      elapsedTime: '00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-
-    const newItems = [...state.items];
-    const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, newItem);
-    
-    actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems, markStructuralChange]);
-
-  // Fixed addHeaderAtIndex that properly inserts at specified index
-  const addHeaderAtIndex = useCallback((insertIndex: number) => {
-    saveUndoState(state.items, [], state.title, 'Add header');
-    markStructuralChange(); // Mark this as a structural change
-    
-    const newHeader = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header' as const,
-      rowNumber: 'A',
-      name: RUNDOWN_DEFAULTS.DEFAULT_HEADER_NAME,
-      startTime: '',
-      duration: RUNDOWN_DEFAULTS.NEW_HEADER_DURATION,
-      endTime: '',
-      elapsedTime: '',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-
-    const newItems = [...state.items];
-    const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, newHeader);
-    
-    actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems, markStructuralChange]);
-
-  // Clean up timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
+    setSelectedRowId(prev => prev === itemId ? null : itemId);
   }, []);
 
   return {
-    // Core state with calculated values
-    items: calculatedItems,
-    setItems: actions.setItems,
+    // Core state
+    items: state.items,
     columns,
-    setColumns,
-    visibleColumns,
+    visibleColumns: columns.filter(col => col.isVisible !== false),
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
     timezone: state.timezone,
+    totalRuntime,
     
+    // UI state
     selectedRowId,
-    handleRowSelection,
-    clearRowSelection,
-    
     currentTime,
     rundownId,
     isLoading: isLoading || isLoadingColumns,
@@ -532,82 +405,29 @@ export const useSimplifiedRundownState = () => {
     isSaving: isSaving || isSavingColumns,
     showcallerActivity,
     
-    // Realtime connection status
+    // Connection status
     isConnected,
     isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving,
     
-    // Calculations
-    totalRuntime,
+    // Actions
+    ...enhancedActions,
+    handleRowSelection,
+    clearRowSelection: () => setSelectedRowId(null),
     getRowNumber,
-    getHeaderDuration: (id: string) => {
-      const itemIndex = state.items.findIndex(item => item.id === id);
-      return getHeaderDuration(itemIndex);
-    },
     
-    updateItem: enhancedActions.updateItem,
-    deleteItem: enhancedActions.deleteRow,
-    deleteRow: enhancedActions.deleteRow,
-    toggleFloat: enhancedActions.toggleFloatRow,
-    deleteMultipleItems: useCallback((itemIds: string[]) => {
-      saveUndoState(state.items, [], state.title, 'Delete multiple items');
-      markStructuralChange(); // Mark this as a structural change
-      actions.deleteMultipleItems(itemIds);
-    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, markStructuralChange]),
-    addItem: actions.addItem,
-    setTitle: enhancedActions.setTitle,
-    setStartTime: useCallback((newStartTime: string) => {
-      // Track start time editing for protection
-      recentlyEditedFieldsRef.current.set('startTime', Date.now());
-      typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
-      
-      actions.setStartTime(newStartTime);
-      
-      // Clear typing session after delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'startTime') {
-          typingSessionRef.current = null;
-        }
-      }, 1000);
-    }, [actions.setStartTime]),
-    setTimezone: useCallback((newTimezone: string) => {
-      // Track timezone editing for protection
-      recentlyEditedFieldsRef.current.set('timezone', Date.now());
-      typingSessionRef.current = { fieldKey: 'timezone', startTime: Date.now() };
-      
-      actions.setTimezone(newTimezone);
-      
-      // Clear typing session after delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'timezone') {
-          typingSessionRef.current = null;
-        }
-      }, 1000);
-    }, [actions.setTimezone]),
-    
-    addRow: enhancedActions.addRow,
-    addHeader: enhancedActions.addHeader,
-    addRowAtIndex,
-    addHeaderAtIndex,
-    
-    addColumn: (column: Column) => {
-      saveUndoState(state.items, [], state.title, 'Add column');
-      setColumns([...columns, column]);
-    },
-    
-    updateColumnWidth: (columnId: string, width: string) => {
-      const newColumns = columns.map(col =>
-        col.id === columnId ? { ...col, width } : col
-      );
-      setColumns(newColumns);
-    },
-
-    // Undo functionality - properly expose these including saveUndoState
+    // Undo functionality
     saveUndoState,
     undo,
     canUndo,
     lastAction,
     
-    // Teleprompter sync callbacks (exposed globally)
+    // Column management
+    setColumns,
+    addColumn: (column: Column) => {
+      setColumns([...columns, column]);
+    },
+    
+    // Teleprompter sync
     teleprompterSaveHandlers: {
       onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
       onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
