@@ -56,37 +56,26 @@ const JoinTeam = () => {
     console.log('Token from useParams:', token);
     console.log('Type of token:', typeof token);
     
-    // Import validation function
-    const validateToken = async () => {
-      const { validateInvitationToken } = await import('@/utils/teamInvitationValidator');
-      const validation = validateInvitationToken(token);
+    if (!token || token === 'undefined') {
+      console.error('Invalid token received:', token);
+      localStorage.removeItem('pendingInvitationToken');
       
-      if (!validation.isValid) {
-        console.error('Invalid token received:', token, validation.error);
-        localStorage.removeItem('pendingInvitationToken');
-        
-        toast({
-          title: 'Invalid Invitation Link',
-          description: validation.error || 'The invitation link appears to be malformed. Please request a new invitation.',
-          variant: 'destructive',
-        });
-        
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-        return false;
-      }
+      toast({
+        title: 'Invalid Invitation Link',
+        description: 'The invitation link appears to be malformed. Please request a new invitation.',
+        variant: 'destructive',
+      });
       
-      return true;
-    };
-    
-    validateToken().then((isValid) => {
-      if (!isValid) return;
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+      return;
+    }
 
-      console.log('Storing invitation token in localStorage:', token);
-      localStorage.setItem('pendingInvitationToken', token);
+    console.log('Storing invitation token in localStorage:', token);
+    localStorage.setItem('pendingInvitationToken', token);
 
-      const loadInvitation = async () => {
+    const loadInvitation = async () => {
       try {
         console.log('Loading invitation data for token:', token);
         
@@ -152,10 +141,9 @@ const JoinTeam = () => {
       } finally {
         setLoading(false);
       }
-      };
+    };
 
-      loadInvitation();
-    });
+    loadInvitation();
   }, [token]); // Removed navigate and toast from dependencies to prevent loop
 
   const checkUserExists = async (emailToCheck: string) => {

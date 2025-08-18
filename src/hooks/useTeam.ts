@@ -281,15 +281,6 @@ export const useTeam = () => {
       return { error: 'User not authenticated' };
     }
 
-    // Import validation function dynamically to avoid circular dependencies
-    const { validateTeamInvitation } = await import('@/utils/teamInvitationValidator');
-    
-    // Validate the invitation before sending
-    const validation = await validateTeamInvitation(email.trim().toLowerCase(), team.id);
-    if (!validation.isValid) {
-      return { error: validation.error };
-    }
-
     try {
       // Get user's profile to ensure we have the latest name
       const { data: profileData, error: profileError } = await supabase
