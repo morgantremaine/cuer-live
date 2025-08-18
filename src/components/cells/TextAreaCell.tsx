@@ -213,16 +213,15 @@ const TextAreaCell = ({
         }}
       />
       
-      {/* Clickable URL overlay when not focused */}
+      {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-auto z-10`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
             textAlign: isDuration ? 'center' : 'left'
           }}
-          onClick={onCellClick}
         >
           {renderTextWithClickableUrls(value)}
         </div>
@@ -248,7 +247,7 @@ const TextAreaCell = ({
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${shouldShowClickableUrls ? 'opacity-0' : ''}`}
+        }`}
         style={{ 
           backgroundColor: 'transparent',
           color: textColor || 'inherit',

@@ -27,7 +27,7 @@ export const renderTextWithClickableUrls = (text: string, className?: string): J
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 underline break-all"
+          className="text-blue-600 hover:text-blue-800 underline break-all pointer-events-auto"
           onClick={(e) => {
             // Prevent event bubbling to avoid triggering cell editing
             e.stopPropagation();
