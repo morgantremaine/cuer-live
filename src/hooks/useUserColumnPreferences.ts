@@ -283,10 +283,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       loadedRundownRef.current = null; // Reset to allow new load
       setIsLoading(true); // Set loading immediately
       loadColumnPreferences();
-    } else if (!rundownId && loadedRundownRef.current !== null) {
-      // Handle new rundowns (rundownId is null)
+    } else if (!rundownId && loadedRundownRef.current !== rundownId) {
+      // Handle new rundowns (rundownId is null) - only load if we haven't already loaded for null
       console.log('🔄 UserColumnPreferences: Loading default columns for new rundown');
-      loadedRundownRef.current = null; // Reset to allow new load
+      loadedRundownRef.current = null; // Set to match current rundownId state
       setIsLoading(true); // Set loading immediately
       loadColumnPreferences();
     }
