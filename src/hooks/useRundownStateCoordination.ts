@@ -203,13 +203,13 @@ export const useRundownStateCoordination = () => {
       showcallerActiveSessions: showcallerSession.activeSessions,
       showcallerActivity: false, // No longer interferes with main state
       
-      // Placeholder showcaller functions
+      // Placeholder showcaller functions with correct signatures
       currentSegmentId: '',
       isPlaying: false,
       timeRemaining: 0,
       isController: false,
       isInitialized: false,
-      getItemVisualStatus: () => ({}),
+      getItemVisualStatus: (itemId: string) => 'upcoming' as 'upcoming' | 'current' | 'completed',
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -241,13 +241,25 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Placeholder showcaller controls
-      play: () => {},
-      pause: () => {},
-      forward: () => {},
-      backward: () => {},
-      reset: () => {},
-      jumpToSegment: () => {},
+      // Placeholder showcaller controls with correct signatures
+      play: (segmentId?: string) => {
+        console.log('🎬 [Phase3] Play called:', segmentId);
+      },
+      pause: () => {
+        console.log('🎬 [Phase3] Pause called');
+      },
+      forward: () => {
+        console.log('🎬 [Phase3] Forward called');
+      },
+      backward: () => {
+        console.log('🎬 [Phase3] Backward called');
+      },
+      reset: () => {
+        console.log('🎬 [Phase3] Reset called');
+      },
+      jumpToSegment: (segmentId: string) => {
+        console.log('🎬 [Phase3] Jump to segment:', segmentId);
+      },
       
       // Undo functionality
       undo: simplifiedState.undo,
