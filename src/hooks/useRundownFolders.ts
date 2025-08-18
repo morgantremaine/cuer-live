@@ -22,7 +22,14 @@ export const useRundownFolders = (teamId?: string) => {
   const { toast } = useToast();
 
   const fetchFolders = async () => {
-    if (!teamId || !user) return;
+    if (!teamId || !user) {
+      console.log('🗂️ fetchFolders: Missing teamId or user, setting loading to false', { teamId: !!teamId, user: !!user });
+      setLoading(false);
+      setFolders([]);
+      return;
+    }
+    
+    console.log('🗂️ fetchFolders: Loading folders for team:', teamId);
     
     try {
       const { data, error } = await supabase
@@ -32,6 +39,7 @@ export const useRundownFolders = (teamId?: string) => {
         .order('position', { ascending: true });
 
       if (error) throw error;
+      console.log('🗂️ fetchFolders: Loaded folders:', data?.length || 0);
       setFolders(data || []);
     } catch (error) {
       console.error('Error fetching folders:', error);
