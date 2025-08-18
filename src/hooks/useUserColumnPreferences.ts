@@ -278,16 +278,22 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Load preferences when rundown changes, but prevent duplicate loads
   useEffect(() => {
+    console.log('🔄 UserColumnPreferences: useEffect triggered', { 
+      rundownId, 
+      loadedRundownRefCurrent: loadedRundownRef.current,
+      userId: user?.id 
+    });
+    
     if (rundownId && rundownId !== loadedRundownRef.current) {
       console.log('🔄 UserColumnPreferences: Loading column preferences for rundown:', rundownId);
-      loadedRundownRef.current = null; // Reset to allow new load
-      setIsLoading(true); // Set loading immediately
+      loadedRundownRef.current = rundownId;
+      setIsLoading(true);
       loadColumnPreferences();
-    } else if (!rundownId && loadedRundownRef.current !== rundownId) {
-      // Handle new rundowns (rundownId is null) - only load if we haven't already loaded for null
+    } else if (!rundownId && loadedRundownRef.current !== 'new_rundown_loaded') {
+      // Handle new rundowns (rundownId is null) - use a special marker to prevent duplicate loads
       console.log('🔄 UserColumnPreferences: Loading default columns for new rundown');
-      loadedRundownRef.current = null; // Set to match current rundownId state
-      setIsLoading(true); // Set loading immediately
+      loadedRundownRef.current = 'new_rundown_loaded';
+      setIsLoading(true);
       loadColumnPreferences();
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
