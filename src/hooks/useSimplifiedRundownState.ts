@@ -17,7 +17,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { createDefaultRundownItems } from '@/utils/rundownUtils';
-// Remove unused import
 import { v4 as uuidv4 } from 'uuid';
 import { useMemo } from 'react';
 
