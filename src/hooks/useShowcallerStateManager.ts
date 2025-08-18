@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerItemUpdates } from './useShowcallerItemUpdates';
 import { useUniversalTiming } from './useUniversalTiming';

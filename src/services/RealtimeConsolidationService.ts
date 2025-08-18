@@ -3,7 +3,7 @@
  * Merges all realtime systems into a single, conflict-aware system
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { stateManager } from './StateManager';
 import { getUniversalTime } from './UniversalTimeService';

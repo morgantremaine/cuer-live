@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { RundownModification } from './useCuerModifications/types';
 
 // Define the types locally since we're not using the openaiService anymore

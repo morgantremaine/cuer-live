@@ -7,7 +7,7 @@ import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';

@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { DatabaseResponse, DatabaseTable, QueryOptions } from '@/types/database';
 import { logger } from '@/utils/logger';
 

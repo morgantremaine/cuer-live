@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 export const useSimpleAutoSave = (

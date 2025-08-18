@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
 import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/hooks/useColumnsManager'
 import { SavedRundown } from './types'

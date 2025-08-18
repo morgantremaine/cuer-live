@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import { TimeoutManager } from '@/utils/realtimeUtils';
