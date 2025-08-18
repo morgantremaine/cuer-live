@@ -84,7 +84,9 @@ const RundownIndexContent = () => {
   });
 
   // Check if we're still loading - show spinner until everything is ready
-  const isFullyLoading = isLoading || isLoadingPreferences || (!items || items.length === 0);
+  // For new rundowns, don't wait for items to exist since they start empty
+  const isNewRundown = !rundownId;
+  const isFullyLoading = isLoading || isLoadingPreferences || (!isNewRundown && (!items || items.length === 0));
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
