@@ -27,15 +27,6 @@ const DEFAULT_COLUMNS = [
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true }
 ];
 
-// Helper function to check if data exists in shared_rundown_layouts table
-const checkSharedLayoutExists = async (rundownId: string) => {
-  const { data, error } = await supabase
-    .from('shared_rundown_layouts')
-    .select('*')
-    .eq('rundown_id', rundownId);
-  
-  return { data, error };
-};
 
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
@@ -217,7 +208,7 @@ const SharedRundown = () => {
     setAutoScrollEnabled(!autoScrollEnabled);
   };
 
-  // Enhanced layout loading with better debugging
+  // Simplified layout loading using the updated RPC function
   useEffect(() => {
     const loadSharedLayout = async () => {
       if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
@@ -233,61 +224,36 @@ const SharedRundown = () => {
       layoutLoadedRef.current = rundownId;
       
       try {
-        // First, check if there's a shared layout record for this rundown
-        const sharedLayoutCheck = await checkSharedLayoutExists(rundownId);
-
-        // Use the FIXED RPC function to get shared layout data
+        // The RPC function now always returns the correct layout (custom or default)
         const { data: sharedLayoutData, error: rpcError } = await supabase
           .rpc('get_shared_layout_for_public_rundown', { rundown_uuid: rundownId });
 
         if (!isMountedRef.current) return;
 
         if (rpcError) {
-          // Fallback to rundown's own columns
-          if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-            setLayoutColumns(rundownData.columns);
-            setLayoutName('Rundown Layout');
-          } else {
-            setLayoutColumns(DEFAULT_COLUMNS);
-            setLayoutName('Default Layout');
-          }
+          logger.error('Error loading shared layout:', rpcError);
+          // Use default columns as final fallback
+          setLayoutColumns(DEFAULT_COLUMNS);
+          setLayoutName('Default Layout');
           return;
         }
 
-        // Better handling of shared layout data
-        if (sharedLayoutData && sharedLayoutData.columns && Array.isArray(sharedLayoutData.columns)) {
+        // The RPC now handles all the logic for us
+        if (sharedLayoutData && sharedLayoutData.columns) {
           setLayoutColumns(sharedLayoutData.columns);
-          setLayoutName(sharedLayoutData.layout_name || 'Shared Layout');
-        } else if (sharedLayoutData && sharedLayoutData.layout_id) {
-          // If we have a layout_id but no columns, something went wrong - use fallback
-          if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-            setLayoutColumns(rundownData.columns);
-            setLayoutName('Rundown Layout');
-          } else {
-            setLayoutColumns(DEFAULT_COLUMNS);
-            setLayoutName('Default Layout');
-          }
+          setLayoutName(sharedLayoutData.layout_name || 'Default Layout');
         } else {
-          // No shared layout configured, use rundown's own columns or default
-          if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-            setLayoutColumns(rundownData.columns);
-            setLayoutName('Rundown Layout');
-          } else {
-            setLayoutColumns(DEFAULT_COLUMNS);
-            setLayoutName('Default Layout');
-          }
-        }
-      } catch (error) {
-        if (!isMountedRef.current) return;
-        
-        // Final fallback
-        if (rundownData.columns && Array.isArray(rundownData.columns) && rundownData.columns.length > 0) {
-          setLayoutColumns(rundownData.columns);
-          setLayoutName('Rundown Layout');
-        } else {
+          // Final fallback
           setLayoutColumns(DEFAULT_COLUMNS);
           setLayoutName('Default Layout');
         }
+      } catch (error) {
+        if (!isMountedRef.current) return;
+        logger.error('Exception loading shared layout:', error);
+        
+        // Final fallback
+        setLayoutColumns(DEFAULT_COLUMNS);
+        setLayoutName('Default Layout');
       } finally {
         if (isMountedRef.current) {
           setLayoutLoading(false);
