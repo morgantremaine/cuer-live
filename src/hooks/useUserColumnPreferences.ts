@@ -87,17 +87,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
       setColumns(mergedDefaults);
       setIsLoading(false);
+      if (!rundownId) {
+        loadedRundownRef.current = 'new_rundown_loaded';
+      }
       return;
     }
 
-    // Prevent duplicate loading for the same rundown
-    if (loadedRundownRef.current === rundownId) {
-      setIsLoading(false);
-      return;
-    }
-
+    // Mark loading state
     isLoadingRef.current = true;
-    loadedRundownRef.current = rundownId;
 
     try {
       const { data, error } = await supabase
@@ -156,6 +153,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
+      if (rundownId) {
+        loadedRundownRef.current = rundownId;
+      }
     }
   }, [user?.id, rundownId, mergeColumnsWithTeamColumns]);
 
@@ -253,12 +253,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     }
 
-    setColumns(newColumns);
+    const merged = mergeColumnsWithTeamColumns(newColumns);
+    setColumns(merged);
     // Only save if we're not currently loading
     if (!isLoadingRef.current) {
-      saveColumnPreferences(newColumns, isImmediate);
+      saveColumnPreferences(merged, isImmediate);
     }
-  }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id]);
+  }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
 
   // Special handler for column width updates during resize
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
@@ -284,17 +285,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       userId: user?.id 
     });
     
-    if (rundownId && rundownId !== loadedRundownRef.current) {
-      console.log('🔄 UserColumnPreferences: Loading column preferences for rundown:', rundownId);
-      loadedRundownRef.current = rundownId;
-      setIsLoading(true);
-      loadColumnPreferences();
-    } else if (!rundownId && loadedRundownRef.current !== 'new_rundown_loaded') {
-      // Handle new rundowns (rundownId is null) - use a special marker to prevent duplicate loads
-      console.log('🔄 UserColumnPreferences: Loading default columns for new rundown');
-      loadedRundownRef.current = 'new_rundown_loaded';
-      setIsLoading(true);
-      loadColumnPreferences();
+    if (rundownId) {
+      if (rundownId !== loadedRundownRef.current) {
+        setIsLoading(true);
+        loadColumnPreferences();
+      }
+    } else {
+      // Handle new rundowns (rundownId is null)
+      if (loadedRundownRef.current !== 'new_rundown_loaded') {
+        setIsLoading(true);
+        loadColumnPreferences();
+      }
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
 
