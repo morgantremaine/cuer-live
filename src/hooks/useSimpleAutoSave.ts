@@ -262,11 +262,12 @@ export const useSimpleAutoSave = (
             // Handle conflict - merge data and retry
             console.log('🔄 Handling conflict - merging changes');
             
-            toast({
-              title: "Changes merged",
-              description: "Your changes have been merged with updates from your team.",
-              duration: 4000,
-            });
+            // Removed toast notification - user prefers just the blue icon indicator
+            // toast({
+            //   title: "Changes merged",
+            //   description: "Your changes have been merged with updates from your team.",
+            //   duration: 4000,
+            // });
 
             // Get protected fields (currently being edited)
             const protectedFields = new Set<string>();
