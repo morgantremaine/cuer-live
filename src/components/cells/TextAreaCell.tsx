@@ -250,7 +250,7 @@ const TextAreaCell = ({
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
-          color: textColor || 'inherit',
+          color: shouldShowClickableUrls ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
