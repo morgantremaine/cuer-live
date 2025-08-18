@@ -217,7 +217,7 @@ export const useRundownStateCoordination = () => {
       timeRemaining: playback.timeRemaining,
       isController: playback.isController,
       isInitialized: playback.isInitialized,
-      getItemVisualStatus: (itemId: string) => playback.visualState.currentItemStatuses.get(itemId) || 'upcoming',
+      getItemVisualStatus: playback.getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -249,25 +249,13 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Placeholder showcaller controls with correct signatures
-      play: (segmentId?: string) => {
-        console.log('🎬 [Phase3] Play called:', segmentId);
-      },
-      pause: () => {
-        console.log('🎬 [Phase3] Pause called');
-      },
-      forward: () => {
-        console.log('🎬 [Phase3] Forward called');
-      },
-      backward: () => {
-        console.log('🎬 [Phase3] Backward called');
-      },
-      reset: () => {
-        console.log('🎬 [Phase3] Reset called');
-      },
-      jumpToSegment: (segmentId: string) => {
-        console.log('🎬 [Phase3] Jump to segment:', segmentId);
-      },
+      // Showcaller controls
+      play: playback.play,
+      pause: playback.pause,
+      forward: playback.forward,
+      backward: playback.backward,
+      reset: playback.reset,
+      jumpToSegment: playback.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,
