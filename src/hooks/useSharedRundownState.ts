@@ -65,20 +65,15 @@ export const useSharedRundownState = () => {
     isLoadingRef.current = true;
 
     try {
-      // Use the public RPC function to get shared rundown data (works for anonymous users)
+      // Use the updated RPC function that always returns data for shared rundowns
       const { data, error: queryError } = await supabase
         .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (!mountedRef.current) return;
 
       if (queryError) {
-        if (queryError.code === 'PGRST116') {
-          setError('Rundown not found - it may be private or the ID is incorrect');
-        } else if (queryError.message.includes('RLS')) {
-          setError('This rundown is private and cannot be shared publicly');
-        } else {
-          setError(`Database error: ${queryError.message} (Code: ${queryError.code})`);
-        }
+        logger.error('Error loading rundown:', queryError);
+        setError(`Database error: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
         // Check if we need to update based on timestamps
@@ -95,7 +90,7 @@ export const useSharedRundownState = () => {
             timezone: data.timezone || 'UTC',
             lastUpdated: data.updated_at,
             showcallerState: data.showcaller_state,
-            visibility: data.visibility || 'private'
+            visibility: data.visibility
           };
           
           logger.debug(`Updated rundown data: ${newRundownData.title} ${showcallerChanged ? '(showcaller changed)' : '(content changed)'}`);
@@ -105,7 +100,7 @@ export const useSharedRundownState = () => {
         }
         setError(null);
       } else {
-        setError('Rundown not found or not shared publicly');
+        setError('Rundown not found');
         setRundownData(null);
       }
     } catch (error) {
