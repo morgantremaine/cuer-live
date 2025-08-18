@@ -1,191 +1,142 @@
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-serve(async (req) => {
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Delete team member function called');
+    // Initialize Supabase client with service role key for elevated permissions
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const { memberId, teamId } = await req.json()
-    console.log('Request body:', { memberId, teamId });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    const { memberId, teamId } = await req.json();
 
     if (!memberId || !teamId) {
-      console.error('Missing required fields:', { memberId, teamId });
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: memberId and teamId' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      )
+        JSON.stringify({ error: 'memberId and teamId are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Create Supabase client with service role key for admin operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Get the current user from the auth header
-    const authHeader = req.headers.get('Authorization')
+    // Get the current user from the Authorization header
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header found');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        }
-      )
+        JSON.stringify({ error: 'Authorization header required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Create a client with user's auth token to verify they're admin
+    // Create a client with the user's token to get user info
+    const userToken = authHeader.replace('Bearer ', '');
     const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } }
-    })
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    });
 
-    const { data: { user }, error: userError } = await userSupabase.auth.getUser()
-    
+    // Get current user
+    const { data: { user }, error: userError } = await userSupabase.auth.getUser(userToken);
     if (userError || !user) {
-      console.error('Error getting user:', userError);
       return new Response(
-        JSON.stringify({ error: 'Failed to get user information' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        }
-      )
+        JSON.stringify({ error: 'Invalid user token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Current user:', user.id);
+    // Check if user is admin of the team
+    const { data: adminMembership, error: adminError } = await supabase
+      .from('team_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('team_id', teamId)
+      .single();
 
-    // Verify user is admin of the team
-    const { data: adminCheck, error: adminError } = await supabase.rpc(
-      'is_team_admin_simple',
-      { user_uuid: user.id, team_uuid: teamId }
-    );
-
-    if (adminError || !adminCheck) {
-      console.error('User is not admin:', { adminError, adminCheck });
+    if (adminError || adminMembership?.role !== 'admin') {
       return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
-        }
-      )
+        JSON.stringify({ error: 'Only team admins can remove members' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Call the database function to transfer data and clean up
-    const { data: transferResult, error: transferError } = await supabase.rpc(
-      'remove_team_member_with_transfer',
-      {
+    // Get the member to be removed
+    const { data: memberToRemove, error: memberError } = await supabase
+      .from('team_members')
+      .select('user_id, role')
+      .eq('id', memberId)
+      .eq('team_id', teamId)
+      .single();
+
+    if (memberError || !memberToRemove) {
+      return new Response(
+        JSON.stringify({ error: 'Team member not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Prevent removing yourself
+    if (memberToRemove.user_id === user.id) {
+      return new Response(
+        JSON.stringify({ error: 'You cannot remove yourself from the team' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use the database function for safe member removal with transfer
+    const { data: result, error: removalError } = await supabase
+      .rpc('remove_team_member_with_transfer', {
         member_id: memberId,
         admin_id: user.id,
         team_id_param: teamId
-      }
+      });
+
+    if (removalError) {
+      console.error('Error removing team member:', removalError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to remove team member' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (result?.error) {
+      return new Response(
+        JSON.stringify({ error: result.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Team member removed successfully:', result);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Team member removed successfully',
+        result
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-    if (transferError) {
-      console.error('Error in transfer function:', transferError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to transfer data and remove member' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      )
-    }
-
-    if (transferResult?.error) {
-      console.error('Transfer function returned error:', transferResult.error);
-      return new Response(
-        JSON.stringify({ error: transferResult.error }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      )
-    }
-
-    console.log('Transfer completed:', transferResult);
-
-    // Now delete the user from auth.users using service role
-    const userIdToDelete = transferResult.user_id_to_delete;
-    
-    if (userIdToDelete) {
-      console.log('Attempting to delete auth user:', userIdToDelete);
-      
-      try {
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(userIdToDelete);
-        
-        if (deleteError) {
-          console.error('Error deleting auth user:', deleteError);
-          // Still return success since data transfer completed
-          return new Response(
-            JSON.stringify({
-              success: true,
-              rundownsTransferred: transferResult.rundowns_transferred || 0,
-              blueprintsTransferred: transferResult.blueprints_transferred || 0,
-              userDeleted: false,
-              warning: 'Data transferred successfully but failed to delete user account: ' + deleteError.message
-            }),
-            {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 200,
-            }
-          )
-        } else {
-          console.log('Auth user deleted successfully');
-        }
-      } catch (authDeleteError) {
-        console.error('Exception when deleting auth user:', authDeleteError);
-        return new Response(
-          JSON.stringify({
-            success: true,
-            rundownsTransferred: transferResult.rundowns_transferred || 0,
-            blueprintsTransferred: transferResult.blueprints_transferred || 0,
-            userDeleted: false,
-            warning: 'Data transferred successfully but failed to delete user account due to exception'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        )
-      }
-    } else {
-      console.log('No user ID to delete found in transfer result');
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        rundownsTransferred: transferResult.rundowns_transferred || 0,
-        blueprintsTransferred: transferResult.blueprints_transferred || 0,
-        userDeleted: true
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
   } catch (error) {
-    console.error('Error in delete team member function:', error)
+    console.error('Error in delete-team-member:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to delete team member', details: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    )
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
+});
