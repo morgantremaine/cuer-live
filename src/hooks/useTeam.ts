@@ -61,16 +61,16 @@ export const useTeam = () => {
         .select(`
           team_id,
           role,
-          teams (
+          teams!inner (
             id,
             name
           )
         `)
         .eq('user_id', user.id)
         .limit(1)
-        .maybeSingle();
+        .single();
 
-      console.log('Membership query result:', { membershipData, membershipError });
+      console.log('🔄 useTeam: Membership query result:', { membershipData, membershipError });
 
       if (membershipError) {
         console.error('Error loading team membership:', membershipError);
