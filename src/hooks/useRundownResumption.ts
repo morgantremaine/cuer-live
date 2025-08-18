@@ -112,11 +112,12 @@ export const useRundownResumption = ({
           if (normalizedLatest !== normalizedKnown) {
             console.log(`📥 [${eventSource}] Updates detected - refreshing rundown data`);
             
-            toast({
-              title: "Updates detected",
-              description: "Your rundown has been updated with the latest changes from your team.",
-              duration: 4000,
-            });
+            // Removed toast notification - user prefers just the blue icon indicator
+            // toast({
+            //   title: "Updates detected", 
+            //   description: "Your rundown has been updated with the latest changes from your team.",
+            //   duration: 4000,
+            // });
             
             onDataRefresh(latestData);
             
