@@ -5,7 +5,8 @@ import { useAuth } from './useAuth';
 interface ShowcallerSession {
   id: string;
   rundown_id: string;
-  user_id: string;
+  controller_user_id: string; // Fixed field name
+  team_id: string;
   session_start: string;
   session_end?: string;
   last_activity: string;
@@ -36,11 +37,24 @@ export const useShowcallerSession = ({
     try {
       console.log('🎬 [Showcaller] Starting session for rundown:', rundownId);
       
+      // First get the team_id for this rundown
+      const { data: rundownData, error: rundownError } = await supabase
+        .from('rundowns')
+        .select('team_id')
+        .eq('id', rundownId)
+        .single();
+
+      if (rundownError || !rundownData?.team_id) {
+        console.error('❌ [Showcaller] Failed to get rundown team:', rundownError);
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('showcaller_sessions')
         .insert({
           rundown_id: rundownId,
-          user_id: user.id,
+          controller_user_id: user.id,
+          team_id: rundownData.team_id,
           session_start: new Date().toISOString(),
           last_activity: new Date().toISOString(),
           is_active: true
@@ -121,7 +135,7 @@ export const useShowcallerSession = ({
         .from('showcaller_sessions')
         .select(`
           *,
-          profiles!showcaller_sessions_user_id_fkey(full_name)
+          profiles!showcaller_sessions_controller_user_id_fkey(full_name)
         `)
         .eq('rundown_id', rundownId)
         .eq('is_active', true)
@@ -140,7 +154,7 @@ export const useShowcallerSession = ({
       setActiveSessions(sessions);
       
       // Check if current user has an active session
-      const userSession = sessions.find(s => s.user_id === user?.id);
+      const userSession = sessions.find(s => s.controller_user_id === user?.id);
       if (userSession) {
         sessionIdRef.current = userSession.id;
         setIsActiveSession(true);
@@ -226,7 +240,7 @@ export const useShowcallerSession = ({
     
     // Computed values
     hasMultipleSessions: activeSessions.length > 1,
-    currentUserSession: activeSessions.find(s => s.user_id === user?.id),
-    otherActiveSessions: activeSessions.filter(s => s.user_id !== user?.id)
+    currentUserSession: activeSessions.find(s => s.controller_user_id === user?.id),
+    otherActiveSessions: activeSessions.filter(s => s.controller_user_id !== user?.id)
   };
 };
