@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import TeamInvitationTester from './TeamInvitationTester';
 
 interface TransferPreview {
   member_email: string;
@@ -68,13 +69,22 @@ const TeamManagement = () => {
 
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
+    const trimmedEmail = inviteEmail.trim().toLowerCase();
+    
+    if (!trimmedEmail) {
+      toast({
+        title: 'Error',
+        description: 'Please enter an email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    console.log('Inviting team member:', inviteEmail.trim());
+    console.log('Inviting team member:', trimmedEmail);
     setIsInviting(true);
     
     try {
-      const { error } = await inviteTeamMember(inviteEmail.trim());
+      const { error } = await inviteTeamMember(trimmedEmail);
       
       if (error) {
         console.error('Error inviting team member:', error);
@@ -87,7 +97,7 @@ const TeamManagement = () => {
         console.log('Team member invited successfully');
         toast({
           title: 'Success',
-          description: 'Invitation sent successfully!',
+          description: `Invitation sent successfully to ${trimmedEmail}!`,
         });
         setInviteEmail('');
       }
@@ -360,6 +370,11 @@ const TeamManagement = () => {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Admin-only Testing Tool */}
+      {userRole === 'admin' && process.env.NODE_ENV === 'development' && (
+        <TeamInvitationTester />
       )}
 
       {/* Team Members */}
