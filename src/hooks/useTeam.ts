@@ -131,7 +131,7 @@ export const useTeam = () => {
 
         if (membershipData?.teams) {
           const teamData = Array.isArray(membershipData.teams) ? membershipData.teams[0] : membershipData.teams;
-          console.log('Setting team data:', teamData);
+          console.log('🔄 useTeam: Successfully loaded team data:', { teamId: teamData.id, teamName: teamData.name });
           setTeam({
             id: teamData.id,
             name: teamData.name
