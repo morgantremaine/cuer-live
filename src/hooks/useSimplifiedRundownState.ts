@@ -91,7 +91,8 @@ export const useSimplifiedRundownState = () => {
     rundownId, 
     actions.markSaved,
     lastKnownTimestamp,
-    handleConflictResolved
+    handleConflictResolved,
+    setLastKnownTimestamp
   );
 
   // Standalone undo system - unchanged
@@ -382,7 +383,8 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onDataRefresh: handleDataRefresh,
     lastKnownTimestamp,
-    enabled: isInitialized && !isLoading
+    enabled: isInitialized && !isLoading,
+    updateLastKnownTimestamp: setLastKnownTimestamp
   });
 
   useEffect(() => {

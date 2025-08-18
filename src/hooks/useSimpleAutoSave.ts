@@ -6,13 +6,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { updateRundownWithConcurrencyCheck, mergeConflictedRundown } from '@/utils/optimisticConcurrency';
 import { useToast } from '@/hooks/use-toast';
+import { registerRecentSave } from './useRundownResumption';
+import { normalizeTimestamp } from '@/utils/realtimeUtils';
 
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
   onSaved: () => void,
   lastKnownTimestamp: string | null = null,
-  onConflictResolved?: (mergedData: any) => void
+  onConflictResolved?: (mergedData: any) => void,
+  updateLastKnownTimestamp?: (timestamp: string) => void
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -213,7 +216,13 @@ export const useSimpleAutoSave = (
           } else {
             // Track the actual timestamp returned by the database
             if (newRundown?.updated_at) {
-              trackMyUpdate(newRundown.updated_at, isStructural);
+              const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
+              trackMyUpdate(normalizedTimestamp, isStructural);
+              if (updateLastKnownTimestamp) {
+                updateLastKnownTimestamp(normalizedTimestamp);
+              }
+              // Register this save to prevent false positives in resumption
+              registerRecentSave(newRundown.id, normalizedTimestamp);
             }
             lastSavedRef.current = finalSignature;
             onSaved();
@@ -237,8 +246,14 @@ export const useSimpleAutoSave = (
           if (result.success) {
             // Track the actual timestamp returned by the database
             if (result.conflictData?.updated_at) {
-              trackMyUpdate(result.conflictData.updated_at, isStructural);
-              lastKnownTimestampRef.current = result.conflictData.updated_at;
+              const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
+              trackMyUpdate(normalizedTimestamp, isStructural);
+              lastKnownTimestampRef.current = normalizedTimestamp;
+              if (updateLastKnownTimestamp) {
+                updateLastKnownTimestamp(normalizedTimestamp);
+              }
+              // Register this save to prevent false positives in resumption
+              registerRecentSave(rundownId, normalizedTimestamp);
             }
             lastSavedRef.current = finalSignature;
             onSaved();
@@ -283,8 +298,14 @@ export const useSimpleAutoSave = (
             );
 
             if (retryResult.success && retryResult.conflictData?.updated_at) {
-              trackMyUpdate(retryResult.conflictData.updated_at, isStructural);
-              lastKnownTimestampRef.current = retryResult.conflictData.updated_at;
+              const normalizedTimestamp = normalizeTimestamp(retryResult.conflictData.updated_at);
+              trackMyUpdate(normalizedTimestamp, isStructural);
+              lastKnownTimestampRef.current = normalizedTimestamp;
+              if (updateLastKnownTimestamp) {
+                updateLastKnownTimestamp(normalizedTimestamp);
+              }
+              // Register this save to prevent false positives in resumption
+              registerRecentSave(rundownId, normalizedTimestamp);
               lastSavedRef.current = finalSignature;
               onSaved();
             } else {
