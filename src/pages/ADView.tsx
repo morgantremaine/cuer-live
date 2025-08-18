@@ -38,7 +38,6 @@ const ADView = () => {
   // Use the same timing hook as the main rundown for consistent calculations
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
-    rundownId: rundownData?.id || null,
     rundownStartTime: rundownData?.startTime || '09:00:00',
     timezone: rundownData?.timezone || 'UTC',
     isPlaying: isShowcallerPlaying,

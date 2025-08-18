@@ -122,7 +122,6 @@ const SharedRundown = () => {
   // Use the unified timing calculation from useShowcallerTiming hook (same as main showcaller)
   const timingStatus = useShowcallerTiming({
     items: rundownData?.items || [],
-    rundownId: rundownData?.id || null,
     rundownStartTime: rundownData?.startTime || '09:00:00',
     timezone: rundownData?.timezone || 'UTC',
     isPlaying,

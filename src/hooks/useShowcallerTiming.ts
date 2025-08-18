@@ -2,12 +2,10 @@ import { useMemo, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 import { useUniversalTiming } from './useUniversalTiming';
-import { useRawRundownItems } from './useRawRundownItems';
 import { formatInTimeZone } from 'date-fns-tz';
 
 interface UseShowcallerTimingProps {
-  items: RundownItem[]; // For finding current segment
-  rundownId: string | null; // For loading raw timing data
+  items: RundownItem[];
   rundownStartTime: string;
   timezone: string;
   isPlaying: boolean;
@@ -24,7 +22,6 @@ interface TimingStatus {
 
 export const useShowcallerTiming = ({
   items,
-  rundownId,
   rundownStartTime,
   timezone,
   isPlaying,
@@ -33,9 +30,6 @@ export const useShowcallerTiming = ({
 }: UseShowcallerTimingProps): TimingStatus => {
   const stableDisplayRef = useRef<string>('00:00:00');
   const { getUniversalTime, isTimeSynced } = useUniversalTiming();
-  
-  // Get raw items for consistent timing calculations across all users
-  const { rawItems } = useRawRundownItems(rundownId);
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -105,35 +99,12 @@ export const useShowcallerTiming = ({
     // Calculate showcaller elapsed time = where the showcaller thinks we are
     let showcallerElapsedSeconds = 0;
     
-    // CRITICAL: Use raw database items for timing calculations to ensure consistency across all users
-    // This prevents timing differences due to user-specific column filtering or other UI preferences
-    const timingItems = rawItems.length > 0 ? rawItems : items; // Fallback to UI items if raw not loaded yet
-    
-    console.log(`⏱️ Timing calculation using ${rawItems.length > 0 ? 'RAW DATABASE' : 'UI FILTERED'} items (${timingItems.length} total)`);
-    if (rawItems.length > 0 && rawItems.length !== items.length) {
-      console.warn(`⚠️ Timing mismatch detected: RAW=${rawItems.length} vs UI=${items.length} items - this could cause timing differences!`);
-    }
-    
-    // Find current segment index in the timing items
-    const timingCurrentSegmentIndex = timingItems.findIndex(item => item.id === currentSegmentId);
-    if (timingCurrentSegmentIndex === -1) {
-      console.warn(`⚠️ Current segment ${currentSegmentId} not found in timing items`);
-      return {
-        isOnTime: false,
-        isAhead: false,
-        timeDifference: '00:00:00',
-        isVisible: false
-      };
-    }
-    
-    // Add durations of all completed segments (before current segment) using raw data
-    for (let i = 0; i < timingCurrentSegmentIndex; i++) {
-      const item = timingItems[i];
-      // Only count regular items that aren't floating/floated for timing
+    // Add durations of all completed segments (before current segment)
+    for (let i = 0; i < currentSegmentIndex; i++) {
+      const item = items[i];
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
         const itemDuration = timeToSeconds(item.duration || '00:00');
         showcallerElapsedSeconds += itemDuration;
-        console.log(`⏱️ Adding segment ${i}: "${item.name}" (${item.duration}) = +${itemDuration}s, total: ${showcallerElapsedSeconds}s`);
       }
     }
     
