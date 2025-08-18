@@ -43,7 +43,7 @@ export const useDirectShowcallerRealtime = ({
   }, []);
 
   // Handle showcaller updates directly
-  const handleShowcallerUpdate = useCallback((payload: any) => {
+  const handleShowcallerUpdate = useCallback(async (payload: any) => {
     if (payload.new?.id !== rundownId) return;
     
     const showcallerState = payload.new?.showcaller_state;
@@ -52,6 +52,12 @@ export const useDirectShowcallerRealtime = ({
     // Skip our own updates
     if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
       return;
+    }
+
+    // Sync time from server timestamp on every showcaller update
+    if (payload.new?.updated_at) {
+      const { updateTimeFromServer } = await import('@/services/UniversalTimeService');
+      updateTimeFromServer(payload.new.updated_at);
     }
 
     console.log('📺 Direct showcaller update received:', showcallerState);

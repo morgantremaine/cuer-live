@@ -29,7 +29,7 @@ export const useShowcallerTiming = ({
   timeRemaining
 }: UseShowcallerTimingProps): TimingStatus => {
   const stableDisplayRef = useRef<string>('00:00:00');
-  const { getUniversalTime, isTimeSynced } = useUniversalTiming();
+  const { getUniversalTime, isTimeSynced, getTimeDrift } = useUniversalTiming();
 
   const timingStatus = useMemo(() => {
     // Only show when playing and we have a current segment
@@ -63,15 +63,23 @@ export const useShowcallerTiming = ({
       };
     }
 
-    // Use Universal Time Service with smart fallback to browser time
-    const universalTime = getUniversalTime();
-    const browserTime = Date.now();
+    // ALWAYS use Universal Time Service as the single source of truth
+    const timeToUse = getUniversalTime();
     
-    // Check if Universal Time Service has a reasonable time (not more than 1 hour off from browser)
-    const timeDifference = Math.abs(universalTime - browserTime);
-    const useUniversalTime = isTimeSynced && timeDifference < 3600000; // 1 hour tolerance
-    
-    const timeToUse = useUniversalTime ? universalTime : browserTime;
+    // Debug timing if requested
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('debugTiming') === '1') {
+      console.log('🕒 Timing Debug:', {
+        universalTime: getUniversalTime(),
+        browserTime: Date.now(),
+        isTimeSynced,
+        timeDrift: getTimeDrift(),
+        timeToUse,
+        rundownStartTime,
+        currentSegmentId,
+        timeRemaining
+      });
+    }
     
     // Validate timeToUse before using with formatInTimeZone (fix for date-fns-tz v3)
     if (!timeToUse || isNaN(timeToUse) || timeToUse <= 0) {
@@ -144,7 +152,7 @@ export const useShowcallerTiming = ({
       timeDifference: stableDisplayRef.current,
       isVisible: true
     };
-  }, [items, rundownStartTime, timezone, isPlaying, currentSegmentId, timeRemaining, getUniversalTime]);
+  }, [items, rundownStartTime, timezone, isPlaying, currentSegmentId, timeRemaining, getUniversalTime, isTimeSynced, getTimeDrift]);
 
   return timingStatus;
 };

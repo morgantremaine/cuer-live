@@ -9,6 +9,7 @@ import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
+import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -67,6 +68,7 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
   
@@ -83,7 +85,10 @@ const RundownHeader = ({
     timeRemaining
   });
 
-  // Format time in the selected timezone
+  // Get current universal time for display
+  const universalTime = new Date(getUniversalTime());
+
+  // Format time in the selected timezone using universal time
   const formatTimeInTimezone = (time: Date, tz: string) => {
     try {
       // Map Las Vegas to Los Angeles timezone for display
@@ -215,7 +220,7 @@ const RundownHeader = ({
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            <span>{formatTimeInTimezone(currentTime, timezone)}</span>
+            <span>{formatTimeInTimezone(universalTime, timezone)}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -314,7 +319,7 @@ const RundownHeader = ({
               currentTimezone={timezone}
               onTimezoneChange={onTimezoneChange}
               showTime={true}
-              timeDisplay={formatTimeInTimezone(currentTime, timezone)}
+              timeDisplay={formatTimeInTimezone(universalTime, timezone)}
             />
           </div>
           
@@ -407,7 +412,7 @@ const RundownHeader = ({
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
             showTime={true}
-            timeDisplay={formatTimeInTimezone(currentTime, timezone)}
+            timeDisplay={formatTimeInTimezone(universalTime, timezone)}
             large={true}
           />
           
