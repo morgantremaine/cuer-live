@@ -197,9 +197,9 @@ export const useSimpleRealtimeRundown = ({
     console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
     // Show processing state briefly for structural changes
     setIsProcessingUpdate(true);
-  } else {
+  } else if (isContentChange) {
     console.log('✅ Processing realtime content update from teammate');
-    // Show processing state briefly only for non-showcaller updates
+    // Show processing state briefly for all content updates from teammates
     setIsProcessingUpdate(true);
   }
     
