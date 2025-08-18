@@ -7,6 +7,7 @@ import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useRundownResumption } from './useRundownResumption';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -27,6 +28,7 @@ export const useSimplifiedRundownState = () => {
   const [isLoading, setIsLoading] = useState(!shouldSkipLoading);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
+  const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
@@ -61,14 +63,35 @@ export const useSimplifiedRundownState = () => {
   // Global teleprompter sync to show blue Wi-Fi when teleprompter saves
   const teleprompterSync = useGlobalTeleprompterSync();
 
-  // Auto-save functionality - now COMPLETELY EXCLUDES showcaller operations
+  // Handle conflict resolution from auto-save
+  const handleConflictResolved = useCallback((mergedData: any) => {
+    console.log('🔄 Applying conflict resolution:', mergedData);
+    
+    // Apply merged data to state
+    actions.loadState({
+      items: mergedData.items || [],
+      columns: [], // Keep columns separate
+      title: mergedData.title || state.title,
+      startTime: mergedData.start_time || state.startTime,
+      timezone: mergedData.timezone || state.timezone
+    });
+    
+    // Update timestamp
+    if (mergedData.updated_at) {
+      setLastKnownTimestamp(mergedData.updated_at);
+    }
+  }, [actions, state.title, state.startTime, state.timezone]);
+
+  // Auto-save functionality with concurrency control
   const { isSaving, setUndoActive, setTrackOwnUpdate, markStructuralChange } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved
+    actions.markSaved,
+    lastKnownTimestamp,
+    handleConflictResolved
   );
 
   // Standalone undo system - unchanged
@@ -134,6 +157,11 @@ export const useSimplifiedRundownState = () => {
       // Only update if we're not currently saving to avoid conflicts
       if (!isSaving) {
         console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
+        
+        // Update our known timestamp
+        if (updatedRundown.updated_at) {
+          setLastKnownTimestamp(updatedRundown.updated_at);
+        }
         
         // Get currently protected fields
         const protectedFields = getProtectedFields();
@@ -290,9 +318,10 @@ export const useSimplifiedRundownState = () => {
               ? data.items 
               : createDefaultRundownItems();
 
-            // Sync time from server timestamp
+            // Sync time from server timestamp and store it
             if (data.updated_at) {
               updateTimeFromServer(data.updated_at);
+              setLastKnownTimestamp(data.updated_at);
             }
 
             // Load content only (columns handled by useUserColumnPreferences)
@@ -324,6 +353,37 @@ export const useSimplifiedRundownState = () => {
 
     loadRundown();
   }, [rundownId]); // Remove isInitialized dependency to prevent reload
+
+  // Handle data refreshing from resumption
+  const handleDataRefresh = useCallback((latestData: any) => {
+    console.log('🔄 Refreshing rundown data from resumption:', latestData);
+    
+    // Update timestamp first
+    if (latestData.updated_at) {
+      setLastKnownTimestamp(latestData.updated_at);
+      updateTimeFromServer(latestData.updated_at);
+    }
+    
+    // Get currently protected fields to preserve local edits
+    const protectedFields = getProtectedFields();
+    
+    // Merge new data while preserving protected fields
+    actions.mergeRealtimeUpdate({
+      items: latestData.items || [],
+      title: latestData.title,
+      startTime: latestData.start_time,
+      timezone: latestData.timezone,
+      protectedFields
+    });
+  }, [actions, getProtectedFields]);
+
+  // Set up resumption handling
+  useRundownResumption({
+    rundownId,
+    onDataRefresh: handleDataRefresh,
+    lastKnownTimestamp,
+    enabled: isInitialized && !isLoading
+  });
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {
@@ -520,6 +580,7 @@ export const useSimplifiedRundownState = () => {
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
     timezone: state.timezone,
+    lastKnownTimestamp,
     
     selectedRowId,
     handleRowSelection,

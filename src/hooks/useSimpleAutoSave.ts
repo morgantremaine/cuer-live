@@ -4,14 +4,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import { updateRundownWithConcurrencyCheck, mergeConflictedRundown } from '@/utils/optimisticConcurrency';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void
+  onSaved: () => void,
+  lastKnownTimestamp: string | null = null,
+  onConflictResolved?: (mergedData: any) => void
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -22,6 +27,7 @@ export const useSimpleAutoSave = (
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
   const structuralChangeRef = useRef(false);
+  const lastKnownTimestampRef = useRef<string | null>(lastKnownTimestamp);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -214,29 +220,90 @@ export const useSimpleAutoSave = (
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
-          // Save only main content - showcaller state handled completely separately
-          const { data: updatedRundown, error } = await supabase
-            .from('rundowns')
-            .update({
-              title: state.title,
-              items: state.items,
-              start_time: state.startTime,
-              timezone: state.timezone,
-              updated_at: updateTimestamp
-            })
-            .eq('id', rundownId)
-            .select('updated_at')
-            .single();
+          // Use optimistic concurrency control for updates
+          const updateData = {
+            title: state.title,
+            items: state.items,
+            start_time: state.startTime,
+            timezone: state.timezone
+          };
 
-          if (error) {
-            console.error('❌ Save failed:', error);
-          } else {
+          const result = await updateRundownWithConcurrencyCheck(
+            rundownId,
+            updateData,
+            lastKnownTimestampRef.current || new Date().toISOString()
+          );
+
+          if (result.success) {
             // Track the actual timestamp returned by the database
-            if (updatedRundown?.updated_at) {
-              trackMyUpdate(updatedRundown.updated_at, isStructural);
+            if (result.conflictData?.updated_at) {
+              trackMyUpdate(result.conflictData.updated_at, isStructural);
+              lastKnownTimestampRef.current = result.conflictData.updated_at;
             }
             lastSavedRef.current = finalSignature;
             onSaved();
+            console.log('✅ Rundown saved successfully with concurrency check');
+          } else if (result.conflictData) {
+            // Handle conflict - merge data and retry
+            console.log('🔄 Handling conflict - merging changes');
+            
+            toast({
+              title: "Changes merged",
+              description: "Your changes have been merged with updates from your team.",
+              duration: 4000,
+            });
+
+            // Get protected fields (currently being edited)
+            const protectedFields = new Set<string>();
+            if (userTypingRef.current) {
+              // Add logic to track which fields are currently being typed in
+              // This would need to be enhanced based on your typing tracking system
+            }
+
+            const mergedData = mergeConflictedRundown(updateData, result.conflictData, protectedFields);
+            
+            // Update our state with merged data
+            if (onConflictResolved) {
+              onConflictResolved(mergedData);
+            }
+            
+            // Update our timestamp reference
+            lastKnownTimestampRef.current = result.conflictData.updated_at;
+            
+            // Retry the save with merged data
+            const retryResult = await updateRundownWithConcurrencyCheck(
+              rundownId,
+              {
+                title: mergedData.title,
+                items: mergedData.items,
+                start_time: mergedData.start_time,
+                timezone: mergedData.timezone
+              },
+              lastKnownTimestampRef.current
+            );
+
+            if (retryResult.success && retryResult.conflictData?.updated_at) {
+              trackMyUpdate(retryResult.conflictData.updated_at, isStructural);
+              lastKnownTimestampRef.current = retryResult.conflictData.updated_at;
+              lastSavedRef.current = finalSignature;
+              onSaved();
+            } else {
+              console.error('❌ Retry save failed after conflict resolution');
+              toast({
+                title: "Save failed",
+                description: "Unable to save changes after conflict resolution. Please try again.",
+                variant: "destructive",
+                duration: 5000,
+              });
+            }
+          } else {
+            console.error('❌ Save failed with concurrency check:', result.error);
+            toast({
+              title: "Save failed",
+              description: result.error || "Unable to save changes. Please try again.",
+              variant: "destructive",
+              duration: 5000,
+            });
           }
         }
       } catch (error) {
@@ -253,7 +320,12 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state]);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state, toast, onConflictResolved]);
+
+  // Update timestamp reference when it changes
+  useEffect(() => {
+    lastKnownTimestampRef.current = lastKnownTimestamp;
+  }, [lastKnownTimestamp]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
