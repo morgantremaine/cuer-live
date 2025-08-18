@@ -177,14 +177,25 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
   );
 
   // Setup realtime sync
-  useBlueprintRealtimeSync({
+  const { isConnected } = useBlueprintRealtimeSync({
     rundownId,
     onRemoteUpdate: (remoteState) => {
+      console.log('📋 Blueprint realtime update received in context:', remoteState);
       logger.blueprint('Received remote blueprint update:', remoteState);
       dispatch({ type: 'MERGE_REMOTE_STATE', payload: remoteState });
     },
     enabled: state.isInitialized
   });
+
+  // Debug realtime connection status
+  useEffect(() => {
+    console.log('📋 Blueprint realtime status:', {
+      isConnected,
+      isInitialized: state.isInitialized,
+      rundownId,
+      enabled: state.isInitialized
+    });
+  }, [isConnected, state.isInitialized, rundownId]);
 
   // Initialize blueprint data
   useEffect(() => {
