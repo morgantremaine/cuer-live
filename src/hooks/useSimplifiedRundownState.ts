@@ -16,6 +16,7 @@ import { useEnhancedGranularMerge } from './useEnhancedGranularMerge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
+import { createDefaultRundownItems } from '@/utils/rundownUtils';
 // Remove unused import
 import { v4 as uuidv4 } from 'uuid';
 import { useMemo } from 'react';
@@ -306,9 +307,10 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     const loadRundown = async () => {
       if (!rundownId) {
-        // New rundown
+        // New rundown - create with default items (header + a few rows)
+        const defaultItems = createDefaultRundownItems();
         actions.loadState({
-          items: [],
+          items: defaultItems,
           columns: [],
           title: 'Untitled Rundown',
           startTime: '09:00:00',
