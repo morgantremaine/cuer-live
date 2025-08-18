@@ -97,15 +97,27 @@ export const useSmartFieldProtection = ({
     const timeSinceStart = now - entry.startTime;
     const timeSinceActivity = now - entry.lastActivity;
 
-    // Calculate protection time based on field state
+    // Enhanced adaptive protection calculation
     let protectionTime = baseProtectionMs;
     
     if (entry.isTyping) {
-      // Extend protection for actively typing fields, but cap at max
+      // Smart adaptive extension based on typing patterns
+      const typingDuration = timeSinceStart;
+      const activityGap = timeSinceActivity;
+      
+      // Base typing protection with progressive extension
+      const typingBonus = Math.min(typingDuration * 0.3, maxProtectionMs - baseProtectionMs);
+      
+      // Recent activity gets extra protection
+      const activityBonus = activityGap < 1000 ? 2000 : 0;
+      
       protectionTime = Math.min(
-        baseProtectionMs + (timeSinceStart * 0.5), // Gradually extend
+        baseProtectionMs + typingBonus + activityBonus,
         maxProtectionMs
       );
+    } else {
+      // Non-typing fields get shorter, more predictable protection
+      protectionTime = Math.min(baseProtectionMs, 3000);
     }
 
     const isProtected = timeSinceActivity < protectionTime;
@@ -115,7 +127,8 @@ export const useSmartFieldProtection = ({
         fieldKey,
         timeSinceActivity,
         protectionTime,
-        wasTyping: entry.isTyping
+        wasTyping: entry.isTyping,
+        typingDuration: entry.isTyping ? timeSinceStart : undefined
       });
     }
 
@@ -189,6 +202,43 @@ export const useSmartFieldProtection = ({
     };
   }, [cleanupExpiredProtections]);
 
+  // Force unprotect a field (for conflict resolution)
+  const forceUnprotectField = useCallback((fieldKey: string) => {
+    const entry = protectedFieldsRef.current.get(fieldKey);
+    if (entry) {
+      console.log(`🛡️ [Smart] Force unprotecting field due to conflict:`, fieldKey);
+      unprotectField(fieldKey);
+    }
+  }, [unprotectField]);
+
+  // Check if field protection conflicts with incoming update
+  const hasProtectionConflict = useCallback((fieldKey: string, incomingTimestamp: string): boolean => {
+    const entry = protectedFieldsRef.current.get(fieldKey);
+    if (!entry || !isFieldProtected(fieldKey)) return false;
+
+    try {
+      const incomingTime = new Date(incomingTimestamp).getTime();
+      const protectionStart = entry.startTime;
+      
+      // Conflict if incoming update is from before protection started
+      const isConflict = incomingTime < protectionStart;
+      
+      if (isConflict) {
+        console.log(`⚠️ [Smart] Protection conflict detected:`, {
+          fieldKey,
+          incomingTime: new Date(incomingTime).toISOString(),
+          protectionStart: new Date(protectionStart).toISOString(),
+          isTyping: entry.isTyping
+        });
+      }
+      
+      return isConflict;
+    } catch (error) {
+      console.warn('Error checking protection conflict:', error);
+      return false;
+    }
+  }, [isFieldProtected]);
+
   // Get protection statistics for debugging
   const getProtectionStats = useCallback(() => {
     const entries = Array.from(protectedFieldsRef.current.values());
@@ -200,7 +250,13 @@ export const useSmartFieldProtection = ({
       averageAge: entries.length > 0 ? 
         entries.reduce((sum, e) => sum + (now - e.startTime), 0) / entries.length : 0,
       oldestProtection: entries.length > 0 ? 
-        Math.max(...entries.map(e => now - e.startTime)) : 0
+        Math.max(...entries.map(e => now - e.startTime)) : 0,
+      protectionBreakdown: entries.map(e => ({
+        fieldKey: e.fieldKey,
+        isTyping: e.isTyping,
+        age: now - e.startTime,
+        lastActivity: now - e.lastActivity
+      }))
     };
   }, []);
 
@@ -210,6 +266,8 @@ export const useSmartFieldProtection = ({
     isFieldProtected,
     getProtectedFields,
     unprotectField,
+    forceUnprotectField,
+    hasProtectionConflict,
     getProtectionStats
   };
 };

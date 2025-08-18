@@ -10,6 +10,7 @@ import { useStandaloneUndo } from './useStandaloneUndo';
 import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useSmartFieldProtection } from './useSmartFieldProtection';
 import { useUnifiedUpdateTracking } from './useUnifiedUpdateTracking';
+import { useConflictResolution } from './useConflictResolution';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
@@ -31,11 +32,24 @@ export const useSimplifiedRundownState = () => {
   // Connection state
   const [isConnected, setIsConnected] = useState(false);
 
-  // Smart field protection
-  const { protectField, updateFieldActivity, getProtectedFields } = useSmartFieldProtection({
+  // Smart field protection with enhanced capabilities
+  const { 
+    protectField, 
+    updateFieldActivity, 
+    getProtectedFields, 
+    forceUnprotectField, 
+    hasProtectionConflict 
+  } = useSmartFieldProtection({
     baseProtectionMs: 3000,
     maxProtectionMs: 8000,
     typingExtensionMs: 2000
+  });
+
+  // Conflict resolution for simultaneous edits
+  const { resolveConflicts, getConflictInfo, clearConflicts } = useConflictResolution({
+    resolveFieldConflicts: true,
+    preserveUserEdits: true,
+    logConflicts: true
   });
 
   // Unified update tracking
@@ -113,9 +127,19 @@ export const useSimplifiedRundownState = () => {
         const protectedFields = getProtectedFields();
         console.log('🛡️ Smart protected fields during update:', Array.from(protectedFields));
         
-        // Use granular merge with enhanced protection
+        // Check for conflicts and resolve them
+        const incomingItems = updatedRundown.items || [];
+        const resolvedItems = resolveConflicts(state.items, incomingItems, protectedFields);
+        
+        // Log conflict resolution if any occurred
+        const conflictInfo = getConflictInfo();
+        if (conflictInfo.hasConflicts) {
+          console.log(`⚠️ [Phase2] Resolved ${conflictInfo.conflictCount} conflicts during realtime update`);
+        }
+        
+        // Use granular merge with enhanced protection and conflict resolution
         actions.mergeRealtimeUpdate({
-          items: updatedRundown.items || [],
+          items: resolvedItems,
           title: updatedRundown.title,
           startTime: updatedRundown.start_time,
           timezone: updatedRundown.timezone,
@@ -126,7 +150,7 @@ export const useSimplifiedRundownState = () => {
       } else {
         console.log('⏸️ Save/queue processing in progress - update will be queued');
       }
-    }, [isSaving, isQueueProcessing, actions, getProtectedFields])
+    }, [isSaving, isQueueProcessing, actions, getProtectedFields, resolveConflicts, state.items, getConflictInfo])
   });
 
   // Connect queued update processing
@@ -135,15 +159,20 @@ export const useSimplifiedRundownState = () => {
       console.log('📤 Processing queued update:', queuedUpdate.updated_at);
       
       const protectedFields = getProtectedFields();
+      
+      // Apply conflict resolution to queued updates too
+      const queuedItems = queuedUpdate.items || [];
+      const resolvedQueuedItems = resolveConflicts(state.items, queuedItems, protectedFields);
+      
       actions.mergeRealtimeUpdate({
-        items: queuedUpdate.items || [],
+        items: resolvedQueuedItems,
         title: queuedUpdate.title,
         startTime: queuedUpdate.start_time,
         timezone: queuedUpdate.timezone,
         protectedFields
       });
     });
-  }, [setUpdateQueueCallback, actions, getProtectedFields]);
+  }, [setUpdateQueueCallback, actions, getProtectedFields, resolveConflicts, state.items]);
 
   // Update connection status from realtime
   useEffect(() => {

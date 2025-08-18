@@ -156,18 +156,20 @@ export const useSmartAutoSave = (
       return;
     }
 
-    // Smart rate limiting based on recent activity
+    // Enhanced smart rate limiting with better coordination
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 2000; // Reduced from 3000ms
+    const minSaveInterval = 1500; // Optimized interval
     
-    // Adaptive debounce time
-    let debounceTime = 2000; // Base debounce reduced from 3000ms
+    // Enhanced adaptive debounce time with better heuristics
+    let debounceTime = 1200; // Optimized base debounce
     if (timeSinceLastSave < minSaveInterval) {
-      debounceTime = 5000; // Still allow longer debounce for rapid changes
+      debounceTime = 2000; // Prevent thrashing
+    } else if (updateQueueRef.current.length > 0) {
+      debounceTime = 600; // Faster when updates are queued
     }
     if (structuralChangeRef.current) {
-      debounceTime = 1000; // Faster save for structural changes
+      debounceTime = 800; // Faster save for structural changes
     }
 
     if (saveTimeoutRef.current) {
@@ -189,10 +191,10 @@ export const useSmartAutoSave = (
         return;
       }
       
-      console.log('💾 [Smart] Starting save operation');
-      setIsSaving(true);
-      pendingSaveRef.current = true;
-      lastSaveTimeRef.current = Date.now();
+        console.log('💾 [Smart] Starting coordinated save operation');
+        setIsSaving(true);
+        pendingSaveRef.current = true;
+        lastSaveTimeRef.current = Date.now();
       
       try {
         const updateTimestamp = new Date().toISOString();
@@ -275,10 +277,13 @@ export const useSmartAutoSave = (
         pendingSaveRef.current = false;
         structuralChangeRef.current = false; // Reset structural flag
         
-        // Process any queued updates
+        // Coordinated queued update processing
         setTimeout(() => {
-          processQueuedUpdates();
-        }, 100);
+          if (updateQueueRef.current.length > 0) {
+            console.log(`📤 [Smart] Processing ${updateQueueRef.current.length} queued updates after save`);
+            processQueuedUpdates();
+          }
+        }, 50); // Reduced delay for better responsiveness
       }
     }, debounceTime);
 
