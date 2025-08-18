@@ -283,6 +283,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       loadedRundownRef.current = null; // Reset to allow new load
       setIsLoading(true); // Set loading immediately
       loadColumnPreferences();
+    } else if (!rundownId && loadedRundownRef.current !== null) {
+      // Handle new rundowns (rundownId is null)
+      console.log('🔄 UserColumnPreferences: Loading default columns for new rundown');
+      loadedRundownRef.current = null; // Reset to allow new load
+      setIsLoading(true); // Set loading immediately
+      loadColumnPreferences();
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
 
