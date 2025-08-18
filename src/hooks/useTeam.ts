@@ -37,17 +37,22 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
 
   const loadTeamData = async () => {
+    console.log('🔄 useTeam: loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current });
+    
     if (!user?.id || isLoadingRef.current) {
+      console.log('🔄 useTeam: Early exit - no user or already loading', { userId: !!user?.id, isLoading: isLoadingRef.current });
       setIsLoading(false);
       return;
     }
 
     // Prevent duplicate loading for the same user
     if (loadedUserRef.current === user.id) {
+      console.log('🔄 useTeam: Early exit - already loaded for this user');
       setIsLoading(false);
       return;
     }
 
+    console.log('🔄 useTeam: Starting team data load for user:', user.id);
     isLoadingRef.current = true;
     loadedUserRef.current = user.id;
 
@@ -139,11 +144,13 @@ export const useTeam = () => {
           setUserRole(membershipData.role);
           setError(null);
 
+          console.log('🔄 useTeam: Loading team members for team:', teamData.id);
           // Load team members for ALL team members (not just admins)
           await loadTeamMembers(teamData.id);
           
           // Load pending invitations only if user is admin
           if (membershipData.role === 'admin') {
+            console.log('🔄 useTeam: Loading pending invitations for admin');
             await loadPendingInvitations(teamData.id);
           }
         } else {

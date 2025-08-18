@@ -22,6 +22,8 @@ export const useRundownFolders = (teamId?: string) => {
   const { toast } = useToast();
 
   const fetchFolders = async () => {
+    console.log('🗂️ fetchFolders: Called with', { teamId, userId: !!user, loading });
+    
     if (!teamId || !user) {
       console.log('🗂️ fetchFolders: Missing teamId or user, setting loading to false', { teamId: !!teamId, user: !!user });
       setLoading(false);
@@ -38,16 +40,24 @@ export const useRundownFolders = (teamId?: string) => {
         .eq('team_id', teamId)
         .order('position', { ascending: true });
 
-      if (error) throw error;
-      console.log('🗂️ fetchFolders: Loaded folders:', data?.length || 0);
+      if (error) {
+        console.error('🗂️ fetchFolders: Database error:', error);
+        throw error;
+      }
+      
+      console.log('🗂️ fetchFolders: Successfully loaded folders:', {
+        count: data?.length || 0,
+        folders: data?.map(f => ({ id: f.id, name: f.name })) || []
+      });
       setFolders(data || []);
     } catch (error) {
-      console.error('Error fetching folders:', error);
+      console.error('🗂️ fetchFolders: Error fetching folders:', error);
       toast({
         title: 'Error',
         description: 'Failed to load folders',
         variant: 'destructive',
       });
+      setFolders([]);
     } finally {
       setLoading(false);
     }
