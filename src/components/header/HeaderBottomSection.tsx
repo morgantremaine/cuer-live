@@ -11,6 +11,7 @@ interface HeaderBottomSectionProps {
   timezone: string;
   onRundownStartTimeChange: (startTime: string) => void;
   items?: RundownItem[];
+  rundownId?: string | null;
   isPlaying?: boolean;
   currentSegmentId?: string | null;
   timeRemaining?: number;
@@ -22,6 +23,7 @@ const HeaderBottomSection = ({
   timezone,
   onRundownStartTimeChange,
   items = [],
+  rundownId = null,
   isPlaying = false,
   currentSegmentId = null,
   timeRemaining = 0
@@ -33,6 +35,7 @@ const HeaderBottomSection = ({
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
+    rundownId,
     rundownStartTime,
     timezone,
     isPlaying,
