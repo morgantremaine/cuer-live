@@ -84,9 +84,7 @@ const RundownIndexContent = () => {
   });
 
   // Check if we're still loading - show spinner until everything is ready
-  // For new rundowns, don't wait for items to exist since they start empty
-  const isNewRundown = !rundownId;
-  const isFullyLoading = isLoading || isLoadingPreferences || (!isNewRundown && (!items || items.length === 0));
+  const isFullyLoading = isLoading || isLoadingPreferences || (!items || items.length === 0);
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
@@ -175,13 +173,12 @@ const RundownIndexContent = () => {
     
     // CRITICAL FIX: Check current playing state and act accordingly
     if (isPlaying) {
-      console.log('🎯 IndexContent: Already playing, jumping to segment:', segmentId);
-      // FIXED: Pass segmentId when already playing to jump to specific segment
+      
       if (play) {
-        play(segmentId);
+        play();
       }
     } else {
-      console.log('🎯 IndexContent: Not playing, using jumpToSegment:', segmentId);
+      
       if (coreState.jumpToSegment) {
         coreState.jumpToSegment(segmentId);
       } else {

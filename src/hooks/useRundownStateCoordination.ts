@@ -2,9 +2,8 @@ import { usePersistedRundownState } from './usePersistedRundownState';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
-import { useShowcallerSession } from './useShowcallerSession';
+import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
-import { usePlaybackControls } from './usePlaybackControls';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -46,18 +45,15 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-// Showcaller session management (Phase 3)
-  const showcallerSession = useShowcallerSession({
+  // Showcaller coordination for playback controls and visual state
+  const showcallerCoordination = useShowcallerStateCoordination({
+    items: performanceOptimization.calculatedItems,
     rundownId: simplifiedState.rundownId,
-    enabled: !!simplifiedState.rundownId
+    userId,
+    teamId: null,
+    rundownTitle: simplifiedState.rundownTitle,
+    rundownStartTime: simplifiedState.rundownStartTime
   });
-
-  // Showcaller playback controls integration
-  const playback = usePlaybackControls(
-    simplifiedState.items,
-    simplifiedState.updateItem,
-    simplifiedState.rundownId
-  );
 
   // Helper function to calculate end time - memoized for performance
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
@@ -185,7 +181,7 @@ export const useRundownStateCoordination = () => {
 
   // NEW: Keep processing states separate - NO combination
   const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate; // Content updates only
-  const showcallerProcessingState = false; // Placeholder for Phase 3
+  const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
 
   return {
     coreState: {
@@ -203,21 +199,19 @@ export const useRundownStateCoordination = () => {
       isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected,
+      isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
       isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
       
-      // Showcaller session state (Phase 3)
-      showcallerSession: showcallerSession.isActiveSession,
-      showcallerActiveSessions: showcallerSession.activeSessions,
+      // Showcaller visual state from completely separate system
+      currentSegmentId: showcallerCoordination.currentSegmentId,
+      isPlaying: showcallerCoordination.isPlaying,
+      timeRemaining: showcallerCoordination.timeRemaining,
+      isController: showcallerCoordination.isController,
+      isInitialized: showcallerCoordination.isInitialized,
       showcallerActivity: false, // No longer interferes with main state
       
-      // Showcaller state
-      currentSegmentId: playback.currentSegmentId,
-      isPlaying: playback.isPlaying,
-      timeRemaining: playback.timeRemaining,
-      isController: playback.isController,
-      isInitialized: playback.isInitialized,
-      getItemVisualStatus: playback.getItemVisualStatus,
+      // Visual status overlay function (doesn't touch main state)
+      getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
       
       // Selection state
       selectedRowId: simplifiedState.selectedRowId,
@@ -249,13 +243,13 @@ export const useRundownStateCoordination = () => {
       updateColumnWidth: simplifiedState.updateColumnWidth,
       setColumns: simplifiedState.setColumns,
       
-      // Showcaller controls
-      play: playback.play,
-      pause: playback.pause,
-      forward: playback.forward,
-      backward: playback.backward,
-      reset: playback.reset,
-      jumpToSegment: playback.jumpToSegment,
+      // Showcaller visual controls (completely separate from main state)
+      play: showcallerCoordination.play,
+      pause: showcallerCoordination.pause,
+      forward: showcallerCoordination.forward,
+      backward: showcallerCoordination.backward,
+      reset: showcallerCoordination.reset,
+      jumpToSegment: showcallerCoordination.jumpToSegment,
       
       // Undo functionality
       undo: simplifiedState.undo,

@@ -3,13 +3,12 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useUniversalTimer } from './useUniversalTimer';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
-import { useUnifiedUpdateTracking } from './useUnifiedUpdateTracking';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
   onRundownUpdate: (data: any) => void;
   enabled?: boolean;
-  queueUpdate?: (data: any, timestamp: string) => void;
+  trackOwnUpdate?: (timestamp: string) => void;
 }
 
 // Global subscription tracking to prevent duplicates
@@ -19,22 +18,14 @@ export const useSimpleRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
   enabled = true,
-  queueUpdate
+  trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
   const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
-  
-  // Unified update tracking
-  const { trackOwnUpdate, isOwnUpdate } = useUnifiedUpdateTracking({
-    userId: user?.id || '',
-    rundownId,
-    enabled
-  });
-  
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
-  const queueUpdateRef = useRef(queueUpdate);
+  const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const subscriptionKeyRef = useRef<string>('');
   const isLeadSubscriptionRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -43,12 +34,29 @@ export const useSimpleRealtimeRundown = ({
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
-  queueUpdateRef.current = queueUpdate;
+  trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Simplified own update tracking using unified system
-  const trackOwnUpdateLocal = useCallback((timestamp: string, type: 'content' | 'showcaller' | 'structural' = 'content') => {
-    trackOwnUpdate(timestamp, type);
-  }, [trackOwnUpdate]);
+  // Global own update tracking to handle multiple subscriptions
+  const trackOwnUpdateLocal = useCallback((timestamp: string, isStructural: boolean = false) => {
+    const subscriptionKey = subscriptionKeyRef.current;
+    if (!subscriptionKey) return;
+    
+    // Always track own updates for deduplication, even structural ones
+    const tracking = activeSubscriptions.get(subscriptionKey);
+    if (tracking) {
+      tracking.ownUpdates.add(timestamp);
+      
+      // Clean up old tracked updates after 15 seconds (extended window)
+      setManagedTimeout(() => {
+        tracking.ownUpdates.delete(timestamp);
+      }, 15000);
+    }
+    
+    // Also track via parent if available
+    if (trackOwnUpdateRef.current) {
+      trackOwnUpdateRef.current(timestamp);
+    }
+  }, []);
 
   // Helper function to detect if an update has actual content changes
   const isContentUpdate = useCallback((newData: any, oldData?: any) => {
@@ -106,18 +114,20 @@ export const useSimpleRealtimeRundown = ({
     return JSON.stringify(newItemIds) !== JSON.stringify(oldItemIds);
   }, []);
 
-  // Enhanced update handler with smart queuing
+  // Simplified update handler with global deduplication
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    const subscriptionKey = subscriptionKeyRef.current;
+    const tracking = activeSubscriptions.get(subscriptionKey);
+    
     // Only lead subscription should log and process updates to avoid console spam
     if (!isLeadSubscriptionRef.current) {
       return;
     }
 
-    console.log('📡 [Enhanced] Realtime update received:', {
+    console.log('📡 Simple realtime update received:', {
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
-      itemCount: payload.new?.items?.length,
-      userId: payload.new?.user_id
+      itemCount: payload.new?.items?.length
     });
 
     // Skip if not for the current rundown
@@ -127,26 +137,29 @@ export const useSimpleRealtimeRundown = ({
 
     const updateTimestamp = payload.new?.updated_at;
     
+    // Check if this is a structural change (add/delete/move rows)
+    const isStructural = isStructuralChange(payload.new, payload.old);
+    
     // Skip if this is exactly the same timestamp we just processed
     if (updateTimestamp === lastProcessedUpdateRef.current) {
-      console.log('⏭️ Skipping - same timestamp as last processed');
       return;
     }
 
-    // Use unified tracking to check if this is our own update
-    if (isOwnUpdate(updateTimestamp, payload.new?.user_id)) {
-      console.log('⏭️ Skipping - our own update detected by unified tracking');
+    // Check global own update tracking for all updates (including structural)
+    if (tracking && tracking.ownUpdates.has(updateTimestamp)) {
+      if (isStructural) {
+        console.log('⏭️ Skipping - our own structural change');
+      } else {
+        console.log('⏭️ Skipping - our own update (content change)');
+      }
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
 
-    // Check if this is a structural change
-    const isStructural = isStructuralChange(payload.new, payload.old);
-
-    // Enhanced content filtering to prevent meta-only updates from merging
-    const isContentChange = isContentUpdate(payload.new, payload.old);
-    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
-    
+  // Enhanced content filtering to prevent meta-only updates from merging
+  const isContentChange = isContentUpdate(payload.new, payload.old);
+  const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
+  
     // Only process updates that have actual content changes
     if (!isContentChange && !isStructural) {
       console.log('⏭️ Skipping meta-only update (no content changes)', {
@@ -157,23 +170,18 @@ export const useSimpleRealtimeRundown = ({
       lastProcessedUpdateRef.current = updateTimestamp;
       return;
     }
-
-    // Check if we should queue this update (if save is in progress)
-    if (queueUpdateRef.current) {
-      console.log('📥 [Enhanced] Attempting to queue update during potential save');
-      queueUpdateRef.current(payload.new, updateTimestamp);
-      return;
-    }
-    
-    if (isShowcallerOnly) {
-      console.log('📺 Processing showcaller-only update (no loading indicator)');
-    } else if (isStructural) {
-      console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
-      setIsProcessingUpdate(true);
-    } else {
-      console.log('✅ Processing realtime content update from teammate');
-      setIsProcessingUpdate(true);
-    }
+  
+  if (isShowcallerOnly) {
+    console.log('📺 Processing showcaller-only update (no loading indicator)');
+  } else if (isStructural) {
+    console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
+    // Show processing state briefly for structural changes
+    setIsProcessingUpdate(true);
+  } else {
+    console.log('✅ Processing realtime content update from teammate');
+    // Show processing state briefly only for non-showcaller updates
+    setIsProcessingUpdate(true);
+  }
     
     lastProcessedUpdateRef.current = updateTimestamp;
     
@@ -196,7 +204,7 @@ export const useSimpleRealtimeRundown = ({
       }, 500);
     }
     
-  }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange, isOwnUpdate]);
+  }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
   useEffect(() => {
     // Only set up subscription if we have the required data

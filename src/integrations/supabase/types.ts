@@ -360,51 +360,6 @@ export type Database = {
           },
         ]
       }
-      showcaller_sessions: {
-        Row: {
-          controller_user_id: string
-          created_at: string
-          current_segment_id: string | null
-          id: string
-          is_active: boolean
-          last_activity: string
-          rundown_id: string
-          session_end: string | null
-          session_start: string
-          team_id: string
-          updated_at: string
-          visual_state: Json | null
-        }
-        Insert: {
-          controller_user_id: string
-          created_at?: string
-          current_segment_id?: string | null
-          id?: string
-          is_active?: boolean
-          last_activity?: string
-          rundown_id: string
-          session_end?: string | null
-          session_start?: string
-          team_id: string
-          updated_at?: string
-          visual_state?: Json | null
-        }
-        Update: {
-          controller_user_id?: string
-          created_at?: string
-          current_segment_id?: string | null
-          id?: string
-          is_active?: boolean
-          last_activity?: string
-          rundown_id?: string
-          session_end?: string | null
-          session_start?: string
-          team_id?: string
-          updated_at?: string
-          visual_state?: Json | null
-        }
-        Relationships: []
-      }
       subscribers: {
         Row: {
           created_at: string
@@ -772,10 +727,6 @@ export type Database = {
         Returns: undefined
       }
       cleanup_expired_invitations_auto: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_inactive_showcaller_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

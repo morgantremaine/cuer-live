@@ -33,8 +33,7 @@ export const usePlaybackControls = (
     timeRemaining,
     isController,
     trackOwnUpdate,
-    isInitialized,
-    getItemVisualStatus
+    isInitialized
   } = useShowcallerVisualState({
     items,
     rundownId,
@@ -160,7 +159,6 @@ export const usePlaybackControls = (
     jumpToSegment: safeJumpToSegment,
     isController: controlsReady ? isController : false,
     isInitialized,
-    isConnected,
-    getItemVisualStatus
+    isConnected
   };
 };
