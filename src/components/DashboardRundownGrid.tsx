@@ -147,8 +147,19 @@ const DashboardRundownGrid = ({
     const updatedDate = new Date(rundown.updated_at)
     const now = new Date()
     const hoursDiff = (now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60)
+    const minutesDiff = (now.getTime() - updatedDate.getTime()) / (1000 * 60)
     
-    if (hoursDiff < 48) return { status: 'active', color: 'bg-green-500', label: 'Recently Active' }
+    if (hoursDiff < 48) {
+      let timeAgo = ''
+      if (minutesDiff < 60) {
+        const minutes = Math.floor(minutesDiff)
+        timeAgo = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
+      } else {
+        const hours = Math.floor(hoursDiff)
+        timeAgo = `${hours} hour${hours !== 1 ? 's' : ''} ago`
+      }
+      return { status: 'active', color: 'bg-green-500', label: `Recently Active • ${timeAgo}` }
+    }
     if (hoursDiff < 168) return { status: 'week', color: 'bg-blue-500', label: 'This Week' }
     return { status: 'older', color: 'bg-gray-500', label: 'Older' }
   }
