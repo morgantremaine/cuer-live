@@ -167,7 +167,7 @@ const LayoutManager = ({
             {userLayouts.length > 0 && (
               <div>
                 <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
-                  My Layouts
+                  Saved Layouts
                 </div>
                 {userLayouts.map((layout) => (
                   <div
