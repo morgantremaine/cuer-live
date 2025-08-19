@@ -29,7 +29,6 @@ const LayoutManager = ({
 }: LayoutManagerProps) => {
   const [layoutName, setLayoutName] = useState('');
   const [showSaveLayout, setShowSaveLayout] = useState(false);
-  const [showLoadLayout, setShowLoadLayout] = useState(false);
   const [editingLayoutId, setEditingLayoutId] = useState<string | null>(null);
   const [editingLayoutName, setEditingLayoutName] = useState('');
 
@@ -96,7 +95,6 @@ const LayoutManager = ({
 
     console.log('✅ LayoutManager: Loading', validColumns.length, 'valid columns');
     onLoadLayout(validColumns);
-    setShowLoadLayout(false);
   };
 
   const startEditingLayout = (layout: any) => {
@@ -140,15 +138,6 @@ const LayoutManager = ({
           <Save className="h-3 w-3" />
           <span>Save Current Layout</span>
         </Button>
-        <Button 
-          onClick={() => setShowLoadLayout(!showLoadLayout)} 
-          variant="outline" 
-          size="sm"
-          className="flex items-center space-x-1"
-        >
-          <FolderOpen className="h-3 w-3" />
-          <span>Load Saved Layout</span>
-        </Button>
       </div>
 
       {showSaveLayout && (
@@ -167,143 +156,141 @@ const LayoutManager = ({
         </div>
       )}
 
-      {showLoadLayout && (
-        <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
-          {loading ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
-          ) : savedLayouts.length === 0 ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts found</div>
-          ) : (
-            <div className="space-y-1">
-              {/* My Layouts Section */}
-              {userLayouts.length > 0 && (
-                <div>
-                  <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
-                    My Layouts
-                  </div>
-                  {userLayouts.map((layout) => (
-                    <div
-                      key={layout.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      {editingLayoutId === layout.id ? (
-                        <div className="flex-1 flex items-center space-x-2">
-                          <input
-                            type="text"
-                            value={editingLayoutName}
-                            onChange={(e) => setEditingLayoutName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleRenameLayout(layout.id, editingLayoutName);
-                              } else if (e.key === 'Escape') {
-                                cancelEditingLayout();
-                              }
-                            }}
-                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            autoFocus
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRenameLayout(layout.id, editingLayoutName)}
-                            className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={cancelEditingLayout}
-                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                          >
-                            <XIcon className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleLoadLayout(layout)}
-                            className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
-                            title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
-                          >
-                            <div className="font-medium">{layout.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
-                            </div>
-                          </button>
-                          <div className="flex items-center space-x-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEditingLayout(layout)}
-                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                              title="Rename layout"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleUpdateLayout(layout.id, layout.name)}
-                              className="text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-                              title="Update layout with current columns"
-                            >
-                              <RefreshCw className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onDeleteLayout(layout.id)}
-                              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                              title="Delete layout"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+      <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+        {loading ? (
+          <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
+        ) : savedLayouts.length === 0 ? (
+          <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts found</div>
+        ) : (
+          <div className="space-y-1">
+            {/* My Layouts Section */}
+            {userLayouts.length > 0 && (
+              <div>
+                <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
+                  My Layouts
                 </div>
-              )}
-
-              {/* Team Layouts Section */}
-              {teamLayouts.length > 0 && (
-                <div>
-                  <div className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700">
-                    Team Layouts
-                  </div>
-                  {teamLayouts.map((layout) => (
-                    <div
-                      key={layout.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <button
-                        onClick={() => handleLoadLayout(layout)}
-                        className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
-                        title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
-                      >
-                        <div className="font-medium">{layout.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
-                          <User className="h-3 w-3" />
-                          <span>by {getCreatorDisplay(layout)}</span>
-                          <span>•</span>
-                          <span>{Array.isArray(layout.columns) ? layout.columns.length : 0} columns</span>
-                        </div>
-                      </button>
-                      <div className="flex items-center space-x-1">
-                        <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
-                          Team
-                        </span>
+                {userLayouts.map((layout) => (
+                  <div
+                    key={layout.id}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    {editingLayoutId === layout.id ? (
+                      <div className="flex-1 flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={editingLayoutName}
+                          onChange={(e) => setEditingLayoutName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleRenameLayout(layout.id, editingLayoutName);
+                            } else if (e.key === 'Escape') {
+                              cancelEditingLayout();
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          autoFocus
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRenameLayout(layout.id, editingLayoutName)}
+                          className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelEditingLayout}
+                          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        >
+                          <XIcon className="h-3 w-3" />
+                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleLoadLayout(layout)}
+                          className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
+                          title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
+                        >
+                          <div className="font-medium">{layout.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
+                          </div>
+                        </button>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditingLayout(layout)}
+                            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            title="Rename layout"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateLayout(layout.id, layout.name)}
+                            className="text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                            title="Update layout with current columns"
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDeleteLayout(layout.id)}
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                            title="Delete layout"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Team Layouts Section */}
+            {teamLayouts.length > 0 && (
+              <div>
+                <div className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700">
+                  Team Layouts
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                {teamLayouts.map((layout) => (
+                  <div
+                    key={layout.id}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <button
+                      onClick={() => handleLoadLayout(layout)}
+                      className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
+                      title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
+                    >
+                      <div className="font-medium">{layout.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
+                        <User className="h-3 w-3" />
+                        <span>by {getCreatorDisplay(layout)}</span>
+                        <span>•</span>
+                        <span>{Array.isArray(layout.columns) ? layout.columns.length : 0} columns</span>
+                      </div>
+                    </button>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">
+                        Team
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
