@@ -147,7 +147,7 @@ const LayoutManager = ({
           className="flex items-center space-x-1"
         >
           <FolderOpen className="h-3 w-3" />
-          <span>Load Layout</span>
+          <span>Load Saved Layout</span>
         </Button>
       </div>
 
