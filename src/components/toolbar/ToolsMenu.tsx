@@ -145,7 +145,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
               <Search className="h-4 w-4 mr-2" />
               Find & Replace
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
           </>
         )}
         
@@ -154,7 +153,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           Notes
         </DropdownMenuItem>
         
-        <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={handleOpenTeleprompter}>
           <Monitor className="h-4 w-4 mr-2" />
