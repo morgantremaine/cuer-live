@@ -188,28 +188,32 @@ const ColumnManager = ({
           </Button>
         </div>
         
-        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-          <LayoutManager
-            columns={columns}
-            savedLayouts={savedLayouts}
-            loading={loading}
-            onSaveLayout={saveLayout}
-            onUpdateLayout={updateLayout}
-            onRenameLayout={renameLayout}
-            onDeleteLayout={deleteLayout}
-            onLoadLayout={handleLoadLayout}
-            canEditLayout={canEditLayout}
-          />
+        <div className="flex-1 p-4 overflow-y-auto flex flex-col">
+          <div className="space-y-6 flex-1 flex flex-col">
+            <LayoutManager
+              columns={columns}
+              savedLayouts={savedLayouts}
+              loading={loading}
+              onSaveLayout={saveLayout}
+              onUpdateLayout={updateLayout}
+              onRenameLayout={renameLayout}
+              onDeleteLayout={deleteLayout}
+              onLoadLayout={handleLoadLayout}
+              canEditLayout={canEditLayout}
+            />
 
-          <ColumnEditor onAddColumn={onAddColumn} />
+            <ColumnEditor onAddColumn={onAddColumn} />
 
-          <ColumnList
-            columns={columns}
-            onReorderColumns={onReorderColumns}
-            onToggleColumnVisibility={onToggleColumnVisibility}
-            onDeleteColumn={onDeleteColumn}
-            onRenameColumn={onRenameColumn}
-          />
+            <div className="flex-1 flex flex-col min-h-0">
+              <ColumnList
+                columns={columns}
+                onReorderColumns={onReorderColumns}
+                onToggleColumnVisibility={onToggleColumnVisibility}
+                onDeleteColumn={onDeleteColumn}
+                onRenameColumn={onRenameColumn}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 dark:border-gray-600">
