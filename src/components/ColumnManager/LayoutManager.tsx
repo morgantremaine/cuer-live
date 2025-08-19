@@ -136,7 +136,7 @@ const LayoutManager = ({
           className="flex items-center space-x-1"
         >
           <Save className="h-3 w-3" />
-          <span>Save Current Layout</span>
+          <span>Save Current Layout As</span>
         </Button>
       </div>
 
