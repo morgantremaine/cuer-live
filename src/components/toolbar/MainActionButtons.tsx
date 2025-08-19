@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Settings, Undo, MapPin, Search } from 'lucide-react';
+import { Plus, Eye, Undo, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -96,7 +96,7 @@ const MainActionButtons = ({
             <span>Undo</span>
           </Button>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
-            <Settings className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
             <span>Columns</span>
           </Button>
         </div>
@@ -187,7 +187,7 @@ const MainActionButtons = ({
         <span>Undo</span>
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
-        <Settings className="h-4 w-4" />
+        <Eye className="h-4 w-4" />
         <span>Manage Layout</span>
       </Button>
       
