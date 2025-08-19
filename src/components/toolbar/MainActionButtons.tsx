@@ -188,7 +188,7 @@ const MainActionButtons = ({
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Settings className="h-4 w-4" />
-        <span>Manage Columns</span>
+        <span>Manage Layout</span>
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
