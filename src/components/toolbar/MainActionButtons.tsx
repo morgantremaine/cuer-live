@@ -97,7 +97,7 @@ const MainActionButtons = ({
           </Button>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1">
             <Eye className="h-4 w-4" />
-            <span>Layout</span>
+            <span>Layouts</span>
           </Button>
         </div>
 
@@ -188,7 +188,7 @@ const MainActionButtons = ({
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
-        <span>Layout</span>
+        <span>Layouts</span>
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
