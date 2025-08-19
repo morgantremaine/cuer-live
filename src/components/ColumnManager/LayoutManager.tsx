@@ -162,7 +162,7 @@ const LayoutManager = ({
       {/* Saved Layouts Section - Always Visible */}
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-gray-900 dark:text-white">Saved Layouts</h4>
-        <div className="max-h-80 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+        <div className="h-96 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
           {loading ? (
             <div className="p-3 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
           ) : savedLayouts.length === 0 ? (
