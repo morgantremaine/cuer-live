@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
@@ -28,6 +28,7 @@ interface ColumnManagerProps {
   onClose: () => void;
   debugColumns?: () => void;
   resetToDefaults?: () => void;
+  isOpen: boolean;
 }
 
 const ColumnManager = ({ 
@@ -40,7 +41,8 @@ const ColumnManager = ({
   onRenameColumn,
   onClose,
   debugColumns,
-  resetToDefaults
+  resetToDefaults,
+  isOpen
 }: ColumnManagerProps) => {
   const { 
     savedLayouts, 
@@ -52,17 +54,25 @@ const ColumnManager = ({
     canEditLayout
   } = useColumnLayoutStorage();
 
+  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [size, setSize] = useState({ width: 448, height: 600 }); // Initial size (max-w-md = 448px)
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const minWidth = 448; // Minimum width (same as current max-w-md)
+  const minHeight = 600; // Minimum height
+
   // Enhanced load layout handler with better validation
   const handleLoadLayout = (layoutColumns: Column[]) => {
-    
-    
     if (!Array.isArray(layoutColumns)) {
       console.error('❌ Invalid layout columns - not an array:', layoutColumns);
       return;
     }
 
     if (layoutColumns.length === 0) {
-      
       return;
     }
 
@@ -78,21 +88,107 @@ const ColumnManager = ({
     if (validColumns.length !== layoutColumns.length) {
     }
 
-    
     onLoadLayout(validColumns);
   };
 
+  // Drag functionality
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isResizing) return;
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect) {
+      setIsDragging(true);
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  // Resize functionality
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const rect = dialogRef.current?.getBoundingClientRect();
+    if (rect) {
+      setIsResizing(true);
+      setResizeStart({
+        x: e.clientX,
+        y: e.clientY,
+        width: rect.width,
+        height: rect.height
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPosition({
+          x: Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.x)),
+          y: Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.y))
+        });
+      } else if (isResizing) {
+        const deltaX = e.clientX - resizeStart.x;
+        const deltaY = e.clientY - resizeStart.y;
+        const newWidth = Math.max(minWidth, resizeStart.width + deltaX);
+        const newHeight = Math.max(minHeight, resizeStart.height + deltaY);
+        
+        setSize({
+          width: Math.min(newWidth, window.innerWidth - position.x),
+          height: Math.min(newHeight, window.innerHeight - position.y)
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, dragOffset, resizeStart, size, position]);
+
+  // Reset position when opening
+  useEffect(() => {
+    if (isOpen) {
+      setPosition({ x: 100, y: 100 });
+      setSize({ width: 448, height: 600 });
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
+    <div 
+      ref={dialogRef}
+      className="fixed z-50 select-none bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+        cursor: isDragging ? 'grabbing' : 'auto'
+      }}
+    >
+      <div className="flex flex-col h-full">
+        <div 
+          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
+        >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Layout</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
         
-        <div className="p-4 space-y-6">
+        <div className="flex-1 p-4 space-y-6 overflow-y-auto">
           <LayoutManager
             columns={columns}
             savedLayouts={savedLayouts}
@@ -104,7 +200,6 @@ const ColumnManager = ({
             onLoadLayout={handleLoadLayout}
             canEditLayout={canEditLayout}
           />
-
 
           <ColumnEditor onAddColumn={onAddColumn} />
 
@@ -122,6 +217,15 @@ const ColumnManager = ({
             Done
           </Button>
         </div>
+
+        {/* Resize handle */}
+        <div
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-300 dark:bg-gray-600 opacity-50 hover:opacity-100 transition-opacity"
+          style={{
+            clipPath: 'polygon(100% 0%, 0% 100%, 100% 100%)'
+          }}
+          onMouseDown={handleResizeStart}
+        />
       </div>
     </div>
   );

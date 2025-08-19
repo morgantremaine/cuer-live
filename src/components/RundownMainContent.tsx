@@ -43,20 +43,19 @@ const RundownMainContent = ({
         visibleItems={contentProps.visibleItems} // Pass visible items for display
       />
       
-      {showColumnManager && (
-        <ColumnManager
-          columns={columns}
-          onClose={() => setShowColumnManager(false)}
-          onAddColumn={handleAddColumn}
-          onReorderColumns={handleReorderColumns}
-          onDeleteColumn={handleDeleteColumnWithCleanup}
-          onRenameColumn={handleRenameColumn}
-          onToggleColumnVisibility={handleToggleColumnVisibility}
-          onLoadLayout={handleLoadLayout}
-          debugColumns={debugColumns}
-          resetToDefaults={resetToDefaults}
-        />
-      )}
+      <ColumnManager
+        isOpen={showColumnManager}
+        columns={columns}
+        onClose={() => setShowColumnManager(false)}
+        onAddColumn={handleAddColumn}
+        onReorderColumns={handleReorderColumns}
+        onDeleteColumn={handleDeleteColumnWithCleanup}
+        onRenameColumn={handleRenameColumn}
+        onToggleColumnVisibility={handleToggleColumnVisibility}
+        onLoadLayout={handleLoadLayout}
+        debugColumns={debugColumns}
+        resetToDefaults={resetToDefaults}
+      />
     </>
   );
 };
