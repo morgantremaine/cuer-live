@@ -29,7 +29,7 @@ const LayoutManager = ({
 }: LayoutManagerProps) => {
   const [layoutName, setLayoutName] = useState('');
   const [showSaveLayout, setShowSaveLayout] = useState(false);
-  const [showLoadLayout, setShowLoadLayout] = useState(false);
+  // Removed showLoadLayout state - layouts are always visible now
   const [editingLayoutId, setEditingLayoutId] = useState<string | null>(null);
   const [editingLayoutName, setEditingLayoutName] = useState('');
 
@@ -96,7 +96,6 @@ const LayoutManager = ({
 
     console.log('✅ LayoutManager: Loading', validColumns.length, 'valid columns');
     onLoadLayout(validColumns);
-    setShowLoadLayout(false);
   };
 
   const startEditingLayout = (layout: any) => {
@@ -128,9 +127,11 @@ const LayoutManager = ({
   const teamLayouts = savedLayouts.filter(layout => !isUserLayout(layout));
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Layouts</h3>
-      <div className="flex space-x-2">
+      
+      {/* Save Layout Section */}
+      <div className="space-y-2">
         <Button 
           onClick={() => setShowSaveLayout(!showSaveLayout)} 
           variant="outline" 
@@ -138,53 +139,46 @@ const LayoutManager = ({
           className="flex items-center space-x-1"
         >
           <Save className="h-3 w-3" />
-          <span>Save Layout</span>
+          <span>Save Current Layout</span>
         </Button>
-        <Button 
-          onClick={() => setShowLoadLayout(!showLoadLayout)} 
-          variant="outline" 
-          size="sm"
-          className="flex items-center space-x-1"
-        >
-          <FolderOpen className="h-3 w-3" />
-          <span>Load Layout</span>
-        </Button>
+
+        {showSaveLayout && (
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={layoutName}
+              onChange={(e) => setLayoutName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveLayout()}
+              placeholder="Layout name"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+            />
+            <Button onClick={handleSaveLayout} size="sm">
+              Save
+            </Button>
+          </div>
+        )}
       </div>
 
-      {showSaveLayout && (
-        <div className="flex space-x-2 mt-2">
-          <input
-            type="text"
-            value={layoutName}
-            onChange={(e) => setLayoutName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSaveLayout()}
-            placeholder="Layout name"
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <Button onClick={handleSaveLayout} size="sm">
-            Save
-          </Button>
-        </div>
-      )}
-
-      {showLoadLayout && (
-        <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+      {/* Saved Layouts Section - Always Visible */}
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Saved Layouts</h4>
+        <div className="max-h-80 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
           {loading ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
+            <div className="p-3 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
           ) : savedLayouts.length === 0 ? (
-            <div className="p-2 text-sm text-gray-500 dark:text-gray-400">No saved layouts found</div>
+            <div className="p-3 text-sm text-gray-500 dark:text-gray-400">No saved layouts found</div>
           ) : (
             <div className="space-y-1">
               {/* My Layouts Section */}
               {userLayouts.length > 0 && (
                 <div>
-                  <div className="px-2 py-1 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">
                     My Layouts
                   </div>
                   {userLayouts.map((layout) => (
                     <div
                       key={layout.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       {editingLayoutId === layout.id ? (
                         <div className="flex-1 flex items-center space-x-2">
@@ -270,13 +264,13 @@ const LayoutManager = ({
               {/* Team Layouts Section */}
               {teamLayouts.length > 0 && (
                 <div>
-                  <div className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700">
+                  <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs font-medium text-blue-700 dark:text-blue-300 border-b border-blue-200 dark:border-blue-700">
                     Team Layouts
                   </div>
                   {teamLayouts.map((layout) => (
                     <div
                       key={layout.id}
-                      className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <button
                         onClick={() => handleLoadLayout(layout)}
@@ -303,7 +297,7 @@ const LayoutManager = ({
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
