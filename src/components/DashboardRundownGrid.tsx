@@ -146,22 +146,58 @@ const DashboardRundownGrid = ({
   const getActivityStatus = (rundown: SavedRundown) => {
     const updatedDate = new Date(rundown.updated_at)
     const now = new Date()
-    const hoursDiff = (now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60)
-    const minutesDiff = (now.getTime() - updatedDate.getTime()) / (1000 * 60)
+    const timeDiff = now.getTime() - updatedDate.getTime()
+    const minutesDiff = timeDiff / (1000 * 60)
+    const hoursDiff = timeDiff / (1000 * 60 * 60)
+    const daysDiff = timeDiff / (1000 * 60 * 60 * 24)
+    const weeksDiff = daysDiff / 7
+    const monthsDiff = daysDiff / 30
+    const yearsDiff = daysDiff / 365
     
-    if (hoursDiff < 48) {
-      let timeAgo = ''
-      if (minutesDiff < 60) {
-        const minutes = Math.floor(minutesDiff)
-        timeAgo = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
-      } else {
-        const hours = Math.floor(hoursDiff)
-        timeAgo = `${hours} hour${hours !== 1 ? 's' : ''} ago`
-      }
-      return { status: 'active', color: 'bg-green-500', label: `Recently Active • ${timeAgo}` }
+    let timeAgo = ''
+    let status = 'older'
+    let color = 'bg-gray-500'
+    let label = ''
+    
+    if (minutesDiff < 60) {
+      const minutes = Math.floor(minutesDiff)
+      timeAgo = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
+      status = 'active'
+      color = 'bg-green-500'
+      label = 'Recently Active'
+    } else if (hoursDiff < 48) {
+      const hours = Math.floor(hoursDiff)
+      timeAgo = `${hours} hour${hours !== 1 ? 's' : ''} ago`
+      status = 'active'
+      color = 'bg-green-500'
+      label = 'Recently Active'
+    } else if (daysDiff < 7) {
+      const days = Math.floor(daysDiff)
+      timeAgo = `${days} day${days !== 1 ? 's' : ''} ago`
+      status = 'week'
+      color = 'bg-blue-500'
+      label = 'This Week'
+    } else if (weeksDiff < 4) {
+      const weeks = Math.floor(weeksDiff)
+      timeAgo = `${weeks} week${weeks !== 1 ? 's' : ''} ago`
+      status = 'week'
+      color = 'bg-blue-500'
+      label = 'This Month'
+    } else if (monthsDiff < 12) {
+      const months = Math.floor(monthsDiff)
+      timeAgo = `${months} month${months !== 1 ? 's' : ''} ago`
+      status = 'older'
+      color = 'bg-gray-500'
+      label = 'This Year'
+    } else {
+      const years = Math.floor(yearsDiff)
+      timeAgo = `${years} year${years !== 1 ? 's' : ''} ago`
+      status = 'older'
+      color = 'bg-gray-500'
+      label = 'Older'
     }
-    if (hoursDiff < 168) return { status: 'week', color: 'bg-blue-500', label: 'This Week' }
-    return { status: 'older', color: 'bg-gray-500', label: 'Older' }
+    
+    return { status, color, label: `${label} • ${timeAgo}` }
   }
 
   // Handle drag start for rundown cards
