@@ -76,11 +76,11 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1">
             <Plus className="h-4 w-4" />
             <span>Add Segment</span>
           </Button>
-          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1">
             <Plus className="h-4 w-4" />
             <span>Add Header</span>
           </Button>
@@ -90,12 +90,12 @@ const MainActionButtons = ({
             size={buttonSize}
             disabled={!canUndo}
             title={lastAction ? `Undo: ${lastAction}` : 'Nothing to undo'}
-            className="flex items-center justify-start gap-2"
+            className="flex items-center justify-start gap-1"
           >
             <Undo className="h-4 w-4" />
             <span>Undo</span>
           </Button>
-          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-2">
+          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1">
             <Eye className="h-4 w-4" />
             <span>Layout</span>
           </Button>
@@ -164,7 +164,7 @@ const MainActionButtons = ({
   }
 
   // Desktop layout - horizontal buttons
-  const buttonClass = 'flex items-center space-x-1';
+  const buttonClass = 'flex items-center space-x-0.5';
   return (
     <>
       <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
