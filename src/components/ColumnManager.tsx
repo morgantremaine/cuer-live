@@ -84,7 +84,7 @@ const ColumnManager = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Manage Columns</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -92,36 +92,29 @@ const ColumnManager = ({
           </Button>
         </div>
         
-        <div className="p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Layout Management */}
-            <div className="space-y-6">
-              <LayoutManager
-                columns={columns}
-                savedLayouts={savedLayouts}
-                loading={loading}
-                onSaveLayout={saveLayout}
-                onUpdateLayout={updateLayout}
-                onRenameLayout={renameLayout}
-                onDeleteLayout={deleteLayout}
-                onLoadLayout={handleLoadLayout}
-                canEditLayout={canEditLayout}
-              />
-            </div>
+        <div className="p-4 space-y-6">
+          <LayoutManager
+            columns={columns}
+            savedLayouts={savedLayouts}
+            loading={loading}
+            onSaveLayout={saveLayout}
+            onUpdateLayout={updateLayout}
+            onRenameLayout={renameLayout}
+            onDeleteLayout={deleteLayout}
+            onLoadLayout={handleLoadLayout}
+            canEditLayout={canEditLayout}
+          />
 
-            {/* Right Column - Column Management */}
-            <div className="space-y-6">
-              <ColumnEditor onAddColumn={onAddColumn} />
 
-              <ColumnList
-                columns={columns}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                onDeleteColumn={onDeleteColumn}
-                onRenameColumn={onRenameColumn}
-              />
-            </div>
-          </div>
+          <ColumnEditor onAddColumn={onAddColumn} />
+
+          <ColumnList
+            columns={columns}
+            onReorderColumns={onReorderColumns}
+            onToggleColumnVisibility={onToggleColumnVisibility}
+            onDeleteColumn={onDeleteColumn}
+            onRenameColumn={onRenameColumn}
+          />
         </div>
 
         <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 dark:border-gray-600">
