@@ -19,7 +19,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
   const [searchTerm, setSearchTerm] = useState('');
   const [replaceTerm, setReplaceTerm] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [showReplace, setShowReplace] = useState(false);
+  
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -332,74 +332,50 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
               )}
             </div>
 
-            {!showReplace && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowReplace(true)}
-                className="w-full justify-start"
-              >
-                <Replace className="h-4 w-4 mr-2" />
-                Show Replace
-              </Button>
-            )}
-
-            {showReplace && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Replace with..."
-                      value={replaceTerm}
-                      onChange={(e) => setReplaceTerm(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      className="flex-1"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleReplaceCurrent}
-                      disabled={!searchTerm.trim() || !replaceTerm.trim() || lastSearchResults.matches.length === 0}
-                      className="flex-1"
-                    >
-                      Replace
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleReplace}
-                      disabled={!searchTerm.trim() || !replaceTerm.trim()}
-                      className="flex-1"
-                    >
-                      Replace All
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="caseSensitive"
-                      checked={caseSensitive}
-                      onChange={(e) => setCaseSensitive(e.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    <label htmlFor="caseSensitive" className="text-sm">
-                      Preserve case pattern
-                    </label>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowReplace(false)}
-                    className="w-full justify-start text-muted-foreground"
-                  >
-                    Hide Replace
-                  </Button>
-                </div>
-              </>
-            )}
+            <Separator />
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Replace with..."
+                  value={replaceTerm}
+                  onChange={(e) => setReplaceTerm(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className="flex-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReplaceCurrent}
+                  disabled={!searchTerm.trim() || !replaceTerm.trim() || lastSearchResults.matches.length === 0}
+                  className="flex-1"
+                >
+                  Replace
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReplace}
+                  disabled={!searchTerm.trim() || !replaceTerm.trim()}
+                  className="flex-1"
+                >
+                  Replace All
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="caseSensitive"
+                  checked={caseSensitive}
+                  onChange={(e) => setCaseSensitive(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="caseSensitive" className="text-sm">
+                  Preserve case pattern
+                </label>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
