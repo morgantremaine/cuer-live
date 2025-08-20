@@ -208,6 +208,7 @@ export const useRundownStateCoordination = () => {
       timeRemaining: showcallerCoordination.timeRemaining,
       isController: showcallerCoordination.isController,
       isInitialized: showcallerCoordination.isInitialized,
+      hasLoadedInitialState: showcallerCoordination.hasLoadedInitialState, // Add this for visual indicator loading
       showcallerActivity: false, // No longer interferes with main state
       
       // Visual status overlay function (doesn't touch main state)

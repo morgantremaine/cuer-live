@@ -258,6 +258,7 @@ export const useShowcallerStateCoordination = ({
     isInitialized,
     isConnected,
     isProcessingVisualUpdate,
+    hasLoadedInitialState: isInitialized, // Add this to track when visual indicators are ready
     
     // Visual state management
     getItemVisualStatus,
