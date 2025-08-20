@@ -104,6 +104,22 @@ const DashboardRundownGrid = ({
     return 'Unknown User'
   }
 
+  // Determine the last editor's display name
+  const getLastEditorName = (rundown: SavedRundown) => {
+    const editorId = rundown.last_updated_by || rundown.user_id
+    if (editorId === currentUserId) return 'You'
+
+    const member = teamMembers.find(m => m.user_id === editorId)
+    if (member?.profiles?.full_name) return member.profiles.full_name
+    if (member?.profiles?.email) return member.profiles.email
+
+    // If the editor is the original creator and we have their profile
+    if (editorId === rundown.user_id && rundown.creator_profile?.full_name) return rundown.creator_profile.full_name
+    if (editorId === rundown.user_id && rundown.creator_profile?.email) return rundown.creator_profile.email
+
+    return 'Unknown User'
+  }
+
   const calculateTotalDuration = (items: RundownItem[]) => {
     const totalSeconds = items.reduce((total, item) => {
       if (item.duration && item.type !== 'header') {
@@ -530,7 +546,7 @@ const DashboardRundownGrid = ({
                 <div className="text-center">
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${activity.color} bg-opacity-20 text-gray-300`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${activity.color}`} />
-                    {activity.label}
+                    {`${activity.label} • by ${getLastEditorName(rundown)}`}
                   </span>
                 </div>
               </CardContent>

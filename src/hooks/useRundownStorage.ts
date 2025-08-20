@@ -24,6 +24,7 @@ interface SavedRundown {
   undo_history?: any[];
   teams?: any;
   creator_profile?: any;
+  last_updated_by?: string | null;
 }
 
 export const useRundownStorage = () => {
@@ -139,7 +140,8 @@ export const useRundownStorage = () => {
         user_id: user.id,
         team_id: teamId,
         folder_id: folderId,
-        archived: false
+        archived: false,
+        last_updated_by: user.id
       })
       .select()
       .single();
@@ -169,7 +171,8 @@ export const useRundownStorage = () => {
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
-        archived: false
+        archived: false,
+        last_updated_by: user.id
       })
       .select()
       .single();
@@ -202,7 +205,8 @@ export const useRundownStorage = () => {
       title,
       items,
       archived,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      last_updated_by: user.id
     };
 
     if (columns !== undefined) updateData.columns = columns;
@@ -227,7 +231,8 @@ export const useRundownStorage = () => {
             columns: columns !== undefined ? columns : rundown.columns,
             timezone: timezone !== undefined ? timezone : rundown.timezone,
             start_time: startTime !== undefined ? startTime : rundown.start_time,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            last_updated_by: user.id
           }
         : rundown
     ));

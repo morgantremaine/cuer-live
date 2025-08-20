@@ -14,6 +14,7 @@ export interface SavedRundown {
   archived?: boolean
   created_at: string
   updated_at: string
+  last_updated_by?: string | null
   undo_history?: any[]
   team_id?: string
   visibility?: string
