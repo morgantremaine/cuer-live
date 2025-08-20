@@ -159,6 +159,10 @@ const RegularRow = (props: RegularRowProps) => {
     if (scriptDuration && scriptDuration !== '00:00') {
       props.onUpdateItem(item.id, 'duration', scriptDuration);
     }
+    // Clear selection after auto timing
+    if (onClearSelection) {
+      onClearSelection();
+    }
   };
 
   // Handle auto time to script for multiple rows
@@ -174,6 +178,11 @@ const RegularRow = (props: RegularRowProps) => {
         }
       }
     });
+    
+    // Clear selection after auto timing
+    if (onClearSelection) {
+      onClearSelection();
+    }
   };
 
   const backgroundColor = backgroundColorOverride || 
