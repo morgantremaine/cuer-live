@@ -3,6 +3,7 @@ import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
+import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
@@ -349,11 +350,7 @@ const RundownIndexContent = () => {
 
   // Show loading spinner until everything is ready
   if (isFullyLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <RundownLoadingSkeleton />;
   }
 
   return (
