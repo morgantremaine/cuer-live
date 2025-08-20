@@ -24,9 +24,8 @@ const Changelog: React.FC = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Version 1.1.9 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.9</h2>
-              <span className="text-sm text-gray-400">December 20, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -41,7 +40,6 @@ const Changelog: React.FC = () => {
                       <li><strong>Single Row Timing:</strong> Right-click any row and select "Auto Time to Script" to automatically calculate duration based on script content</li>
                       <li><strong>Bulk Processing:</strong> Select multiple rows and apply timing calculations to all selected items at once</li>
                       <li><strong>Smart Calculations:</strong> Uses industry-standard reading speeds (150 words per minute) with automatic rounding to nearest 5-second intervals</li>
-                      <li><strong>Auto-Clear Selection:</strong> Selected rows automatically deselect after timing calculations for smooth workflow</li>
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
@@ -61,9 +59,8 @@ const Changelog: React.FC = () => {
 
           {/* Version 1.1.8 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.8</h2>
-              <span className="text-sm text-gray-400">December 15, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -98,9 +95,8 @@ const Changelog: React.FC = () => {
 
           {/* Version 1.1.7 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.7</h2>
-              <span className="text-sm text-gray-400">December 10, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -134,9 +130,8 @@ const Changelog: React.FC = () => {
 
           {/* Version 1.1.6 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.6</h2>
-              <span className="text-sm text-gray-400">December 5, 2024</span>
             </div>
             
             <div className="space-y-4">
