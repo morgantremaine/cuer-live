@@ -87,19 +87,19 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const systemFolders: SystemFolder[] = [
     {
-      id: null,
-      name: 'All Rundowns',
-      icon: FileText,
-      type: 'all',
-      count: allCount,
-      permanent: true
-    },
-    {
       id: 'recent',
       name: 'Recently Active',
       icon: Clock,
       type: 'recent',
       count: recentCount,
+      permanent: true
+    },
+    {
+      id: null,
+      name: 'All Rundowns',
+      icon: FileText,
+      type: 'all',
+      count: allCount,
       permanent: true
     },
     {

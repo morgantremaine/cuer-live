@@ -37,7 +37,7 @@ const Dashboard = () => {
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('all');
+  const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('recent');
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
