@@ -15,15 +15,25 @@ export const countWords = (text: string): number => {
 };
 
 /**
+ * Rounds seconds to the nearest 5 seconds
+ * @param seconds - Time in seconds
+ * @returns Time rounded to nearest 5 seconds
+ */
+export const roundToNearest5Seconds = (seconds: number): number => {
+  return Math.round(seconds / 5) * 5;
+};
+
+/**
  * Calculates reading time in seconds based on words per minute
  * @param wordCount - Number of words
  * @param wordsPerMinute - Reading speed (default: 150 wpm)
- * @returns Reading time in seconds
+ * @returns Reading time in seconds, rounded to nearest 5 seconds
  */
 export const calculateReadingTimeSeconds = (wordCount: number, wordsPerMinute: number = 150): number => {
   if (wordCount <= 0 || wordsPerMinute <= 0) return 0;
   
-  return Math.round((wordCount / wordsPerMinute) * 60);
+  const seconds = Math.round((wordCount / wordsPerMinute) * 60);
+  return roundToNearest5Seconds(seconds);
 };
 
 /**
