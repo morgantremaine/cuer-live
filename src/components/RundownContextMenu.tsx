@@ -31,7 +31,9 @@ interface RundownContextMenuProps {
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
   onAutoTimeToScript?: () => void;
+  onAutoTimeToScriptMultiple?: (selectedRows: Set<string>) => void;
   scriptText?: string;
+  allItems?: any[];
 }
 
 const RundownContextMenu = memo(({
@@ -55,7 +57,9 @@ const RundownContextMenu = memo(({
   onAddHeader,
   onJumpToHere,
   onAutoTimeToScript,
-  scriptText
+  onAutoTimeToScriptMultiple,
+  scriptText,
+  allItems
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -125,13 +129,23 @@ const RundownContextMenu = memo(({
 
   // Handle auto time to script
   const handleAutoTimeToScript = () => {
-    if (onAutoTimeToScript) {
+    if (isMultipleSelection && selectedRows && onAutoTimeToScriptMultiple) {
+      onAutoTimeToScriptMultiple(selectedRows);
+    } else if (onAutoTimeToScript) {
       onAutoTimeToScript();
     }
   };
 
   // Calculate if Auto Time to Script should be shown
-  const showAutoTimeToScript = itemType === 'regular' && !isMultipleSelection && scriptText && scriptText.trim().length > 0;
+  const showAutoTimeToScript = itemType === 'regular' && (
+    (isMultipleSelection && selectedRows && allItems && 
+     Array.from(selectedRows).some(id => {
+       const item = allItems.find(item => item.id === id);
+       return item && item.script && item.script.trim().length > 0;
+     })
+    ) ||
+    (!isMultipleSelection && scriptText && scriptText.trim().length > 0)
+  );
 
   return (
     <>
@@ -213,14 +227,14 @@ const RundownContextMenu = memo(({
             </ContextMenuItem>
           )}
           
-          {/* Auto Time to Script - only show for regular segments with script content */}
+          {/* Auto Time to Script - show for regular segments with script content */}
           {showAutoTimeToScript && (
             <ContextMenuItem 
               onClick={handleAutoTimeToScript} 
               className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Clock className="mr-2 h-4 w-4" />
-              Auto Time to Script
+              {isMultipleSelection ? `Auto Time to Script (${selectedCount} rows)` : 'Auto Time to Script'}
             </ContextMenuItem>
           )}
           

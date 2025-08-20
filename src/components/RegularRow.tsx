@@ -45,6 +45,7 @@ interface RegularRowProps {
   onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  allItems?: any[];
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -74,7 +75,8 @@ const RegularRow = (props: RegularRowProps) => {
     onDragOver,
     onDrop,
     onDragEnd,
-    isDragging
+    isDragging,
+    allItems
   } = props;
 
   const { rowClass, backgroundColorOverride } = useRowStyling({
@@ -151,12 +153,27 @@ const RegularRow = (props: RegularRowProps) => {
     onDragEnd(e);
   };
 
-  // Handle auto time to script
+  // Handle auto time to script for single row
   const handleAutoTimeToScript = () => {
     const scriptDuration = calculateScriptDuration(item.script || '');
     if (scriptDuration && scriptDuration !== '00:00') {
       props.onUpdateItem(item.id, 'duration', scriptDuration);
     }
+  };
+
+  // Handle auto time to script for multiple rows
+  const handleAutoTimeToScriptMultiple = (selectedRows: Set<string>) => {
+    if (!allItems) return;
+    
+    selectedRows.forEach(rowId => {
+      const targetItem = allItems.find(item => item.id === rowId);
+      if (targetItem && targetItem.script && targetItem.script.trim().length > 0) {
+        const scriptDuration = calculateScriptDuration(targetItem.script);
+        if (scriptDuration && scriptDuration !== '00:00') {
+          props.onUpdateItem(rowId, 'duration', scriptDuration);
+        }
+      }
+    });
   };
 
   const backgroundColor = backgroundColorOverride || 
@@ -182,7 +199,9 @@ const RegularRow = (props: RegularRowProps) => {
       onAddHeader={onAddHeader}
       onJumpToHere={handleJumpToHere}
       onAutoTimeToScript={handleAutoTimeToScript}
+      onAutoTimeToScriptMultiple={handleAutoTimeToScriptMultiple}
       scriptText={item.script}
+      allItems={allItems}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}

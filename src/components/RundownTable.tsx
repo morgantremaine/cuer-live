@@ -182,6 +182,7 @@ const RundownTable = ({
                    getColumnWidth={getColumnWidth}
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}
+                   allItems={items}
                 />
                 
                 {/* Drop indicator AFTER the last row */}

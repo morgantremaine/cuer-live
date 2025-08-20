@@ -45,6 +45,7 @@ interface RundownRowProps {
   onJumpToHere?: (segmentId: string) => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
+  allItems?: any[];
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
@@ -106,6 +107,7 @@ const RundownRow = (props: RundownRowProps) => {
       onDragEnd={props.onDragEnd}
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
+      allItems={props.allItems}
     />
   );
 };
