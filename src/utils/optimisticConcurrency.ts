@@ -12,6 +12,7 @@ interface RundownUpdateData {
   items?: RundownItem[];
   start_time?: string;
   timezone?: string;
+  last_updated_by?: string;
 }
 
 /**

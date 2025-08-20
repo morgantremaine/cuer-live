@@ -22,8 +22,10 @@ interface SavedRundown {
   icon?: string | null;
   visibility?: string;
   undo_history?: any[];
+  last_updated_by?: string;
   teams?: any;
   creator_profile?: any;
+  last_editor_profile?: any;
 }
 
 export const useRundownStorage = () => {
@@ -79,7 +81,11 @@ export const useRundownStorage = () => {
       try {
         const { data, error } = await supabase
           .from('rundowns')
-          .select('*')
+          .select(`
+            *,
+            creator_profile:profiles!rundowns_user_id_fkey(full_name, email),
+            last_editor_profile:profiles!rundowns_last_updated_by_fkey(full_name, email)
+          `)
           .eq('team_id', teamId)
           .order('updated_at', { ascending: false });
 
@@ -139,6 +145,7 @@ export const useRundownStorage = () => {
         user_id: user.id,
         team_id: teamId,
         folder_id: folderId,
+        last_updated_by: user.id,
         archived: false
       })
       .select()
@@ -169,6 +176,7 @@ export const useRundownStorage = () => {
         columns: rundown.columns,
         timezone: rundown.timezone,
         start_time: rundown.start_time,
+        last_updated_by: user.id,
         archived: false
       })
       .select()
@@ -202,6 +210,7 @@ export const useRundownStorage = () => {
       title,
       items,
       archived,
+      last_updated_by: user.id,
       updated_at: new Date().toISOString()
     };
 
@@ -264,6 +273,7 @@ export const useRundownStorage = () => {
         user_id: user.id,
         team_id: teamId,
         folder_id: originalRundown.folder_id,
+        last_updated_by: user.id,
         archived: false
       })
       .select()

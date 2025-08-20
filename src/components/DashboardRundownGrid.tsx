@@ -104,6 +104,25 @@ const DashboardRundownGrid = ({
     return 'Unknown User'
   }
 
+  const getLastEditorInfo = (rundown: SavedRundown) => {
+    if (!rundown.last_updated_by) return 'Unknown'
+    
+    if (rundown.last_updated_by === currentUserId) {
+      return 'you'
+    }
+    
+    if (rundown.last_editor_profile) {
+      return rundown.last_editor_profile.full_name || rundown.last_editor_profile.email || 'Unknown'
+    }
+    
+    // Fallback to creator if last editor profile not found
+    if (rundown.last_updated_by === rundown.user_id && rundown.creator_profile) {
+      return rundown.creator_profile.full_name || rundown.creator_profile.email || 'Unknown'
+    }
+    
+    return 'Unknown'
+  }
+
   const calculateTotalDuration = (items: RundownItem[]) => {
     const totalSeconds = items.reduce((total, item) => {
       if (item.duration && item.type !== 'header') {
@@ -197,7 +216,15 @@ const DashboardRundownGrid = ({
       label = 'Older'
     }
     
-    return { status, color, label: `${label} • ${timeAgo}` }
+    const lastEditor = getLastEditorInfo(rundown)
+    return { 
+      status, 
+      color, 
+      label: `${label} • ${timeAgo}`,
+      timeAgo,
+      lastEditor,
+      isRecentlyActive: status === 'active'
+    }
   }
 
   // Handle drag start for rundown cards
@@ -527,11 +554,16 @@ const DashboardRundownGrid = ({
                 </div>
                 
                 {/* Activity Status Label */}
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${activity.color} bg-opacity-20 text-gray-300`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${activity.color}`} />
                     {activity.label}
                   </span>
+                  {activity.isRecentlyActive && (
+                    <div className="text-xs text-gray-400">
+                      by {activity.lastEditor}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -18,11 +18,16 @@ export interface SavedRundown {
   team_id?: string
   visibility?: string
   folder_id?: string | null
+  last_updated_by?: string
   teams?: {
     id: string
     name: string
   } | null
   creator_profile?: {
+    full_name: string | null
+    email: string
+  } | null
+  last_editor_profile?: {
     full_name: string | null
     email: string
   } | null
