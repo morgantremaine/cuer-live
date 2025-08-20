@@ -6,6 +6,7 @@ import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { calculateScriptDuration } from '@/utils/scriptTiming';
 
 interface RegularRowProps {
   item: RundownItem;
@@ -150,6 +151,14 @@ const RegularRow = (props: RegularRowProps) => {
     onDragEnd(e);
   };
 
+  // Handle auto time to script
+  const handleAutoTimeToScript = () => {
+    const scriptDuration = calculateScriptDuration(item.script || '');
+    if (scriptDuration && scriptDuration !== '00:00') {
+      props.onUpdateItem(item.id, 'duration', scriptDuration);
+    }
+  };
+
   const backgroundColor = backgroundColorOverride || 
     (item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? item.color : undefined);
 
@@ -172,6 +181,8 @@ const RegularRow = (props: RegularRowProps) => {
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
       onJumpToHere={handleJumpToHere}
+      onAutoTimeToScript={handleAutoTimeToScript}
+      scriptText={item.script}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer`}

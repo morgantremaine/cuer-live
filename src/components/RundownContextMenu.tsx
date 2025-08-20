@@ -1,6 +1,6 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy, Clock } from 'lucide-react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -30,6 +30,8 @@ interface RundownContextMenuProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onAutoTimeToScript?: () => void;
+  scriptText?: string;
 }
 
 const RundownContextMenu = memo(({
@@ -51,7 +53,9 @@ const RundownContextMenu = memo(({
   onClearSelection,
   onAddRow,
   onAddHeader,
-  onJumpToHere
+  onJumpToHere,
+  onAutoTimeToScript,
+  scriptText
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
@@ -118,6 +122,16 @@ const RundownContextMenu = memo(({
       onClearSelection();
     }
   };
+
+  // Handle auto time to script
+  const handleAutoTimeToScript = () => {
+    if (onAutoTimeToScript) {
+      onAutoTimeToScript();
+    }
+  };
+
+  // Calculate if Auto Time to Script should be shown
+  const showAutoTimeToScript = itemType === 'regular' && !isMultipleSelection && scriptText && scriptText.trim().length > 0;
 
   return (
     <>
@@ -196,6 +210,17 @@ const RundownContextMenu = memo(({
             >
               <ClipboardPaste className="mr-2 h-4 w-4" />
               Paste rows
+            </ContextMenuItem>
+          )}
+          
+          {/* Auto Time to Script - only show for regular segments with script content */}
+          {showAutoTimeToScript && (
+            <ContextMenuItem 
+              onClick={handleAutoTimeToScript} 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Clock className="mr-2 h-4 w-4" />
+              Auto Time to Script
             </ContextMenuItem>
           )}
           
