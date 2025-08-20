@@ -43,6 +43,7 @@ const RundownIndexContent = () => {
     hasUnsavedChanges,
     isSaving,
     isLoading,
+    isInitialized,
     totalRuntime,
     setTitle,
     setStartTime,
@@ -131,7 +132,7 @@ const RundownIndexContent = () => {
 
   // Check if we're still loading - show spinner until everything is ready
   // Include additional loading states to prevent awkward loading UI
-  const isFullyLoading = isLoading || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  const isFullyLoading = isLoading || !isInitialized || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
