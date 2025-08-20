@@ -26,7 +26,7 @@ const Changelog: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.9</h2>
-              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+              <span className="text-sm text-gray-400">December 20, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -45,7 +45,7 @@ const Changelog: React.FC = () => {
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/89ec4bf9-2365-4fcc-96f1-0faa7a813b8b.png" 
+                        src="/lovable-uploads/ac008c6d-5fc5-4e20-8239-c3e1c37146ab.png"
                         alt="Auto Time to Script context menu option"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />
@@ -63,7 +63,7 @@ const Changelog: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.8</h2>
-              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+              <span className="text-sm text-gray-400">December 15, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -100,7 +100,7 @@ const Changelog: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.7</h2>
-              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+              <span className="text-sm text-gray-400">December 10, 2024</span>
             </div>
             
             <div className="space-y-4">
@@ -136,7 +136,7 @@ const Changelog: React.FC = () => {
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold text-white">Version 1.1.6</h2>
-              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+              <span className="text-sm text-gray-400">December 5, 2024</span>
             </div>
             
             <div className="space-y-4">
