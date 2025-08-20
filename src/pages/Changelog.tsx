@@ -22,6 +22,43 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.1.9 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.1.9</h2>
+              <span className="text-sm text-gray-400">{new Date().toLocaleDateString()}</span>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">⏱️ Auto Time to Script</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Automatic Script Duration Calculation:</strong> Instantly calculate reading times for your script content with intelligent timing features:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>Single Row Timing:</strong> Right-click any row and select "Auto Time to Script" to automatically calculate duration based on script content</li>
+                      <li><strong>Bulk Processing:</strong> Select multiple rows and apply timing calculations to all selected items at once</li>
+                      <li><strong>Smart Calculations:</strong> Uses industry-standard reading speeds (150 words per minute) with automatic rounding to nearest 5-second intervals</li>
+                      <li><strong>Auto-Clear Selection:</strong> Selected rows automatically deselect after timing calculations for smooth workflow</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src="/lovable-uploads/89ec4bf9-2365-4fcc-96f1-0faa7a813b8b.png" 
+                        alt="Auto Time to Script context menu option"
+                        className="w-full max-w-md mx-auto rounded border border-slate-600"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Right-click context menu showing Auto Time to Script option
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.1.8 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center justify-between mb-4">
