@@ -6,9 +6,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import ColorPicker from './ColorPicker';
@@ -33,7 +30,7 @@ interface RundownContextMenuProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
-  onAutoTimeToScript?: (wordsPerMinute: number) => void;
+  onAutoTimeToScript?: () => void;
   scriptText?: string;
 }
 
@@ -127,9 +124,9 @@ const RundownContextMenu = memo(({
   };
 
   // Handle auto time to script
-  const handleAutoTimeToScript = (wordsPerMinute: number) => {
+  const handleAutoTimeToScript = () => {
     if (onAutoTimeToScript) {
-      onAutoTimeToScript(wordsPerMinute);
+      onAutoTimeToScript();
     }
   };
 
@@ -216,36 +213,15 @@ const RundownContextMenu = memo(({
             </ContextMenuItem>
           )}
           
-          <ContextMenuSeparator />
-          
           {/* Auto Time to Script - only show for regular segments with script content */}
           {showAutoTimeToScript && (
-            <ContextMenuSub>
-              <ContextMenuSubTrigger className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Clock className="mr-2 h-4 w-4" />
-                Auto Time to Script
-              </ContextMenuSubTrigger>
-              <ContextMenuSubContent className="w-40">
-                <ContextMenuItem 
-                  onClick={() => handleAutoTimeToScript(140)} 
-                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Slow (140 wpm)
-                </ContextMenuItem>
-                <ContextMenuItem 
-                  onClick={() => handleAutoTimeToScript(150)} 
-                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Normal (150 wpm)
-                </ContextMenuItem>
-                <ContextMenuItem 
-                  onClick={() => handleAutoTimeToScript(160)} 
-                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Fast (160 wpm)
-                </ContextMenuItem>
-              </ContextMenuSubContent>
-            </ContextMenuSub>
+            <ContextMenuItem 
+              onClick={handleAutoTimeToScript} 
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Clock className="mr-2 h-4 w-4" />
+              Auto Time to Script
+            </ContextMenuItem>
           )}
           
           <ContextMenuSeparator />
