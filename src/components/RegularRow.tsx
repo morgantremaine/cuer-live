@@ -152,8 +152,8 @@ const RegularRow = (props: RegularRowProps) => {
   };
 
   // Handle auto time to script
-  const handleAutoTimeToScript = () => {
-    const scriptDuration = calculateScriptDuration(item.script || '');
+  const handleAutoTimeToScript = (wordsPerMinute: number) => {
+    const scriptDuration = calculateScriptDuration(item.script || '', wordsPerMinute);
     if (scriptDuration && scriptDuration !== '00:00') {
       props.onUpdateItem(item.id, 'duration', scriptDuration);
     }
