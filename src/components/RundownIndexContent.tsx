@@ -130,7 +130,8 @@ const RundownIndexContent = () => {
   }, []);
 
   // Check if we're still loading - show spinner until everything is ready
-  const isFullyLoading = isLoading || isLoadingPreferences || (!items || items.length === 0);
+  // Include additional loading states to prevent awkward loading UI
+  const isFullyLoading = isLoading || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
