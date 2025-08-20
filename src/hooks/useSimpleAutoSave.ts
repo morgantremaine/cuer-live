@@ -8,7 +8,6 @@ import { updateRundownWithConcurrencyCheck, mergeConflictedRundown } from '@/uti
 import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
-import { useAuth } from './useAuth';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -18,7 +17,6 @@ export const useSimpleAutoSave = (
   onConflictResolved?: (mergedData: any) => void,
   updateLastKnownTimestamp?: (timestamp: string) => void
 ) => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -207,7 +205,6 @@ export const useSimpleAutoSave = (
               timezone: state.timezone,
               team_id: teamData.team_id,
               user_id: (await supabase.auth.getUser()).data.user?.id,
-              last_updated_by: user?.id,
               folder_id: folderId,
               updated_at: updateTimestamp
             })
@@ -237,8 +234,7 @@ export const useSimpleAutoSave = (
             title: state.title,
             items: state.items,
             start_time: state.startTime,
-            timezone: state.timezone,
-            last_updated_by: user?.id
+            timezone: state.timezone
           };
 
           const result = await updateRundownWithConcurrencyCheck(
@@ -297,8 +293,7 @@ export const useSimpleAutoSave = (
                 title: mergedData.title,
                 items: mergedData.items,
                 start_time: mergedData.start_time,
-                timezone: mergedData.timezone,
-                last_updated_by: user?.id
+                timezone: mergedData.timezone
               },
               lastKnownTimestampRef.current
             );
