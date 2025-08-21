@@ -73,6 +73,18 @@ export const useSimpleAutoSave = (
     undoActiveRef.current = active;
   };
 
+  // Track own updates including structural changes
+  const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
+    if (trackOwnUpdateRef.current) {
+      trackOwnUpdateRef.current(timestamp, isStructural);
+    }
+    
+    // Always reset the structural change flag after tracking
+    if (isStructural) {
+      structuralChangeRef.current = false; // Reset flag
+    }
+  }, []);
+
   // Immediate flush function for critical saves (page unload, route change)
   const flushSave = useCallback(async () => {
     if (!rundownId || rundownId === DEMO_RUNDOWN_ID || !state.hasUnsavedChanges || isFlushingRef.current) {
@@ -95,8 +107,9 @@ export const useSimpleAutoSave = (
         start_time: state.startTime,
         timezone: state.timezone
       };
+      const isStructural = structuralChangeRef.current;
 
-      // For flush saves, use a simpler approach - try concurrency first, fallback to plain update
+      // Prefer concurrency check if we have a known server timestamp
       if (lastKnownTimestampRef.current) {
         const result = await updateRundownWithConcurrencyCheck(
           rundownId,
@@ -104,7 +117,13 @@ export const useSimpleAutoSave = (
           lastKnownTimestampRef.current
         );
 
-        if (result.success) {
+        if (result.success && result.conflictData?.updated_at) {
+          const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
+          // Track own update so realtime ignores it
+          trackMyUpdate(normalizedTimestamp, isStructural);
+          lastKnownTimestampRef.current = normalizedTimestamp;
+          updateLastKnownTimestamp?.(normalizedTimestamp);
+          registerRecentSave(rundownId, normalizedTimestamp);
           lastSavedRef.current = currentSignature;
           onSaved();
           console.log('✅ FLUSH SAVE - Completed with concurrency check');
@@ -113,19 +132,26 @@ export const useSimpleAutoSave = (
       }
 
       // Fallback to plain update if concurrency fails or no timestamp
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('rundowns')
         .update({
           ...updateData,
           updated_at: new Date().toISOString()
         })
-        .eq('id', rundownId);
+        .eq('id', rundownId)
+        .select('updated_at')
+        .single();
 
-      if (!error) {
+      if (!error && data?.updated_at) {
+        const normalizedTimestamp = normalizeTimestamp(data.updated_at);
+        trackMyUpdate(normalizedTimestamp, isStructural);
+        lastKnownTimestampRef.current = normalizedTimestamp;
+        updateLastKnownTimestamp?.(normalizedTimestamp);
+        registerRecentSave(rundownId, normalizedTimestamp);
         lastSavedRef.current = currentSignature;
         onSaved();
         console.log('✅ FLUSH SAVE - Completed with plain update');
-      } else {
+      } else if (error) {
         console.error('❌ FLUSH SAVE - Failed:', error);
       }
     } catch (error) {
@@ -133,7 +159,7 @@ export const useSimpleAutoSave = (
     } finally {
       isFlushingRef.current = false;
     }
-  }, [rundownId, state, createContentSignature, onSaved]);
+  }, [rundownId, state, createContentSignature, onSaved, trackMyUpdate, updateLastKnownTimestamp]);
 
   // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
@@ -161,17 +187,7 @@ export const useSimpleAutoSave = (
     console.log('📊 Marked structural change - will not filter in realtime');
   }, []);
 
-  // Track own updates including structural changes
-  const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
-    if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp, isStructural);
-    }
-    
-    // Always reset the structural change flag after tracking
-    if (isStructural) {
-      structuralChangeRef.current = false; // Reset flag
-    }
-  }, []);
+  
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
