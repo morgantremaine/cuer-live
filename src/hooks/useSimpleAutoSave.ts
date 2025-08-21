@@ -31,11 +31,109 @@ export const useSimpleAutoSave = (
   const pendingSaveRef = useRef(false);
   const structuralChangeRef = useRef(false);
   const lastKnownTimestampRef = useRef<string | null>(lastKnownTimestamp);
+  const isFlushingRef = useRef(false);
+
+  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
+  const createContentSignature = useCallback(() => {
+    // Create signature with ONLY content fields - completely exclude ALL showcaller data
+    const cleanItems = state.items?.map(item => {
+      return {
+        id: item.id,
+        type: item.type,
+        rowNumber: item.rowNumber,
+        name: item.name,
+        startTime: item.startTime,
+        duration: item.duration,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        images: item.images,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        customFields: item.customFields
+        // EXPLICITLY EXCLUDED: status, elapsedTime, and any other showcaller fields
+      };
+    }) || [];
+
+    const signature = JSON.stringify({
+      items: cleanItems,
+      title: state.title,
+      startTime: state.startTime,
+      timezone: state.timezone
+    });
+
+    return signature;
+  }, [state.items, state.title, state.startTime, state.timezone]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
   };
+
+  // Immediate flush function for critical saves (page unload, route change)
+  const flushSave = useCallback(async () => {
+    if (!rundownId || rundownId === DEMO_RUNDOWN_ID || !state.hasUnsavedChanges || isFlushingRef.current) {
+      return;
+    }
+
+    const currentSignature = createContentSignature();
+    if (currentSignature === lastSavedRef.current) {
+      onSaved();
+      return;
+    }
+
+    isFlushingRef.current = true;
+    console.log('🚨 FLUSH SAVE - Critical save initiated');
+
+    try {
+      const updateData = {
+        title: state.title,
+        items: state.items,
+        start_time: state.startTime,
+        timezone: state.timezone
+      };
+
+      // For flush saves, use a simpler approach - try concurrency first, fallback to plain update
+      if (lastKnownTimestampRef.current) {
+        const result = await updateRundownWithConcurrencyCheck(
+          rundownId,
+          updateData,
+          lastKnownTimestampRef.current
+        );
+
+        if (result.success) {
+          lastSavedRef.current = currentSignature;
+          onSaved();
+          console.log('✅ FLUSH SAVE - Completed with concurrency check');
+          return;
+        }
+      }
+
+      // Fallback to plain update if concurrency fails or no timestamp
+      const { error } = await supabase
+        .from('rundowns')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rundownId);
+
+      if (!error) {
+        lastSavedRef.current = currentSignature;
+        onSaved();
+        console.log('✅ FLUSH SAVE - Completed with plain update');
+      } else {
+        console.error('❌ FLUSH SAVE - Failed:', error);
+      }
+    } catch (error) {
+      console.error('❌ FLUSH SAVE - Error:', error);
+    } finally {
+      isFlushingRef.current = false;
+    }
+  }, [rundownId, state, createContentSignature, onSaved]);
 
   // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
@@ -74,41 +172,6 @@ export const useSimpleAutoSave = (
       structuralChangeRef.current = false; // Reset flag
     }
   }, []);
-
-  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
-  const createContentSignature = useCallback(() => {
-    // Create signature with ONLY content fields - completely exclude ALL showcaller data
-    const cleanItems = state.items?.map(item => {
-      return {
-        id: item.id,
-        type: item.type,
-        rowNumber: item.rowNumber,
-        name: item.name,
-        startTime: item.startTime,
-        duration: item.duration,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        customFields: item.customFields
-        // EXPLICITLY EXCLUDED: status, elapsedTime, and any other showcaller fields
-      };
-    }) || [];
-
-    const signature = JSON.stringify({
-      items: cleanItems,
-      title: state.title,
-      startTime: state.startTime,
-      timezone: state.timezone
-    });
-
-    return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -237,11 +300,33 @@ export const useSimpleAutoSave = (
             timezone: state.timezone
           };
 
-          const result = await updateRundownWithConcurrencyCheck(
-            rundownId,
-            updateData,
-            lastKnownTimestampRef.current || new Date().toISOString()
-          );
+          // Only use concurrency check if we have a known timestamp
+          let result;
+          if (lastKnownTimestampRef.current) {
+            result = await updateRundownWithConcurrencyCheck(
+              rundownId,
+              updateData,
+              lastKnownTimestampRef.current
+            );
+          } else {
+            // No known timestamp - do a plain update without concurrency check
+            console.log('📝 No known timestamp - performing plain update');
+            const { data, error } = await supabase
+              .from('rundowns')
+              .update({
+                ...updateData,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', rundownId)
+              .select('updated_at')
+              .single();
+
+            if (error) {
+              result = { success: false, error: error.message };
+            } else {
+              result = { success: true, conflictData: { updated_at: data.updated_at } };
+            }
+          }
 
           if (result.success) {
             // Track the actual timestamp returned by the database
@@ -348,6 +433,42 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     lastKnownTimestampRef.current = lastKnownTimestamp;
   }, [lastKnownTimestamp]);
+
+  // Flush-on-leave protection - save immediately when user navigates away
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
+        flushSave();
+        // Show browser warning for unsaved changes
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    const handlePageHide = () => {
+      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
+        flushSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [rundownId, state.hasUnsavedChanges, flushSave]);
+
+  // Flush on route changes
+  useEffect(() => {
+    return () => {
+      // When this component unmounts (route change), flush any pending saves
+      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
+        flushSave();
+      }
+    };
+  }, [location.pathname, rundownId, state.hasUnsavedChanges, flushSave]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
