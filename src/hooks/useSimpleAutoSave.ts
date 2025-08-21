@@ -32,6 +32,15 @@ export const useSimpleAutoSave = (
   const structuralChangeRef = useRef(false);
   const lastKnownTimestampRef = useRef<string | null>(lastKnownTimestamp);
   const isFlushingRef = useRef(false);
+  const hasUnsavedRef = useRef(false);
+  const flushSaveRef = useRef<() => void>(() => {});
+  const rundownIdRef = useRef<string | null>(rundownId);
+
+  // Keep refs in sync
+  useEffect(() => {
+    hasUnsavedRef.current = state.hasUnsavedChanges;
+    rundownIdRef.current = rundownId;
+  }, [state.hasUnsavedChanges, rundownId]);
 
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
@@ -127,6 +136,7 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = currentSignature;
           onSaved();
           console.log('✅ FLUSH SAVE - Completed with concurrency check');
+          isFlushingRef.current = false;
           return;
         }
       }
@@ -160,6 +170,11 @@ export const useSimpleAutoSave = (
       isFlushingRef.current = false;
     }
   }, [rundownId, state, createContentSignature, onSaved, trackMyUpdate, updateLastKnownTimestamp]);
+
+  // Keep latest flush function in a ref for stable event handlers
+  useEffect(() => {
+    flushSaveRef.current = flushSave;
+  }, [flushSave]);
 
   // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
@@ -450,20 +465,21 @@ export const useSimpleAutoSave = (
     lastKnownTimestampRef.current = lastKnownTimestamp;
   }, [lastKnownTimestamp]);
 
-  // Flush-on-leave protection - save immediately when user navigates away
+  // Flush-on-leave protection - save immediately on unload or when page is hidden
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
-        flushSave();
-        // Show browser warning for unsaved changes
+      const rid = rundownIdRef.current;
+      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
+        flushSaveRef.current();
         e.preventDefault();
         e.returnValue = '';
       }
     };
 
     const handlePageHide = () => {
-      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
-        flushSave();
+      const rid = rundownIdRef.current;
+      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
+        flushSaveRef.current();
       }
     };
 
@@ -474,17 +490,18 @@ export const useSimpleAutoSave = (
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
     };
-  }, [rundownId, state.hasUnsavedChanges, flushSave]);
+  }, []);
 
-  // Flush on route changes
+  // Flush on route changes (component unmount)
   useEffect(() => {
     return () => {
       // When this component unmounts (route change), flush any pending saves
-      if (rundownId && rundownId !== DEMO_RUNDOWN_ID && state.hasUnsavedChanges) {
-        flushSave();
+      const rid = rundownIdRef.current;
+      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
+        flushSaveRef.current();
       }
     };
-  }, [location.pathname, rundownId, state.hasUnsavedChanges, flushSave]);
+  }, []);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
