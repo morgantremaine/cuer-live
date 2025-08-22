@@ -206,15 +206,70 @@ const Teleprompter = () => {
       return isUppercase ? text.toUpperCase() : text;
     };
 
-    // Helper function to process script text and remove bracket styling for print
+    // Helper function to process script text for print with colored brackets
     const processScriptForPrint = (text: string) => {
       // Handle [null] case (case-insensitive) - don't show any script content in print
       if (text.trim().toLowerCase() === '[null]') {
         return '';
       }
-      // Keep brackets but remove color indicators: [Caster{blue}] becomes [Caster]
-      const cleanText = text.replace(/\[([^\[\]{}]+)(?:\{[^}]+\})?\]/g, '[$1]');
-      return formatText(cleanText);
+
+      const bracketRegex = /\[([^\[\]{}]+)(?:\{([^}]+)\})?\]/g;
+      
+      let result = '';
+      let lastIndex = 0;
+      let match;
+
+      while ((match = bracketRegex.exec(text)) !== null) {
+        // Add text before the bracket
+        if (match.index > lastIndex) {
+          result += formatText(text.slice(lastIndex, match.index));
+        }
+
+        const bracketText = match[1];
+        const colorName = match[2]?.toLowerCase();
+
+        if (colorName) {
+          // Apply color for brackets with custom colors
+          const colorMap: { [key: string]: string } = {
+            'red': '#ef4444',
+            'blue': '#3b82f6',
+            'green': '#22c55e',
+            'yellow': '#eab308',
+            'purple': '#a855f7',
+            'orange': '#f97316',
+            'pink': '#ec4899',
+            'gray': '#6b7280',
+            'grey': '#6b7280',
+            'cyan': '#06b6d4',
+            'lime': '#84cc16',
+            'indigo': '#6366f1',
+            'teal': '#14b8a6',
+            'amber': '#f59e0b',
+            'emerald': '#10b981',
+            'violet': '#8b5cf6',
+            'rose': '#f43f5e',
+            'slate': '#64748b',
+            'stone': '#78716c',
+            'neutral': '#737373',
+            'zinc': '#71717a'
+          };
+          
+          const backgroundColor = colorMap[colorName] || colorName;
+          result += `<span style="background-color: ${backgroundColor}; color: white; padding: 2px 6px; border-radius: 3px; margin: 0 2px;">${formatText(bracketText)}</span>`;
+        } else {
+          // Keep normal brackets as text
+          result += `[${formatText(bracketText)}]`;
+        }
+
+        lastIndex = bracketRegex.lastIndex;
+      }
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        result += formatText(text.slice(lastIndex));
+      }
+
+      return result;
     };
 
     // Generate HTML for print with proper page flow
