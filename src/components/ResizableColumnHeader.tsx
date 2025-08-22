@@ -163,7 +163,7 @@ const ResizableColumnHeader = ({
     position: isDragging ? 'relative' as const : undefined,
   };
 
-  // Create listeners that exclude the resize handle
+  // Create listeners that exclude the resize handle and context menu events
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
@@ -173,7 +173,18 @@ const ResizableColumnHeader = ({
           (e.target as HTMLElement).closest('.resize-handle')) {
         return;
       }
+      
+      // Don't start drag if it's a right-click (context menu)
+      if (e.button === 2) {
+        return;
+      }
+      
       listeners?.onPointerDown?.(e);
+    },
+    // Prevent context menu from being blocked
+    onContextMenu: (e: React.MouseEvent) => {
+      e.stopPropagation();
+      // Allow the context menu to work normally
     }
   };
 
