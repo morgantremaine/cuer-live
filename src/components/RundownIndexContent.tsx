@@ -8,7 +8,6 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
-import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -73,12 +72,6 @@ const RundownIndexContent = () => {
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences 
   } = useUserColumnPreferences(rundownId);
-
-  // Use column layout storage for saved layouts
-  const { 
-    savedLayouts, 
-    loading: isLoadingLayouts 
-  } = useColumnLayoutStorage();
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
   const handleAddColumnWrapper = useCallback((name: string) => {
@@ -327,26 +320,6 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Column context menu handlers
-  const handleHideColumn = useCallback((columnId: string) => {
-    handleToggleColumnVisibilityWrapper(columnId);
-  }, [handleToggleColumnVisibilityWrapper]);
-
-  const handleAddColumnAfter = useCallback((column: any, afterColumnId: string) => {
-    const afterIndex = userColumns.findIndex(col => col.id === afterColumnId);
-    const newColumns = [...userColumns];
-    
-    // Insert the column after the specified column
-    newColumns.splice(afterIndex + 1, 0, { ...column, isVisible: true });
-    setUserColumns(newColumns, true);
-  }, [userColumns, setUserColumns]);
-
-  const handleLoadLayoutFromContextMenu = useCallback((layout: any) => {
-    if (layout.columns) {
-      handleLoadLayoutWrapper(layout.columns);
-    }
-  }, [handleLoadLayoutWrapper]);
-
   // Prepare rundown data for Cuer AI
   const rundownData = {
     id: rundownId,
@@ -444,12 +417,6 @@ const RundownIndexContent = () => {
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
         hasUnsavedChanges={hasUnsavedChanges}
-        // Column context menu props
-        allColumns={userColumns}
-        savedLayouts={savedLayouts}
-        onHideColumn={handleHideColumn}
-        onAddColumnAfter={handleAddColumnAfter}
-        onLoadLayoutFromContextMenu={handleLoadLayoutFromContextMenu}
         isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}

@@ -27,12 +27,6 @@ interface RundownContentProps {
   autoScrollEnabled?: boolean;
   startTime?: string;
   onToggleAutoScroll?: () => void;
-  
-  // Column context menu props
-  savedLayouts?: any[];
-  onHideColumn?: (columnId: string) => void;
-  onAddColumnAfter?: (column: Column, afterColumnId: string) => void;
-  onLoadLayoutFromContextMenu?: (layout: any) => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
@@ -85,11 +79,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   title = 'Untitled Rundown',
   totalRuntime = '00:00:00',
   onToggleAutoScroll,
-  // Column context menu props
-  savedLayouts,
-  onHideColumn,
-  onAddColumnAfter,
-  onLoadLayoutFromContextMenu,
   getColumnWidth,
   updateColumnWidth,
   onReorderColumns,
@@ -257,12 +246,6 @@ const RundownContent = React.memo<RundownContentProps>(({
               onToggleColumnExpand={handleToggleColumnExpand}
               onToggleAllHeaders={handleToggleAllHeaders}
               isHeaderCollapsed={isHeaderCollapsed}
-              // Column context menu props
-              allColumns={visibleColumns} // Pass all available columns
-              savedLayouts={savedLayouts || []}
-              onHideColumn={onHideColumn}
-              onAddColumnAfter={onAddColumnAfter}
-              onLoadLayoutFromContextMenu={onLoadLayoutFromContextMenu}
             />
             
             {/* Table Body - Content */}

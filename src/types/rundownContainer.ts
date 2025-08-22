@@ -60,13 +60,6 @@ export interface RundownContainerProps {
   handleLoadLayout: (layoutColumns: Column[]) => void;
   debugColumns?: () => void;
   resetToDefaults?: () => void;
-  
-  // Column context menu props
-  allColumns?: Column[];
-  savedLayouts?: any[];
-  onHideColumn?: (columnId: string) => void;
-  onAddColumnAfter?: (column: Column, afterColumnId: string) => void;
-  onLoadLayoutFromContextMenu?: (layout: any) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;

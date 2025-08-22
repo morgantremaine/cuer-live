@@ -26,11 +26,6 @@ const RundownMainContent = ({
   totalDuration,
   autoScrollEnabled,
   onToggleAutoScroll,
-  // Column context menu props
-  savedLayouts,
-  onHideColumn,
-  onAddColumnAfter,
-  onLoadLayoutFromContextMenu,
   ...contentProps
 }: RundownMainContentProps) => {
 
@@ -43,11 +38,6 @@ const RundownMainContent = ({
         onToggleAutoScroll={onToggleAutoScroll}
         onReorderColumns={handleReorderColumns}
         title={contentProps.rundownTitle}
-        // Column context menu props
-        savedLayouts={savedLayouts}
-        onHideColumn={onHideColumn}
-        onAddColumnAfter={onAddColumnAfter}
-        onLoadLayoutFromContextMenu={onLoadLayoutFromContextMenu}
         totalRuntime={totalDuration}
         items={contentProps.items} // Pass original items for duration calculations
         visibleItems={contentProps.visibleItems} // Pass visible items for display
