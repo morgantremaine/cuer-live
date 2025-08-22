@@ -1,10 +1,13 @@
 /**
  * Simplified Universal Time Service
- * Uses Supabase server timestamps as the single source of truth
- * Eliminates external API dependencies and provides consistent timing
+ * Now uses system time to ensure accurate time display
+ * Eliminates server timestamp offset issues
  */
 
 import { formatInTimeZone } from 'date-fns-tz';
+
+// Force system time usage to fix incorrect time display
+const USE_SYSTEM_TIME = true;
 
 interface TimeSyncState {
   serverTimeOffset: number; // Difference between server time and local time
@@ -15,8 +18,8 @@ interface TimeSyncState {
 class UniversalTimeService {
   private state: TimeSyncState = {
     serverTimeOffset: 0,
-    lastSyncTime: 0,
-    isTimeSynced: false
+    lastSyncTime: Date.now(),
+    isTimeSynced: USE_SYSTEM_TIME // Always synced when using system time
   };
 
   /**
@@ -24,8 +27,12 @@ class UniversalTimeService {
    * This replaces all Date.now() calls
    */
   public getUniversalTime(): number {
-    const localTime = Date.now();
+    // Use system time directly to fix incorrect time display
+    if (USE_SYSTEM_TIME) {
+      return Date.now();
+    }
     
+    const localTime = Date.now();
     // Always return local time + offset (offset will be 0 if not synced)
     return localTime + this.state.serverTimeOffset;
   }
@@ -77,6 +84,11 @@ class UniversalTimeService {
    * This gets called whenever we receive server timestamps from database operations
    */
   public updateFromServerTimestamp(serverTimestamp: string): void {
+    // When using system time, ignore server timestamps to prevent stale time issues
+    if (USE_SYSTEM_TIME) {
+      return;
+    }
+    
     try {
       const serverTime = new Date(serverTimestamp).getTime();
       const localTime = Date.now();
