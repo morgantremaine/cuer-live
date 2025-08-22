@@ -31,8 +31,8 @@ interface ColumnHeaderContextMenuProps {
   availableColumns: Column[];
   savedLayouts: ColumnLayout[];
   onHideColumn: (columnId: string) => void;
-  onAddColumn: (column: Column, afterColumnId: string) => void;
-  onLoadLayout: (layout: ColumnLayout) => void;
+  onAddColumnAfter: (column: Column, afterColumnId: string) => void;
+  onLoadLayoutFromContextMenu: (layout: ColumnLayout) => void;
 }
 
 const ColumnHeaderContextMenu = ({
@@ -41,8 +41,8 @@ const ColumnHeaderContextMenu = ({
   availableColumns,
   savedLayouts,
   onHideColumn,
-  onAddColumn,
-  onLoadLayout,
+  onAddColumnAfter,
+  onLoadLayoutFromContextMenu,
 }: ColumnHeaderContextMenuProps) => {
   // Filter out columns that are already visible
   const hiddenColumns = availableColumns.filter(col => !col.isVisible);
@@ -73,7 +73,7 @@ const ColumnHeaderContextMenu = ({
               hiddenColumns.map((hiddenColumn) => (
                 <ContextMenuItem
                   key={hiddenColumn.id}
-                  onClick={() => onAddColumn(hiddenColumn, column.id)}
+                  onClick={() => onAddColumnAfter(hiddenColumn, column.id)}
                   className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   {hiddenColumn.name}
@@ -99,7 +99,7 @@ const ColumnHeaderContextMenu = ({
               savedLayouts.map((layout) => (
                 <ContextMenuItem
                   key={layout.id}
-                  onClick={() => onLoadLayout(layout)}
+                  onClick={() => onLoadLayoutFromContextMenu(layout)}
                   className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   <div className="flex flex-col gap-1">

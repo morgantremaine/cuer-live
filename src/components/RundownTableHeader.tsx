@@ -245,8 +245,8 @@ const RundownTableHeader = ({
                   availableColumns={allColumns}
                   savedLayouts={savedLayouts}
                   onHideColumn={onHideColumn || (() => {})}
-                  onAddColumn={onAddColumnAfter || (() => {})}
-                  onLoadLayout={onLoadLayoutFromContextMenu || (() => {})}
+                  onAddColumnAfter={onAddColumnAfter || (() => {})}
+                  onLoadLayoutFromContextMenu={onLoadLayoutFromContextMenu || (() => {})}
                 >
                   <ResizableColumnHeader
                     column={column}

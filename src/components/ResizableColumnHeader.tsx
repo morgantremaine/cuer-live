@@ -180,12 +180,6 @@ const ResizableColumnHeader = ({
       }
       
       listeners?.onPointerDown?.(e);
-    },
-    // Prevent context menu from being blocked
-    onContextMenu: (e: React.MouseEvent) => {
-      e.preventDefault(); // Prevent browser's default context menu
-      e.stopPropagation();
-      // Allow our custom context menu to work
     }
   };
 
