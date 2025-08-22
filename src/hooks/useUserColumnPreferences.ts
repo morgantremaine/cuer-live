@@ -315,10 +315,100 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     };
   }, []);
 
+  // Apply layout while preserving all available columns (defaults + team customs + user customs)
+  const applyLayout = useCallback((layoutColumns: Column[]) => {
+    console.log('🔄 UserColumnPreferences: Applying layout with', layoutColumns.length, 'columns');
+    
+    // Create master list of all available columns (defaults + team + existing user columns)
+    const masterColumns = [...defaultColumns];
+    
+    // Add all team custom columns to master list
+    teamColumns.forEach(teamCol => {
+      const existsInMaster = masterColumns.some(col => col.key === teamCol.column_key);
+      if (!existsInMaster) {
+        masterColumns.push({
+          id: teamCol.column_key,
+          name: teamCol.column_name,
+          key: teamCol.column_key,
+          width: '150px',
+          isCustom: true,
+          isEditable: true,
+          isVisible: false,
+          isTeamColumn: true,
+          createdBy: teamCol.created_by
+        } as Column & { isTeamColumn?: boolean; createdBy?: string });
+      }
+    });
+    
+    // Add any existing user custom columns not in team columns
+    columns.forEach(col => {
+      if (col.isCustom && !(col as any).isTeamColumn) {
+        const existsInMaster = masterColumns.some(masterCol => masterCol.key === col.key);
+        if (!existsInMaster) {
+          masterColumns.push(col);
+        }
+      }
+    });
+    
+    // Create a map of layout column preferences with sort order
+    const layoutColumnMap = new Map<string, Column & { sortOrder: number }>();
+    layoutColumns.forEach((col, index) => {
+      layoutColumnMap.set(col.key, { ...col, sortOrder: index });
+    });
+    
+    // Apply layout preferences to master columns
+    const appliedColumns = masterColumns.map(masterCol => {
+      const layoutCol = layoutColumnMap.get(masterCol.key);
+      if (layoutCol) {
+        // Column exists in layout - use layout preferences but preserve master column metadata
+        const { sortOrder, ...layoutColWithoutSort } = layoutCol;
+        return {
+          ...masterCol, // Preserve original metadata (isCustom, isTeamColumn, etc.)
+          ...layoutColWithoutSort, // Apply layout preferences (visibility, width, etc.)
+          isCustom: masterCol.isCustom, // Ensure we don't lose custom flag
+          isTeamColumn: (masterCol as any).isTeamColumn, // Preserve team flag
+          createdBy: (masterCol as any).createdBy, // Preserve creator info
+          sortOrder // Add sort order for sorting
+        };
+      } else {
+        // Column not in layout - keep it but mark as hidden
+        return {
+          ...masterCol,
+          isVisible: false,
+          sortOrder: 9999 // Put non-layout columns at the end
+        };
+      }
+    });
+    
+    // Sort by layout order first, then by original order for non-layout columns
+    appliedColumns.sort((a, b) => {
+      const aOrder = (a as any).sortOrder ?? 9999;
+      const bOrder = (b as any).sortOrder ?? 9999;
+      return aOrder - bOrder;
+    });
+    
+    // Remove sortOrder property and return clean columns
+    const finalColumns = appliedColumns.map(col => {
+      const { sortOrder, ...cleanCol } = col as any;
+      return cleanCol as Column;
+    });
+    
+    console.log('✅ Layout applied - total columns:', finalColumns.length, 
+      'visible:', finalColumns.filter(c => c.isVisible).length);
+    
+    setColumns(finalColumns);
+    
+    // Save the layout application
+    if (!isLoadingRef.current) {
+      saveColumnPreferences(finalColumns, true);
+    }
+  }, [columns, teamColumns, saveColumnPreferences]);
+
   return {
     columns,
     setColumns: updateColumns,
     updateColumnWidth,
+    applyLayout,
     isLoading,
     isSaving,
     reloadPreferences: loadColumnPreferences

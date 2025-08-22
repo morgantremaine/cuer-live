@@ -69,6 +69,7 @@ const RundownIndexContent = () => {
     columns: userColumns, 
     setColumns: setUserColumns, 
     updateColumnWidth: updateUserColumnWidth,
+    applyLayout: applyUserLayout,
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences 
   } = useUserColumnPreferences(rundownId);
@@ -310,8 +311,9 @@ const RundownIndexContent = () => {
       return;
     }
 
-    console.log('✅ Setting user column preferences from loaded layout');
-    setUserColumns(validColumns, true); // Immediate save for layout loading
+    console.log('✅ Applying layout while preserving all available columns');
+    // Use applyLayout instead of setColumns to preserve all available columns
+    applyUserLayout(validColumns);
   };
 
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
