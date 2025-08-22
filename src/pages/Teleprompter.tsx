@@ -281,7 +281,7 @@ const Teleprompter = () => {
           <style>
             @media print {
               @page {
-                margin: 0.75in;
+                margin: 0.5in;
                 size: letter;
               }
               body {
@@ -291,43 +291,51 @@ const Teleprompter = () => {
             }
             * {
               box-sizing: border-box;
+              margin: 0;
+              padding: 0;
             }
             body {
               font-family: Arial, sans-serif;
               color: black;
               background: white;
-              line-height: 1.4;
+              line-height: 1.5;
               font-size: 14px;
               margin: 0;
               padding: 0;
             }
             .script-container {
               max-width: 100%;
+              width: 100%;
             }
             .script-item {
-              margin-bottom: 2em;
-              page-break-inside: avoid;
+              margin-bottom: 1.5em;
+              break-inside: avoid-column;
             }
             .segment-header {
               font-weight: bold;
-              font-size: 12px;
-              margin-bottom: 0.75em;
-              page-break-after: avoid;
+              font-size: 13px;
+              margin-bottom: 0.5em;
               color: #333;
+              break-after: avoid;
             }
             .script-content {
               font-size: 14px;
-              line-height: 1.4;
+              line-height: 1.5;
               text-align: left;
               white-space: pre-wrap;
+              margin-bottom: 0;
             }
             .header-item {
-              margin: 2em 0 1.5em 0;
+              margin: 1.5em 0 1em 0;
             }
             .header-item .segment-header {
               font-size: 14px;
               font-weight: bold;
               color: #000;
+            }
+            /* Ensure no orphaned headers */
+            .script-item:last-child {
+              margin-bottom: 0;
             }
           </style>
         </head>
