@@ -121,6 +121,7 @@ export const useSimplifiedRundownState = () => {
     
     // Add currently typing field if any
     if (typingSessionRef.current) {
+      console.log('🛡️ Protecting currently typing field:', typingSessionRef.current.fieldKey);
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
@@ -229,7 +230,7 @@ export const useSimplifiedRundownState = () => {
       
       typingTimeoutRef.current = setTimeout(() => {
         typingSessionRef.current = null;
-      }, 1000);
+      }, 5000); // Extended to 5 seconds for better protection
     } else if (field === 'duration') {
       const sessionKey = `${id}-${field}`;
       recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
@@ -463,7 +464,7 @@ export const useSimplifiedRundownState = () => {
           if (typingSessionRef.current?.fieldKey === 'title') {
             typingSessionRef.current = null;
           }
-        }, 1000);
+        }, 5000); // Extended timeout for title editing
       }
     }, [actions.setTitle, state.items, state.title, saveUndoState])
   };
@@ -630,7 +631,7 @@ export const useSimplifiedRundownState = () => {
         if (typingSessionRef.current?.fieldKey === 'startTime') {
           typingSessionRef.current = null;
         }
-      }, 1000);
+      }, 5000); // Extended timeout for start time editing
     }, [actions.setStartTime]),
     setTimezone: useCallback((newTimezone: string) => {
       // Track timezone editing for protection
@@ -644,7 +645,7 @@ export const useSimplifiedRundownState = () => {
         if (typingSessionRef.current?.fieldKey === 'timezone') {
           typingSessionRef.current = null;
         }
-      }, 1000);
+      }, 5000); // Extended timeout for timezone editing
     }, [actions.setTimezone]),
     
     addRow: enhancedActions.addRow,
