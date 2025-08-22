@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/modifiers';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import ResizableColumnHeader from './ResizableColumnHeader';
+import ColumnHeaderContextMenu from './ColumnHeaderContextMenu';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableHeaderProps {
@@ -35,6 +36,12 @@ interface RundownTableHeaderProps {
   onToggleColumnExpand?: (columnKey: string) => void;
   onToggleAllHeaders?: () => void;
   isHeaderCollapsed?: (headerId: string) => boolean;
+  // Column context menu props
+  allColumns?: Column[]; // All columns including hidden ones
+  savedLayouts?: any[];
+  onHideColumn?: (columnId: string) => void;
+  onAddColumnAfter?: (column: Column, afterColumnId: string) => void;
+  onLoadLayoutFromContextMenu?: (layout: any) => void;
 }
 
 const RundownTableHeader = ({
@@ -46,7 +53,13 @@ const RundownTableHeader = ({
   columnExpandState = {},
   onToggleColumnExpand,
   onToggleAllHeaders,
-  isHeaderCollapsed
+  isHeaderCollapsed,
+  // Column context menu props
+  allColumns = [],
+  savedLayouts = [],
+  onHideColumn,
+  onAddColumnAfter,
+  onLoadLayoutFromContextMenu
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -226,35 +239,44 @@ const RundownTableHeader = ({
               const isLastColumn = index === visibleColumns.length - 1;
               
               return (
-                <ResizableColumnHeader
+                <ColumnHeaderContextMenu
                   key={column.id}
                   column={column}
-                  width={columnWidth}
-                  onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
-                  onAutoResize={() => handleAutoResize(column)}
-                  showLeftSeparator={index > 0}
-                  isLastColumn={isLastColumn}
+                  availableColumns={allColumns}
+                  savedLayouts={savedLayouts}
+                  onHideColumn={onHideColumn || (() => {})}
+                  onAddColumn={onAddColumnAfter || (() => {})}
+                  onLoadLayout={onLoadLayoutFromContextMenu || (() => {})}
                 >
-                  <div className="flex items-center space-x-1">
-                    {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpand && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleColumnExpand(column.key);
-                        }}
-                        className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
-                        title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
-                      >
-                        {columnExpandState[column.key] ? (
-                          <ChevronDown className="h-3 w-3 text-white" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 text-white" />
-                        )}
-                      </button>
-                    )}
-                    <span>{column.name || column.key}</span>
-                  </div>
-                </ResizableColumnHeader>
+                  <ResizableColumnHeader
+                    column={column}
+                    width={columnWidth}
+                    onWidthChange={(columnId: string, width: number) => updateColumnWidth(columnId, width)}
+                    onAutoResize={() => handleAutoResize(column)}
+                    showLeftSeparator={index > 0}
+                    isLastColumn={isLastColumn}
+                  >
+                    <div className="flex items-center space-x-1">
+                      {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpand && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleColumnExpand(column.key);
+                          }}
+                          className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
+                          title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
+                        >
+                          {columnExpandState[column.key] ? (
+                            <ChevronDown className="h-3 w-3 text-white" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3 text-white" />
+                          )}
+                        </button>
+                      )}
+                      <span>{column.name || column.key}</span>
+                    </div>
+                  </ResizableColumnHeader>
+                </ColumnHeaderContextMenu>
               );
             })}
           </SortableContext>

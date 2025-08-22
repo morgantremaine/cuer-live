@@ -84,7 +84,12 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleLoadLayout,
     autoScrollEnabled,
     onToggleAutoScroll,
-    onShowNotes
+    onShowNotes,
+    // Column context menu props
+    savedLayouts,
+    onHideColumn,
+    onAddColumnAfter,
+    onLoadLayoutFromContextMenu
   } = props;
 
   // Create rundown data for CSV export
