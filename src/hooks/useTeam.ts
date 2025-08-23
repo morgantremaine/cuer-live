@@ -107,8 +107,32 @@ export const useTeam = () => {
         setTeam(null);
         setUserRole(null);
       } else {
-        // Skip auto-acceptance in useTeam - this is now handled only in join-team route
-        // This prevents unwanted team creation when users have pending invitations
+        // Check if user has pending invitation
+        const pendingToken = localStorage.getItem('pendingInvitationToken');
+        
+        if (!membershipData && pendingToken && pendingToken !== 'undefined') {
+          console.log('No team membership found, but have pending token:', pendingToken);
+          // User has pending invitation, try to accept it
+          const { data: acceptResult, error: acceptError } = await supabase.rpc(
+            'accept_team_invitation_safe',
+            { invitation_token: pendingToken }
+          );
+
+          if (acceptError) {
+            console.error('Error accepting invitation:', acceptError);
+            localStorage.removeItem('pendingInvitationToken');
+          } else if (acceptResult?.success) {
+            console.log('Invitation accepted successfully');
+            localStorage.removeItem('pendingInvitationToken');
+            // Reload team data after successful invitation acceptance
+            setTimeout(() => {
+              loadedUserRef.current = null;
+              isLoadingRef.current = false;
+              loadTeamData();
+            }, 1000);
+            return;
+          }
+        }
 
         if (membershipData?.teams) {
           const teamData = Array.isArray(membershipData.teams) ? membershipData.teams[0] : membershipData.teams;
