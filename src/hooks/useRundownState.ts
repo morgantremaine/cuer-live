@@ -4,6 +4,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { mergeItemsWithProtection } from '@/utils/optimisticConcurrency';
 
 export interface RundownState {
   items: RundownItem[];
@@ -149,26 +150,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       let finalItems: RundownItem[];
       
       if (isStructuralChange) {
-        // For structural changes, replace the entire items array but preserve protected field content
-        console.log('🏗️ Applying structural change - replacing items array');
-        finalItems = newItems.map(newItem => {
-          const existingItem = state.items.find(item => item.id === newItem.id);
-          if (!existingItem) {
-            // New item, use as-is
-            return newItem;
-          }
-          
-          // Existing item - preserve protected fields
-          const mergedItem = { ...newItem };
-          Object.keys(existingItem).forEach(key => {
-            const fieldKey = `${existingItem.id}-${key}`;
-            if (protectedFields.has(fieldKey)) {
-              (mergedItem as any)[key] = existingItem[key as keyof RundownItem];
-            }
-          });
-          
-          return mergedItem;
-        });
+        // For structural changes, use the same merge strategy as conflict resolution
+        // This preserves LOCAL order and local-only items while merging teammate changes
+        console.log(`🏗️ Structural realtime merge: ${state.items.length} local → ${newItems.length} server items`);
+        finalItems = mergeItemsWithProtection(state.items, newItems, protectedFields);
+        console.log(`🏗️ Result: ${finalItems.length} items after merge`);
       } else {
         // For content changes, use field-by-field merge
         console.log('📝 Applying content change - field-by-field merge');

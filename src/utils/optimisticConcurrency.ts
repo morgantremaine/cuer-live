@@ -157,7 +157,7 @@ export const mergeConflictedRundown = (
 /**
  * Merges item arrays while preserving local changes to protected fields
  */
-const mergeItemsWithProtection = (
+export const mergeItemsWithProtection = (
   localItems: RundownItem[],
   serverItems: RundownItem[],
   protectedFields: Set<string>
