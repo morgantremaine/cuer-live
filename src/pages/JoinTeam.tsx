@@ -251,16 +251,17 @@ const JoinTeam = () => {
     } else {
       console.log('Account created successfully');
       
-      // Check if user has immediate session (email confirmation disabled)
+      // Since email confirmation is disabled, user should have immediate session
       if (data?.session) {
-        console.log('Email confirmation is disabled - user has immediate session');
+        console.log('User has immediate session - proceeding with team invitation');
         toast({
-          title: 'Account Created',
-          description: 'Your account has been created! You will now join the team.',
+          title: 'Account Created Successfully!',
+          description: 'Welcome! You will now join the team automatically.',
         });
         // User will be automatically processed by the useEffect that handles invitation acceptance
       } else {
-        console.log('Email confirmation required - showing email confirmation screen');
+        console.log('Unexpected: No immediate session despite disabled email confirmation');
+        // Fallback - still show confirmation screen just in case
         setShowEmailConfirmation(true);
       }
       setIsProcessing(false);
@@ -278,10 +279,10 @@ const JoinTeam = () => {
     if (error) {
       console.error('Sign in error:', error);
       
-      if (error.message.includes('Email not confirmed')) {
+      if (error.message.includes('Email not confirmed') || error.message.includes('Invalid login credentials')) {
         toast({
-          title: 'Email not confirmed',
-          description: 'Please check your email and click the confirmation link first, then try signing in again.',
+          title: 'Sign In Failed',
+          description: 'Please check your email and password, or create a new account if you haven\'t signed up yet.',
           variant: 'destructive',
         });
       } else {
@@ -371,43 +372,16 @@ const JoinTeam = () => {
           <CardContent>
             {showEmailConfirmation ? (
               <div className="text-center space-y-4">
-                <div className="text-white text-lg font-semibold">Check Your Email</div>
+                <div className="text-white text-lg font-semibold">Almost There!</div>
                 <p className="text-gray-400">
-                  We've sent a verification link to your email address. Please check your inbox (including spam/promotions folders) and click the link to verify your account.
+                  If you're seeing this message, there may have been an issue with automatic account setup. Please try refreshing the page or contact support.
                 </p>
-                <p className="text-sm text-gray-500">
-                  After verifying your email, you'll be automatically redirected to complete joining {getInviterDisplayName()}'s team.
-                </p>
-                <div className="bg-gray-700 p-4 rounded-lg text-sm text-gray-300">
-                  <p className="font-semibold mb-2">📧 Email Tips:</p>
-                  <ul className="text-left space-y-1">
-                    <li>• Check your spam/junk folder</li>
-                    <li>• Check promotions tab (Gmail)</li>
-                    <li>• Wait 2-3 minutes for delivery</li>
-                    <li>• Add our domain to your safe senders</li>
-                  </ul>
-                </div>
                 <div className="space-y-2">
                   <Button 
-                    onClick={async () => {
-                      const { error } = await signUp(email, password, fullName);
-                      if (error) {
-                        toast({
-                          title: 'Error',
-                          description: error.message,
-                          variant: 'destructive',
-                        });
-                      } else {
-                        toast({
-                          title: 'Email Resent',
-                          description: 'Confirmation email sent again. Please check your inbox.',
-                        });
-                      }
-                    }}
-                    variant="outline"
-                    className="text-gray-300 border-gray-600 hover:bg-gray-700 w-full"
+                    onClick={() => window.location.reload()}
+                    className="text-white bg-blue-600 hover:bg-blue-700 w-full"
                   >
-                    Resend Confirmation Email
+                    Refresh Page
                   </Button>
                   <Button 
                     onClick={() => setShowEmailConfirmation(false)}
@@ -475,8 +449,8 @@ const JoinTeam = () => {
                         className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
                         required
                       />
-                      <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
-                        By creating an account, you agree to the{' '}
+                        <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
+                        I agree to create an account and join {getInviterDisplayName()}'s team by accepting the{' '}
                         <a 
                           href="/terms" 
                           target="_blank" 
