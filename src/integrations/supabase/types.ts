@@ -250,6 +250,7 @@ export type Database = {
           icon: string | null
           id: string
           items: Json
+          last_updated_by: string | null
           logo_url: string | null
           showcaller_state: Json | null
           start_time: string | null
@@ -270,6 +271,7 @@ export type Database = {
           icon?: string | null
           id?: string
           items: Json
+          last_updated_by?: string | null
           logo_url?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
@@ -290,6 +292,7 @@ export type Database = {
           icon?: string | null
           id?: string
           items?: Json
+          last_updated_by?: string | null
           logo_url?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
@@ -749,6 +752,10 @@ export type Database = {
       }
       accept_team_invitation: {
         Args: { accepting_user_id: string; invitation_token: string }
+        Returns: Json
+      }
+      accept_team_invitation_legacy: {
+        Args: { invitation_token: string }
         Returns: Json
       }
       accept_team_invitation_safe: {
