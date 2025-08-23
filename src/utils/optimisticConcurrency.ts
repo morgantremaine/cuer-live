@@ -109,16 +109,22 @@ export const mergeConflictedRundown = (
 ) => {
   const merged = { ...serverData };
 
-  // Preserve protected fields from local data
-  if (protectedFields.has('title') && localData.title !== undefined) {
-    merged.title = localData.title;
-  }
-  if (protectedFields.has('startTime') && localData.start_time !== undefined) {
-    merged.start_time = localData.start_time;
-  }
-  if (protectedFields.has('timezone') && localData.timezone !== undefined) {
-    merged.timezone = localData.timezone;
-  }
+  // Handle rundown-level protected fields (format: rundownId-fieldName)
+  protectedFields.forEach(fieldKey => {
+    const parts = fieldKey.split('-');
+    if (parts.length === 2) {
+      // Rundown-level field: rundownId-fieldName
+      const field = parts[1];
+      
+      if (field === 'title' && localData.title !== undefined) {
+        merged.title = localData.title;
+      } else if (field === 'start_time' && localData.start_time !== undefined) {
+        merged.start_time = localData.start_time;
+      } else if (field === 'timezone' && localData.timezone !== undefined) {
+        merged.timezone = localData.timezone;
+      }
+    }
+  });
 
   // For items, we need more sophisticated merging
   if (protectedFields.size > 0 && localData.items && serverData.items) {
@@ -152,17 +158,22 @@ const mergeItemsWithProtection = (
     const merged = { ...serverItem };
     
     protectedFields.forEach(fieldKey => {
-      if (fieldKey.startsWith(`${serverItem.id}-`)) {
-        const field = fieldKey.substring(serverItem.id.length + 1);
+      // New format: rundownId-itemId-field or rundownId-field
+      const parts = fieldKey.split('-');
+      if (parts.length >= 3) {
+        const itemId = parts[1];
+        const field = parts.slice(2).join('-'); // Handle field names with hyphens
         
-        if (field.startsWith('customFields.')) {
-          const customField = field.substring('customFields.'.length);
-          merged.customFields = merged.customFields || {};
-          if (localItem.customFields?.[customField] !== undefined) {
-            merged.customFields[customField] = localItem.customFields[customField];
+        if (itemId === serverItem.id) {
+          if (field.startsWith('customFields.')) {
+            const customField = field.substring('customFields.'.length);
+            merged.customFields = merged.customFields || {};
+            if (localItem.customFields?.[customField] !== undefined) {
+              merged.customFields[customField] = localItem.customFields[customField];
+            }
+          } else if (field in localItem && (localItem as any)[field] !== undefined) {
+            (merged as any)[field] = (localItem as any)[field];
           }
-        } else if (field in localItem && (localItem as any)[field] !== undefined) {
-          (merged as any)[field] = (localItem as any)[field];
         }
       }
     });

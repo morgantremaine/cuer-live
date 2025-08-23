@@ -8,6 +8,7 @@ import { updateRundownWithConcurrencyCheck, mergeConflictedRundown } from '@/uti
 import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { fieldFocusRegistry } from '@/utils/fieldFocusRegistry';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -386,11 +387,7 @@ export const useSimpleAutoSave = (
             // });
 
             // Get protected fields (currently being edited)
-            const protectedFields = new Set<string>();
-            if (userTypingRef.current) {
-              // Add logic to track which fields are currently being typed in
-              // This would need to be enhanced based on your typing tracking system
-            }
+            const protectedFields = fieldFocusRegistry.getProtectedFields(rundownId);
 
             const mergedData = mergeConflictedRundown(updateData, result.conflictData, protectedFields);
             
@@ -509,8 +506,13 @@ export const useSimpleAutoSave = (
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      
+      // Clear all field focus when leaving the rundown
+      if (rundownId) {
+        fieldFocusRegistry.clearRundownFocus(rundownId);
+      }
     };
-  }, []);
+  }, [rundownId]);
 
   return {
     isSaving,
