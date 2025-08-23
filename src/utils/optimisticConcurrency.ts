@@ -126,8 +126,8 @@ export const mergeConflictedRundown = (
     }
   });
 
-  // For items, we need more sophisticated merging
-  if (protectedFields.size > 0 && localData.items && serverData.items) {
+  // For items, always merge to preserve local changes where appropriate
+  if (localData.items && serverData.items) {
     merged.items = mergeItemsWithProtection(localData.items, serverData.items, protectedFields);
   }
 
@@ -155,7 +155,7 @@ const mergeItemsWithProtection = (
     }
 
     // Merge item while preserving protected fields
-    const merged = { ...serverItem };
+    const merged = { ...serverItem } as any;
     
     protectedFields.forEach(fieldKey => {
       // New format: rundownId-itemId-field or rundownId-field
@@ -172,11 +172,37 @@ const mergeItemsWithProtection = (
               merged.customFields[customField] = localItem.customFields[customField];
             }
           } else if (field in localItem && (localItem as any)[field] !== undefined) {
-            (merged as any)[field] = (localItem as any)[field];
+            merged[field] = (localItem as any)[field];
           }
         }
       }
     });
+
+    // Additionally, prefer local changes for core content fields to prevent data loss
+    const coreFields = [
+      'name','script','talent','gfx','video','images','notes',
+      'duration','startTime','endTime','color','isFloating','rowNumber'
+    ] as const;
+
+    coreFields.forEach((fld) => {
+      const lVal = (localItem as any)[fld];
+      const sVal = (serverItem as any)[fld];
+      if (lVal !== undefined && lVal !== sVal) {
+        merged[fld] = lVal;
+      }
+    });
+
+    // Merge customFields with local taking precedence
+    if (localItem.customFields) {
+      merged.customFields = { ...((serverItem as any).customFields || {}) };
+      Object.keys(localItem.customFields).forEach((key) => {
+        const lVal = localItem.customFields![key];
+        const sVal = (serverItem as any).customFields?.[key];
+        if (lVal !== undefined && lVal !== sVal) {
+          merged.customFields[key] = lVal;
+        }
+      });
+    }
 
     return merged;
   });

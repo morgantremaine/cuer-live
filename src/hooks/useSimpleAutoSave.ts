@@ -131,7 +131,8 @@ export const useSimpleAutoSave = (
           const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
           // Track own update so realtime ignores it
           trackMyUpdate(normalizedTimestamp, isStructural);
-          lastKnownTimestampRef.current = normalizedTimestamp;
+          // Use RAW DB timestamp for concurrency checks
+          lastKnownTimestampRef.current = result.conflictData.updated_at;
           updateLastKnownTimestamp?.(normalizedTimestamp);
           registerRecentSave(rundownId, normalizedTimestamp);
           lastSavedRef.current = currentSignature;
@@ -156,7 +157,8 @@ export const useSimpleAutoSave = (
       if (!error && data?.updated_at) {
         const normalizedTimestamp = normalizeTimestamp(data.updated_at);
         trackMyUpdate(normalizedTimestamp, isStructural);
-        lastKnownTimestampRef.current = normalizedTimestamp;
+        // Use RAW DB timestamp for concurrency checks
+        lastKnownTimestampRef.current = data.updated_at;
         updateLastKnownTimestamp?.(normalizedTimestamp);
         registerRecentSave(rundownId, normalizedTimestamp);
         lastSavedRef.current = currentSignature;
@@ -365,7 +367,8 @@ export const useSimpleAutoSave = (
             if (result.conflictData?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
               trackMyUpdate(normalizedTimestamp, isStructural);
-              lastKnownTimestampRef.current = normalizedTimestamp;
+              // Use RAW DB timestamp for concurrency checks
+              lastKnownTimestampRef.current = result.conflictData.updated_at;
               if (updateLastKnownTimestamp) {
                 updateLastKnownTimestamp(normalizedTimestamp);
               }
@@ -414,7 +417,8 @@ export const useSimpleAutoSave = (
             if (retryResult.success && retryResult.conflictData?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(retryResult.conflictData.updated_at);
               trackMyUpdate(normalizedTimestamp, isStructural);
-              lastKnownTimestampRef.current = normalizedTimestamp;
+              // Use RAW DB timestamp for concurrency checks
+              lastKnownTimestampRef.current = retryResult.conflictData.updated_at;
               if (updateLastKnownTimestamp) {
                 updateLastKnownTimestamp(normalizedTimestamp);
               }
