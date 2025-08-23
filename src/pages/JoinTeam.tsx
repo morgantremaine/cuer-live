@@ -238,7 +238,7 @@ const JoinTeam = () => {
     setIsProcessing(true);
     console.log('Creating account for:', email);
     
-    const { error } = await signUp(email, password, fullName);
+    const { error, data } = await signUp(email, password, fullName);
     
     if (error) {
       console.error('Sign up error:', error);
@@ -250,7 +250,19 @@ const JoinTeam = () => {
       setIsProcessing(false);
     } else {
       console.log('Account created successfully');
-      setShowEmailConfirmation(true);
+      
+      // Check if user has immediate session (email confirmation disabled)
+      if (data?.session) {
+        console.log('Email confirmation is disabled - user has immediate session');
+        toast({
+          title: 'Account Created',
+          description: 'Your account has been created! You will now join the team.',
+        });
+        // User will be automatically processed by the useEffect that handles invitation acceptance
+      } else {
+        console.log('Email confirmation required - showing email confirmation screen');
+        setShowEmailConfirmation(true);
+      }
       setIsProcessing(false);
     }
   };

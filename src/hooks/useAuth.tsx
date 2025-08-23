@@ -9,7 +9,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any; data: any }>
   signOut: () => Promise<void>
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
   resetPasswordFromEmail: (newPassword: string) => Promise<{ error: any }>
@@ -100,10 +100,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
-    logger.debug('Attempting to sign up', { email })
+    logger.debug('Attempting to sign up', { email, redirectTo: `${window.location.origin}/auth/callback` })
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -116,14 +116,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         logger.error('Sign up error', error)
-        return { error }
+        return { error, data: null }
       }
       
-      logger.debug('Account created successfully')
-      return { error: null }
+      logger.debug('Sign up response', { 
+        user: data.user?.email,
+        userConfirmed: data.user?.email_confirmed_at,
+        sessionExists: !!data.session,
+        identitiesCount: data.user?.identities?.length
+      })
+      
+      // Check if email confirmation is disabled (user will have immediate session)
+      if (data.session) {
+        logger.debug('User has immediate session - email confirmation appears to be disabled')
+      } else {
+        logger.debug('No immediate session - email confirmation required')
+      }
+      
+      return { error: null, data }
     } catch (err) {
       logger.error('Sign up catch error', err)
-      return { error: err }
+      return { error: err, data: null }
     }
   }, [])
 
