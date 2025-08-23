@@ -250,7 +250,6 @@ export type Database = {
           icon: string | null
           id: string
           items: Json
-          last_updated_by: string | null
           logo_url: string | null
           showcaller_state: Json | null
           start_time: string | null
@@ -271,7 +270,6 @@ export type Database = {
           icon?: string | null
           id?: string
           items: Json
-          last_updated_by?: string | null
           logo_url?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
@@ -292,7 +290,6 @@ export type Database = {
           icon?: string | null
           id?: string
           items?: Json
-          last_updated_by?: string | null
           logo_url?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
