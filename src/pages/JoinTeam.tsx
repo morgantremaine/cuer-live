@@ -242,6 +242,18 @@ const JoinTeam = () => {
     
     if (error) {
       console.error('Sign up error:', error);
+      
+      // Handle "user already registered" case
+      if (error.message.includes('User already registered')) {
+        toast({
+          title: 'Account Already Exists',
+          description: 'This email is already registered. Please use the sign-in tab instead.',
+        });
+        setActiveTab('signin'); // Switch to sign-in tab
+        setIsProcessing(false);
+        return;
+      }
+      
       toast({
         title: 'Error',
         description: error.message,
