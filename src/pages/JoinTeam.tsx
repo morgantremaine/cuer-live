@@ -1,334 +1,188 @@
-import { useState, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import Footer from '@/components/Footer';
-import CuerLogo from '@/components/common/CuerLogo';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, AlertCircle, CheckCircle, UserX } from 'lucide-react';
+import { toast } from 'sonner';
 
-const JoinTeam = () => {
-  const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
-  
-  console.log('JoinTeam component loaded with token:', token);
-  console.log('useParams result:', useParams());
-  console.log('Current URL:', window.location.href);
-  
-  const [invitation, setInvitation] = useState<any>(null);
-  const [inviterProfile, setInviterProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState('signup');
-  const [userExists, setUserExists] = useState(false);
-  const [profileError, setProfileError] = useState(false);
-  const [invitationProcessed, setInvitationProcessed] = useState(false);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-  const { user, signUp, signIn } = useAuth();
-  const { acceptInvitation } = useTeam();
-  const { toast } = useToast();
-
-  // Define helper function early in the component
-  const getInviterDisplayName = () => {
-    if (profileError) {
-      return 'A team member';
-    }
-    if (inviterProfile?.full_name) {
-      return inviterProfile.full_name;
-    }
-    if (inviterProfile?.email) {
-      return inviterProfile.email;
-    }
-    return 'A team member';
+interface InvitationDetails {
+  invitation: {
+    id: string;
+    email: string;
+    team_id: string;
+    invited_by: string;
+    created_at: string;
+    expires_at: string;
+    token: string;
   };
+  team: {
+    id: string;
+    name: string;
+  };
+  inviter: {
+    full_name: string;
+    email: string;
+  };
+}
 
-  // Store invitation token in localStorage and load invitation data
+export const JoinTeam = () => {
+  const { token } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const [invitationDetails, setInvitationDetails] = useState<InvitationDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [emailMismatch, setEmailMismatch] = useState(false);
+
   useEffect(() => {
-    console.log('Token from useParams:', token);
-    console.log('Type of token:', typeof token);
-    
-    if (!token || token === 'undefined') {
-      console.error('Invalid token received:', token);
-      localStorage.removeItem('pendingInvitationToken');
-      
-      toast({
-        title: 'Invalid Invitation Link',
-        description: 'The invitation link appears to be malformed. Please request a new invitation.',
-        variant: 'destructive',
-      });
-      
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
-      return;
-    }
+    const fetchInvitationDetails = async () => {
+      if (!token) {
+        setError('No invitation token provided');
+        setLoading(false);
+        return;
+      }
 
-    console.log('Storing invitation token in localStorage:', token);
-    localStorage.setItem('pendingInvitationToken', token);
-
-    const loadInvitation = async () => {
       try {
-        console.log('Loading invitation data for token:', token);
+        console.log('🔍 Fetching invitation details for token:', token);
         
-        // Use the safe function to get all invitation details
-        const { data: invitationResponse, error: invitationError } = await supabase.rpc(
-          'get_invitation_details_safe',
-          { invitation_token: token }
-        );
-
-        console.log('Invitation details response:', { invitationResponse, invitationError });
-
-        if (invitationError) {
-          console.error('Error loading invitation:', invitationError);
-          toast({
-            title: 'Error Loading Invitation',
-            description: 'There was an error loading the invitation details.',
-            variant: 'destructive',
-          });
-          localStorage.removeItem('pendingInvitationToken');
-          navigate('/login');
-          return;
-        }
-
-        // Check if the response contains an error (function returned error object)
-        if (!invitationResponse || invitationResponse.error) {
-          console.log('Invalid or expired invitation token:', invitationResponse?.error);
-          toast({
-            title: 'Invalid Invitation',
-            description: invitationResponse?.error || 'This invitation link is invalid or has expired.',
-            variant: 'destructive',
-          });
-          localStorage.removeItem('pendingInvitationToken');
-          navigate('/login');
-          return;
-        }
-
-        // Set invitation and inviter profile from the function result
-        setInvitation({
-          ...invitationResponse.invitation,
-          teams: invitationResponse.team
+        const { data, error } = await supabase.rpc('get_invitation_details_safe', {
+          invitation_token: token
         });
-        setEmail(invitationResponse.invitation.email);
 
-        if (invitationResponse.inviter) {
-          setInviterProfile(invitationResponse.inviter);
-          setProfileError(false);
+        if (error) {
+          console.error('❌ Error fetching invitation details:', error);
+          setError('Failed to load invitation details');
+        } else if (data?.error) {
+          console.log('⚠️ Invalid invitation:', data.error);
+          setError(data.error);
+        } else if (data) {
+          console.log('✅ Invitation details loaded:', data);
+          setInvitationDetails(data);
+          
+          // Check if user email matches invitation email
+          if (user?.email && data.invitation?.email) {
+            const userEmail = user.email.toLowerCase();
+            const inviteEmail = data.invitation.email.toLowerCase();
+            
+            if (userEmail !== inviteEmail) {
+              console.log('⚠️ Email mismatch detected:', { userEmail, inviteEmail });
+              setEmailMismatch(true);
+            }
+          }
         } else {
-          console.log('No inviter profile found, using fallback display');
-          setProfileError(true);
+          setError('Invalid or expired invitation');
         }
-        
-        // Check if user already exists with this email
-        await checkUserExists(invitationResponse.invitation.email);
       } catch (error) {
-        console.error('Error loading invitation:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load invitation details.',
-          variant: 'destructive',
-        });
-        localStorage.removeItem('pendingInvitationToken');
-        navigate('/login');
+        console.error('❌ Exception fetching invitation details:', error);
+        setError('Failed to load invitation details');
       } finally {
         setLoading(false);
       }
     };
 
-    loadInvitation();
-  }, [token]); // Removed navigate and toast from dependencies to prevent loop
-
-  const checkUserExists = async (emailToCheck: string) => {
-    try {
-      console.log('Checking if user exists for email:', emailToCheck);
-      
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', emailToCheck)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error checking user existence:', error);
-        setUserExists(false);
-        setActiveTab('signup');
-        return;
-      }
-      
-      if (profileData) {
-        console.log('User exists, defaulting to sign in tab');
-        setUserExists(true);
-        setActiveTab('signin');
-      } else {
-        console.log('User does not exist, defaulting to sign up tab');
-        setUserExists(false);
-        setActiveTab('signup');
-      }
-    } catch (error) {
-      console.error('Error in checkUserExists:', error);
-      setUserExists(false);
-      setActiveTab('signup');
-    }
-  };
-
-  // Handle invitation acceptance when user is authenticated
-  useEffect(() => {
-    if (user && invitation && !invitationProcessed && !isProcessing) {
-      console.log('User is authenticated and invitation is loaded, processing invitation');
-      setInvitationProcessed(true);
-      handleAcceptInvitation();
-    }
-  }, [user?.id, invitation?.id, invitationProcessed, isProcessing]); // Use specific IDs to prevent unnecessary re-renders
+    fetchInvitationDetails();
+  }, [token, user?.email]);
 
   const handleAcceptInvitation = async () => {
-    if (!token || isProcessing) return;
+    if (!token || !user) {
+      toast.error('Please sign in to accept this invitation');
+      return;
+    }
 
-    setIsProcessing(true);
-    
+    if (emailMismatch) {
+      toast.error('Please sign out and use the correct account');
+      return;
+    }
+
+    setAccepting(true);
+
     try {
-      console.log('Accepting invitation with token:', token);
-      const { error } = await acceptInvitation(token);
+      console.log('🔄 Accepting invitation with token:', token);
       
+      const { data, error } = await supabase.rpc('accept_team_invitation_safe', {
+        invitation_token: token
+      });
+
       if (error) {
-        console.error('Failed to accept invitation:', error);
-        toast({
-          title: 'Error',
-          description: error,
-          variant: 'destructive',
-        });
-        setIsProcessing(false);
-        setInvitationProcessed(false); // Reset so user can try again
-      } else {
-        console.log('Invitation accepted successfully');
-        localStorage.removeItem('pendingInvitationToken');
-        toast({
-          title: 'Success',
-          description: 'Welcome to the team!',
-        });
+        console.error('❌ Error accepting invitation:', error);
+        toast.error('Failed to accept invitation: ' + error.message);
+        return;
+      }
+
+      if (data?.success) {
+        console.log('✅ Invitation accepted successfully:', data);
+        toast.success(data.message || 'Successfully joined the team!');
         
-        // Add a small delay before navigation to ensure toast is visible
+        // Clear the token from localStorage if it exists
+        localStorage.removeItem('pendingInvitationToken');
+        
+        // Navigate to dashboard after successful acceptance
         setTimeout(() => {
           navigate('/dashboard');
-        }, 1000);
+        }, 1500);
+      } else {
+        console.error('❌ Invitation acceptance failed:', data?.error);
+        toast.error(data?.error || 'Failed to accept invitation');
       }
     } catch (error) {
-      console.error('Error accepting invitation:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to join team. Please try again.',
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-      setInvitationProcessed(false);
+      console.error('❌ Exception accepting invitation:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setAccepting(false);
     }
   };
 
-  const handleCreateAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!agreeToTerms) {
-      toast({
-        title: 'Error',
-        description: 'You must agree to the Terms of Service and Privacy Policy to create an account.',
-        variant: 'destructive',
-      });
-      return;
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      // The page will reload and show the sign-in prompt
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
     }
-    
-    if (password.length < 6) {
-      toast({
-        title: 'Error',
-        description: 'Password must be at least 6 characters long',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    console.log('Creating account for:', email);
-    
-    const { error } = await signUp(email, password, fullName);
-    
-    if (error) {
-      console.error('Sign up error:', error);
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-      setIsProcessing(false);
-    } else {
-      console.log('Account created successfully');
-      setShowEmailConfirmation(true);
-      setIsProcessing(false);
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    setIsProcessing(true);
-    console.log('Signing in user:', email);
-    
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      console.error('Sign in error:', error);
-      
-      if (error.message.includes('Email not confirmed')) {
-        toast({
-          title: 'Email not confirmed',
-          description: 'Please check your email and click the confirmation link first, then try signing in again.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-      setIsProcessing(false);
-    }
-    // If successful, the useEffect will handle accepting the invitation
   };
 
   if (loading) {
     return (
-      <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-300">Loading invitation...</p>
-          <p className="mt-2 text-sm text-gray-500">Token: {token || 'No token'}</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center space-x-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading invitation...</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (!invitation) {
+  if (error) {
     return (
-      <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
-        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
-          <CardHeader className="text-center">
-            <CardTitle className="text-white">Invalid Invitation</CardTitle>
-            <CardDescription className="text-gray-400">
-              This invitation link is invalid or has expired.
-            </CardDescription>
-            <p className="text-xs text-gray-500 mt-2">
-              Token received: {token || 'undefined'}
-            </p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <span>Invitation Error</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/login')} className="w-full">
-              Go to Login
+            <Alert>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <Button 
+              onClick={() => navigate('/auth')} 
+              className="w-full mt-4"
+              variant="outline"
+            >
+              Go to Sign In
             </Button>
           </CardContent>
         </Card>
@@ -336,24 +190,77 @@ const JoinTeam = () => {
     );
   }
 
-  if (user && !isProcessing) {
+  if (!user) {
     return (
-      <div className="dark min-h-screen bg-gray-900 flex items-center justify-center">
-        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
-          <CardHeader className="text-center">
-            <CardTitle className="text-white">Join Team</CardTitle>
-            <CardDescription className="text-gray-400">
-              You're about to join {getInviterDisplayName()}'s team
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Team Invitation</CardTitle>
+            <CardDescription>
+              You've been invited to join <strong>{invitationDetails?.team.name}</strong>
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              This invitation is for: <strong>{invitationDetails?.invitation.email}</strong>
+            </p>
+            <Alert className="mb-4">
+              <AlertDescription>
+                Please sign in with the invited email address to accept this invitation.
+              </AlertDescription>
+            </Alert>
             <Button 
-              onClick={handleAcceptInvitation} 
-              className="w-full" 
-              disabled={isProcessing || invitationProcessed}
+              onClick={() => navigate('/auth')} 
+              className="w-full"
             >
-              {isProcessing ? 'Joining Team...' : 'Accept Invitation'}
+              Sign In to Accept
             </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (emailMismatch && invitationDetails) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <UserX className="h-5 w-5 text-amber-500" />
+              <span>Account Mismatch</span>
+            </CardTitle>
+            <CardDescription>
+              Invitation for <strong>{invitationDetails.team.name}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                This invitation is for <strong>{invitationDetails.invitation.email}</strong>, 
+                but you're signed in as <strong>{user.email}</strong>.
+              </AlertDescription>
+            </Alert>
+            <p className="text-sm text-gray-600 mb-4">
+              To accept this invitation, please sign out and sign in with the correct account.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={handleSignOut}
+                className="w-full"
+                variant="outline"
+              >
+                Sign Out and Switch Account
+              </Button>
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                variant="ghost"
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -361,166 +268,59 @@ const JoinTeam = () => {
   }
 
   return (
-    <div className="dark min-h-screen flex flex-col bg-gray-900">
-      <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-2">
-              <CuerLogo isDark={true} className="h-12 w-auto" />
-            </div>
-            <CardTitle className="text-white">Join {getInviterDisplayName()}'s Team</CardTitle>
-            <CardDescription className="text-gray-400">
-              {getInviterDisplayName()} has invited you to join their team.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {showEmailConfirmation ? (
-              <div className="text-center space-y-4">
-                <div className="text-white text-lg font-semibold">Check Your Email</div>
-                <p className="text-gray-400">
-                  We've sent a verification link to your email address. Please check your inbox and click the link to verify your account, then return to this page to join the team.
-                </p>
-                <p className="text-sm text-gray-500">
-                  After verifying your email, simply return to this page and you'll automatically join {getInviterDisplayName()}'s team.
-                </p>
-                <Button 
-                  onClick={() => setShowEmailConfirmation(false)}
-                  variant="outline"
-                  className="text-gray-300 border-gray-600 hover:bg-gray-700"
-                >
-                  Back to Sign In
-                </Button>
-              </div>
-            ) : (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-700">
-                  <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
-                    Create Account
-                  </TabsTrigger>
-                  <TabsTrigger value="signin" className="text-gray-300 data-[state=active]:text-white">
-                    Sign In
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="signup" className="space-y-4 mt-4">
-                  <form onSubmit={handleCreateAccount} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-300">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        disabled
-                        className="bg-gray-600 border-gray-500 text-gray-400"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-gray-300">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                        placeholder="Create a password"
-                      />
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <input
-                        type="checkbox"
-                        id="agree-terms-join"
-                        checked={agreeToTerms}
-                        onChange={(e) => setAgreeToTerms(e.target.checked)}
-                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
-                        required
-                      />
-                      <label htmlFor="agree-terms-join" className="text-sm text-gray-300">
-                        By creating an account, you agree to the{' '}
-                        <a 
-                          href="/terms" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 underline"
-                        >
-                          Terms of Service
-                        </a>
-                        {' '}and{' '}
-                        <a 
-                          href="/privacy" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 underline"
-                        >
-                          Privacy Policy
-                        </a>
-                        .
-                      </label>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? 'Creating Account...' : 'Create Account & Join Team'}
-                    </Button>
-                  </form>
-                </TabsContent>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span>Team Invitation</span>
+          </CardTitle>
+          <CardDescription>
+            You've been invited to join <strong>{invitationDetails?.team.name}</strong>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invitationDetails?.inviter && (
+            <p className="text-sm text-gray-600 mb-2">
+              Invited by: <strong>{invitationDetails.inviter.full_name || invitationDetails.inviter.email}</strong>
+            </p>
+          )}
+          <p className="text-sm text-gray-600 mb-4">
+            Invitation for: <strong>{invitationDetails?.invitation.email}</strong>
+          </p>
+          
+          <Alert className="mb-4">
+            <AlertDescription>
+              You're signed in as <strong>{user.email}</strong>. Ready to join the team!
+            </AlertDescription>
+          </Alert>
 
-                <TabsContent value="signin" className="space-y-4 mt-4">
-                  <form onSubmit={handleSignIn} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email" className="text-gray-300">Email</Label>
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        value={email}
-                        disabled
-                        className="bg-gray-600 border-gray-500 text-gray-400"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password" className="text-gray-300">Password</Label>
-                      <Input
-                        id="signin-password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                        placeholder="Enter your password"
-                      />
-                    </div>
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? 'Signing In...' : 'Sign In & Join Team'}
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      <Footer />
+          <div className="space-y-3">
+            <Button 
+              onClick={handleAcceptInvitation}
+              disabled={accepting}
+              className="w-full"
+            >
+              {accepting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Joining Team...
+                </>
+              ) : (
+                'Accept Invitation'
+              )}
+            </Button>
+            <Button 
+              onClick={() => navigate('/dashboard')}
+              variant="outline"
+              className="w-full"
+              disabled={accepting}
+            >
+              Cancel
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
-
-export default JoinTeam;
