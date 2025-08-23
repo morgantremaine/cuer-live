@@ -36,8 +36,28 @@ export const updateRundownWithConcurrencyCheck = async (
       .maybeSingle();
 
     if (error) {
+      // Treat 406/zero-updated as a normal concurrency conflict
+      const status = (error as any)?.status;
+      const code = (error as any)?.code;
+      const msg = (error as any)?.message || '';
+      if (status === 406 || code === 'PGRST116' || msg.includes('406')) {
+        console.log('🔄 Concurrency conflict detected (406) - fetching latest data');
+        const { data: latestData, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .single();
+        if (fetchError) {
+          return { success: false, error: fetchError.message };
+        }
+        return {
+          success: false,
+          conflictData: latestData,
+          error: 'Conflict detected - rundown was modified by another user'
+        };
+      }
       console.error('❌ Concurrency update failed:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: msg };
     }
 
     // If no rows were updated, there was a conflict
