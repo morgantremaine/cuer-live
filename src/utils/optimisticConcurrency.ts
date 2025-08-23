@@ -162,28 +162,31 @@ const mergeItemsWithProtection = (
   serverItems: RundownItem[],
   protectedFields: Set<string>
 ): RundownItem[] => {
-  // Create a map of local items for quick lookup
-  const localItemsMap = new Map(localItems.map(item => [item.id, item]));
-  
-  // Start with server items as base
-  const mergedItems = serverItems.map(serverItem => {
-    const localItem = localItemsMap.get(serverItem.id);
-    
-    if (!localItem) {
-      // Item doesn't exist locally, use server version
-      return serverItem;
+  // Create quick-lookup maps
+  const localMap = new Map(localItems.map((i) => [i.id, i]));
+  const serverMap = new Map(serverItems.map((i) => [i.id, i]));
+
+  const mergedItems: RundownItem[] = [] as any;
+
+  // 1) Preserve LOCAL ORDER first
+  for (const localItem of localItems) {
+    const serverItem = serverMap.get(localItem.id);
+
+    if (!serverItem) {
+      // New local item (not yet on server)
+      mergedItems.push(localItem);
+      continue;
     }
 
-    // Merge item while preserving protected fields
-    const merged = { ...serverItem } as any;
-    
-    protectedFields.forEach(fieldKey => {
-      // New format: rundownId-itemId-field or rundownId-field
+    // Start from server version to include teammate changes
+    const merged: any = { ...serverItem };
+
+    // Preserve protected fields (actively edited)
+    protectedFields.forEach((fieldKey) => {
       const parts = fieldKey.split('-');
       if (parts.length >= 3) {
         const itemId = parts[1];
-        const field = parts.slice(2).join('-'); // Handle field names with hyphens
-        
+        const field = parts.slice(2).join('-');
         if (itemId === serverItem.id) {
           if (field.startsWith('customFields.')) {
             const customField = field.substring('customFields.'.length);
@@ -198,12 +201,11 @@ const mergeItemsWithProtection = (
       }
     });
 
-    // Additionally, prefer local changes for core content fields to prevent data loss
+    // Prefer LOCAL values for core content to avoid loss
     const coreFields = [
       'name','script','talent','gfx','video','images','notes',
       'duration','startTime','endTime','color','isFloating','rowNumber'
     ] as const;
-
     coreFields.forEach((fld) => {
       const lVal = (localItem as any)[fld];
       const sVal = (serverItem as any)[fld];
@@ -224,15 +226,15 @@ const mergeItemsWithProtection = (
       });
     }
 
-    return merged;
-  });
+    mergedItems.push(merged);
+  }
 
-  // Add any local items that don't exist on server (newly created items)
-  localItems.forEach(localItem => {
-    if (!serverItems.some(serverItem => serverItem.id === localItem.id)) {
-      mergedItems.push(localItem);
+  // 2) Append any SERVER-ONLY items (teammate added) preserving their relative order
+  for (const serverItem of serverItems) {
+    if (!localMap.has(serverItem.id)) {
+      mergedItems.push(serverItem);
     }
-  });
+  }
 
   return mergedItems;
 };
