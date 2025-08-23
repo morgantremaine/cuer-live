@@ -35,43 +35,28 @@ const AuthCallback = () => {
           const pendingToken = localStorage.getItem('pendingInvitationToken')
           
           if (pendingToken && pendingToken !== 'undefined') {
-            console.log('Processing pending invitation after authentication')
+            console.log('Found pending invitation token, redirecting to join team page')
             
-            // Try to accept the invitation
-            const { data: acceptResult, error: acceptError } = await supabase.rpc(
-              'accept_team_invitation_safe',
-              { invitation_token: pendingToken }
-            )
-
-            if (acceptError) {
-              console.error('Error accepting invitation:', acceptError)
-              localStorage.removeItem('pendingInvitationToken')
-            } else if (acceptResult?.success) {
-              console.log('Invitation accepted successfully')
-              localStorage.removeItem('pendingInvitationToken')
-              toast({
-                title: 'Success',
-                description: 'Email confirmed and team invitation accepted! Welcome to the team.',
-              })
-            } else {
-              console.log('Invitation acceptance failed:', acceptResult?.error)
-              localStorage.removeItem('pendingInvitationToken')
-              toast({
-                title: 'Email Confirmed',
-                description: 'Your email has been confirmed, but there was an issue with the team invitation.',
-              })
-            }
+            toast({
+              title: 'Success',
+              description: 'Email confirmed! Please complete your team invitation.',
+            })
+            
+            // Redirect to join team page with token
+            setTimeout(() => {
+              navigate(`/join-team/${pendingToken}`)
+            }, 1000)
           } else {
             toast({
               title: 'Success',
               description: 'Email confirmed successfully! Welcome to Cuer.',
             })
+            
+            // Navigate to dashboard after a short delay
+            setTimeout(() => {
+              navigate('/dashboard')
+            }, 1000)
           }
-
-          // Wait longer for auth state to fully settle, then navigate
-          setTimeout(() => {
-            navigate('/dashboard')
-          }, 2000)
         } else {
           console.log('No session found, redirecting to login')
           navigate('/login')
