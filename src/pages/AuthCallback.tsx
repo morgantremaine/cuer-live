@@ -31,36 +31,22 @@ const AuthCallback = () => {
         if (data.session?.user) {
           console.log('User authenticated successfully:', data.session.user.email)
 
-          // Check for pending invitation token
+          // Check for pending invitation token but don't process it here
+          // Let JoinTeam page handle invitation acceptance for better UX
           const pendingToken = localStorage.getItem('pendingInvitationToken')
           
           if (pendingToken && pendingToken !== 'undefined') {
-            console.log('Processing pending invitation after authentication')
+            console.log('Pending invitation detected, will be processed by JoinTeam page')
+            toast({
+              title: 'Email Confirmed',
+              description: 'Your email has been confirmed! Redirecting to complete team invitation...',
+            })
             
-            // Try to accept the invitation
-            const { data: acceptResult, error: acceptError } = await supabase.rpc(
-              'accept_team_invitation_safe',
-              { invitation_token: pendingToken }
-            )
-
-            if (acceptError) {
-              console.error('Error accepting invitation:', acceptError)
-              localStorage.removeItem('pendingInvitationToken')
-            } else if (acceptResult?.success) {
-              console.log('Invitation accepted successfully')
-              localStorage.removeItem('pendingInvitationToken')
-              toast({
-                title: 'Success',
-                description: 'Email confirmed and team invitation accepted! Welcome to the team.',
-              })
-            } else {
-              console.log('Invitation acceptance failed:', acceptResult?.error)
-              localStorage.removeItem('pendingInvitationToken')
-              toast({
-                title: 'Email Confirmed',
-                description: 'Your email has been confirmed, but there was an issue with the team invitation.',
-              })
-            }
+            // Navigate to JoinTeam page to handle invitation acceptance
+            setTimeout(() => {
+              navigate(`/join-team/${pendingToken}`)
+            }, 1500)
+            return
           } else {
             toast({
               title: 'Success',

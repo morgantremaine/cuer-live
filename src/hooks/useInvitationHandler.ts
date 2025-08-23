@@ -53,39 +53,23 @@ export const useInvitationHandler = () => {
       processedUserRef.current = user.id;
 
       try {
-        // Let useTeam handle the invitation acceptance via loadTeamData
-        // This ensures proper team loading and prevents duplicate team creation
-        await loadTeamData();
-        
-        // Check if token was cleared (meaning invitation was processed)
+        // Check if token is still present - if so, redirect to JoinTeam page for proper handling
         const stillPending = localStorage.getItem('pendingInvitationToken');
-        if (!stillPending) {
-          // Force reload rundowns after successful team join
-          console.log('Invitation processed successfully, reloading rundowns...');
+        if (stillPending && stillPending !== 'undefined') {
+          console.log('Pending invitation detected, redirecting to JoinTeam page for proper handling');
           
-          // Add a delay to ensure team data is fully loaded before reloading rundowns
-          setTimeout(async () => {
-            await loadRundowns();
-          }, 1000);
-          
-          toast({
-            title: 'Success',
-            description: 'Successfully joined the team! Your team rundowns are now available.',
-          });
-          
-          // Navigate to dashboard after successful join if not already there
-          if (location.pathname !== '/dashboard') {
-            navigate('/dashboard');
-          }
-        } else {
-          // Token is still there, validate it
-          console.log('Invitation token still present, checking validity...');
-          
+          // Validate token before redirecting
           try {
             const { validateInvitationToken } = await import('@/utils/invitationUtils');
-            const isValid = await validateInvitationToken(pendingToken);
+            const isValid = await validateInvitationToken(stillPending);
             
-            if (!isValid) {
+            if (isValid) {
+              // Redirect to JoinTeam page for proper invitation handling
+              if (!location.pathname.startsWith('/join-team/')) {
+                navigate(`/join-team/${stillPending}`);
+                return;
+              }
+            } else {
               console.log('Invalid invitation token detected, clearing it');
               localStorage.removeItem('pendingInvitationToken');
               
@@ -100,6 +84,9 @@ export const useInvitationHandler = () => {
             localStorage.removeItem('pendingInvitationToken');
           }
         }
+        
+        // Load team data normally (no auto-invitation processing here)
+        await loadTeamData();
       } catch (error) {
         console.error('Error processing pending invitation:', error);
         

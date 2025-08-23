@@ -150,28 +150,11 @@ const JoinTeam = () => {
     try {
       console.log('Checking if user exists for email:', emailToCheck);
       
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', emailToCheck)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error checking user existence:', error);
-        setUserExists(false);
-        setActiveTab('signup');
-        return;
-      }
-      
-      if (profileData) {
-        console.log('User exists, defaulting to sign in tab');
-        setUserExists(true);
-        setActiveTab('signin');
-      } else {
-        console.log('User does not exist, defaulting to sign up tab');
-        setUserExists(false);
-        setActiveTab('signup');
-      }
+      // Simply assume user doesn't exist and default to signup to avoid 401 errors
+      // Let the actual signup/signin process handle user existence validation
+      console.log('Defaulting to sign up tab to avoid authentication issues');
+      setUserExists(false);
+      setActiveTab('signup');
     } catch (error) {
       console.error('Error in checkUserExists:', error);
       setUserExists(false);
@@ -378,18 +361,50 @@ const JoinTeam = () => {
               <div className="text-center space-y-4">
                 <div className="text-white text-lg font-semibold">Check Your Email</div>
                 <p className="text-gray-400">
-                  We've sent a verification link to your email address. Please check your inbox and click the link to verify your account, then return to this page to join the team.
+                  We've sent a verification link to your email address. Please check your inbox (including spam/promotions folders) and click the link to verify your account.
                 </p>
                 <p className="text-sm text-gray-500">
-                  After verifying your email, simply return to this page and you'll automatically join {getInviterDisplayName()}'s team.
+                  After verifying your email, you'll be automatically redirected to complete joining {getInviterDisplayName()}'s team.
                 </p>
-                <Button 
-                  onClick={() => setShowEmailConfirmation(false)}
-                  variant="outline"
-                  className="text-gray-300 border-gray-600 hover:bg-gray-700"
-                >
-                  Back to Sign In
-                </Button>
+                <div className="bg-gray-700 p-4 rounded-lg text-sm text-gray-300">
+                  <p className="font-semibold mb-2">📧 Email Tips:</p>
+                  <ul className="text-left space-y-1">
+                    <li>• Check your spam/junk folder</li>
+                    <li>• Check promotions tab (Gmail)</li>
+                    <li>• Wait 2-3 minutes for delivery</li>
+                    <li>• Add our domain to your safe senders</li>
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    onClick={async () => {
+                      const { error } = await signUp(email, password, fullName);
+                      if (error) {
+                        toast({
+                          title: 'Error',
+                          description: error.message,
+                          variant: 'destructive',
+                        });
+                      } else {
+                        toast({
+                          title: 'Email Resent',
+                          description: 'Confirmation email sent again. Please check your inbox.',
+                        });
+                      }
+                    }}
+                    variant="outline"
+                    className="text-gray-300 border-gray-600 hover:bg-gray-700 w-full"
+                  >
+                    Resend Confirmation Email
+                  </Button>
+                  <Button 
+                    onClick={() => setShowEmailConfirmation(false)}
+                    variant="ghost"
+                    className="text-gray-400 hover:text-gray-300 w-full"
+                  >
+                    Back to Sign In
+                  </Button>
+                </div>
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

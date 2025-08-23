@@ -44,13 +44,32 @@ export const useColumnLayoutStorage = () => {
       }
 
       const teamIds = teamMemberships?.map(membership => membership.team_id) || []
-
-      // Load layouts that user can access (own layouts + team layouts)
-      const { data: layoutsData, error } = await supabase
-        .from('column_layouts')
-        .select('*')
-        .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
-        .order('updated_at', { ascending: false })
+      
+      // Handle case where user has no team memberships yet
+      let layoutsData = null;
+      let error = null;
+      
+      if (teamIds.length > 0) {
+        // Load layouts that user can access (own layouts + team layouts)
+        const { data, error: layoutError } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
+          .order('updated_at', { ascending: false })
+        
+        layoutsData = data;
+        error = layoutError;
+      } else {
+        // Load only user's personal layouts when no team memberships
+        const { data, error: layoutError } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+        
+        layoutsData = data;
+        error = layoutError;
+      }
 
       if (error) {
         toast({
