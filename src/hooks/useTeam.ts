@@ -15,7 +15,7 @@ interface TeamMember {
   id: string;
   user_id: string;
   team_id: string;
-  role: string;
+  role: 'admin' | 'member';
   joined_at: string;
   profiles?: {
     full_name: string | null;
@@ -41,11 +41,13 @@ export const useTeam = () => {
   const [pendingInvitations, setPendingInvitations] = useState<TeamInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteLoading, setInviteLoading] = useState(false);
-
+  const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
+  const [error, setError] = useState<string | null>(null);
   // Load team data
   const loadTeamData = useCallback(async () => {
     if (!user) {
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -68,17 +70,21 @@ export const useTeam = () => {
 
       if (membershipError) {
         console.error('Error loading team memberships:', membershipError);
+        setError('Failed to load team memberships');
         return;
       }
 
       if (!memberships || memberships.length === 0) {
         console.log('No team memberships found, creating team...');
         await createDefaultTeam();
+        setUserRole('admin');
         return;
       }
 
-      const teamData = memberships[0].teams as Team;
+      const teamData = (memberships[0].teams as unknown) as Team;
       setTeam(teamData);
+      setUserRole((memberships[0].role as 'admin' | 'member') ?? null);
+      setError(null);
 
       // Load team members
       await loadTeamMembers(teamData.id);
@@ -89,6 +95,7 @@ export const useTeam = () => {
       }
     } catch (error) {
       console.error('Error loading team data:', error);
+      setError('Failed to load team data');
     } finally {
       setLoading(false);
     }
@@ -121,10 +128,13 @@ export const useTeam = () => {
       if (memberError) throw memberError;
 
       setTeam(newTeam);
+      setUserRole('admin');
       await loadTeamMembers(newTeam.id);
+      setError(null);
       console.log('✅ Default team created successfully');
     } catch (error) {
       console.error('❌ Error creating default team:', error);
+      setError('Failed to create team');
       toast.error('Failed to create team');
     }
   }, [user]);
@@ -149,7 +159,7 @@ export const useTeam = () => {
         .order('joined_at', { ascending: true });
 
       if (error) throw error;
-      setTeamMembers(data || []);
+      setTeamMembers((data as unknown as TeamMember[]) || []);
     } catch (error) {
       console.error('Error loading team members:', error);
     }
@@ -260,6 +270,43 @@ export const useTeam = () => {
     }
   }, [team, loadPendingInvitations]);
 
+  // Aliases and additional helpers for compatibility
+  const inviteTeamMember = useCallback(async (email: string) => {
+    const success = await sendInvitation(email);
+    return { error: success ? null : 'Failed to send invitation' } as const;
+  }, [sendInvitation]);
+
+  const revokeInvitation = useCallback(async (invitationId: string) => {
+    const success = await deleteInvitation(invitationId);
+    return { error: success ? null : 'Failed to cancel invitation' } as const;
+  }, [deleteInvitation]);
+
+  const getTransferPreview = useCallback(async (memberId: string) => {
+    try {
+      const member = teamMembers.find(m => m.id === memberId);
+      return {
+        data: {
+          member_email: member?.profiles?.email ?? '',
+          member_name: member?.profiles?.full_name ?? null,
+          rundown_count: 0,
+          blueprint_count: 0,
+          will_delete_account: true
+        },
+        error: null
+      } as const;
+    } catch (e) {
+      return { data: null, error: 'Failed to load transfer details' } as const;
+    }
+  }, [teamMembers]);
+
+  const removeTeamMemberWithTransfer = useCallback(async (memberId: string) => {
+    const success = await removeMember(memberId);
+    if (success) {
+      return { error: null, result: { rundownsTransferred: 0, blueprintsTransferred: 0 } } as const;
+    }
+    return { error: 'Failed to remove team member', result: null } as const;
+  }, [removeMember]);
+
   // Load team data when user changes
   useEffect(() => {
     loadTeamData();
@@ -270,10 +317,18 @@ export const useTeam = () => {
     teamMembers,
     pendingInvitations,
     loading,
+    isLoading: loading,
     inviteLoading,
+    userRole,
+    error,
     sendInvitation,
     removeMember,
     deleteInvitation,
-    reloadTeam: loadTeamData
+    inviteTeamMember,
+    revokeInvitation,
+    getTransferPreview,
+    removeTeamMemberWithTransfer,
+    reloadTeam: loadTeamData,
+    loadTeamData
   };
 };

@@ -324,3 +324,5 @@ export const JoinTeam = () => {
     </div>
   );
 };
+
+export default JoinTeam;
