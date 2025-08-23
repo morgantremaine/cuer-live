@@ -89,10 +89,7 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved,
-    lastKnownTimestamp,
-    handleConflictResolved,
-    setLastKnownTimestamp
+    actions.markSaved
   );
 
   // Standalone undo system - unchanged
@@ -169,13 +166,12 @@ export const useSimplifiedRundownState = () => {
         const protectedFields = getProtectedFields();
         console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
         
-        // Use granular merge instead of full state replacement
-        actions.mergeRealtimeUpdate({
+        // Load state directly without field protection for now
+        actions.loadState({
           items: updatedRundown.items || [],
           title: updatedRundown.title,
           startTime: updatedRundown.start_time,
-          timezone: updatedRundown.timezone,
-          protectedFields
+          timezone: updatedRundown.timezone
         });
         
         console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
@@ -369,13 +365,12 @@ export const useSimplifiedRundownState = () => {
     // Get currently protected fields to preserve local edits
     const protectedFields = getProtectedFields();
     
-    // Merge new data while preserving protected fields
-    actions.mergeRealtimeUpdate({
+    // Load new data directly
+    actions.loadState({
       items: latestData.items || [],
       title: latestData.title,
       startTime: latestData.start_time,
-      timezone: latestData.timezone,
-      protectedFields
+      timezone: latestData.timezone
     });
   }, [actions, getProtectedFields]);
 

@@ -1,7 +1,30 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { fetchLatestRundownData } from '@/utils/optimisticConcurrency';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+
+/**
+ * Fetches the latest rundown data from the server
+ */
+const fetchLatestRundownData = async (rundownId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('rundowns')
+      .select('*')
+      .eq('id', rundownId)
+      .single();
+
+    if (error) {
+      console.error('❌ Failed to fetch latest rundown:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Error fetching latest rundown:', error);
+    return null;
+  }
+};
 
 // Global manager to prevent duplicate listeners per rundown
 const globalListenerManager = new Map<string, {

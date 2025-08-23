@@ -1,10 +1,8 @@
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RundownState } from './useRundownState';
 import { supabase } from '@/integrations/supabase/client';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { updateRundownWithConcurrencyCheck, mergeConflictedRundown } from '@/utils/optimisticConcurrency';
 import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
@@ -12,10 +10,7 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void,
-  lastKnownTimestamp: string | null = null,
-  onConflictResolved?: (mergedData: any) => void,
-  updateLastKnownTimestamp?: (timestamp: string) => void
+  onSaved: () => void
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,17 +25,6 @@ export const useSimpleAutoSave = (
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSaveRef = useRef(false);
   const structuralChangeRef = useRef(false);
-  const lastKnownTimestampRef = useRef<string | null>(lastKnownTimestamp);
-  const isFlushingRef = useRef(false);
-  const hasUnsavedRef = useRef(false);
-  const flushSaveRef = useRef<() => void>(() => {});
-  const rundownIdRef = useRef<string | null>(rundownId);
-
-  // Keep refs in sync
-  useEffect(() => {
-    hasUnsavedRef.current = state.hasUnsavedChanges;
-    rundownIdRef.current = rundownId;
-  }, [state.hasUnsavedChanges, rundownId]);
 
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
@@ -94,88 +78,6 @@ export const useSimpleAutoSave = (
     }
   }, []);
 
-  // Immediate flush function for critical saves (page unload, route change)
-  const flushSave = useCallback(async () => {
-    if (!rundownId || rundownId === DEMO_RUNDOWN_ID || !state.hasUnsavedChanges || isFlushingRef.current) {
-      return;
-    }
-
-    const currentSignature = createContentSignature();
-    if (currentSignature === lastSavedRef.current) {
-      onSaved();
-      return;
-    }
-
-    isFlushingRef.current = true;
-    console.log('🚨 FLUSH SAVE - Critical save initiated');
-
-    try {
-      const updateData = {
-        title: state.title,
-        items: state.items,
-        start_time: state.startTime,
-        timezone: state.timezone
-      };
-      const isStructural = structuralChangeRef.current;
-
-      // Prefer concurrency check if we have a known server timestamp
-      if (lastKnownTimestampRef.current) {
-        const result = await updateRundownWithConcurrencyCheck(
-          rundownId,
-          updateData,
-          lastKnownTimestampRef.current
-        );
-
-        if (result.success && result.conflictData?.updated_at) {
-          const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
-          // Track own update so realtime ignores it
-          trackMyUpdate(normalizedTimestamp, isStructural);
-          lastKnownTimestampRef.current = normalizedTimestamp;
-          updateLastKnownTimestamp?.(normalizedTimestamp);
-          registerRecentSave(rundownId, normalizedTimestamp);
-          lastSavedRef.current = currentSignature;
-          onSaved();
-          console.log('✅ FLUSH SAVE - Completed with concurrency check');
-          isFlushingRef.current = false;
-          return;
-        }
-      }
-
-      // Fallback to plain update if concurrency fails or no timestamp
-      const { data, error } = await supabase
-        .from('rundowns')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', rundownId)
-        .select('updated_at')
-        .single();
-
-      if (!error && data?.updated_at) {
-        const normalizedTimestamp = normalizeTimestamp(data.updated_at);
-        trackMyUpdate(normalizedTimestamp, isStructural);
-        lastKnownTimestampRef.current = normalizedTimestamp;
-        updateLastKnownTimestamp?.(normalizedTimestamp);
-        registerRecentSave(rundownId, normalizedTimestamp);
-        lastSavedRef.current = currentSignature;
-        onSaved();
-        console.log('✅ FLUSH SAVE - Completed with plain update');
-      } else if (error) {
-        console.error('❌ FLUSH SAVE - Failed:', error);
-      }
-    } catch (error) {
-      console.error('❌ FLUSH SAVE - Error:', error);
-    } finally {
-      isFlushingRef.current = false;
-    }
-  }, [rundownId, state, createContentSignature, onSaved, trackMyUpdate, updateLastKnownTimestamp]);
-
-  // Keep latest flush function in a ref for stable event handlers
-  useEffect(() => {
-    flushSaveRef.current = flushSave;
-  }, [flushSave]);
-
   // Function to set user typing state
   const setUserTyping = useCallback((typing: boolean) => {
     userTypingRef.current = typing;
@@ -201,8 +103,6 @@ export const useSimpleAutoSave = (
     structuralChangeRef.current = true;
     console.log('📊 Marked structural change - will not filter in realtime');
   }, []);
-
-  
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -239,8 +139,6 @@ export const useSimpleAutoSave = (
     
     const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
 
-    
-
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -262,7 +160,6 @@ export const useSimpleAutoSave = (
         onSaved();
         return;
       }
-      
       
       setIsSaving(true);
       pendingSaveRef.current = true;
@@ -312,9 +209,6 @@ export const useSimpleAutoSave = (
             if (newRundown?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
               trackMyUpdate(normalizedTimestamp, isStructural);
-              if (updateLastKnownTimestamp) {
-                updateLastKnownTimestamp(normalizedTimestamp);
-              }
               // Register this save to prevent false positives in resumption
               registerRecentSave(newRundown.id, normalizedTimestamp);
             }
@@ -323,131 +217,44 @@ export const useSimpleAutoSave = (
             navigate(`/rundown/${newRundown.id}`, { replace: true });
           }
         } else {
-          // Use optimistic concurrency control for updates
-          const updateData = {
-            title: state.title,
-            items: state.items,
-            start_time: state.startTime,
-            timezone: state.timezone
-          };
+          // Simple update for existing rundowns
+          const { data, error } = await supabase
+            .from('rundowns')
+            .update({
+              title: state.title,
+              items: state.items,
+              start_time: state.startTime,
+              timezone: state.timezone,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', rundownId)
+            .select('updated_at')
+            .single();
 
-          // Only use concurrency check if we have a known timestamp
-          let result;
-          if (lastKnownTimestampRef.current) {
-            result = await updateRundownWithConcurrencyCheck(
-              rundownId,
-              updateData,
-              lastKnownTimestampRef.current
-            );
+          if (error) {
+            console.error('❌ Save failed:', error);
+            toast({
+              title: "Save failed",
+              description: "Unable to save changes. Please try again.",
+              variant: "destructive",
+              duration: 5000,
+            });
           } else {
-            // No known timestamp - do a plain update without concurrency check
-            console.log('📝 No known timestamp - performing plain update');
-            const { data, error } = await supabase
-              .from('rundowns')
-              .update({
-                ...updateData,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', rundownId)
-              .select('updated_at')
-              .single();
-
-            if (error) {
-              result = { success: false, error: error.message };
-            } else {
-              result = { success: true, conflictData: { updated_at: data.updated_at } };
-            }
-          }
-
-          if (result.success) {
             // Track the actual timestamp returned by the database
-            if (result.conflictData?.updated_at) {
-              const normalizedTimestamp = normalizeTimestamp(result.conflictData.updated_at);
+            if (data?.updated_at) {
+              const normalizedTimestamp = normalizeTimestamp(data.updated_at);
               trackMyUpdate(normalizedTimestamp, isStructural);
-              lastKnownTimestampRef.current = normalizedTimestamp;
-              if (updateLastKnownTimestamp) {
-                updateLastKnownTimestamp(normalizedTimestamp);
-              }
               // Register this save to prevent false positives in resumption
               registerRecentSave(rundownId, normalizedTimestamp);
             }
             lastSavedRef.current = finalSignature;
             onSaved();
-            console.log('✅ Rundown saved successfully with concurrency check');
-          } else if (result.conflictData) {
-            // Handle conflict - merge data and retry
-            console.log('🔄 Handling conflict - merging changes');
-            
-            // Removed toast notification - user prefers just the blue icon indicator
-            // toast({
-            //   title: "Changes merged",
-            //   description: "Your changes have been merged with updates from your team.",
-            //   duration: 4000,
-            // });
-
-            // Get protected fields (currently being edited)
-            const protectedFields = new Set<string>();
-            if (userTypingRef.current) {
-              // Add logic to track which fields are currently being typed in
-              // This would need to be enhanced based on your typing tracking system
-            }
-
-            const mergedData = mergeConflictedRundown(updateData, result.conflictData, protectedFields);
-            
-            // Update our state with merged data
-            if (onConflictResolved) {
-              onConflictResolved(mergedData);
-            }
-            
-            // Update our timestamp reference
-            lastKnownTimestampRef.current = result.conflictData.updated_at;
-            
-            // Retry the save with merged data
-            const retryResult = await updateRundownWithConcurrencyCheck(
-              rundownId,
-              {
-                title: mergedData.title,
-                items: mergedData.items,
-                start_time: mergedData.start_time,
-                timezone: mergedData.timezone
-              },
-              lastKnownTimestampRef.current
-            );
-
-            if (retryResult.success && retryResult.conflictData?.updated_at) {
-              const normalizedTimestamp = normalizeTimestamp(retryResult.conflictData.updated_at);
-              trackMyUpdate(normalizedTimestamp, isStructural);
-              lastKnownTimestampRef.current = normalizedTimestamp;
-              if (updateLastKnownTimestamp) {
-                updateLastKnownTimestamp(normalizedTimestamp);
-              }
-              // Register this save to prevent false positives in resumption
-              registerRecentSave(rundownId, normalizedTimestamp);
-              lastSavedRef.current = finalSignature;
-              onSaved();
-            } else {
-              console.error('❌ Retry save failed after conflict resolution');
-              toast({
-                title: "Save failed",
-                description: "Unable to save changes after conflict resolution. Please try again.",
-                variant: "destructive",
-                duration: 5000,
-              });
-            }
-          } else {
-            console.error('❌ Save failed with concurrency check:', result.error);
-            toast({
-              title: "Save failed",
-              description: result.error || "Unable to save changes. Please try again.",
-              variant: "destructive",
-              duration: 5000,
-            });
+            console.log('✅ Rundown saved successfully');
           }
         }
       } catch (error) {
         console.error('❌ Save error:', error);
       } finally {
-        
         setIsSaving(false);
         pendingSaveRef.current = false;
       }
@@ -458,50 +265,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state, toast, onConflictResolved]);
-
-  // Update timestamp reference when it changes
-  useEffect(() => {
-    lastKnownTimestampRef.current = lastKnownTimestamp;
-  }, [lastKnownTimestamp]);
-
-  // Flush-on-leave protection - save immediately on unload or when page is hidden
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const rid = rundownIdRef.current;
-      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
-        flushSaveRef.current();
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    const handlePageHide = () => {
-      const rid = rundownIdRef.current;
-      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
-        flushSaveRef.current();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('pagehide', handlePageHide);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handlePageHide);
-    };
-  }, []);
-
-  // Flush on route changes (component unmount)
-  useEffect(() => {
-    return () => {
-      // When this component unmounts (route change), flush any pending saves
-      const rid = rundownIdRef.current;
-      if (hasUnsavedRef.current && rid && rid !== DEMO_RUNDOWN_ID) {
-        flushSaveRef.current();
-      }
-    };
-  }, []);
+  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state, toast]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
