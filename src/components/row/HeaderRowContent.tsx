@@ -51,7 +51,7 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-6 text-xl font-mono font-semibold align-middle min-h-[115px]"
+        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
         style={{ 
           backgroundColor,
           width: '64px',
@@ -96,7 +96,7 @@ const HeaderRowContent = ({
                 }}
             >
               <div 
-                className="px-2 py-6 flex items-center"
+                className="px-2 py-8 flex items-center"
                 style={{ 
                   position: 'relative',
                   zIndex: 10,
@@ -161,7 +161,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-6">
+              <div className="px-2 py-8">
                 {/* Show duration in print only */}
                 <span className="hidden print:inline-block font-medium">
                   {headerDuration}
@@ -180,7 +180,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-6"></div>
+              <div className="px-2 py-8"></div>
             </td>
           );
         } else {
@@ -194,7 +194,7 @@ const HeaderRowContent = ({
                 backgroundColor 
               }}
             >
-              <div className="px-2 py-6"></div>
+              <div className="px-2 py-8"></div>
             </td>
           );
         }
