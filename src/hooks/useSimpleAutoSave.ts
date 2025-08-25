@@ -85,8 +85,18 @@ export const useSimpleAutoSave = (
   }, []);
 
   useEffect(() => {
+    console.log('🔍 AutoSave useEffect triggered:', {
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      rundownId,
+      isDemoRundown: rundownId === DEMO_RUNDOWN_ID,
+      undoActive: undoActiveRef.current,
+      isSaving,
+      itemsCount: state.items?.length || 0
+    });
+
     // Check if this is a demo rundown - skip saving but allow change detection
     if (rundownId === DEMO_RUNDOWN_ID) {
+      console.log('🔍 Demo rundown detected, skipping save');
       if (state.hasUnsavedChanges) {
         onSaved();
       }
@@ -94,9 +104,22 @@ export const useSimpleAutoSave = (
     }
 
     // Simple blocking conditions - only block for undo operations and active saves
-    if (!state.hasUnsavedChanges || undoActiveRef.current || isSaving) {
+    if (!state.hasUnsavedChanges) {
+      console.log('🔍 No unsaved changes, skipping save');
       return;
     }
+    
+    if (undoActiveRef.current) {
+      console.log('🔍 Undo operation active, skipping save');
+      return;
+    }
+    
+    if (isSaving) {
+      console.log('🔍 Already saving, skipping save');
+      return;
+    }
+
+    console.log('✅ All conditions passed, proceeding with autosave');
 
     // Create signature of current state - excluding ALL showcaller data
     const currentSignature = createContentSignature();
