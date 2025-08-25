@@ -282,6 +282,13 @@ const SharedRundown = () => {
     };
   }, []);
 
+  // Determine columns early so hooks are always called in the same order
+  const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
+
+  // Use local column ordering for anonymous users to persist their preferred column order
+  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
+  const visibleColumns = getVisibleColumns(orderedColumns);
+
   if (loading) {
     return (
       <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
@@ -325,12 +332,7 @@ const SharedRundown = () => {
     );
   }
 
-  // Use layout columns if available, otherwise fall back to rundown's default columns, or finally to DEFAULT_COLUMNS
-  const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
   
-  // Use local column ordering for anonymous users to persist their preferred column order
-  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
-  const visibleColumns = getVisibleColumns(orderedColumns);
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
