@@ -22,7 +22,7 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
-  const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
+  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
@@ -32,12 +32,16 @@ export const useSimpleRealtimeRundown = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef<string | null>(null);
+  const heartbeatTimerRef = useRef<string | null>(null);
+  const lastHeartbeatRef = useRef<number>(Date.now());
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Global own update tracking to handle multiple subscriptions
+  // Optimized own update tracking with duplicate prevention
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
@@ -54,10 +58,10 @@ export const useSimpleRealtimeRundown = ({
         console.log('🏷️ Tracking own update:', { original: timestamp, normalized: normalizedTimestamp });
       }
       
-      // Clean up old tracked updates after 15 seconds (extended window)
+      // Clean up old tracked updates after 20 seconds (extended for safety)
       setManagedTimeout(() => {
         tracking.ownUpdates.delete(normalizedTimestamp);
-      }, 15000);
+      }, 20000);
     }
     
     // Also track via parent if available
@@ -157,15 +161,17 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Enhanced deduplication with stricter matching
+    // Enhanced deduplication with safer matching
     const isOwnUpdate = tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp);
     const isSameUser = payload.new?.last_updated_by === user?.id;
     
-    // Additional check: if the last few seconds of updates were from this user, likely our own
-    const isRecentOwnUser = payload.new?.last_updated_by === user?.id && 
-      Math.abs(new Date(updateTimestamp).getTime() - Date.now()) < 10000; // Within 10 seconds
+    // Additional check: if update is very recent from this user, likely our own
+    const updateTime = new Date(updateTimestamp).getTime();
+    const timeDiff = Math.abs(updateTime - Date.now());
+    const isRecentOwnUser = isSameUser && timeDiff < 8000; // Within 8 seconds instead of 10
     
-    if (isOwnUpdate || isSameUser || isRecentOwnUser) {
+    // Only skip if we have strong evidence it's our own update
+    if (isOwnUpdate || (isSameUser && isRecentOwnUser)) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🏷️ Own update detected:', { 
           timestamp: normalizedUpdateTimestamp, 
@@ -234,8 +240,34 @@ export const useSimpleRealtimeRundown = ({
     
   }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
-  useEffect(() => {
-    // Only set up subscription if we have the required data
+  // Auto-reconnect logic with exponential backoff
+  const attemptReconnect = useCallback(() => {
+    if (!rundownId || !user || !enabled) return;
+    
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000); // Cap at 30s
+    console.log(`🔄 Attempting reconnect in ${delay}ms (attempt ${reconnectAttemptRef.current + 1})`);
+    
+    if (reconnectTimerRef.current) {
+      clearTimer(reconnectTimerRef.current);
+    }
+    
+    reconnectTimerRef.current = setManagedTimeout(() => {
+      reconnectAttemptRef.current++;
+      console.log(`🔄 Reconnecting realtime subscription (attempt ${reconnectAttemptRef.current})`);
+      
+      // Clean up old subscription
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
+      
+      // Create new subscription with same logic as initial setup
+      setupSubscription();
+    }, delay);
+  }, [rundownId, user, enabled, setManagedTimeout, clearTimer]);
+  
+  // Setup subscription logic extracted for reuse
+  const setupSubscription = useCallback(() => {
     if (!rundownId || !user || !enabled) {
       return;
     }
@@ -243,7 +275,7 @@ export const useSimpleRealtimeRundown = ({
     const subscriptionKey = `${rundownId}-${user.id}`;
     subscriptionKeyRef.current = subscriptionKey;
     
-    // Track this subscription instance
+    // Track this subscription instance - improved lifecycle management
     if (!activeSubscriptions.has(subscriptionKey)) {
       activeSubscriptions.set(subscriptionKey, { count: 0, ownUpdates: new Set() });
     }
@@ -271,35 +303,39 @@ export const useSimpleRealtimeRundown = ({
           handleRealtimeUpdate
         )
         .subscribe((status) => {
+          lastHeartbeatRef.current = Date.now();
+          
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
             connectionStableRef.current = true;
+            reconnectAttemptRef.current = 0; // Reset reconnect attempts on success
             console.log('✅ Simple realtime connected successfully');
+            
+            // Start heartbeat monitoring
+            if (heartbeatTimerRef.current) {
+              clearTimer(heartbeatTimerRef.current);
+            }
+            heartbeatTimerRef.current = setManagedTimeout(() => {
+              checkConnectionHealth();
+            }, 30000); // Check every 30 seconds
+            
           } else if (status === 'CHANNEL_ERROR') {
             connectionStableRef.current = false;
-            setManagedTimeout(() => {
-              if (!connectionStableRef.current) {
-                setIsConnected(false);
-              }
-            }, 1000);
-            console.error('❌ Simple realtime channel error');
+            setIsConnected(false);
+            console.error('❌ Simple realtime channel error - attempting reconnect');
+            attemptReconnect();
+            
           } else if (status === 'TIMED_OUT') {
             connectionStableRef.current = false;
-            setManagedTimeout(() => {
-              if (!connectionStableRef.current) {
-                setIsConnected(false);
-              }
-            }, 1000);
-            console.error('⏰ Simple realtime connection timed out');
+            setIsConnected(false);
+            console.error('⏰ Simple realtime connection timed out - attempting reconnect');
+            attemptReconnect();
+            
           } else if (status === 'CLOSED') {
             connectionStableRef.current = false;
-            if (subscriptionRef.current) {
-              setManagedTimeout(() => {
-                if (!connectionStableRef.current) {
-                  setIsConnected(false);
-                }
-              }, 500);
-            }
+            setIsConnected(false);
+            console.warn('🔌 Simple realtime connection closed - attempting reconnect');
+            attemptReconnect();
           }
         });
 
@@ -308,8 +344,33 @@ export const useSimpleRealtimeRundown = ({
       // Non-lead subscriptions still get connection status from lead
       setIsConnected(true);
     }
+  }, [rundownId, user, enabled, handleRealtimeUpdate, attemptReconnect, setManagedTimeout, clearTimer]);
+  
+  // Connection health monitoring
+  const checkConnectionHealth = useCallback(() => {
+    const now = Date.now();
+    const timeSinceLastHeartbeat = now - lastHeartbeatRef.current;
+    
+    if (timeSinceLastHeartbeat > 60000) { // No activity for 1 minute
+      console.warn('💔 Connection health check failed - attempting reconnect');
+      setIsConnected(false);
+      attemptReconnect();
+    } else {
+      // Schedule next health check
+      if (heartbeatTimerRef.current) {
+        clearTimer(heartbeatTimerRef.current);
+      }
+      heartbeatTimerRef.current = setManagedTimeout(() => {
+        checkConnectionHealth();
+      }, 30000);
+    }
+  }, [attemptReconnect, setManagedTimeout, clearTimer]);
+
+  useEffect(() => {
+    setupSubscription();
 
     return () => {
+      const subscriptionKey = subscriptionKeyRef.current;
       const tracking = activeSubscriptions.get(subscriptionKey);
       if (tracking) {
         tracking.count--;
@@ -326,11 +387,19 @@ export const useSimpleRealtimeRundown = ({
         }
       }
       
+      // Clean up timers
+      if (reconnectTimerRef.current) {
+        clearTimer(reconnectTimerRef.current);
+      }
+      if (heartbeatTimerRef.current) {
+        clearTimer(heartbeatTimerRef.current);
+      }
+      
       connectionStableRef.current = false;
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
+  }, [setupSubscription, clearTimer]);
 
   return {
     isConnected,
