@@ -4,15 +4,11 @@ import React, { createContext, useContext, ReactNode } from 'react';
 interface RealtimeConnectionContextType {
   isConnected: boolean;
   isProcessingUpdate: boolean;
-  connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected';
-  lastHeartbeat: number | null;
 }
 
 const RealtimeConnectionContext = createContext<RealtimeConnectionContextType>({
   isConnected: false,
-  isProcessingUpdate: false,
-  connectionQuality: 'disconnected',
-  lastHeartbeat: null
+  isProcessingUpdate: false
 });
 
 export const useRealtimeConnection = () => {
@@ -23,25 +19,16 @@ interface RealtimeConnectionProviderProps {
   children: ReactNode;
   isConnected: boolean;
   isProcessingUpdate: boolean;
-  connectionQuality?: 'excellent' | 'good' | 'poor' | 'disconnected';
-  lastHeartbeat?: number | null;
 }
 
 const RealtimeConnectionProvider = ({ 
   children, 
   isConnected, 
-  isProcessingUpdate,
-  connectionQuality = isConnected ? 'good' : 'disconnected',
-  lastHeartbeat = null
+  isProcessingUpdate 
 }: RealtimeConnectionProviderProps) => {
   return (
     <RealtimeConnectionContext.Provider 
-      value={{ 
-        isConnected, 
-        isProcessingUpdate, 
-        connectionQuality,
-        lastHeartbeat 
-      }}
+      value={{ isConnected, isProcessingUpdate }}
     >
       {children}
     </RealtimeConnectionContext.Provider>

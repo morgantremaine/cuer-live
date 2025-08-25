@@ -39,8 +39,7 @@ export const useSimplifiedRundownState = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
-  const PROTECTION_WINDOW_MS = 12000; // 12 second protection window (optimized)
-  const saveThrottleRef = useRef<NodeJS.Timeout>();
+  const PROTECTION_WINDOW_MS = 15000; // 15 second protection window (extended for better safety)
   
   // Listen to global focus tracker
   useEffect(() => {
@@ -334,7 +333,7 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
-  // Enhanced updateItem function with optimized protection tracking and save throttling
+  // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
@@ -342,7 +341,7 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // Track field edits for protection with optimized timing
+    // ALWAYS track field edits for protection, regardless of type
     recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
     console.log('🛡️ Tracking field edit for protection:', sessionKey);
     
@@ -356,25 +355,22 @@ export const useSimplifiedRundownState = () => {
         console.log('🛡️ Started typing session for field:', sessionKey);
       }
       
-      // Clear existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
       
-      // End typing session after period of inactivity
       typingTimeoutRef.current = setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === sessionKey) {
           typingSessionRef.current = null;
           console.log('🛡️ Ended typing session for field:', sessionKey);
         }
-      }, 5000); // Optimized to 5 seconds for better responsiveness
+      }, 8000); // Extended to 8 seconds for better protection
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (field === 'color') {
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
     
-    // Apply the update
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const item = state.items.find(i => i.id === id);

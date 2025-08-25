@@ -22,7 +22,7 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdate
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
-  const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('SimpleRealtimeRundown');
+  const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onRundownUpdateRef = useRef(onRundownUpdate);
@@ -32,17 +32,12 @@ export const useSimpleRealtimeRundown = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
-  const reconnectAttemptRef = useRef(0);
-  const reconnectTimerRef = useRef<string | null>(null);
-  const heartbeatTimerRef = useRef<string | null>(null);
-  const lastHeartbeatRef = useRef<number>(Date.now());
-  const cleanupInProgressRef = useRef(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
   trackOwnUpdateRef.current = trackOwnUpdate;
 
-  // Optimized own update tracking with duplicate prevention
+  // Global own update tracking to handle multiple subscriptions
   const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
@@ -59,10 +54,10 @@ export const useSimpleRealtimeRundown = ({
         console.log('🏷️ Tracking own update:', { original: timestamp, normalized: normalizedTimestamp });
       }
       
-      // Clean up old tracked updates after 20 seconds (extended for safety)
+      // Clean up old tracked updates after 15 seconds (extended window)
       setManagedTimeout(() => {
         tracking.ownUpdates.delete(normalizedTimestamp);
-      }, 20000);
+      }, 15000);
     }
     
     // Also track via parent if available
@@ -129,9 +124,6 @@ export const useSimpleRealtimeRundown = ({
 
   // Simplified update handler with global deduplication
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
-    // Record heartbeat on any incoming message
-    lastHeartbeatRef.current = Date.now();
-
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
     
@@ -141,7 +133,6 @@ export const useSimpleRealtimeRundown = ({
     }
 
     console.log('📡 Simple realtime update received:', {
-
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
       itemCount: payload.new?.items?.length
@@ -166,17 +157,15 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Enhanced deduplication with safer matching
+    // Enhanced deduplication with stricter matching
     const isOwnUpdate = tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp);
     const isSameUser = payload.new?.last_updated_by === user?.id;
     
-    // Additional check: if update is very recent from this user, likely our own
-    const updateTime = new Date(updateTimestamp).getTime();
-    const timeDiff = Math.abs(updateTime - Date.now());
-    const isRecentOwnUser = isSameUser && timeDiff < 8000; // Within 8 seconds instead of 10
+    // Additional check: if the last few seconds of updates were from this user, likely our own
+    const isRecentOwnUser = payload.new?.last_updated_by === user?.id && 
+      Math.abs(new Date(updateTimestamp).getTime() - Date.now()) < 10000; // Within 10 seconds
     
-    // Only skip if we have strong evidence it's our own update
-    if (isOwnUpdate || (isSameUser && isRecentOwnUser)) {
+    if (isOwnUpdate || isSameUser || isRecentOwnUser) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🏷️ Own update detected:', { 
           timestamp: normalizedUpdateTimestamp, 
@@ -245,68 +234,29 @@ export const useSimpleRealtimeRundown = ({
     
   }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
-  // Auto-reconnect logic with exponential backoff
-  const attemptReconnect = useCallback(() => {
-    if (!rundownId || !user || !enabled) return;
-    
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000); // Cap at 30s
-    console.log(`🔄 Attempting reconnect in ${delay}ms (attempt ${reconnectAttemptRef.current + 1})`);
-    
-    if (reconnectTimerRef.current) {
-      clearTimer(reconnectTimerRef.current);
-    }
-    
-    reconnectTimerRef.current = setManagedTimeout(() => {
-      reconnectAttemptRef.current++;
-      console.log(`🔄 Reconnecting realtime subscription (attempt ${reconnectAttemptRef.current})`);
-      
-      // Clean up old subscription
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
-      }
-      
-      // Create new subscription with same logic as initial setup
-      setupSubscription('reconnect');
-    }, delay);
-  }, [rundownId, user, enabled, setManagedTimeout, clearTimer]);
-  
-  // Setup subscription logic extracted for reuse
-  const setupSubscription = useCallback((mode: 'initial' | 'reconnect' = 'initial') => {
-    cleanupInProgressRef.current = false; // Reset any cleanup flag on setup
+  useEffect(() => {
+    // Only set up subscription if we have the required data
     if (!rundownId || !user || !enabled) {
-      return;
-    }
-
-    // Prevent duplicate initial subscriptions
-    if (mode === 'initial' && subscriptionRef.current) {
-      console.log('🔁 Realtime subscription already exists - skipping');
       return;
     }
 
     const subscriptionKey = `${rundownId}-${user.id}`;
     subscriptionKeyRef.current = subscriptionKey;
     
-    // Ensure tracking exists
+    // Track this subscription instance
     if (!activeSubscriptions.has(subscriptionKey)) {
       activeSubscriptions.set(subscriptionKey, { count: 0, ownUpdates: new Set() });
     }
     
     const tracking = activeSubscriptions.get(subscriptionKey)!;
-
-    // Determine lead status
-    let isLead = false;
-    if (mode === 'initial') {
-      tracking.count++;
-      isLead = tracking.count === 1;
-    } else {
-      // During reconnect, preserve previous lead status (or become lead if no active channel)
-      isLead = isLeadSubscriptionRef.current || !subscriptionRef.current;
-    }
+    tracking.count++;
+    
+    // Only the first subscription instance becomes the lead
+    const isLead = tracking.count === 1;
     isLeadSubscriptionRef.current = isLead;
-
+    
     if (isLead) {
-      console.log(`🚀 Setting up ${mode} lead realtime subscription for rundown:`, rundownId);
+      console.log('🚀 Setting up lead realtime subscription for rundown:', rundownId);
       
       const channel = supabase
         .channel(`simple-realtime-${subscriptionKey}`)
@@ -321,43 +271,35 @@ export const useSimpleRealtimeRundown = ({
           handleRealtimeUpdate
         )
         .subscribe((status) => {
-          lastHeartbeatRef.current = Date.now();
-          
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
             connectionStableRef.current = true;
-            reconnectAttemptRef.current = 0; // Reset reconnect attempts on success
             console.log('✅ Simple realtime connected successfully');
-            
-            // Start/refresh heartbeat monitoring
-            if (heartbeatTimerRef.current) {
-              clearTimer(heartbeatTimerRef.current);
-            }
-            heartbeatTimerRef.current = setManagedTimeout(() => {
-              checkConnectionHealth();
-            }, 30000); // Check every 30 seconds
-            
           } else if (status === 'CHANNEL_ERROR') {
             connectionStableRef.current = false;
-            setIsConnected(false);
-            console.error('❌ Simple realtime channel error - attempting reconnect');
-            attemptReconnect();
-            
+            setManagedTimeout(() => {
+              if (!connectionStableRef.current) {
+                setIsConnected(false);
+              }
+            }, 1000);
+            console.error('❌ Simple realtime channel error');
           } else if (status === 'TIMED_OUT') {
             connectionStableRef.current = false;
-            setIsConnected(false);
-            console.error('⏰ Simple realtime connection timed out - attempting reconnect');
-            attemptReconnect();
-            
+            setManagedTimeout(() => {
+              if (!connectionStableRef.current) {
+                setIsConnected(false);
+              }
+            }, 1000);
+            console.error('⏰ Simple realtime connection timed out');
           } else if (status === 'CLOSED') {
             connectionStableRef.current = false;
-            setIsConnected(false);
-            if (cleanupInProgressRef.current) {
-              console.warn('🔌 Simple realtime connection closed during cleanup - ignoring reconnect');
-              return;
+            if (subscriptionRef.current) {
+              setManagedTimeout(() => {
+                if (!connectionStableRef.current) {
+                  setIsConnected(false);
+                }
+              }, 500);
             }
-            console.warn('🔌 Simple realtime connection closed - attempting reconnect');
-            attemptReconnect();
           }
         });
 
@@ -366,34 +308,8 @@ export const useSimpleRealtimeRundown = ({
       // Non-lead subscriptions still get connection status from lead
       setIsConnected(true);
     }
-  }, [rundownId, user, enabled, handleRealtimeUpdate, attemptReconnect, setManagedTimeout, clearTimer]);
-  
-  // Connection health monitoring
-  const checkConnectionHealth = useCallback(() => {
-    const now = Date.now();
-    const timeSinceLastHeartbeat = now - lastHeartbeatRef.current;
-    
-    if (timeSinceLastHeartbeat > 60000) { // No activity for 1 minute
-      console.warn('💔 Connection health check failed - attempting reconnect');
-      setIsConnected(false);
-      attemptReconnect();
-    } else {
-      // Schedule next health check
-      if (heartbeatTimerRef.current) {
-        clearTimer(heartbeatTimerRef.current);
-      }
-      heartbeatTimerRef.current = setManagedTimeout(() => {
-        checkConnectionHealth();
-      }, 30000);
-    }
-  }, [attemptReconnect, setManagedTimeout, clearTimer]);
-
-  useEffect(() => {
-    setupSubscription('initial');
 
     return () => {
-      cleanupInProgressRef.current = true;
-      const subscriptionKey = subscriptionKeyRef.current;
       const tracking = activeSubscriptions.get(subscriptionKey);
       if (tracking) {
         tracking.count--;
@@ -410,19 +326,11 @@ export const useSimpleRealtimeRundown = ({
         }
       }
       
-      // Clean up timers
-      if (reconnectTimerRef.current) {
-        clearTimer(reconnectTimerRef.current);
-      }
-      if (heartbeatTimerRef.current) {
-        clearTimer(heartbeatTimerRef.current);
-      }
-      
       connectionStableRef.current = false;
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [rundownId, user?.id, enabled]);
+  }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
 
   return {
     isConnected,
