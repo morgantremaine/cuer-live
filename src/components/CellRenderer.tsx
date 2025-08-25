@@ -20,7 +20,6 @@ interface CellRendererProps {
   backgroundColor?: string;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -35,7 +34,6 @@ const CellRenderer = ({
   backgroundColor,
   currentSegmentId,
   columnExpandState = {},
-  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -143,7 +141,6 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
-        setUserTyping={setUserTyping}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
@@ -162,7 +159,6 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
-      setUserTyping={setUserTyping}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {

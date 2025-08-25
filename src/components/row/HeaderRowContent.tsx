@@ -14,7 +14,6 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   isCollapsed?: boolean;
-  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -31,7 +30,6 @@ const HeaderRowContent = ({
   currentSegmentId,
   cellRefs,
   isCollapsed = false,
-  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -119,14 +117,12 @@ const HeaderRowContent = ({
                     type="text"
                     value={headerName}
                     onChange={(e) => {
-                      setUserTyping?.(true);
                       onUpdateItem(item.id, 'name', e.target.value);
                       // Auto-resize on change with buffer
                       const contentLength = e.target.value.length || 1;
                       const bufferWidth = contentLength + 3; // Add buffer for PC browsers
                       e.target.style.width = `${bufferWidth}ch`;
                     }}
-                    onBlur={() => setUserTyping?.(false)}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
                     className="bg-transparent border-none outline-none text-lg font-bold"

@@ -11,7 +11,6 @@ interface ExpandableScriptCellProps {
   textColor?: string;
   columnExpanded?: boolean;
   fieldType?: 'script' | 'notes';
-  setUserTyping?: (typing: boolean) => void;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -24,7 +23,6 @@ const ExpandableScriptCell = ({
   textColor,
   columnExpanded = false,
   fieldType = 'script',
-  setUserTyping,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -274,7 +272,6 @@ const ExpandableScriptCell = ({
               }}
               value={value}
               onChange={(e) => {
-                setUserTyping?.(true);
                 onUpdateValue(e.target.value);
                 // Trigger resize on content change
                 requestAnimationFrame(() => {
@@ -293,7 +290,6 @@ const ExpandableScriptCell = ({
               onBlur={() => {
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
-                setUserTyping?.(false);
               }}
               onSelect={() => {
                 setShowOverlay(false); // Hide overlay when text is selected

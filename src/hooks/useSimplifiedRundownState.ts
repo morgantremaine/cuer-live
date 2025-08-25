@@ -87,7 +87,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with concurrency control
-  const { isSaving, setUndoActive, setTrackOwnUpdate, setUserTyping, markStructuralChange } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markStructuralChange } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -158,11 +158,7 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { 
-        isSaving, 
-        structuralDirty: structuralDirtyRef.current,
-        hasUnsavedChanges: state.hasUnsavedChanges
-      });
+      console.log('📊 Current saving state check:', { isSaving, structuralDirty: structuralDirtyRef.current });
       
       // Skip update if saving OR if we have unsaved structural changes
       const hasStructuralChanges = updatedRundown.items && Array.isArray(updatedRundown.items);
@@ -180,73 +176,20 @@ export const useSimplifiedRundownState = () => {
         const protectedFields = getProtectedFields();
         console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
         
-        // Implement granular merge when we have unsaved changes
-        if (state.hasUnsavedChanges && protectedFields.size > 0) {
-          console.log('🔄 Applying granular merge to preserve local edits');
-          
-          // Merge items with field-level protection
-          const mergedItems = (updatedRundown.items || []).map((remoteItem: any) => {
-            const localItem = state.items.find(item => item.id === remoteItem.id);
-            if (!localItem) return remoteItem;
-            
-            // Create merged item, preserving protected fields
-            const mergedItem = { ...remoteItem };
-            
-            // Check each field for protection
-            ['name', 'script', 'talent', 'notes', 'gfx', 'video', 'images', 'duration'].forEach(field => {
-              const fieldKey = `${localItem.id}-${field}`;
-              if (protectedFields.has(fieldKey)) {
-                console.log(`🛡️ Preserving local edit for ${fieldKey}`);
-                mergedItem[field] = localItem[field];
-              }
-            });
-            
-            // Preserve custom fields if they're being edited
-            if (localItem.customFields) {
-              Object.keys(localItem.customFields).forEach(customKey => {
-                const fieldKey = `${localItem.id}-customFields.${customKey}`;
-                if (protectedFields.has(fieldKey)) {
-                  console.log(`🛡️ Preserving local custom field edit for ${fieldKey}`);
-                  mergedItem.customFields = mergedItem.customFields || {};
-                  mergedItem.customFields[customKey] = localItem.customFields[customKey];
-                }
-              });
-            }
-            
-            return mergedItem;
-          });
-          
-          // Use setItems to preserve local state, avoiding loadState which resets change tracking
-          actions.setItems(mergedItems);
-          
-          // Only update title/timing if they're not being edited
-          if (!protectedFields.has('title') && updatedRundown.title) {
-            actions.setTitle(updatedRundown.title);
-          }
-          if (!protectedFields.has('startTime') && updatedRundown.start_time) {
-            actions.setStartTime(updatedRundown.start_time);
-          }
-          if (!protectedFields.has('timezone') && updatedRundown.timezone) {
-            actions.setTimezone(updatedRundown.timezone);
-          }
-          
-          console.log('✅ Granular merge completed, preserved local edits');
-        } else {
-          // No conflicts, safe to load complete state
-          actions.loadState({
-            items: updatedRundown.items || [],
-            title: updatedRundown.title,
-            startTime: updatedRundown.start_time,
-            timezone: updatedRundown.timezone
-          });
-        }
+        // Load state directly without field protection for now
+        actions.loadState({
+          items: updatedRundown.items || [],
+          title: updatedRundown.title,
+          startTime: updatedRundown.start_time,
+          timezone: updatedRundown.timezone
+        });
         
         console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
       } else {
         const reason = isSaving ? 'currently saving' : 'structural changes in progress';
         console.log(`📊 Deferring realtime update - ${reason}`);
       }
-    }, [actions, isSaving, getProtectedFields, state.hasUnsavedChanges, state.items]),
+    }, [actions, isSaving, getProtectedFields]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
       console.log('📝 Tracking own update in realtime:', timestamp);
@@ -750,9 +693,6 @@ export const useSimplifiedRundownState = () => {
     teleprompterSaveHandlers: {
       onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
       onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
-    },
-    
-    // Auto-save utilities
-    setUserTyping
+    }
   };
 };

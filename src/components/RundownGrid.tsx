@@ -25,8 +25,7 @@ const RundownGrid = React.memo(() => {
     clearRowSelection,
     rundownId,
     rundownStartTime,
-    rundownTitle,
-    setUserTyping
+    rundownTitle
   } = coreState;
 
   // Update browser tab title when rundown title changes
@@ -182,7 +181,6 @@ const RundownGrid = React.memo(() => {
       getRowNumber={coreState.getRowNumber}
       getRowStatus={getRowStatus}
       calculateHeaderDuration={coreState.calculateHeaderDuration}
-      setUserTyping={setUserTyping}
       onUpdateItem={coreState.updateItem}
       onCellClick={stableCallbacks.handleCellClick}
       onKeyDown={stableCallbacks.handleKeyDown}

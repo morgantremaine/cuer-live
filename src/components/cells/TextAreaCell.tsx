@@ -9,7 +9,6 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
-  setUserTyping?: (typing: boolean) => void;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -23,7 +22,6 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
-  setUserTyping,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -122,9 +120,6 @@ const TextAreaCell = ({
       e.preventDefault();
       e.stopPropagation();
       
-      // Signal that user is actively editing
-      setUserTyping?.(true);
-      
       const textarea = e.target as HTMLTextAreaElement;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -154,9 +149,6 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Notify autosave that user is typing
-    setUserTyping?.(true);
-    
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
@@ -186,8 +178,6 @@ const TextAreaCell = ({
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
     setIsFocused(false);
-    // Allow autosave to proceed after editing
-    setUserTyping?.(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {

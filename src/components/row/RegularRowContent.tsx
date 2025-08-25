@@ -18,7 +18,6 @@ interface RegularRowContentProps {
   isSelected?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -37,7 +36,6 @@ const RegularRowContent = ({
   isSelected = false,
   currentSegmentId,
   columnExpandState = {},
-  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -93,7 +91,6 @@ const RegularRowContent = ({
               backgroundColor="transparent"
               currentSegmentId={currentSegmentId}
               columnExpandState={columnExpandState}
-              setUserTyping={setUserTyping}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

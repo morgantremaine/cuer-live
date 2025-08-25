@@ -23,7 +23,6 @@ interface RundownTableProps {
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
   getHeaderDuration: (index: number) => string;
-  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -68,7 +67,6 @@ const RundownTable = ({
   getRowNumber,
   getRowStatus,
   getHeaderDuration,
-  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -132,10 +130,10 @@ const RundownTable = ({
             const isCurrentlyPlaying = item.id === currentSegmentId;
 
             return (
-              <React.Fragment key={item.id}>
+              <>
                 {/* Drop indicator ABOVE this row */}
                 {dropTargetIndex === index && (
-                  <tr key={`drop-above-${item.id}`}>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
@@ -143,7 +141,6 @@ const RundownTable = ({
                 )}
                 
                 <RundownRow
-                  key={item.id}
                   item={item}
                   index={index}
                   rowNumber={rowNumber}
@@ -162,7 +159,6 @@ const RundownTable = ({
                   isDragging={isDragging}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   columnExpandState={columnExpandState}
-                  setUserTyping={setUserTyping}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
@@ -191,13 +187,13 @@ const RundownTable = ({
                 
                 {/* Drop indicator AFTER the last row */}
                 {dropTargetIndex === items.length && index === items.length - 1 && (
-                  <tr key={`drop-after-${item.id}`}>
+                  <tr>
                     <td colSpan={visibleColumns.length + 1} className="p-0">
                       <div className="h-0.5 bg-blue-500 w-full relative z-50"></div>
                     </td>
                   </tr>
                 )}
-              </React.Fragment>
+              </>
             );
           })}
     </tbody>
