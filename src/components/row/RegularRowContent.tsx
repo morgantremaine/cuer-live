@@ -18,6 +18,7 @@ interface RegularRowContentProps {
   isSelected?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
+  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -36,6 +37,7 @@ const RegularRowContent = ({
   isSelected = false,
   currentSegmentId,
   columnExpandState = {},
+  rundownId,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -91,6 +93,7 @@ const RegularRowContent = ({
               backgroundColor="transparent"
               currentSegmentId={currentSegmentId}
               columnExpandState={columnExpandState}
+              rundownId={rundownId}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}

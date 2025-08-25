@@ -14,6 +14,7 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   isCollapsed?: boolean;
+  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -30,6 +31,7 @@ const HeaderRowContent = ({
   currentSegmentId,
   cellRefs,
   isCollapsed = false,
+  rundownId,
   onUpdateItem,
   onCellClick,
   onKeyDown,

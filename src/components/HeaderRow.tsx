@@ -171,13 +171,14 @@ const HeaderRow = (props: HeaderRowProps) => {
           headerDuration={props.headerDuration}
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
-          currentSegmentId={currentSegmentId}
+          currentSegmentId={props.currentSegmentId}
           cellRefs={props.cellRefs}
-          isCollapsed={isCollapsed}
+          isCollapsed={props.isCollapsed}
+          rundownId={props.rundownId}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
-          onToggleCollapse={onToggleCollapse}
+          onToggleCollapse={props.onToggleCollapse}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>
