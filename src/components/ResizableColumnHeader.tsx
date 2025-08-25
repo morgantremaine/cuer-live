@@ -185,7 +185,7 @@ const ResizableColumnHeader = ({
       }}
       className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
         isDragging ? 'opacity-50' : ''
-      } cursor-move`}
+      } cursor-move hover:bg-blue-500 transition-colors`}
       style={style}
       {...attributes}
       {...dragListeners}
