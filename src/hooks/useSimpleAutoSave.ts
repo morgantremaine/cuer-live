@@ -78,8 +78,9 @@ export const useSimpleAutoSave = (
     }
   }, []);
 
-  // Function to set user typing state
+  // Function to set user typing state with enhanced logic
   const setUserTyping = useCallback((typing: boolean) => {
+    const wasTyping = userTypingRef.current;
     userTypingRef.current = typing;
     
     if (typing) {
@@ -87,9 +88,17 @@ export const useSimpleAutoSave = (
         clearTimeout(typingTimeoutRef.current);
       }
       
+      // Reduced idle threshold for faster saves
       typingTimeoutRef.current = setTimeout(() => {
+        console.log('⌨️ User stopped typing, allowing autosave');
         userTypingRef.current = false;
-      }, 3000);
+      }, 1200); // Reduced from 3000ms to 1200ms
+    } else if (wasTyping) {
+      // User explicitly stopped typing (blur event)
+      console.log('⌨️ User explicitly stopped typing (blur)');
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   }, []);
 
@@ -114,12 +123,26 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Simple blocking conditions - no showcaller interference possible
-    if (!state.hasUnsavedChanges || 
-        undoActiveRef.current || 
-        userTypingRef.current ||
-        pendingSaveRef.current) {
+    // Enhanced blocking conditions with background save capability
+    const now = Date.now();
+    const timeSinceLastSave = now - lastSaveTimeRef.current;
+    
+    const isBlocked = !state.hasUnsavedChanges || 
+                     undoActiveRef.current || 
+                     pendingSaveRef.current;
+    
+    // Allow background saves during typing if it's been a while
+    const allowBackgroundSave = userTypingRef.current && timeSinceLastSave > 10000; // 10 seconds
+    
+    if (isBlocked || (userTypingRef.current && !allowBackgroundSave)) {
+      if (userTypingRef.current && !allowBackgroundSave) {
+        console.log('⌨️ Blocking save - user is typing (last save:', timeSinceLastSave, 'ms ago)');
+      }
       return;
+    }
+    
+    if (allowBackgroundSave) {
+      console.log('💾 Performing background save during typing session');
     }
 
     // Create signature of current state - excluding ALL showcaller data
@@ -133,8 +156,6 @@ export const useSimpleAutoSave = (
     }
 
     // Rate limiting with faster saves for structural changes
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTimeRef.current;
     const minSaveInterval = 3000;
     
     // Speed up structural changes for show day safety

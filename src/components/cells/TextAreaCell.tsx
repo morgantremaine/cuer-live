@@ -122,6 +122,9 @@ const TextAreaCell = ({
       e.preventDefault();
       e.stopPropagation();
       
+      // Signal that user is actively editing
+      setUserTyping?.(true);
+      
       const textarea = e.target as HTMLTextAreaElement;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
