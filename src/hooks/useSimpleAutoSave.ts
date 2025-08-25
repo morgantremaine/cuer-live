@@ -177,7 +177,8 @@ export const useSimpleAutoSave = (
     const debounceTime = isStructuralChange ? Math.min(baseDebounceTime, 750) : baseDebounceTime;
 
     if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+      console.log('⏳ Save already scheduled, skipping reschedule');
+      return;
     }
 
     console.log('💾 Starting save process - proceeding with timeout:', debounceTime, 'ms');
@@ -295,13 +296,13 @@ export const useSimpleAutoSave = (
       } finally {
         setIsSaving(false);
         pendingSaveRef.current = false;
+        saveTimeoutRef.current = undefined as unknown as NodeJS.Timeout;
       }
     }, debounceTime);
 
+    // Do not clear scheduled save on re-renders; allow the pending timeout to fire
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      // intentional no-op to avoid canceling pending saves
     };
   }, [state.hasUnsavedChanges, rundownId, onSaved, isSaving, navigate, trackMyUpdate, location.state?.folderId, toast]);
 
