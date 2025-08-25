@@ -173,47 +173,41 @@ const DashboardRundownGrid = ({
     let timeAgo = ''
     let status = 'older'
     let color = 'bg-gray-500'
-    let label = ''
     
     if (minutesDiff < 60) {
       const minutes = Math.floor(minutesDiff)
       timeAgo = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
       status = 'active'
       color = 'bg-green-500'
-      label = 'Recently Active'
     } else if (hoursDiff < 48) {
       const hours = Math.floor(hoursDiff)
       timeAgo = `${hours} hour${hours !== 1 ? 's' : ''} ago`
       status = 'active'
       color = 'bg-green-500'
-      label = 'Recently Active'
     } else if (daysDiff < 7) {
       const days = Math.floor(daysDiff)
       timeAgo = `${days} day${days !== 1 ? 's' : ''} ago`
       status = 'week'
       color = 'bg-blue-500'
-      label = 'This Week'
     } else if (weeksDiff < 4) {
       const weeks = Math.floor(weeksDiff)
       timeAgo = `${weeks} week${weeks !== 1 ? 's' : ''} ago`
       status = 'week'
       color = 'bg-blue-500'
-      label = 'This Month'
     } else if (monthsDiff < 12) {
       const months = Math.floor(monthsDiff)
       timeAgo = `${months} month${months !== 1 ? 's' : ''} ago`
       status = 'older'
       color = 'bg-gray-500'
-      label = 'This Year'
     } else {
       const years = Math.floor(yearsDiff)
       timeAgo = `${years} year${years !== 1 ? 's' : ''} ago`
       status = 'older'
       color = 'bg-gray-500'
-      label = 'Older'
     }
     
-    return { status, color, label: `${label} • ${timeAgo}` }
+    const editorName = getLastEditorName(rundown)
+    return { status, color, label: `Edited ${timeAgo} by ${editorName}` }
   }
 
   // Handle drag start for rundown cards
@@ -546,7 +540,7 @@ const DashboardRundownGrid = ({
                 <div className="text-center">
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${activity.color} bg-opacity-20 text-gray-300`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${activity.color}`} />
-                    {`${activity.label} • by ${getLastEditorName(rundown)}`}
+                    {activity.label}
                   </span>
                 </div>
               </CardContent>
