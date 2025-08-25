@@ -4,13 +4,11 @@ import React, { createContext, useContext, ReactNode } from 'react';
 interface RealtimeConnectionContextType {
   isConnected: boolean;
   isProcessingUpdate: boolean;
-  isProcessingLocalStructural?: boolean;
 }
 
 const RealtimeConnectionContext = createContext<RealtimeConnectionContextType>({
   isConnected: false,
-  isProcessingUpdate: false,
-  isProcessingLocalStructural: false
+  isProcessingUpdate: false
 });
 
 export const useRealtimeConnection = () => {
@@ -21,18 +19,16 @@ interface RealtimeConnectionProviderProps {
   children: ReactNode;
   isConnected: boolean;
   isProcessingUpdate: boolean;
-  isProcessingLocalStructural?: boolean;
 }
 
 const RealtimeConnectionProvider = ({ 
   children, 
   isConnected, 
-  isProcessingUpdate,
-  isProcessingLocalStructural 
+  isProcessingUpdate 
 }: RealtimeConnectionProviderProps) => {
   return (
     <RealtimeConnectionContext.Provider 
-      value={{ isConnected, isProcessingUpdate, isProcessingLocalStructural }}
+      value={{ isConnected, isProcessingUpdate }}
     >
       {children}
     </RealtimeConnectionContext.Provider>

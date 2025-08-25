@@ -24,7 +24,6 @@ export const useRundownInteractionHandlers = (
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   markStructuralChange?: () => void,
-  markLocalStructuralChange?: () => void,
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
@@ -100,8 +99,7 @@ export const useRundownInteractionHandlers = (
     items,
     setRundownTitle,
     addRowAtIndex,
-    addHeaderAtIndex,
-    markLocalStructuralChange
+    addHeaderAtIndex
   });
 
   return {
