@@ -55,7 +55,7 @@ const DraggableColumnHeader = ({
     <th
       ref={setNodeRef}
       style={{...style, width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 cursor-grab active:cursor-grabbing ${
+      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 ${
         isDark 
           ? 'text-gray-300 border-gray-600 bg-gray-800' 
           : 'text-gray-500 border-gray-200 bg-gray-50'
@@ -64,8 +64,6 @@ const DraggableColumnHeader = ({
           ? 'print-time-column' 
           : 'print-content-column'
       }`}
-      {...attributes}
-      {...listeners}
     >
       <div className="flex items-center space-x-1">
         {(column.key === 'script' || column.key === 'notes') && (
