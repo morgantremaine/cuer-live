@@ -132,12 +132,15 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Rate limiting
+    // Rate limiting with faster saves for structural changes
     const now = Date.now();
     const timeSinceLastSave = now - lastSaveTimeRef.current;
     const minSaveInterval = 3000;
     
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
+    // Speed up structural changes for show day safety
+    const isStructuralChange = structuralChangeRef.current;
+    const baseDebounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
+    const debounceTime = isStructuralChange ? Math.min(baseDebounceTime, 750) : baseDebounceTime;
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);

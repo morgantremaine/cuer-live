@@ -39,6 +39,10 @@ export const useSimplifiedRundownState = () => {
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const PROTECTION_WINDOW_MS = 10000; // 10 second protection window (extended for safety)
 
+  // Structural change protection
+  const structuralDirtyRef = useRef(false);
+  const lastStructuralAtRef = useRef<number>(0);
+
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
     state,
@@ -89,7 +93,10 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved
+    () => {
+      actions.markSaved();
+      structuralDirtyRef.current = false; // Reset structural flag when saved
+    }
   );
 
   // Standalone undo system - unchanged
@@ -151,10 +158,13 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
+      console.log('📊 Current saving state check:', { isSaving, structuralDirty: structuralDirtyRef.current });
       
-      // Only update if we're not currently saving to avoid conflicts
-      if (!isSaving) {
+      // Skip update if saving OR if we have unsaved structural changes
+      const hasStructuralChanges = updatedRundown.items && Array.isArray(updatedRundown.items);
+      const shouldSkipUpdate = isSaving || (structuralDirtyRef.current && hasStructuralChanges);
+      
+      if (!shouldSkipUpdate) {
         console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
         
         // Update our known timestamp
@@ -176,7 +186,8 @@ export const useSimplifiedRundownState = () => {
         
         console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
       } else {
-        console.log('📊 Skipping realtime update - currently saving');
+        const reason = isSaving ? 'currently saving' : 'structural changes in progress';
+        console.log(`📊 Deferring realtime update - ${reason}`);
       }
     }, [actions, isSaving, getProtectedFields]),
     enabled: !isLoading,
@@ -379,7 +390,7 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     onDataRefresh: handleDataRefresh,
     lastKnownTimestamp,
-    enabled: isInitialized && !isLoading,
+    enabled: isInitialized && !isLoading && !structuralDirtyRef.current && !state.hasUnsavedChanges,
     updateLastKnownTimestamp: setLastKnownTimestamp
   });
 
@@ -429,18 +440,24 @@ export const useSimplifiedRundownState = () => {
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
+      structuralDirtyRef.current = true;
+      lastStructuralAtRef.current = Date.now();
       markStructuralChange(); // Mark this as a structural change
       actions.deleteItem(id);
     }, [actions.deleteItem, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
+      structuralDirtyRef.current = true;
+      lastStructuralAtRef.current = Date.now();
       markStructuralChange(); // Mark this as a structural change
       helpers.addRow();
     }, [helpers.addRow, state.items, state.title, saveUndoState, markStructuralChange]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
+      structuralDirtyRef.current = true;
+      lastStructuralAtRef.current = Date.now();
       markStructuralChange(); // Mark this as a structural change
       helpers.addHeader();
     }, [helpers.addHeader, state.items, state.title, saveUndoState, markStructuralChange]),
@@ -498,6 +515,8 @@ export const useSimplifiedRundownState = () => {
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
     saveUndoState(state.items, [], state.title, 'Add segment');
+    structuralDirtyRef.current = true;
+    lastStructuralAtRef.current = Date.now();
     markStructuralChange(); // Mark this as a structural change
     
     const newItem = {
@@ -530,6 +549,8 @@ export const useSimplifiedRundownState = () => {
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
     saveUndoState(state.items, [], state.title, 'Add header');
+    structuralDirtyRef.current = true;
+    lastStructuralAtRef.current = Date.now();
     markStructuralChange(); // Mark this as a structural change
     
     const newHeader = {
@@ -609,6 +630,8 @@ export const useSimplifiedRundownState = () => {
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
+      structuralDirtyRef.current = true;
+      lastStructuralAtRef.current = Date.now();
       markStructuralChange(); // Mark this as a structural change
       actions.deleteMultipleItems(itemIds);
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, markStructuralChange]),
