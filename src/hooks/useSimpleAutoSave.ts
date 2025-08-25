@@ -184,11 +184,14 @@ export const useSimpleAutoSave = (
     console.log('💾 Starting save process - proceeding with timeout:', debounceTime, 'ms');
     
     saveTimeoutRef.current = setTimeout(async () => {
+      console.log('🔥 Save timeout fired, checking conditions...');
+      
       // Final check before saving
       if (isSaving || 
           undoActiveRef.current || 
           userTypingRef.current ||
           pendingSaveRef.current) {
+        console.log('❌ Save blocked:', { isSaving, undoActive: undoActiveRef.current, userTyping: userTypingRef.current, pendingSave: pendingSaveRef.current });
         return;
       }
       
