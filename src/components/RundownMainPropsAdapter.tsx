@@ -106,7 +106,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         totalRuntime={totalRuntime}
         onAddRow={onAddRow}
         onAddHeader={onAddHeader}
-        onShowColumnManager={() => setShowColumnManager(true)}
+         onShowColumnManager={() => setShowColumnManager(true)}
         selectedCount={selectedCount}
         hasClipboardData={hasClipboardData}
         onCopySelectedRows={onCopySelectedRows}

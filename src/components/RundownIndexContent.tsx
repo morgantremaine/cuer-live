@@ -175,13 +175,24 @@ const RundownIndexContent = () => {
   const [showColumnManager, setShowColumnManager] = React.useState(false);
   
   // Enhanced column manager opener that ensures fresh data
-  const handleShowColumnManager = useCallback(() => {
-    // Reload preferences to ensure we have all available columns including team columns
-    if (reloadPreferences) {
-      reloadPreferences();
+  useEffect(() => {
+    if (showColumnManager) {
+      console.log('📊 Column Manager opened - current columns:', {
+        totalColumns: userColumns.length,
+        visibleColumns: visibleColumns.length,
+        defaultColumns: userColumns.filter(col => !col.isCustom).length,
+        customColumns: userColumns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
+        teamColumns: userColumns.filter(col => (col as any).isTeamColumn).length,
+        columnDetails: userColumns.map(col => ({
+          name: col.name,
+          key: col.key,
+          isCustom: col.isCustom,
+          isTeamColumn: (col as any).isTeamColumn || false,
+          isVisible: col.isVisible
+        }))
+      });
     }
-    setShowColumnManager(true);
-  }, [reloadPreferences]);
+  }, [showColumnManager, userColumns, visibleColumns]);
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
@@ -376,7 +387,16 @@ const RundownIndexContent = () => {
         onTimezoneChange={handleTimezoneChange}
         totalRuntime={totalRuntime}
         showColumnManager={showColumnManager}
-        setShowColumnManager={handleShowColumnManager}
+        setShowColumnManager={(show: boolean) => {
+          if (show) {
+            // Reload preferences to ensure we have all available columns including team columns
+            console.log('🔄 Opening column manager - reloading preferences to ensure all columns are available');
+            if (reloadPreferences) {
+              reloadPreferences();
+            }
+          }
+          setShowColumnManager(show);
+        }}
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
