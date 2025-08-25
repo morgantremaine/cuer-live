@@ -26,6 +26,7 @@ interface RundownContentProps {
   isPlaying?: boolean;
   autoScrollEnabled?: boolean;
   startTime?: string;
+  rundownId?: string;
   onToggleAutoScroll?: () => void;
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
@@ -76,6 +77,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   isPlaying = false,
   autoScrollEnabled = false,
   startTime = '00:00:00',
+  rundownId,
   title = 'Untitled Rundown',
   totalRuntime = '00:00:00',
   onToggleAutoScroll,
@@ -265,6 +267,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             selectedRowId={selectedRowId}
             startTime={startTime}
             columnExpandState={columnExpandState}
+            rundownId={rundownId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             onUpdateItem={onUpdateItem}
