@@ -28,7 +28,7 @@ const TextAreaCell = ({
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
-  const [calculatedHeight, setCalculatedHeight] = useState<number>(24);
+  const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
@@ -67,8 +67,8 @@ const TextAreaCell = ({
     
     // Calculate minimum height (single line)
     const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
-    const paddingTop = parseFloat(computedStyle.paddingTop) || 2;
-    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 2;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
     const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
     
@@ -216,7 +216,7 @@ const TextAreaCell = ({
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-2 py-0.5 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -245,7 +245,7 @@ const TextAreaCell = ({
         onBlur={handleBlur}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        className={`w-full h-full px-2 py-0.5 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
