@@ -19,12 +19,7 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
-  const lastSaveTimeRef = useRef<number>(0);
-  const trackOwnUpdateRef = useRef<((timestamp: string, isStructural?: boolean) => void) | null>(null);
-  const userTypingRef = useRef(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingSaveRef = useRef(false);
-  const structuralChangeRef = useRef(false);
+  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
 
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
@@ -66,97 +61,41 @@ export const useSimpleAutoSave = (
     undoActiveRef.current = active;
   };
 
-  // Track own updates including structural changes
-  const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
+  // Track own updates
+  const trackMyUpdate = useCallback((timestamp: string) => {
     if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp, isStructural);
-    }
-    
-    // Always reset the structural change flag after tracking
-    if (isStructural) {
-      structuralChangeRef.current = false; // Reset flag
-    }
-  }, []);
-
-  // Function to set user typing state with enhanced logic
-  const setUserTyping = useCallback((typing: boolean) => {
-    const wasTyping = userTypingRef.current;
-    userTypingRef.current = typing;
-    
-    console.log('⌨️ setUserTyping called:', { typing, wasTyping });
-    
-    if (typing) {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      // Reduced idle threshold for faster saves
-      typingTimeoutRef.current = setTimeout(() => {
-        console.log('⌨️ User stopped typing via timeout, allowing autosave');
-        userTypingRef.current = false;
-      }, 800); // Further reduced from 1200ms to 800ms for faster response
-    } else if (wasTyping) {
-      // User explicitly stopped typing (blur event)
-      console.log('⌨️ User explicitly stopped typing (blur event) - immediate save allowed');
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      // Force immediate save opportunity by clearing the typing flag
-      userTypingRef.current = false;
+      trackOwnUpdateRef.current(timestamp);
     }
   }, []);
 
   // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string, isStructural?: boolean) => void) => {
+  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Function to mark structural changes (add/delete/move rows)
+  // Simplified placeholder functions for API compatibility
+  const setUserTyping = useCallback((typing: boolean) => {
+    // Simplified - no longer blocks saves
+    console.log('⌨️ User typing state changed:', typing);
+  }, []);
+
   const markStructuralChange = useCallback(() => {
-    structuralChangeRef.current = true;
-    console.log('📊 Marked structural change - will not filter in realtime');
+    // Simplified - no longer affects save timing
+    console.log('📊 Structural change noted');
   }, []);
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
     if (rundownId === DEMO_RUNDOWN_ID) {
-      // Still mark as saved to prevent UI from showing "unsaved" state
       if (state.hasUnsavedChanges) {
         onSaved();
       }
       return;
     }
 
-    // Enhanced blocking conditions with background save capability
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTimeRef.current;
-    
-    const isBlocked = !state.hasUnsavedChanges || 
-                     undoActiveRef.current || 
-                     pendingSaveRef.current;
-    
-    // Allow background saves during typing if it's been a while
-    const allowBackgroundSave = userTypingRef.current && timeSinceLastSave > 5000; // Reduced to 5 seconds
-    
-    // DIAGNOSTIC: Log autosave state for debugging
-    console.log('💾 Autosave check:', {
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      userTyping: userTypingRef.current,
-      isBlocked,
-      allowBackgroundSave,
-      timeSinceLastSave,
-      willSave: !isBlocked && (!userTypingRef.current || allowBackgroundSave)
-    });
-    
-    if (isBlocked || (userTypingRef.current && !allowBackgroundSave)) {
-      if (userTypingRef.current && !allowBackgroundSave) {
-        console.log('⌨️ Blocking save - user is typing (last save:', timeSinceLastSave, 'ms ago)');
-      }
+    // Simple blocking conditions - only block for undo operations and active saves
+    if (!state.hasUnsavedChanges || undoActiveRef.current || isSaving) {
       return;
-    }
-    
-    if (allowBackgroundSave) {
-      console.log('💾 Performing background save during typing session');
     }
 
     // Create signature of current state - excluding ALL showcaller data
@@ -164,54 +103,33 @@ export const useSimpleAutoSave = (
 
     // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
-      console.log('💾 Content signature unchanged, skipping save');
       return;
     }
 
-    // Rate limiting with faster saves for structural changes
-    const minSaveInterval = 3000;
-    
-    // Speed up structural changes for show day safety
-    const isStructuralChange = structuralChangeRef.current;
-    const baseDebounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
-    const debounceTime = isStructuralChange ? Math.min(baseDebounceTime, 750) : baseDebounceTime;
-
+    // Clear any existing timeout
     if (saveTimeoutRef.current) {
-      console.log('⏳ Save already scheduled, skipping reschedule');
-      return;
+      clearTimeout(saveTimeoutRef.current);
     }
 
-    console.log('💾 Starting save process - proceeding with timeout:', debounceTime, 'ms');
-    
+    // Simple consistent debounce - 2 seconds for all changes
     saveTimeoutRef.current = setTimeout(async () => {
-      console.log('🔥 Save timeout fired, checking conditions...');
-      
       // Final check before saving
-      if (isSaving || 
-          undoActiveRef.current || 
-          userTypingRef.current ||
-          pendingSaveRef.current) {
-        console.log('❌ Save blocked:', { isSaving, undoActive: undoActiveRef.current, userTyping: userTypingRef.current, pendingSave: pendingSaveRef.current });
+      if (isSaving || undoActiveRef.current) {
         return;
       }
       
       // Final signature check
       const finalSignature = createContentSignature();
-      
       if (finalSignature === lastSavedRef.current) {
-        console.log('💾 Final signature check: no changes, skipping save');
         return;
       }
       
       setIsSaving(true);
-      pendingSaveRef.current = true;
-      lastSaveTimeRef.current = Date.now();
       
       try {
         // Track this as our own update before saving
         const updateTimestamp = new Date().toISOString();
-        const isStructural = structuralChangeRef.current;
-        trackMyUpdate(updateTimestamp, isStructural);
+        trackMyUpdate(updateTimestamp);
 
         if (!rundownId) {
           const { data: teamData, error: teamError } = await supabase
@@ -250,7 +168,7 @@ export const useSimpleAutoSave = (
             // Track the actual timestamp returned by the database
             if (newRundown?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
-              trackMyUpdate(normalizedTimestamp, isStructural);
+              trackMyUpdate(normalizedTimestamp);
               // Register this save to prevent false positives in resumption
               registerRecentSave(newRundown.id, normalizedTimestamp);
             }
@@ -285,7 +203,7 @@ export const useSimpleAutoSave = (
             // Track the actual timestamp returned by the database
             if (data?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(data.updated_at);
-              trackMyUpdate(normalizedTimestamp, isStructural);
+              trackMyUpdate(normalizedTimestamp);
               // Register this save to prevent false positives in resumption
               registerRecentSave(rundownId, normalizedTimestamp);
             }
@@ -298,25 +216,11 @@ export const useSimpleAutoSave = (
         console.error('❌ Save error:', error);
       } finally {
         setIsSaving(false);
-        pendingSaveRef.current = false;
         saveTimeoutRef.current = undefined as unknown as NodeJS.Timeout;
       }
-    }, debounceTime);
+    }, 2000); // Simple 2-second debounce for all changes
 
-    // Do not clear scheduled save on re-renders; allow the pending timeout to fire
-    return () => {
-      // intentional no-op to avoid canceling pending saves
-    };
-  }, [state.hasUnsavedChanges, rundownId, onSaved, isSaving, navigate, trackMyUpdate, location.state?.folderId, toast]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
+  }, [state.hasUnsavedChanges, rundownId, onSaved, isSaving, navigate, trackMyUpdate, location.state?.folderId, toast, createContentSignature]);
 
   return {
     isSaving,
