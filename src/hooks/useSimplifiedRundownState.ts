@@ -469,13 +469,18 @@ export const useSimplifiedRundownState = () => {
         }
       } catch (error) {
         console.error('Failed to load rundown:', error);
-        actions.loadState({
-          items: createDefaultRundownItems(),
-          columns: [],
-          title: 'Untitled Rundown',
-          startTime: '09:00:00',
-          timezone: 'America/New_York'
-        });
+        // DON'T replace existing data with blank data on error!
+        // Only load default data if we have no existing data
+        if (state.items.length === 0) {
+          actions.loadState({
+            items: createDefaultRundownItems(),
+            columns: [],
+            title: 'Untitled Rundown',
+            startTime: '09:00:00',
+            timezone: 'America/New_York'
+          });
+        }
+        // If we have existing data, preserve it and show error in console
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
