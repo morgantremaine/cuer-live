@@ -83,6 +83,8 @@ export const useSimpleAutoSave = (
     const wasTyping = userTypingRef.current;
     userTypingRef.current = typing;
     
+    console.log('⌨️ setUserTyping called:', { typing, wasTyping });
+    
     if (typing) {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -90,15 +92,17 @@ export const useSimpleAutoSave = (
       
       // Reduced idle threshold for faster saves
       typingTimeoutRef.current = setTimeout(() => {
-        console.log('⌨️ User stopped typing, allowing autosave');
+        console.log('⌨️ User stopped typing via timeout, allowing autosave');
         userTypingRef.current = false;
-      }, 1200); // Reduced from 3000ms to 1200ms
+      }, 800); // Further reduced from 1200ms to 800ms for faster response
     } else if (wasTyping) {
       // User explicitly stopped typing (blur event)
-      console.log('⌨️ User explicitly stopped typing (blur)');
+      console.log('⌨️ User explicitly stopped typing (blur event) - immediate save allowed');
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      // Force immediate save opportunity by clearing the typing flag
+      userTypingRef.current = false;
     }
   }, []);
 
@@ -132,7 +136,17 @@ export const useSimpleAutoSave = (
                      pendingSaveRef.current;
     
     // Allow background saves during typing if it's been a while
-    const allowBackgroundSave = userTypingRef.current && timeSinceLastSave > 10000; // 10 seconds
+    const allowBackgroundSave = userTypingRef.current && timeSinceLastSave > 5000; // Reduced to 5 seconds
+    
+    // DIAGNOSTIC: Log autosave state for debugging
+    console.log('💾 Autosave check:', {
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      userTyping: userTypingRef.current,
+      isBlocked,
+      allowBackgroundSave,
+      timeSinceLastSave,
+      willSave: !isBlocked && (!userTypingRef.current || allowBackgroundSave)
+    });
     
     if (isBlocked || (userTypingRef.current && !allowBackgroundSave)) {
       if (userTypingRef.current && !allowBackgroundSave) {
