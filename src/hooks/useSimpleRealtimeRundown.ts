@@ -36,6 +36,7 @@ export const useSimpleRealtimeRundown = ({
   const reconnectTimerRef = useRef<string | null>(null);
   const heartbeatTimerRef = useRef<string | null>(null);
   const lastHeartbeatRef = useRef<number>(Date.now());
+  const cleanupInProgressRef = useRef(false);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -272,7 +273,14 @@ export const useSimpleRealtimeRundown = ({
   
   // Setup subscription logic extracted for reuse
   const setupSubscription = useCallback((mode: 'initial' | 'reconnect' = 'initial') => {
+    cleanupInProgressRef.current = false; // Reset any cleanup flag on setup
     if (!rundownId || !user || !enabled) {
+      return;
+    }
+
+    // Prevent duplicate initial subscriptions
+    if (mode === 'initial' && subscriptionRef.current) {
+      console.log('🔁 Realtime subscription already exists - skipping');
       return;
     }
 
@@ -344,6 +352,10 @@ export const useSimpleRealtimeRundown = ({
           } else if (status === 'CLOSED') {
             connectionStableRef.current = false;
             setIsConnected(false);
+            if (cleanupInProgressRef.current) {
+              console.warn('🔌 Simple realtime connection closed during cleanup - ignoring reconnect');
+              return;
+            }
             console.warn('🔌 Simple realtime connection closed - attempting reconnect');
             attemptReconnect();
           }
@@ -377,9 +389,10 @@ export const useSimpleRealtimeRundown = ({
   }, [attemptReconnect, setManagedTimeout, clearTimer]);
 
   useEffect(() => {
-    setupSubscription();
+    setupSubscription('initial');
 
     return () => {
+      cleanupInProgressRef.current = true;
       const subscriptionKey = subscriptionKeyRef.current;
       const tracking = activeSubscriptions.get(subscriptionKey);
       if (tracking) {
@@ -409,7 +422,7 @@ export const useSimpleRealtimeRundown = ({
       setIsConnected(false);
       setIsProcessingUpdate(false);
     };
-  }, [setupSubscription, clearTimer]);
+  }, [rundownId, user?.id, enabled]);
 
   return {
     isConnected,
