@@ -55,7 +55,7 @@ const DraggableColumnHeader = ({
     <th
       ref={setNodeRef}
       style={{...style, width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 ${
         isDark 
           ? 'text-gray-300 border-gray-600 bg-gray-800' 
           : 'text-gray-500 border-gray-200 bg-gray-50'
@@ -66,18 +66,6 @@ const DraggableColumnHeader = ({
       }`}
     >
       <div className="flex items-center space-x-1">
-        <button
-          {...attributes}
-          {...listeners}
-          className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden cursor-grab active:cursor-grabbing ${
-            isDark 
-              ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
-              : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-          }`}
-          title="Drag to reorder column"
-        >
-          <GripVertical className="h-3 w-3" />
-        </button>
         {(column.key === 'script' || column.key === 'notes') && (
           <button
             onClick={(e) => {
@@ -967,7 +955,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }`}>
               <tr className="print-header-row">
                 <th 
-                  className={`px-2 py-1 text-center text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 print-row-number ${
+                  className={`px-2 py-1 text-center text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 print-row-number ${
                     isDark 
                       ? 'text-gray-300 border-gray-600 bg-gray-800' 
                       : 'text-gray-500 border-gray-200 bg-gray-50'
