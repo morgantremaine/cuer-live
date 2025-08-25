@@ -33,6 +33,7 @@ interface RundownContentProps {
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
+  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -85,6 +86,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
+  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -267,6 +269,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             columnExpandState={columnExpandState}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
+            setUserTyping={setUserTyping}
             onUpdateItem={onUpdateItem}
             onCellClick={onCellClick}
             onKeyDown={onKeyDown}

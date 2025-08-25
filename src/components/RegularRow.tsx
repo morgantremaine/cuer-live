@@ -24,6 +24,7 @@ interface RegularRowProps {
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
+  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -243,6 +244,7 @@ const RegularRow = (props: RegularRowProps) => {
           currentSegmentId={currentSegmentId}
           columnExpandState={props.columnExpandState}
           cellRefs={props.cellRefs}
+          setUserTyping={props.setUserTyping}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

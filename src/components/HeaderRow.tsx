@@ -22,6 +22,7 @@ interface HeaderRowProps {
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
   columnExpandState?: { [columnKey: string]: boolean };
+  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -174,6 +175,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           isCollapsed={isCollapsed}
+          setUserTyping={props.setUserTyping}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

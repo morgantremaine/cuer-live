@@ -23,6 +23,7 @@ interface RundownTableProps {
   getRowNumber: (index: number) => string;
   getRowStatus: (item: any) => 'upcoming' | 'current' | 'completed';
   getHeaderDuration: (index: number) => string;
+  setUserTyping?: (typing: boolean) => void;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -67,6 +68,7 @@ const RundownTable = ({
   getRowNumber,
   getRowStatus,
   getHeaderDuration,
+  setUserTyping,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -160,6 +162,7 @@ const RundownTable = ({
                   isDragging={isDragging}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   columnExpandState={columnExpandState}
+                  setUserTyping={setUserTyping}
                   onUpdateItem={onUpdateItem}
                   onCellClick={onCellClick}
                   onKeyDown={onKeyDown}
