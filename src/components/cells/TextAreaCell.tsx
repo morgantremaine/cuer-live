@@ -9,6 +9,7 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
+  setUserTyping?: (typing: boolean) => void;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -22,6 +23,7 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
+  setUserTyping,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -149,6 +151,9 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Notify autosave that user is typing
+    setUserTyping?.(true);
+    
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };

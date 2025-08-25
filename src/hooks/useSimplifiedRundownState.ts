@@ -87,7 +87,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with concurrency control
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markStructuralChange } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, setUserTyping, markStructuralChange } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -693,6 +693,9 @@ export const useSimplifiedRundownState = () => {
     teleprompterSaveHandlers: {
       onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
       onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
-    }
+    },
+    
+    // Auto-save utilities
+    setUserTyping
   };
 };
