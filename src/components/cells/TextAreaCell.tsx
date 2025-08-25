@@ -183,6 +183,8 @@ const TextAreaCell = ({
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
     setIsFocused(false);
+    // Allow autosave to proceed after editing
+    setUserTyping?.(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {

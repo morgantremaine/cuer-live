@@ -143,6 +143,7 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
+        setUserTyping={setUserTyping}
         onUpdateValue={(newValue) => {
           onUpdateItem(item.id, column.key, newValue);
         }}
