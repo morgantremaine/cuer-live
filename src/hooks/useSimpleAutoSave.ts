@@ -180,6 +180,8 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
+    console.log('💾 Starting save process - proceeding with timeout:', debounceTime, 'ms');
+    
     saveTimeoutRef.current = setTimeout(async () => {
       // Final check before saving
       if (isSaving || 
@@ -301,7 +303,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state, toast]);
+  }, [state.hasUnsavedChanges, rundownId, onSaved, isSaving, navigate, trackMyUpdate, location.state?.folderId, toast]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
