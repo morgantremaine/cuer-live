@@ -263,6 +263,7 @@ export const useRundownStateCoordination = () => {
         // Handled internally by simplified state
       },
       addMultipleRows,
+      setUserTyping: simplifiedState.setUserTyping,
       
       // Autoscroll state with enhanced debugging
       autoScrollEnabled,
