@@ -359,6 +359,7 @@ const RundownIndexContent = () => {
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
+      isProcessingLocalStructural={coreState.isProcessingLocalStructural || false}
     >
       <RundownContainer
         currentTime={currentTime}

@@ -6,6 +6,7 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
+import { useLocalProcessingState } from './useLocalProcessingState';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
@@ -24,6 +25,9 @@ export const useRundownStateCoordination = () => {
     columns: simplifiedState.columns,
     startTime: simplifiedState.rundownStartTime
   });
+
+  // Local processing state for structural changes
+  const { isProcessingLocalStructural, markLocalStructuralChange } = useLocalProcessingState();
 
   // Autoscroll state with localStorage persistence
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(() => {
@@ -164,6 +168,7 @@ export const useRundownStateCoordination = () => {
     // Pass undo-related parameters - use the correct property name now available
     simplifiedState.saveUndoState,
     () => {}, // markStructuralChange - placeholder for now
+    markLocalStructuralChange, // Add local processing state marker
     simplifiedState.columns,
     simplifiedState.rundownTitle,
     getHeaderGroupItemIds,
@@ -201,6 +206,7 @@ export const useRundownStateCoordination = () => {
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
       isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
+      isProcessingLocalStructural, // Local structural changes for visual smoothness
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerCoordination.currentSegmentId,

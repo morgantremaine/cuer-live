@@ -24,6 +24,7 @@ interface UseRundownGridHandlersProps {
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
+  markLocalStructuralChange?: () => void;
 }
 
 export const useRundownGridHandlers = ({
@@ -48,7 +49,8 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex
+  addHeaderAtIndex,
+  markLocalStructuralChange
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -59,6 +61,11 @@ export const useRundownGridHandlers = ({
   const handleAddRow = useCallback(() => {
     console.log('🚀 Grid handlers addRow called');
     console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Trigger local processing state for visual smoothness
+    if (markLocalStructuralChange) {
+      markLocalStructuralChange();
+    }
     
     // Check if we have any selection
     if (selectedRows.size > 0) {
@@ -79,12 +86,17 @@ export const useRundownGridHandlers = ({
     
     console.log('🚀 No selection, using default addRow');
     addRow();
-  }, [addRowAtIndex, addRow, selectedRows, items]);
+  }, [addRowAtIndex, addRow, selectedRows, items, markLocalStructuralChange]);
 
   // Enhanced addHeader that considers selection state and inserts after selected rows  
   const handleAddHeader = useCallback(() => {
     console.log('🚀 Grid handlers addHeader called');
     console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    
+    // Trigger local processing state for visual smoothness
+    if (markLocalStructuralChange) {
+      markLocalStructuralChange();
+    }
     
     // Check if we have any selection
     if (selectedRows.size > 0) {
@@ -105,7 +117,7 @@ export const useRundownGridHandlers = ({
     
     console.log('🚀 No selection, using default addHeader');
     addHeader();
-  }, [addHeaderAtIndex, addHeader, selectedRows, items]);
+  }, [addHeaderAtIndex, addHeader, selectedRows, items, markLocalStructuralChange]);
 
   const handleDeleteRow = useCallback((id: string) => {
     deleteRow(id);
@@ -122,14 +134,23 @@ export const useRundownGridHandlers = ({
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
+      // Trigger local processing state for visual smoothness
+      if (markLocalStructuralChange) {
+        markLocalStructuralChange();
+      }
       deleteMultipleRows(selectedIds);
       clearSelection();
     }
-  }, [selectedRows, deleteMultipleRows, clearSelection]);
+  }, [selectedRows, deleteMultipleRows, clearSelection, markLocalStructuralChange]);
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
       console.log('Grid handlers: pasting with targetRowId:', targetRowId);
+      
+      // Trigger local processing state for visual smoothness
+      if (markLocalStructuralChange) {
+        markLocalStructuralChange();
+      }
       
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
@@ -155,7 +176,7 @@ export const useRundownGridHandlers = ({
       
       markAsChanged();
     }
-  }, [clipboardItems, items, setItems, markAsChanged]);
+  }, [clipboardItems, items, setItems, markAsChanged, markLocalStructuralChange]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
