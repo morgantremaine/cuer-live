@@ -128,6 +128,9 @@ export const useSimpleRealtimeRundown = ({
 
   // Simplified update handler with global deduplication
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    // Record heartbeat on any incoming message
+    lastHeartbeatRef.current = Date.now();
+
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
     
@@ -137,6 +140,7 @@ export const useSimpleRealtimeRundown = ({
     }
 
     console.log('📡 Simple realtime update received:', {
+
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
       itemCount: payload.new?.items?.length
@@ -262,12 +266,12 @@ export const useSimpleRealtimeRundown = ({
       }
       
       // Create new subscription with same logic as initial setup
-      setupSubscription();
+      setupSubscription('reconnect');
     }, delay);
   }, [rundownId, user, enabled, setManagedTimeout, clearTimer]);
   
   // Setup subscription logic extracted for reuse
-  const setupSubscription = useCallback(() => {
+  const setupSubscription = useCallback((mode: 'initial' | 'reconnect' = 'initial') => {
     if (!rundownId || !user || !enabled) {
       return;
     }
@@ -275,20 +279,26 @@ export const useSimpleRealtimeRundown = ({
     const subscriptionKey = `${rundownId}-${user.id}`;
     subscriptionKeyRef.current = subscriptionKey;
     
-    // Track this subscription instance - improved lifecycle management
+    // Ensure tracking exists
     if (!activeSubscriptions.has(subscriptionKey)) {
       activeSubscriptions.set(subscriptionKey, { count: 0, ownUpdates: new Set() });
     }
     
     const tracking = activeSubscriptions.get(subscriptionKey)!;
-    tracking.count++;
-    
-    // Only the first subscription instance becomes the lead
-    const isLead = tracking.count === 1;
+
+    // Determine lead status
+    let isLead = false;
+    if (mode === 'initial') {
+      tracking.count++;
+      isLead = tracking.count === 1;
+    } else {
+      // During reconnect, preserve previous lead status (or become lead if no active channel)
+      isLead = isLeadSubscriptionRef.current || !subscriptionRef.current;
+    }
     isLeadSubscriptionRef.current = isLead;
-    
+
     if (isLead) {
-      console.log('🚀 Setting up lead realtime subscription for rundown:', rundownId);
+      console.log(`🚀 Setting up ${mode} lead realtime subscription for rundown:`, rundownId);
       
       const channel = supabase
         .channel(`simple-realtime-${subscriptionKey}`)
@@ -311,7 +321,7 @@ export const useSimpleRealtimeRundown = ({
             reconnectAttemptRef.current = 0; // Reset reconnect attempts on success
             console.log('✅ Simple realtime connected successfully');
             
-            // Start heartbeat monitoring
+            // Start/refresh heartbeat monitoring
             if (heartbeatTimerRef.current) {
               clearTimer(heartbeatTimerRef.current);
             }
