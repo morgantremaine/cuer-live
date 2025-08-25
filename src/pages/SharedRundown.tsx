@@ -3,6 +3,7 @@ import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
+import { useLocalSharedColumnOrder } from '@/hooks/useLocalSharedColumnOrder';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
@@ -326,7 +327,10 @@ const SharedRundown = () => {
 
   // Use layout columns if available, otherwise fall back to rundown's default columns, or finally to DEFAULT_COLUMNS
   const columnsToUse = layoutColumns || rundownData.columns || DEFAULT_COLUMNS;
-  const visibleColumns = getVisibleColumns(columnsToUse);
+  
+  // Use local column ordering for anonymous users to persist their preferred column order
+  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
+  const visibleColumns = getVisibleColumns(orderedColumns);
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
@@ -357,6 +361,7 @@ const SharedRundown = () => {
               isPlaying={isPlaying}
               rundownStartTime={rundownData.startTime || '09:00:00'}
               isDark={isDark}
+              onReorderColumns={reorderColumns}
             />
           </div>
 

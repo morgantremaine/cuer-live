@@ -1,11 +1,14 @@
-
 import React, { forwardRef, useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { getRowNumber, getCellValue } from '@/utils/sharedRundownUtils';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
-import { Play, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { Play, ChevronDown, ChevronRight, ExternalLink, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -14,7 +17,94 @@ interface SharedRundownTableProps {
   isPlaying?: boolean;
   rundownStartTime?: string;
   isDark?: boolean;
+  onReorderColumns?: (startIndex: number, endIndex: number) => void;
 }
+
+// Draggable column header component
+const DraggableColumnHeader = ({ 
+  column, 
+  index, 
+  isDark, 
+  columnExpandState, 
+  toggleColumnExpand,
+  getColumnWidth 
+}: {
+  column: any;
+  index: number;
+  isDark: boolean;
+  columnExpandState: { [key: string]: boolean };
+  toggleColumnExpand: (key: string) => void;
+  getColumnWidth: (column: any) => string;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: column.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const columnWidth = getColumnWidth(column);
+
+  return (
+    <th
+      ref={setNodeRef}
+      style={{...style, width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
+      className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
+        isDark 
+          ? 'text-gray-300 border-gray-600 bg-gray-800' 
+          : 'text-gray-500 border-gray-200 bg-gray-50'
+      } ${
+        ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
+          ? 'print-time-column' 
+          : 'print-content-column'
+      }`}
+    >
+      <div className="flex items-center space-x-1">
+        <button
+          {...attributes}
+          {...listeners}
+          className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden cursor-grab active:cursor-grabbing ${
+            isDark 
+              ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
+              : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+          }`}
+          title="Drag to reorder column"
+        >
+          <GripVertical className="h-3 w-3" />
+        </button>
+        {(column.key === 'script' || column.key === 'notes') && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleColumnExpand(column.key);
+            }}
+            className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
+              isDark 
+                ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
+                : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+            }`}
+            title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
+          >
+            {columnExpandState[column.key] ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+          </button>
+        )}
+        <span className="truncate">
+          {column.name}
+        </span>
+      </div>
+    </th>
+  );
+};
 
 const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>(({ 
   items, 
@@ -22,8 +112,27 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   currentSegmentId, 
   isPlaying = false,
   rundownStartTime = '09:00:00',
-  isDark = false
+  isDark = false,
+  onReorderColumns
 }, ref) => {
+  // Set up drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end event
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id && onReorderColumns) {
+      const oldIndex = visibleColumns.findIndex(col => col.id === active.id);
+      const newIndex = visibleColumns.findIndex(col => col.id === over.id);
+      onReorderColumns(oldIndex, newIndex);
+    }
+  };
   // State for managing expanded script/notes cells
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
   // State for managing collapsed headers
@@ -632,7 +741,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const itemsWithTimes = calculateItemTimes();
 
   return (
-    <>
+    <DndContext 
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <style>
         {`
           @media print {
@@ -885,50 +998,20 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     <span>#</span>
                   </div>
                 </th>
-                {visibleColumns.map((column) => {
-                  const columnWidth = getColumnWidth(column);
-                  return (
-                     <th
-                       key={column.id}
-                       className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b print:border-gray-400 ${
-                         isDark 
-                           ? 'text-gray-300 border-gray-600 bg-gray-800' 
-                           : 'text-gray-500 border-gray-200 bg-gray-50'
-                       } ${
-                         ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
-                           ? 'print-time-column' 
-                           : 'print-content-column'
-                       }`}
-                       style={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
-                     >
-                       <div className="flex items-center space-x-1">
-                         {(column.key === 'script' || column.key === 'notes') && (
-                           <button
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               toggleColumnExpand(column.key);
-                             }}
-                             className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
-                               isDark 
-                                 ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
-                                 : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-                             }`}
-                             title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
-                           >
-                             {columnExpandState[column.key] ? (
-                               <ChevronDown className="h-3 w-3" />
-                             ) : (
-                               <ChevronRight className="h-3 w-3" />
-                             )}
-                           </button>
-                         )}
-                         <span className="truncate">
-                           {column.name}
-                         </span>
-                       </div>
-                     </th>
-                  );
-                })}
+                
+                <SortableContext items={visibleColumns.map(col => col.id)} strategy={horizontalListSortingStrategy}>
+                  {visibleColumns.map((column, index) => (
+                    <DraggableColumnHeader
+                      key={column.id}
+                      column={column}
+                      index={index}
+                      isDark={isDark}
+                      columnExpandState={columnExpandState}
+                      toggleColumnExpand={toggleColumnExpand}
+                      getColumnWidth={getColumnWidth}
+                    />
+                  ))}
+                </SortableContext>
               </tr>
             </thead>
             <tbody className={`divide-y print:divide-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
@@ -1217,7 +1300,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           </table>
         </div>
       </div>
-    </>
+    </DndContext>
   );
 });
 
