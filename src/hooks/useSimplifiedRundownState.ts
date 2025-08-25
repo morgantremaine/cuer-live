@@ -8,6 +8,7 @@ import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useRundownResumption } from './useRundownResumption';
+import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from './useColumnsManager';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
@@ -33,11 +34,22 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced typing session tracking with field-level protection
+  // Enhanced typing session tracking with global focus integration
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
-  const PROTECTION_WINDOW_MS = 10000; // 10 second protection window (extended for safety)
+  const activeFocusFieldRef = useRef<string | null>(null);
+  const PROTECTION_WINDOW_MS = 15000; // 15 second protection window (extended for better safety)
+  
+  // Listen to global focus tracker
+  useEffect(() => {
+    const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
+      activeFocusFieldRef.current = fieldKey;
+      console.log('🎯 Global focus changed:', fieldKey);
+    });
+    
+    return unsubscribe;
+  }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -111,7 +123,7 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Create protected fields set for granular updates
+  // Create protected fields set for granular updates with enhanced detection
   const getProtectedFields = useCallback(() => {
     const protectedFields = new Set<string>();
     const now = Date.now();
@@ -122,10 +134,17 @@ export const useSimplifiedRundownState = () => {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
-    // Add recently edited fields within protection window
+    // Add active focus field (from DOM focus events)
+    if (activeFocusFieldRef.current) {
+      console.log('🛡️ Protecting currently focused field:', activeFocusFieldRef.current);
+      protectedFields.add(activeFocusFieldRef.current);
+    }
+    
+    // Add ALL recently edited fields within extended protection window
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
       if (now - timestamp < PROTECTION_WINDOW_MS) {
         protectedFields.add(fieldKey);
+        console.log('🛡️ Protecting recently edited field:', fieldKey, `(${Math.round((now - timestamp) / 1000)}s ago)`);
       } else {
         // Clean up expired fields
         recentlyEditedFieldsRef.current.delete(fieldKey);
@@ -133,13 +152,13 @@ export const useSimplifiedRundownState = () => {
     });
     
     // Add global title/timing fields if they're being edited
-    if (typingSessionRef.current?.fieldKey === 'title') {
+    if (typingSessionRef.current?.fieldKey === 'title' || activeFocusFieldRef.current === 'title') {
       protectedFields.add('title');
     }
-    if (typingSessionRef.current?.fieldKey === 'startTime') {
+    if (typingSessionRef.current?.fieldKey === 'startTime' || activeFocusFieldRef.current === 'startTime') {
       protectedFields.add('startTime');
     }
-    if (typingSessionRef.current?.fieldKey === 'timezone') {
+    if (typingSessionRef.current?.fieldKey === 'timezone' || activeFocusFieldRef.current === 'timezone') {
       protectedFields.add('timezone');
     }
     
@@ -314,24 +333,26 @@ export const useSimplifiedRundownState = () => {
     setIsConnected(realtimeConnection.isConnected);
   }, [realtimeConnection.isConnected]);
 
-  // Enhanced updateItem function with field-level protection tracking
+  // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
     
+    const sessionKey = `${id}-${field}`;
+    
+    // ALWAYS track field edits for protection, regardless of type
+    recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
+    console.log('🛡️ Tracking field edit for protection:', sessionKey);
+    
     if (isTypingField) {
-      const sessionKey = `${id}-${field}`;
-      
-      // Track this field as recently edited for protection window
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
-      
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
           fieldKey: sessionKey,
           startTime: Date.now()
         };
+        console.log('🛡️ Started typing session for field:', sessionKey);
       }
       
       if (typingTimeoutRef.current) {
@@ -339,15 +360,14 @@ export const useSimplifiedRundownState = () => {
       }
       
       typingTimeoutRef.current = setTimeout(() => {
-        typingSessionRef.current = null;
-      }, 5000); // Extended to 5 seconds for better protection
+        if (typingSessionRef.current?.fieldKey === sessionKey) {
+          typingSessionRef.current = null;
+          console.log('🛡️ Ended typing session for field:', sessionKey);
+        }
+      }, 8000); // Extended to 8 seconds for better protection
     } else if (field === 'duration') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (field === 'color') {
-      const sessionKey = `${id}-${field}`;
-      recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
     

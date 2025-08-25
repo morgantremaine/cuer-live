@@ -240,28 +240,38 @@ export const useSimpleAutoSave = (
     }
 
     // Simple blocking conditions - only undo blocks saves
-    if (!state.hasUnsavedChanges || undoActiveRef.current) {
+    if (undoActiveRef.current) {
+      console.log('💾 Save blocked: undo operation active');
       return;
     }
 
-    // Create signature of current state - excluding ALL showcaller data
+    // Always check for content changes, even if hasUnsavedChanges is false
     const currentSignature = createContentSignature();
 
     // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
-      onSaved();
+      if (state.hasUnsavedChanges) {
+        console.log('💾 No actual content changes - marking as saved');
+        onSaved();
+      }
       return;
     }
 
-    // Single unified debounce for all changes
-    const debounceTime = 2000;
+    console.log('💾 Content signature changed - scheduling save:', { 
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      lastChanged: state.lastChanged 
+    });
+
+    // Immediate save for structural changes, short debounce for text edits
+    const debounceTime = state.hasUnsavedChanges ? 1500 : 500; // Faster saves
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
+      console.log('💾 Debounce completed - executing save');
       await performSave();
     }, debounceTime);
 
@@ -270,7 +280,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, performSave]);
+  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave]);
 
   return {
     isSaving,

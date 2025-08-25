@@ -157,20 +157,25 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Enhanced deduplication: Check both timestamp and user ID (if available)
+    // Enhanced deduplication with stricter matching
     const isOwnUpdate = tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp);
     const isSameUser = payload.new?.last_updated_by === user?.id;
     
-    if (isOwnUpdate || isSameUser) {
+    // Additional check: if the last few seconds of updates were from this user, likely our own
+    const isRecentOwnUser = payload.new?.last_updated_by === user?.id && 
+      Math.abs(new Date(updateTimestamp).getTime() - Date.now()) < 10000; // Within 10 seconds
+    
+    if (isOwnUpdate || isSameUser || isRecentOwnUser) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🏷️ Own update detected:', { 
           timestamp: normalizedUpdateTimestamp, 
           isStructural,
           matchedTimestamp: isOwnUpdate,
           matchedUserId: isSameUser,
+          isRecentOwnUser,
           userId: user?.id,
           lastUpdatedBy: payload.new?.last_updated_by,
-          trackedUpdates: Array.from(tracking?.ownUpdates || []) 
+          trackedUpdates: Array.from(tracking?.ownUpdates || []).slice(-5) // Only show last 5
         });
       }
       
