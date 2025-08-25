@@ -38,14 +38,14 @@ export const useSimpleRealtimeRundown = ({
   trackOwnUpdateRef.current = trackOwnUpdate;
 
   // Global own update tracking to handle multiple subscriptions
-  const trackOwnUpdateLocal = useCallback((timestamp: string, isStructural: boolean = false) => {
+  const trackOwnUpdateLocal = useCallback((timestamp: string) => {
     const subscriptionKey = subscriptionKeyRef.current;
     if (!subscriptionKey) return;
     
     // Normalize timestamp to ensure consistent format matching
     const normalizedTimestamp = normalizeTimestamp(timestamp);
     
-    // Always track own updates for deduplication, even structural ones
+    // Always track own updates for deduplication
     const tracking = activeSubscriptions.get(subscriptionKey);
     if (tracking) {
       tracking.ownUpdates.add(normalizedTimestamp);
@@ -167,11 +167,7 @@ export const useSimpleRealtimeRundown = ({
         });
       }
       
-      if (isStructural) {
-        console.log('⏭️ Skipping - our own structural change');
-      } else {
-        console.log('⏭️ Skipping - our own update (content change)');
-      }
+      console.log('⏭️ Skipping own update - timestamp matched');
       lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }

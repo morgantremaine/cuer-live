@@ -19,12 +19,7 @@ export const useSimpleAutoSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
   const undoActiveRef = useRef(false);
-  const lastSaveTimeRef = useRef<number>(0);
-  const trackOwnUpdateRef = useRef<((timestamp: string, isStructural?: boolean) => void) | null>(null);
-  const userTypingRef = useRef(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingSaveRef = useRef(false);
-  const structuralChangeRef = useRef(false);
+  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
 
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
@@ -66,42 +61,16 @@ export const useSimpleAutoSave = (
     undoActiveRef.current = active;
   };
 
-  // Track own updates including structural changes
-  const trackMyUpdate = useCallback((timestamp: string, isStructural: boolean = false) => {
+  // Simplified update tracking
+  const trackMyUpdate = useCallback((timestamp: string) => {
     if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp, isStructural);
-    }
-    
-    // Always reset the structural change flag after tracking
-    if (isStructural) {
-      structuralChangeRef.current = false; // Reset flag
-    }
-  }, []);
-
-  // Function to set user typing state
-  const setUserTyping = useCallback((typing: boolean) => {
-    userTypingRef.current = typing;
-    
-    if (typing) {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        userTypingRef.current = false;
-      }, 3000);
+      trackOwnUpdateRef.current(timestamp);
     }
   }, []);
 
   // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string, isStructural?: boolean) => void) => {
+  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
-  }, []);
-
-  // Function to mark structural changes (add/delete/move rows)
-  const markStructuralChange = useCallback(() => {
-    structuralChangeRef.current = true;
-    console.log('📊 Marked structural change - will not filter in realtime');
   }, []);
 
   useEffect(() => {
@@ -114,11 +83,8 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Simple blocking conditions - no showcaller interference possible
-    if (!state.hasUnsavedChanges || 
-        undoActiveRef.current || 
-        userTypingRef.current ||
-        pendingSaveRef.current) {
+    // Simple blocking conditions - only undo blocks saves
+    if (!state.hasUnsavedChanges || undoActiveRef.current) {
       return;
     }
 
@@ -132,23 +98,16 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Rate limiting
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTimeRef.current;
-    const minSaveInterval = 3000;
-    
-    const debounceTime = timeSinceLastSave < minSaveInterval ? 8000 : 3000;
+    // Single unified debounce for all changes
+    const debounceTime = 2000;
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check before saving
-      if (isSaving || 
-          undoActiveRef.current || 
-          userTypingRef.current ||
-          pendingSaveRef.current) {
+      // Final check before saving - only undo blocks saves
+      if (isSaving || undoActiveRef.current) {
         return;
       }
       
@@ -162,14 +121,11 @@ export const useSimpleAutoSave = (
       }
       
       setIsSaving(true);
-      pendingSaveRef.current = true;
-      lastSaveTimeRef.current = Date.now();
       
       try {
         // Track this as our own update before saving
         const updateTimestamp = new Date().toISOString();
-        const isStructural = structuralChangeRef.current;
-        trackMyUpdate(updateTimestamp, isStructural);
+        trackMyUpdate(updateTimestamp);
 
         if (!rundownId) {
           const { data: teamData, error: teamError } = await supabase
@@ -208,7 +164,7 @@ export const useSimpleAutoSave = (
             // Track the actual timestamp returned by the database
             if (newRundown?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
-              trackMyUpdate(normalizedTimestamp, isStructural);
+              trackMyUpdate(normalizedTimestamp);
               // Register this save to prevent false positives in resumption
               registerRecentSave(newRundown.id, normalizedTimestamp);
             }
@@ -243,7 +199,7 @@ export const useSimpleAutoSave = (
             // Track the actual timestamp returned by the database
             if (data?.updated_at) {
               const normalizedTimestamp = normalizeTimestamp(data.updated_at);
-              trackMyUpdate(normalizedTimestamp, isStructural);
+              trackMyUpdate(normalizedTimestamp);
               // Register this save to prevent false positives in resumption
               registerRecentSave(rundownId, normalizedTimestamp);
             }
@@ -256,7 +212,6 @@ export const useSimpleAutoSave = (
         console.error('❌ Save error:', error);
       } finally {
         setIsSaving(false);
-        pendingSaveRef.current = false;
       }
     }, debounceTime);
 
@@ -267,20 +222,9 @@ export const useSimpleAutoSave = (
     };
   }, [state.hasUnsavedChanges, state.lastChanged, rundownId, onSaved, createContentSignature, isSaving, navigate, trackMyUpdate, location.state, toast]);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
   return {
     isSaving,
     setUndoActive,
-    setTrackOwnUpdate,
-    setUserTyping,
-    markStructuralChange
+    setTrackOwnUpdate
   };
 };
