@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
-import { useCellLocks } from '@/hooks/realtime/useCellLocks';
-import CellLockIndicator from '@/components/CellLockIndicator';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -13,7 +11,6 @@ interface ExpandableScriptCellProps {
   textColor?: string;
   columnExpanded?: boolean;
   fieldType?: 'script' | 'notes';
-  rundownId?: string;
   onUpdateValue: (value: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
 }
@@ -26,7 +23,6 @@ const ExpandableScriptCell = ({
   textColor,
   columnExpanded = false,
   fieldType = 'script',
-  rundownId,
   onUpdateValue,
   onKeyDown
 }: ExpandableScriptCellProps) => {
@@ -41,16 +37,6 @@ const ExpandableScriptCell = ({
   
   // Create the proper cell ref key
   const cellKey = `${itemId}-${cellRefKey}`;
-  
-  // Cell locking system
-  const cellLocks = useCellLocks({ 
-    rundownId: rundownId || '', 
-    enabled: !!rundownId 
-  });
-  
-  const cellLock = cellLocks.isCellLocked(cellKey);
-  const isLockedByOther = cellLock && !cellLocks.isMyLock(cellKey);
-  const isReadOnly = isLockedByOther;
   
   // Always use local state - column state just sets it initially
   const effectiveExpanded = isExpanded;
@@ -251,13 +237,6 @@ const ExpandableScriptCell = ({
 
   return (
     <div ref={containerRef} className="flex items-start space-x-1 w-full expandable-script-cell overflow-hidden">
-      {/* Cell lock indicator */}
-      {isLockedByOther && (
-        <div className="absolute top-0 right-0 z-20">
-          <CellLockIndicator userName={cellLock.userName} />
-        </div>
-      )}
-      
       <button
         onClick={toggleExpanded}
         className="flex-shrink-0 mt-1 p-1 rounded transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -269,7 +248,7 @@ const ExpandableScriptCell = ({
           <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         )}
       </button>
-      <div className={`flex-1 relative min-w-0 ${isLockedByOther ? 'opacity-60' : ''}`}>
+      <div className="flex-1 relative min-w-0">
         {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
           <div className="relative">
@@ -293,11 +272,6 @@ const ExpandableScriptCell = ({
               }}
               value={value}
               onChange={(e) => {
-                // Refresh lock on typing
-                if (rundownId && cellLocks.isMyLock(cellKey)) {
-                  cellLocks.refreshLock(cellKey);
-                }
-                
                 onUpdateValue(e.target.value);
                 // Trigger resize on content change
                 requestAnimationFrame(() => {
@@ -309,30 +283,13 @@ const ExpandableScriptCell = ({
                 });
               }}
               onKeyDown={handleKeyDown}
-              onFocus={async () => {
-                // Try to acquire lock before focusing
-                if (rundownId && !cellLocks.isMyLock(cellKey)) {
-                  const acquired = await cellLocks.acquireLock(cellKey);
-                  if (!acquired) {
-                    // Failed to acquire lock, blur the element
-                    if (textareaRef.current) {
-                      textareaRef.current.blur();
-                    }
-                    return;
-                  }
-                }
-                
+              onFocus={() => {
                 setIsFocused(true);
                 setShowOverlay(false); // Hide overlay when focused for native selection
               }}
               onBlur={() => {
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
-                
-                // Release cell lock
-                if (rundownId && cellLocks.isMyLock(cellKey)) {
-                  cellLocks.releaseLock(cellKey);
-                }
               }}
               onSelect={() => {
                 setShowOverlay(false); // Hide overlay when text is selected
@@ -347,10 +304,9 @@ const ExpandableScriptCell = ({
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
-              readOnly={isReadOnly}
               className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
-              } ${isLockedByOther ? 'border-2 border-destructive/50 bg-destructive/5' : ''}`}
+              }`}
               style={{ 
                 color: showOverlay ? 'transparent' : (textColor || undefined),
                 minHeight: '24px',
@@ -410,18 +366,8 @@ const ExpandableScriptCell = ({
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
               tabIndex={0}
-              readOnly={isReadOnly}
-              onFocus={async (e) => {
-                // Try to acquire lock first
-                if (rundownId && !cellLocks.isMyLock(cellKey) && !isReadOnly) {
-                  const acquired = await cellLocks.acquireLock(cellKey);
-                  if (!acquired) {
-                    // Failed to acquire lock, blur the element
-                    (e.target as HTMLTextAreaElement).blur();
-                    return;
-                  }
-                }
-                
+              readOnly
+              onFocus={(e) => {
                 // Only auto-expand if focus was triggered by Tab or click, not by scrolling
                 // Check if the focus was triggered by keyboard navigation
                 if (e.relatedTarget || document.activeElement === e.target) {
@@ -429,16 +375,7 @@ const ExpandableScriptCell = ({
                   setShouldAutoFocus(true);
                 }
               }}
-              onBlur={() => {
-                // Release cell lock when blurring collapsed cell
-                if (rundownId && cellLocks.isMyLock(cellKey)) {
-                  cellLocks.releaseLock(cellKey);
-                }
-              }}
-              title={isLockedByOther ? `${cellLock.userName} is editing this cell` : undefined}
-              className={`absolute inset-0 opacity-0 w-full h-full cursor-text ${
-                isLockedByOther ? 'cursor-not-allowed' : ''
-              }`}
+              className="absolute inset-0 opacity-0 w-full h-full cursor-text"
               style={{ 
                 background: 'transparent',
                 border: 'none',

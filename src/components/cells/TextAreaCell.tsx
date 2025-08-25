@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
-import { useCellLocks } from '@/hooks/realtime/useCellLocks';
-import CellLockIndicator from '@/components/CellLockIndicator';
 
 interface TextAreaCellProps {
   value: string;
@@ -11,7 +9,6 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
-  rundownId?: string;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -25,7 +22,6 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
-  rundownId,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -35,17 +31,6 @@ const TextAreaCell = ({
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
-  
-  // Cell locking system
-  const cellLocks = useCellLocks({ 
-    rundownId: rundownId || '', 
-    enabled: !!rundownId 
-  });
-  
-  const cellKey = `${itemId}-${cellRefKey}`;
-  const cellLock = cellLocks.isCellLocked(cellKey);
-  const isLockedByOther = cellLock && !cellLocks.isMyLock(cellKey);
-  const isReadOnly = isLockedByOther;
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -164,11 +149,6 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Refresh lock on typing
-    if (rundownId && cellLocks.isMyLock(cellKey)) {
-      cellLocks.refreshLock(cellKey);
-    }
-    
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
@@ -186,17 +166,7 @@ const TextAreaCell = ({
   };
 
   // Enhanced focus handler to disable row dragging when editing
-  const handleFocus = async (e: React.FocusEvent) => {
-    // Try to acquire lock before focusing
-    if (rundownId && !cellLocks.isMyLock(cellKey)) {
-      const acquired = await cellLocks.acquireLock(cellKey);
-      if (!acquired) {
-        // Failed to acquire lock, blur the element
-        (e.target as HTMLTextAreaElement).blur();
-        return;
-      }
-    }
-    
+  const handleFocus = (e: React.FocusEvent) => {
     setIsFocused(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
@@ -208,12 +178,6 @@ const TextAreaCell = ({
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
     setIsFocused(false);
-    
-    // Release cell lock
-    if (rundownId && cellLocks.isMyLock(cellKey)) {
-      cellLocks.releaseLock(cellKey);
-    }
-    
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -224,6 +188,8 @@ const TextAreaCell = ({
     }
   };
 
+  // Create the proper cell ref key
+  const cellKey = `${itemId}-${cellRefKey}`;
 
   // Check if this is a header row based on itemId
   const isHeaderRow = itemId.includes('header');
@@ -235,13 +201,6 @@ const TextAreaCell = ({
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
-      {/* Cell lock indicator */}
-      {isLockedByOther && (
-        <div className="absolute top-1 right-1 z-20">
-          <CellLockIndicator userName={cellLock.userName} />
-        </div>
-      )}
-      
       {/* Hidden measurement div */}
       <div
         ref={measurementRef}
@@ -284,17 +243,13 @@ const TextAreaCell = ({
         onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        readOnly={isReadOnly}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
-        title={isLockedByOther ? `${cellLock.userName} is editing this cell` : undefined}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''} ${
-          isLockedByOther ? 'border-2 border-destructive/50 bg-destructive/5' : ''
-        }`}
+        } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
-          backgroundColor: isLockedByOther ? 'hsl(var(--destructive) / 0.05)' : 'transparent',
+          backgroundColor: 'transparent',
           color: shouldShowClickableUrls ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',

@@ -24,7 +24,6 @@ interface RegularRowProps {
   hasClipboardData?: boolean;
   currentSegmentId?: string | null;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -238,13 +237,12 @@ const RegularRow = (props: RegularRowProps) => {
           rowNumber={rowNumber}
           status={status}
           backgroundColor={backgroundColor}
-          cellRefs={props.cellRefs}
-          isCurrentlyPlaying={props.isCurrentlyPlaying}
-          isDraggingMultiple={props.isDraggingMultiple}
-          isSelected={props.isSelected}
-          currentSegmentId={props.currentSegmentId}
+          isCurrentlyPlaying={isCurrentlyPlaying}
+          isDraggingMultiple={isDraggingMultiple}
+          isSelected={isSelected}
+          currentSegmentId={currentSegmentId}
           columnExpandState={props.columnExpandState}
-          rundownId={props.rundownId}
+          cellRefs={props.cellRefs}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}

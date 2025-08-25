@@ -22,7 +22,6 @@ interface HeaderRowProps {
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -172,14 +171,13 @@ const HeaderRow = (props: HeaderRowProps) => {
           headerDuration={props.headerDuration}
           rowNumber={rowNumber}
           backgroundColor={backgroundColor}
-          currentSegmentId={props.currentSegmentId}
+          currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
-          isCollapsed={props.isCollapsed}
-          rundownId={props.rundownId}
+          isCollapsed={isCollapsed}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
-          onToggleCollapse={props.onToggleCollapse}
+          onToggleCollapse={onToggleCollapse}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>
