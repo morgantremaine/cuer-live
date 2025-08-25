@@ -236,7 +236,7 @@ const ColumnList = ({
                   )}
                 </Button>
 
-                {column.isCustom && (
+                {column.isCustom && !(column as any).isTeamColumn && (
                   <Button
                     variant="ghost"
                     size="sm"

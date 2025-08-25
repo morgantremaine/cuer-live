@@ -71,7 +71,8 @@ const RundownIndexContent = () => {
     updateColumnWidth: updateUserColumnWidth,
     applyLayout: applyUserLayout,
     isLoading: isLoadingPreferences,
-    isSaving: isSavingPreferences 
+    isSaving: isSavingPreferences,
+    reloadPreferences
   } = useUserColumnPreferences(rundownId);
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
@@ -172,6 +173,15 @@ const RundownIndexContent = () => {
 
   // State for column manager
   const [showColumnManager, setShowColumnManager] = React.useState(false);
+  
+  // Enhanced column manager opener that ensures fresh data
+  const handleShowColumnManager = useCallback(() => {
+    // Reload preferences to ensure we have all available columns including team columns
+    if (reloadPreferences) {
+      reloadPreferences();
+    }
+    setShowColumnManager(true);
+  }, [reloadPreferences]);
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
@@ -366,7 +376,7 @@ const RundownIndexContent = () => {
         onTimezoneChange={handleTimezoneChange}
         totalRuntime={totalRuntime}
         showColumnManager={showColumnManager}
-        setShowColumnManager={setShowColumnManager}
+        setShowColumnManager={handleShowColumnManager}
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}

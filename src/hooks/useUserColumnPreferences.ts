@@ -242,16 +242,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     }
 
-    // Delete team custom columns from team_custom_columns table
-    for (const deletedCol of deletedTeamColumns) {
-      if (team?.id && user?.id) {
-        const deleteSuccess = await deleteTeamColumn(deletedCol.key);
-        if (deleteSuccess) {
-          // Also remove from local columns immediately to prevent it from reappearing
-          setColumns(prevColumns => prevColumns.filter(col => col.key !== deletedCol.key));
-        }
-      }
-    }
+    // Note: We no longer automatically delete team columns to prevent accidental removal
+    // Team columns should only be deleted through explicit team management actions
+    console.log('🔧 Prevented automatic deletion of team columns:', deletedTeamColumns.map(c => c.name));
 
     const merged = mergeColumnsWithTeamColumns(newColumns);
     setColumns(merged);
