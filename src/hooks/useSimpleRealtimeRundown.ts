@@ -157,17 +157,24 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // Check global own update tracking for all updates (including structural) - BEFORE setting processing state
-    if (tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp)) {
+    // Enhanced deduplication: Check both timestamp and user ID (if available)
+    const isOwnUpdate = tracking && tracking.ownUpdates.has(normalizedUpdateTimestamp);
+    const isSameUser = payload.new?.last_updated_by === user?.id;
+    
+    if (isOwnUpdate || isSameUser) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🏷️ Own update detected:', { 
           timestamp: normalizedUpdateTimestamp, 
           isStructural,
-          trackedUpdates: Array.from(tracking.ownUpdates) 
+          matchedTimestamp: isOwnUpdate,
+          matchedUserId: isSameUser,
+          userId: user?.id,
+          lastUpdatedBy: payload.new?.last_updated_by,
+          trackedUpdates: Array.from(tracking?.ownUpdates || []) 
         });
       }
       
-      console.log('⏭️ Skipping own update - timestamp matched');
+      console.log('⏭️ Skipping own update - user/timestamp matched');
       lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }

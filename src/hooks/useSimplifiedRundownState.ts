@@ -146,27 +146,72 @@ export const useSimplifiedRundownState = () => {
     return protectedFields;
   }, []);
 
-  // Enhanced realtime connection with granular update logic
+  // Enhanced realtime connection with granular update logic and deferred updates during saves
+  const deferredUpdateRef = useRef<any>(null);
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       console.log('📊 Simplified state received realtime update:', updatedRundown);
       console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
       
-      // Only update if we're not currently saving to avoid conflicts
-      if (!isSaving) {
-        console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
+      // If we're currently saving, defer the update
+      if (isSaving) {
+        console.log('📊 Deferring realtime update - currently saving');
+        deferredUpdateRef.current = updatedRundown;
+        return;
+      }
+      
+      console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
+      
+      // Update our known timestamp
+      if (updatedRundown.updated_at) {
+        setLastKnownTimestamp(updatedRundown.updated_at);
+      }
+      
+      // Get currently protected fields for granular merging
+      const protectedFields = getProtectedFields();
+      console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
+      
+      // Apply granular merge if we have protected fields
+      if (protectedFields.size > 0) {
+        console.log('🔀 Applying granular merge with protected fields');
         
-        // Update our known timestamp
-        if (updatedRundown.updated_at) {
-          setLastKnownTimestamp(updatedRundown.updated_at);
-        }
+        // Create merged items by protecting local edits
+        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
+          const localItem = state.items.find(item => item.id === remoteItem.id);
+          if (!localItem) return remoteItem; // New item from remote
+          
+          const merged = { ...remoteItem };
+          
+          // Protect specific fields that are currently being edited
+          protectedFields.forEach(fieldKey => {
+            if (fieldKey.startsWith(remoteItem.id + '-')) {
+              const field = fieldKey.substring(remoteItem.id.length + 1);
+              if (field.startsWith('customFields.')) {
+                const customFieldKey = field.replace('customFields.', '');
+                merged.customFields = merged.customFields || {};
+                merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
+              } else if (localItem.hasOwnProperty(field)) {
+                merged[field] = localItem[field]; // Keep local value
+                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id}:`, localItem[field]);
+              }
+            }
+          });
+          
+          return merged;
+        }) || [];
         
-        // Get currently protected fields
-        const protectedFields = getProtectedFields();
-        console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
+        // Apply merged update
+        actions.loadState({
+          items: mergedItems,
+          title: protectedFields.has('title') ? state.title : updatedRundown.title,
+          startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
+          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
+        });
         
-        // Load state directly without field protection for now
+        console.log('🔀 Granular merge applied with field protection');
+      } else {
+        // No protected fields - apply update normally
         actions.loadState({
           items: updatedRundown.items || [],
           title: updatedRundown.title,
@@ -174,17 +219,86 @@ export const useSimplifiedRundownState = () => {
           timezone: updatedRundown.timezone
         });
         
-        console.log('🔄 Granular realtime update applied, item count:', updatedRundown.items?.length || 0);
-      } else {
-        console.log('📊 Skipping realtime update - currently saving');
+        console.log('🔄 Full realtime update applied, item count:', updatedRundown.items?.length || 0);
       }
-    }, [actions, isSaving, getProtectedFields]),
+    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
       console.log('📝 Tracking own update in realtime:', timestamp);
       ownUpdateTimestampRef.current = timestamp;
     }
   });
+
+  // Apply deferred updates when save completes
+  useEffect(() => {
+    if (!isSaving && deferredUpdateRef.current) {
+      console.log('📊 Applying deferred realtime update after save completion');
+      const deferredUpdate = deferredUpdateRef.current;
+      deferredUpdateRef.current = null;
+      
+      // Process the deferred update by recreating the same logic as in onRundownUpdate
+      console.log('🕒 Processing deferred granular realtime update:', deferredUpdate.updated_at);
+      
+      // Update our known timestamp
+      if (deferredUpdate.updated_at) {
+        setLastKnownTimestamp(deferredUpdate.updated_at);
+      }
+      
+      // Get currently protected fields for granular merging
+      const protectedFields = getProtectedFields();
+      console.log('🛡️ Protected fields during deferred update:', Array.from(protectedFields));
+      
+      // Apply granular merge if we have protected fields
+      if (protectedFields.size > 0) {
+        console.log('🔀 Applying granular merge with protected fields (deferred)');
+        
+        // Create merged items by protecting local edits
+        const mergedItems = deferredUpdate.items?.map((remoteItem: any) => {
+          const localItem = state.items.find(item => item.id === remoteItem.id);
+          if (!localItem) return remoteItem; // New item from remote
+          
+          const merged = { ...remoteItem };
+          
+          // Protect specific fields that are currently being edited
+          protectedFields.forEach(fieldKey => {
+            if (fieldKey.startsWith(remoteItem.id + '-')) {
+              const field = fieldKey.substring(remoteItem.id.length + 1);
+              if (field.startsWith('customFields.')) {
+                const customFieldKey = field.replace('customFields.', '');
+                merged.customFields = merged.customFields || {};
+                merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
+              } else if (localItem.hasOwnProperty(field)) {
+                merged[field] = localItem[field]; // Keep local value
+                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (deferred):`, localItem[field]);
+              }
+            }
+          });
+          
+          return merged;
+        }) || [];
+        
+        // Apply merged update
+        actions.loadState({
+          items: mergedItems,
+          title: protectedFields.has('title') ? state.title : deferredUpdate.title,
+          startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
+          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
+        });
+        
+        console.log('🔀 Deferred granular merge applied with field protection');
+      } else {
+        // No protected fields - apply update normally
+        actions.loadState({
+          items: deferredUpdate.items || [],
+          title: deferredUpdate.title,
+          startTime: deferredUpdate.start_time,
+          timezone: deferredUpdate.timezone
+        });
+        
+        console.log('🔄 Deferred full realtime update applied, item count:', deferredUpdate.items?.length || 0);
+      }
+    }
+  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone]);
 
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
