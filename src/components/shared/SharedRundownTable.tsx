@@ -5,8 +5,7 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 import { Play, ChevronDown, ChevronRight, ExternalLink, GripVertical } from 'lucide-react';
-import { SimpleResizableColumnHeader } from './SimpleResizableColumnHeader';
-import { DndContext, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -19,8 +18,6 @@ interface SharedRundownTableProps {
   rundownStartTime?: string;
   isDark?: boolean;
   onReorderColumns?: (startIndex: number, endIndex: number) => void;
-  getColumnWidth?: (column: any) => string;
-  onColumnWidthChange?: (columnId: string, width: number) => void;
 }
 
 // Draggable column header component
@@ -30,16 +27,14 @@ const DraggableColumnHeader = ({
   isDark, 
   columnExpandState, 
   toggleColumnExpand,
-  getColumnWidthForColumn,
-  onColumnWidthChange
+  getColumnWidth 
 }: {
   column: any;
   index: number;
   isDark: boolean;
   columnExpandState: { [key: string]: boolean };
   toggleColumnExpand: (key: string) => void;
-  getColumnWidthForColumn: (column: any) => string;
-  onColumnWidthChange?: (columnId: string, width: number) => void;
+  getColumnWidth: (column: any) => string;
 }) => {
   const {
     attributes,
@@ -54,23 +49,8 @@ const DraggableColumnHeader = ({
     transition,
   };
 
-  const columnWidth = getColumnWidthForColumn(column);
+  const columnWidth = getColumnWidth(column);
 
-  // If we have column width change functionality, use the resizable header
-  if (onColumnWidthChange) {
-    return (
-      <SimpleResizableColumnHeader
-        column={column}
-        width={columnWidth}
-        onWidthChange={onColumnWidthChange}
-        isDark={isDark}
-        columnExpandState={columnExpandState}
-        toggleColumnExpand={toggleColumnExpand}
-      />
-    );
-  }
-
-  // Fallback to basic draggable header without resize
   return (
     <th
       ref={setNodeRef}
@@ -123,9 +103,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   isPlaying = false,
   rundownStartTime = '09:00:00',
   isDark = false,
-  onReorderColumns,
-  getColumnWidth,
-  onColumnWidthChange
+  onReorderColumns
 }, ref) => {
   // Set up drag and drop sensors
   const sensors = useSensors(
@@ -137,26 +115,12 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
   // Handle drag end event
   const handleDragEnd = (event: any) => {
-    console.log('🔄 SharedRundownTable handleDragEnd called:', event);
     const { active, over } = event;
-    console.log('Active:', active, 'Over:', over);
-    console.log('onReorderColumns prop:', onReorderColumns);
 
-    // Check if both active and over exist and have ids before proceeding
-    if (active && over && active.id && over.id && active.id !== over.id && onReorderColumns) {
+    if (active.id !== over.id && onReorderColumns) {
       const oldIndex = visibleColumns.findIndex(col => col.id === active.id);
       const newIndex = visibleColumns.findIndex(col => col.id === over.id);
-      console.log('Calling onReorderColumns with:', oldIndex, newIndex);
       onReorderColumns(oldIndex, newIndex);
-    } else {
-      console.log('Not calling onReorderColumns. Reasons:', {
-        hasActive: !!active,
-        hasOver: !!over,
-        hasActiveId: !!(active && active.id),
-        hasOverId: !!(over && over.id),
-        differentIds: !!(active && over && active.id !== over.id),
-        hasCallback: !!onReorderColumns
-      });
     }
   };
   // State for managing expanded script/notes cells
@@ -389,18 +353,14 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return url;
   };
 
-  // Helper function to get column width - use passed prop or fallback to default
-  const getColumnWidthForColumn = (column: any): string => {
-    if (getColumnWidth) {
-      return getColumnWidth(column);
-    }
-    
-    // Fallback to default widths for backward compatibility when no prop is provided
-    // First check if the column itself has a width (from layout)
+  // Helper function to get column width - use saved layout width when available
+  const getColumnWidth = (column: any): string => {
+    // Use the saved width from the layout if available
     if (column.width) {
       return column.width;
     }
     
+    // Fallback to default widths for backward compatibility
     const key = column.key || column.id;
     
     // Time-related columns should be narrow
@@ -773,7 +733,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   return (
     <DndContext 
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
       <style>
@@ -991,10 +951,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
         ref={ref}
       >
         <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
-          <table className="print:text-xs print-table print:h-auto print:max-h-none" style={{ 
-            tableLayout: 'fixed',
-            width: `${60 + visibleColumns.reduce((sum, col) => sum + parseInt(getColumnWidthForColumn(col)), 0)}px`
-          }}>
+          <table className="w-full print:text-xs print-table table-fixed print:h-auto print:max-h-none">
             <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
@@ -1041,8 +998,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       isDark={isDark}
                       columnExpandState={columnExpandState}
                       toggleColumnExpand={toggleColumnExpand}
-                      getColumnWidthForColumn={getColumnWidthForColumn}
-                      onColumnWidthChange={onColumnWidthChange}
+                      getColumnWidth={getColumnWidth}
                     />
                   ))}
                 </SortableContext>
@@ -1152,7 +1108,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     </td>
                     
                     {visibleColumns.map((column) => {
-                      const columnWidth = getColumnWidthForColumn(column);
+                      const columnWidth = getColumnWidth(column);
                       // Check if this is the current segment and this is the segment name column
                       const isCurrentSegmentName = isShowcallerCurrent && 
                         (column.key === 'segmentName' || column.key === 'name');

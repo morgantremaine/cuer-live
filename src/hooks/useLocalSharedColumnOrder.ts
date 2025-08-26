@@ -10,27 +10,12 @@ interface UseLocalSharedColumnOrderReturn {
 }
 
 export const useLocalSharedColumnOrder = (
-  originalColumns: Column[],
-  resetKey?: any // When this changes, reset the local storage
+  originalColumns: Column[]
 ): UseLocalSharedColumnOrderReturn => {
   const [orderedColumns, setOrderedColumns] = useState<Column[]>(originalColumns);
-  const [lastResetKey, setLastResetKey] = useState(resetKey);
-
-  // Reset when resetKey changes
-  useEffect(() => {
-    if (resetKey !== lastResetKey) {
-      setLastResetKey(resetKey);
-      localStorage.removeItem(STORAGE_KEY);
-      setOrderedColumns(originalColumns);
-      return;
-    }
-  }, [resetKey, lastResetKey, originalColumns]);
 
   // Load saved order from localStorage on mount
   useEffect(() => {
-    // Skip if we just reset
-    if (resetKey !== lastResetKey) return;
-    
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -64,7 +49,7 @@ export const useLocalSharedColumnOrder = (
       console.error('Failed to load column order from localStorage:', error);
       setOrderedColumns(originalColumns);
     }
-  }, [originalColumns, resetKey, lastResetKey]);
+  }, [originalColumns]);
 
   // Save column order to localStorage
   const saveColumnOrder = useCallback((columns: Column[]) => {
@@ -78,13 +63,10 @@ export const useLocalSharedColumnOrder = (
 
   // Reorder columns by moving from startIndex to endIndex
   const reorderColumns = useCallback((startIndex: number, endIndex: number) => {
-    console.log('🔄 useLocalSharedColumnOrder reorderColumns called:', { startIndex, endIndex });
     setOrderedColumns(prev => {
-      console.log('Previous columns:', prev.map(c => c.name));
       const newColumns = [...prev];
       const [removed] = newColumns.splice(startIndex, 1);
       newColumns.splice(endIndex, 0, removed);
-      console.log('New columns order:', newColumns.map(c => c.name));
       
       // Save the new order
       saveColumnOrder(newColumns);

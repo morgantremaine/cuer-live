@@ -4,7 +4,6 @@ import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
 import { useLocalSharedColumnOrder } from '@/hooks/useLocalSharedColumnOrder';
-import { useLocalSharedColumnWidths } from '@/hooks/useLocalSharedColumnWidths';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
@@ -287,13 +286,8 @@ const SharedRundown = () => {
   const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
 
   // Use local column ordering for anonymous users to persist their preferred column order
-  // Reset when layoutColumns changes (when admin changes the layout from main rundown)
-  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse, layoutColumns);
+  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
   const visibleColumns = getVisibleColumns(orderedColumns);
-
-  // Use local column width management for anonymous users
-  // Reset when layoutColumns changes (when admin changes the layout from main rundown)
-  const { getColumnWidth, updateColumnWidth, resetColumnWidths } = useLocalSharedColumnWidths(orderedColumns, layoutColumns);
 
   if (loading) {
     return (
@@ -358,7 +352,6 @@ const SharedRundown = () => {
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={handleToggleAutoScroll}
             items={rundownData.items || []}
-            onResetColumnWidths={resetColumnWidths}
           />
 
           <div className="flex-1 min-h-0 p-4 print:p-2">
@@ -371,8 +364,6 @@ const SharedRundown = () => {
               rundownStartTime={rundownData.startTime || '09:00:00'}
               isDark={isDark}
               onReorderColumns={reorderColumns}
-              getColumnWidth={getColumnWidth}
-              onColumnWidthChange={updateColumnWidth}
             />
           </div>
 
