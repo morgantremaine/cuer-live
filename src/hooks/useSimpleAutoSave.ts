@@ -12,7 +12,8 @@ export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
   onSaved: () => void,
-  pendingStructuralChangeRef?: React.MutableRefObject<boolean>
+  pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
+  suppressUntilRef?: React.MutableRefObject<number>
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -79,6 +80,12 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with re-queuing logic
   const performSave = useCallback(async (): Promise<void> => {
+    // Check suppression cooldown to prevent ping-pong
+    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: teammate update cooldown active');
+      return;
+    }
+    
     // Final check before saving - only undo blocks saves  
     if (isSaving || undoActiveRef.current) {
       debugLogger.autosave('Save blocked: already saving or undo active');
@@ -227,7 +234,7 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving]);
+  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -239,6 +246,12 @@ export const useSimpleAutoSave = (
       return;
     }
 
+    // Check suppression cooldown first
+    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: teammate update cooldown active');
+      return;
+    }
+    
     // Simple blocking conditions - only undo blocks saves
     if (undoActiveRef.current) {
       debugLogger.autosave('Save blocked: undo operation active');
@@ -274,7 +287,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave]);
+  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef]);
 
   return {
     isSaving,

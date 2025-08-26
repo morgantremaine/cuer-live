@@ -44,6 +44,9 @@ export const useSimplifiedRundownState = () => {
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
   
+  // Track cooldown after teammate updates to prevent ping-pong
+  const remoteSaveCooldownRef = useRef<number>(0);
+  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
@@ -103,7 +106,8 @@ export const useSimplifiedRundownState = () => {
     }, 
     rundownId, 
     actions.markSaved,
-    pendingStructuralChangeRef
+    pendingStructuralChangeRef,
+    remoteSaveCooldownRef
   );
 
   // Standalone undo system - unchanged
@@ -169,10 +173,37 @@ export const useSimplifiedRundownState = () => {
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
+      // Monotonic update guard: ignore stale updates
+      if (updatedRundown.updated_at && lastKnownTimestamp) {
+        const incomingTime = new Date(updatedRundown.updated_at).getTime();
+        const knownTime = new Date(lastKnownTimestamp).getTime();
+        
+        if (incomingTime <= knownTime) {
+          console.log('⏭️ Stale realtime update ignored:', {
+            incoming: updatedRundown.updated_at,
+            known: lastKnownTimestamp
+          });
+          return;
+        }
+      }
+      
       // If we're currently saving or have pending structural changes, defer the update
       if (isSaving || pendingStructuralChangeRef.current) {
         deferredUpdateRef.current = updatedRundown;
         return;
+      }
+      
+      // Detect if this is a structural change (items array length or order change)
+      const isStructural = updatedRundown.items && state.items && (
+        updatedRundown.items.length !== state.items.length ||
+        JSON.stringify(updatedRundown.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
+      );
+      
+      // Set cooldown after applying teammate update to prevent ping-pong
+      if (isStructural) {
+        remoteSaveCooldownRef.current = Date.now() + 1500; // 1.5 second cooldown for structural
+      } else {
+        remoteSaveCooldownRef.current = Date.now() + 800; // 0.8 second cooldown for content
       }
       
       // Update our known timestamp
@@ -239,6 +270,33 @@ export const useSimplifiedRundownState = () => {
     if (!isSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
       const deferredUpdate = deferredUpdateRef.current;
       deferredUpdateRef.current = null;
+      
+      // Monotonic update guard for deferred updates too
+      if (deferredUpdate.updated_at && lastKnownTimestamp) {
+        const incomingTime = new Date(deferredUpdate.updated_at).getTime();
+        const knownTime = new Date(lastKnownTimestamp).getTime();
+        
+        if (incomingTime <= knownTime) {
+          console.log('⏭️ Stale deferred update ignored:', {
+            incoming: deferredUpdate.updated_at,
+            known: lastKnownTimestamp
+          });
+          return;
+        }
+      }
+      
+      // Detect if this is a structural change for cooldown
+      const isStructural = deferredUpdate.items && state.items && (
+        deferredUpdate.items.length !== state.items.length ||
+        JSON.stringify(deferredUpdate.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
+      );
+      
+      // Set cooldown after applying deferred teammate update
+      if (isStructural) {
+        remoteSaveCooldownRef.current = Date.now() + 1500;
+      } else {
+        remoteSaveCooldownRef.current = Date.now() + 800;
+      }
       
       // Update our known timestamp
       if (deferredUpdate.updated_at) {

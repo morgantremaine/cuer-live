@@ -33,6 +33,7 @@ export const useSimpleRealtimeRundown = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const connectionStableRef = useRef(false);
+  const lastErrorLogRef = useRef<number>(0);
   
   // Keep callback refs updated
   onRundownUpdateRef.current = onRundownUpdate;
@@ -283,7 +284,12 @@ export const useSimpleRealtimeRundown = ({
                 setIsConnected(false);
               }
             }, 1000);
-            console.error('❌ Simple realtime channel error');
+            // Throttle error logging to reduce console noise
+            const now = Date.now();
+            if (now - lastErrorLogRef.current > 3000) {
+              console.error('❌ Simple realtime channel error');
+              lastErrorLogRef.current = now;
+            }
           } else if (status === 'TIMED_OUT') {
             connectionStableRef.current = false;
             setManagedTimeout(() => {

@@ -45,7 +45,10 @@ export class RundownOperations {
 
       const { data, error } = await supabase
         .from('rundowns')
-        .update(updateData)
+        .update({
+          ...updateData,
+          last_updated_by: this.user.id
+        })
         .eq('id', id)
         .select()
         .single();
