@@ -172,12 +172,13 @@ const ColumnList = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 h-full flex flex-col">
       <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Order & Visibility</h3>
       <div 
         ref={scrollContainerRef}
-        className="space-y-1 overflow-y-auto flex-1 min-h-0" 
+        className="space-y-1 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md flex-1" 
         onDragLeave={handleDragLeave}
+        style={{ maxHeight: 'calc(100% - 2rem)' }}
       >
         {columns.map((column, index) => (
           <React.Fragment key={column.id}>
