@@ -55,14 +55,14 @@ const ColumnManager = ({
   } = useColumnLayoutStorage();
 
   const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [size, setSize] = useState({ width: 448, height: 600 }); // Initial size (max-w-md = 448px)
+  const [size, setSize] = useState({ width: 800, height: 600 }); // Wider initial size for two-column layout
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
   
   const dialogRef = useRef<HTMLDivElement>(null);
-  const minWidth = 448; // Minimum width (same as current max-w-md)
+  const minWidth = 700; // Wider minimum width for two-column layout
   const minHeight = 600; // Minimum height
 
   // Enhanced load layout handler with better validation
@@ -159,7 +159,7 @@ const ColumnManager = ({
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 100, y: 100 });
-      setSize({ width: 448, height: 600 });
+      setSize({ width: 800, height: 600 }); // Wider default size
     }
   }, [isOpen]);
 
@@ -188,30 +188,39 @@ const ColumnManager = ({
           </Button>
         </div>
         
-        <div className="flex-1 p-4 overflow-y-auto flex flex-col">
-          <div className="space-y-6 flex-1 flex flex-col">
-            <LayoutManager
-              columns={columns}
-              savedLayouts={savedLayouts}
-              loading={loading}
-              onSaveLayout={saveLayout}
-              onUpdateLayout={updateLayout}
-              onRenameLayout={renameLayout}
-              onDeleteLayout={deleteLayout}
-              onLoadLayout={handleLoadLayout}
-              canEditLayout={canEditLayout}
-            />
-
-            <ColumnEditor onAddColumn={onAddColumn} />
-
-            <div className="flex-1 flex flex-col min-h-0">
-              <ColumnList
+        <div className="flex-1 p-4 overflow-hidden">
+          {/* Two-column layout */}
+          <div className="flex h-full gap-6">
+            {/* Left Column: Saved Layouts */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <LayoutManager
                 columns={columns}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                onDeleteColumn={onDeleteColumn}
-                onRenameColumn={onRenameColumn}
+                savedLayouts={savedLayouts}
+                loading={loading}
+                onSaveLayout={saveLayout}
+                onUpdateLayout={updateLayout}
+                onRenameLayout={renameLayout}
+                onDeleteLayout={deleteLayout}
+                onLoadLayout={handleLoadLayout}
+                canEditLayout={canEditLayout}
               />
+            </div>
+
+            {/* Right Column: Add Column & Column Management */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <div className="space-y-6 h-full flex flex-col">
+                <ColumnEditor onAddColumn={onAddColumn} />
+
+                <div className="flex-1 flex flex-col min-h-0">
+                  <ColumnList
+                    columns={columns}
+                    onReorderColumns={onReorderColumns}
+                    onToggleColumnVisibility={onToggleColumnVisibility}
+                    onDeleteColumn={onDeleteColumn}
+                    onRenameColumn={onRenameColumn}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
