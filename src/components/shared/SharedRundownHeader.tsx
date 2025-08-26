@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-react';
+import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import CuerLogo from '@/components/common/CuerLogo';
@@ -18,6 +18,7 @@ interface SharedRundownHeaderProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   items?: any[]; // Add items prop for runtime calculation
+  onResetColumnWidths?: () => void;
 }
 
 export const SharedRundownHeader = ({
@@ -32,7 +33,8 @@ export const SharedRundownHeader = ({
   onToggleTheme,
   autoScrollEnabled = false,
   onToggleAutoScroll,
-  items = []
+  items = [],
+  onResetColumnWidths
 }: SharedRundownHeaderProps) => {
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
@@ -110,6 +112,23 @@ export const SharedRundownHeader = ({
                     className="scale-75"
                   />
                 </div>
+              )}
+              
+              {/* Reset Column Widths Button */}
+              {onResetColumnWidths && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onResetColumnWidths}
+                  className={`${
+                    isDark 
+                      ? 'border-gray-600 hover:bg-gray-700' 
+                      : 'border-gray-300 hover:bg-gray-100'
+                  }`}
+                  title="Reset column widths"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
               )}
               
               <Button

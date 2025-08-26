@@ -5,6 +5,7 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 import { Play, ChevronDown, ChevronRight, ExternalLink, GripVertical } from 'lucide-react';
+import { SimpleResizableColumnHeader } from './SimpleResizableColumnHeader';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -18,6 +19,8 @@ interface SharedRundownTableProps {
   rundownStartTime?: string;
   isDark?: boolean;
   onReorderColumns?: (startIndex: number, endIndex: number) => void;
+  getColumnWidth?: (column: any) => string;
+  onColumnWidthChange?: (columnId: string, width: number) => void;
 }
 
 // Draggable column header component
@@ -27,14 +30,16 @@ const DraggableColumnHeader = ({
   isDark, 
   columnExpandState, 
   toggleColumnExpand,
-  getColumnWidth 
+  getColumnWidthForColumn,
+  onColumnWidthChange
 }: {
   column: any;
   index: number;
   isDark: boolean;
   columnExpandState: { [key: string]: boolean };
   toggleColumnExpand: (key: string) => void;
-  getColumnWidth: (column: any) => string;
+  getColumnWidthForColumn: (column: any) => string;
+  onColumnWidthChange?: (columnId: string, width: number) => void;
 }) => {
   const {
     attributes,
@@ -49,8 +54,23 @@ const DraggableColumnHeader = ({
     transition,
   };
 
-  const columnWidth = getColumnWidth(column);
+  const columnWidth = getColumnWidthForColumn(column);
 
+  // If we have column width change functionality, use the resizable header
+  if (onColumnWidthChange) {
+    return (
+      <SimpleResizableColumnHeader
+        column={column}
+        width={columnWidth}
+        onWidthChange={onColumnWidthChange}
+        isDark={isDark}
+        columnExpandState={columnExpandState}
+        toggleColumnExpand={toggleColumnExpand}
+      />
+    );
+  }
+
+  // Fallback to basic draggable header without resize
   return (
     <th
       ref={setNodeRef}
@@ -103,7 +123,9 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   isPlaying = false,
   rundownStartTime = '09:00:00',
   isDark = false,
-  onReorderColumns
+  onReorderColumns,
+  getColumnWidth,
+  onColumnWidthChange
 }, ref) => {
   // Set up drag and drop sensors
   const sensors = useSensors(
@@ -353,14 +375,17 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     return url;
   };
 
-  // Helper function to get column width - use saved layout width when available
-  const getColumnWidth = (column: any): string => {
-    // Use the saved width from the layout if available
+  // Helper function to get column width - use passed prop or fallback to default
+  const getColumnWidthForColumn = (column: any): string => {
+    if (getColumnWidth) {
+      return getColumnWidth(column);
+    }
+    
+    // Fallback to default widths for backward compatibility when no prop is provided
     if (column.width) {
       return column.width;
     }
     
-    // Fallback to default widths for backward compatibility
     const key = column.key || column.id;
     
     // Time-related columns should be narrow
@@ -998,7 +1023,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       isDark={isDark}
                       columnExpandState={columnExpandState}
                       toggleColumnExpand={toggleColumnExpand}
-                      getColumnWidth={getColumnWidth}
+                      getColumnWidthForColumn={getColumnWidthForColumn}
+                      onColumnWidthChange={onColumnWidthChange}
                     />
                   ))}
                 </SortableContext>
@@ -1108,7 +1134,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     </td>
                     
                     {visibleColumns.map((column) => {
-                      const columnWidth = getColumnWidth(column);
+                      const columnWidth = getColumnWidthForColumn(column);
                       // Check if this is the current segment and this is the segment name column
                       const isCurrentSegmentName = isShowcallerCurrent && 
                         (column.key === 'segmentName' || column.key === 'name');

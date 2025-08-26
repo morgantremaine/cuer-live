@@ -4,6 +4,7 @@ import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { getVisibleColumns } from '@/utils/sharedRundownUtils';
 import { useLocalSharedColumnOrder } from '@/hooks/useLocalSharedColumnOrder';
+import { useLocalSharedColumnWidths } from '@/hooks/useLocalSharedColumnWidths';
 import { SharedRundownHeader } from '@/components/shared/SharedRundownHeader';
 import SharedRundownTable from '@/components/shared/SharedRundownTable';
 import SharedRundownFooter from '@/components/shared/SharedRundownFooter';
@@ -289,6 +290,9 @@ const SharedRundown = () => {
   const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
   const visibleColumns = getVisibleColumns(orderedColumns);
 
+  // Use local column width management for anonymous users
+  const { getColumnWidth, updateColumnWidth, resetColumnWidths } = useLocalSharedColumnWidths(orderedColumns);
+
   if (loading) {
     return (
       <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
@@ -352,6 +356,7 @@ const SharedRundown = () => {
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={handleToggleAutoScroll}
             items={rundownData.items || []}
+            onResetColumnWidths={resetColumnWidths}
           />
 
           <div className="flex-1 min-h-0 p-4 print:p-2">
@@ -364,6 +369,8 @@ const SharedRundown = () => {
               rundownStartTime={rundownData.startTime || '09:00:00'}
               isDark={isDark}
               onReorderColumns={reorderColumns}
+              getColumnWidth={getColumnWidth}
+              onColumnWidthChange={updateColumnWidth}
             />
           </div>
 
