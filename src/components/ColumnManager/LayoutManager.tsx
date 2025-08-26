@@ -127,7 +127,6 @@ const LayoutManager = ({
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Column Layouts</h3>
       <div className="flex space-x-2">
         <Button 
           onClick={() => setShowSaveLayout(!showSaveLayout)} 
