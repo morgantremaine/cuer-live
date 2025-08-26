@@ -133,7 +133,6 @@ export const SimpleResizableColumnHeader: React.FC<SimpleResizableColumnHeaderPr
       }`}
       {...attributes}
       {...dragListeners}
-      onMouseDown={handleMouseDown}
     >
       <div className="flex items-center space-x-1">
         {(column.key === 'script' || column.key === 'notes') && (
