@@ -100,18 +100,38 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
     }
   }, [markAsChanged]);
 
-  const handleToggleColumnVisibility = useCallback((columnId: string) => {
+  const handleToggleColumnVisibility = useCallback((columnId: string, insertIndex?: number) => {
     setColumns(prev => {
       if (!Array.isArray(prev)) return [];
-      const updated = prev.map(col => {
-        if (col.id === columnId) {
-          const newVisibility = col.isVisible !== false ? false : true;
-          return { ...col, isVisible: newVisibility };
-        }
-        return col;
-      });
       
-      return updated;
+      const columnToToggle = prev.find(col => col.id === columnId);
+      if (!columnToToggle) return prev;
+      
+      // If hiding a column (making it invisible)
+      if (columnToToggle.isVisible !== false) {
+        return prev.map(col => {
+          if (col.id === columnId) {
+            return { ...col, isVisible: false };
+          }
+          return col;
+        });
+      }
+      
+      // If showing a column (making it visible)
+      const updatedColumns = prev.map(col => 
+        col.id === columnId ? { ...col, isVisible: true } : col
+      );
+      
+      // If insertIndex is provided, reorder the column to that position
+      if (typeof insertIndex === 'number') {
+        const columnIndex = updatedColumns.findIndex(col => col.id === columnId);
+        if (columnIndex !== -1) {
+          const [column] = updatedColumns.splice(columnIndex, 1);
+          updatedColumns.splice(insertIndex, 0, column);
+        }
+      }
+      
+      return updatedColumns;
     });
     if (markAsChanged) {
       markAsChanged();

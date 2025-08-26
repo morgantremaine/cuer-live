@@ -56,7 +56,7 @@ export interface RundownContainerProps {
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;
   handleRenameColumn: (columnId: string, newName: string) => void;
-  handleToggleColumnVisibility: (columnId: string) => void;
+  handleToggleColumnVisibility: (columnId: string, insertIndex?: number) => void;
   handleLoadLayout: (layoutColumns: Column[]) => void;
   debugColumns?: () => void;
   resetToDefaults?: () => void;

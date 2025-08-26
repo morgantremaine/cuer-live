@@ -15,13 +15,15 @@ import { Eye, EyeOff, Plus } from 'lucide-react';
 interface HeaderContextMenuProps {
   children: React.ReactNode;
   column: Column;
+  columnIndex: number;
   allColumns: Column[];
-  onToggleColumnVisibility: (columnId: string) => void;
+  onToggleColumnVisibility: (columnId: string, insertIndex?: number) => void;
 }
 
 const HeaderContextMenu = ({ 
   children, 
   column, 
+  columnIndex,
   allColumns, 
   onToggleColumnVisibility 
 }: HeaderContextMenuProps) => {
@@ -53,7 +55,7 @@ const HeaderContextMenu = ({
                 {hiddenColumns.map((hiddenColumn) => (
                   <ContextMenuItem
                     key={hiddenColumn.id}
-                    onClick={() => onToggleColumnVisibility(hiddenColumn.id)}
+                    onClick={() => onToggleColumnVisibility(hiddenColumn.id, columnIndex + 1)}
                     className="flex items-center gap-2"
                   >
                     <Eye className="h-4 w-4" />

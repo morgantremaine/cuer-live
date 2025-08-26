@@ -31,7 +31,7 @@ interface RundownContentProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
-  onToggleColumnVisibility?: (columnId: string) => void;
+  onToggleColumnVisibility?: (columnId: string, insertIndex?: number) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;

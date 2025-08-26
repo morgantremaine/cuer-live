@@ -32,7 +32,7 @@ interface RundownTableHeaderProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
-  onToggleColumnVisibility?: (columnId: string) => void;
+  onToggleColumnVisibility?: (columnId: string, insertIndex?: number) => void;
   items?: any[]; // For auto-sizing columns
   columnExpandState?: { [columnKey: string]: boolean };
   onToggleColumnExpand?: (columnKey: string) => void;
@@ -265,6 +265,7 @@ const RundownTableHeader = ({
                   {onToggleColumnVisibility && allColumns.length > 0 ? (
                     <HeaderContextMenu
                       column={column}
+                      columnIndex={index}
                       allColumns={allColumns}
                       onToggleColumnVisibility={onToggleColumnVisibility}
                     >
