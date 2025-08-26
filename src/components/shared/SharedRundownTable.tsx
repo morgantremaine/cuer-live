@@ -139,7 +139,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
 
-    if (active.id !== over.id && onReorderColumns) {
+    // Check if both active and over exist and have ids before proceeding
+    if (active && over && active.id && over.id && active.id !== over.id && onReorderColumns) {
       const oldIndex = visibleColumns.findIndex(col => col.id === active.id);
       const newIndex = visibleColumns.findIndex(col => col.id === over.id);
       onReorderColumns(oldIndex, newIndex);
@@ -382,6 +383,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     }
     
     // Fallback to default widths for backward compatibility when no prop is provided
+    // First check if the column itself has a width (from layout)
     if (column.width) {
       return column.width;
     }

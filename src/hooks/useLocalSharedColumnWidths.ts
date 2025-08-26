@@ -92,10 +92,23 @@ export const useLocalSharedColumnWidths = (
     });
   }, [columns, saveColumnWidths]);
 
-  // Get column width in pixels - use saved width or fallback to minimum
+  // Get column width in pixels - use saved width, layout width, or fallback to minimum
   const getColumnWidth = useCallback((column: Column) => {
     const savedWidth = columnWidths[column.id];
-    const actualWidth = savedWidth || getMinimumWidth(column);
+    if (savedWidth) {
+      return `${savedWidth}px`;
+    }
+    
+    // If no saved width, use the column's layout width if available
+    if (column.width) {
+      const layoutWidth = parseInt(column.width.replace('px', ''));
+      if (!isNaN(layoutWidth)) {
+        return `${layoutWidth}px`;
+      }
+    }
+    
+    // Finally fallback to minimum width
+    const actualWidth = getMinimumWidth(column);
     return `${actualWidth}px`;
   }, [columnWidths]);
 
