@@ -265,8 +265,9 @@ const RundownTableHeader = ({
                   {onToggleColumnVisibility && allColumns.length > 0 ? (
                     <HeaderContextMenu
                       column={column}
-                      columnIndex={index}
                       allColumns={allColumns}
+                      visibleColumns={visibleColumns}
+                      columnIndex={index}
                       onToggleColumnVisibility={onToggleColumnVisibility}
                     >
                       {headerContent}

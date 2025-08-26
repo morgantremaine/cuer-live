@@ -15,19 +15,35 @@ import { Eye, EyeOff, Plus } from 'lucide-react';
 interface HeaderContextMenuProps {
   children: React.ReactNode;
   column: Column;
-  columnIndex: number;
   allColumns: Column[];
+  visibleColumns: Column[];
+  columnIndex: number;
   onToggleColumnVisibility: (columnId: string, insertIndex?: number) => void;
 }
 
 const HeaderContextMenu = ({ 
   children, 
   column, 
+  allColumns,
+  visibleColumns,
   columnIndex,
-  allColumns, 
   onToggleColumnVisibility 
 }: HeaderContextMenuProps) => {
   const hiddenColumns = allColumns.filter(col => col.isVisible === false);
+
+  // Find the position in the full columns array where we want to insert
+  const getInsertPosition = () => {
+    const currentColumnIndexInAll = allColumns.findIndex(col => col.id === column.id);
+    // Find the next visible column after the current one
+    let insertPosition = currentColumnIndexInAll + 1;
+    
+    // If this is the last column or there are no columns after it, insert at the end
+    if (insertPosition >= allColumns.length) {
+      insertPosition = allColumns.length;
+    }
+    
+    return insertPosition;
+  };
 
   return (
     <ContextMenu>
@@ -55,7 +71,7 @@ const HeaderContextMenu = ({
                 {hiddenColumns.map((hiddenColumn) => (
                   <ContextMenuItem
                     key={hiddenColumn.id}
-                    onClick={() => onToggleColumnVisibility(hiddenColumn.id, columnIndex + 1)}
+                    onClick={() => onToggleColumnVisibility(hiddenColumn.id, getInsertPosition())}
                     className="flex items-center gap-2"
                   >
                     <Eye className="h-4 w-4" />
