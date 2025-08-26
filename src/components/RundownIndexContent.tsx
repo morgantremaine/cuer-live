@@ -113,14 +113,33 @@ const RundownIndexContent = () => {
     setUserColumns(updated, true); // Immediate save
   }, [userColumns, setUserColumns]);
 
-  const handleToggleColumnVisibilityWrapper = useCallback((columnId: string) => {
-    const updated = userColumns.map(col => {
-      if (col.id === columnId) {
-        const newVisibility = col.isVisible !== false ? false : true;
-        return { ...col, isVisible: newVisibility };
+  const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
+    const target = userColumns.find(col => col.id === columnId);
+    if (!target) return;
+
+    // If currently visible, hide it
+    if (target.isVisible !== false) {
+      const updated = userColumns.map(col => (
+        col.id === columnId ? { ...col, isVisible: false } : col
+      ));
+      setUserColumns(updated, true); // Immediate save
+      return;
+    }
+
+    // If currently hidden, show it and optionally reposition
+    const updated = userColumns.map(col => (
+      col.id === columnId ? { ...col, isVisible: true } : col
+    ));
+
+    if (typeof insertIndex === 'number') {
+      const currentIndex = updated.findIndex(col => col.id === columnId);
+      if (currentIndex !== -1) {
+        const [col] = updated.splice(currentIndex, 1);
+        const clampedIndex = Math.min(Math.max(insertIndex, 0), updated.length);
+        updated.splice(clampedIndex, 0, col);
       }
-      return col;
-    });
+    }
+
     setUserColumns(updated, true); // Immediate save
   }, [userColumns, setUserColumns]);
 
