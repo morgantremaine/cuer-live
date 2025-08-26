@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
+import { useCellEditingPresence } from '@/hooks/realtime/useCellEditingPresence';
 
 interface TextAreaCellProps {
   value: string;
@@ -9,6 +10,7 @@ interface TextAreaCellProps {
   textColor?: string;
   backgroundColor?: string;
   isDuration?: boolean;
+  rundownId?: string;
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -22,6 +24,7 @@ const TextAreaCell = ({
   textColor,
   backgroundColor,
   isDuration = false,
+  rundownId,
   onUpdateValue,
   onCellClick,
   onKeyDown
@@ -31,6 +34,9 @@ const TextAreaCell = ({
   const [calculatedHeight, setCalculatedHeight] = useState<number>(38);
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+
+  // Cell editing presence
+  const { trackEditing, untrackEditing, checkForActiveEditors } = useCellEditingPresence(rundownId || '');
 
   // Function to calculate required height using a measurement div
   const calculateHeight = () => {
@@ -150,6 +156,13 @@ const TextAreaCell = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdateValue(e.target.value);
+    
+    // Update editing presence on typing
+    const fieldKey = `${itemId}:${cellRefKey}`;
+    if (rundownId && isFocused) {
+      trackEditing(fieldKey);
+    }
+    
     // Height will be recalculated by useEffect
   };
 
@@ -168,6 +181,14 @@ const TextAreaCell = ({
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
     setIsFocused(true);
+    
+    // Check for active editors and warn if someone else is editing
+    const fieldKey = `${itemId}:${cellRefKey}`;
+    if (rundownId) {
+      checkForActiveEditors(fieldKey);
+      trackEditing(fieldKey);
+    }
+    
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
     if (row) {
@@ -178,6 +199,13 @@ const TextAreaCell = ({
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
     setIsFocused(false);
+    
+    // Stop tracking editing
+    const fieldKey = `${itemId}:${cellRefKey}`;
+    if (rundownId) {
+      untrackEditing(fieldKey);
+    }
+    
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
     if (row) {
@@ -245,6 +273,7 @@ const TextAreaCell = ({
         onBlur={handleBlur}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
+        data-field-key={`${itemId}:${cellRefKey}`}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}

@@ -14,6 +14,7 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   isCollapsed?: boolean;
+  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -30,6 +31,7 @@ const HeaderRowContent = ({
   currentSegmentId,
   cellRefs,
   isCollapsed = false,
+  rundownId,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -137,6 +139,7 @@ const HeaderRowContent = ({
                       width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
                       minWidth: '4ch'
                     }}
+                    data-field-key={`${item.id}:name`}
                     placeholder="Header Name"
                   />
                   <span 
