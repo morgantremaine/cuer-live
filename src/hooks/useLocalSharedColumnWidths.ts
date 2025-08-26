@@ -33,12 +33,27 @@ const getMinimumWidth = (column: Column): number => {
 };
 
 export const useLocalSharedColumnWidths = (
-  columns: Column[]
+  columns: Column[],
+  resetKey?: any // When this changes, reset the local storage
 ): UseLocalSharedColumnWidthsReturn => {
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+  const [lastResetKey, setLastResetKey] = useState(resetKey);
+
+  // Reset when resetKey changes
+  useEffect(() => {
+    if (resetKey !== lastResetKey) {
+      setLastResetKey(resetKey);
+      localStorage.removeItem(STORAGE_KEY);
+      setColumnWidths({});
+      return;
+    }
+  }, [resetKey, lastResetKey]);
 
   // Load saved widths from localStorage on mount
   useEffect(() => {
+    // Skip if we just reset
+    if (resetKey !== lastResetKey) return;
+    
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -48,7 +63,7 @@ export const useLocalSharedColumnWidths = (
     } catch (error) {
       console.error('Failed to load column widths from localStorage:', error);
     }
-  }, []);
+  }, [resetKey, lastResetKey]);
 
   // Save column widths to localStorage
   const saveColumnWidths = useCallback((widths: { [key: string]: number }) => {

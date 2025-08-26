@@ -287,11 +287,13 @@ const SharedRundown = () => {
   const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
 
   // Use local column ordering for anonymous users to persist their preferred column order
-  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
+  // Reset when layoutColumns changes (when admin changes the layout from main rundown)
+  const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse, layoutColumns);
   const visibleColumns = getVisibleColumns(orderedColumns);
 
   // Use local column width management for anonymous users
-  const { getColumnWidth, updateColumnWidth, resetColumnWidths } = useLocalSharedColumnWidths(orderedColumns);
+  // Reset when layoutColumns changes (when admin changes the layout from main rundown)
+  const { getColumnWidth, updateColumnWidth, resetColumnWidths } = useLocalSharedColumnWidths(orderedColumns, layoutColumns);
 
   if (loading) {
     return (
