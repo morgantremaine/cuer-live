@@ -6,6 +6,7 @@ import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { useCellEditingPresence } from '@/hooks/realtime/useCellEditingPresence';
 
 interface CellRendererProps {
   column: Column;
@@ -24,6 +25,7 @@ interface CellRendererProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   width?: string;
+  rundownId?: string;
 }
 
 const CellRenderer = ({
@@ -37,8 +39,10 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
-  width
+  width,
+  rundownId
 }: CellRendererProps) => {
+  const { startEditingField, updateFieldActivity, stopEditingField, checkForActiveEditor } = useCellEditingPresence(rundownId);
   // Get the current value for this cell
   const getCellValue = () => {
     if (column.isCustom) {
@@ -107,6 +111,7 @@ const CellRenderer = ({
 
   // Create cell key for referencing
   const cellKey = `${item.id}-${column.key}`;
+  const fieldKey = `${item.id}:${column.key}`;
 
   // Use ImageCell for images column - check both column.key and column.id
   if (column.key === 'images' || column.id === 'images') {
@@ -122,7 +127,8 @@ const CellRenderer = ({
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}
-        onCellClick={(e) => {
+        onCellClick={async (e) => {
+          await checkForActiveEditor(fieldKey);
           onCellClick(item.id, column.key);
         }}
         onKeyDown={onKeyDown}
@@ -159,6 +165,10 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
+      fieldKey={fieldKey}
+      onFocusField={startEditingField}
+      onBlurField={stopEditingField}
+      onInputField={updateFieldActivity}
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
@@ -171,7 +181,10 @@ const CellRenderer = ({
           onUpdateItem(item.id, field, newValue);
         }
       }}
-      onCellClick={(e) => onCellClick(item.id, column.key)}
+      onCellClick={async (e) => {
+        await checkForActiveEditor(fieldKey);
+        onCellClick(item.id, column.key);
+      }}
       onKeyDown={onKeyDown}
     />
   );

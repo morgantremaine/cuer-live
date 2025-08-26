@@ -12,6 +12,10 @@ interface TextAreaCellProps {
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  fieldKey?: string;
+  onFocusField?: (fieldKey: string) => void;
+  onBlurField?: () => void;
+  onInputField?: (fieldKey: string) => void;
 }
 
 const TextAreaCell = ({
@@ -24,7 +28,11 @@ const TextAreaCell = ({
   isDuration = false,
   onUpdateValue,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  fieldKey,
+  onFocusField,
+  onBlurField,
+  onInputField
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -148,23 +156,6 @@ const TextAreaCell = ({
     // Allow other keys to work normally
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onUpdateValue(e.target.value);
-    // Height will be recalculated by useEffect
-  };
-
-  // Enhanced mouse down handler to prevent row dragging when selecting text
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only handle left-clicks - right-clicks should not start editing or stop propagation
-    if (e.button === 0) { // Left click
-      // Stop propagation to prevent row drag events
-      e.stopPropagation();
-    } else {
-      // For right-clicks, prevent focusing to avoid triggering edit mode
-      e.preventDefault();
-    }
-  };
-
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
     setIsFocused(true);
@@ -172,6 +163,11 @@ const TextAreaCell = ({
     const row = e.target.closest('tr');
     if (row) {
       row.setAttribute('draggable', 'false');
+    }
+    
+    // Notify presence system
+    if (fieldKey && onFocusField) {
+      onFocusField(fieldKey);
     }
   };
 
@@ -185,6 +181,33 @@ const TextAreaCell = ({
       setTimeout(() => {
         row.setAttribute('draggable', 'true');
       }, 50);
+    }
+    
+    // Notify presence system
+    if (onBlurField) {
+      onBlurField();
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect
+    
+    // Notify presence system of activity
+    if (fieldKey && onInputField) {
+      onInputField(fieldKey);
+    }
+  };
+
+  // Enhanced mouse down handler to prevent row dragging when selecting text
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only handle left-clicks - right-clicks should not start editing or stop propagation
+    if (e.button === 0) { // Left click
+      // Stop propagation to prevent row drag events
+      e.stopPropagation();
+    } else {
+      // For right-clicks, prevent focusing to avoid triggering edit mode
+      e.preventDefault();
     }
   };
 
@@ -243,7 +266,7 @@ const TextAreaCell = ({
         onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        data-cell-id={cellKey}
+        data-field-key={fieldKey || cellKey}
         data-cell-ref={cellKey}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''

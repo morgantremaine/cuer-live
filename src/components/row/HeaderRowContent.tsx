@@ -19,6 +19,7 @@ interface HeaderRowContentProps {
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleCollapse?: (headerId: string) => void;
   getColumnWidth: (column: Column) => string;
+  rundownId?: string;
 }
 
 const HeaderRowContent = ({
@@ -34,7 +35,8 @@ const HeaderRowContent = ({
   onCellClick,
   onKeyDown,
   onToggleCollapse,
-  getColumnWidth
+  getColumnWidth,
+  rundownId
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
