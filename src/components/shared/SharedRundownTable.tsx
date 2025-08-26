@@ -137,13 +137,26 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
 
   // Handle drag end event
   const handleDragEnd = (event: any) => {
+    console.log('🔄 SharedRundownTable handleDragEnd called:', event);
     const { active, over } = event;
+    console.log('Active:', active, 'Over:', over);
+    console.log('onReorderColumns prop:', onReorderColumns);
 
     // Check if both active and over exist and have ids before proceeding
     if (active && over && active.id && over.id && active.id !== over.id && onReorderColumns) {
       const oldIndex = visibleColumns.findIndex(col => col.id === active.id);
       const newIndex = visibleColumns.findIndex(col => col.id === over.id);
+      console.log('Calling onReorderColumns with:', oldIndex, newIndex);
       onReorderColumns(oldIndex, newIndex);
+    } else {
+      console.log('Not calling onReorderColumns. Reasons:', {
+        hasActive: !!active,
+        hasOver: !!over,
+        hasActiveId: !!(active && active.id),
+        hasOverId: !!(over && over.id),
+        differentIds: !!(active && over && active.id !== over.id),
+        hasCallback: !!onReorderColumns
+      });
     }
   };
   // State for managing expanded script/notes cells

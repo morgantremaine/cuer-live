@@ -56,6 +56,8 @@ export const SimpleResizableColumnHeader: React.FC<SimpleResizableColumnHeaderPr
     transition,
   } = useSortable({ id: column.id });
 
+  console.log('🎯 SimpleResizableColumnHeader render:', column.name, 'listeners:', listeners);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -110,10 +112,13 @@ export const SimpleResizableColumnHeader: React.FC<SimpleResizableColumnHeaderPr
   const dragListeners = {
     ...listeners,
     onMouseDown: (e: React.MouseEvent) => {
+      console.log('🖱️ Mouse down on column header:', column.name, 'target:', e.target);
       // Don't start dragging if clicking on resize handle
       if ((e.target as Element).classList.contains('resize-handle')) {
+        console.log('❌ Blocked drag because clicked on resize handle');
         return;
       }
+      console.log('✅ Starting drag for column:', column.name);
       listeners?.onMouseDown?.(e);
     }
   };

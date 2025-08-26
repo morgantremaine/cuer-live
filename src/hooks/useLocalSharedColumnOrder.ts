@@ -78,10 +78,13 @@ export const useLocalSharedColumnOrder = (
 
   // Reorder columns by moving from startIndex to endIndex
   const reorderColumns = useCallback((startIndex: number, endIndex: number) => {
+    console.log('🔄 useLocalSharedColumnOrder reorderColumns called:', { startIndex, endIndex });
     setOrderedColumns(prev => {
+      console.log('Previous columns:', prev.map(c => c.name));
       const newColumns = [...prev];
       const [removed] = newColumns.splice(startIndex, 1);
       newColumns.splice(endIndex, 0, removed);
+      console.log('New columns order:', newColumns.map(c => c.name));
       
       // Save the new order
       saveColumnOrder(newColumns);
