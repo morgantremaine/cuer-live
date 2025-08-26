@@ -48,7 +48,6 @@ interface RegularRowProps {
   allItems?: any[];
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
-  rundownId?: string;
   getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
@@ -248,7 +247,6 @@ const RegularRow = (props: RegularRowProps) => {
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
           getColumnWidth={props.getColumnWidth}
-          rundownId={props.rundownId}
         />
       </tr>
     </RundownContextMenu>

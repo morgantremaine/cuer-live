@@ -45,7 +45,6 @@ interface HeaderRowProps {
   // Header collapse props
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
-  rundownId?: string;
 }
 
 const HeaderRow = (props: HeaderRowProps) => {
@@ -180,7 +179,6 @@ const HeaderRow = (props: HeaderRowProps) => {
           onKeyDown={props.onKeyDown}
           onToggleCollapse={onToggleCollapse}
           getColumnWidth={props.getColumnWidth}
-          rundownId={props.rundownId}
         />
       </tr>
     </RundownContextMenu>
