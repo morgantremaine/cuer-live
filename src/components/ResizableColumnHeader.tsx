@@ -163,10 +163,15 @@ const ResizableColumnHeader = ({
     position: isDragging ? 'relative' as const : undefined,
   };
 
-  // Create listeners that exclude the resize handle
+  // Create listeners that exclude the resize handle and right-clicks
   const dragListeners = {
     ...listeners,
     onPointerDown: (e: React.PointerEvent) => {
+      // Don't start drag if right-clicking (for context menu)
+      if (e.button === 2) {
+        return;
+      }
+      
       // Don't start drag if clicking on resize handle
       if (isResizingRef.current || 
           (e.target as HTMLElement).classList.contains('resize-handle') ||
@@ -187,6 +192,7 @@ const ResizableColumnHeader = ({
         isDragging ? 'opacity-50' : ''
       } cursor-move`}
       style={style}
+      onContextMenu={(e) => e.preventDefault()} // Prevent browser context menu
       {...attributes}
       {...dragListeners}
     >

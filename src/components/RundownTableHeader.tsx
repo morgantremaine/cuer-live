@@ -23,13 +23,16 @@ import {
 } from '@dnd-kit/modifiers';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import ResizableColumnHeader from './ResizableColumnHeader';
+import HeaderContextMenu from './HeaderContextMenu';
 import { Column } from '@/hooks/useColumnsManager';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];
+  allColumns?: Column[];
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
+  onToggleColumnVisibility?: (columnId: string) => void;
   items?: any[]; // For auto-sizing columns
   columnExpandState?: { [columnKey: string]: boolean };
   onToggleColumnExpand?: (columnKey: string) => void;
@@ -39,9 +42,11 @@ interface RundownTableHeaderProps {
 
 const RundownTableHeader = ({
   visibleColumns,
+  allColumns = [],
   getColumnWidth,
   updateColumnWidth,
   onReorderColumns,
+  onToggleColumnVisibility,
   items = [],
   columnExpandState = {},
   onToggleColumnExpand,
@@ -225,6 +230,28 @@ const RundownTableHeader = ({
               const columnWidth = getColumnWidth(column);
               const isLastColumn = index === visibleColumns.length - 1;
               
+              const headerContent = (
+                <div className="flex items-center space-x-1">
+                  {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpand && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleColumnExpand(column.key);
+                      }}
+                      className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
+                      title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
+                    >
+                      {columnExpandState[column.key] ? (
+                        <ChevronDown className="h-3 w-3 text-white" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3 text-white" />
+                      )}
+                    </button>
+                  )}
+                  <span>{column.name || column.key}</span>
+                </div>
+              );
+
               return (
                 <ResizableColumnHeader
                   key={column.id}
@@ -235,25 +262,17 @@ const RundownTableHeader = ({
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
                 >
-                  <div className="flex items-center space-x-1">
-                    {(column.key === 'script' || column.key === 'notes') && onToggleColumnExpand && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleColumnExpand(column.key);
-                        }}
-                        className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
-                        title={columnExpandState[column.key] ? 'Collapse all' : 'Expand all'}
-                      >
-                        {columnExpandState[column.key] ? (
-                          <ChevronDown className="h-3 w-3 text-white" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 text-white" />
-                        )}
-                      </button>
-                    )}
-                    <span>{column.name || column.key}</span>
-                  </div>
+                  {onToggleColumnVisibility && allColumns.length > 0 ? (
+                    <HeaderContextMenu
+                      column={column}
+                      allColumns={allColumns}
+                      onToggleColumnVisibility={onToggleColumnVisibility}
+                    >
+                      {headerContent}
+                    </HeaderContextMenu>
+                  ) : (
+                    headerContent
+                  )}
                 </ResizableColumnHeader>
               );
             })}

@@ -13,6 +13,7 @@ interface RundownContentProps {
   totalRuntime?: string;
   items: RundownItem[];
   visibleColumns: Column[];
+  allColumns?: Column[];
   currentTime: Date;
   showColorPicker: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
@@ -30,6 +31,7 @@ interface RundownContentProps {
   getColumnWidth: (column: Column) => string;
   updateColumnWidth: (columnId: string, width: number) => void;
   onReorderColumns?: (columns: Column[]) => void;
+  onToggleColumnVisibility?: (columnId: string) => void;
   getRowNumber: (index: number) => string;
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
@@ -63,6 +65,7 @@ interface RundownContentProps {
 const RundownContent = React.memo<RundownContentProps>(({
   items,
   visibleColumns,
+  allColumns,
   currentTime,
   showColorPicker,
   cellRefs,
@@ -82,6 +85,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   getColumnWidth,
   updateColumnWidth,
   onReorderColumns,
+  onToggleColumnVisibility,
   getRowNumber,
   getRowStatus,
   calculateHeaderDuration,
@@ -238,9 +242,11 @@ const RundownContent = React.memo<RundownContentProps>(({
             {/* Sticky Header */}
             <RundownTableHeader 
               visibleColumns={visibleColumns}
+              allColumns={allColumns}
               getColumnWidth={getColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onReorderColumns={onReorderColumns}
+              onToggleColumnVisibility={onToggleColumnVisibility}
               items={items}
               columnExpandState={columnExpandState}
               onToggleColumnExpand={handleToggleColumnExpand}

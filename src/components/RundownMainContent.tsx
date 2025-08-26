@@ -34,9 +34,11 @@ const RundownMainContent = ({
       <RundownContent 
         {...contentProps}
         visibleColumns={visibleColumns}
+        allColumns={columns}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
         onReorderColumns={handleReorderColumns}
+        onToggleColumnVisibility={handleToggleColumnVisibility}
         title={contentProps.rundownTitle}
         totalRuntime={totalDuration}
         items={contentProps.items} // Pass original items for duration calculations
