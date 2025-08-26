@@ -104,13 +104,22 @@ const RundownIndexContent = () => {
   }, [setUserColumns]);
 
   const handleDeleteColumnWrapper = useCallback(async (columnId: string) => {
+    console.log('🗑️ Delete column wrapper called with ID:', columnId);
+    
     const columnToDelete = userColumns.find(col => col.id === columnId);
-    if (!columnToDelete) return;
+    if (!columnToDelete) {
+      console.error('🗑️ Column not found:', columnId);
+      return;
+    }
+
+    console.log('🗑️ Column to delete:', columnToDelete);
+    console.log('🗑️ Is team column:', (columnToDelete as any).isTeamColumn);
+    console.log('🗑️ Team ID:', team?.id);
 
     // If it's a team column, delete it from the database
     if ((columnToDelete as any).isTeamColumn && team?.id) {
-      // We need to access the deleteTeamColumn function from the hook context
-      // For now, let's delete from the database directly
+      console.log('🗑️ Deleting team column from database...');
+      
       try {
         const { error } = await supabase
           .from('team_custom_columns')
@@ -119,9 +128,11 @@ const RundownIndexContent = () => {
           .eq('column_key', columnToDelete.key);
 
         if (error) {
-          console.error('Error deleting team custom column:', error);
+          console.error('🗑️ Error deleting team custom column:', error);
           return; // Don't proceed with local deletion if database deletion failed
         }
+
+        console.log('🗑️ Successfully deleted team column from database');
 
         // Clean up this column from all user column preferences for this team
         const { error: cleanupError } = await supabase
@@ -131,17 +142,21 @@ const RundownIndexContent = () => {
           });
 
         if (cleanupError) {
-          console.warn('Warning: Could not clean up deleted team column from user preferences:', cleanupError);
+          console.warn('🗑️ Warning: Could not clean up deleted team column from user preferences:', cleanupError);
+        } else {
+          console.log('🗑️ Successfully cleaned up team column references');
         }
       } catch (dbError) {
-        console.error('Error deleting team column from database:', dbError);
+        console.error('🗑️ Error deleting team column from database:', dbError);
         return; // Don't proceed with local deletion if database operation failed
       }
     }
 
     // Remove from local state
+    console.log('🗑️ Removing column from local state...');
     const filtered = userColumns.filter(col => col.id !== columnId);
     setUserColumns(filtered, true); // Immediate save
+    console.log('🗑️ Column deletion complete');
   }, [userColumns, setUserColumns, team?.id]);
 
   const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
