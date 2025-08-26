@@ -21,9 +21,22 @@ export const useCellEditingPresence = (rundownId: string) => {
   const throttleRef = useRef<{ [fieldKey: string]: number }>({});
   const lastNotificationRef = useRef<{ [fieldKey: string]: number }>({});
 
+  // Early return if essential data is missing
+  if (!rundownId || !user) {
+    return {
+      trackEditing: () => {},
+      untrackEditing: () => {},
+      checkForActiveEditors: () => false,
+      presenceData: {}
+    };
+  }
+
   // Initialize channel
   useEffect(() => {
-    if (!rundownId || !user) return;
+    if (!rundownId || !user) {
+      logger.debug('🔗 Skipping cell editing presence - missing rundownId or user');
+      return;
+    }
 
     const channelName = `rundown-editing-${rundownId}`;
     logger.info(`🔗 Joining cell editing channel: ${channelName}`);

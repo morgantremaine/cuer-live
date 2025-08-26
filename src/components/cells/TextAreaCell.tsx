@@ -187,6 +187,9 @@ const TextAreaCell = ({
     if (rundownId) {
       checkForActiveEditors(fieldKey);
       trackEditing(fieldKey);
+    } else {
+      // Log that cell editing presence is not available
+      console.debug('Cell editing presence not available - rundownId missing');
     }
     
     // Find the parent row and disable dragging while editing
