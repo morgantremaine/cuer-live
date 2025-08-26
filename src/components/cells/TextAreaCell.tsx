@@ -36,6 +36,7 @@ const TextAreaCell = ({
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
   // Cell editing presence
+  console.log('📝 TextAreaCell: rundownId =', rundownId, 'itemId =', itemId, 'cellRefKey =', cellRefKey);
   const { trackEditing, untrackEditing, checkForActiveEditors } = useCellEditingPresence(rundownId || '');
 
   // Function to calculate required height using a measurement div

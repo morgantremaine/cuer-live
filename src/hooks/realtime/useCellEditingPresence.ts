@@ -21,8 +21,12 @@ export const useCellEditingPresence = (rundownId: string) => {
   const throttleRef = useRef<{ [fieldKey: string]: number }>({});
   const lastNotificationRef = useRef<{ [fieldKey: string]: number }>({});
 
+  // Debug logging to see if hook is being called
+  console.log('🔗 useCellEditingPresence called', { rundownId, hasUser: !!user });
+
   // Early return if essential data is missing
   if (!rundownId || !user) {
+    console.log('🔗 Early return - missing rundownId or user', { rundownId: !!rundownId, user: !!user });
     return {
       trackEditing: () => {},
       untrackEditing: () => {},
