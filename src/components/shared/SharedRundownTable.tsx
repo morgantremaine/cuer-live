@@ -6,7 +6,7 @@ import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 import { Play, ChevronDown, ChevronRight, ExternalLink, GripVertical } from 'lucide-react';
 import { SimpleResizableColumnHeader } from './SimpleResizableColumnHeader';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -773,7 +773,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   return (
     <DndContext 
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={pointerWithin}
       onDragEnd={handleDragEnd}
     >
       <style>
