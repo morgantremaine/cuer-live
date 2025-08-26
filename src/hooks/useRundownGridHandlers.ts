@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { debugLogger } from '@/utils/debugLogger';
 
 interface UseRundownGridHandlersProps {
   updateItem: (id: string, field: string, value: string) => void;
@@ -57,12 +58,12 @@ export const useRundownGridHandlers = ({
 
   // Enhanced addRow that considers selection state and inserts after selected rows
   const handleAddRow = useCallback(() => {
-    console.log('🚀 Grid handlers addRow called');
-    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    debugLogger.grid('Grid handlers addRow called');
+    debugLogger.grid('Current selection state - selectedRows size:', selectedRows.size);
     
     // Check if we have any selection
     if (selectedRows.size > 0) {
-      console.log('🚀 Using selection for insertion');
+      debugLogger.grid('Using selection for insertion');
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
@@ -71,24 +72,24 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        console.log('🚀 Inserting row at index:', insertIndex);
+        debugLogger.grid('Inserting row at index:', insertIndex);
         addRowAtIndex(insertIndex);
         return;
       }
     }
     
-    console.log('🚀 No selection, using default addRow');
+    debugLogger.grid('No selection, using default addRow');
     addRow();
   }, [addRowAtIndex, addRow, selectedRows, items]);
 
   // Enhanced addHeader that considers selection state and inserts after selected rows  
   const handleAddHeader = useCallback(() => {
-    console.log('🚀 Grid handlers addHeader called');
-    console.log('🚀 Current selection state - selectedRows size:', selectedRows.size);
+    debugLogger.grid('Grid handlers addHeader called');
+    debugLogger.grid('Current selection state - selectedRows size:', selectedRows.size);
     
     // Check if we have any selection
     if (selectedRows.size > 0) {
-      console.log('🚀 Using selection for header insertion');
+      debugLogger.grid('Using selection for header insertion');
       // Find the highest index among selected rows and insert after it
       const selectedIndices = Array.from(selectedRows)
         .map(id => items.findIndex(item => item.id === id))
@@ -97,13 +98,13 @@ export const useRundownGridHandlers = ({
       if (selectedIndices.length > 0) {
         const insertAfterIndex = Math.max(...selectedIndices);
         const insertIndex = insertAfterIndex + 1;
-        console.log('🚀 Inserting header at index:', insertIndex);
+        debugLogger.grid('Inserting header at index:', insertIndex);
         addHeaderAtIndex(insertIndex);
         return;
       }
     }
     
-    console.log('🚀 No selection, using default addHeader');
+    debugLogger.grid('No selection, using default addHeader');
     addHeader();
   }, [addHeaderAtIndex, addHeader, selectedRows, items]);
 
@@ -129,7 +130,7 @@ export const useRundownGridHandlers = ({
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      console.log('Grid handlers: pasting with targetRowId:', targetRowId);
+      debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
@@ -167,20 +168,20 @@ export const useRundownGridHandlers = ({
   }, [items, selectedRows, copyItems]);
 
   const handleRowSelection = useCallback((itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
-    console.log('🎯 handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
-    console.log('🎯 Current selectedRows state:', Array.from(selectedRows));
+    debugLogger.grid('handleRowSelection called:', { itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds });
+    debugLogger.grid('Current selectedRows state:', Array.from(selectedRows));
     
     // If this is a collapsed header with group items, handle group selection/deselection
     if (headerGroupItemIds && headerGroupItemIds.length > 1 && !isShiftClick && !isCtrlClick) {
-      console.log('🎯 Handling header group:', headerGroupItemIds);
+      debugLogger.grid('Handling header group:', headerGroupItemIds);
       
       // Check if all items in the group are currently selected
       const allGroupItemsSelected = headerGroupItemIds.every(id => {
         const isSelected = selectedRows.has(id);
-        console.log('🎯 Checking item:', id, 'isSelected:', isSelected);
+        debugLogger.grid(`Checking item: ${id}, isSelected: ${isSelected}`);
         return isSelected;
       });
-      console.log('🎯 Selection check result:', { 
+      debugLogger.grid('Selection check result:', { 
         headerGroupItemIds, 
         selectedRows: Array.from(selectedRows), 
         allGroupItemsSelected 
@@ -188,11 +189,11 @@ export const useRundownGridHandlers = ({
       
       if (allGroupItemsSelected) {
         // Deselect the entire group
-        console.log('🎯 Deselecting entire header group');
+        debugLogger.grid('Deselecting entire header group');
         clearSelection();
       } else {
         // Select the entire group
-        console.log('🎯 Selecting entire header group');
+        debugLogger.grid('Selecting entire header group');
         // Clear existing selection first
         clearSelection();
         headerGroupItemIds.forEach(id => {
@@ -204,7 +205,7 @@ export const useRundownGridHandlers = ({
       }
     } else {
       // Normal single/multi selection
-      console.log('🎯 Calling toggleRowSelection with headerGroupItemIds:', headerGroupItemIds);
+      debugLogger.grid('Calling toggleRowSelection with headerGroupItemIds:', headerGroupItemIds);
       toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
     }
   }, [items, toggleRowSelection, clearSelection]);

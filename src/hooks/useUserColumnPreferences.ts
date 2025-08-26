@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Column } from './useColumnsManager';
+import { debugLogger } from '@/utils/debugLogger';
 
 interface UserColumnPreferences {
   id: string;
@@ -272,7 +273,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Load preferences when rundown changes, but prevent duplicate loads
   useEffect(() => {
-    console.log('🔄 UserColumnPreferences: useEffect triggered', { 
+    debugLogger.preferences('useEffect triggered', { 
       rundownId, 
       loadedRundownRefCurrent: loadedRundownRef.current,
       userId: user?.id 
@@ -310,7 +311,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Apply layout while preserving all available columns (defaults + team customs + user customs)
   const applyLayout = useCallback((layoutColumns: Column[]) => {
-    console.log('🔄 UserColumnPreferences: Applying layout with', layoutColumns.length, 'columns');
+    debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns');
     
     // Create master list of all available columns (defaults + team + existing user columns)
     const masterColumns = [...defaultColumns];
@@ -386,8 +387,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return cleanCol as Column;
     });
     
-    console.log('✅ Layout applied - total columns:', finalColumns.length, 
-      'visible:', finalColumns.filter(c => c.isVisible).length);
+    debugLogger.preferences('Layout applied - total columns: ' + finalColumns.length + 
+      ', visible: ' + finalColumns.filter(c => c.isVisible).length);
     
     setColumns(finalColumns);
     

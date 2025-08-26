@@ -6,6 +6,7 @@ import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { debugLogger } from '@/utils/debugLogger';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -80,7 +81,7 @@ export const useSimpleAutoSave = (
   const performSave = useCallback(async (): Promise<void> => {
     // Final check before saving - only undo blocks saves  
     if (isSaving || undoActiveRef.current) {
-      console.log('💾 Save blocked: already saving or undo active');
+      debugLogger.autosave('Save blocked: already saving or undo active');
       return;
     }
     
@@ -89,7 +90,7 @@ export const useSimpleAutoSave = (
     
     if (finalSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
-      console.log('💾 No changes to save - marking as saved');
+      debugLogger.autosave('No changes to save - marking as saved');
       onSaved();
       return;
     }
@@ -240,7 +241,7 @@ export const useSimpleAutoSave = (
 
     // Simple blocking conditions - only undo blocks saves
     if (undoActiveRef.current) {
-      console.log('💾 Save blocked: undo operation active');
+      debugLogger.autosave('Save blocked: undo operation active');
       return;
     }
 

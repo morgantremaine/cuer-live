@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUniversalTimer } from './useUniversalTimer';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { debugLogger } from '@/utils/debugLogger';
 
 interface UseSimpleRealtimeRundownProps {
   rundownId: string | null;
@@ -132,7 +133,7 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    console.log('📡 Simple realtime update received:', {
+    debugLogger.realtime('Simple realtime update received:', {
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
       itemCount: payload.new?.items?.length
@@ -152,7 +153,7 @@ export const useSimpleRealtimeRundown = ({
     // Skip if this is exactly the same timestamp we just processed (using normalized form)
     if (normalizedUpdateTimestamp === lastProcessedUpdateRef.current) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('⏭️ Skipping duplicate timestamp:', normalizedUpdateTimestamp);
+        debugLogger.realtime('Skipping duplicate timestamp:', normalizedUpdateTimestamp);
       }
       return;
     }
@@ -179,7 +180,7 @@ export const useSimpleRealtimeRundown = ({
         });
       }
       
-      console.log('⏭️ Skipping own update - user/timestamp matched');
+      debugLogger.realtime('Skipping own update - user/timestamp matched');
       lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }
@@ -190,7 +191,7 @@ export const useSimpleRealtimeRundown = ({
   
     // Only process updates that have actual content changes
     if (!isContentChange && !isStructural) {
-      console.log('⏭️ Skipping meta-only update (no content changes)', {
+      debugLogger.realtime('Skipping meta-only update (no content changes)', {
         changedFields: Object.keys(payload.new || {}).filter(key => 
           JSON.stringify(payload.new[key]) !== JSON.stringify(payload.old?.[key])
         )
