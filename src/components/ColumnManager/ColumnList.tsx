@@ -172,12 +172,11 @@ const ColumnList = ({
   };
 
   return (
-    <div className="space-y-2 h-full flex flex-col">
+    <div className="h-full flex flex-col">
       <div
         ref={scrollContainerRef}
         className="space-y-1 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md flex-1" 
         onDragLeave={handleDragLeave}
-        style={{ maxHeight: 'calc(100% - 2rem)' }}
       >
         {columns.map((column, index) => (
           <React.Fragment key={column.id}>
