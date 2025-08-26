@@ -976,7 +976,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
         ref={ref}
       >
         <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
-          <table className="w-full print:text-xs print-table table-fixed print:h-auto print:max-h-none">
+          <table className="print:text-xs print-table print:h-auto print:max-h-none" style={{ 
+            tableLayout: 'fixed',
+            width: `${60 + visibleColumns.reduce((sum, col) => sum + parseInt(getColumnWidthForColumn(col)), 0)}px`
+          }}>
             <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
