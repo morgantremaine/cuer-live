@@ -3,6 +3,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 
+import { debugLogger } from '@/utils/debugLogger';
+
 interface UndoState {
   items: RundownItem[];
   columns: Column[];
@@ -91,11 +93,11 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     // Create a signature for the current state to avoid duplicate saves
     const currentSignature = JSON.stringify({ items, columns, title });
     if (lastStateSignature.current === currentSignature) {
-      console.log('Skipping duplicate state save for action:', action);
+      debugLogger.autosave('Skipping duplicate state save for action:', action);
       return;
     }
 
-    console.log('Saving undo state for action:', action);
+    debugLogger.autosave('Saving undo state for action:', action);
     lastStateSignature.current = currentSignature;
 
     const newState: UndoState = {

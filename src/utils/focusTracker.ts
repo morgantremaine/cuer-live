@@ -1,7 +1,10 @@
+import { debugLogger } from './debugLogger';
+
 // Focus tracking utility for field-level protection during real-time updates
 class FocusTracker {
   private activeField: string | null = null;
   private listeners: ((fieldKey: string | null) => void)[] = [];
+  private lastBlurTime: number = 0;
   
   constructor() {
     this.setupGlobalListeners();
@@ -14,7 +17,7 @@ class FocusTracker {
       if (this.isEditableElement(target)) {
         const fieldKey = this.extractFieldKey(target);
         if (fieldKey) {
-          console.log('🎯 Field focused for protection:', fieldKey);
+          debugLogger.focus('Field focused for protection:', fieldKey);
           this.setActiveField(fieldKey);
         }
       }
@@ -26,7 +29,12 @@ class FocusTracker {
       if (this.isEditableElement(target)) {
         const fieldKey = this.extractFieldKey(target);
         if (fieldKey === this.activeField) {
-          console.log('🎯 Field blurred, removing protection:', fieldKey);
+          // Throttle blur logging to reduce noise
+          const now = Date.now();
+          if (now - this.lastBlurTime > 1000) {
+            debugLogger.focus('Field blurred, removing protection:', fieldKey || 'unknown field');
+            this.lastBlurTime = now;
+          }
           // Delay clearing to allow for quick refocusing
           setTimeout(() => {
             if (this.activeField === fieldKey) {
@@ -73,6 +81,16 @@ class FocusTracker {
       return ariaLabel;
     }
     
+    // Try to find parent with field information
+    let parent = element.parentElement;
+    while (parent && parent !== document.body) {
+      const parentFieldKey = parent.getAttribute('data-field-key');
+      if (parentFieldKey) {
+        return parentFieldKey;
+      }
+      parent = parent.parentElement;
+    }
+    
     return null;
   }
   
@@ -105,7 +123,7 @@ class FocusTracker {
   
   // Manual field protection API for programmatic usage
   public setFieldProtection(fieldKey: string, durationMs: number = 5000) {
-    console.log('🛡️ Manual field protection set:', fieldKey);
+    debugLogger.focus('Manual field protection set:', fieldKey);
     this.setActiveField(fieldKey);
     
     setTimeout(() => {

@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 
+import { debugLogger } from '@/utils/debugLogger';
+
 interface UndoState {
   items: RundownItem[];
   columns: Column[];
@@ -38,7 +40,7 @@ export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoPr
       return;
     }
 
-    console.log('📝 Saving undo state for action:', action);
+    debugLogger.autosave('Saving undo state for action:', action);
     lastStateSignature.current = currentSignature;
 
     const newState: UndoState = {
