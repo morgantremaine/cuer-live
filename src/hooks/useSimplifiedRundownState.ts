@@ -41,11 +41,13 @@ export const useSimplifiedRundownState = () => {
   const activeFocusFieldRef = useRef<string | null>(null);
   const PROTECTION_WINDOW_MS = 15000; // 15 second protection window (extended for better safety)
   
+  // Track pending structural changes to prevent overwrite during save
+  const pendingStructuralChangeRef = useRef(false);
+  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
       activeFocusFieldRef.current = fieldKey;
-      console.log('🎯 Global focus changed:', fieldKey);
     });
     
     return unsubscribe;
@@ -77,7 +79,6 @@ export const useSimplifiedRundownState = () => {
 
   // Handle conflict resolution from auto-save
   const handleConflictResolved = useCallback((mergedData: any) => {
-    console.log('🔄 Applying conflict resolution:', mergedData);
     
     // Apply merged data to state
     actions.loadState({
@@ -101,7 +102,8 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved
+    actions.markSaved,
+    pendingStructuralChangeRef
   );
 
   // Standalone undo system - unchanged
@@ -130,13 +132,11 @@ export const useSimplifiedRundownState = () => {
     
     // Add currently typing field if any
     if (typingSessionRef.current) {
-      console.log('🛡️ Protecting currently typing field:', typingSessionRef.current.fieldKey);
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
     // Add active focus field (from DOM focus events)
     if (activeFocusFieldRef.current) {
-      console.log('🛡️ Protecting currently focused field:', activeFocusFieldRef.current);
       protectedFields.add(activeFocusFieldRef.current);
     }
     
@@ -144,7 +144,6 @@ export const useSimplifiedRundownState = () => {
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
       if (now - timestamp < PROTECTION_WINDOW_MS) {
         protectedFields.add(fieldKey);
-        console.log('🛡️ Protecting recently edited field:', fieldKey, `(${Math.round((now - timestamp) / 1000)}s ago)`);
       } else {
         // Clean up expired fields
         recentlyEditedFieldsRef.current.delete(fieldKey);
@@ -170,17 +169,11 @@ export const useSimplifiedRundownState = () => {
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
-      console.log('📊 Simplified state received realtime update:', updatedRundown);
-      console.log('📊 Current saving state check:', { isSaving, willApplyUpdate: !isSaving });
-      
-      // If we're currently saving, defer the update
-      if (isSaving) {
-        console.log('📊 Deferring realtime update - currently saving');
+      // If we're currently saving or have pending structural changes, defer the update
+      if (isSaving || pendingStructuralChangeRef.current) {
         deferredUpdateRef.current = updatedRundown;
         return;
       }
-      
-      console.log('🕒 Processing granular realtime update:', updatedRundown.updated_at);
       
       // Update our known timestamp
       if (updatedRundown.updated_at) {
@@ -189,11 +182,9 @@ export const useSimplifiedRundownState = () => {
       
       // Get currently protected fields for granular merging
       const protectedFields = getProtectedFields();
-      console.log('🛡️ Protected fields during update:', Array.from(protectedFields));
       
       // Apply granular merge if we have protected fields
       if (protectedFields.size > 0) {
-        console.log('🔀 Applying granular merge with protected fields');
         
         // Create merged items by protecting local edits
         const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
@@ -212,7 +203,6 @@ export const useSimplifiedRundownState = () => {
                 merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
               } else if (localItem.hasOwnProperty(field)) {
                 merged[field] = localItem[field]; // Keep local value
-                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id}:`, localItem[field]);
               }
             }
           });
@@ -228,7 +218,6 @@ export const useSimplifiedRundownState = () => {
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
         
-        console.log('🔀 Granular merge applied with field protection');
       } else {
         // No protected fields - apply update normally
         actions.loadState({
@@ -237,26 +226,19 @@ export const useSimplifiedRundownState = () => {
           startTime: updatedRundown.start_time,
           timezone: updatedRundown.timezone
         });
-        
-        console.log('🔄 Full realtime update applied, item count:', updatedRundown.items?.length || 0);
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
-      console.log('📝 Tracking own update in realtime:', timestamp);
       ownUpdateTimestampRef.current = timestamp;
     }
   });
 
   // Apply deferred updates when save completes
   useEffect(() => {
-    if (!isSaving && deferredUpdateRef.current) {
-      console.log('📊 Applying deferred realtime update after save completion');
+    if (!isSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
       const deferredUpdate = deferredUpdateRef.current;
       deferredUpdateRef.current = null;
-      
-      // Process the deferred update by recreating the same logic as in onRundownUpdate
-      console.log('🕒 Processing deferred granular realtime update:', deferredUpdate.updated_at);
       
       // Update our known timestamp
       if (deferredUpdate.updated_at) {
@@ -265,11 +247,9 @@ export const useSimplifiedRundownState = () => {
       
       // Get currently protected fields for granular merging
       const protectedFields = getProtectedFields();
-      console.log('🛡️ Protected fields during deferred update:', Array.from(protectedFields));
       
       // Apply granular merge if we have protected fields
       if (protectedFields.size > 0) {
-        console.log('🔀 Applying granular merge with protected fields (deferred)');
         
         // Create merged items by protecting local edits
         const mergedItems = deferredUpdate.items?.map((remoteItem: any) => {
@@ -288,7 +268,6 @@ export const useSimplifiedRundownState = () => {
                 merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
               } else if (localItem.hasOwnProperty(field)) {
                 merged[field] = localItem[field]; // Keep local value
-                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (deferred):`, localItem[field]);
               }
             }
           });
@@ -304,7 +283,6 @@ export const useSimplifiedRundownState = () => {
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
         });
         
-        console.log('🔀 Deferred granular merge applied with field protection');
       } else {
         // No protected fields - apply update normally
         actions.loadState({
@@ -313,8 +291,6 @@ export const useSimplifiedRundownState = () => {
           startTime: deferredUpdate.start_time,
           timezone: deferredUpdate.timezone
         });
-        
-        console.log('🔄 Deferred full realtime update applied, item count:', deferredUpdate.items?.length || 0);
       }
     }
   }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone]);
@@ -343,7 +319,6 @@ export const useSimplifiedRundownState = () => {
     
     // ALWAYS track field edits for protection, regardless of type
     recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
-    console.log('🛡️ Tracking field edit for protection:', sessionKey);
     
     if (isTypingField) {
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
@@ -352,7 +327,6 @@ export const useSimplifiedRundownState = () => {
           fieldKey: sessionKey,
           startTime: Date.now()
         };
-        console.log('🛡️ Started typing session for field:', sessionKey);
       }
       
       if (typingTimeoutRef.current) {
@@ -362,7 +336,6 @@ export const useSimplifiedRundownState = () => {
       typingTimeoutRef.current = setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === sessionKey) {
           typingSessionRef.current = null;
-          console.log('🛡️ Ended typing session for field:', sessionKey);
         }
       }, 8000); // Extended to 8 seconds for better protection
     } else if (field === 'duration') {
@@ -434,7 +407,7 @@ export const useSimplifiedRundownState = () => {
             timezone: DEMO_RUNDOWN_DATA.timezone
           });
           
-          console.log('✅ Demo rundown loaded successfully');
+          
         } else {
           // Normal database loading for real rundowns
           const { data, error } = await supabase
@@ -457,7 +430,6 @@ export const useSimplifiedRundownState = () => {
             }
 
             // Load content only (columns handled by useUserColumnPreferences)
-            console.log('📋 Loading rundown state without columns (handled by useUserColumnPreferences)');
             actions.loadState({
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
@@ -493,7 +465,6 @@ export const useSimplifiedRundownState = () => {
 
   // Handle data refreshing from resumption
   const handleDataRefresh = useCallback((latestData: any) => {
-    console.log('🔄 Refreshing rundown data from resumption:', latestData);
     
     // Update timestamp first
     if (latestData.updated_at) {
@@ -513,12 +484,12 @@ export const useSimplifiedRundownState = () => {
     });
   }, [actions, getProtectedFields]);
 
-  // Set up resumption handling
+  // Set up resumption handling - disable if pending structural changes
   useRundownResumption({
     rundownId,
     onDataRefresh: handleDataRefresh,
     lastKnownTimestamp,
-    enabled: isInitialized && !isLoading,
+    enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current,
     updateLastKnownTimestamp: setLastKnownTimestamp
   });
 
@@ -567,16 +538,19 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
+      pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
     }, [actions.deleteItem, state.items, state.title, saveUndoState]),
 
     addRow: useCallback(() => {
+      pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
     }, [helpers.addRow, state.items, state.title, saveUndoState]),
 
     addHeader: useCallback(() => {
+      pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
     }, [helpers.addHeader, state.items, state.title, saveUndoState]),
@@ -633,6 +607,7 @@ export const useSimplifiedRundownState = () => {
 
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
+    pendingStructuralChangeRef.current = true;
     saveUndoState(state.items, [], state.title, 'Add segment');
     
     const newItem = {
@@ -664,6 +639,7 @@ export const useSimplifiedRundownState = () => {
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
+    pendingStructuralChangeRef.current = true;
     saveUndoState(state.items, [], state.title, 'Add header');
     
     const newHeader = {
@@ -742,6 +718,7 @@ export const useSimplifiedRundownState = () => {
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
+      pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
       actions.deleteMultipleItems(itemIds);
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState]),

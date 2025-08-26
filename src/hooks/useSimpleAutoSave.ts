@@ -10,7 +10,8 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void
+  onSaved: () => void,
+  pendingStructuralChangeRef?: React.MutableRefObject<boolean>
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,7 +94,6 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    console.log('💾 Starting save operation');
     setIsSaving(true);
     currentSaveSignatureRef.current = finalSignature;
     
@@ -101,8 +101,6 @@ export const useSimpleAutoSave = (
       // Track this as our own update before saving
       const updateTimestamp = new Date().toISOString();
       trackMyUpdate(updateTimestamp);
-      
-      console.log('💾 Saving with tracking timestamp:', updateTimestamp);
 
       if (!rundownId) {
         const { data: teamData, error: teamError } = await supabase
@@ -186,7 +184,6 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           onSaved();
-          console.log('✅ Rundown saved successfully');
         }
       }
     } catch (error) {
@@ -200,10 +197,14 @@ export const useSimpleAutoSave = (
     } finally {
       setIsSaving(false);
       
+      // Clear structural change flag after save completes
+      if (pendingStructuralChangeRef) {
+        pendingStructuralChangeRef.current = false;
+      }
+      
       // Check if content changed during save - if so, re-queue
       const currentSignature = createContentSignature();
       if (currentSignature !== currentSaveSignatureRef.current && currentSignature !== lastSavedRef.current) {
-        console.log('💾 Content changed during save - re-queuing save operation');
         saveQueueRef.current = { 
           signature: currentSignature, 
           retryCount: (saveQueueRef.current?.retryCount || 0) + 1 
@@ -213,13 +214,11 @@ export const useSimpleAutoSave = (
         if ((saveQueueRef.current?.retryCount || 0) < 3) {
           setTimeout(() => {
             if (saveQueueRef.current && !isSaving) {
-              console.log('💾 Executing re-queued save, attempt:', saveQueueRef.current.retryCount);
               saveQueueRef.current = null;
               performSave();
             }
           }, 500);
         } else {
-          console.warn('💾 Max save retries reached - stopping re-queue to prevent infinite loop');
           saveQueueRef.current = null;
         }
       } else {
@@ -252,26 +251,20 @@ export const useSimpleAutoSave = (
     if (currentSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
       if (state.hasUnsavedChanges) {
-        console.log('💾 No actual content changes - marking as saved');
         onSaved();
       }
       return;
     }
 
-    console.log('💾 Content signature changed - scheduling save:', { 
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      lastChanged: state.lastChanged 
-    });
-
     // Immediate save for structural changes, short debounce for text edits
-    const debounceTime = state.hasUnsavedChanges ? 1500 : 500; // Faster saves
+    const isStructuralChange = pendingStructuralChangeRef?.current || false;
+    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
-      console.log('💾 Debounce completed - executing save');
       await performSave();
     }, debounceTime);
 

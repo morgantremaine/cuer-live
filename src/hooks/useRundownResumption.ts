@@ -101,18 +101,12 @@ export const useRundownResumption = ({
       
       // Avoid rapid checks
       if (now - manager.lastCheck < 3000) {
-        const isDev = process.env.NODE_ENV === 'development';
-        if (isDev) console.log(`🔄 [${eventSource}] Skipping check - too recent (${now - manager.lastCheck}ms ago)`);
         return;
       }
 
       manager.lastCheck = now;
       
       try {
-        const isDev = process.env.NODE_ENV === 'development';
-        if (isDev) {
-          console.log(`🔄 [${eventSource}] Checking for rundown updates after resumption...`);
-        }
         
         const latestData = await fetchLatestRundownData(rundownId);
         
@@ -122,9 +116,6 @@ export const useRundownResumption = ({
           
           // Check if this is a recent save we made
           if (manager.recentSaves.has(normalizedLatest)) {
-            if (isDev) {
-              console.log(`⏭️ [${eventSource}] Skipping - recent save we made (${normalizedLatest})`);
-            }
             // Update our known timestamp to this value
             if (updateLastKnownTimestamp) {
               updateLastKnownTimestamp(normalizedLatest);
@@ -133,7 +124,6 @@ export const useRundownResumption = ({
           }
           
           if (normalizedLatest !== normalizedKnown) {
-            console.log(`📥 [${eventSource}] Updates detected - refreshing rundown data`);
             
             // Removed toast notification - user prefers just the blue icon indicator
             // toast({
@@ -148,8 +138,6 @@ export const useRundownResumption = ({
             if (updateLastKnownTimestamp) {
               updateLastKnownTimestamp(normalizedLatest);
             }
-          } else if (isDev) {
-            console.log(`✅ [${eventSource}] No updates detected - rundown is current`);
           }
         }
       } catch (error) {
@@ -185,21 +173,15 @@ export const useRundownResumption = ({
     if (isFirstListener) {
       const handleVisibilityChange = () => {
         if (!document.hidden) {
-          const isDev = process.env.NODE_ENV === 'development';
-          if (isDev) console.log('👁️ [visibility] Tab became visible');
           performCheck('visibility');
         }
       };
 
       const handleFocus = () => {
-        const isDev = process.env.NODE_ENV === 'development';
-        if (isDev) console.log('🎯 [focus] Window gained focus');
         performCheck('focus');
       };
 
       const handleOnline = () => {
-        const isDev = process.env.NODE_ENV === 'development';
-        if (isDev) console.log('🌐 [online] Network came back online');
         performCheck('online');
       };
 
