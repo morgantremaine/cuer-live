@@ -208,13 +208,13 @@ const ColumnManager = ({
 
             {/* Right Column: Add Column & Column Management */}
             <div className="flex-1 flex flex-col min-w-0 h-full">
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col h-full space-y-2">
                 {/* Add Column Section - Fixed height */}
-                <div className="flex-shrink-0 mb-6">
+                <div className="flex-shrink-0">
                   <ColumnEditor onAddColumn={onAddColumn} />
                 </div>
 
-                {/* Column List Section - Scrollable */}
+                {/* Column List Section - Flexible height to match left side */}
                 <div className="flex-1 min-h-0">
                   <ColumnList
                     columns={columns}
