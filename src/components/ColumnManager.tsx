@@ -207,11 +207,15 @@ const ColumnManager = ({
             </div>
 
             {/* Right Column: Add Column & Column Management */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <div className="space-y-6 h-full flex flex-col">
-                <ColumnEditor onAddColumn={onAddColumn} />
+            <div className="flex-1 flex flex-col min-w-0 h-full">
+              <div className="flex flex-col h-full">
+                {/* Add Column Section - Fixed height */}
+                <div className="flex-shrink-0 mb-6">
+                  <ColumnEditor onAddColumn={onAddColumn} />
+                </div>
 
-                <div className="flex-1 flex flex-col min-h-0">
+                {/* Column List Section - Scrollable */}
+                <div className="flex-1 min-h-0">
                   <ColumnList
                     columns={columns}
                     onReorderColumns={onReorderColumns}
