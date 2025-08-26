@@ -126,7 +126,7 @@ const LayoutManager = ({
   const teamLayouts = savedLayouts.filter(layout => !isUserLayout(layout));
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 h-full flex flex-col">
       <div className="flex space-x-2">
         <Button 
           onClick={() => setShowSaveLayout(!showSaveLayout)} 
@@ -140,7 +140,7 @@ const LayoutManager = ({
       </div>
 
       {showSaveLayout && (
-        <div className="flex space-x-2 mt-2">
+        <div className="flex space-x-2 mt-2 flex-shrink-0">
           <input
             type="text"
             value={layoutName}
@@ -155,7 +155,7 @@ const LayoutManager = ({
         </div>
       )}
 
-      <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+      <div className="overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md flex-1" style={{ maxHeight: 'calc(100% - 2rem)' }}>
         {loading ? (
           <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading layouts...</div>
         ) : savedLayouts.length === 0 ? (
