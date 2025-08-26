@@ -111,18 +111,19 @@ export const SimpleResizableColumnHeader: React.FC<SimpleResizableColumnHeaderPr
   // Create drag listeners that exclude the resize handle
   const dragListeners = {
     ...listeners,
-    onMouseDown: (e: React.MouseEvent) => {
-      console.log('🖱️ Mouse down on column header:', column.name, 'target:', e.target);
-      // Don't start dragging if clicking on resize handle
-      if ((e.target as Element).classList.contains('resize-handle')) {
+    onPointerDown: (e: React.PointerEvent) => {
+      console.log('🖱️ Pointer down on column header:', column.name, 'target:', e.target);
+      // Don't start dragging if clicking on resize handle or inside it
+      if ((e.target as Element).closest('.resize-handle')) {
         console.log('❌ Blocked drag because clicked on resize handle');
         return;
       }
-      console.log('✅ Starting drag for column:', column.name);
-      listeners?.onMouseDown?.(e);
+      console.log('✅ Starting drag (pointer) for column:', column.name);
+      // Call original pointer down if present
+      // @ts-ignore - dnd-kit listeners can be partial
+      listeners?.onPointerDown?.(e);
     }
   };
-
   return (
     <th
       ref={setNodeRef}
