@@ -42,6 +42,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const lastSavedRef = useRef<string>('');
   const isLoadingRef = useRef(false);
   const loadedRundownRef = useRef<string | null>(null);
+  const isFirstTimeViewRef = useRef<boolean>(false);
 
   // Merge team custom columns with user's column layout
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], isFirstTimeLoad = false) => {
@@ -89,6 +90,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
       setColumns(mergedDefaults);
       setIsLoading(false);
+      isFirstTimeViewRef.current = true; // Mark as first time view for new rundowns
       if (!rundownId) {
         loadedRundownRef.current = 'new_rundown_loaded';
       }
@@ -148,6 +150,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
         lastSavedRef.current = JSON.stringify(defaultColumns);
+        isFirstTimeViewRef.current = true; // Mark as first time view
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
@@ -298,9 +301,21 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   // Update columns when team columns change, but only if not currently loading
   useEffect(() => {
     if (!isLoadingRef.current && teamColumns.length > 0 && loadedRundownRef.current) {
-      setColumns(prevColumns => mergeColumnsWithTeamColumns(prevColumns));
+      // If this is the first time viewing and team columns just loaded, make them visible
+      const shouldShowTeamColumns = isFirstTimeViewRef.current;
+      setColumns(prevColumns => {
+        const merged = mergeColumnsWithTeamColumns(prevColumns, shouldShowTeamColumns);
+        
+        // Save the updated layout if team columns were made visible for first time
+        if (shouldShowTeamColumns && !isLoadingRef.current) {
+          saveColumnPreferences(merged, true);
+          isFirstTimeViewRef.current = false; // Reset after saving
+        }
+        
+        return merged;
+      });
     }
-  }, [teamColumns, mergeColumnsWithTeamColumns]);
+  }, [teamColumns, mergeColumnsWithTeamColumns, saveColumnPreferences]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
