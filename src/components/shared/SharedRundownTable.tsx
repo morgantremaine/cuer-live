@@ -5,7 +5,7 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
 import { Play, ChevronDown, ChevronRight, ExternalLink, GripVertical } from 'lucide-react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -105,13 +105,26 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   isDark = false,
   onReorderColumns
 }, ref) => {
+  // State for active dragged column
+  const [activeColumn, setActiveColumn] = useState<any | null>(null);
+  
   // Set up drag and drop sensors
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Minimum distance before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Handle drag start event
+  const handleDragStart = (event: DragStartEvent) => {
+    const column = visibleColumns.find(col => col.id === event.active.id);
+    setActiveColumn(column || null);
+  };
 
   // Handle drag end event
   const handleDragEnd = (event: any) => {
@@ -122,6 +135,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       const newIndex = visibleColumns.findIndex(col => col.id === over.id);
       onReorderColumns(oldIndex, newIndex);
     }
+    
+    setActiveColumn(null);
   };
   // State for managing expanded script/notes cells
   const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
@@ -734,6 +749,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     <DndContext 
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <style>
@@ -1290,6 +1306,36 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           </table>
         </div>
       </div>
+      
+      <DragOverlay>
+        {activeColumn ? (
+          <th 
+            className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r ${
+              isDark 
+                ? 'text-gray-300 border-gray-600 bg-gray-800' 
+                : 'text-gray-500 border-gray-200 bg-gray-50'
+            }`}
+            style={{ 
+              width: getColumnWidth(activeColumn),
+              minWidth: getColumnWidth(activeColumn),
+              maxWidth: getColumnWidth(activeColumn),
+              opacity: 0.9,
+              zIndex: 1000
+            }}
+          >
+            <div 
+              className="truncate overflow-hidden text-ellipsis whitespace-nowrap"
+              style={{
+                width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+              }}
+            >
+              {activeColumn.name}
+            </div>
+          </th>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 });
