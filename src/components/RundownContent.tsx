@@ -60,7 +60,6 @@ interface RundownContentProps {
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
   visibleItems: RundownItem[];
-  rundownId?: string;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -114,8 +113,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   toggleHeaderCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds,
-  visibleItems,
-  rundownId
+  visibleItems
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -273,7 +271,6 @@ const RundownContent = React.memo<RundownContentProps>(({
             selectedRowId={selectedRowId}
             startTime={startTime}
             columnExpandState={columnExpandState}
-            rundownId={rundownId}
             getColumnWidth={getColumnWidth}
             updateColumnWidth={updateColumnWidth}
             onUpdateItem={onUpdateItem}

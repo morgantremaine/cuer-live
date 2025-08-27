@@ -23,7 +23,6 @@ interface RundownRowProps {
   currentSegmentId?: string | null;
   isCollapsed?: boolean;
   columnExpandState?: { [columnKey: string]: boolean };
-  rundownId?: string;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -75,7 +74,6 @@ const RundownRow = (props: RundownRowProps) => {
         currentSegmentId={props.currentSegmentId}
         isCollapsed={props.isCollapsed}
         columnExpandState={props.columnExpandState}
-        rundownId={props.rundownId}
         onToggleCollapse={props.onToggleCollapse}
         onPasteRows={props.onPasteRows}
         onClearSelection={props.onClearSelection}
@@ -90,28 +88,27 @@ const RundownRow = (props: RundownRowProps) => {
   }
 
   return (
-      <RegularRow 
-        {...props} 
-        isSelected={isActuallySelected}
-        isCurrentlyPlaying={props.isCurrentlyPlaying}
-        isDraggingMultiple={props.isDraggingMultiple}
-        selectedRowsCount={props.selectedRowsCount || 1}
-        selectedRows={props.selectedRows}
-        hasClipboardData={props.hasClipboardData}
-        currentSegmentId={props.currentSegmentId}
-        columnExpandState={props.columnExpandState}
-        rundownId={props.rundownId}
-        onToggleFloat={props.onToggleFloat || (() => {})}
-        onPasteRows={props.onPasteRows}
-        onClearSelection={props.onClearSelection}
-        onAddRow={props.onAddRow}
-        onAddHeader={props.onAddHeader}
-        onJumpToHere={handleJumpToHere}
-        onDragEnd={props.onDragEnd}
-        isHeaderCollapsed={props.isHeaderCollapsed}
-        getHeaderGroupItemIds={props.getHeaderGroupItemIds}
-        allItems={props.allItems}
-      />
+    <RegularRow 
+      {...props} 
+      isSelected={isActuallySelected}
+      isCurrentlyPlaying={props.isCurrentlyPlaying}
+      isDraggingMultiple={props.isDraggingMultiple}
+      selectedRowsCount={props.selectedRowsCount || 1}
+      selectedRows={props.selectedRows}
+      hasClipboardData={props.hasClipboardData}
+      currentSegmentId={props.currentSegmentId}
+      columnExpandState={props.columnExpandState}
+      onToggleFloat={props.onToggleFloat || (() => {})}
+      onPasteRows={props.onPasteRows}
+      onClearSelection={props.onClearSelection}
+      onAddRow={props.onAddRow}
+      onAddHeader={props.onAddHeader}
+      onJumpToHere={handleJumpToHere}
+      onDragEnd={props.onDragEnd}
+      isHeaderCollapsed={props.isHeaderCollapsed}
+      getHeaderGroupItemIds={props.getHeaderGroupItemIds}
+      allItems={props.allItems}
+    />
   );
 };
 
