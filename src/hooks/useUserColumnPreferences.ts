@@ -44,14 +44,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const loadedRundownRef = useRef<string | null>(null);
 
   // Merge team custom columns with user's column layout
-  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
+  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], isFirstTimeLoad = false) => {
     const userColumnKeys = new Set(userColumns.map(col => col.key));
     const mergedColumns = [...userColumns];
 
     // Add team custom columns that aren't already in user's layout
     teamColumns.forEach(teamCol => {
       if (!userColumnKeys.has(teamCol.column_key)) {
-        // Add team columns as hidden by default - users must explicitly enable them
+        // For first-time loads, show all team columns as visible so users can see all options
+        // For subsequent loads, respect user's saved preferences (hidden by default)
         mergedColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -59,7 +60,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: false, // Hidden by default for new team columns
+          isVisible: isFirstTimeLoad, // Visible on first load, hidden otherwise
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
@@ -85,7 +86,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   // Load user's column preferences for this rundown
   const loadColumnPreferences = useCallback(async () => {
     if (!user?.id || !rundownId || isLoadingRef.current) {
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
       setColumns(mergedDefaults);
       setIsLoading(false);
       if (!rundownId) {
@@ -108,7 +109,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading column preferences:', error);
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
@@ -143,13 +144,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         setColumns(mergedColumns);
         lastSavedRef.current = JSON.stringify(fixedColumns); // Only save personal columns
       } else {
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+        // This is the first time loading this rundown - show all columns as visible
+        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
         lastSavedRef.current = JSON.stringify(defaultColumns);
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
