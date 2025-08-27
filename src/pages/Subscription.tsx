@@ -15,9 +15,9 @@ const Subscription = () => {
     <div className="min-h-screen bg-gray-900">
       <DashboardHeader onSignOut={signOut} />
       
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="space-y-8">
-          {/* Page Header */}
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold text-white">Choose Your Plan</h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
@@ -29,19 +29,21 @@ const Subscription = () => {
           <div className="max-w-2xl mx-auto">
             <SubscriptionStatus />
           </div>
+        </div>
 
-          {/* Subscription Plans - Only show for users without team access */}
-          {access_type !== 'team_member' && (
-            <div className="w-full">
-              <SubscriptionPlans 
-                interval={interval}
-                onIntervalChange={setInterval}
-              />
-            </div>
-          )}
+        {/* Subscription Plans - Full width carousel */}
+        {access_type !== 'team_member' && (
+          <div className="w-full">
+            <SubscriptionPlans 
+              interval={interval}
+              onIntervalChange={setInterval}
+            />
+          </div>
+        )}
 
-          {/* Team Member Message */}
-          {access_type === 'team_member' && (
+        {/* Team Member Message */}
+        {access_type === 'team_member' && (
+          <div className="container mx-auto px-4 max-w-6xl">
             <Card className="max-w-2xl mx-auto bg-gray-800 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white text-center">Team Member Access</CardTitle>
@@ -52,8 +54,8 @@ const Subscription = () => {
                 </p>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
