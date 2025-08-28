@@ -229,11 +229,21 @@ serve(async (req) => {
     console.log('Email will use inviter name:', safeInviterName);
     console.log('Email will use team name:', safeTeamName);
 
-    // Send email using Resend - using cuer.live domain with improved styling
+    // Get logo as base64 for email attachment
+    const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || 'https://cuer.live/cuer-logo-email.png';
+    
+    // Send email using Resend with logo attachment
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
       subject: `You're invited to join ${safeInviterName}'s team on Cuer`,
+      attachments: [
+        {
+          filename: 'cuer-logo.png',
+          content: await fetch(logoUrl).then(r => r.arrayBuffer()).then(buffer => Array.from(new Uint8Array(buffer))),
+          cid: 'cuer-logo'
+        }
+      ],
       html: `
         <!DOCTYPE html>
         <html>
@@ -283,26 +293,11 @@ serve(async (req) => {
                 margin-bottom: 30px; 
               }
               
-              .logo-container {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 10px;
-              }
-              
-              .logo-triangle {
-                color: #3b82f6 !important;
-                font-size: 24px;
-                margin-right: 8px;
-                line-height: 1;
-              }
-              
-              .logo-text {
-                font-size: 28px;
-                font-weight: bold;
-                color: #3b82f6 !important;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                line-height: 1;
+              .logo-img { 
+                height: 40px;
+                display: block;
+                margin: 0 auto 10px auto;
+                max-width: 200px;
               }
               
               h1 {
@@ -390,10 +385,7 @@ serve(async (req) => {
           <body>
             <div class="container">
               <div class="header">
-                <div class="logo-container">
-                  <div class="logo-triangle">▶</div>
-                  <div class="logo-text">Cuer</div>
-                </div>
+                <img src="cid:cuer-logo" alt="Cuer Logo" class="logo-img" />
                 <h1>You've been invited to join a team!</h1>
               </div>
               
