@@ -1,6 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 
-export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[]) => {
+export const handleSharedRundownPrint = (rundownTitle: string, items: RundownItem[], selectedColumnIds?: string[]) => {
   // Remove any existing print content
   const existingPrintContent = document.getElementById('shared-print-only-content');
   if (existingPrintContent) {
@@ -12,7 +12,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     existingPrintStyles.remove();
   }
 
-  // Find the actual rundown table to extract its structure (use same selectors as main rundown)
+  // Find the actual rundown table to extract its structure
   const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table, table');
   if (!existingTable) {
     console.error('Could not find rundown table to print');
@@ -45,7 +45,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate total runtime (use same logic as main rundown)
+  // Calculate total runtime
   const calculateTotalRuntime = () => {
     // Look for the runtime text in the header first
     const runtimeTexts = document.querySelectorAll('*');
@@ -78,7 +78,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return '00:00:00';
   };
 
-  // Get start time from the rundown header (use same logic as main rundown)
+  // Get start time from the rundown header
   const getStartTime = () => {
     // Look for the start time input in the rundown header
     const startTimeInputs = document.querySelectorAll('input[type="text"]');
@@ -113,26 +113,15 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     return;
   }
 
-  // Build the print HTML using actual table structure - keep it minimal
-  let printHTML = `<div class="print-container">
-<div class="print-header">
-<h1>${rundownTitle}</h1>
-<div class="print-info">
-<span>Start Time: ${getStartTime()}</span>
-<span>Total Runtime: ${calculateTotalRuntime()}</span>
-</div>
-</div>
-<table class="print-table">
-<thead>
-<tr>`;
-
-  // Copy header structure (use same approach as main rundown)
+  // Create column mapping for filtering
   const headerCells = headerRow.querySelectorAll('th');
-  headerCells.forEach(th => {
+  const columnMapping: { index: number; id: string; content: string }[] = [];
+  
+  headerCells.forEach((th, index) => {
     const thElement = th as HTMLElement;
-    // Get clean header text
     let content = '';
     
+    // Get clean header text
     const directText = thElement.childNodes[0]?.textContent?.trim();
     if (directText && !directText.includes('undefined')) {
       content = directText;
@@ -150,11 +139,59 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     
     content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
     
-    if (!content && headerCells[0] === th) {
+    if (!content && index === 0) {
       content = '#';
     }
     
-    printHTML += `<th>${content || ''}</th>`;
+    // Create column ID based on content
+    let columnId = content.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Map common column names to their IDs
+    const columnIdMap: { [key: string]: string } = {
+      '#': 'rowNumber',
+      'segmentname': 'name',
+      'segment': 'name', 
+      'talent': 'talent',
+      'script': 'script',
+      'gfx': 'gfx',
+      'video': 'video',
+      'images': 'images',
+      'duration': 'duration',
+      'dur': 'duration',
+      'start': 'startTime',
+      'starttime': 'startTime',
+      'end': 'endTime',
+      'endtime': 'endTime',
+      'elapsed': 'elapsedTime',
+      'elapsedtime': 'elapsedTime'
+    };
+    
+    columnId = columnIdMap[columnId] || columnId || `column-${index}`;
+    
+    columnMapping.push({ index, id: columnId, content });
+  });
+
+  // Filter columns if selectedColumnIds is provided
+  const visibleColumns = selectedColumnIds 
+    ? columnMapping.filter(col => col.index === 0 || selectedColumnIds.includes(col.id)) // Always include first column (row numbers)
+    : columnMapping;
+
+  // Build the print HTML
+  let printHTML = `<div class="print-container">
+<div class="print-header">
+<h1>${rundownTitle}</h1>
+<div class="print-info">
+<span>Start Time: ${getStartTime()}</span>
+<span>Total Runtime: ${calculateTotalRuntime()}</span>
+</div>
+</div>
+<table class="print-table">
+<thead>
+<tr>`;
+
+  // Add headers for visible columns only
+  visibleColumns.forEach(col => {
+    printHTML += `<th>${col.content || ''}</th>`;
   });
 
   printHTML += `</tr>
@@ -209,82 +246,89 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
     printHTML += `<tr class="${rowClass}" style="background-color: ${backgroundColor};">`;
     
     const cells = rowElement.querySelectorAll('td');
-    cells.forEach((cell, cellIndex) => {
-      const cellElement = cell as HTMLElement;
-      
-      // Extract clean content from the cell
-      let content = '';
-      
-      // For first cell (row number), look for specific content
-      if (cellIndex === 0) {
-        const rowNumberSpan = cellElement.querySelector('span');
-        if (rowNumberSpan) {
-          content = rowNumberSpan.textContent?.trim() || '';
-        } else {
-          content = cellElement.textContent?.trim() || '';
-        }
-      } else {
-        // For other cells, look for input/textarea values first, then text content
-        const input = cellElement.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement;
-        if (input && input.value) {
-          content = input.value.trim();
-        } else {
-          // Get text content but exclude button text, icons, and screen-only duration
-          const clone = cellElement.cloneNode(true) as HTMLElement;
-          clone.querySelectorAll('button, .lucide, [role="button"], .screen-only-duration').forEach(el => el.remove());
-          content = clone.textContent?.trim() || '';
-          
-          // For header rows in name columns, also remove any duration in parentheses
-          if (dataType === 'header') {
-            const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
-            if (headerText.includes('segment') || headerText.includes('name')) {
-              content = content.replace(/\s*\([^)]*\)\s*$/, '').trim();
-            }
+    
+    // Add cells for visible columns only
+    visibleColumns.forEach(col => {
+      const cell = cells[col.index];
+      if (cell) {
+        const cellElement = cell as HTMLElement;
+        
+        // Extract clean content from the cell
+        let content = '';
+        
+        // For first cell (row number), look for specific content
+        if (col.index === 0) {
+          const rowNumberSpan = cellElement.querySelector('span');
+          if (rowNumberSpan) {
+            content = rowNumberSpan.textContent?.trim() || '';
+          } else {
+            content = cellElement.textContent?.trim() || '';
           }
-        }
-      }
-      
-      // For header rows, extract duration from appropriate source
-      if (dataType === 'header') {
-        const headerText = headerCells[cellIndex]?.textContent?.toLowerCase() || '';
-        if (headerText.includes('duration') || headerText.includes('dur')) {
-          // Try to get duration from the current duration column (which has print-only span)
-          let foundContent = false;
-          
-          // Look for print-only content in the current duration cell
-          const printOnlySpan = cellElement.querySelector('.print\\:inline-block, [class*="print:inline-block"]');
-          if (printOnlySpan && printOnlySpan.textContent) {
-            const spanText = printOnlySpan.textContent.trim();
-            if (spanText && spanText.match(/\d{2}:\d{2}:\d{2}/)) {
-              content = spanText;
-              foundContent = true;
-            }
-          }
-          
-          // Fallback: extract duration from header name in first column
-          if (!foundContent) {
-            const headerRow = cellElement.closest('tr');
-            const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
+        } else {
+          // For other cells, look for input/textarea values first, then text content
+          const input = cellElement.querySelector('input, textarea') as HTMLInputElement | HTMLTextAreaElement;
+          if (input && input.value) {
+            content = input.value.trim();
+          } else {
+            // Get text content but exclude button text, icons, and screen-only duration
+            const clone = cellElement.cloneNode(true) as HTMLElement;
+            clone.querySelectorAll('button, .lucide, [role="button"], .screen-only-duration').forEach(el => el.remove());
+            content = clone.textContent?.trim() || '';
             
-            if (firstCell) {
-              const firstCellText = firstCell.textContent || '';
-              const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
-              if (durationMatch) {
-                content = durationMatch[1];
+            // For header rows in name columns, also remove any duration in parentheses
+            if (dataType === 'header') {
+              const headerText = col.content.toLowerCase();
+              if (headerText.includes('segment') || headerText.includes('name')) {
+                content = content.replace(/\s*\([^)]*\)\s*$/, '').trim();
+              }
+            }
+          }
+        }
+        
+        // For header rows, extract duration from appropriate source
+        if (dataType === 'header') {
+          const headerText = col.content.toLowerCase();
+          if (headerText.includes('duration') || headerText.includes('dur')) {
+            // Try to get duration from the current duration column (which has print-only span)
+            let foundContent = false;
+            
+            // Look for print-only content in the current duration cell
+            const printOnlySpan = cellElement.querySelector('.print\\:inline-block, [class*="print:inline-block"]');
+            if (printOnlySpan && printOnlySpan.textContent) {
+              const spanText = printOnlySpan.textContent.trim();
+              if (spanText && spanText.match(/\d{2}:\d{2}:\d{2}/)) {
+                content = spanText;
+                foundContent = true;
+              }
+            }
+            
+            // Fallback: extract duration from header name in first column
+            if (!foundContent) {
+              const headerRow = cellElement.closest('tr');
+              const firstCell = headerRow?.querySelector('td:first-child, th:first-child');
+              
+              if (firstCell) {
+                const firstCellText = firstCell.textContent || '';
+                const durationMatch = firstCellText.match(/\((\d{2}:\d{2}:\d{2})\)/);
+                if (durationMatch) {
+                  content = durationMatch[1];
+                } else {
+                  content = '00:00:00';
+                }
               } else {
                 content = '00:00:00';
               }
-            } else {
-              content = '00:00:00';
             }
           }
         }
+        
+        // Clean up content
+        content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+        
+        printHTML += `<td>${content}</td>`;
+      } else {
+        printHTML += `<td></td>`;
       }
-      
-      // Clean up content
-      content = content.replace(/\s+/g, ' ').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-      
-      printHTML += `<td>${content}</td>`;
     });
     
     printHTML += `</tr>`;

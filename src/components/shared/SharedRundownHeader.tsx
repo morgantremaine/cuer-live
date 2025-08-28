@@ -3,7 +3,7 @@ import { Clock, Palette, Sun, Moon, Play, Pause, MapPin, Printer } from 'lucide-
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import CuerLogo from '@/components/common/CuerLogo';
-import { handleSharedRundownPrint } from '@/utils/sharedRundownPrint';
+import { SharedRundownPrintDialog } from './SharedRundownPrintDialog';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -17,7 +17,8 @@ interface SharedRundownHeaderProps {
   onToggleTheme: () => void;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
-  items?: any[]; // Add items prop for runtime calculation
+  items?: any[];
+  columns?: any[]; // Add columns prop for print dialog
 }
 
 export const SharedRundownHeader = ({
@@ -32,7 +33,8 @@ export const SharedRundownHeader = ({
   onToggleTheme,
   autoScrollEnabled = false,
   onToggleAutoScroll,
-  items = []
+  items = [],
+  columns = []
 }: SharedRundownHeaderProps) => {
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
@@ -112,21 +114,12 @@ export const SharedRundownHeader = ({
                 </div>
               )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // Use the same print logic as the main rundown
-                  handleSharedRundownPrint(title, items);
-                }}
-                className={`${
-                  isDark 
-                    ? 'border-gray-600 hover:bg-gray-700' 
-                    : 'border-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                <Printer className="h-4 w-4" />
-              </Button>
+              <SharedRundownPrintDialog 
+                title={title}
+                items={items}
+                columns={columns}
+                isDark={isDark}
+              />
               
               <Button
                 variant="outline"
