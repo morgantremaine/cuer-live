@@ -122,7 +122,8 @@ const DashboardRundownGrid = ({
 
   const calculateTotalDuration = (items: RundownItem[]) => {
     const totalSeconds = items.reduce((total, item) => {
-      if (item.duration && item.type !== 'header') {
+      // Skip header items and floated items (same logic as main rundown)
+      if (item.duration && item.type !== 'header' && !item.isFloating && !item.isFloated) {
         const [minutes, seconds] = item.duration.split(':').map(Number)
         return total + (minutes * 60) + seconds
       }
