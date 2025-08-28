@@ -229,21 +229,13 @@ serve(async (req) => {
     console.log('Email will use inviter name:', safeInviterName);
     console.log('Email will use team name:', safeTeamName);
 
-    // Get logo as base64 for email attachment
-    const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || 'https://cuer.live/cuer-logo-email.png';
+    const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || `${siteUrl}/cuer-logo.svg`;
     
-    // Send email using Resend with logo attachment
+    // Send email using Resend - using cuer.live domain with improved styling
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
       subject: `You're invited to join ${safeInviterName}'s team on Cuer`,
-      attachments: [
-        {
-          filename: 'cuer-logo.png',
-          content: await fetch(logoUrl).then(r => r.arrayBuffer()).then(buffer => Array.from(new Uint8Array(buffer))),
-          cid: 'cuer-logo'
-        }
-      ],
       html: `
         <!DOCTYPE html>
         <html>
@@ -385,7 +377,7 @@ serve(async (req) => {
           <body>
             <div class="container">
               <div class="header">
-                <img src="cid:cuer-logo" alt="Cuer Logo" class="logo-img" />
+                <img src="${logoUrl}" alt="Cuer Logo" class="logo-img" />
                 <h1>You've been invited to join a team!</h1>
               </div>
               
