@@ -12,7 +12,7 @@ import CuerLogo from '@/components/common/CuerLogo'
 const Login = () => {
   // Separate form states for clarity
   const [signInData, setSignInData] = useState({ email: '', password: '' })
-  const [signUpData, setSignUpData] = useState({ email: '', password: '', fullName: '', agreeToTerms: false })
+  const [signUpData, setSignUpData] = useState({ email: '', password: '', confirmPassword: '', fullName: '', agreeToTerms: false })
   const [resetEmail, setResetEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResetForm, setShowResetForm] = useState(false)
@@ -63,6 +63,15 @@ const Login = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (signUpData.password !== signUpData.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
+        variant: 'destructive',
+      })
+      return
+    }
+    
     if (!signUpData.agreeToTerms) {
       toast({
         title: 'Error',
@@ -86,7 +95,7 @@ const Login = () => {
       } else {
         setShowEmailConfirmation(true)
         // Clear form on success
-        setSignUpData({ email: '', password: '', fullName: '', agreeToTerms: false })
+        setSignUpData({ email: '', password: '', confirmPassword: '', fullName: '', agreeToTerms: false })
       }
     } catch (err) {
       toast({
@@ -327,6 +336,19 @@ const Login = () => {
                         type="password"
                         value={signUpData.password}
                         onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                        autoComplete="new-password"
+                        required
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm-password" className="text-gray-300">Confirm Password</Label>
+                      <Input
+                        id="signup-confirm-password"
+                        name="confirmPassword"
+                        type="password"
+                        value={signUpData.confirmPassword}
+                        onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
                         autoComplete="new-password"
                         required
                         className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500"
