@@ -126,9 +126,9 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 <thead>
 <tr>`;
 
-  // Copy header structure with proper column sizing
+  // Copy header structure (use same approach as main rundown)
   const headerCells = headerRow.querySelectorAll('th');
-  headerCells.forEach((th, index) => {
+  headerCells.forEach(th => {
     const thElement = th as HTMLElement;
     // Get clean header text
     let content = '';
@@ -154,26 +154,7 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       content = '#';
     }
     
-    // Determine column width based on content type
-    let columnStyle = '';
-    const lowerContent = content.toLowerCase();
-    
-    if (content === '#' || index === 0) {
-      columnStyle = 'width: 25px; max-width: 25px; white-space: nowrap;';
-    } else if (lowerContent.includes('duration') || lowerContent.includes('start') || lowerContent.includes('end') || lowerContent.includes('elapsed')) {
-      columnStyle = 'width: 50px; max-width: 50px; white-space: nowrap;';
-    } else if (lowerContent.includes('talent') || lowerContent.includes('stage') || lowerContent.includes('source') || lowerContent.includes('gfx') || lowerContent.includes('camera') || lowerContent.includes('audio') || lowerContent.includes('video')) {
-      columnStyle = 'width: 60px; max-width: 60px; white-space: nowrap;';
-    } else if (lowerContent.includes('script') || lowerContent.includes('content') || lowerContent.includes('notes') || lowerContent.includes('description')) {
-      columnStyle = 'min-width: 200px; width: auto;';
-    } else if (lowerContent.includes('segment') || lowerContent.includes('name') || lowerContent.includes('title')) {
-      columnStyle = 'width: 120px; max-width: 120px;';
-    } else {
-      // For other columns, use minimal width
-      columnStyle = 'width: 40px; max-width: 40px; white-space: nowrap;';
-    }
-    
-    printHTML += `<th style="${columnStyle}">${content || ''}</th>`;
+    printHTML += `<th>${content || ''}</th>`;
   });
 
   printHTML += `</tr>
@@ -386,19 +367,17 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
       #shared-print-only-content .print-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        font-size: 18px !important;
+        font-size: 10px !important;
         background: white !important;
         table-layout: auto !important;
-        page-break-before: avoid !important;
-        page-break-after: avoid !important;
       }
 
       #shared-print-only-content .print-table th {
-        background: #f9f9f9 !important;
+        background: #f5f5f5 !important;
         border: 1px solid #333 !important;
-        padding: 10px 8px !important;
+        padding: 6px 4px !important;
         font-weight: bold !important;
-        font-size: 16px !important;
+        font-size: 9px !important;
         text-align: left !important;
         color: black !important;
         -webkit-print-color-adjust: exact !important;
@@ -407,12 +386,12 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
       #shared-print-only-content .print-table td {
         border: 1px solid #666 !important;
-        padding: 8px !important;
+        padding: 4px !important;
         vertical-align: top !important;
         word-wrap: break-word !important;
         color: black !important;
-        font-size: 16px !important;
-        line-height: 1.4 !important;
+        font-size: 9px !important;
+        line-height: 1.3 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -425,12 +404,8 @@ export const handleSharedRundownPrint = (rundownTitle: string, items: RundownIte
 
       #shared-print-only-content .header-row td {
         font-weight: bold !important;
-        font-size: 18px !important;
-        padding: 12px 8px !important;
-        background: #f5f5f5 !important;
-        color: black !important;
-        border-top: 1px solid #999 !important;
-        border-bottom: 1px solid #999 !important;
+        font-size: 11px !important;
+        padding: 8px 4px !important;
         border-left: none !important;
         border-right: none !important;
         white-space: nowrap !important;
