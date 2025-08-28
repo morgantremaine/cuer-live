@@ -229,7 +229,7 @@ serve(async (req) => {
     console.log('Email will use inviter name:', safeInviterName);
     console.log('Email will use team name:', safeTeamName);
 
-    const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || `${siteUrl}/cuer-logo.svg`;
+    const logoUrl = Deno.env.get('EMAIL_LOGO_URL') || `${siteUrl}/cuer-logo-email.png`;
     
     // Send email using Resend - using cuer.live domain with improved styling
     const emailResult = await resend.emails.send({
@@ -286,10 +286,10 @@ serve(async (req) => {
               }
               
               .logo-img { 
-                height: 40px;
+                height: 48px;
                 display: block;
-                margin: 0 auto 10px auto;
-                max-width: 200px;
+                margin: 0 auto 12px auto;
+                max-width: 240px;
               }
               
               h1 {
