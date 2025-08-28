@@ -283,7 +283,7 @@ serve(async (req) => {
                 margin-bottom: 30px; 
               }
               
-              .logo-image { 
+              .logo-svg { 
                 height: 40px;
                 display: block;
                 margin: 0 auto 10px auto;
@@ -374,7 +374,10 @@ serve(async (req) => {
           <body>
             <div class="container">
               <div class="header">
-                <img src="${siteUrl}/cuer-logo.svg" alt="Cuer" style="height: 40px; margin-bottom: 10px;" class="logo-image">
+                <svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
+                  <polygon points="8,8 8,32 28,20" fill="#3b82f6"/>
+                  <text x="36" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="bold" fill="#333333">Cuer</text>
+                </svg>
                 <h1>You've been invited to join a team!</h1>
               </div>
               
