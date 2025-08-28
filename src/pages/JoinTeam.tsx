@@ -25,6 +25,7 @@ const JoinTeam = () => {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -221,6 +222,15 @@ const JoinTeam = () => {
       toast({
         title: 'Error',
         description: 'You must agree to the Terms of Service and Privacy Policy to create an account.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Passwords do not match',
         variant: 'destructive',
       });
       return;
@@ -450,6 +460,19 @@ const JoinTeam = () => {
                         minLength={6}
                         className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                         placeholder="Create a password"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-gray-300">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                        placeholder="Confirm your password"
                       />
                     </div>
                     <div className="flex items-start space-x-2">
