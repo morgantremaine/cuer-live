@@ -283,13 +283,10 @@ serve(async (req) => {
                 margin-bottom: 30px; 
               }
               
-              .logo { 
-                font-size: 28px; 
-                font-weight: bold; 
-                color: #3b82f6 !important;
-                text-decoration: none;
-                display: inline-block;
-                margin-bottom: 10px;
+              .logo-image { 
+                height: 40px;
+                display: block;
+                margin: 0 auto 10px auto;
               }
               
               h1 {
@@ -377,7 +374,7 @@ serve(async (req) => {
           <body>
             <div class="container">
               <div class="header">
-                <div class="logo">Cuer</div>
+                <img src="${siteUrl}/cuer-logo.svg" alt="Cuer" style="height: 40px; margin-bottom: 10px;" class="logo-image">
                 <h1>You've been invited to join a team!</h1>
               </div>
               
