@@ -283,10 +283,26 @@ serve(async (req) => {
                 margin-bottom: 30px; 
               }
               
-              .logo-svg { 
-                height: 40px;
-                display: block;
-                margin: 0 auto 10px auto;
+              .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 10px;
+              }
+              
+              .logo-triangle {
+                color: #3b82f6 !important;
+                font-size: 24px;
+                margin-right: 8px;
+                line-height: 1;
+              }
+              
+              .logo-text {
+                font-size: 28px;
+                font-weight: bold;
+                color: #3b82f6 !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                line-height: 1;
               }
               
               h1 {
@@ -374,10 +390,10 @@ serve(async (req) => {
           <body>
             <div class="container">
               <div class="header">
-                <svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg" style="height: 40px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-                  <polygon points="8,8 8,32 28,20" fill="#3b82f6"/>
-                  <text x="36" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="bold" fill="#333333">Cuer</text>
-                </svg>
+                <div class="logo-container">
+                  <div class="logo-triangle">▶</div>
+                  <div class="logo-text">Cuer</div>
+                </div>
                 <h1>You've been invited to join a team!</h1>
               </div>
               
