@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 
 interface DateTimePickerProps {
-  value?: string; // HH:MM:SS format
+  value?: string; // ISO datetime string or HH:MM:SS format for backwards compatibility
   onValueChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
@@ -31,13 +31,28 @@ export function DateTimePicker({
   // Initialize from existing value
   React.useEffect(() => {
     if (value && value !== "00:00:00") {
-      // If we have a time value, use today's date with that time
-      const today = new Date();
-      const [hours, minutes] = value.split(':').map(Number);
-      const dateWithTime = new Date(today);
-      dateWithTime.setHours(hours || 0, minutes || 0, 0, 0);
-      setSelectedDate(dateWithTime);
-      setTimeValue(`${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`);
+      try {
+        // Try parsing as ISO datetime first
+        const parsedDate = new Date(value);
+        if (!isNaN(parsedDate.getTime()) && value.includes('T')) {
+          // It's a full datetime
+          setSelectedDate(parsedDate);
+          setTimeValue(format(parsedDate, 'HH:mm'));
+        } else if (value.match(/^\d{2}:\d{2}:\d{2}$/)) {
+          // It's just time format - use today's date
+          const today = new Date();
+          const [hours, minutes] = value.split(':').map(Number);
+          const dateWithTime = new Date(today);
+          dateWithTime.setHours(hours || 0, minutes || 0, 0, 0);
+          setSelectedDate(dateWithTime);
+          setTimeValue(`${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`);
+        }
+      } catch (error) {
+        // Fallback to current date and time
+        const now = new Date();
+        setSelectedDate(now);
+        setTimeValue(format(now, 'HH:mm'));
+      }
     } else {
       // Default to current date and time
       const now = new Date();
@@ -91,20 +106,33 @@ export function DateTimePicker({
     }
     
     setTimeValue(formattedTime);
-    // Convert to HH:MM:SS format for the callback (add :00 seconds)
-    onValueChange?.(`${formattedTime}:00`);
+    
+    // Update selectedDate with the new time
+    if (selectedDate) {
+      const [hours, minutes] = formattedTime.split(':').map(Number);
+      const newDateTime = new Date(selectedDate);
+      newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
+      setSelectedDate(newDateTime);
+      
+      // Return full datetime as ISO string
+      onValueChange?.(newDateTime.toISOString());
+    }
   };
 
   const handleApply = () => {
-    // Convert to HH:MM:SS format for the callback (add :00 seconds)
-    onValueChange?.(`${timeValue}:00`);
+    if (selectedDate) {
+      // Return full datetime as ISO string
+      onValueChange?.(selectedDate.toISOString());
+    }
     setOpen(false);
   };
 
   const displayText = React.useMemo(() => {
     if (!selectedDate) return placeholder;
     
-    const dateStr = format(selectedDate, "MMM d");
+    const today = new Date();
+    const isToday = selectedDate.toDateString() === today.toDateString();
+    const dateStr = isToday ? "Today" : format(selectedDate, "MMM d, yyyy");
     return `${dateStr} at ${timeValue}`;
   }, [selectedDate, timeValue, placeholder]);
 
