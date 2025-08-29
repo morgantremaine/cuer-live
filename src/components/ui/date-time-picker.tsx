@@ -63,26 +63,33 @@ export function DateTimePicker({
   }, [value]);
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
+    if (!date || !isValid(date)) return;
     
     // Preserve the current time when date changes
     const [hours, minutes] = timeValue.split(':').map(Number);
     const newDateTime = new Date(date);
     newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
     
-    setSelectedDate(newDateTime);
+    // Only set if the resulting datetime is valid
+    if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
+      setSelectedDate(newDateTime);
+    }
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTimeValue = e.target.value;
     setTimeValue(newTimeValue);
     
-    if (selectedDate) {
+    if (selectedDate && isValid(selectedDate)) {
       // Update the selected date with new time
       const [hours, minutes] = newTimeValue.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
       newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
-      setSelectedDate(newDateTime);
+      
+      // Only update if the resulting datetime is valid
+      if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
+        setSelectedDate(newDateTime);
+      }
     }
   };
 
@@ -108,20 +115,22 @@ export function DateTimePicker({
     setTimeValue(formattedTime);
     
     // Update selectedDate with the new time
-    if (selectedDate) {
+    if (selectedDate && isValid(selectedDate)) {
       const [hours, minutes] = formattedTime.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
       newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
-      setSelectedDate(newDateTime);
       
-      // Return full datetime as ISO string
-      onValueChange?.(newDateTime.toISOString());
+      // Validate the new datetime before setting and calling onChange
+      if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
+        setSelectedDate(newDateTime);
+        onValueChange?.(newDateTime.toISOString());
+      }
     }
   };
 
   const handleApply = () => {
-    if (selectedDate) {
-      // Return full datetime as ISO string
+    if (selectedDate && isValid(selectedDate) && !isNaN(selectedDate.getTime())) {
+      // Return full datetime as ISO string only if date is valid
       onValueChange?.(selectedDate.toISOString());
     }
     setOpen(false);
