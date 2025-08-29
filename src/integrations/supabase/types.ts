@@ -240,6 +240,72 @@ export type Database = {
         }
         Relationships: []
       }
+      rundown_recovery_backup: {
+        Row: {
+          archived: boolean | null
+          columns: Json | null
+          created_at: string | null
+          external_notes: Json | null
+          folder_id: string | null
+          icon: string | null
+          id: string | null
+          items: Json | null
+          last_updated_by: string | null
+          logo_url: string | null
+          showcaller_state: Json | null
+          start_time: string | null
+          team_id: string | null
+          timezone: string | null
+          title: string | null
+          undo_history: Json | null
+          updated_at: string | null
+          user_id: string | null
+          visibility: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          columns?: Json | null
+          created_at?: string | null
+          external_notes?: Json | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string | null
+          items?: Json | null
+          last_updated_by?: string | null
+          logo_url?: string | null
+          showcaller_state?: Json | null
+          start_time?: string | null
+          team_id?: string | null
+          timezone?: string | null
+          title?: string | null
+          undo_history?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          columns?: Json | null
+          created_at?: string | null
+          external_notes?: Json | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string | null
+          items?: Json | null
+          last_updated_by?: string | null
+          logo_url?: string | null
+          showcaller_state?: Json | null
+          start_time?: string | null
+          team_id?: string | null
+          timezone?: string | null
+          title?: string | null
+          undo_history?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+        }
+        Relationships: []
+      }
       rundowns: {
         Row: {
           archived: boolean
