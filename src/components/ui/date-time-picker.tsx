@@ -16,13 +16,15 @@ interface DateTimePickerProps {
   onValueChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  storageKey?: string; // Optional key to persist/retrieve full ISO between renders
 }
 
 export function DateTimePicker({
   value,
   onValueChange,
   placeholder = "Select date & time",
-  className
+  className,
+  storageKey
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<Date>();
@@ -39,10 +41,21 @@ export function DateTimePicker({
           setSelectedDate(parsedDate);
           setTimeValue(format(parsedDate, 'HH:mm'));
         } else if (value.match(/^\d{2}:\d{2}:\d{2}$/)) {
-          // It's just time format - use today's date
-          const today = new Date();
+          // It's just time format - try to use persisted date if available, otherwise use today
           const [hours, minutes] = value.split(':').map(Number);
-          const dateWithTime = new Date(today);
+          let baseDate = new Date();
+          try {
+            if (storageKey) {
+              const storedISO = localStorage.getItem(storageKey);
+              if (storedISO) {
+                const persisted = new Date(storedISO);
+                if (!isNaN(persisted.getTime())) {
+                  baseDate = persisted;
+                }
+              }
+            }
+          } catch {}
+          const dateWithTime = new Date(baseDate);
           dateWithTime.setHours(hours || 0, minutes || 0, 0, 0);
           setSelectedDate(dateWithTime);
           setTimeValue(`${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`);
@@ -74,6 +87,8 @@ export function DateTimePicker({
     // Only set if the resulting datetime is valid
     if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
       setSelectedDate(newDateTime);
+      // Persist selection locally if a storageKey is provided
+      try { if (storageKey) localStorage.setItem(storageKey, newDateTime.toISOString()); } catch {}
       // Trigger autosave immediately when date is selected
       onValueChange?.(newDateTime.toISOString());
     }
@@ -126,6 +141,7 @@ export function DateTimePicker({
       // Validate the new datetime before setting and calling onChange
       if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
         setSelectedDate(newDateTime);
+        try { if (storageKey) localStorage.setItem(storageKey, newDateTime.toISOString()); } catch {}
         onValueChange?.(newDateTime.toISOString());
       }
     }
@@ -134,6 +150,7 @@ export function DateTimePicker({
   const handleApply = () => {
     if (selectedDate && isValid(selectedDate) && !isNaN(selectedDate.getTime())) {
       // Return full datetime as ISO string only if date is valid
+      try { if (storageKey) localStorage.setItem(storageKey, selectedDate.toISOString()); } catch {}
       onValueChange?.(selectedDate.toISOString());
     }
     setOpen(false);

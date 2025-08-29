@@ -296,6 +296,7 @@ const RundownHeader = ({
                   handleStartDateChangeISO(isoDateTime);
                   onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
                 }}
+                storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
                 className="text-sm bg-transparent font-mono"
               />
             </div>
@@ -388,6 +389,7 @@ const RundownHeader = ({
                 handleStartDateChangeISO(isoDateTime);
                 onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
               }}
+              storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
               className="bg-transparent text-sm font-mono"
             />
           </div>

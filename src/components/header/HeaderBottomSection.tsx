@@ -82,6 +82,7 @@ const HeaderBottomSection = ({
               setLocalStartTime(timeOnly);
               onRundownStartTimeChange(timeOnly);
             }}
+            storageKey={routeRundownId ? `rundown:${routeRundownId}:start_time` : undefined}
             className="bg-transparent text-sm font-mono"
           />
         </div>
