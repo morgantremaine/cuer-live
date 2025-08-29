@@ -339,7 +339,7 @@ const Dashboard = () => {
       case 'all':
         return 'All Rundowns';
       case 'recent':
-        return 'Recently Active';
+        return 'Recent';
       case 'archived':
         return 'Archived Rundowns';
       case 'custom':
