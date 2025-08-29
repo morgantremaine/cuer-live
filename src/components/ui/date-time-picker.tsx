@@ -132,7 +132,7 @@ export function DateTimePicker({
     
     const today = new Date();
     const isToday = selectedDate.toDateString() === today.toDateString();
-    const dateStr = isToday ? "Today" : format(selectedDate, "MMM d, yyyy");
+    const dateStr = isToday ? "Today" : format(selectedDate, "MMM d");
     return `${dateStr} at ${timeValue}`;
   }, [selectedDate, timeValue, placeholder]);
 
