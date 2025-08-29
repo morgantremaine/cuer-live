@@ -5,6 +5,7 @@ import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 
 interface HeaderBottomSectionProps {
   totalRuntime: string;
@@ -58,9 +59,10 @@ const HeaderBottomSection = ({
           <span className="opacity-75">Start Time:</span>
           <DateTimePicker
             value={localStartTime}
-            onValueChange={(newTime) => {
-              setLocalStartTime(newTime);
-              onRundownStartTimeChange(newTime);
+            onValueChange={(isoDateTime) => {
+              const timeOnly = extractTimeFromISO(isoDateTime);
+              setLocalStartTime(timeOnly);
+              onRundownStartTimeChange(timeOnly);
             }}
             className="bg-transparent text-sm font-mono"
           />

@@ -10,6 +10,7 @@ import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -277,7 +278,7 @@ const RundownHeader = ({
               <span>Start:</span>
               <DateTimePicker
                 value={rundownStartTime}
-                onValueChange={onRundownStartTimeChange}
+                onValueChange={(isoDateTime) => onRundownStartTimeChange(extractTimeFromISO(isoDateTime))}
                 className="text-sm bg-transparent font-mono"
               />
             </div>
@@ -366,7 +367,7 @@ const RundownHeader = ({
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
             <DateTimePicker
               value={rundownStartTime}
-              onValueChange={onRundownStartTimeChange}
+              onValueChange={(isoDateTime) => onRundownStartTimeChange(extractTimeFromISO(isoDateTime))}
               className="bg-transparent text-sm font-mono"
             />
           </div>

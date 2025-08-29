@@ -63,6 +63,31 @@ export const getCurrentTimestamp = (): string => {
   return new Date().toISOString();
 };
 
+export const extractTimeFromISO = (isoString: string): string => {
+  try {
+    // If it's already in HH:MM:SS format, return as-is
+    if (isoString && isoString.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+      return isoString.length === 5 ? `${isoString}:00` : isoString;
+    }
+    
+    // If it's an ISO datetime string, extract the time portion
+    if (isoString && isoString.includes('T')) {
+      const date = new Date(isoString);
+      if (!isNaN(date.getTime())) {
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`;
+      }
+    }
+    
+    // Fallback to default time
+    return '09:00:00';
+  } catch (error) {
+    return '09:00:00';
+  }
+};
+
 export const isValidTimeFormat = (timeStr: string): boolean => {
   if (!timeStr || typeof timeStr !== 'string') return false;
   
