@@ -6,6 +6,22 @@
 export const timeToSeconds = (timeStr: string): number => {
   if (!timeStr || typeof timeStr !== 'string') return 0;
   
+  // Handle ISO datetime strings - extract time portion
+  if (timeStr.includes('T')) {
+    try {
+      const date = new Date(timeStr);
+      if (!isNaN(date.getTime())) {
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const seconds = date.getSeconds();
+        return Math.floor(hours * 3600 + minutes * 60 + seconds);
+      }
+    } catch (error) {
+      // Fall through to original parsing
+    }
+  }
+  
+  // Handle traditional HH:MM:SS or HH:MM format
   const parts = timeStr.split(':').map(Number);
   
   if (parts.some(isNaN)) return 0;
