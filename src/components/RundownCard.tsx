@@ -17,6 +17,7 @@ interface SavedRundown {
   items: RundownItem[]
   created_at: string
   updated_at: string
+  start_time?: string
   archived?: boolean
 }
 
@@ -123,15 +124,12 @@ const RundownCard = ({
             <CardTitle className="text-lg flex items-center text-white">
               {rundown.title}
             </CardTitle>
-            <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1" />
-                Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-1" />
-                Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
-              </div>
+            <CardDescription className="flex items-center text-sm text-gray-400">
+              <Calendar className="h-4 w-4 mr-1" />
+              {rundown.start_time 
+                ? format(new Date(rundown.start_time), 'MMM d, yyyy')
+                : format(new Date(rundown.created_at), 'MMM d, yyyy')
+              }
             </CardDescription>
           </div>
           <DropdownMenu>
@@ -187,13 +185,18 @@ const RundownCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex items-center text-sm text-gray-400">
-            {(() => {
-              const items = rundown.items || [];
-              const headers = items.filter(item => item.type === 'header').length;
-              const segments = items.filter(item => item.type !== 'header').length;
-              return `${headers} headers, ${segments} segments`;
-            })()}
+          <div className="flex flex-col gap-1 text-sm text-gray-400">
+            <div>
+              {(() => {
+                const items = rundown.items || [];
+                const headers = items.filter(item => item.type === 'header').length;
+                const segments = items.filter(item => item.type !== 'header').length;
+                return `${headers} headers, ${segments} segments`;
+              })()}
+            </div>
+            <div className="text-xs">
+              Last edited: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button 
