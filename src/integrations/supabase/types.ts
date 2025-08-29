@@ -994,6 +994,14 @@ export type Database = {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
       }
+      update_column_layouts_on_team_column_rename: {
+        Args: {
+          new_column_name: string
+          old_column_key: string
+          team_uuid: string
+        }
+        Returns: undefined
+      }
       update_rundown_presence: {
         Args: { rundown_uuid: string }
         Returns: undefined
