@@ -177,12 +177,14 @@ export const useSimpleAutoSave = (
 
         if (error) {
           console.error('❌ Save failed:', error);
+          debugLogger.autosave('Save failed with error', error);
           toast({
             title: "Save failed",
             description: "Unable to save changes. Will retry automatically.",
             variant: "destructive",
             duration: 3000,
           });
+          // Don't return here - we still want to set lastSavedRef and call onSaved on successful response
         } else {
           // Track the actual timestamp returned by the database
           if (data?.updated_at) {
@@ -193,16 +195,19 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           onSaved();
+          debugLogger.autosave('Save successful for existing rundown');
         }
       }
     } catch (error) {
       console.error('❌ Save error:', error);
+      debugLogger.autosave('Save threw exception', error);
       toast({
         title: "Save failed", 
         description: "Unable to save changes. Will retry automatically.",
         variant: "destructive",
         duration: 3000,
       });
+      // Don't modify lastSavedRef or call onSaved on error
     } finally {
       setIsSaving(false);
       
@@ -292,6 +297,7 @@ export const useSimpleAutoSave = (
         // Double-check if save is still needed after cooldown
         const latestSignature = createContentSignature();
         if (latestSignature !== lastSavedRef.current && !undoActiveRef.current) {
+          debugLogger.autosave('Executing delayed save after cooldown');
           await performSave();
         }
       }, cooldownRemaining + 100); // Small buffer after cooldown expires
@@ -307,6 +313,7 @@ export const useSimpleAutoSave = (
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
+      debugLogger.autosave('Executing scheduled save');
       await performSave();
     }, debounceTime);
 
