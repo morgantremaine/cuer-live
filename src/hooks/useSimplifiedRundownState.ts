@@ -793,19 +793,22 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      // Track start time editing for protection
-      recentlyEditedFieldsRef.current.set('startTime', Date.now());
-      typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
-      
-      actions.setStartTime(newStartTime);
-      
-      // Clear typing session after delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'startTime') {
-          typingSessionRef.current = null;
-        }
-      }, 5000); // Extended timeout for start time editing
-    }, [actions.setStartTime]),
+      if (state.startTime !== newStartTime) {
+        // Track start time editing for protection
+        recentlyEditedFieldsRef.current.set('startTime', Date.now());
+        typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
+        
+        saveUndoState(state.items, [], state.title, 'Change start time');
+        actions.setStartTime(newStartTime);
+        
+        // Clear typing session after delay
+        setTimeout(() => {
+          if (typingSessionRef.current?.fieldKey === 'startTime') {
+            typingSessionRef.current = null;
+          }
+        }, 5000); // Extended timeout for start time editing
+      }
+    }, [actions.setStartTime, state.startTime, state.items, state.title, saveUndoState]),
     setTimezone: useCallback((newTimezone: string) => {
       // Track timezone editing for protection
       recentlyEditedFieldsRef.current.set('timezone', Date.now());
