@@ -28,7 +28,7 @@ export function DateTimePicker({
   const [selectedDate, setSelectedDate] = React.useState<Date>();
   const [timeValue, setTimeValue] = React.useState("00:00");
 
-  // Initialize from existing value
+  // Initialize from existing value - NEVER trigger saves during initialization
   React.useEffect(() => {
     if (value && value !== "00:00:00") {
       try {
@@ -48,19 +48,20 @@ export function DateTimePicker({
           setTimeValue(`${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`);
         }
       } catch (error) {
-        // Fallback to current date and time
+        console.warn('DateTimePicker: Invalid date value provided, using current time as fallback');
+        // Fallback to current date and time - DO NOT trigger onValueChange
         const now = new Date();
         setSelectedDate(now);
         setTimeValue(format(now, 'HH:mm'));
       }
     } else {
-      // Default to current date and time
+      // Default to current date and time - DO NOT trigger onValueChange during initialization
       const now = new Date();
       setSelectedDate(now);
       const currentTime = format(now, 'HH:mm');
       setTimeValue(currentTime);
     }
-  }, [value]);
+  }, [value]); // Only depend on value, not onValueChange to prevent saves during init
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || !isValid(date)) return;

@@ -126,10 +126,19 @@ const RundownCard = ({
             </CardTitle>
             <CardDescription className="flex items-center text-sm text-gray-400">
               <Calendar className="h-4 w-4 mr-1" />
-               {rundown.start_time 
-                 ? format(new Date(rundown.start_time), 'MMM d')
-                 : format(new Date(rundown.created_at), 'MMM d')
-               }
+              {(() => {
+                try {
+                  if (rundown.start_time) {
+                    const startDate = new Date(rundown.start_time);
+                    if (!isNaN(startDate.getTime())) {
+                      return format(startDate, 'MMM d');
+                    }
+                  }
+                  return format(new Date(rundown.created_at), 'MMM d');
+                } catch (error) {
+                  return format(new Date(rundown.created_at), 'MMM d');
+                }
+              })()}
             </CardDescription>
           </div>
           <DropdownMenu>
