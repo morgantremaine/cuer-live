@@ -87,7 +87,8 @@ const DashboardRundownGrid = ({
   }, [])
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   const formatTime = (dateString: string) => {
@@ -285,11 +286,11 @@ const DashboardRundownGrid = ({
                       >
                         {rundown.title}
                       </CardTitle>
-                      <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
-                        <span>{getOwnerInfo(rundown)}</span>
-                        <span>•</span>
-                        <span>{formatDate(rundown.updated_at)}</span>
-                      </CardDescription>
+                       <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
+                         <span>{getOwnerInfo(rundown)}</span>
+                         <span>•</span>
+                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.updated_at)}</span>
+                       </CardDescription>
                     </div>
                     
                     {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
@@ -403,10 +404,10 @@ const DashboardRundownGrid = ({
                         <Users className="h-3 w-3" />
                         <span>by {getOwnerInfo(rundown)}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{formatDate(rundown.updated_at)}</span>
-                      </div>
+                       <div className="flex items-center gap-1">
+                         <Calendar className="h-3 w-3" />
+                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.updated_at)}</span>
+                       </div>
                     </CardDescription>
                   </div>
                   
