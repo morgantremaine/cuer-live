@@ -106,7 +106,7 @@ export function DateTimePicker({
   const displayText = React.useMemo(() => {
     if (!selectedDate) return placeholder;
     
-    const dateStr = format(selectedDate, "PPP");
+    const dateStr = format(selectedDate, "MMM d");
     return `${dateStr} at ${timeValue}`;
   }, [selectedDate, timeValue, placeholder]);
 
