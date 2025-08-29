@@ -8,6 +8,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useTeam } from '@/hooks/useTeam';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -68,6 +69,7 @@ const RundownIndexContent = () => {
 
   // Get team data for column deletion
   const { team } = useTeam();
+  const { renameTeamColumn } = useTeamCustomColumns();
 
   // Use user column preferences for persistent column management
   const { 
@@ -159,7 +161,23 @@ const RundownIndexContent = () => {
     console.log('🗑️ Column deletion complete');
   }, [userColumns, setUserColumns, team?.id]);
 
-  const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
+  const handleRenameColumnWrapper = useCallback(async (columnId: string, newName: string) => {
+    // Check if this is a team custom column that needs to be updated globally
+    const columnToRename = userColumns.find(col => col.id === columnId);
+    const isTeamColumn = columnToRename?.isCustom && (columnToRename as any)?.isTeamColumn;
+    
+    if (isTeamColumn && team?.id && columnToRename) {
+      // Update the team custom column in the database - this will sync across all rundowns
+      console.log('🔄 Renaming team custom column globally:', columnToRename.name, '->', newName);
+      
+      const success = await renameTeamColumn(columnToRename.key, newName);
+      if (!success) {
+        console.error('❌ Failed to rename team custom column');
+        // Still update locally for immediate feedback, but user should be informed
+      }
+    }
+    
+    // Update local user preferences immediately for responsive UI
     const updated = userColumns.map(col => {
       if (col.id === columnId) {
         return { ...col, name: newName };
@@ -167,7 +185,7 @@ const RundownIndexContent = () => {
       return col;
     });
     setUserColumns(updated, true); // Immediate save
-  }, [userColumns, setUserColumns]);
+  }, [userColumns, setUserColumns, team?.id, renameTeamColumn]);
 
   const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
     const target = userColumns.find(col => col.id === columnId);
