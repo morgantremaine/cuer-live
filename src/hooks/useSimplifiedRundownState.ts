@@ -241,13 +241,18 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
-        // Apply merged update
+        // Apply merged update - preserve hasUnsavedChanges if we protected fields
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
+        
+        // If we protected any fields, preserve unsaved changes state
+        if (protectedFields.size > 0) {
+          // Don't call actions.markSaved() to preserve hasUnsavedChanges
+        }
         
       } else {
         // No protected fields - apply update normally
@@ -333,13 +338,18 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
-        // Apply merged update
+        // Apply merged update - preserve hasUnsavedChanges if we protected fields
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
           startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
         });
+        
+        // If we protected any fields, preserve unsaved changes state
+        if (protectedFields.size > 0) {
+          // Don't call actions.markSaved() to preserve hasUnsavedChanges
+        }
         
       } else {
         // No protected fields - apply update normally

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
+import { useTabVisibilityAutoSave } from './useTabVisibilityAutoSave';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -236,6 +237,16 @@ export const useSimpleAutoSave = (
     }
   }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
+  // Tab visibility save for unsaved changes on tab hide
+  useTabVisibilityAutoSave({
+    state,
+    rundownId,
+    performSave,
+    createContentSignature,
+    lastSavedRef,
+    isDemo: rundownId === DEMO_RUNDOWN_ID
+  });
+
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
     if (rundownId === DEMO_RUNDOWN_ID) {
@@ -243,18 +254,6 @@ export const useSimpleAutoSave = (
       if (state.hasUnsavedChanges) {
         onSaved();
       }
-      return;
-    }
-
-    // Check suppression cooldown first
-    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: teammate update cooldown active');
-      return;
-    }
-    
-    // Simple blocking conditions - only undo blocks saves
-    if (undoActiveRef.current) {
-      debugLogger.autosave('Save blocked: undo operation active');
       return;
     }
 
@@ -270,8 +269,37 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Immediate save for structural changes, short debounce for text edits
+    // Simple blocking conditions - only undo blocks saves
+    if (undoActiveRef.current) {
+      debugLogger.autosave('Save blocked: undo operation active');
+      return;
+    }
+
+    // Determine if this is a structural change
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
+    
+    // Check suppression cooldown - but bypass entirely for structural changes
+    if (!isStructuralChange && suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: teammate update cooldown active, scheduling delayed save');
+      
+      // Schedule a save attempt after cooldown expires
+      const cooldownRemaining = suppressUntilRef.current - Date.now();
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      saveTimeoutRef.current = setTimeout(async () => {
+        // Double-check if save is still needed after cooldown
+        const latestSignature = createContentSignature();
+        if (latestSignature !== lastSavedRef.current && !undoActiveRef.current) {
+          await performSave();
+        }
+      }, cooldownRemaining + 100); // Small buffer after cooldown expires
+      
+      return;
+    }
+
+    // Immediate save for structural changes, short debounce for text edits
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
 
     if (saveTimeoutRef.current) {
@@ -287,7 +315,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef]);
+  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, pendingStructuralChangeRef]);
 
   return {
     isSaving,
