@@ -36,22 +36,10 @@ const HeaderBottomSection = ({
   // Get rundownId from route for direct DB save of full ISO start_time
   const params = useParams<{ id: string }>();
   const routeRundownId = params.id && params.id !== 'new' ? params.id : null;
-
-  const handleStartDateChangeISO = async (isoDateTime: string) => {
-    try {
-      if (!routeRundownId) return;
-      await supabase
-        .from('rundowns')
-        .update({ start_time: isoDateTime, updated_at: new Date().toISOString() })
-        .eq('id', routeRundownId);
-    } catch (error) {
-      console.error('Failed to save start date-time', error);
-    }
-  };
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
-    rundownStartTime,
+    rundownStartTime: localStartTime,
     timezone,
     isPlaying,
     currentSegmentId,
@@ -77,10 +65,8 @@ const HeaderBottomSection = ({
           <DateTimePicker
             value={localStartTime}
             onValueChange={(isoDateTime) => {
-              handleStartDateChangeISO(isoDateTime);
-              const timeOnly = extractTimeFromISO(isoDateTime);
-              setLocalStartTime(timeOnly);
-              onRundownStartTimeChange(timeOnly);
+              setLocalStartTime(isoDateTime);
+              onRundownStartTimeChange(isoDateTime);
             }}
             storageKey={routeRundownId ? `rundown:${routeRundownId}:start_time` : undefined}
             className="bg-transparent text-sm font-mono"

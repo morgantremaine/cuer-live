@@ -55,7 +55,7 @@ export const useSimpleAutoSave = (
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
-      startTime: state.startTime,
+      startTime: state.startTime, // Include startTime in signature for proper change detection
       timezone: state.timezone
     });
 
@@ -166,6 +166,7 @@ export const useSimpleAutoSave = (
           .update({
             title: state.title,
             items: state.items,
+            start_time: state.startTime,
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId

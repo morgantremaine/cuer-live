@@ -89,19 +89,6 @@ const RundownHeader = ({
   // Get current universal time for display
   const universalTime = new Date(getUniversalTime());
 
-  // Save full start date-time (ISO) to DB without affecting internal time-only state
-  const handleStartDateChangeISO = async (isoDateTime: string) => {
-    try {
-      if (!rundownId) return;
-      await supabase
-        .from('rundowns')
-        .update({ start_time: isoDateTime, updated_at: new Date().toISOString() })
-        .eq('id', rundownId);
-    } catch (error) {
-      console.error('Failed to save start date-time', error);
-    }
-  };
-
   // Format time in the selected timezone using universal time
   const formatTimeInTimezone = (time: Date, tz: string) => {
     try {
@@ -292,10 +279,7 @@ const RundownHeader = ({
               <span>Start:</span>
               <DateTimePicker
                 value={rundownStartTime}
-                onValueChange={(isoDateTime) => {
-                  handleStartDateChangeISO(isoDateTime);
-                  onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
-                }}
+                onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
                 storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
                 className="text-sm bg-transparent font-mono"
               />
@@ -385,10 +369,7 @@ const RundownHeader = ({
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
             <DateTimePicker
               value={rundownStartTime}
-              onValueChange={(isoDateTime) => {
-                handleStartDateChangeISO(isoDateTime);
-                onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
-              }}
+              onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
               storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
               className="bg-transparent text-sm font-mono"
             />

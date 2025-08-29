@@ -30,8 +30,9 @@ export const useIndexHandlers = ({
 }: UseIndexHandlersProps) => {
   const navigate = useNavigate();
 
-  const handleRundownStartTimeChange = useCallback((startTime: string) => {
-    setRundownStartTime(startTime);
+  const handleRundownStartTimeChange = useCallback((isoDateTime: string) => {
+    // Store the full ISO date-time for proper date persistence
+    setRundownStartTime(isoDateTime);
     markAsChanged();
   }, [setRundownStartTime, markAsChanged]);
 
