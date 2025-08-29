@@ -74,6 +74,8 @@ export function DateTimePicker({
     // Only set if the resulting datetime is valid
     if (isValid(newDateTime) && !isNaN(newDateTime.getTime())) {
       setSelectedDate(newDateTime);
+      // Trigger autosave immediately when date is selected
+      onValueChange?.(newDateTime.toISOString());
     }
   };
 
