@@ -143,7 +143,7 @@ export function DateTimePicker({
               onChange={handleTimeChange}
               onBlur={handleTimeBlur}
               placeholder="HH:MM"
-              className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
             />
           </div>
           <div className="flex justify-end space-x-2 pt-2 border-t">
