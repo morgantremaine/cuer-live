@@ -258,7 +258,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-600">
+      <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto bg-gray-800 border-gray-600">
         <DialogHeader>
           <DialogTitle className="text-white">Import CSV Rundown</DialogTitle>
         </DialogHeader>
