@@ -32,6 +32,7 @@ export const useIndexHandlers = ({
 
   const handleRundownStartTimeChange = useCallback((isoDateTime: string) => {
     // Store the full ISO date-time for proper date persistence
+    console.log('🕒 handleRundownStartTimeChange called with:', isoDateTime);
     setRundownStartTime(isoDateTime);
     markAsChanged();
   }, [setRundownStartTime, markAsChanged]);

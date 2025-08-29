@@ -794,6 +794,7 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
+      console.log('🕒 useSimplifiedRundownState setStartTime called with:', newStartTime, 'current:', state.startTime);
       if (state.startTime !== newStartTime) {
         // Track start time editing for protection
         recentlyEditedFieldsRef.current.set('startTime', Date.now());
