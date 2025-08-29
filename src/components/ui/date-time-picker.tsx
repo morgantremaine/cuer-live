@@ -26,23 +26,23 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
   const [selectedDate, setSelectedDate] = React.useState<Date>();
-  const [timeValue, setTimeValue] = React.useState("00:00:00");
+  const [timeValue, setTimeValue] = React.useState("00:00");
 
   // Initialize from existing value
   React.useEffect(() => {
     if (value && value !== "00:00:00") {
       // If we have a time value, use today's date with that time
       const today = new Date();
-      const [hours, minutes, seconds] = value.split(':').map(Number);
+      const [hours, minutes] = value.split(':').map(Number);
       const dateWithTime = new Date(today);
-      dateWithTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+      dateWithTime.setHours(hours || 0, minutes || 0, 0, 0);
       setSelectedDate(dateWithTime);
-      setTimeValue(value);
+      setTimeValue(`${String(hours || 0).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}`);
     } else {
       // Default to current date and time
       const now = new Date();
       setSelectedDate(now);
-      const currentTime = format(now, 'HH:mm:ss');
+      const currentTime = format(now, 'HH:mm');
       setTimeValue(currentTime);
     }
   }, [value]);
@@ -51,9 +51,9 @@ export function DateTimePicker({
     if (!date) return;
     
     // Preserve the current time when date changes
-    const [hours, minutes, seconds] = timeValue.split(':').map(Number);
+    const [hours, minutes] = timeValue.split(':').map(Number);
     const newDateTime = new Date(date);
-    newDateTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+    newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
     
     setSelectedDate(newDateTime);
   };
@@ -64,9 +64,9 @@ export function DateTimePicker({
     
     if (selectedDate) {
       // Update the selected date with new time
-      const [hours, minutes, seconds] = newTimeValue.split(':').map(Number);
+      const [hours, minutes] = newTimeValue.split(':').map(Number);
       const newDateTime = new Date(selectedDate);
-      newDateTime.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+      newDateTime.setHours(hours || 0, minutes || 0, 0, 0);
       setSelectedDate(newDateTime);
     }
   };
@@ -85,21 +85,19 @@ export function DateTimePicker({
       if (minutes.length === 1) minutes = '0' + minutes;
       if (parseInt(minutes) > 59) minutes = '59';
       
-      let seconds = parts[2] || '00';
-      if (seconds.length === 1) seconds = '0' + seconds;
-      if (parseInt(seconds) > 59) seconds = '59';
-      
-      formattedTime = `${hours}:${minutes}:${seconds}`;
+      formattedTime = `${hours}:${minutes}`;
     } else {
-      formattedTime = '00:00:00';
+      formattedTime = '00:00';
     }
     
     setTimeValue(formattedTime);
-    onValueChange?.(formattedTime);
+    // Convert to HH:MM:SS format for the callback (add :00 seconds)
+    onValueChange?.(`${formattedTime}:00`);
   };
 
   const handleApply = () => {
-    onValueChange?.(timeValue);
+    // Convert to HH:MM:SS format for the callback (add :00 seconds)
+    onValueChange?.(`${timeValue}:00`);
     setOpen(false);
   };
 
@@ -144,7 +142,7 @@ export function DateTimePicker({
               value={timeValue}
               onChange={handleTimeChange}
               onBlur={handleTimeBlur}
-              placeholder="HH:MM:SS"
+              placeholder="HH:MM"
               className="w-full px-3 py-2 border border-input rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
