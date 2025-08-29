@@ -5,6 +5,7 @@ import { SavedRundown } from './useRundownStorage/types';
 import { Column } from './useColumnsManager';
 import { RundownItem } from '@/types/rundown';
 import { migrateTimezone } from '@/utils/timezoneMigration';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 
 interface UseRundownDataLoaderProps {
   rundownId?: string;
@@ -62,8 +63,8 @@ export const useRundownDataLoader = ({
     console.log('🌍 Loading timezone directly:', timezoneToLoad);
     setTimezoneDirectly(timezoneToLoad);
     
-    // Load start time - use saved value or fallback to default
-    const startTimeToLoad = rundown.start_time || '09:00:00';
+    // Load start time - use saved value or fallback to default, normalized to HH:MM:SS
+    const startTimeToLoad = extractTimeFromISO(rundown.start_time || '09:00:00');
     console.log('⏰ Loading start time directly:', startTimeToLoad);
     setRundownStartTimeDirectly(startTimeToLoad);
     

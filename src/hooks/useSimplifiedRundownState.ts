@@ -16,6 +16,7 @@ import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuratio
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -88,7 +89,7 @@ export const useSimplifiedRundownState = () => {
       items: mergedData.items || [],
       columns: [], // Keep columns separate
       title: mergedData.title || state.title,
-      startTime: mergedData.start_time || state.startTime,
+      startTime: mergedData.start_time ? extractTimeFromISO(mergedData.start_time) : state.startTime,
       timezone: mergedData.timezone || state.timezone
     });
     
@@ -245,7 +246,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
+          startTime: protectedFields.has('startTime') ? state.startTime : extractTimeFromISO(updatedRundown.start_time || '09:00:00'),
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
         
@@ -259,7 +260,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: updatedRundown.items || [],
           title: updatedRundown.title,
-          startTime: updatedRundown.start_time,
+          startTime: extractTimeFromISO(updatedRundown.start_time || '09:00:00'),
           timezone: updatedRundown.timezone
         });
       }
@@ -342,7 +343,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
+          startTime: protectedFields.has('startTime') ? state.startTime : extractTimeFromISO(deferredUpdate.start_time || '09:00:00'),
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
         });
         
@@ -356,7 +357,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: deferredUpdate.items || [],
           title: deferredUpdate.title,
-          startTime: deferredUpdate.start_time,
+          startTime: extractTimeFromISO(deferredUpdate.start_time || '09:00:00'),
           timezone: deferredUpdate.timezone
         });
       }
@@ -502,7 +503,7 @@ export const useSimplifiedRundownState = () => {
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
-              startTime: data.start_time || '09:00:00',
+              startTime: extractTimeFromISO(data.start_time || '09:00:00'),
               timezone: data.timezone || 'America/New_York'
             });
           }
@@ -793,13 +794,14 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      if (state.startTime !== newStartTime) {
+      const normalized = extractTimeFromISO(newStartTime);
+      if (state.startTime !== normalized) {
         // Track start time editing for protection
         recentlyEditedFieldsRef.current.set('startTime', Date.now());
         typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
         
         saveUndoState(state.items, [], state.title, 'Change start time');
-        actions.setStartTime(newStartTime);
+        actions.setStartTime(normalized);
         
         // Clear typing session after delay
         setTimeout(() => {

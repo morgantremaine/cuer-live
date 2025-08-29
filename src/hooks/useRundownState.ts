@@ -4,6 +4,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 
 export interface RundownState {
   items: RundownItem[];
@@ -280,7 +281,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     
     setTitle: (title: string) => dispatch({ type: 'SET_TITLE', payload: title }),
     
-    setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: startTime }),
+    setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: extractTimeFromISO(startTime) }),
     
     setTimezone: (timezone: string) => dispatch({ type: 'SET_TIMEZONE', payload: timezone }),
     
