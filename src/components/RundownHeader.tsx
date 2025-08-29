@@ -14,6 +14,7 @@ import { extractTimeFromISO } from '@/utils/timeUtils';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { supabase } from '@/integrations/supabase/client';
 
 
 interface RundownHeaderProps {
@@ -87,6 +88,19 @@ const RundownHeader = ({
 
   // Get current universal time for display
   const universalTime = new Date(getUniversalTime());
+
+  // Save full start date-time (ISO) to DB without affecting internal time-only state
+  const handleStartDateChangeISO = async (isoDateTime: string) => {
+    try {
+      if (!rundownId) return;
+      await supabase
+        .from('rundowns')
+        .update({ start_time: isoDateTime, updated_at: new Date().toISOString() })
+        .eq('id', rundownId);
+    } catch (error) {
+      console.error('Failed to save start date-time', error);
+    }
+  };
 
   // Format time in the selected timezone using universal time
   const formatTimeInTimezone = (time: Date, tz: string) => {
