@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -66,6 +67,24 @@ const DashboardRundownGrid = ({
   teamMembers = []
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
+  
+  // Auto-update timer state for refreshing "time ago" displays
+  const [, forceUpdate] = useState(0)
+  const timerRef = useRef<NodeJS.Timeout>()
+
+  // Set up auto-update timer for time displays
+  useEffect(() => {
+    // Update time displays every 60 seconds
+    timerRef.current = setInterval(() => {
+      forceUpdate(prev => prev + 1)
+    }, 60000)
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+    }
+  }, [])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
