@@ -91,6 +91,16 @@ const DashboardRundownGrid = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
+  // Safely determine a display date: prefer a valid ISO start_time, otherwise fallback to creation date
+  const getDisplayDate = (r: SavedRundown) => {
+    const s = r.start_time;
+    if (s && s.includes('T')) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return formatDate(s);
+    }
+    return formatDate(r.created_at);
+  }
+
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
@@ -288,8 +298,8 @@ const DashboardRundownGrid = ({
                       </CardTitle>
                        <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
                          <span>{getOwnerInfo(rundown)}</span>
-                         <span>•</span>
-                          <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.created_at)}</span>
+                          <span>•</span>
+                          <span>{getDisplayDate(rundown)}</span>
                        </CardDescription>
                     </div>
                     
@@ -405,9 +415,9 @@ const DashboardRundownGrid = ({
                         <span>by {getOwnerInfo(rundown)}</span>
                       </div>
                        <div className="flex items-center gap-1">
-                         <Calendar className="h-3 w-3" />
-                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.created_at)}</span>
-                       </div>
+                          <Calendar className="h-3 w-3" />
+                          <span>{getDisplayDate(rundown)}</span>
+                        </div>
                     </CardDescription>
                   </div>
                   
