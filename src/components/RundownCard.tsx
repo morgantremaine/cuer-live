@@ -126,10 +126,10 @@ const RundownCard = ({
             </CardTitle>
             <CardDescription className="flex items-center text-sm text-gray-400">
               <Calendar className="h-4 w-4 mr-1" />
-              {rundown.start_time 
-                ? format(new Date(rundown.start_time), 'MMM d, yyyy')
-                : format(new Date(rundown.created_at), 'MMM d, yyyy')
-              }
+               {rundown.start_time 
+                 ? format(new Date(rundown.start_time), 'MMM d')
+                 : format(new Date(rundown.created_at), 'MMM d')
+               }
             </CardDescription>
           </div>
           <DropdownMenu>
