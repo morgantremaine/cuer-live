@@ -292,7 +292,10 @@ const RundownHeader = ({
               <span>Start:</span>
               <DateTimePicker
                 value={rundownStartTime}
-                onValueChange={(isoDateTime) => onRundownStartTimeChange(extractTimeFromISO(isoDateTime))}
+                onValueChange={(isoDateTime) => {
+                  handleStartDateChangeISO(isoDateTime);
+                  onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
+                }}
                 className="text-sm bg-transparent font-mono"
               />
             </div>
@@ -381,7 +384,10 @@ const RundownHeader = ({
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
             <DateTimePicker
               value={rundownStartTime}
-              onValueChange={(isoDateTime) => onRundownStartTimeChange(extractTimeFromISO(isoDateTime))}
+              onValueChange={(isoDateTime) => {
+                handleStartDateChangeISO(isoDateTime);
+                onRundownStartTimeChange(extractTimeFromISO(isoDateTime));
+              }}
               className="bg-transparent text-sm font-mono"
             />
           </div>

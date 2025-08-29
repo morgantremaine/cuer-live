@@ -166,7 +166,6 @@ export const useSimpleAutoSave = (
           .update({
             title: state.title,
             items: state.items,
-            start_time: state.startTime,
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId

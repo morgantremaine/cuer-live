@@ -6,6 +6,8 @@ import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { extractTimeFromISO } from '@/utils/timeUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 
 interface HeaderBottomSectionProps {
   totalRuntime: string;
@@ -31,6 +33,21 @@ const HeaderBottomSection = ({
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
 
+  // Get rundownId from route for direct DB save of full ISO start_time
+  const params = useParams<{ id: string }>();
+  const routeRundownId = params.id && params.id !== 'new' ? params.id : null;
+
+  const handleStartDateChangeISO = async (isoDateTime: string) => {
+    try {
+      if (!routeRundownId) return;
+      await supabase
+        .from('rundowns')
+        .update({ start_time: isoDateTime, updated_at: new Date().toISOString() })
+        .eq('id', routeRundownId);
+    } catch (error) {
+      console.error('Failed to save start date-time', error);
+    }
+  };
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
@@ -60,6 +77,7 @@ const HeaderBottomSection = ({
           <DateTimePicker
             value={localStartTime}
             onValueChange={(isoDateTime) => {
+              handleStartDateChangeISO(isoDateTime);
               const timeOnly = extractTimeFromISO(isoDateTime);
               setLocalStartTime(timeOnly);
               onRundownStartTimeChange(timeOnly);
