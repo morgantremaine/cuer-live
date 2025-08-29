@@ -289,7 +289,7 @@ const DashboardRundownGrid = ({
                        <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
                          <span>{getOwnerInfo(rundown)}</span>
                          <span>•</span>
-                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.updated_at)}</span>
+                          <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.created_at)}</span>
                        </CardDescription>
                     </div>
                     
@@ -406,7 +406,7 @@ const DashboardRundownGrid = ({
                       </div>
                        <div className="flex items-center gap-1">
                          <Calendar className="h-3 w-3" />
-                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.updated_at)}</span>
+                         <span>{rundown.start_time ? formatDate(rundown.start_time) : formatDate(rundown.created_at)}</span>
                        </div>
                     </CardDescription>
                   </div>

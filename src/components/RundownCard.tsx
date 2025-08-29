@@ -134,6 +134,7 @@ const RundownCard = ({
                       return format(startDate, 'MMM d');
                     }
                   }
+                  // Default to creation date for rundowns without start_time
                   return format(new Date(rundown.created_at), 'MMM d');
                 } catch (error) {
                   return format(new Date(rundown.created_at), 'MMM d');
