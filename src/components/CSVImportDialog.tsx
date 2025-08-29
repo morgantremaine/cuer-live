@@ -347,7 +347,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
 
               <div className="space-y-4">
                 {columnMappings.map((mapping, index) => (
-                  <div key={index} className="grid grid-cols-[0.75fr_0.75fr] gap-3 items-center max-w-3xl">
+                  <div key={index} className="grid grid-cols-[1fr_1fr] gap-4 items-center">
                     <div className="min-w-0">
                       <Label className="text-sm text-gray-300">CSV Column</Label>
                       <div className="p-2 bg-gray-700 rounded border border-gray-600 text-white truncate">
