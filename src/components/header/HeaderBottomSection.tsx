@@ -4,10 +4,10 @@ import { Clock } from 'lucide-react';
 import ShowcallerTimingIndicator from '../showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { RundownItem } from '@/types/rundown';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { extractTimeFromISO } from '@/utils/timeUtils';
-import { supabase } from '@/integrations/supabase/client';
-import { useParams } from 'react-router-dom';
+
+import { extractTimeFromISO, createDateTimeString } from '@/utils/timeUtils';
+import { DatePickerOnly } from '@/components/ui/date-picker-only';
+import { Input } from '@/components/ui/input';
 
 interface HeaderBottomSectionProps {
   totalRuntime: string;
@@ -32,10 +32,8 @@ const HeaderBottomSection = ({
 }: HeaderBottomSectionProps) => {
   // Local state for the input to prevent external updates from interfering with typing
   const [localStartTime, setLocalStartTime] = useState(rundownStartTime);
+  const [localTime, setLocalTime] = useState(extractTimeFromISO(rundownStartTime));
 
-  // Get rundownId from route for direct DB save of full ISO start_time
-  const params = useParams<{ id: string }>();
-  const routeRundownId = params.id && params.id !== 'new' ? params.id : null;
   // Get timing status from the showcaller timing hook
   const { isOnTime, isAhead, timeDifference, isVisible } = useShowcallerTiming({
     items,
@@ -49,6 +47,7 @@ const HeaderBottomSection = ({
   // Update local state when external value changes
   useEffect(() => {
     setLocalStartTime(rundownStartTime);
+    setLocalTime(extractTimeFromISO(rundownStartTime));
   }, [rundownStartTime]);
 
   // Display calculated total runtime with proper formatting
@@ -61,15 +60,38 @@ const HeaderBottomSection = ({
         <span className="opacity-75">Total Runtime: {displayRuntime}</span>
         <div className="flex items-center space-x-2">
           <Clock className="h-4 w-4 opacity-75" />
-          <span className="opacity-75">Start Time:</span>
-          <DateTimePicker
-            value={localStartTime}
-            onValueChange={(isoDateTime) => {
-              setLocalStartTime(isoDateTime);
-              onRundownStartTimeChange(isoDateTime);
+          <span className="opacity-75">Start:</span>
+          <DatePickerOnly
+            date={new Date(localStartTime)}
+            onDateChange={(d) => {
+              const newISO = createDateTimeString(d, extractTimeFromISO(localStartTime));
+              setLocalStartTime(newISO);
+              onRundownStartTimeChange(newISO);
             }}
-            storageKey={routeRundownId ? `rundown:${routeRundownId}:start_time` : undefined}
             className="bg-transparent text-sm font-mono"
+          />
+          <Input
+            type="text"
+            value={localTime}
+            onChange={(e) => setLocalTime(e.target.value)}
+            onBlur={() => {
+              // Normalize to HH:MM
+              let formatted = localTime.replace(/[^0-9:]/g, '');
+              const parts = formatted.split(':');
+              let hours = parts[0] || '00';
+              if (hours.length === 1) hours = '0' + hours;
+              if (parseInt(hours) > 23) hours = '23';
+              let minutes = parts[1] || '00';
+              if (minutes.length === 1) minutes = '0' + minutes;
+              if (parseInt(minutes) > 59) minutes = '59';
+              formatted = `${hours}:${minutes}`;
+              setLocalTime(formatted);
+              const newISO = createDateTimeString(new Date(localStartTime), formatted);
+              setLocalStartTime(newISO);
+              onRundownStartTimeChange(newISO);
+            }}
+            placeholder="HH:MM"
+            className="w-[110px] text-sm font-mono"
           />
         </div>
       </div>

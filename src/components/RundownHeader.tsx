@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,8 @@ import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import { extractTimeFromISO } from '@/utils/timeUtils';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { supabase } from '@/integrations/supabase/client';
+import { DatePickerOnly } from '@/components/ui/date-picker-only';
+import { createDateTimeString } from '@/utils/timeUtils';
 
 
 interface RundownHeaderProps {
@@ -89,6 +89,13 @@ const RundownHeader = ({
   // Get current universal time for display
   const universalTime = new Date(getUniversalTime());
 
+  // Local time input state for separate time editing
+  const [timeInput, setTimeInput] = useState(
+    extractTimeFromISO(rundownStartTime).split(':').slice(0,2).join(':')
+  );
+  useEffect(() => {
+    setTimeInput(extractTimeFromISO(rundownStartTime).split(':').slice(0,2).join(':'));
+  }, [rundownStartTime]);
   // Format time in the selected timezone using universal time
   const formatTimeInTimezone = (time: Date, tz: string) => {
     try {
@@ -277,11 +284,34 @@ const RundownHeader = ({
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span>Start:</span>
-              <DateTimePicker
-                value={rundownStartTime}
-                onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
-                storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
+              <DatePickerOnly
+                date={new Date(rundownStartTime)}
+                onDateChange={(d) => {
+                  const newISO = createDateTimeString(d, extractTimeFromISO(rundownStartTime));
+                  onRundownStartTimeChange(newISO);
+                }}
                 className="text-sm bg-transparent font-mono"
+              />
+              <Input
+                type="text"
+                value={timeInput}
+                onChange={(e) => setTimeInput(e.target.value)}
+                onBlur={() => {
+                  let formatted = timeInput.replace(/[^0-9:]/g, '');
+                  const parts = formatted.split(':');
+                  let hours = parts[0] || '00';
+                  if (hours.length === 1) hours = '0' + hours;
+                  if (parseInt(hours) > 23) hours = '23';
+                  let minutes = parts[1] || '00';
+                  if (minutes.length === 1) minutes = '0' + minutes;
+                  if (parseInt(minutes) > 59) minutes = '59';
+                  formatted = `${hours}:${minutes}`;
+                  setTimeInput(formatted);
+                  const newISO = createDateTimeString(new Date(rundownStartTime), formatted);
+                  onRundownStartTimeChange(newISO);
+                }}
+                placeholder="HH:MM"
+                className="w-[110px] text-sm font-mono"
               />
             </div>
             <span>Runtime: {totalRuntime}</span>
@@ -367,11 +397,34 @@ const RundownHeader = ({
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
-            <DateTimePicker
-              value={rundownStartTime}
-              onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
-              storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
+            <DatePickerOnly
+              date={new Date(rundownStartTime)}
+              onDateChange={(d) => {
+                const newISO = createDateTimeString(d, extractTimeFromISO(rundownStartTime));
+                onRundownStartTimeChange(newISO);
+              }}
               className="bg-transparent text-sm font-mono"
+            />
+            <Input
+              type="text"
+              value={timeInput}
+              onChange={(e) => setTimeInput(e.target.value)}
+              onBlur={() => {
+                let formatted = timeInput.replace(/[^0-9:]/g, '');
+                const parts = formatted.split(':');
+                let hours = parts[0] || '00';
+                if (hours.length === 1) hours = '0' + hours;
+                if (parseInt(hours) > 23) hours = '23';
+                let minutes = parts[1] || '00';
+                if (minutes.length === 1) minutes = '0' + minutes;
+                if (parseInt(minutes) > 59) minutes = '59';
+                formatted = `${hours}:${minutes}`;
+                setTimeInput(formatted);
+                const newISO = createDateTimeString(new Date(rundownStartTime), formatted);
+                onRundownStartTimeChange(newISO);
+              }}
+              placeholder="HH:MM"
+              className="w-[110px] text-sm font-mono"
             />
           </div>
           
