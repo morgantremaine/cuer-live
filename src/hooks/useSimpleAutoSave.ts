@@ -27,6 +27,38 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
+  // Helper to derive full ISO datetime for saving
+  const deriveFullStartTime = useCallback(() => {
+    // If state.startTime is already a valid ISO, use it
+    if (state.startTime && state.startTime.includes('T')) {
+      return state.startTime;
+    }
+
+    // Try to get full ISO from localStorage (set by DateTimePicker)
+    try {
+      const storedDateTime = localStorage.getItem(`rundown-datetime-${rundownId || 'new'}`);
+      if (storedDateTime) {
+        const storedDate = new Date(storedDateTime);
+        if (!isNaN(storedDate.getTime())) {
+          // Combine stored date with current time portion
+          const timeOnly = state.startTime || '09:00:00';
+          const [hours, minutes, seconds = '00'] = timeOnly.split(':');
+          storedDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]));
+          return storedDate.toISOString();
+        }
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+
+    // Fallback: today's date + current time
+    const today = new Date();
+    const timeOnly = state.startTime || '09:00:00';
+    const [hours, minutes, seconds = '00'] = timeOnly.split(':');
+    today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]));
+    return today.toISOString();
+  }, [state.startTime, rundownId]);
+
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
@@ -52,15 +84,19 @@ export const useSimpleAutoSave = (
       };
     }) || [];
 
+    // Include the full ISO datetime in signature for proper change detection
+    const fullStartTime = deriveFullStartTime();
+
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
-      startTime: state.startTime, // Include startTime in signature for proper change detection
+      startTime: state.startTime, // Keep time portion for calculations
+      fullStartTime, // Include full ISO for date changes
       timezone: state.timezone
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, deriveFullStartTime]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -128,12 +164,13 @@ export const useSimpleAutoSave = (
         const folderId = location.state?.folderId || null;
 
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        const fullStartTime = deriveFullStartTime();
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert({
             title: state.title,
             items: state.items,
-            start_time: state.startTime,
+            start_time: fullStartTime,
             timezone: state.timezone,
             team_id: teamData.team_id,
             user_id: currentUserId,
@@ -161,12 +198,13 @@ export const useSimpleAutoSave = (
       } else {
         // Enhanced update for existing rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        const fullStartTime = deriveFullStartTime();
         const { data, error } = await supabase
           .from('rundowns')
           .update({
             title: state.title,
             items: state.items,
-            start_time: state.startTime,
+            start_time: fullStartTime,
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId
@@ -240,7 +278,7 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, deriveFullStartTime]);
 
   // Tab visibility save for unsaved changes on tab hide
   useTabVisibilityAutoSave({
