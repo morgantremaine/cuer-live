@@ -129,9 +129,16 @@ const RundownCard = ({
               {(() => {
                 try {
                   if (rundown.start_time) {
-                    const startDate = new Date(rundown.start_time);
-                    if (!isNaN(startDate.getTime())) {
-                      return format(startDate, 'MMM d');
+                    // Handle both ISO datetime strings and old HH:MM:SS format
+                    if (rundown.start_time.includes('T')) {
+                      // ISO datetime string - use the date portion
+                      const startDate = new Date(rundown.start_time);
+                      if (!isNaN(startDate.getTime())) {
+                        return format(startDate, 'MMM d');
+                      }
+                    } else if (rundown.start_time.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+                      // Old HH:MM:SS format - use creation date
+                      return format(new Date(rundown.created_at), 'MMM d');
                     }
                   }
                   // Default to creation date for rundowns without start_time

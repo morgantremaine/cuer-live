@@ -16,7 +16,7 @@ import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuratio
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
-import { extractTimeFromISO } from '@/utils/timeUtils';
+import { extractTimeFromISO, normalizeStartTime, createDateTimeString } from '@/utils/timeUtils';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -246,7 +246,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : (updatedRundown.start_time || '09:00:00'),
+          startTime: protectedFields.has('startTime') ? state.startTime : normalizeStartTime(updatedRundown.start_time || '09:00:00', updatedRundown.created_at || new Date().toISOString()),
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
         
@@ -260,7 +260,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: updatedRundown.items || [],
           title: updatedRundown.title,
-          startTime: updatedRundown.start_time || '09:00:00',
+          startTime: normalizeStartTime(updatedRundown.start_time || '09:00:00', updatedRundown.created_at || new Date().toISOString()),
           timezone: updatedRundown.timezone
         });
       }
@@ -343,7 +343,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : (deferredUpdate.start_time || '09:00:00'),
+          startTime: protectedFields.has('startTime') ? state.startTime : normalizeStartTime(deferredUpdate.start_time || '09:00:00', deferredUpdate.created_at || new Date().toISOString()),
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
         });
         
@@ -357,7 +357,7 @@ export const useSimplifiedRundownState = () => {
         actions.loadState({
           items: deferredUpdate.items || [],
           title: deferredUpdate.title,
-          startTime: deferredUpdate.start_time || '09:00:00',
+          startTime: normalizeStartTime(deferredUpdate.start_time || '09:00:00', deferredUpdate.created_at || new Date().toISOString()),
           timezone: deferredUpdate.timezone
         });
       }
@@ -503,7 +503,7 @@ export const useSimplifiedRundownState = () => {
               items: itemsToLoad,
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
-              startTime: data.start_time || '09:00:00',
+              startTime: normalizeStartTime(data.start_time || '09:00:00', data.created_at),
               timezone: data.timezone || 'America/New_York'
             });
           }
@@ -548,7 +548,7 @@ export const useSimplifiedRundownState = () => {
     actions.loadState({
       items: latestData.items || [],
       title: latestData.title,
-      startTime: latestData.start_time,
+      startTime: normalizeStartTime(latestData.start_time, latestData.created_at || new Date().toISOString()),
       timezone: latestData.timezone
     });
   }, [actions, getProtectedFields]);
@@ -795,25 +795,41 @@ export const useSimplifiedRundownState = () => {
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
       console.log('🕒 useSimplifiedRundownState setStartTime called with:', newStartTime, 'current:', state.startTime);
-      if (state.startTime !== newStartTime) {
+      
+      // Handle both ISO datetime strings and time-only strings
+      let normalizedStartTime = newStartTime;
+      
+      // If it's a time-only string (HH:MM:SS), combine with current date
+      if (newStartTime && !newStartTime.includes('T') && newStartTime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+        // Get current date from existing startTime or use today
+        let baseDate: Date;
+        if (state.startTime && state.startTime.includes('T')) {
+          baseDate = new Date(state.startTime);
+        } else {
+          baseDate = new Date();
+        }
+        normalizedStartTime = createDateTimeString(baseDate, newStartTime);
+      }
+      
+      if (state.startTime !== normalizedStartTime) {
+        console.log('🕒 Normalized start time:', normalizedStartTime);
+        
         // Track start time editing for protection
         recentlyEditedFieldsRef.current.set('startTime', Date.now());
         typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
         
         // Treat start time changes as structural so autosave shows immediately
-        if (pendingStructuralChangeRef) {
-          pendingStructuralChangeRef.current = true;
-        }
+        pendingStructuralChangeRef.current = true;
         
         saveUndoState(state.items, [], state.title, 'Change start time');
-        actions.setStartTime(newStartTime);
+        actions.setStartTime(normalizedStartTime);
         
         // Clear typing session after delay
         setTimeout(() => {
           if (typingSessionRef.current?.fieldKey === 'startTime') {
             typingSessionRef.current = null;
           }
-        }, 5000); // Extended timeout for start time editing
+        }, 5000);
       }
     }, [actions.setStartTime, state.startTime, state.items, state.title, saveUndoState]),
     setTimezone: useCallback((newTimezone: string) => {

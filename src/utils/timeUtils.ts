@@ -88,6 +88,57 @@ export const extractTimeFromISO = (isoString: string): string => {
   }
 };
 
+export const normalizeStartTime = (startTime: string, createdAt: string): string => {
+  try {
+    // If already ISO datetime string, return as-is
+    if (startTime && startTime.includes('T')) {
+      const date = new Date(startTime);
+      if (!isNaN(date.getTime())) {
+        return startTime;
+      }
+    }
+    
+    // If it's HH:MM:SS format, combine with creation date
+    if (startTime && startTime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+      const creationDate = new Date(createdAt);
+      if (!isNaN(creationDate.getTime())) {
+        const [hours, minutes, seconds = '00'] = startTime.split(':');
+        const normalizedDate = new Date(creationDate);
+        normalizedDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds), 0);
+        return normalizedDate.toISOString();
+      }
+    }
+    
+    // Fallback: use creation date with default time
+    const creationDate = new Date(createdAt);
+    if (!isNaN(creationDate.getTime())) {
+      creationDate.setHours(9, 0, 0, 0);
+      return creationDate.toISOString();
+    }
+    
+    // Final fallback: today with default time
+    const today = new Date();
+    today.setHours(9, 0, 0, 0);
+    return today.toISOString();
+  } catch (error) {
+    // Final fallback: today with default time
+    const today = new Date();
+    today.setHours(9, 0, 0, 0);
+    return today.toISOString();
+  }
+};
+
+export const createDateTimeString = (date: Date, timeString: string): string => {
+  try {
+    const [hours, minutes, seconds = '00'] = timeString.split(':');
+    const newDate = new Date(date);
+    newDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds), 0);
+    return newDate.toISOString();
+  } catch (error) {
+    return date.toISOString();
+  }
+};
+
 export const isValidTimeFormat = (timeStr: string): boolean => {
   if (!timeStr || typeof timeStr !== 'string') return false;
   

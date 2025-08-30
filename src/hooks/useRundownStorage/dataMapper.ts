@@ -2,8 +2,14 @@
 import { SavedRundown } from './types';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
+import { normalizeStartTime } from '@/utils/timeUtils';
 
 export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
+  // Normalize start_time to ISO datetime string if needed
+  const normalizedStartTime = dbRundown.start_time 
+    ? normalizeStartTime(dbRundown.start_time, dbRundown.created_at)
+    : normalizeStartTime('09:00:00', dbRundown.created_at);
+
   const mapped = {
     id: dbRundown.id,
     user_id: dbRundown.user_id,
@@ -11,7 +17,7 @@ export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
     items: dbRundown.items || [],
     columns: dbRundown.columns,
     timezone: dbRundown.timezone,
-    start_time: dbRundown.start_time,
+    start_time: normalizedStartTime,
     icon: dbRundown.icon,
     archived: dbRundown.archived || false,
     created_at: dbRundown.created_at,
