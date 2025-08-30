@@ -800,6 +800,11 @@ export const useSimplifiedRundownState = () => {
         recentlyEditedFieldsRef.current.set('startTime', Date.now());
         typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
         
+        // Treat start time changes as structural so autosave shows immediately
+        if (pendingStructuralChangeRef) {
+          pendingStructuralChangeRef.current = true;
+        }
+        
         saveUndoState(state.items, [], state.title, 'Change start time');
         actions.setStartTime(newStartTime);
         
