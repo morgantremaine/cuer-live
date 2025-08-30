@@ -258,7 +258,7 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto bg-gray-800 border-gray-600">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-600">
         <DialogHeader>
           <DialogTitle className="text-white">Import CSV Rundown</DialogTitle>
         </DialogHeader>
@@ -347,14 +347,14 @@ const CSVImportDialog = ({ onImport, children }: CSVImportDialogProps) => {
 
               <div className="space-y-4">
                 {columnMappings.map((mapping, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_1fr] gap-4 items-center">
-                    <div className="min-w-0">
+                  <div key={index} className="grid grid-cols-2 gap-4 items-center">
+                    <div>
                       <Label className="text-sm text-gray-300">CSV Column</Label>
-                      <div className="p-2 bg-gray-700 rounded border border-gray-600 text-white truncate">
+                      <div className="p-2 bg-gray-700 rounded border border-gray-600 text-white">
                         {mapping.csvColumn}
                       </div>
                     </div>
-                    <div className="min-w-0">
+                    <div>
                       <Label className="text-sm text-gray-300">
                         Map to Column 
                         {mapping.isSkipped && <span className="text-orange-400 ml-2">(Skipped)</span>}

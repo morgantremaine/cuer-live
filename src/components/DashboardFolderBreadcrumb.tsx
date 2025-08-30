@@ -19,7 +19,7 @@ const DashboardFolderBreadcrumb: React.FC<DashboardFolderBreadcrumbProps> = ({
       case 'all':
         return { name: 'All Rundowns', icon: FileText };
       case 'recent':
-        return { name: 'Recent', icon: Clock };
+        return { name: 'Recently Active', icon: Clock };
       case 'archived':
         return { name: 'Archived', icon: Archive };
       case 'custom':

@@ -21,7 +21,6 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   
   const [caseSensitive, setCaseSensitive] = useState(false);
-  const [wholeWord, setWholeWord] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -80,7 +79,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         replaceTerm: '',
         fields: searchFields,
         caseSensitive,
-        wholeWord
+        wholeWord: false
       });
       setCurrentMatchIndex(0);
     } else {
@@ -88,17 +87,17 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
       clearResults();
       setCurrentMatchIndex(0);
     }
-  }, [searchTerm, caseSensitive, wholeWord, findMatches, clearResults]);
+  }, [searchTerm, findMatches, clearResults]);
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      // Force a fresh search with current settings
+      // Force a fresh search with current case sensitivity setting
       findMatches({
         searchTerm,
         replaceTerm: '',
         fields: searchFields,
         caseSensitive,
-        wholeWord
+        wholeWord: false
       });
       setCurrentMatchIndex(0);
     }
@@ -111,7 +110,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         replaceTerm,
         fields: searchFields,
         caseSensitive,
-        wholeWord
+        wholeWord: false
       });
       // Clear search after replace
       setSearchTerm('');
@@ -127,7 +126,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         replaceTerm,
         fields: searchFields,
         caseSensitive,
-        wholeWord
+        wholeWord: false
       }, currentMatchIndex);
       
       if (result.replacements > 0) {
@@ -138,7 +137,7 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
             replaceTerm: '',
             fields: searchFields,
             caseSensitive,
-            wholeWord
+            wholeWord: false
           });
           // Move to next match or reset if we were at the last one
           const newIndex = currentMatchIndex >= lastSearchResults.matches.length - 1 ? 0 : currentMatchIndex;
@@ -173,19 +172,8 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
         // Find and select the matching text in input fields
         setTimeout(() => {
           const inputs = element.querySelectorAll('input, textarea');
-          
-          // Build the same regex pattern used in findMatches
-          const isQuoted = (searchTerm.startsWith('"') && searchTerm.endsWith('"')) || 
-                           (searchTerm.startsWith("'") && searchTerm.endsWith("'"));
-          const actualSearchTerm = isQuoted ? searchTerm.slice(1, -1) : searchTerm;
-          const shouldUseWholeWord = isQuoted || wholeWord;
-          
           const flags = 'gi';
-          let pattern = actualSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          if (shouldUseWholeWord) {
-            pattern = `\\b${pattern}\\b`;
-          }
-          const regex = new RegExp(pattern, flags);
+          const regex = new RegExp(searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
           
           for (const input of inputs) {
             const inputElement = input as HTMLInputElement | HTMLTextAreaElement;
@@ -375,34 +363,17 @@ const FindReplaceDialog = ({ isOpen, onClose, onUpdateItem, items, columns }: Fi
                   Replace All
                 </Button>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="caseSensitive"
-                    checked={caseSensitive}
-                    onChange={(e) => setCaseSensitive(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <label htmlFor="caseSensitive" className="text-sm">
-                    Preserve case pattern
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="wholeWord"
-                    checked={wholeWord}
-                    onChange={(e) => setWholeWord(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <label htmlFor="wholeWord" className="text-sm">
-                    Whole word
-                  </label>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Tip: Use "word" or 'word' to search for whole words
-                </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="caseSensitive"
+                  checked={caseSensitive}
+                  onChange={(e) => setCaseSensitive(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="caseSensitive" className="text-sm">
+                  Preserve case pattern
+                </label>
               </div>
             </div>
           </div>

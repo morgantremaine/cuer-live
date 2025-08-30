@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardRundownGrid from '@/components/DashboardRundownGrid';
@@ -33,72 +33,6 @@ const Dashboard = () => {
   
   // Improved loading state tracking
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
-  
-  // Tab resume and refresh functionality
-  const lastRefreshRef = useRef<number>(Date.now())
-  const refreshCooldownMs = 10000 // 10 seconds minimum between refreshes
-  
-  // Handle tab focus/visibility changes and periodic refreshes
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (!document.hidden && user) {
-        const now = Date.now()
-        // Only refresh if enough time has passed since last refresh
-        if (now - lastRefreshRef.current > refreshCooldownMs) {
-          console.log('🔄 Tab visible - refreshing rundowns...')
-          lastRefreshRef.current = now
-          await loadRundowns()
-        }
-      }
-    }
-
-    const handleFocus = async () => {
-      if (user) {
-        const now = Date.now()
-        // Only refresh if enough time has passed since last refresh
-        if (now - lastRefreshRef.current > refreshCooldownMs) {
-          console.log('🔄 Window focused - refreshing rundowns...')
-          lastRefreshRef.current = now
-          await loadRundowns()
-        }
-      }
-    }
-
-    const handleOnline = async () => {
-      if (user) {
-        console.log('🔄 Back online - refreshing rundowns...')
-        // Always refresh when coming back online (no cooldown)
-        lastRefreshRef.current = Date.now()
-        await loadRundowns()
-      }
-    }
-
-    // Periodic background refresh every 2 minutes when tab is visible
-    const backgroundRefreshInterval = setInterval(async () => {
-      if (!document.hidden && user) {
-        const now = Date.now()
-        // Only refresh if enough time has passed since last refresh
-        if (now - lastRefreshRef.current > refreshCooldownMs) {
-          console.log('🔄 Background refresh - updating rundowns...')
-          lastRefreshRef.current = now
-          await loadRundowns()
-        }
-      }
-    }, 120000) // 2 minutes
-
-    // Add event listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', handleFocus)
-    window.addEventListener('online', handleOnline)
-
-    return () => {
-      // Cleanup
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('online', handleOnline)
-      clearInterval(backgroundRefreshInterval)
-    }
-  }, [user, loadRundowns])
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -339,7 +273,7 @@ const Dashboard = () => {
       case 'all':
         return 'All Rundowns';
       case 'recent':
-        return 'Recent';
+        return 'Recently Active';
       case 'archived':
         return 'Archived Rundowns';
       case 'custom':

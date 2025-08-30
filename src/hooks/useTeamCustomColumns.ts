@@ -75,38 +75,6 @@ export const useTeamCustomColumns = () => {
     }
   }, [team?.id, user]);
 
-  // Rename a team custom column
-  const renameTeamColumn = useCallback(async (columnKey: string, newColumnName: string) => {
-    if (!team?.id || !user) return false;
-
-    try {
-      const { error } = await supabase
-        .from('team_custom_columns')
-        .update({ 
-          column_name: newColumnName,
-          updated_at: new Date().toISOString()
-        })
-        .eq('team_id', team.id)
-        .eq('column_key', columnKey);
-
-      if (error) {
-        console.error('Error renaming team custom column:', error);
-        return false;
-      }
-
-      // Update local state immediately (realtime will also handle this)
-      setTeamColumns(prev => prev.map(col => 
-        col.column_key === columnKey 
-          ? { ...col, column_name: newColumnName }
-          : col
-      ));
-      return true;
-    } catch (error) {
-      console.error('Failed to rename team custom column:', error);
-      return false;
-    }
-  }, [team?.id, user]);
-
   // Delete a team custom column
   const deleteTeamColumn = useCallback(async (columnKey: string) => {
     if (!team?.id || !user) return false;
@@ -167,23 +135,6 @@ export const useTeamCustomColumns = () => {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'team_custom_columns',
-          filter: `team_id=eq.${team.id}`
-        },
-        (payload) => {
-          console.log('Team custom column updated:', payload);
-          setTeamColumns(prev => prev.map(col => 
-            col.id === payload.new.id 
-              ? payload.new as TeamCustomColumn
-              : col
-          ));
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
           event: 'DELETE',
           schema: 'public',
           table: 'team_custom_columns',
@@ -210,7 +161,6 @@ export const useTeamCustomColumns = () => {
     teamColumns,
     loading,
     addTeamColumn,
-    renameTeamColumn,
     deleteTeamColumn,
     reloadTeamColumns: loadTeamColumns
   };

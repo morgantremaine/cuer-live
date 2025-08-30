@@ -17,7 +17,6 @@ interface SavedRundown {
   items: RundownItem[]
   created_at: string
   updated_at: string
-  start_time?: string
   archived?: boolean
 }
 
@@ -124,29 +123,15 @@ const RundownCard = ({
             <CardTitle className="text-lg flex items-center text-white">
               {rundown.title}
             </CardTitle>
-            <CardDescription className="flex items-center text-sm text-gray-400">
-              <Calendar className="h-4 w-4 mr-1" />
-              {(() => {
-                try {
-                  if (rundown.start_time) {
-                    // Handle both ISO datetime strings and old HH:MM:SS format
-                    if (rundown.start_time.includes('T')) {
-                      // ISO datetime string - use the date portion
-                      const startDate = new Date(rundown.start_time);
-                      if (!isNaN(startDate.getTime())) {
-                        return format(startDate, 'MMM d');
-                      }
-                    } else if (rundown.start_time.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-                      // Old HH:MM:SS format - use creation date
-                      return format(new Date(rundown.created_at), 'MMM d');
-                    }
-                  }
-                  // Default to creation date for rundowns without start_time
-                  return format(new Date(rundown.created_at), 'MMM d');
-                } catch (error) {
-                  return format(new Date(rundown.created_at), 'MMM d');
-                }
-              })()}
+            <CardDescription className="flex flex-col gap-1 text-sm text-gray-400">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Created: {format(new Date(rundown.created_at), 'MMM d, yyyy')}
+              </div>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+              </div>
             </CardDescription>
           </div>
           <DropdownMenu>
@@ -202,18 +187,13 @@ const RundownCard = ({
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1 text-sm text-gray-400">
-            <div>
-              {(() => {
-                const items = rundown.items || [];
-                const headers = items.filter(item => item.type === 'header').length;
-                const segments = items.filter(item => item.type !== 'header').length;
-                return `${headers} headers, ${segments} segments`;
-              })()}
-            </div>
-            <div className="text-xs">
-              Last edited: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
-            </div>
+          <div className="flex items-center text-sm text-gray-400">
+            {(() => {
+              const items = rundown.items || [];
+              const headers = items.filter(item => item.type === 'header').length;
+              const segments = items.filter(item => item.type !== 'header').length;
+              return `${headers} headers, ${segments} segments`;
+            })()}
           </div>
           <div className="flex gap-2">
             <Button 
