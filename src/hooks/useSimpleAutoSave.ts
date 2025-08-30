@@ -27,38 +27,24 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
-  // Helper to derive full ISO datetime for saving
-  const deriveFullStartTime = useCallback(() => {
-    // If state.startTime is already a valid ISO, use it
-    if (state.startTime && state.startTime.includes('T')) {
-      return state.startTime;
-    }
-
-    // Try to get full ISO from localStorage (set by DateTimePicker)
+  // Helper to derive show_date from localStorage or fallback
+  const deriveShowDate = useCallback(() => {
+    // Try to get date from localStorage (set by DateTimePicker)
     try {
       const storedDateTime = localStorage.getItem(`rundown-datetime-${rundownId || 'new'}`);
       if (storedDateTime) {
         const storedDate = new Date(storedDateTime);
         if (!isNaN(storedDate.getTime())) {
-          // Combine stored date with current time portion
-          const timeOnly = state.startTime || '09:00:00';
-          const [hours, minutes, seconds = '00'] = timeOnly.split(':');
-          const combinedDate = new Date(storedDate);
-          combinedDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]), 0);
-          return combinedDate.toISOString();
+          return storedDate.toISOString().split('T')[0]; // Return YYYY-MM-DD
         }
       }
     } catch (e) {
       // Ignore localStorage errors
     }
 
-    // Fallback: today's date + current time
-    const today = new Date();
-    const timeOnly = state.startTime || '09:00:00';
-    const [hours, minutes, seconds = '00'] = timeOnly.split(':');
-    today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]), 0);
-    return today.toISOString();
-  }, [state.startTime, rundownId]);
+    // Fallback: today's date
+    return new Date().toISOString().split('T')[0];
+  }, [rundownId]);
 
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
@@ -85,13 +71,13 @@ export const useSimpleAutoSave = (
       };
     }) || [];
 
-    // Create a stable signature that doesn't cause loops
-    // Use only the time portion for consistency since that's what the state stores
+    // Create a stable signature that includes show_date separately
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
-      startTime: state.startTime, // Just use time portion for signature consistency
-      timezone: state.timezone
+      startTime: state.startTime, // HH:MM:SS time portion only
+      timezone: state.timezone,
+      showDate: deriveShowDate() // Include derived show_date in signature
     });
 
     return signature;
@@ -163,13 +149,14 @@ export const useSimpleAutoSave = (
         const folderId = location.state?.folderId || null;
 
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        const fullStartTime = deriveFullStartTime();
+        const showDate = deriveShowDate();
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert({
             title: state.title,
             items: state.items,
-            start_time: fullStartTime,
+            start_time: state.startTime, // HH:MM:SS only
+            show_date: showDate, // YYYY-MM-DD
             timezone: state.timezone,
             team_id: teamData.team_id,
             user_id: currentUserId,
@@ -197,13 +184,14 @@ export const useSimpleAutoSave = (
       } else {
         // Enhanced update for existing rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        const fullStartTime = deriveFullStartTime();
+        const showDate = deriveShowDate();
         const { data, error } = await supabase
           .from('rundowns')
           .update({
             title: state.title,
             items: state.items,
-            start_time: fullStartTime,
+            start_time: state.startTime, // HH:MM:SS only
+            show_date: showDate, // YYYY-MM-DD
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId
@@ -277,7 +265,7 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, deriveFullStartTime]);
+  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, deriveShowDate]);
 
   // Tab visibility save for unsaved changes on tab hide
   useTabVisibilityAutoSave({

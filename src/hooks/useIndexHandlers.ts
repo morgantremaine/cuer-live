@@ -31,11 +31,20 @@ export const useIndexHandlers = ({
   const navigate = useNavigate();
 
   const handleRundownStartTimeChange = useCallback((isoDateTime: string) => {
-    // Store the full ISO date-time for proper date persistence
+    // Extract time portion only (HH:MM:SS) for rundown timing
     console.log('🕒 handleRundownStartTimeChange called with:', isoDateTime);
-    setRundownStartTime(isoDateTime);
+    
+    // Store the full ISO in localStorage for date persistence
+    if (rundownId) {
+      localStorage.setItem(`rundown-datetime-${rundownId}`, isoDateTime);
+    }
+    
+    // Extract and set only the time portion for rundown start time
+    const timeOnly = new Date(isoDateTime).toTimeString().slice(0, 8); // HH:MM:SS
+    console.log('🕒 useSimplifiedRundownState setStartTime called with:', timeOnly, 'current:', timeOnly);
+    setRundownStartTime(timeOnly);
     markAsChanged();
-  }, [setRundownStartTime, markAsChanged]);
+  }, [setRundownStartTime, markAsChanged, rundownId]);
 
   const handleTimezoneChange = useCallback((timezone: string) => {
     setTimezone(timezone);
