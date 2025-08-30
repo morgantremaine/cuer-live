@@ -67,7 +67,8 @@ export const useSimplifiedRundownState = () => {
     columns: [], // Empty - will be managed separately
     title: 'Untitled Rundown',
     startTime: '09:00:00',
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
+    showDate: new Date().toISOString().split('T')[0] // Today's date
   });
 
   // User-specific column preferences (separate from team sync)
@@ -90,7 +91,8 @@ export const useSimplifiedRundownState = () => {
       columns: [], // Keep columns separate
       title: mergedData.title || state.title,
       startTime: mergedData.start_time || state.startTime,
-      timezone: mergedData.timezone || state.timezone
+      timezone: mergedData.timezone || state.timezone,
+      showDate: mergedData.show_date || state.showDate
     });
     
     // Update timestamp
@@ -247,7 +249,8 @@ export const useSimplifiedRundownState = () => {
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : normalizeStartTime(updatedRundown.start_time || '09:00:00', updatedRundown.created_at || new Date().toISOString()),
-          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
+          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
+          showDate: updatedRundown.show_date || state.showDate
         });
         
         // If we protected any fields, preserve unsaved changes state
@@ -261,7 +264,8 @@ export const useSimplifiedRundownState = () => {
           items: updatedRundown.items || [],
           title: updatedRundown.title,
           startTime: normalizeStartTime(updatedRundown.start_time || '09:00:00', updatedRundown.created_at || new Date().toISOString()),
-          timezone: updatedRundown.timezone
+          timezone: updatedRundown.timezone,
+          showDate: updatedRundown.show_date || new Date().toISOString().split('T')[0]
         });
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone]),
@@ -344,7 +348,8 @@ export const useSimplifiedRundownState = () => {
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
           startTime: protectedFields.has('startTime') ? state.startTime : normalizeStartTime(deferredUpdate.start_time || '09:00:00', deferredUpdate.created_at || new Date().toISOString()),
-          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
+          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
+          showDate: deferredUpdate.show_date || state.showDate
         });
         
         // If we protected any fields, preserve unsaved changes state
@@ -358,7 +363,8 @@ export const useSimplifiedRundownState = () => {
           items: deferredUpdate.items || [],
           title: deferredUpdate.title,
           startTime: normalizeStartTime(deferredUpdate.start_time || '09:00:00', deferredUpdate.created_at || new Date().toISOString()),
-          timezone: deferredUpdate.timezone
+          timezone: deferredUpdate.timezone,
+          showDate: deferredUpdate.show_date || new Date().toISOString().split('T')[0]
         });
       }
     }
@@ -473,7 +479,8 @@ export const useSimplifiedRundownState = () => {
             columns: [],
             title: DEMO_RUNDOWN_DATA.title,
             startTime: DEMO_RUNDOWN_DATA.start_time,
-            timezone: DEMO_RUNDOWN_DATA.timezone
+            timezone: DEMO_RUNDOWN_DATA.timezone,
+            showDate: new Date().toISOString().split('T')[0]
           });
           
           
@@ -504,7 +511,8 @@ export const useSimplifiedRundownState = () => {
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: normalizeStartTime(data.start_time || '09:00:00', data.created_at),
-              timezone: data.timezone || 'America/New_York'
+              timezone: data.timezone || 'America/New_York',
+              showDate: data.show_date || new Date().toISOString().split('T')[0]
             });
           }
         }
@@ -549,7 +557,8 @@ export const useSimplifiedRundownState = () => {
       items: latestData.items || [],
       title: latestData.title,
       startTime: normalizeStartTime(latestData.start_time, latestData.created_at || new Date().toISOString()),
-      timezone: latestData.timezone
+      timezone: latestData.timezone,
+      showDate: latestData.show_date || new Date().toISOString().split('T')[0]
     });
   }, [actions, getProtectedFields]);
 
@@ -569,7 +578,8 @@ export const useSimplifiedRundownState = () => {
         columns: [],
         title: 'Untitled Rundown',
         startTime: '09:00:00',
-        timezone: 'America/New_York'
+        timezone: 'America/New_York',
+        showDate: new Date().toISOString().split('T')[0]
       });
       setIsLoading(false);
       setIsInitialized(true);
@@ -846,6 +856,11 @@ export const useSimplifiedRundownState = () => {
         }
       }, 5000); // Extended timeout for timezone editing
     }, [actions.setTimezone]),
+    
+    setShowDate: useCallback((newShowDate: string) => {
+      console.log('📅 setShowDate called with:', newShowDate);
+      actions.setShowDate(newShowDate);
+    }, [actions.setShowDate]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

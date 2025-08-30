@@ -27,26 +27,7 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
-  // Helper to derive show_date from localStorage or fallback
-  const deriveShowDate = useCallback(() => {
-    // Try to get date from localStorage (set by DateTimePicker)
-    try {
-      const storedDateTime = localStorage.getItem(`rundown-datetime-${rundownId || 'new'}`);
-      if (storedDateTime) {
-        const storedDate = new Date(storedDateTime);
-        if (!isNaN(storedDate.getTime())) {
-          return storedDate.toISOString().split('T')[0]; // Return YYYY-MM-DD
-        }
-      }
-    } catch (e) {
-      // Ignore localStorage errors
-    }
-
-    // Fallback: today's date
-    return new Date().toISOString().split('T')[0];
-  }, [rundownId]);
-
-  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
+  // Content signature that includes showDate from state
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
     const cleanItems = state.items?.map(item => {
@@ -71,17 +52,17 @@ export const useSimpleAutoSave = (
       };
     }) || [];
 
-    // Create a stable signature that includes show_date separately
+    // Create a stable signature that includes showDate from state
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
       startTime: state.startTime, // HH:MM:SS time portion only
       timezone: state.timezone,
-      showDate: deriveShowDate() // Include derived show_date in signature
+      showDate: state.showDate // Include showDate from state
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -148,15 +129,15 @@ export const useSimpleAutoSave = (
         // Get folder ID from location state if available
         const folderId = location.state?.folderId || null;
 
+        // Enhanced save for new rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        const showDate = deriveShowDate();
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert({
             title: state.title,
             items: state.items,
             start_time: state.startTime, // HH:MM:SS only
-            show_date: showDate, // YYYY-MM-DD
+            show_date: state.showDate, // YYYY-MM-DD from state
             timezone: state.timezone,
             team_id: teamData.team_id,
             user_id: currentUserId,
@@ -184,14 +165,13 @@ export const useSimpleAutoSave = (
       } else {
         // Enhanced update for existing rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        const showDate = deriveShowDate();
         const { data, error } = await supabase
           .from('rundowns')
           .update({
             title: state.title,
             items: state.items,
             start_time: state.startTime, // HH:MM:SS only
-            show_date: showDate, // YYYY-MM-DD
+            show_date: state.showDate, // YYYY-MM-DD from state
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId
@@ -265,7 +245,7 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, deriveShowDate]);
+  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, state.showDate, isSaving, suppressUntilRef]);
 
   // Tab visibility save for unsaved changes on tab hide
   useTabVisibilityAutoSave({

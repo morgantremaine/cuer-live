@@ -52,6 +52,7 @@ const RundownIndexContent = () => {
     totalRuntime,
     setTitle,
     setStartTime,
+    setShowDate,
     setTimezone,
     undo,
     canUndo,
@@ -391,6 +392,7 @@ const RundownIndexContent = () => {
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime: setStartTime,
+    setShowDate,
     setTimezone,
     markAsChanged: () => {} // Handled internally by unified state
   });
