@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
-import { extractTimeFromISO } from '@/utils/timeUtils';
 
 interface RundownData {
   id: string;
@@ -61,7 +60,7 @@ export const useRundownData = () => {
           title: rundownData.title || 'Untitled Rundown',
           items: rundownData.items || [],
           columns: rundownData.columns || [],
-          startTime: extractTimeFromISO(rundownData.start_time || '09:00:00'),
+          startTime: rundownData.start_time || '09:00:00',
           timezone: rundownData.timezone || 'UTC',
           visibility: rundownData.visibility || 'private'
         });

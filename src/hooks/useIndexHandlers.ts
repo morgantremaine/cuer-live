@@ -12,7 +12,6 @@ interface UseIndexHandlersProps {
   calculateEndTime: (startTime: string, duration: string) => string;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[], headerGroupItemIds?: string[]) => void;
   setRundownStartTime: (startTime: string) => void;
-  setShowDate: (showDate: string) => void;
   setTimezone: (timezone: string) => void;
   markAsChanged: () => void;
 }
@@ -26,26 +25,15 @@ export const useIndexHandlers = ({
   calculateEndTime,
   toggleRowSelection,
   setRundownStartTime,
-  setShowDate,
   setTimezone,
   markAsChanged
 }: UseIndexHandlersProps) => {
   const navigate = useNavigate();
 
-  const handleRundownStartTimeChange = useCallback((isoDateTime: string) => {
-    // Extract time portion only (HH:MM:SS) for rundown timing
-    console.log('🕒 handleRundownStartTimeChange called with:', isoDateTime);
-    
-    // Extract and set date portion separately
-    const dateOnly = new Date(isoDateTime).toISOString().split('T')[0]; // YYYY-MM-DD
-    setShowDate(dateOnly);
-    
-    // Extract and set only the time portion for rundown start time
-    const timeOnly = new Date(isoDateTime).toTimeString().slice(0, 8); // HH:MM:SS
-    console.log('🕒 useSimplifiedRundownState setStartTime called with:', timeOnly, 'current:', timeOnly);
-    setRundownStartTime(timeOnly);
+  const handleRundownStartTimeChange = useCallback((startTime: string) => {
+    setRundownStartTime(startTime);
     markAsChanged();
-  }, [setRundownStartTime, setShowDate, markAsChanged]);
+  }, [setRundownStartTime, markAsChanged]);
 
   const handleTimezoneChange = useCallback((timezone: string) => {
     setTimezone(timezone);

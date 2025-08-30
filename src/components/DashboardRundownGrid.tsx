@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
@@ -67,38 +66,9 @@ const DashboardRundownGrid = ({
   teamMembers = []
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
-  
-  // Auto-update timer state for refreshing "time ago" displays
-  const [, forceUpdate] = useState(0)
-  const timerRef = useRef<NodeJS.Timeout>()
-
-  // Set up auto-update timer for time displays
-  useEffect(() => {
-    // Update time displays every 60 seconds
-    timerRef.current = setInterval(() => {
-      forceUpdate(prev => prev + 1)
-    }, 60000)
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
-  }, [])
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-
-  // Safely determine a display date: prefer a valid ISO start_time, otherwise fallback to creation date
-  const getDisplayDate = (r: SavedRundown) => {
-    const s = r.start_time;
-    if (s && s.includes('T')) {
-      const d = new Date(s);
-      if (!isNaN(d.getTime())) return formatDate(s);
-    }
-    return formatDate(r.created_at);
+    return new Date(dateString).toLocaleDateString()
   }
 
   const formatTime = (dateString: string) => {
@@ -296,11 +266,11 @@ const DashboardRundownGrid = ({
                       >
                         {rundown.title}
                       </CardTitle>
-                       <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
-                         <span>{getOwnerInfo(rundown)}</span>
-                          <span>•</span>
-                          <span>{getDisplayDate(rundown)}</span>
-                       </CardDescription>
+                      <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
+                        <span>{getOwnerInfo(rundown)}</span>
+                        <span>•</span>
+                        <span>{formatDate(rundown.updated_at)}</span>
+                      </CardDescription>
                     </div>
                     
                     {/* Three-dot menu - Fixed: Remove invalid React.Fragment props */}
@@ -414,10 +384,10 @@ const DashboardRundownGrid = ({
                         <Users className="h-3 w-3" />
                         <span>by {getOwnerInfo(rundown)}</span>
                       </div>
-                       <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>{getDisplayDate(rundown)}</span>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(rundown.updated_at)}</span>
+                      </div>
                     </CardDescription>
                   </div>
                   

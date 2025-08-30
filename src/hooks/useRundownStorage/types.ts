@@ -10,7 +10,6 @@ export interface SavedRundown {
   columns?: Column[]
   timezone?: string
   start_time?: string
-  show_date?: string // Date in YYYY-MM-DD format
   icon?: string
   archived?: boolean
   created_at: string

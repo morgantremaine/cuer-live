@@ -10,11 +10,8 @@ import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
-import { extractTimeFromISO } from '@/utils/timeUtils';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { supabase } from '@/integrations/supabase/client';
 
 
 interface RundownHeaderProps {
@@ -73,6 +70,8 @@ const RundownHeader = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const { getUniversalTime } = useUniversalTiming();
   
+  const timeInputRef = useRef<HTMLInputElement>(null);
+  
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
 
@@ -99,6 +98,56 @@ const RundownHeader = ({
       // Fallback to local time if timezone is invalid
       return format(time, 'HH:mm:ss');
     }
+  };
+
+  const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Allow natural typing - only restrict clearly invalid characters
+    // Allow digits, colons, and common separators
+    if (!/^[0-9:]*$/.test(value)) {
+      return;
+    }
+    
+    // Update the value directly without aggressive formatting
+    onRundownStartTimeChange(value);
+  };
+
+  const handleTimeInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Only format and validate on blur
+    let formattedTime = value;
+    
+    // Remove any non-digit, non-colon characters
+    formattedTime = formattedTime.replace(/[^0-9:]/g, '');
+    
+    // Split by colon and pad/validate each part
+    const parts = formattedTime.split(':');
+    
+    if (parts.length >= 1) {
+      // Hours
+      let hours = parts[0] || '00';
+      if (hours.length === 1) hours = '0' + hours;
+      if (parseInt(hours) > 23) hours = '23';
+      
+      // Minutes
+      let minutes = parts[1] || '00';
+      if (minutes.length === 1) minutes = '0' + minutes;
+      if (parseInt(minutes) > 59) minutes = '59';
+      
+      // Seconds
+      let seconds = parts[2] || '00';
+      if (seconds.length === 1) seconds = '0' + seconds;
+      if (parseInt(seconds) > 59) seconds = '59';
+      
+      formattedTime = `${hours}:${minutes}:${seconds}`;
+    } else {
+      // If no valid format, default to current time or 00:00:00
+      formattedTime = rundownStartTime || '00:00:00';
+    }
+    
+    onRundownStartTimeChange(formattedTime);
   };
 
   const handleTitleEdit = () => {
@@ -277,11 +326,14 @@ const RundownHeader = ({
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span>Start:</span>
-              <DateTimePicker
+              <input
+                ref={timeInputRef}
+                type="text"
                 value={rundownStartTime}
-                onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
-                storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
-                className="text-sm bg-transparent font-mono"
+                onChange={handleTimeInputChange}
+                onBlur={handleTimeInputBlur}
+                placeholder="HH:MM:SS"
+                className="w-20 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono"
               />
             </div>
             <span>Runtime: {totalRuntime}</span>
@@ -367,11 +419,14 @@ const RundownHeader = ({
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
-            <DateTimePicker
+            <input
+              ref={timeInputRef}
+              type="text"
               value={rundownStartTime}
-              onValueChange={(isoDateTime) => onRundownStartTimeChange(isoDateTime)}
-              storageKey={rundownId ? `rundown:${rundownId}:start_time` : undefined}
-              className="bg-transparent text-sm font-mono"
+              onChange={handleTimeInputChange}
+              onBlur={handleTimeInputBlur}
+              placeholder="HH:MM:SS"
+              className="w-24 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
             />
           </div>
           

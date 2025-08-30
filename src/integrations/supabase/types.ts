@@ -240,75 +240,6 @@ export type Database = {
         }
         Relationships: []
       }
-      rundown_recovery_backup: {
-        Row: {
-          archived: boolean | null
-          columns: Json | null
-          created_at: string | null
-          external_notes: Json | null
-          folder_id: string | null
-          icon: string | null
-          id: string | null
-          items: Json | null
-          last_updated_by: string | null
-          logo_url: string | null
-          show_date: string | null
-          showcaller_state: Json | null
-          start_time: string | null
-          team_id: string | null
-          timezone: string | null
-          title: string | null
-          undo_history: Json | null
-          updated_at: string | null
-          user_id: string | null
-          visibility: string | null
-        }
-        Insert: {
-          archived?: boolean | null
-          columns?: Json | null
-          created_at?: string | null
-          external_notes?: Json | null
-          folder_id?: string | null
-          icon?: string | null
-          id?: string | null
-          items?: Json | null
-          last_updated_by?: string | null
-          logo_url?: string | null
-          show_date?: string | null
-          showcaller_state?: Json | null
-          start_time?: string | null
-          team_id?: string | null
-          timezone?: string | null
-          title?: string | null
-          undo_history?: Json | null
-          updated_at?: string | null
-          user_id?: string | null
-          visibility?: string | null
-        }
-        Update: {
-          archived?: boolean | null
-          columns?: Json | null
-          created_at?: string | null
-          external_notes?: Json | null
-          folder_id?: string | null
-          icon?: string | null
-          id?: string | null
-          items?: Json | null
-          last_updated_by?: string | null
-          logo_url?: string | null
-          show_date?: string | null
-          showcaller_state?: Json | null
-          start_time?: string | null
-          team_id?: string | null
-          timezone?: string | null
-          title?: string | null
-          undo_history?: Json | null
-          updated_at?: string | null
-          user_id?: string | null
-          visibility?: string | null
-        }
-        Relationships: []
-      }
       rundowns: {
         Row: {
           archived: boolean
@@ -321,7 +252,6 @@ export type Database = {
           items: Json
           last_updated_by: string | null
           logo_url: string | null
-          show_date: string | null
           showcaller_state: Json | null
           start_time: string | null
           team_id: string
@@ -343,7 +273,6 @@ export type Database = {
           items: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id: string
@@ -365,7 +294,6 @@ export type Database = {
           items?: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id?: string
@@ -999,14 +927,6 @@ export type Database = {
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
-      }
-      update_column_layouts_on_team_column_rename: {
-        Args: {
-          new_column_name: string
-          old_column_key: string
-          team_uuid: string
-        }
-        Returns: undefined
       }
       update_rundown_presence: {
         Args: { rundown_uuid: string }

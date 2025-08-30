@@ -88,7 +88,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   const systemFolders: SystemFolder[] = [
     {
       id: 'recent',
-      name: 'Recent',
+      name: 'Recently Active',
       icon: Clock,
       type: 'recent',
       count: recentCount,

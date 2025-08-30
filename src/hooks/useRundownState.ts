@@ -4,7 +4,6 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
-import { extractTimeFromISO } from '@/utils/timeUtils';
 
 export interface RundownState {
   items: RundownItem[];
@@ -12,7 +11,6 @@ export interface RundownState {
   title: string;
   startTime: string;
   timezone: string;
-  showDate: string; // YYYY-MM-DD format for display
   currentSegmentId: string | null;
   isPlaying: boolean;
   hasUnsavedChanges: boolean;
@@ -30,7 +28,6 @@ type RundownAction =
   | { type: 'UPDATE_COLUMN'; payload: { id: string; updates: Partial<Column> } }
   | { type: 'SET_TITLE'; payload: string }
   | { type: 'SET_START_TIME'; payload: string }
-  | { type: 'SET_SHOW_DATE'; payload: string }
   | { type: 'SET_TIMEZONE'; payload: string }
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
@@ -43,7 +40,6 @@ const initialState: RundownState = {
   title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
   startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
   timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
-  showDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD
   currentSegmentId: null,
   isPlaying: false,
   hasUnsavedChanges: false,
@@ -120,9 +116,6 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'SET_START_TIME':
       return markChanged({ startTime: action.payload });
-
-    case 'SET_SHOW_DATE':
-      return markChanged({ showDate: action.payload });
 
     case 'SET_TIMEZONE':
       return markChanged({ timezone: action.payload });
@@ -287,9 +280,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     
     setTitle: (title: string) => dispatch({ type: 'SET_TITLE', payload: title }),
     
-    setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: extractTimeFromISO(startTime) }),
-    
-    setShowDate: (showDate: string) => dispatch({ type: 'SET_SHOW_DATE', payload: showDate }),
+    setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: startTime }),
     
     setTimezone: (timezone: string) => dispatch({ type: 'SET_TIMEZONE', payload: timezone }),
     

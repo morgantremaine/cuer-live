@@ -306,28 +306,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(prevColumns => {
         const merged = mergeColumnsWithTeamColumns(prevColumns, shouldShowTeamColumns);
         
-        // Check if any team column names have changed and update user preferences
-        let hasTeamColumnNameChanges = false;
-        const updatedMerged = merged.map(col => {
-          if (col.isCustom && (col as any).isTeamColumn) {
-            const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
-            if (teamColumn && col.name !== teamColumn.column_name) {
-              hasTeamColumnNameChanges = true;
-              return { ...col, name: teamColumn.column_name };
-            }
-          }
-          return col;
-        });
-        
-        // Save the updated layout if team columns were made visible or names changed
-        if ((shouldShowTeamColumns || hasTeamColumnNameChanges) && !isLoadingRef.current) {
-          const finalMerged = hasTeamColumnNameChanges ? updatedMerged : merged;
-          saveColumnPreferences(finalMerged, true);
+        // Save the updated layout if team columns were made visible for first time
+        if (shouldShowTeamColumns && !isLoadingRef.current) {
+          saveColumnPreferences(merged, true);
           isFirstTimeViewRef.current = false; // Reset after saving
-          return finalMerged;
         }
         
-        return hasTeamColumnNameChanges ? updatedMerged : merged;
+        return merged;
       });
     }
   }, [teamColumns, mergeColumnsWithTeamColumns, saveColumnPreferences]);

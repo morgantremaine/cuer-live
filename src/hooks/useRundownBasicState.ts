@@ -93,7 +93,6 @@ export const useRundownBasicState = () => {
   };
 
   const setRundownStartTimeWithChange = (newStartTime: string) => {
-    console.log('🕒 setRundownStartTimeWithChange called with:', newStartTime, 'current:', rundownStartTime);
     if (rundownStartTime !== newStartTime) {
       setRundownStartTime(newStartTime);
       markAsChanged();
