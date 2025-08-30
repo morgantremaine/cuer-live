@@ -6,14 +6,15 @@
 export const timeToSeconds = (timeStr: string): number => {
   if (!timeStr || typeof timeStr !== 'string') return 0;
   
-  // Handle ISO datetime strings - extract time portion
+  // Handle ISO datetime strings - extract time portion using UTC methods
   if (timeStr.includes('T')) {
     try {
       const date = new Date(timeStr);
       if (!isNaN(date.getTime())) {
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-        const seconds = date.getSeconds();
+        // Use UTC methods to avoid timezone conversion issues
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
+        const seconds = date.getUTCSeconds();
         return Math.floor(hours * 3600 + minutes * 60 + seconds);
       }
     } catch (error) {
@@ -70,13 +71,14 @@ export const extractTimeFromISO = (isoString: string): string => {
       return isoString.length === 5 ? `${isoString}:00` : isoString;
     }
     
-    // If it's an ISO datetime string, extract the time portion
+    // If it's an ISO datetime string, extract the time portion using UTC methods
     if (isoString && isoString.includes('T')) {
       const date = new Date(isoString);
       if (!isNaN(date.getTime())) {
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
+        // Use UTC methods to avoid timezone conversion issues
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
         return `${hours}:${minutes}:${seconds}`;
       }
     }
