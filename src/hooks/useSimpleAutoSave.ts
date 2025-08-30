@@ -43,8 +43,9 @@ export const useSimpleAutoSave = (
           // Combine stored date with current time portion
           const timeOnly = state.startTime || '09:00:00';
           const [hours, minutes, seconds = '00'] = timeOnly.split(':');
-          storedDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]));
-          return storedDate.toISOString();
+          const combinedDate = new Date(storedDate);
+          combinedDate.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]), 0);
+          return combinedDate.toISOString();
         }
       }
     } catch (e) {
@@ -55,7 +56,7 @@ export const useSimpleAutoSave = (
     const today = new Date();
     const timeOnly = state.startTime || '09:00:00';
     const [hours, minutes, seconds = '00'] = timeOnly.split(':');
-    today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]));
+    today.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds.split('.')[0]), 0);
     return today.toISOString();
   }, [state.startTime, rundownId]);
 
@@ -84,19 +85,17 @@ export const useSimpleAutoSave = (
       };
     }) || [];
 
-    // Include the full ISO datetime in signature for proper change detection
-    const fullStartTime = deriveFullStartTime();
-
+    // Create a stable signature that doesn't cause loops
+    // Use only the time portion for consistency since that's what the state stores
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
-      startTime: state.startTime, // Keep time portion for calculations
-      fullStartTime, // Include full ISO for date changes
+      startTime: state.startTime, // Just use time portion for signature consistency
       timezone: state.timezone
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone, deriveFullStartTime]);
+  }, [state.items, state.title, state.startTime, state.timezone]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
