@@ -21,18 +21,31 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   const currentItems = items || directState.items;
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
-    const { searchTerm, fields } = options;
+    const { searchTerm, fields, wholeWord } = options;
     
     if (!searchTerm.trim()) {
       setLastSearchResults({ matches: [], totalMatches: 0 });
       return { matches: [], totalMatches: 0 };
     }
 
+    // Check if search term is quoted (indicating whole word search)
+    const isQuoted = (searchTerm.startsWith('"') && searchTerm.endsWith('"')) || 
+                     (searchTerm.startsWith("'") && searchTerm.endsWith("'"));
+    
+    const actualSearchTerm = isQuoted ? searchTerm.slice(1, -1) : searchTerm;
+    const shouldUseWholeWord = isQuoted || wholeWord;
+
     let searchRegex: RegExp;
     try {
       // Always search case-insensitively for find
       const flags = 'gi';
-      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let pattern = actualSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Add word boundaries if whole word search is enabled
+      if (shouldUseWholeWord) {
+        pattern = `\\b${pattern}\\b`;
+      }
+      
       searchRegex = new RegExp(pattern, flags);
     } catch (error) {
       console.error('🔍 Invalid search regex:', error);
@@ -92,7 +105,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   }, []);
 
   const replaceCurrent = useCallback((options: FindReplaceOptions, currentMatchIndex: number) => {
-    const { searchTerm, replaceTerm, fields, caseSensitive } = options;
+    const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
     
     if (!searchTerm.trim() || lastSearchResults.matches.length === 0 || currentMatchIndex >= lastSearchResults.matches.length) {
       return { replacements: 0 };
@@ -105,11 +118,24 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       return { replacements: 0 };
     }
 
+    // Check if search term is quoted (indicating whole word search)
+    const isQuoted = (searchTerm.startsWith('"') && searchTerm.endsWith('"')) || 
+                     (searchTerm.startsWith("'") && searchTerm.endsWith("'"));
+    
+    const actualSearchTerm = isQuoted ? searchTerm.slice(1, -1) : searchTerm;
+    const shouldUseWholeWord = isQuoted || wholeWord;
+
     let searchRegex: RegExp;
     try {
       // Always search case-insensitively
       const flags = 'gi';
-      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let pattern = actualSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Add word boundaries if whole word search is enabled
+      if (shouldUseWholeWord) {
+        pattern = `\\b${pattern}\\b`;
+      }
+      
       searchRegex = new RegExp(pattern, flags);
     } catch (error) {
       console.error('🔄 Invalid search regex:', error);
@@ -130,25 +156,25 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       let newValue = fieldValue;
       let replacementCount = 0;
       
-      if (caseSensitive) {
-        // Smart case replacement - preserve original capitalization
-        newValue = fieldValue.replace(searchRegex, (match) => {
-          if (replacementCount === 0) {
-            replacementCount++;
-            return matchCapitalization(match, replaceTerm);
-          }
-          return match; // Don't replace subsequent matches
-        });
-      } else {
-        // Simple replacement - use exact replacement term
-        newValue = fieldValue.replace(searchRegex, (match) => {
-          if (replacementCount === 0) {
-            replacementCount++;
-            return replaceTerm;
-          }
-          return match; // Don't replace subsequent matches
-        });
-      }
+        if (caseSensitive) {
+          // Smart case replacement - preserve original capitalization
+          newValue = fieldValue.replace(searchRegex, (match) => {
+            if (replacementCount === 0) {
+              replacementCount++;
+              return matchCapitalization(match, replaceTerm);
+            }
+            return match; // Don't replace subsequent matches
+          });
+        } else {
+          // Simple replacement - use exact replacement term
+          newValue = fieldValue.replace(searchRegex, (match) => {
+            if (replacementCount === 0) {
+              replacementCount++;
+              return replaceTerm;
+            }
+            return match; // Don't replace subsequent matches
+          });
+        }
       
       if (replacementCount > 0) {
         // Use the same update mechanism as manual user edits
@@ -166,17 +192,30 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
   }, [currentItems, onUpdateItem, directState.updateItem, matchCapitalization, lastSearchResults.matches]);
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
-    const { searchTerm, replaceTerm, fields, caseSensitive } = options;
+    const { searchTerm, replaceTerm, fields, caseSensitive, wholeWord } = options;
     
     if (!searchTerm.trim()) {
       return { replacements: 0 };
     }
 
+    // Check if search term is quoted (indicating whole word search)
+    const isQuoted = (searchTerm.startsWith('"') && searchTerm.endsWith('"')) || 
+                     (searchTerm.startsWith("'") && searchTerm.endsWith("'"));
+    
+    const actualSearchTerm = isQuoted ? searchTerm.slice(1, -1) : searchTerm;
+    const shouldUseWholeWord = isQuoted || wholeWord;
+
     let searchRegex: RegExp;
     try {
       // Always search case-insensitively
       const flags = 'gi';
-      const pattern = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let pattern = actualSearchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Add word boundaries if whole word search is enabled
+      if (shouldUseWholeWord) {
+        pattern = `\\b${pattern}\\b`;
+      }
+      
       searchRegex = new RegExp(pattern, flags);
     } catch (error) {
       console.error('🔄 Invalid search regex:', error);

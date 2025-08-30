@@ -1,6 +1,7 @@
 
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
+import { extractTimeFromISO } from '@/utils/timeUtils';
 
 export interface CalculatedRundownItem extends RundownItem {
   calculatedStartTime: string;
@@ -73,7 +74,8 @@ export const calculateItemsWithTiming = (
   // Clear header row numbers
   const itemsWithClearedHeaders = clearHeaderNumbers(items);
   
-  let currentTime = rundownStartTime;
+  // Extract time portion from ISO datetime for calculations
+  let currentTime = extractTimeFromISO(rundownStartTime);
   let regularRowCount = 0;
 
   return itemsWithClearedHeaders.map((item, index) => {
@@ -107,7 +109,7 @@ export const calculateItemsWithTiming = (
       calculatedRowNumber = regularRowCount.toString();
     }
 
-    const calculatedElapsedTime = calculateElapsedTime(calculatedStartTime, rundownStartTime);
+    const calculatedElapsedTime = calculateElapsedTime(calculatedStartTime, extractTimeFromISO(rundownStartTime));
 
     return {
       ...item,

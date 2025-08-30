@@ -623,43 +623,53 @@ export const useShowcallerVisualState = ({
   useEffect(() => {
     if (!isInitialized || !visualState.currentSegmentId) return;
 
-    // Check if current segment still exists and is valid (non-floated regular item)
-    const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
-    const isCurrentSegmentValid = currentSegment && 
-                                  currentSegment.type === 'regular' && 
-                                  !isFloated(currentSegment);
+    // CRITICAL: Add more conservative guards to prevent data loss
+    // Only trigger self-healing after items have been stable for a period
+    const timeoutId = setTimeout(() => {
+      // Check if current segment still exists and is valid (non-floated regular item)
+      const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
+      const isCurrentSegmentValid = currentSegment && 
+                                    currentSegment.type === 'regular' && 
+                                    !isFloated(currentSegment);
 
-    if (!isCurrentSegmentValid) {
-      console.log('🔧 Self-healing: Current segment invalid or deleted, finding fallback');
-      
-      // Only proceed if this client is the controller or there's no active controller
-      const isController = visualState.controllerId === userId;
-      if (!isController && visualState.controllerId) {
-        console.log('🔧 Self-healing: Not controller, skipping auto-healing');
-        return;
-      }
-      
-      // Find fallback segment: prefer next available, then previous, then clear
-      let fallbackSegment = null;
-      const wasPlaying = visualState.isPlaying;
-      
-      if (currentSegment) {
-        // Try to find next segment from current position
-        fallbackSegment = getNextSegment(visualState.currentSegmentId);
-        
-        // If no next segment, try previous
-        if (!fallbackSegment) {
-          fallbackSegment = getPreviousSegment(visualState.currentSegmentId);
+      if (!isCurrentSegmentValid) {
+        // EXTRA SAFETY: Only proceed if items array has more than 0 items
+        // This prevents self-healing from triggering during data loading/corruption
+        if (items.length === 0) {
+          console.log('🔧 Self-healing: BLOCKED - No items available, likely data loading issue');
+          return;
         }
-      }
-      
-      // If still no fallback, find first available segment
-      if (!fallbackSegment) {
-        fallbackSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-      }
-      
-      if (fallbackSegment) {
-        console.log('🔧 Self-healing: Moving to fallback segment:', fallbackSegment.id);
+        
+        console.log('🔧 Self-healing: Current segment invalid or deleted, finding fallback');
+        
+        // Only proceed if this client is the controller or there's no active controller
+        const isController = visualState.controllerId === userId;
+        if (!isController && visualState.controllerId) {
+          console.log('🔧 Self-healing: Not controller, skipping auto-healing');
+          return;
+        }
+        
+        // Find fallback segment: prefer next available, then previous, then clear
+        let fallbackSegment = null;
+        const wasPlaying = visualState.isPlaying;
+        
+        if (currentSegment) {
+          // Try to find next segment from current position
+          fallbackSegment = getNextSegment(visualState.currentSegmentId);
+          
+          // If no next segment, try previous
+          if (!fallbackSegment) {
+            fallbackSegment = getPreviousSegment(visualState.currentSegmentId);
+          }
+        }
+        
+        // If still no fallback, find first available segment
+        if (!fallbackSegment) {
+          fallbackSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+        }
+        
+        if (fallbackSegment) {
+          console.log('🔧 Self-healing: Moving to fallback segment:', fallbackSegment.id);
         
         // Rebuild status map for the new current segment
         const newStatuses = new Map();
@@ -732,6 +742,9 @@ export const useShowcallerVisualState = ({
         }, visualState.controllerId === userId, false);
       }
     }
+    }, 500); // Wait 500ms for items to stabilize before triggering self-healing
+    
+    return () => clearTimeout(timeoutId);
   }, [
     isInitialized, 
     items, 

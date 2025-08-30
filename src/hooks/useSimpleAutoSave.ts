@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
+import { useTabVisibilityAutoSave } from './useTabVisibilityAutoSave';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -26,7 +27,7 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
-  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
+  // Content signature that includes showDate from state
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
     const cleanItems = state.items?.map(item => {
@@ -51,15 +52,17 @@ export const useSimpleAutoSave = (
       };
     }) || [];
 
+    // Create a stable signature that includes showDate from state
     const signature = JSON.stringify({
       items: cleanItems,
       title: state.title,
-      startTime: state.startTime,
-      timezone: state.timezone
+      startTime: state.startTime, // HH:MM:SS time portion only
+      timezone: state.timezone,
+      showDate: state.showDate // Include showDate from state
     });
 
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -126,13 +129,15 @@ export const useSimpleAutoSave = (
         // Get folder ID from location state if available
         const folderId = location.state?.folderId || null;
 
+        // Enhanced save for new rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert({
             title: state.title,
             items: state.items,
-            start_time: state.startTime,
+            start_time: state.startTime, // HH:MM:SS only
+            show_date: state.showDate, // YYYY-MM-DD from state
             timezone: state.timezone,
             team_id: teamData.team_id,
             user_id: currentUserId,
@@ -165,7 +170,8 @@ export const useSimpleAutoSave = (
           .update({
             title: state.title,
             items: state.items,
-            start_time: state.startTime,
+            start_time: state.startTime, // HH:MM:SS only
+            show_date: state.showDate, // YYYY-MM-DD from state
             timezone: state.timezone,
             updated_at: new Date().toISOString(),
             last_updated_by: currentUserId
@@ -176,12 +182,14 @@ export const useSimpleAutoSave = (
 
         if (error) {
           console.error('❌ Save failed:', error);
+          debugLogger.autosave('Save failed with error', error);
           toast({
             title: "Save failed",
             description: "Unable to save changes. Will retry automatically.",
             variant: "destructive",
             duration: 3000,
           });
+          // Don't return here - we still want to set lastSavedRef and call onSaved on successful response
         } else {
           // Track the actual timestamp returned by the database
           if (data?.updated_at) {
@@ -192,16 +200,19 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           onSaved();
+          debugLogger.autosave('Save successful for existing rundown');
         }
       }
     } catch (error) {
       console.error('❌ Save error:', error);
+      debugLogger.autosave('Save threw exception', error);
       toast({
         title: "Save failed", 
         description: "Unable to save changes. Will retry automatically.",
         variant: "destructive",
         duration: 3000,
       });
+      // Don't modify lastSavedRef or call onSaved on error
     } finally {
       setIsSaving(false);
       
@@ -234,7 +245,17 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, state.showDate, isSaving, suppressUntilRef]);
+
+  // Tab visibility save for unsaved changes on tab hide
+  useTabVisibilityAutoSave({
+    state,
+    rundownId,
+    performSave,
+    createContentSignature,
+    lastSavedRef,
+    isDemo: rundownId === DEMO_RUNDOWN_ID
+  });
 
   useEffect(() => {
     // Check if this is a demo rundown - skip saving but allow change detection
@@ -243,18 +264,6 @@ export const useSimpleAutoSave = (
       if (state.hasUnsavedChanges) {
         onSaved();
       }
-      return;
-    }
-
-    // Check suppression cooldown first
-    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: teammate update cooldown active');
-      return;
-    }
-    
-    // Simple blocking conditions - only undo blocks saves
-    if (undoActiveRef.current) {
-      debugLogger.autosave('Save blocked: undo operation active');
       return;
     }
 
@@ -270,8 +279,38 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Immediate save for structural changes, short debounce for text edits
+    // Simple blocking conditions - only undo blocks saves
+    if (undoActiveRef.current) {
+      debugLogger.autosave('Save blocked: undo operation active');
+      return;
+    }
+
+    // Determine if this is a structural change
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
+    
+    // Check suppression cooldown - but bypass entirely for structural changes
+    if (!isStructuralChange && suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: teammate update cooldown active, scheduling delayed save');
+      
+      // Schedule a save attempt after cooldown expires
+      const cooldownRemaining = suppressUntilRef.current - Date.now();
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      saveTimeoutRef.current = setTimeout(async () => {
+        // Double-check if save is still needed after cooldown
+        const latestSignature = createContentSignature();
+        if (latestSignature !== lastSavedRef.current && !undoActiveRef.current) {
+          debugLogger.autosave('Executing delayed save after cooldown');
+          await performSave();
+        }
+      }, cooldownRemaining + 100); // Small buffer after cooldown expires
+      
+      return;
+    }
+
+    // Immediate save for structural changes, short debounce for text edits
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
 
     if (saveTimeoutRef.current) {
@@ -279,6 +318,7 @@ export const useSimpleAutoSave = (
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
+      debugLogger.autosave('Executing scheduled save');
       await performSave();
     }, debounceTime);
 
@@ -287,7 +327,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef]);
+  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, pendingStructuralChangeRef]);
 
   return {
     isSaving,
