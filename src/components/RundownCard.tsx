@@ -7,9 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText, Download } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
+import { exportRundownAsCSV } from '@/utils/csvExport'
 
 interface SavedRundown {
   id: string
@@ -27,6 +28,7 @@ interface RundownCardProps {
   onArchive?: (id: string, title: string, e: React.MouseEvent) => void
   onUnarchive?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   onDuplicate?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
+  onDownloadCSV?: (id: string, title: string, items: RundownItem[], e: React.MouseEvent) => void
   isArchived?: boolean
 }
 
@@ -37,6 +39,7 @@ const RundownCard = ({
   onArchive, 
   onUnarchive, 
   onDuplicate,
+  onDownloadCSV,
   isArchived = false 
 }: RundownCardProps) => {
   const handleBlueprintClick = (e: React.MouseEvent) => {
@@ -47,6 +50,28 @@ const RundownCard = ({
   const handleOpenClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     onOpen(rundown.id)
+  }
+
+  const handleDownloadCSV = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onDownloadCSV) {
+      onDownloadCSV(rundown.id, rundown.title, rundown.items, e)
+    } else {
+      // Fallback to direct CSV export if no callback provided
+      try {
+        exportRundownAsCSV({
+          items: rundown.items,
+          visibleColumns: [
+            { id: 'name', name: 'Name', key: 'name', width: '200px', isCustom: false, isEditable: true },
+            { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true },
+            { id: 'startTime', name: 'Start Time', key: 'startTime', width: '120px', isCustom: false, isEditable: true },
+            { id: 'endTime', name: 'End Time', key: 'endTime', width: '120px', isCustom: false, isEditable: false }
+          ]
+        }, rundown.title)
+      } catch (error) {
+        console.error('Error exporting CSV:', error)
+      }
+    }
   }
 
   // Collapsed view for archived rundowns
@@ -74,6 +99,13 @@ const RundownCard = ({
                 align="end" 
                 className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
               >
+                <DropdownMenuItem 
+                  onClick={handleDownloadCSV}
+                  className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download CSV
+                </DropdownMenuItem>
                 {onDuplicate && (
                   <DropdownMenuItem 
                     onClick={(e) => {
@@ -149,6 +181,13 @@ const RundownCard = ({
               align="end" 
               className="z-50 bg-gray-800 border-gray-700 shadow-lg rounded-md min-w-[160px]"
             >
+              <DropdownMenuItem 
+                onClick={handleDownloadCSV}
+                className="flex items-center px-3 py-2 text-sm hover:bg-gray-700 cursor-pointer text-gray-300 hover:text-white"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download CSV
+              </DropdownMenuItem>
               {onDuplicate && (
                 <DropdownMenuItem 
                   onClick={(e) => {
