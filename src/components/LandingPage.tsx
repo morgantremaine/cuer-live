@@ -72,7 +72,7 @@ const LandingPage = () => {
   return (
     <>
       {/* Preload critical background image */}
-      <link rel="preload" as="image" href="/uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" />
+      <link rel="preload" as="image" href="/lovable-uploads/a3f263ca-d673-4163-914c-64e4aa3eb05f.png" />
       
       <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
@@ -114,7 +114,7 @@ const LandingPage = () => {
           {/* Background Image */}
           <div className="absolute inset-0 w-full">
             <img 
-              src="/uploads/6769f69c-e3fb-4e96-b40f-bde77fa84f6e.png" 
+              src="/lovable-uploads/a3f263ca-d673-4163-914c-64e4aa3eb05f.png" 
               alt="Professional Broadcast Control Room"
               className="w-full h-full object-cover animate-fade-in"
               loading="eager"
