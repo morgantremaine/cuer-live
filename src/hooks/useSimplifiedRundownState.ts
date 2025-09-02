@@ -250,6 +250,18 @@ export const useSimplifiedRundownState = () => {
         });
         
       } else {
+        // Safety guard: Don't apply updates that would clear all items unless intentional
+        const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
+        
+        if (wouldClearItems) {
+          console.warn('🛡️ Prevented applying malformed update that would clear all items:', {
+            incomingItems: updatedRundown.items?.length || 0,
+            currentItems: state.items.length,
+            timestamp: updatedRundown.updated_at
+          });
+          return;
+        }
+        
         // No protected fields - apply update normally
         actions.loadState({
           items: updatedRundown.items || [],
