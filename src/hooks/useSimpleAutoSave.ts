@@ -258,15 +258,36 @@ export const useSimpleAutoSave = (
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
         console.log('💾 AutoSave: updating rundown', { rundownId, items: state.items?.length, title: state.title });
 
-        // 1) Read current doc_version
-        const { data: currentRow, error: readErr } = await supabase
-          .from('rundowns')
-          .select('doc_version, updated_at')
-          .eq('id', rundownId)
-          .single();
+        // 1) Read current doc_version with retry logic
+        let currentRow: any = null;
+        let readErr: any = null;
+        
+        // Retry reading current version up to 3 times to handle race conditions
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          const { data, error } = await supabase
+            .from('rundowns')
+            .select('doc_version, updated_at')
+            .eq('id', rundownId)
+            .single();
+            
+          if (error) {
+            readErr = error;
+            console.warn(`❌ Attempt ${attempt} failed to read current doc_version:`, error);
+            if (attempt < 3) {
+              // Wait briefly before retry
+              await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+              continue;
+            }
+          } else {
+            currentRow = data;
+            readErr = null;
+            console.log(`✅ Read current doc_version on attempt ${attempt}:`, data?.doc_version);
+            break;
+          }
+        }
 
         if (readErr || !currentRow) {
-          console.error('❌ Save failed: could not read current doc_version', readErr);
+          console.error('❌ Save failed: could not read current doc_version after retries', readErr);
           throw readErr || new Error('Failed to read current rundown row');
         }
 
