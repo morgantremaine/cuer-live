@@ -62,8 +62,6 @@ interface RundownContentProps {
   visibleItems: RundownItem[];
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
-  // Active typing detection for improved autosave
-  markActiveTyping?: () => void;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -301,11 +299,11 @@ const RundownContent = React.memo<RundownContentProps>(({
             onAddRow={onAddRow || (() => {})}
             onAddHeader={onAddHeader || (() => {})}
             onJumpToHere={onJumpToHere}
-             // Header collapse functions
-             toggleHeaderCollapse={toggleHeaderCollapse}
-             isHeaderCollapsed={isHeaderCollapsed}
-             getHeaderGroupItemIds={getHeaderGroupItemIds}
-             />
+            // Header collapse functions
+            toggleHeaderCollapse={toggleHeaderCollapse}
+            isHeaderCollapsed={isHeaderCollapsed}
+            getHeaderGroupItemIds={getHeaderGroupItemIds}
+            />
           </table>
         </div>
         <ScrollBar orientation="horizontal" />

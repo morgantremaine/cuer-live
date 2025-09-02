@@ -26,11 +26,6 @@ export const useSimpleAutoSave = (
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
-  
-  // Active typing detection to prevent saves during rapid typing
-  const activeTypingRef = useRef(false);
-  const lastTypingTimeRef = useRef(0);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -129,34 +124,6 @@ export const useSimpleAutoSave = (
   const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
   }, []);
-
-  // Function to mark user as actively typing (called from input components)
-  const markActiveTyping = useCallback(() => {
-    const now = Date.now();
-    lastTypingTimeRef.current = now;
-    
-    if (!activeTypingRef.current) {
-      activeTypingRef.current = true;
-      console.log('⌨️ AutoSave: user started typing - deferring saves');
-    }
-
-    // Clear any existing typing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Set user as inactive after 800ms of no typing
-    typingTimeoutRef.current = setTimeout(() => {
-      activeTypingRef.current = false;
-      console.log('⌨️ AutoSave: typing stopped - saves allowed');
-      
-      // If there are unsaved changes, trigger a save with shorter delay
-      if (state.hasUnsavedChanges) {
-        console.log('💾 AutoSave: triggering save after typing stopped');
-        debouncedSave();
-      }
-    }, 800);
-  }, [state.hasUnsavedChanges]);
 
   // Enhanced save function with re-queuing logic
   const performSave = useCallback(async (): Promise<void> => {
@@ -370,12 +337,6 @@ export const useSimpleAutoSave = (
       }
       return;
     }
-
-    // Check if user is actively typing - if so, defer save
-    if (activeTypingRef.current) {
-      console.log('⌨️ AutoSave: deferring save - user is actively typing');
-      return; // The typing timeout will trigger a save when typing stops
-    }
     
     console.log('🔥 AutoSave: content changed detected', { 
       hasUnsavedChanges: state.hasUnsavedChanges,
@@ -387,16 +348,10 @@ export const useSimpleAutoSave = (
     });
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1000 : 500);
+    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
     console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
 
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check - don't save if user is still typing
-      if (activeTypingRef.current) {
-        console.log('⌨️ AutoSave: save cancelled - user is still typing');
-        return;
-      }
-      
       console.log('⏱️ AutoSave: executing save now');
       try {
         await performSave();
@@ -479,7 +434,6 @@ export const useSimpleAutoSave = (
   return {
     isSaving,
     setUndoActive,
-    setTrackOwnUpdate,
-    markActiveTyping
+    setTrackOwnUpdate
   };
 };

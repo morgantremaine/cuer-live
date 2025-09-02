@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
-import { globalFocusTracker } from '@/utils/focusTracker';
 
 interface TextAreaCellProps {
   value: string;
@@ -150,16 +149,8 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Mark user as actively typing to prevent autosave interruption
-    if (globalFocusTracker.markActiveTyping) {
-      globalFocusTracker.markActiveTyping();
-    }
-    
-    const newValue = e.target.value;
-    onUpdateValue(newValue);
-    
-    // Recalculate height when content changes
-    calculateHeight();
+    onUpdateValue(e.target.value);
+    // Height will be recalculated by useEffect
   };
 
   // Enhanced mouse down handler to prevent row dragging when selecting text
