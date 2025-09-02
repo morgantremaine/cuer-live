@@ -374,9 +374,6 @@ export const useSimpleAutoSave = (
       lastSavedSigHash: lastSavedRef.current.slice(0, 100) + '...'
     });
 
-    // Record that content is being changed (typing activity)
-    markActiveTyping();
-
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 2500 : 500);
     console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
