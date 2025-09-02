@@ -353,6 +353,7 @@ export type Database = {
           archived: boolean
           columns: Json | null
           created_at: string | null
+          doc_version: number
           external_notes: Json | null
           folder_id: string | null
           icon: string | null
@@ -374,6 +375,7 @@ export type Database = {
           archived?: boolean
           columns?: Json | null
           created_at?: string | null
+          doc_version?: number
           external_notes?: Json | null
           folder_id?: string | null
           icon?: string | null
@@ -395,6 +397,7 @@ export type Database = {
           archived?: boolean
           columns?: Json | null
           created_at?: string | null
+          doc_version?: number
           external_notes?: Json | null
           folder_id?: string | null
           icon?: string | null
