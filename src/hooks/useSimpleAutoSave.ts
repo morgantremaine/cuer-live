@@ -315,6 +315,12 @@ export const useSimpleAutoSave = (
     }
   }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
+  // Keep latest performSave reference without retriggering effects
+  const performSaveRef = useRef(performSave);
+  useEffect(() => {
+    performSaveRef.current = performSave;
+  }, [performSave]);
+
   // Debounced save function that's called by state change handlers, not useEffect
   const debouncedSave = useCallback(() => {
     if (saveTimeoutRef.current) {
@@ -356,7 +362,7 @@ export const useSimpleAutoSave = (
     }, debounceTime);
   }, [createContentSignature, state.hasUnsavedChanges, performSave, onSaved, pendingStructuralChangeRef]);
 
-  // Simple effect that just calls debounced save when hasUnsavedChanges becomes true
+  // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
     if (!isInitiallyLoaded) {
       console.log('🛑 AutoSave(effect): blocked - initial load not complete');
@@ -380,9 +386,24 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // Only trigger debounced save when hasUnsavedChanges becomes true
     if (state.hasUnsavedChanges) {
-      debouncedSave();
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      const isStructuralChange = pendingStructuralChangeRef?.current || false;
+      const debounceTime = isStructuralChange ? 100 : 1500;
+      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
+
+      saveTimeoutRef.current = setTimeout(async () => {
+        console.log('⏱️ AutoSave: executing save now');
+        try {
+          await performSaveRef.current();
+          console.log('✅ AutoSave: save completed successfully');
+        } catch (error) {
+          console.error('❌ AutoSave: save execution failed:', error);
+        }
+      }, debounceTime);
     }
 
     return () => {
@@ -390,7 +411,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, onSaved, suppressUntilRef, debouncedSave]);
+  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, onSaved, suppressUntilRef]);
 
   return {
     isSaving,
