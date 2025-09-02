@@ -30,26 +30,17 @@ export const useSimpleAutoSave = (
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
-    const cleanItems = state.items?.map(item => {
-      return {
-        id: item.id,
-        type: item.type,
-        rowNumber: item.rowNumber,
-        name: item.name,
-        startTime: item.startTime,
-        duration: item.duration,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        customFields: item.customFields
-        // EXPLICITLY EXCLUDED: status, elapsedTime, and any other showcaller fields
-      };
+    const cleanItems = state.items?.map((item: any) => {
+      // Remove showcaller-only or calculated fields so content edits always save
+      const {
+        status, // showcaller state
+        elapsedTime, // showcaller runtime field
+        calculatedElapsedTime,
+        calculatedStartTime,
+        calculatedEndTime,
+        ...rest
+      } = item || {};
+      return rest;
     }) || [];
 
     const signature = JSON.stringify({
