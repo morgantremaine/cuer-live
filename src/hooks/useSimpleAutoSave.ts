@@ -33,19 +33,6 @@ export const useSimpleAutoSave = (
     onSavedRef.current = onSaved;
   }, [onSaved]);
 
-  // Add effect to monitor when lastSavedRef gets reset
-  useEffect(() => {
-    const currentValue = lastSavedRef.current;
-    return () => {
-      if (lastSavedRef.current !== currentValue) {
-        console.log('⚠️ lastSavedRef changed unexpectedly:', { 
-          from: currentValue.length, 
-          to: lastSavedRef.current.length 
-        });
-      }
-    };
-  });
-
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
