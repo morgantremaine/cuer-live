@@ -82,12 +82,33 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state.items, state.title, state.startTime, state.timezone]);
 
+  // Prime baseline signature when initial load completes and on rundown change
+  useEffect(() => {
+    // Reset baseline when switching rundowns to avoid cross-rundown comparisons
+    // This ensures the next effect will prime a fresh baseline
+    // Note: rundownId may be null for new rundowns
+    lastSavedRef.current = '';
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+  }, [rundownId]);
+
+  useEffect(() => {
+    if (!isInitiallyLoaded) return;
+
+    // Compute current content signature and prime baseline if empty/unset
+    const sig = createContentSignature();
+    if (!lastSavedRef.current || lastSavedRef.current.length === 0) {
+      lastSavedRef.current = sig;
+      console.log('🧪 AutoSave: primed baseline after init', { length: sig.length });
+    }
+  }, [isInitiallyLoaded, rundownId, createContentSignature]);
+
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
     console.log('🎯 Undo active set to:', active);
   };
-
   // Simplified update tracking
   const trackMyUpdate = useCallback((timestamp: string) => {
     if (trackOwnUpdateRef.current) {
