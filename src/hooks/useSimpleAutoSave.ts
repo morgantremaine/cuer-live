@@ -315,48 +315,20 @@ export const useSimpleAutoSave = (
     }
   }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
-  useEffect(() => {
-    // CRITICAL: Gate autosave until initial load is complete
-    if (!isInitiallyLoaded) {
-      debugLogger.autosave('Save blocked: initial load not complete');
-      console.log('🛑 AutoSave(effect): blocked - initial load not complete');
-      return;
+  // Debounced save function that's called by state change handlers, not useEffect
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
 
-    // Check if this is a demo rundown - skip saving but allow change detection
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      // Still mark as saved to prevent UI from showing "unsaved" state
-      if (state.hasUnsavedChanges) {
-        onSaved();
-      }
-      return;
-    }
-
-    // Check suppression cooldown first
-    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: teammate update cooldown active');
-      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active');
-      return;
-    }
-    
-    // Simple blocking conditions - only undo blocks saves
-    if (undoActiveRef.current) {
-      debugLogger.autosave('Save blocked: undo operation active');
-      console.log('🛑 AutoSave(effect): blocked - undo operation active');
-      return;
-    }
-
-    // Always check for content changes, even if hasUnsavedChanges is false
     const currentSignature = createContentSignature();
-
+    
     // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
-      // Mark as saved since there are no actual content changes
       if (state.hasUnsavedChanges) {
         console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - marking saved anyway');
         onSaved();
       }
-      console.log('ℹ️ AutoSave(effect): signature unchanged, skipping save');
       return;
     }
     
@@ -369,14 +341,9 @@ export const useSimpleAutoSave = (
       lastSavedSigHash: lastSavedRef.current.slice(0, 100) + '...'
     });
 
-    // Immediate save for structural changes, short debounce for text edits
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
     console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
 
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('⏱️ AutoSave: executing save now');
@@ -387,13 +354,43 @@ export const useSimpleAutoSave = (
         console.error('❌ AutoSave: save execution failed:', error);
       }
     }, debounceTime);
+  }, [createContentSignature, state.hasUnsavedChanges, performSave, onSaved, pendingStructuralChangeRef]);
+
+  // Simple effect that just calls debounced save when hasUnsavedChanges becomes true
+  useEffect(() => {
+    if (!isInitiallyLoaded) {
+      console.log('🛑 AutoSave(effect): blocked - initial load not complete');
+      return;
+    }
+
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      if (state.hasUnsavedChanges) {
+        onSaved();
+      }
+      return;
+    }
+
+    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
+      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active');
+      return;
+    }
+    
+    if (undoActiveRef.current) {
+      console.log('🛑 AutoSave(effect): blocked - undo operation active');
+      return;
+    }
+
+    // Only trigger debounced save when hasUnsavedChanges becomes true
+    if (state.hasUnsavedChanges) {
+      debouncedSave();
+    }
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, isInitiallyLoaded]);
+  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, onSaved, suppressUntilRef, debouncedSave]);
 
   return {
     isSaving,
