@@ -306,6 +306,48 @@ export type Database = {
         }
         Relationships: []
       }
+      rundown_revisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          items: Json
+          items_count: number | null
+          revision_number: number
+          revision_type: string
+          rundown_id: string
+          start_time: string | null
+          timezone: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          items: Json
+          items_count?: number | null
+          revision_number?: number
+          revision_type?: string
+          rundown_id: string
+          start_time?: string | null
+          timezone?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          items?: Json
+          items_count?: number | null
+          revision_number?: number
+          revision_type?: string
+          rundown_id?: string
+          start_time?: string | null
+          timezone?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       rundowns: {
         Row: {
           archived: boolean
@@ -993,6 +1035,10 @@ export type Database = {
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
         Returns: Json
+      }
+      restore_rundown_from_revision: {
+        Args: { revision_id: string; target_rundown_id: string }
+        Returns: boolean
       }
       update_column_layouts_on_team_column_rename: {
         Args: {
