@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import RundownContent from './RundownContent';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useStableCallbacks } from '@/hooks/useStableCallbacks';
@@ -9,6 +10,7 @@ import { logger } from '@/utils/logger';
 const RundownGrid = React.memo(() => {
   const { user } = useAuth();
   const userId = user?.id;
+  const { savedLayouts, loading } = useColumnLayoutStorage();
 
   const {
     coreState,

@@ -38,6 +38,8 @@ interface RundownTableHeaderProps {
   onToggleColumnExpand?: (columnKey: string) => void;
   onToggleAllHeaders?: () => void;
   isHeaderCollapsed?: (headerId: string) => boolean;
+  savedLayouts?: any[];
+  onLoadLayout?: (columns: Column[]) => void;
 }
 
 const RundownTableHeader = ({
@@ -51,7 +53,9 @@ const RundownTableHeader = ({
   columnExpandState = {},
   onToggleColumnExpand,
   onToggleAllHeaders,
-  isHeaderCollapsed
+  isHeaderCollapsed,
+  savedLayouts,
+  onLoadLayout
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -262,19 +266,21 @@ const RundownTableHeader = ({
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
                 >
-                  {onToggleColumnVisibility && allColumns.length > 0 ? (
-                    <HeaderContextMenu
-                      column={column}
-                      allColumns={allColumns}
-                      visibleColumns={visibleColumns}
-                      columnIndex={index}
-                      onToggleColumnVisibility={onToggleColumnVisibility}
-                    >
-                      {headerContent}
-                    </HeaderContextMenu>
-                  ) : (
-                    headerContent
-                  )}
+                   {onToggleColumnVisibility && allColumns.length > 0 ? (
+                     <HeaderContextMenu
+                       column={column}
+                       allColumns={allColumns}
+                       visibleColumns={visibleColumns}
+                       columnIndex={index}
+                       onToggleColumnVisibility={onToggleColumnVisibility}
+                       savedLayouts={savedLayouts}
+                       onLoadLayout={onLoadLayout}
+                     >
+                       {headerContent}
+                     </HeaderContextMenu>
+                   ) : (
+                     headerContent
+                   )}
                 </ResizableColumnHeader>
               );
             })}

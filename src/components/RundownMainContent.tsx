@@ -3,6 +3,7 @@ import React from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
 import { RundownContainerProps } from '@/types/rundownContainer';
+import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 interface RundownMainContentProps extends RundownContainerProps {
   currentSegmentName: string;
@@ -28,6 +29,7 @@ const RundownMainContent = ({
   onToggleAutoScroll,
   ...contentProps
 }: RundownMainContentProps) => {
+  const { savedLayouts } = useColumnLayoutStorage();
 
   return (
     <>
@@ -43,6 +45,8 @@ const RundownMainContent = ({
         totalRuntime={totalDuration}
         items={contentProps.items} // Pass original items for duration calculations
         visibleItems={contentProps.visibleItems} // Pass visible items for display
+        savedLayouts={savedLayouts}
+        onLoadLayout={handleLoadLayout}
       />
       
       <ColumnManager

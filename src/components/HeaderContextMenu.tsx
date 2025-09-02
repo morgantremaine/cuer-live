@@ -10,7 +10,18 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Column } from '@/hooks/useColumnsManager';
-import { Eye, EyeOff, Plus } from 'lucide-react';
+import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
+
+interface LayoutData {
+  id: string;
+  name: string;
+  columns: Column[];
+  is_default?: boolean;
+  creator_profile?: {
+    full_name: string | null;
+    email: string;
+  };
+}
 
 interface HeaderContextMenuProps {
   children: React.ReactNode;
@@ -19,6 +30,8 @@ interface HeaderContextMenuProps {
   visibleColumns: Column[];
   columnIndex: number;
   onToggleColumnVisibility: (columnId: string, insertIndex?: number) => void;
+  savedLayouts?: LayoutData[];
+  onLoadLayout?: (columns: Column[]) => void;
 }
 
 const HeaderContextMenu = ({ 
@@ -27,7 +40,9 @@ const HeaderContextMenu = ({
   allColumns,
   visibleColumns,
   columnIndex,
-  onToggleColumnVisibility 
+  onToggleColumnVisibility,
+  savedLayouts = [],
+  onLoadLayout
 }: HeaderContextMenuProps) => {
   const hiddenColumns = allColumns.filter(col => col.isVisible === false);
 
@@ -43,6 +58,12 @@ const HeaderContextMenu = ({
     }
     
     return insertPosition;
+  };
+
+  const handleLoadLayout = (layout: LayoutData) => {
+    if (onLoadLayout && Array.isArray(layout.columns)) {
+      onLoadLayout(layout.columns);
+    }
   };
 
   return (
@@ -76,6 +97,39 @@ const HeaderContextMenu = ({
                   >
                     <Eye className="h-4 w-4" />
                     {hiddenColumn.name || hiddenColumn.key}
+                  </ContextMenuItem>
+                ))}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </>
+        )}
+
+        {savedLayouts.length > 0 && onLoadLayout && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger className="flex items-center gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Load Layout
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="w-56">
+                {savedLayouts.map((layout) => (
+                  <ContextMenuItem
+                    key={layout.id}
+                    onClick={() => handleLoadLayout(layout)}
+                    className="flex items-center gap-2"
+                  >
+                    <FolderOpen className="h-4 w-4" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {layout.name}
+                      </div>
+                      {layout.creator_profile && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          by {layout.creator_profile.full_name || layout.creator_profile.email}
+                        </div>
+                      )}
+                    </div>
                   </ContextMenuItem>
                 ))}
               </ContextMenuSubContent>
