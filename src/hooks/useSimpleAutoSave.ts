@@ -27,6 +27,12 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
+  // Stable onSaved ref to avoid effect churn from changing callbacks
+  const onSavedRef = useRef(onSaved);
+  useEffect(() => {
+    onSavedRef.current = onSaved;
+  }, [onSaved]);
+
   // Add effect to monitor when lastSavedRef gets reset
   useEffect(() => {
     const currentValue = lastSavedRef.current;
@@ -173,7 +179,7 @@ export const useSimpleAutoSave = (
       // Mark as saved since there are no actual content changes
       debugLogger.autosave('No changes to save - marking as saved');
       console.log('ℹ️ AutoSave: no content changes detected');
-      onSaved();
+      onSavedRef.current?.();
       return;
     }
     
@@ -230,7 +236,7 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
-          onSaved();
+          onSavedRef.current?.();
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
@@ -270,7 +276,7 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
-          onSaved();
+          onSavedRef.current?.();
         }
       }
     } catch (error) {
@@ -313,7 +319,7 @@ export const useSimpleAutoSave = (
         saveQueueRef.current = null;
       }
     }
-  }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
   // Keep latest performSave reference without retriggering effects
   const performSaveRef = useRef(performSave);
@@ -329,11 +335,10 @@ export const useSimpleAutoSave = (
 
     const currentSignature = createContentSignature();
     
-    // Only save if content actually changed
     if (currentSignature === lastSavedRef.current) {
       if (state.hasUnsavedChanges) {
         console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - marking saved anyway');
-        onSaved();
+        onSavedRef.current?.();
       }
       return;
     }
@@ -360,7 +365,7 @@ export const useSimpleAutoSave = (
         console.error('❌ AutoSave: save execution failed:', error);
       }
     }, debounceTime);
-  }, [createContentSignature, state.hasUnsavedChanges, performSave, onSaved, pendingStructuralChangeRef]);
+  }, [createContentSignature, state.hasUnsavedChanges, performSave, pendingStructuralChangeRef]);
 
   // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
@@ -371,7 +376,7 @@ export const useSimpleAutoSave = (
 
     if (rundownId === DEMO_RUNDOWN_ID) {
       if (state.hasUnsavedChanges) {
-        onSaved();
+        onSavedRef.current?.();
       }
       return;
     }
@@ -411,7 +416,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, onSaved, suppressUntilRef]);
+  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
 
   return {
     isSaving,
