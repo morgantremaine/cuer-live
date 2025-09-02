@@ -393,7 +393,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, isInitiallyLoaded]);
+  }, [state.hasUnsavedChanges, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, isInitiallyLoaded]);
 
   return {
     isSaving,
