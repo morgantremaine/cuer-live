@@ -102,7 +102,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -389,6 +389,13 @@ export const useSimplifiedRundownState = () => {
       });
     }
   }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
+
+  // Connect typing state checker to realtime to prevent overwrites during typing
+  useEffect(() => {
+    if (realtimeConnection.setTypingChecker) {
+      realtimeConnection.setTypingChecker(isTypingActive);
+    }
+  }, [realtimeConnection.setTypingChecker, isTypingActive]);
 
   // Update connection status from realtime
   useEffect(() => {

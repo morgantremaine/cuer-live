@@ -27,9 +27,9 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   
-  // Typing idle detection
+  // Typing idle detection - increased window to ensure complete typing sessions
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 3000; // Wait 3s after last edit before allowing saves
+  const typingIdleMs = 5000; // Wait 5s after last edit before allowing saves (increased from 3s)
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -451,8 +451,10 @@ export const useSimpleAutoSave = (
     });
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 2500 : 500);
-    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
+    // Ensure debounce is always longer than typing idle time to prevent partial saves
+    const minDebounce = typingIdleMs + 500; // 5.5s minimum to wait for typing to complete
+    const debounceTime = isStructuralChange ? 100 : Math.max(minDebounce, state.hasUnsavedChanges ? 2500 : 500);
+    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingIdleMs });
 
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('⏱️ AutoSave: executing save now');
@@ -496,7 +498,9 @@ export const useSimpleAutoSave = (
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
       const baseDebounce = isStructuralChange ? 100 : 2500;
-      const debounceTime = isTypingActive() ? Math.max(baseDebounce, typingIdleMs) : baseDebounce;
+      // Always ensure debounce is longer than typing idle time
+      const minDebounce = typingIdleMs + 500; // 5.5s minimum
+      const debounceTime = isTypingActive() ? Math.max(baseDebounce, minDebounce) : Math.max(baseDebounce, minDebounce);
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingActive: isTypingActive() });
 
       saveTimeoutRef.current = setTimeout(async () => {
@@ -556,6 +560,7 @@ export const useSimpleAutoSave = (
     isSaving,
     setUndoActive,
     setTrackOwnUpdate,
-    markActiveTyping
+    markActiveTyping,
+    isTypingActive
   };
 };

@@ -163,7 +163,15 @@ export const useSimpleRealtimeRundown = ({
     return false; // Not a structural change - just content edits
   }, []);
 
-  // Simplified update handler with global deduplication
+  // Add typing state awareness to prevent overwrites during typing
+  const isTypingActiveRef = useRef<() => boolean>(() => false);
+  
+  // Function to set typing state checker from autosave hook
+  const setTypingChecker = useCallback((checker: () => boolean) => {
+    isTypingActiveRef.current = checker;
+  }, []);
+
+  // Simplified update handler with global deduplication and typing awareness
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
@@ -234,6 +242,16 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
+    // CRITICAL: Check if user is actively typing - defer remote updates to prevent overwrites
+    if (isTypingActiveRef.current && isTypingActiveRef.current()) {
+      console.log('⌨️ User is typing - deferring remote update to prevent overwrite');
+      // Schedule to check again in 2 seconds
+      setManagedTimeout(() => {
+        handleRealtimeUpdate(payload);
+      }, 2000);
+      return;
+    }
+
     // Only process updates that have actual content changes or are structural
     if (!isContentChange && !isStructural) {
       console.log('⏭️ Skipping meta-only update (no meaningful changes):', {
@@ -381,6 +399,7 @@ export const useSimpleRealtimeRundown = ({
   return {
     isConnected,
     isProcessingUpdate,
-    trackOwnUpdate: trackOwnUpdateLocal
+    trackOwnUpdate: trackOwnUpdateLocal,
+    setTypingChecker
   };
 };
