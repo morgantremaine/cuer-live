@@ -474,6 +474,7 @@ export const useSimplifiedRundownState = () => {
         console.log('📋 Skipping loading state - using cached data for:', rundownId);
         setIsLoading(false);
         setIsInitialized(true);
+        console.log('✅ Initialization complete (cached):', rundownId);
         return;
       }
 
@@ -543,6 +544,7 @@ export const useSimplifiedRundownState = () => {
         setIsLoading(false);
         setIsInitialized(true);
         setCacheLoading(false);
+        console.log('✅ Initialization complete (loaded):', rundownId);
       }
     };
 
@@ -590,6 +592,7 @@ export const useSimplifiedRundownState = () => {
       });
       setIsLoading(false);
       setIsInitialized(true);
+      console.log('✅ Initialization complete (new rundown)');
     }
   }, [rundownId, isInitialized, actions]);
 
