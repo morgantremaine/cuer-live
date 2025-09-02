@@ -272,7 +272,10 @@ export const useRundownStateCoordination = () => {
       toggleHeaderCollapse,
       isHeaderCollapsed,
       getHeaderGroupItemIds,
-      visibleItems
+      visibleItems,
+      
+      // Autosave typing guard
+      markActiveTyping: simplifiedState.markActiveTyping
     },
     interactions,
     uiState

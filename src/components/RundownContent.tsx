@@ -55,6 +55,7 @@ interface RundownContentProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (itemId: string) => void;
+  markActiveTyping?: () => void;
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
@@ -111,6 +112,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   onAddRow,
   onAddHeader,
   onJumpToHere,
+  markActiveTyping,
   // Header collapse functions
   toggleHeaderCollapse,
   isHeaderCollapsed,

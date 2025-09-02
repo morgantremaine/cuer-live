@@ -207,6 +207,7 @@ const RundownGrid = React.memo(() => {
       onAddRow={interactions.handleAddRow}
       onAddHeader={interactions.handleAddHeader}
       onJumpToHere={stableCallbacks.handleJumpToHere}
+      markActiveTyping={coreState.markActiveTyping}
       // Header collapse functions
       toggleHeaderCollapse={coreState.toggleHeaderCollapse}
       isHeaderCollapsed={coreState.isHeaderCollapsed}
