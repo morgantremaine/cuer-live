@@ -7,6 +7,8 @@ import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import { ToolsMenu } from './ToolsMenu';
 import PlaybackControls from './PlaybackControls';
 import { CSVExportData } from '@/utils/csvExport';
+import { RundownRevisionHistory } from '@/components/RundownRevisionHistory';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface MainActionButtonsProps {
   onAddRow: () => void;
@@ -101,6 +103,16 @@ const MainActionButtons = ({
           </Button>
         </div>
 
+        {/* History button - only show for non-demo rundowns */}
+        {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
+          <div className="w-full">
+            <RundownRevisionHistory 
+              rundownId={rundownId} 
+              onRestore={() => window.location.reload()} 
+            />
+          </div>
+        )}
+
         {/* Tools and Share menus */}
         <div className="grid grid-cols-2 gap-2 w-full">
           <div className="w-full">
@@ -186,6 +198,12 @@ const MainActionButtons = ({
         <Undo className="h-4 w-4" />
         <span>Undo</span>
       </Button>
+      {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
+        <RundownRevisionHistory 
+          rundownId={rundownId} 
+          onRestore={() => window.location.reload()} 
+        />
+      )}
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
         <span>Layouts</span>

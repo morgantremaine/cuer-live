@@ -127,7 +127,7 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <History className="w-4 h-4 mr-2" />
-          Revision History
+          History
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh]">
