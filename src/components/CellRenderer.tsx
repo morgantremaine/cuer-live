@@ -23,6 +23,7 @@ interface CellRendererProps {
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  markActiveTyping?: () => void;
   width?: string;
 }
 
@@ -37,6 +38,7 @@ const CellRenderer = ({
   onUpdateItem,
   onCellClick,
   onKeyDown,
+  markActiveTyping,
   width
 }: CellRendererProps) => {
   // Get the current value for this cell
@@ -119,6 +121,7 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
+          markActiveTyping?.();
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}
@@ -142,6 +145,7 @@ const CellRenderer = ({
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
         onUpdateValue={(newValue) => {
+          markActiveTyping?.();
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
@@ -160,6 +164,7 @@ const CellRenderer = ({
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
       onUpdateValue={(newValue) => {
+        markActiveTyping?.();
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
           const field = `customFields.${column.key}`;

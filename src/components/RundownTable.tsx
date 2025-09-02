@@ -46,6 +46,7 @@ interface RundownTableProps {
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
   onJumpToHere?: (segmentId: string) => void;
+  markActiveTyping?: () => void;
 }
 
 const RundownTable = ({
@@ -89,7 +90,8 @@ const RundownTable = ({
   onToggleHeaderCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds,
-  onJumpToHere
+  onJumpToHere,
+  markActiveTyping
 }: RundownTableProps) => {
 
   // Enhanced drag over handler that calculates drop target index
@@ -179,6 +181,7 @@ const RundownTable = ({
                   onAddRow={onAddRow}
                   onAddHeader={onAddHeader}
                    onJumpToHere={onJumpToHere}
+                   markActiveTyping={markActiveTyping}
                    getColumnWidth={getColumnWidth}
                    isHeaderCollapsed={isHeaderCollapsed}
                    getHeaderGroupItemIds={getHeaderGroupItemIds}

@@ -43,6 +43,7 @@ interface RegularRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
@@ -246,6 +247,7 @@ const RegularRow = (props: RegularRowProps) => {
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
+          markActiveTyping={props.markActiveTyping}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>

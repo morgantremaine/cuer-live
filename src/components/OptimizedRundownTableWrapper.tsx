@@ -41,6 +41,7 @@ interface OptimizedRundownTableWrapperProps {
   onAddRow: () => void;
   onAddHeader: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  markActiveTyping?: () => void;
   // Header collapse functions (to ensure same state as drag system)
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;
@@ -184,6 +185,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       onToggleHeaderCollapse={toggleHeaderCollapse}
       isHeaderCollapsed={isHeaderCollapsed}
       getHeaderGroupItemIds={getHeaderGroupItemIds}
+      markActiveTyping={restProps.markActiveTyping}
       onRowSelect={(itemId, visibleIndex, isShiftClick, isCtrlClick, passedHeaderGroupItemIds) => {
         // Map visible index to original index first
         const originalIndex = getOriginalIndex(visibleIndex);

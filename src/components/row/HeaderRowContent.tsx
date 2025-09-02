@@ -18,6 +18,7 @@ interface HeaderRowContentProps {
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleCollapse?: (headerId: string) => void;
+  markActiveTyping?: () => void;
   getColumnWidth: (column: Column) => string;
 }
 
@@ -34,6 +35,7 @@ const HeaderRowContent = ({
   onCellClick,
   onKeyDown,
   onToggleCollapse,
+  markActiveTyping,
   getColumnWidth
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
@@ -117,6 +119,7 @@ const HeaderRowContent = ({
                     type="text"
                     value={headerName}
                     onChange={(e) => {
+                      markActiveTyping?.();
                       onUpdateItem(item.id, 'name', e.target.value);
                       // Auto-resize on change with buffer
                       const contentLength = e.target.value.length || 1;

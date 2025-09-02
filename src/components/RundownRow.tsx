@@ -43,6 +43,7 @@ interface RundownRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   allItems?: any[];
@@ -80,6 +81,7 @@ const RundownRow = (props: RundownRowProps) => {
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
         onDragEnd={props.onDragEnd}
+        markActiveTyping={props.markActiveTyping}
         isHeaderCollapsed={props.isHeaderCollapsed}
         getHeaderGroupItemIds={props.getHeaderGroupItemIds}
         // Note: onJumpToHere not passed to HeaderRow since headers don't need jump functionality
@@ -105,6 +107,7 @@ const RundownRow = (props: RundownRowProps) => {
       onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHere}
       onDragEnd={props.onDragEnd}
+      markActiveTyping={props.markActiveTyping}
       isHeaderCollapsed={props.isHeaderCollapsed}
       getHeaderGroupItemIds={props.getHeaderGroupItemIds}
       allItems={props.allItems}

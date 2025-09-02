@@ -40,6 +40,7 @@ interface HeaderRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
   // Header collapse props
@@ -178,6 +179,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
           onToggleCollapse={onToggleCollapse}
+          markActiveTyping={props.markActiveTyping}
           getColumnWidth={props.getColumnWidth}
         />
       </tr>
