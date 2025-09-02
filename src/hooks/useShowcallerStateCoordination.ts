@@ -58,7 +58,9 @@ export const useShowcallerStateCoordination = ({
     userId
   });
 
-  // Enhanced external state handler with better logic
+  // Enhanced external state handler with suppression window
+  const suppressionWindowRef = useRef<Map<string, number>>(new Map());
+  
   const handleExternalVisualState = useCallback((externalState: any) => {
     console.log('📺 handleExternalVisualState called with:', {
       hasLastUpdate: !!externalState.lastUpdate,
@@ -75,15 +77,32 @@ export const useShowcallerStateCoordination = ({
       return;
     }
 
+    // Skip if this is our own update (enhanced detection)
+    if (externalState.controllerId === userId) {
+      console.log('⏭️ Skipping own showcaller update');
+      return;
+    }
+
+    // Suppression window: prevent processing duplicate external states within 1 second
+    const stateKey = externalState.lastUpdate || 'no-timestamp';
+    const now = Date.now();
+    const lastProcessed = suppressionWindowRef.current.get(stateKey);
+    
+    if (lastProcessed && (now - lastProcessed) < 1000) {
+      console.log('📺 Suppression window: skipping duplicate external state');
+      return;
+    }
+
     // Only skip if this is the exact same timestamp we just processed
     if (externalState.lastUpdate && externalState.lastUpdate === lastProcessedTimestampRef.current) {
       console.log('📺 Skipping - exact same timestamp as last processed');
       return;
     }
 
-    // Allow the update through if it has a valid timestamp
+    // Apply the external state with suppression tracking
     if (externalState.lastUpdate) {
       lastProcessedTimestampRef.current = externalState.lastUpdate;
+      suppressionWindowRef.current.set(stateKey, now);
       
       console.log('📺 Coordinating external showcaller state:', {
         fromController: externalState.controllerId,
@@ -93,7 +112,13 @@ export const useShowcallerStateCoordination = ({
       });
 
       // Apply the external state
+      console.log('📺 Applying external visual state from controller:', externalState.controllerId);
       applyExternalVisualState(externalState);
+      
+      // Cleanup old suppression entries (older than 5 seconds)
+      setTimeout(() => {
+        suppressionWindowRef.current.delete(stateKey);
+      }, 5000);
     } else {
       console.log('📺 Skipping external state - no timestamp');
     }

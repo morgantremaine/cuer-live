@@ -22,8 +22,10 @@ export const useShowcallerRealtimeSync = ({
   const timeoutManagerRef = useRef(new TimeoutManager());
   const isMountedRef = useRef(true);
   
-  // Showcaller processing state tracking
+  // Showcaller processing state tracking with loop guard
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
+  const processingLoopGuardRef = useRef<number>(0);
+  const maxProcessingLoops = 5; // Prevent excessive processing loops
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
@@ -63,13 +65,25 @@ export const useShowcallerRealtimeSync = ({
       }
     }
 
+    // Loop guard: prevent excessive processing
+    processingLoopGuardRef.current++;
+    if (processingLoopGuardRef.current > maxProcessingLoops) {
+      console.warn('📺 Processing loop guard triggered - too many rapid updates');
+      return;
+    }
+
+    // Reset loop guard after 2 seconds
+    timeoutManagerRef.current.set('reset-loop-guard', () => {
+      processingLoopGuardRef.current = 0;
+    }, 2000);
+
     // Only set processing state AFTER all validation checks pass
     setIsProcessingVisualUpdate(true);
 
     // Clear any existing processing timeout to prevent race conditions
     timeoutManagerRef.current.clear('visual-processing');
 
-    // Process the update with minimal delay
+    // Process with throttling to prevent cascading updates
     timeoutManagerRef.current.set('visual-processing', () => {
       // Check if component is still mounted
       if (!isMountedRef.current) {
@@ -87,9 +101,9 @@ export const useShowcallerRealtimeSync = ({
         if (isMountedRef.current) {
           setIsProcessingVisualUpdate(false);
         }
-      }, 600);
+      }, 400); // Reduced from 600ms for faster UI response
       
-    }, 50);
+    }, 100); // Increased from 50ms for better throttling
     
   }, [rundownId, user?.id]);
 

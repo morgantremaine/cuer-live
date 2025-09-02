@@ -136,11 +136,11 @@ export const useShowcallerVisualState = ({
         currentItemStatuses: Object.fromEntries(state.currentItemStatuses)
       };
 
+      // CRITICAL FIX: Don't manually set updated_at to prevent realtime feedback loops
       const { error } = await supabase
         .from('rundowns')
         .update({
-          showcaller_state: stateToSave,
-          updated_at: new Date().toISOString()
+          showcaller_state: stateToSave
         })
         .eq('id', rundownId);
 
@@ -619,9 +619,17 @@ export const useShowcallerVisualState = ({
     }
   }, [isInitialized, items.length, visualState.currentSegmentId, timeToSeconds]);
 
-  // Self-healing mechanism: Handle segment deletion/invalidation
+  // Self-healing mechanism: Handle segment deletion/invalidation with throttling
+  const lastSelfHealingRef = useRef<number>(0);
+  const selfHealingThrottleMs = 3000; // Only self-heal once every 3 seconds
+  
   useEffect(() => {
     if (!isInitialized || !visualState.currentSegmentId) return;
+
+    const now = Date.now();
+    if (now - lastSelfHealingRef.current < selfHealingThrottleMs) {
+      return; // Throttle self-healing to prevent loops
+    }
 
     // Check if current segment still exists and is valid (non-floated regular item)
     const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
@@ -631,6 +639,7 @@ export const useShowcallerVisualState = ({
 
     if (!isCurrentSegmentValid) {
       console.log('🔧 Self-healing: Current segment invalid or deleted, finding fallback');
+      lastSelfHealingRef.current = now; // Mark that we're performing self-healing
       
       // Only proceed if this client is the controller or there's no active controller
       const isController = visualState.controllerId === userId;
@@ -710,7 +719,7 @@ export const useShowcallerVisualState = ({
         resetDriftCompensation();
       }
     } else {
-      // Current segment is valid, but check if status map needs cleaning
+      // Current segment is valid, but check if status map needs cleaning (also throttled)
       const newStatuses = new Map();
       let statusMapChanged = false;
       
@@ -725,8 +734,9 @@ export const useShowcallerVisualState = ({
         }
       });
       
-      // Update status map if any invalid items were removed
-      if (statusMapChanged) {
+      // Update status map if any invalid items were removed (throttled)
+      if (statusMapChanged && (now - lastSelfHealingRef.current) >= selfHealingThrottleMs) {
+        lastSelfHealingRef.current = now;
         updateVisualState({
           currentItemStatuses: newStatuses
         }, visualState.controllerId === userId, false);

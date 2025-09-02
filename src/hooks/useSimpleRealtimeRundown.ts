@@ -87,41 +87,80 @@ export const useSimpleRealtimeRundown = ({
     return false; // Only meta fields changed (folder_id, showcaller_state, etc.)
   }, []);
 
-  // Helper function to detect if an update is showcaller-only
+  // Enhanced showcaller-only update detection
   const isShowcallerOnlyUpdate = useCallback((newData: any, oldData?: any) => {
     if (!newData || !oldData) return false;
     
-    // Compare all fields except showcaller_visual_state
-    const fieldsToCheck = [
+    // Check if ONLY showcaller_state changed (more precise)
+    const showcallerChanged = JSON.stringify(newData.showcaller_state) !== JSON.stringify(oldData.showcaller_state);
+    
+    // Compare all non-showcaller fields
+    const nonShowcallerFields = [
       'items', 'title', 'description', 'external_notes', 'columns',
-      'archived', 'folder_id', 'created_at'
+      'archived', 'folder_id', 'created_at', 'start_time', 'timezone'
     ];
     
-    for (const field of fieldsToCheck) {
+    let nonShowcallerChanged = false;
+    for (const field of nonShowcallerFields) {
       if (JSON.stringify(newData[field]) !== JSON.stringify(oldData[field])) {
-        return false; // Non-showcaller field changed
+        nonShowcallerChanged = true;
+        break;
       }
     }
     
-    // Only showcaller_visual_state changed (or no meaningful changes)
-    return true;
+    // It's showcaller-only if showcaller changed BUT no other fields changed
+    const isShowcallerOnly = showcallerChanged && !nonShowcallerChanged;
+    
+    if (isShowcallerOnly) {
+      console.log('📺 Detected showcaller-only update (no content processing needed)');
+    }
+    
+    return isShowcallerOnly;
   }, []);
 
-  // Helper function to detect structural changes (add/delete/move rows)
+  // Conservative structural change detection - only triggers on real structure changes
   const isStructuralChange = useCallback((newData: any, oldData?: any) => {
     if (!newData || !oldData || !newData.items || !oldData.items) return false;
     
-    // Compare item IDs and order - if different, it's structural
     const newItemIds = newData.items.map((item: any) => item.id);
     const oldItemIds = oldData.items.map((item: any) => item.id);
     
-    // Different number of items = structural change
+    // CONSERVATIVE: Only count length changes as structural
     if (newItemIds.length !== oldItemIds.length) {
+      console.log('🏗️ Structural change detected: item count changed', {
+        oldCount: oldItemIds.length,
+        newCount: newItemIds.length
+      });
       return true;
     }
     
-    // Different order of items = structural change (row move)
-    return JSON.stringify(newItemIds) !== JSON.stringify(oldItemIds);
+    // CONSERVATIVE: Only flag order changes if they're significant (not just content edits)
+    const orderChanged = JSON.stringify(newItemIds) !== JSON.stringify(oldItemIds);
+    if (orderChanged) {
+      // Additional check: ensure this isn't just a content update that looks like reordering
+      const hasNewItems = newItemIds.some(id => !oldItemIds.includes(id));
+      const hasRemovedItems = oldItemIds.some(id => !newItemIds.includes(id));
+      
+      if (hasNewItems || hasRemovedItems) {
+        console.log('🏗️ Structural change detected: items added/removed with reordering');
+        return true;
+      }
+      
+      // Pure reorder - only count if multiple consecutive items changed position
+      let positionChanges = 0;
+      for (let i = 0; i < newItemIds.length; i++) {
+        if (newItemIds[i] !== oldItemIds[i]) {
+          positionChanges++;
+        }
+      }
+      
+      if (positionChanges > 2) { // More than 2 position changes suggests real reordering
+        console.log('🏗️ Structural change detected: significant reordering', { positionChanges });
+        return true;
+      }
+    }
+    
+    return false; // Not a structural change - just content edits
   }, []);
 
   // Simplified update handler with global deduplication
@@ -148,9 +187,6 @@ export const useSimpleRealtimeRundown = ({
     const updateTimestamp = payload.new?.updated_at;
     const normalizedUpdateTimestamp = normalizeTimestamp(updateTimestamp);
     
-    // Check if this is a structural change (add/delete/move rows)
-    const isStructural = isStructuralChange(payload.new, payload.old);
-    
     // Skip if this is exactly the same timestamp we just processed (using normalized form)
     if (normalizedUpdateTimestamp === lastProcessedUpdateRef.current) {
       if (process.env.NODE_ENV === 'development') {
@@ -171,7 +207,7 @@ export const useSimpleRealtimeRundown = ({
       if (process.env.NODE_ENV === 'development') {
         console.log('🏷️ Own update detected:', { 
           timestamp: normalizedUpdateTimestamp, 
-          isStructural,
+          isStructural: isStructuralChange(payload.new, payload.old),
           matchedTimestamp: isOwnUpdate,
           matchedUserId: isSameUser,
           isRecentOwnUser,
@@ -186,32 +222,37 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-  // Enhanced content filtering to prevent meta-only updates from merging
-  const isContentChange = isContentUpdate(payload.new, payload.old);
-  const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
-  
-    // Only process updates that have actual content changes
+    // Enhanced filtering with better showcaller separation
+    const isContentChange = isContentUpdate(payload.new, payload.old);
+    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
+    const isStructural = isStructuralChange(payload.new, payload.old);
+    
+    // CRITICAL: Skip showcaller-only updates entirely to prevent feedback loops
+    if (isShowcallerOnly) {
+      console.log('📺 Skipping showcaller-only update (handled by dedicated showcaller sync)');
+      lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
+      return;
+    }
+    
+    // Only process updates that have actual content changes or are structural
     if (!isContentChange && !isStructural) {
-      debugLogger.realtime('Skipping meta-only update (no content changes)', {
+      console.log('⏭️ Skipping meta-only update (no meaningful changes):', {
         changedFields: Object.keys(payload.new || {}).filter(key => 
           JSON.stringify(payload.new[key]) !== JSON.stringify(payload.old?.[key])
-        )
+        ).slice(0, 3) // Limit to first 3 for conciseness
       });
       lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
       return;
     }
-  
-  if (isShowcallerOnly) {
-    console.log('📺 Processing showcaller-only update (no loading indicator)');
-  } else if (isStructural) {
-    console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
-    // Show processing state briefly for structural changes
-    setIsProcessingUpdate(true);
-  } else if (isContentChange) {
-    console.log('✅ Processing realtime content update from teammate');
-    // Show processing state briefly for all content updates from teammates
-    setIsProcessingUpdate(true);
-  }
+    
+    // Set processing indicators based on change type  
+    if (isStructural) {
+      console.log('🏗️ Processing structural change from teammate (rows added/deleted/moved)');
+      setIsProcessingUpdate(true);
+    } else if (isContentChange) {
+      console.log('✅ Processing content update from teammate');
+      setIsProcessingUpdate(true);
+    }
     
     lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
     
@@ -227,12 +268,10 @@ export const useSimpleRealtimeRundown = ({
       console.error('Error processing realtime update:', error);
     }
     
-    // Clear processing state after short delay using managed timer (only if we set it)
-    if (!isShowcallerOnly) {
-      setManagedTimeout(() => {
-        setIsProcessingUpdate(false);
-      }, 500);
-    }
+    // Clear processing state after short delay using managed timer
+    setManagedTimeout(() => {
+      setIsProcessingUpdate(false);
+    }, 500);
     
   }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
