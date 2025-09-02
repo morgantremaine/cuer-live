@@ -11,7 +11,7 @@ import { debugLogger } from '@/utils/debugLogger';
 export const useSimpleAutoSave = (
   state: RundownState,
   rundownId: string | null,
-  onSaved: () => void,
+  onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
   isInitiallyLoaded?: boolean
@@ -250,7 +250,7 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
-          onSavedRef.current?.();
+          onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
@@ -354,7 +354,7 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
-          onSavedRef.current?.();
+          onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         } else {
           const updated = Array.isArray(upd1) ? upd1[0] : upd1;
           console.log('✅ AutoSave: update response', { updated_at: updated?.updated_at });
@@ -366,7 +366,7 @@ export const useSimpleAutoSave = (
           }
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
-          onSavedRef.current?.();
+          onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
       }
     } catch (error) {
