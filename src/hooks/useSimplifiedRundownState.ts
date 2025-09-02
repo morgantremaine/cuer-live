@@ -102,7 +102,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -869,6 +869,9 @@ export const useSimplifiedRundownState = () => {
     teleprompterSaveHandlers: {
       onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
       onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
-    }
+    },
+    
+    // Autosave typing guard
+    markActiveTyping
   };
 };

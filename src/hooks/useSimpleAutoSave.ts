@@ -26,6 +26,10 @@ export const useSimpleAutoSave = (
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
+  
+  // Typing idle detection
+  const lastEditAtRef = useRef<number>(0);
+  const typingIdleMs = 1200; // Wait 1.2s after last edit before allowing saves
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -125,6 +129,17 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
+  // Function to mark active typing - called by input components
+  const markActiveTyping = useCallback(() => {
+    lastEditAtRef.current = Date.now();
+    console.log('⌨️ AutoSave: typing activity recorded');
+  }, []);
+
+  // Check if user is currently typing
+  const isTypingActive = useCallback(() => {
+    return Date.now() - lastEditAtRef.current < typingIdleMs;
+  }, [typingIdleMs]);
+
   // Enhanced save function with re-queuing logic
   const performSave = useCallback(async (): Promise<void> => {
     // CRITICAL: Gate autosave until initial load is complete
@@ -138,6 +153,18 @@ export const useSimpleAutoSave = (
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: teammate update cooldown active');
       console.log('🛑 AutoSave: blocked - teammate update cooldown active');
+      return;
+    }
+    
+    // Check if user is currently typing - defer save if so
+    if (isTypingActive()) {
+      debugLogger.autosave('Save deferred: user is actively typing');
+      console.log('⌨️ AutoSave: deferred - user is actively typing, rescheduling');
+      setTimeout(() => {
+        if (!isTypingActive()) {
+          performSave();
+        }
+      }, typingIdleMs);
       return;
     }
     
@@ -293,11 +320,11 @@ export const useSimpleAutoSave = (
         // Re-trigger save with short delay, but max 3 retries to prevent infinite loops
         if ((saveQueueRef.current?.retryCount || 0) < 3) {
           setTimeout(() => {
-            if (saveQueueRef.current && !isSaving) {
+            if (saveQueueRef.current && !isSaving && !isTypingActive()) {
               saveQueueRef.current = null;
               performSave();
             }
-          }, 500);
+          }, typingIdleMs);
         } else {
           saveQueueRef.current = null;
         }
@@ -346,6 +373,9 @@ export const useSimpleAutoSave = (
       currentSigHash: currentSignature.slice(0, 100) + '...',
       lastSavedSigHash: lastSavedRef.current.slice(0, 100) + '...'
     });
+
+    // Record that content is being changed (typing activity)
+    markActiveTyping();
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 2500 : 500);
@@ -434,6 +464,7 @@ export const useSimpleAutoSave = (
   return {
     isSaving,
     setUndoActive,
-    setTrackOwnUpdate
+    setTrackOwnUpdate,
+    markActiveTyping
   };
 };
