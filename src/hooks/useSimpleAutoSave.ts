@@ -27,6 +27,19 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
 
+  // Add effect to monitor when lastSavedRef gets reset
+  useEffect(() => {
+    const currentValue = lastSavedRef.current;
+    return () => {
+      if (lastSavedRef.current !== currentValue) {
+        console.log('⚠️ lastSavedRef changed unexpectedly:', { 
+          from: currentValue.length, 
+          to: lastSavedRef.current.length 
+        });
+      }
+    };
+  });
+
   // Create content signature that ONLY includes actual content (NO showcaller fields at all)
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
@@ -72,6 +85,7 @@ export const useSimpleAutoSave = (
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
     undoActiveRef.current = active;
+    console.log('🎯 Undo active set to:', active);
   };
 
   // Simplified update tracking
@@ -183,6 +197,7 @@ export const useSimpleAutoSave = (
             registerRecentSave(newRundown.id, normalizedTimestamp);
           }
           lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
           onSaved();
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
@@ -222,6 +237,7 @@ export const useSimpleAutoSave = (
             registerRecentSave(rundownId, normalizedTimestamp);
           }
           lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
           onSaved();
         }
       }
