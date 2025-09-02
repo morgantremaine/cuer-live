@@ -75,18 +75,21 @@ export const useSimpleAutoSave = (
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
+      console.log('🛑 AutoSave: blocked - initial load not complete');
       return;
     }
 
     // Check suppression cooldown to prevent ping-pong
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: teammate update cooldown active');
+      console.log('🛑 AutoSave: blocked - teammate update cooldown active');
       return;
     }
     
     // Final check before saving - only undo blocks saves  
     if (isSaving || undoActiveRef.current) {
       debugLogger.autosave('Save blocked: already saving or undo active');
+      console.log('🛑 AutoSave: blocked - already saving or undo active');
       return;
     }
     
@@ -107,6 +110,7 @@ export const useSimpleAutoSave = (
     if (finalSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
       debugLogger.autosave('No changes to save - marking as saved');
+      console.log('ℹ️ AutoSave: no content changes detected');
       onSaved();
       return;
     }
@@ -169,6 +173,7 @@ export const useSimpleAutoSave = (
       } else {
         // Enhanced update for existing rundowns with user tracking
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        console.log('💾 AutoSave: updating rundown', { rundownId, items: state.items?.length, title: state.title });
         const { data, error } = await supabase
           .from('rundowns')
           .update({
@@ -182,6 +187,7 @@ export const useSimpleAutoSave = (
           .eq('id', rundownId)
           .select('updated_at')
           .single();
+        console.log('✅ AutoSave: update response', { ok: !error, updated_at: data?.updated_at });
 
         if (error) {
           console.error('❌ Save failed:', error);
@@ -249,6 +255,7 @@ export const useSimpleAutoSave = (
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
+      console.log('🛑 AutoSave(effect): blocked - initial load not complete');
       return;
     }
 
@@ -264,12 +271,14 @@ export const useSimpleAutoSave = (
     // Check suppression cooldown first
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: teammate update cooldown active');
+      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active');
       return;
     }
     
     // Simple blocking conditions - only undo blocks saves
     if (undoActiveRef.current) {
       debugLogger.autosave('Save blocked: undo operation active');
+      console.log('🛑 AutoSave(effect): blocked - undo operation active');
       return;
     }
 
@@ -282,18 +291,21 @@ export const useSimpleAutoSave = (
       if (state.hasUnsavedChanges) {
         onSaved();
       }
+      console.log('ℹ️ AutoSave(effect): signature unchanged, skipping save');
       return;
     }
 
     // Immediate save for structural changes, short debounce for text edits
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
     const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
+    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     saveTimeoutRef.current = setTimeout(async () => {
+      console.log('⏱️ AutoSave: executing save now');
       await performSave();
     }, debounceTime);
 
