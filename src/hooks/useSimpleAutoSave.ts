@@ -13,7 +13,8 @@ export const useSimpleAutoSave = (
   rundownId: string | null,
   onSaved: () => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
-  suppressUntilRef?: React.MutableRefObject<number>
+  suppressUntilRef?: React.MutableRefObject<number>,
+  isInitiallyLoaded?: boolean
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,6 +81,12 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with re-queuing logic
   const performSave = useCallback(async (): Promise<void> => {
+    // CRITICAL: Gate autosave until initial load is complete
+    if (!isInitiallyLoaded) {
+      debugLogger.autosave('Save blocked: initial load not complete');
+      return;
+    }
+
     // Check suppression cooldown to prevent ping-pong
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: teammate update cooldown active');
@@ -94,6 +101,17 @@ export const useSimpleAutoSave = (
     
     // Final signature check
     const finalSignature = createContentSignature();
+
+    // ANTI-WIPE CIRCUIT BREAKER: Prevent saves that would drastically reduce items
+    const currentItemCount = state.items?.length || 0;
+    const lastSavedItemCount = lastSavedRef.current ? 
+      (JSON.parse(lastSavedRef.current).items?.length || 0) : 0;
+    
+    if (currentItemCount === 0 && lastSavedItemCount > 10) {
+      console.error('🚨 CIRCUIT BREAKER: Prevented save that would wipe', lastSavedItemCount, 'items');
+      debugLogger.autosave('Save blocked: circuit breaker - would wipe significant items');
+      return;
+    }
     
     if (finalSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
@@ -237,6 +255,12 @@ export const useSimpleAutoSave = (
   }, [rundownId, onSaved, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
   useEffect(() => {
+    // CRITICAL: Gate autosave until initial load is complete
+    if (!isInitiallyLoaded) {
+      debugLogger.autosave('Save blocked: initial load not complete');
+      return;
+    }
+
     // Check if this is a demo rundown - skip saving but allow change detection
     if (rundownId === DEMO_RUNDOWN_ID) {
       // Still mark as saved to prevent UI from showing "unsaved" state
@@ -287,7 +311,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef]);
+  }, [state.hasUnsavedChanges, state.lastChanged, state.items, state.title, state.startTime, state.timezone, rundownId, onSaved, createContentSignature, performSave, suppressUntilRef, isInitiallyLoaded]);
 
   return {
     isSaving,

@@ -47,6 +47,9 @@ export const useSimplifiedRundownState = () => {
   // Track cooldown after teammate updates to prevent ping-pong
   const remoteSaveCooldownRef = useRef<number>(0);
   
+  // Track if we've primed the autosave after initial load
+  const lastSavedPrimedRef = useRef(false);
+  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
@@ -105,9 +108,16 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    actions.markSaved,
+    () => {
+      actions.markSaved();
+      // Prime lastSavedRef after initial load to prevent false autosave triggers
+      if (isInitialized && !lastSavedPrimedRef.current) {
+        lastSavedPrimedRef.current = true;
+      }
+    },
     pendingStructuralChangeRef,
-    remoteSaveCooldownRef
+    remoteSaveCooldownRef,
+    isInitialized
   );
 
   // Standalone undo system - unchanged
@@ -194,6 +204,7 @@ export const useSimplifiedRundownState = () => {
       }
       
       // Detect if this is a structural change (items array length or order change)
+      // CRITICAL FIX: Only compute structural changes if payload contains items
       const isStructural = updatedRundown.items && state.items && (
         updatedRundown.items.length !== state.items.length ||
         JSON.stringify(updatedRundown.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
@@ -251,6 +262,7 @@ export const useSimplifiedRundownState = () => {
         
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
+        // Also ensure we only update fields that are actually present in the payload
         const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
         
         if (wouldClearItems) {
@@ -262,13 +274,17 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-        // No protected fields - apply update normally
-        actions.loadState({
-          items: updatedRundown.items || [],
-          title: updatedRundown.title,
-          startTime: updatedRundown.start_time,
-          timezone: updatedRundown.timezone
-        });
+        // No protected fields - apply update normally but only for present fields
+        const updateData: any = {};
+        if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
+        if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
+        if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
+        if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
+        
+        // Only apply if we have fields to update
+        if (Object.keys(updateData).length > 0) {
+          actions.loadState(updateData);
+        }
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone]),
     enabled: !isLoading,
