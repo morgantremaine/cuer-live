@@ -212,6 +212,8 @@ const RundownGrid = React.memo(() => {
       isHeaderCollapsed={coreState.isHeaderCollapsed}
       getHeaderGroupItemIds={coreState.getHeaderGroupItemIds}
       visibleItems={coreState.visibleItems}
+      // Active typing detection for improved autosave
+      markActiveTyping={coreState.markActiveTyping}
     />
   );
 });
