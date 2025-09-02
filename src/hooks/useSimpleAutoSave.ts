@@ -31,25 +31,41 @@ export const useSimpleAutoSave = (
   const createContentSignature = useCallback(() => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
     const cleanItems = state.items?.map((item: any) => {
-      // Remove showcaller-only or calculated fields so content edits always save
-      const {
-        status, // showcaller state
-        elapsedTime, // showcaller runtime field
-        calculatedElapsedTime,
-        calculatedStartTime,
-        calculatedEndTime,
-        ...rest
-      } = item || {};
-      return rest;
+      // Create a clean copy with only the editable content fields
+      const cleanItem: any = {
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        images: item.images,
+        notes: item.notes,
+        duration: item.duration,
+        color: item.color,
+        isFloating: item.isFloating,
+        customFields: item.customFields || {}
+      };
+      
+      // Remove any undefined/null values to ensure clean comparison
+      Object.keys(cleanItem).forEach(key => {
+        if (cleanItem[key] === undefined || cleanItem[key] === null) {
+          cleanItem[key] = '';
+        }
+      });
+      
+      return cleanItem;
     }) || [];
 
     const signature = JSON.stringify({
       items: cleanItems,
-      title: state.title,
-      startTime: state.startTime,
-      timezone: state.timezone
+      title: state.title || '',
+      startTime: state.startTime || '',
+      timezone: state.timezone || ''
     });
-
+    
+    console.log('🔍 Creating signature with', cleanItems.length, 'items');
     return signature;
   }, [state.items, state.title, state.startTime, state.timezone]);
 
@@ -289,11 +305,21 @@ export const useSimpleAutoSave = (
     if (currentSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
       if (state.hasUnsavedChanges) {
+        console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - marking saved anyway');
         onSaved();
       }
       console.log('ℹ️ AutoSave(effect): signature unchanged, skipping save');
       return;
     }
+    
+    console.log('🔥 AutoSave: content changed detected', { 
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      currentSigLength: currentSignature.length,
+      lastSavedSigLength: lastSavedRef.current.length,
+      signaturesEqual: currentSignature === lastSavedRef.current,
+      currentSigHash: currentSignature.slice(0, 100) + '...',
+      lastSavedSigHash: lastSavedRef.current.slice(0, 100) + '...'
+    });
 
     // Immediate save for structural changes, short debounce for text edits
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
