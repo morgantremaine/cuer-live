@@ -254,38 +254,93 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        // Enhanced update for existing rundowns with user tracking
+        // Enhanced update for existing rundowns with optimistic concurrency (doc_version)
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
         console.log('💾 AutoSave: updating rundown', { rundownId, items: state.items?.length, title: state.title });
-        const { data, error } = await supabase
-          .from('rundowns')
-          .update({
-            title: state.title,
-            items: state.items,
-            start_time: state.startTime,
-            timezone: state.timezone,
-            updated_at: new Date().toISOString(),
-            last_updated_by: currentUserId
-          })
-          .eq('id', rundownId)
-          .select('updated_at')
-          .single();
-        console.log('✅ AutoSave: update response', { ok: !error, updated_at: data?.updated_at });
 
-        if (error) {
-          console.error('❌ Save failed:', error);
-          toast({
-            title: "Save failed",
-            description: "Unable to save changes. Will retry automatically.",
-            variant: "destructive",
-            duration: 3000,
-          });
-        } else {
-          // Track the actual timestamp returned by the database
-          if (data?.updated_at) {
-            const normalizedTimestamp = normalizeTimestamp(data.updated_at);
+        // 1) Read current doc_version
+        const { data: currentRow, error: readErr } = await supabase
+          .from('rundowns')
+          .select('doc_version, updated_at')
+          .eq('id', rundownId)
+          .single();
+
+        if (readErr || !currentRow) {
+          console.error('❌ Save failed: could not read current doc_version', readErr);
+          throw readErr || new Error('Failed to read current rundown row');
+        }
+
+        const baseUpdate = {
+          title: state.title,
+          items: state.items,
+          start_time: state.startTime,
+          timezone: state.timezone,
+          updated_at: new Date().toISOString(),
+          last_updated_by: currentUserId
+        } as const;
+
+        // 2) Attempt guarded update with current doc_version
+        let { data: upd1, error: updErr1 } = await supabase
+          .from('rundowns')
+          .update(baseUpdate)
+          .eq('id', rundownId)
+          .eq('doc_version', currentRow.doc_version)
+          .select('updated_at, doc_version');
+
+        // If no rows updated or error, treat as conflict and retry once
+        const noRowsUpdated = !upd1 || (Array.isArray(upd1) && upd1.length === 0);
+        if (updErr1 || noRowsUpdated) {
+          console.warn('⚠️ Version conflict detected. Retrying with latest doc_version...', { updErr1, noRowsUpdated });
+
+          // Fetch latest version
+          const { data: latestRow, error: latestErr } = await supabase
+            .from('rundowns')
+            .select('doc_version, updated_at')
+            .eq('id', rundownId)
+            .single();
+
+          if (latestErr || !latestRow) {
+            console.error('❌ Save failed: could not fetch latest doc_version after conflict', latestErr);
+            throw latestErr || new Error('Failed to read latest rundown row');
+          }
+
+          // Retry once using latest doc_version (last-writer-wins)
+          const { data: upd2, error: updErr2 } = await supabase
+            .from('rundowns')
+            .update(baseUpdate)
+            .eq('id', rundownId)
+            .eq('doc_version', latestRow.doc_version)
+            .select('updated_at, doc_version');
+
+          if (updErr2 || !upd2 || (Array.isArray(upd2) && upd2.length === 0)) {
+            console.error('❌ Save failed after conflict retry', updErr2);
+            toast({
+              title: 'Save conflicted',
+              description: 'Another user updated this rundown. Please try again.',
+              variant: 'destructive',
+              duration: 3000,
+            });
+            throw updErr2 || new Error('Conflict retry failed');
+          }
+
+          const updated = Array.isArray(upd2) ? upd2[0] : upd2;
+          console.log('✅ AutoSave: update (after conflict) response', { updated_at: updated?.updated_at });
+
+          if (updated?.updated_at) {
+            const normalizedTimestamp = normalizeTimestamp(updated.updated_at);
             trackMyUpdate(normalizedTimestamp);
-            // Register this save to prevent false positives in resumption
+            registerRecentSave(rundownId, normalizedTimestamp);
+          }
+          lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
+          onSavedRef.current?.();
+        } else {
+          const updated = Array.isArray(upd1) ? upd1[0] : upd1;
+          console.log('✅ AutoSave: update response', { updated_at: updated?.updated_at });
+
+          if (updated?.updated_at) {
+            const normalizedTimestamp = normalizeTimestamp(updated.updated_at);
+            trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
           lastSavedRef.current = finalSignature;
