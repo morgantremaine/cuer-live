@@ -314,6 +314,14 @@ export const useSimpleAutoSave = (
     performSaveRef.current = performSave;
   }, [performSave]);
 
+  // Track latest flags for unmount flush
+  const hasUnsavedRef = useRef(false);
+  useEffect(() => { hasUnsavedRef.current = state.hasUnsavedChanges; }, [state.hasUnsavedChanges]);
+  const isLoadedRef = useRef(!!isInitiallyLoaded);
+  useEffect(() => { isLoadedRef.current = !!isInitiallyLoaded; }, [isInitiallyLoaded]);
+  const rundownIdRef = useRef(rundownId);
+  useEffect(() => { rundownIdRef.current = rundownId; }, [rundownId]);
+
   // Debounced save function that's called by state change handlers, not useEffect
   const debouncedSave = useCallback(() => {
     if (saveTimeoutRef.current) {
@@ -404,6 +412,24 @@ export const useSimpleAutoSave = (
       }
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
+
+  // Flush any pending changes on unmount/view switch to prevent reverts
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
+        console.log('🧯 AutoSave: flushing pending changes on unmount');
+        try {
+          // Fire-and-forget; ensures a network request is sent before teardown
+          performSaveRef.current();
+        } catch (e) {
+          console.error('❌ AutoSave: flush-on-unmount failed', e);
+        }
+      }
+    };
+  }, []);
 
   return {
     isSaving,
