@@ -11,6 +11,7 @@ import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
+import { RundownRevisionHistory } from './RundownRevisionHistory';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 
@@ -407,8 +408,15 @@ const RundownHeader = ({
           />
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0">
-          <TimezoneSelector
+          <div className="flex items-center space-x-4 flex-shrink-0">
+            {!isDemoRundown && rundownId && (
+              <RundownRevisionHistory 
+                rundownId={rundownId} 
+                onRestore={() => window.location.reload()} 
+              />
+            )}
+            
+            <TimezoneSelector
             currentTimezone={timezone}
             onTimezoneChange={onTimezoneChange}
             showTime={true}
