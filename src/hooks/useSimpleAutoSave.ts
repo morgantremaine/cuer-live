@@ -82,25 +82,36 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state.items, state.title, state.startTime, state.timezone]);
 
-  // Prime baseline signature when initial load completes and on rundown change
+  // Stabilized baseline priming - only reset on actual rundown switches, not during init
+  const lastPrimedRundownRef = useRef<string | null>(null);
+  
   useEffect(() => {
-    // Reset baseline when switching rundowns to avoid cross-rundown comparisons
-    // This ensures the next effect will prime a fresh baseline
-    // Note: rundownId may be null for new rundowns
-    lastSavedRef.current = '';
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+    // Only reset baseline when truly switching between different rundowns
+    // Don't reset during initial load or if rundownId is the same
+    if (rundownId !== lastPrimedRundownRef.current && lastPrimedRundownRef.current !== null) {
+      console.log('🔄 AutoSave: switching rundowns, resetting baseline', { 
+        from: lastPrimedRundownRef.current, 
+        to: rundownId 
+      });
+      lastSavedRef.current = '';
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
     }
   }, [rundownId]);
 
   useEffect(() => {
     if (!isInitiallyLoaded) return;
 
-    // Compute current content signature and prime baseline if empty/unset
-    const sig = createContentSignature();
-    if (!lastSavedRef.current || lastSavedRef.current.length === 0) {
+    // Prime baseline once per rundown when initial load completes
+    if (rundownId !== lastPrimedRundownRef.current) {
+      const sig = createContentSignature();
       lastSavedRef.current = sig;
-      console.log('🧪 AutoSave: primed baseline after init', { length: sig.length });
+      lastPrimedRundownRef.current = rundownId;
+      console.log('✅ AutoSave: primed baseline for rundown', { 
+        rundownId, 
+        length: sig.length 
+      });
     }
   }, [isInitiallyLoaded, rundownId, createContentSignature]);
 
@@ -369,7 +380,12 @@ export const useSimpleAutoSave = (
 
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('⏱️ AutoSave: executing save now');
-      await performSave();
+      try {
+        await performSave();
+        console.log('✅ AutoSave: save completed successfully');
+      } catch (error) {
+        console.error('❌ AutoSave: save execution failed:', error);
+      }
     }, debounceTime);
 
     return () => {

@@ -56,10 +56,10 @@ export const useSimpleRealtimeRundown = ({
         console.log('🏷️ Tracking own update:', { original: timestamp, normalized: normalizedTimestamp });
       }
       
-      // Clean up old tracked updates after 15 seconds (extended window)
+      // Clean up old tracked updates after 20 seconds (extended window for better save protection)
       setManagedTimeout(() => {
         tracking.ownUpdates.delete(normalizedTimestamp);
-      }, 15000);
+      }, 20000);
     }
     
     // Also track via parent if available
