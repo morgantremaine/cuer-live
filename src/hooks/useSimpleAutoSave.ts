@@ -482,7 +482,30 @@ export const useSimpleAutoSave = (
     }
 
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active');
+      const waitMs = suppressUntilRef.current - Date.now() + 100;
+      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active, retrying after cooldown', { waitMs });
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      // Schedule a retry as soon as cooldown ends
+      saveTimeoutRef.current = setTimeout(async () => {
+        // If still typing, wait for idle window then save
+        if (isTypingActive()) {
+          saveTimeoutRef.current = setTimeout(async () => {
+            try {
+              await performSaveRef.current();
+            } catch (error) {
+              console.error('❌ AutoSave: save execution failed after cooldown:', error);
+            }
+          }, typingIdleMs + 200);
+        } else {
+          try {
+            await performSaveRef.current();
+          } catch (error) {
+            console.error('❌ AutoSave: save execution failed after cooldown:', error);
+          }
+        }
+      }, waitMs);
       return;
     }
     

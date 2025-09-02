@@ -397,6 +397,13 @@ export const useSimplifiedRundownState = () => {
     }
   }, [realtimeConnection.setTypingChecker, isTypingActive]);
 
+  // Connect unsaved changes checker to defer teammate updates until local save completes
+  useEffect(() => {
+    if (realtimeConnection.setUnsavedChecker) {
+      realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
+    }
+  }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
+
   // Update connection status from realtime
   useEffect(() => {
     setIsConnected(realtimeConnection.isConnected);
