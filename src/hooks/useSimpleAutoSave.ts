@@ -348,7 +348,7 @@ export const useSimpleAutoSave = (
     });
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 1500 : 500);
+    const debounceTime = isStructuralChange ? 100 : (state.hasUnsavedChanges ? 2500 : 500);
     console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
 
     saveTimeoutRef.current = setTimeout(async () => {
@@ -392,7 +392,7 @@ export const useSimpleAutoSave = (
       }
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      const debounceTime = isStructuralChange ? 100 : 1500;
+      const debounceTime = isStructuralChange ? 100 : 2500;
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
 
       saveTimeoutRef.current = setTimeout(async () => {
