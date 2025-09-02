@@ -29,7 +29,7 @@ export const useSimpleAutoSave = (
   
   // Typing idle detection
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 1200; // Wait 1.2s after last edit before allowing saves
+  const typingIdleMs = 3000; // Wait 3s after last edit before allowing saves
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -419,10 +419,28 @@ export const useSimpleAutoSave = (
       }
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      const debounceTime = isStructuralChange ? 100 : 2500;
-      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges });
+      const baseDebounce = isStructuralChange ? 100 : 2500;
+      const debounceTime = isTypingActive() ? Math.max(baseDebounce, typingIdleMs) : baseDebounce;
+      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingActive: isTypingActive() });
 
       saveTimeoutRef.current = setTimeout(async () => {
+        // Double-check typing state right before saving
+        if (isTypingActive()) {
+          console.log('⌨️ AutoSave(effect): deferred at trigger - user is typing, rescheduling');
+          // Re-schedule to try again after typing idle window
+          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+          saveTimeoutRef.current = setTimeout(async () => {
+            console.log('⏱️ AutoSave: executing save now (post-typing)');
+            try {
+              await performSaveRef.current();
+              console.log('✅ AutoSave: save completed successfully');
+            } catch (error) {
+              console.error('❌ AutoSave: save execution failed:', error);
+            }
+          }, typingIdleMs);
+          return;
+        }
+
         console.log('⏱️ AutoSave: executing save now');
         try {
           await performSaveRef.current();
