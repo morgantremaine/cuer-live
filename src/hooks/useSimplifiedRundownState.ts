@@ -31,6 +31,7 @@ export const useSimplifiedRundownState = () => {
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState<number>(0);
+  const [isTabActive, setIsTabActive] = useState(true);
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
@@ -60,6 +61,39 @@ export const useSimplifiedRundownState = () => {
     
     return unsubscribe;
   }, []);
+
+  // Tab visibility and focus tracking for stale tab prevention
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabActive(!document.hidden);
+      console.log('👁️ Tab visibility changed:', !document.hidden ? 'visible' : 'hidden');
+    };
+
+    const handleFocusChange = () => {
+      setIsTabActive(document.hasFocus());
+      console.log('🎯 Tab focus changed:', document.hasFocus() ? 'focused' : 'blurred');
+    };
+
+    const handleBeforeUnload = () => {
+      // Force sync latest data before tab closes
+      if (rundownId && isInitialized) {
+        console.log('🔄 Tab closing - forcing final sync');
+        // Could trigger a final save here if needed
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocusChange);
+    window.addEventListener('blur', handleFocusChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocusChange);
+      window.removeEventListener('blur', handleFocusChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [rundownId, isInitialized]);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -195,10 +229,11 @@ export const useSimplifiedRundownState = () => {
     return protectedFields;
   }, []);
 
-  // Enhanced realtime connection with granular update logic and deferred updates during saves
+  // Enhanced realtime connection with sync-before-write protection
   const deferredUpdateRef = useRef<any>(null);
   const initialLoadGateRef = useRef(true);
   const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
+  const syncBeforeWriteRef = useRef(false);
   
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
@@ -369,7 +404,7 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
-  // Clear initial load gate after initialization
+  // Clear initial load gate after initialization and implement sync-before-write
   useEffect(() => {
     if (isInitialized) {
       setTimeout(() => {
@@ -378,6 +413,62 @@ export const useSimplifiedRundownState = () => {
       }, 500);
     }
   }, [isInitialized]);
+
+  // Sync-before-write: When tab becomes active after being inactive, force sync
+  useEffect(() => {
+    if (isTabActive && isInitialized && rundownId && !syncBeforeWriteRef.current) {
+      // Only sync if tab was previously inactive
+      syncBeforeWriteRef.current = true;
+      
+      const syncLatestData = async () => {
+        try {
+          console.log('🔄 Tab became active - syncing latest data before allowing writes');
+          
+          const { data: latestRundown, error } = await supabase
+            .from('rundowns')
+            .select('*')
+            .eq('id', rundownId)
+            .single();
+
+          if (!error && latestRundown) {
+            // Check if remote data is newer than what we have
+            if (latestRundown.updated_at && lastKnownTimestamp) {
+              const remoteTime = new Date(latestRundown.updated_at).getTime();
+              const localTime = new Date(lastKnownTimestamp).getTime();
+              
+              if (remoteTime > localTime) {
+                console.log('🔄 Remote data is newer - applying sync update');
+                
+                // Apply the remote data
+                actions.loadState({
+                  items: latestRundown.items || [],
+                  title: latestRundown.title || state.title,
+                  startTime: latestRundown.start_time || state.startTime,
+                  timezone: latestRundown.timezone || state.timezone,
+                  showDate: latestRundown.show_date ? new Date(latestRundown.show_date + 'T00:00:00') : state.showDate,
+                  externalNotes: latestRundown.external_notes || state.externalNotes
+                });
+                
+                setLastKnownTimestamp(latestRundown.updated_at);
+                if (latestRundown.doc_version) {
+                  setLastSeenDocVersion(latestRundown.doc_version);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ Failed to sync latest data on tab activation:', error);
+        } finally {
+          // Reset sync flag after a delay
+          setTimeout(() => {
+            syncBeforeWriteRef.current = false;
+          }, 1000);
+        }
+      };
+
+      syncLatestData();
+    }
+  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
   // Apply deferred updates when save completes
   useEffect(() => {

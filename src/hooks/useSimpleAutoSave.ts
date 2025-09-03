@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
+import { detectDataConflict } from '@/utils/conflictDetection';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -26,6 +27,7 @@ export const useSimpleAutoSave = (
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
+  const editBaseDocVersionRef = useRef<number>(0);
   
   // Optimized typing detection for responsive autosave
   const lastEditAtRef = useRef<number>(0);
@@ -142,12 +144,19 @@ export const useSimpleAutoSave = (
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
 
-  // Enhanced save function with re-queuing logic
+  // Enhanced save function with conflict prevention
   const performSave = useCallback(async (): Promise<void> => {
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
       console.log('🛑 AutoSave: blocked - initial load not complete');
+      return;
+    }
+
+    // STALE TAB PROTECTION: Block saves if tab is hidden or inactive
+    if (document.hidden || !document.hasFocus()) {
+      debugLogger.autosave('Save blocked: tab hidden or inactive');
+      console.log('🛑 AutoSave: blocked - tab hidden or inactive (stale tab protection)');
       return;
     }
 
@@ -337,24 +346,50 @@ export const useSimpleAutoSave = (
             throw latestErr || new Error('Failed to read latest rundown row');
           }
 
-          // Retry once using latest doc_version (last-writer-wins)
-          const { data: upd2, error: updErr2 } = await supabase
-            .from('rundowns')
-            .update(baseUpdate)
-            .eq('id', rundownId)
-            .eq('doc_version', latestRow.doc_version)
-            .select('updated_at, doc_version');
+        // CONFLICT DETECTION: Fetch and compare latest data instead of overwriting
+        const { data: latestRundown, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .single();
 
-          if (updErr2 || !upd2 || (Array.isArray(upd2) && upd2.length === 0)) {
-            console.error('❌ Save failed after conflict retry', updErr2);
-            toast({
-              title: 'Save conflicted',
-              description: 'Another user updated this rundown. Please try again.',
-              variant: 'destructive',
-              duration: 3000,
-            });
-            throw updErr2 || new Error('Conflict retry failed');
-          }
+        if (fetchError || !latestRundown) {
+          console.error('❌ Save failed: could not fetch latest data for conflict resolution', fetchError);
+          throw fetchError || new Error('Failed to fetch latest rundown data');
+        }
+
+        // Analyze conflict: check if there are overlapping changes
+        const hasDataConflict = detectDataConflict(state, latestRundown);
+        
+        if (hasDataConflict) {
+          console.error('🚨 DATA CONFLICT DETECTED: Aborting save to prevent overwrite');
+          toast({
+            title: 'Conflict Detected',
+            description: 'Another user made changes while you were editing. Please refresh to see their changes.',
+            variant: 'destructive',
+            duration: 5000,
+          });
+          throw new Error('Data conflict prevented overwrite');
+        }
+
+        // No conflict detected - safe to retry with latest doc_version
+        const { data: upd2, error: updErr2 } = await supabase
+          .from('rundowns')
+          .update(baseUpdate)
+          .eq('id', rundownId)
+          .eq('doc_version', latestRundown.doc_version)
+          .select('updated_at, doc_version');
+
+        if (updErr2 || !upd2 || (Array.isArray(upd2) && upd2.length === 0)) {
+          console.error('❌ Save failed after conflict analysis', updErr2);
+          toast({
+            title: 'Save failed',
+            description: 'Unable to save changes. Please try again.',
+            variant: 'destructive',
+            duration: 3000,
+          });
+          throw updErr2 || new Error('Conflict retry failed');
+        }
 
           const updated = Array.isArray(upd2) ? upd2[0] : upd2;
           console.log('✅ AutoSave: update (after conflict) response', { updated_at: updated?.updated_at });
