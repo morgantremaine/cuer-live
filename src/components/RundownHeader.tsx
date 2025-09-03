@@ -451,7 +451,7 @@ const RundownHeader = ({
           
           
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Start Time:</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Start:</span>
             <input
               ref={timeInputRef}
               type="text"
