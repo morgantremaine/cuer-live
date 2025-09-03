@@ -36,6 +36,7 @@ export const useSimpleAutoSave = (
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
   const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const postTypingSafetyTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -102,6 +103,9 @@ export const useSimpleAutoSave = (
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (postTypingSafetyTimeoutRef.current) {
+        clearTimeout(postTypingSafetyTimeoutRef.current);
+      }
     }
   }, [rundownId]);
 
@@ -145,6 +149,11 @@ export const useSimpleAutoSave = (
     // Record that this save will be initiated while tab is active
     saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
     
+    // Clear any existing safety save timeout when new typing occurs
+    if (postTypingSafetyTimeoutRef.current) {
+      clearTimeout(postTypingSafetyTimeoutRef.current);
+    }
+    
     // Always reschedule save when user types
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -153,6 +162,12 @@ export const useSimpleAutoSave = (
     saveTimeoutRef.current = setTimeout(() => {
       console.log('⏰ AutoSave: idle timeout reached - triggering save');
       performSave();
+      
+      // Schedule safety save 2 seconds after typing stops
+      postTypingSafetyTimeoutRef.current = setTimeout(() => {
+        console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
+        performSave();
+      }, 2000);
     }, typingIdleMs);
   }, [typingIdleMs]);
 
@@ -704,6 +719,9 @@ export const useSimpleAutoSave = (
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (postTypingSafetyTimeoutRef.current) {
+        clearTimeout(postTypingSafetyTimeoutRef.current);
+      }
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
 
@@ -747,6 +765,9 @@ export const useSimpleAutoSave = (
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (postTypingSafetyTimeoutRef.current) {
+        clearTimeout(postTypingSafetyTimeoutRef.current);
       }
       if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
         console.log('🧯 AutoSave: flushing pending changes on unmount');
