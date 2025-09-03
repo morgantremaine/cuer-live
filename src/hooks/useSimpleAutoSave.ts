@@ -174,8 +174,8 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (): Promise<void> => {
-    // CRITICAL: Gate autosave until initial load is complete
-    if (!isInitiallyLoaded) {
+    // CRITICAL: Gate autosave until initial load is complete - use ref to avoid stale closure
+    if (!isLoadedRef.current) {
       debugLogger.autosave('Save blocked: initial load not complete');
       console.log('🛑 AutoSave: blocked - initial load not complete');
       return;
