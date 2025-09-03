@@ -192,6 +192,7 @@ export const useRundownStateCoordination = () => {
       rundownTitle: simplifiedState.rundownTitle,
       rundownStartTime: simplifiedState.rundownStartTime,
       timezone: simplifiedState.timezone,
+      showDate: simplifiedState.showDate,
       currentTime: simplifiedState.currentTime,
       rundownId: simplifiedState.rundownId,
       
