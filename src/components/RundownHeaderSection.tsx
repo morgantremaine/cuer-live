@@ -33,6 +33,8 @@ interface RundownHeaderSectionProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  showDate?: Date | null;
+  onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
   items?: any[];
@@ -79,6 +81,8 @@ const RundownHeaderSection = ({
   onTitleChange,
   rundownStartTime,
   onRundownStartTimeChange,
+  showDate,
+  onShowDateChange,
   rundownId,
   onOpenTeleprompter,
   items = [],
@@ -108,6 +112,8 @@ const RundownHeaderSection = ({
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
+        showDate={showDate}
+        onShowDateChange={onShowDateChange}
         items={items}
         visibleColumns={visibleColumns}
         onUndo={onUndo}

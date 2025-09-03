@@ -44,6 +44,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onTitleChange,
     rundownStartTime,
     onRundownStartTimeChange,
+    showDate,
+    onShowDateChange,
     rundownId,
     onOpenTeleprompter,
     items,
@@ -128,6 +130,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={onRundownStartTimeChange}
+        showDate={showDate}
+        onShowDateChange={onShowDateChange}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         items={items}
