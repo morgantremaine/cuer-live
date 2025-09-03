@@ -96,7 +96,7 @@ export const useSimplifiedRundownState = () => {
       title: mergedData.title || state.title,
       startTime: mergedData.start_time || state.startTime,
       timezone: mergedData.timezone || state.timezone,
-      showDate: mergedData.show_date ? new Date(mergedData.show_date) : state.showDate,
+      showDate: mergedData.show_date ? new Date(mergedData.show_date + 'T00:00:00') : state.showDate,
       externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes
     });
     
@@ -355,7 +355,7 @@ export const useSimplifiedRundownState = () => {
         if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
         if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
         if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
-        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date) : null;
+        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
         
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {
@@ -456,7 +456,7 @@ export const useSimplifiedRundownState = () => {
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
           startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
-          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date) : null)
+          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null)
         });
         
       } else {
@@ -466,7 +466,7 @@ export const useSimplifiedRundownState = () => {
           title: deferredUpdate.title,
           startTime: deferredUpdate.start_time,
           timezone: deferredUpdate.timezone,
-          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date) : null
+          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
         });
       }
     }
@@ -628,7 +628,7 @@ export const useSimplifiedRundownState = () => {
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
               timezone: data.timezone || 'America/New_York',
-              showDate: data.show_date ? new Date(data.show_date) : null,
+              showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
               externalNotes: data.external_notes
             });
           }
@@ -676,7 +676,7 @@ export const useSimplifiedRundownState = () => {
       title: latestData.title,
       startTime: latestData.start_time,
       timezone: latestData.timezone,
-      showDate: latestData.show_date ? new Date(latestData.show_date) : null
+      showDate: latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null
     });
   }, [actions, getProtectedFields]);
 
