@@ -29,10 +29,11 @@ export const useSimpleAutoSave = (
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
   
-  // Optimized typing detection for responsive autosave
+  // Enhanced idle-based autosave system
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 800; // Quick 800ms typing detection as requested
-  const maxSaveDelay = 3000; // Maximum delay before forcing a save
+  const typingIdleMs = 1200; // Wait 1.2s after typing stops
+  const maxSaveDelay = 5000; // Maximum delay before forcing save
+  const saveInProgressRef = useRef(false);
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -133,11 +134,21 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Function to mark active typing - called by input components
+  // Enhanced typing activity tracker with auto-rescheduling
   const markActiveTyping = useCallback(() => {
     lastEditAtRef.current = Date.now();
-    console.log('⌨️ AutoSave: typing activity recorded');
-  }, []);
+    console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
+    
+    // Always reschedule save when user types
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ AutoSave: idle timeout reached - triggering save');
+      performSave();
+    }, typingIdleMs);
+  }, [typingIdleMs]);
 
   // Check if user is currently typing
   const isTypingActive = useCallback(() => {
@@ -167,26 +178,23 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Optimized typing check for multi-user scenarios
-    if (isTypingActive()) {
-      const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-      const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 2000;
-      
-      // In multi-user scenarios, be more aggressive about saving
-      if (!isMultiUserActive && timeSinceLastEdit < maxSaveDelay) {
-        debugLogger.autosave('Save deferred: user typing, will retry soon');
-        console.log('⌨️ AutoSave: brief typing defer, rescheduling for', typingIdleMs, 'ms');
-        setTimeout(() => {
-          performSave();
-        }, typingIdleMs);
-        return;
-      } else {
-        console.log('⚡ AutoSave: proceeding despite typing - multi-user or timeout');
-      }
+    // Enhanced typing protection with force-save after max delay
+    const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+    const isRecentlyTyping = timeSinceLastEdit < typingIdleMs;
+    const hasExceededMaxDelay = timeSinceLastEdit > maxSaveDelay;
+    
+    if (isRecentlyTyping && !hasExceededMaxDelay) {
+      debugLogger.autosave('Save deferred: user actively typing');
+      console.log('⌨️ AutoSave: user still typing, waiting for idle period');
+      return; // Don't reschedule here - markActiveTyping handles it
     }
     
-    // Final check before saving - only undo blocks saves  
-    if (isSaving || undoActiveRef.current) {
+    if (hasExceededMaxDelay && isRecentlyTyping) {
+      console.log('⚡ AutoSave: forcing save after max delay despite typing');
+    }
+    
+    // Final check before saving - prevent overlapping saves
+    if (saveInProgressRef.current || undoActiveRef.current) {
       debugLogger.autosave('Save blocked: already saving or undo active');
       console.log('🛑 AutoSave: blocked - already saving or undo active');
       return;
@@ -214,7 +222,9 @@ export const useSimpleAutoSave = (
       return;
     }
     
+    // Mark save in progress and capture what we're saving
     setIsSaving(true);
+    saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
     
     try {
@@ -267,8 +277,14 @@ export const useSimpleAutoSave = (
             // Register this save to prevent false positives in resumption
             registerRecentSave(newRundown.id, normalizedTimestamp);
           }
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
+          // Only update saved reference if content hasn't changed during save
+          const currentSignatureAfterSave = createContentSignature();
+          if (currentSignatureAfterSave === finalSignature) {
+            lastSavedRef.current = finalSignature;
+            console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
+          } else {
+            console.log('⚠️ Content changed during save - keeping dirty state');
+          }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
@@ -399,8 +415,14 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
+          // Only update saved reference if content hasn't changed during save
+          const currentSignatureAfterSave = createContentSignature();
+          if (currentSignatureAfterSave === finalSignature) {
+            lastSavedRef.current = finalSignature;
+            console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
+          } else {
+            console.log('⚠️ Content changed during save - keeping dirty state');
+          }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         } else {
           const updated = Array.isArray(upd1) ? upd1[0] : upd1;
@@ -411,21 +433,28 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
+          // Only update saved reference if content hasn't changed during save
+          const currentSignatureAfterSave = createContentSignature();
+          if (currentSignatureAfterSave === finalSignature) {
+            lastSavedRef.current = finalSignature;
+            console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
+          } else {
+            console.log('⚠️ Content changed during save - keeping dirty state');
+          }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
       }
     } catch (error) {
       console.error('❌ Save error:', error);
       toast({
-        title: "Save failed", 
+        title: "Save failed",
         description: "Unable to save changes. Will retry automatically.",
         variant: "destructive",
         duration: 3000,
       });
     } finally {
       setIsSaving(false);
+      saveInProgressRef.current = false; // Reset save progress flag
       
       // Clear structural change flag after save completes
       if (pendingStructuralChangeRef) {
