@@ -355,7 +355,7 @@ const RundownHeader = ({
                           !showDate && "text-muted-foreground"
                         )}
                       >
-                        {showDate ? format(showDate, "MMM do") : "Date"}
+                        {showDate ? format(showDate, "MMM do").toUpperCase() : "Date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -477,7 +477,7 @@ const RundownHeader = ({
                         !showDate && "text-muted-foreground"
                       )}
                     >
-                      {showDate ? format(showDate, "MMM do") : "Date"}
+                      {showDate ? format(showDate, "MMM do").toUpperCase() : "Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
