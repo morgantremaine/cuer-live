@@ -424,6 +424,12 @@ export const useSimplifiedRundownState = () => {
         try {
           console.log('🔄 Tab became active - syncing latest data before allowing writes');
           
+          // CRITICAL: Never overwrite unsaved local changes
+          if (state.hasUnsavedChanges) {
+            console.log('🛡️ Skipping remote sync - preserving unsaved local changes');
+            return;
+          }
+          
           const { data: latestRundown, error } = await supabase
             .from('rundowns')
             .select('*')
