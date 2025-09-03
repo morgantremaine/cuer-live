@@ -9,6 +9,7 @@ import { useAuth } from './useAuth';
 import { usePerRowFeatureFlag } from './usePerRowFeatureFlag';
 import { usePerRowRundownState } from './usePerRowRundownState';
 import { usePerRowCompatibilityAdapter } from './usePerRowCompatibilityAdapter';
+import { useRundownMetadata } from './useRundownMetadata';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
@@ -30,6 +31,7 @@ export const useRundownStateCoordination = () => {
     rundownId: rundownId || '',
     enableRealtime: true
   });
+  const metadata = useRundownMetadata({ rundownId: rundownId || '' });
 
   // Use per-row system if enabled and we have a valid rundown ID
   const shouldUsePerRow = isPerRowEnabled && rundownId && rundownId !== 'new';
@@ -73,9 +75,9 @@ export const useRundownStateCoordination = () => {
     ...perRowState,
     // Map per-row state to legacy interface
     rundownId: rundownId,
-    rundownTitle: 'Untitled Rundown', // TODO: Get from per-row metadata
-    rundownStartTime: '09:00:00', // TODO: Get from per-row metadata  
-    timezone: 'America/New_York', // TODO: Get from per-row metadata
+    rundownTitle: metadata.title,
+    rundownStartTime: metadata.startTime,
+    timezone: metadata.timezone,
     currentTime: new Date(),
     hasUnsavedChanges: perRowState.isSaving,
     isConnected: true, // Per-row system manages its own connection
@@ -87,9 +89,10 @@ export const useRundownStateCoordination = () => {
     setColumns: () => {}, // TODO: Wire to user preferences
     addColumn: () => {}, // TODO: Wire to user preferences
     updateColumnWidth: () => {}, // TODO: Wire to user preferences
-    setTitle: () => {}, // TODO: Wire to per-row metadata
-    setStartTime: () => {}, // TODO: Wire to per-row metadata
-    setTimezone: () => {}, // TODO: Wire to per-row metadata
+    setTitle: metadata.updateTitle,
+    setStartTime: metadata.updateStartTime,
+    setTimezone: metadata.updateTimezone,
+
     addRow: () => {
       const newItem = {
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

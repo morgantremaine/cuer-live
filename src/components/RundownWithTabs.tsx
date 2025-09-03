@@ -8,6 +8,7 @@ import Teleprompter from '@/pages/Teleprompter';
 import { PerRowMigrationBanner } from '@/components/PerRowMigrationBanner';
 import { usePerRowFeatureFlag } from '@/hooks/usePerRowFeatureFlag';
 import { usePerRowPersistence } from '@/hooks/usePerRowPersistence';
+import { supabase } from '@/integrations/supabase/client';
 
 const RundownWithTabs = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,24 +16,39 @@ const RundownWithTabs = () => {
   const location = useLocation();
   
   // Per-row feature flag and migration state
-  const { isEnabled: isPerRowEnabled, userDismissed } = usePerRowFeatureFlag();
+  const { isEnabled: isPerRowEnabled, userDismissed, dismissMigrationBanner } = usePerRowFeatureFlag();
   const { migrateRundown } = usePerRowPersistence({ 
     rundownId: id || '', 
     onItemsChange: () => {} 
   });
   
   const [showMigrationBanner, setShowMigrationBanner] = useState(false);
+  const [isMigrated, setIsMigrated] = useState<boolean | null>(null);
 
-  // Show migration banner for valid rundowns when per-row is enabled but user hasn't dismissed
+  // Check if rundown has normalized items (migrated)
   useEffect(() => {
-    if (id && id !== 'new' && isPerRowEnabled && !userDismissed) {
-      setShowMigrationBanner(true);
-    } else {
-      setShowMigrationBanner(false);
-    }
-  }, [id, isPerRowEnabled, userDismissed]);
-  
-  
+    const checkMigration = async () => {
+      if (!id || id === 'new') { setIsMigrated(null); return; }
+      const { count, error } = await supabase
+        .from('rundown_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('rundown_id', id);
+      if (error) {
+        console.error('Failed to check migration status:', error);
+        setIsMigrated(null);
+      } else {
+        setIsMigrated((count || 0) > 0);
+      }
+    };
+    checkMigration();
+  }, [id]);
+
+  // Show migration banner only if not migrated and not dismissed
+  useEffect(() => {
+    const shouldShow = Boolean(id && id !== 'new' && isPerRowEnabled && !userDismissed && isMigrated === false);
+    setShowMigrationBanner(shouldShow);
+  }, [id, isPerRowEnabled, userDismissed, isMigrated]);
+
   // Determine active tab from URL path
   const getActiveTab = () => {
     const path = location.pathname;
@@ -76,8 +92,12 @@ const RundownWithTabs = () => {
     if (!id) return false;
     try {
       const result = await migrateRundown();
-      setShowMigrationBanner(false);
-      return true;
+      if (result) {
+        dismissMigrationBanner();
+        setIsMigrated(true);
+        setShowMigrationBanner(false);
+      }
+      return !!result;
     } catch (error) {
       console.error('Migration failed:', error);
       return false;
@@ -85,6 +105,7 @@ const RundownWithTabs = () => {
   };
 
   const handleDismissBanner = () => {
+    dismissMigrationBanner();
     setShowMigrationBanner(false);
   };
 
