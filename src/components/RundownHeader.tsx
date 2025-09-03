@@ -355,8 +355,7 @@ const RundownHeader = ({
                           !showDate && "text-muted-foreground"
                         )}
                       >
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {showDate ? format(showDate, "M/d") : "Date"}
+                        {showDate ? format(showDate, "MMM d") : "Date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -478,8 +477,7 @@ const RundownHeader = ({
                         !showDate && "text-muted-foreground"
                       )}
                     >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {showDate ? format(showDate, "M/d") : "Date"}
+                      {showDate ? format(showDate, "MMM d") : "Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
