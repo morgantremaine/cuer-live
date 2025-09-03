@@ -702,9 +702,6 @@ export const useSimplifiedRundownState = () => {
     recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
     
     if (isTypingField) {
-      // Mark typing activity to prevent immediate auto-save
-      markActiveTyping();
-      
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {
@@ -746,7 +743,7 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: value });
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, markActiveTyping]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
   // Update current time every second
   useEffect(() => {
@@ -947,9 +944,6 @@ export const useSimplifiedRundownState = () => {
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
-        // Mark typing activity to prevent immediate auto-save
-        markActiveTyping();
-        
         // Track title editing for protection
         recentlyEditedFieldsRef.current.set('title', Date.now());
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
@@ -964,7 +958,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState, markActiveTyping]),
+    }, [actions.setTitle, state.items, state.title, saveUndoState])
   };
 
   // Get visible columns from user preferences
