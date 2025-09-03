@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, RefreshCw, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { History, RefreshCw, AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface RundownRevision {
   id: string;
@@ -38,6 +40,9 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
   const [revisions, setRevisions] = useState<RundownRevision[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [manualRestorePointName, setManualRestorePointName] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
 
   const loadRevisions = async () => {
@@ -125,6 +130,67 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
     }
   };
 
+  const handleCreateManualRevision = async () => {
+    if (!manualRestorePointName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter a name for the restore point",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Get current rundown data
+      const { data: rundownData, error: rundownError } = await supabase
+        .from('rundowns')
+        .select('items, title, start_time, timezone')
+        .eq('id', rundownId)
+        .single();
+
+      if (rundownError) {
+        throw rundownError;
+      }
+
+      // Create manual revision
+      const { error: revisionError } = await supabase
+        .from('rundown_revisions')
+        .insert({
+          rundown_id: rundownId,
+          revision_number: Date.now(), // Use timestamp to ensure uniqueness
+          items: rundownData.items,
+          title: rundownData.title,
+          start_time: rundownData.start_time,
+          timezone: rundownData.timezone,
+          revision_type: 'manual',
+          action_description: `Manual restore point: ${manualRestorePointName.trim()}`
+        });
+
+      if (revisionError) {
+        throw revisionError;
+      }
+
+      toast({
+        title: "Restore point created",
+        description: `Manual restore point "${manualRestorePointName.trim()}" has been created`,
+      });
+
+      setManualRestorePointName('');
+      setShowCreateDialog(false);
+      loadRevisions(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating manual revision:', error);
+      toast({
+        title: "Creation failed",
+        description: "Could not create manual restore point",
+        variant: "destructive"
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const getRevisionTypeLabel = (type: string) => {
     switch (type) {
       case 'initial': return 'Initial';
@@ -173,10 +239,61 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
           <p className="text-sm text-muted-foreground">
             Showing {revisions.length} recent revisions
           </p>
-          <Button variant="outline" size="sm" onClick={loadRevisions} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Restore Point
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Create Manual Restore Point</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Create a manual restore point with a custom name to easily identify this state later.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <Label htmlFor="restore-point-name">Restore Point Name</Label>
+                  <Input
+                    id="restore-point-name"
+                    value={manualRestorePointName}
+                    onChange={(e) => setManualRestorePointName(e.target.value)}
+                    placeholder="e.g., Before major script changes"
+                    className="mt-2"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleCreateManualRevision();
+                      }
+                    }}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCreateManualRevision}
+                    disabled={creating || !manualRestorePointName.trim()}
+                  >
+                    {creating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Restore Point'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            
+            <Button variant="outline" size="sm" onClick={loadRevisions} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="h-[400px]">
@@ -201,19 +318,28 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
                       )}
                     </div>
                     <h4 className="font-medium">{revision.title}</h4>
-                    <div className="space-y-1">
-                      {revision.action_description && (
-                        <p className="text-sm font-medium text-primary">
-                          {revision.action_description}
-                        </p>
-                      )}
-                      <p className="text-sm text-muted-foreground">
-                        {revision.items_count} items • {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        By: {revision.creator_name} {revision.creator_email && `(${revision.creator_email})`}
-                      </p>
-                    </div>
+                     <div className="space-y-1">
+                       {revision.action_description && (
+                         <p className="text-sm font-medium text-primary">
+                           {revision.action_description}
+                         </p>
+                       )}
+                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                         <span>{revision.items_count} items</span>
+                         <span>•</span>
+                         <span>{formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}</span>
+                         <span>•</span>
+                         <span className="text-xs">{format(new Date(revision.created_at), 'MMM d, h:mm a')}</span>
+                       </div>
+                       <p className="text-xs text-muted-foreground">
+                         By: {revision.creator_name} {revision.creator_email && `(${revision.creator_email})`}
+                       </p>
+                       {revision.revision_type === 'manual' && (
+                         <div className="mt-2 p-2 bg-accent/20 rounded text-xs text-accent-foreground">
+                           📌 Manual restore point
+                         </div>
+                       )}
+                     </div>
                     {revision.start_time && (
                       <p className="text-xs text-muted-foreground">
                         Start time: {revision.start_time} ({revision.timezone})
