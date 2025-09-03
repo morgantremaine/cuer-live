@@ -157,21 +157,21 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Smart typing check - allow saves during brief pauses or if delay is too long
+    // Optimized typing check for multi-user scenarios
     if (isTypingActive()) {
       const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-      const maxWaitTime = maxSaveDelay;
+      const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 2000;
       
-      // If user has been typing for too long, force save anyway to prevent data loss
-      if (timeSinceLastEdit < maxWaitTime) {
-        debugLogger.autosave('Save deferred: user is actively typing, will retry');
-        console.log('⌨️ AutoSave: deferred - user typing, rescheduling for', typingIdleMs, 'ms');
+      // In multi-user scenarios, be more aggressive about saving
+      if (!isMultiUserActive && timeSinceLastEdit < maxSaveDelay) {
+        debugLogger.autosave('Save deferred: user typing, will retry soon');
+        console.log('⌨️ AutoSave: brief typing defer, rescheduling for', typingIdleMs, 'ms');
         setTimeout(() => {
           performSave();
         }, typingIdleMs);
         return;
       } else {
-        console.log('⚡ AutoSave: forcing save despite typing - preventing data loss');
+        console.log('⚡ AutoSave: proceeding despite typing - multi-user or timeout');
       }
     }
     
@@ -392,18 +392,20 @@ export const useSimpleAutoSave = (
         pendingStructuralChangeRef.current = false;
       }
       
-      // Check if content changed during save - if so, re-queue
+      // Optimized re-queuing for multi-user scenarios
       const currentSignature = createContentSignature();
       if (currentSignature !== currentSaveSignatureRef.current && currentSignature !== lastSavedRef.current) {
+        const retryCount = (saveQueueRef.current?.retryCount || 0) + 1;
         saveQueueRef.current = { 
           signature: currentSignature, 
-          retryCount: (saveQueueRef.current?.retryCount || 0) + 1 
+          retryCount 
         };
         
-        // Re-trigger save with optimized delay
-        if ((saveQueueRef.current?.retryCount || 0) < 5) {
-          const retryDelay = Math.min(typingIdleMs, 500); // Quick retries
-          console.log('🔄 AutoSave: queuing retry save in', retryDelay, 'ms');
+        // More aggressive retries for multi-user scenarios
+        if (retryCount < 8) {
+          const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
+          const retryDelay = isMultiUserActive ? 200 : Math.min(typingIdleMs, 400);
+          console.log('🔄 AutoSave: queuing retry save in', retryDelay, 'ms (attempt', retryCount, ')');
           setTimeout(() => {
             if (saveQueueRef.current && !isSaving) {
               saveQueueRef.current = null;
@@ -496,23 +498,13 @@ export const useSimpleAutoSave = (
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      // Schedule a retry as soon as cooldown ends
+      // Schedule retry after cooldown with optimized timing
       saveTimeoutRef.current = setTimeout(async () => {
-        // If still typing, brief wait then save anyway to prevent data loss
-        if (isTypingActive()) {
-          saveTimeoutRef.current = setTimeout(async () => {
-            try {
-              await performSaveRef.current();
-            } catch (error) {
-              console.error('❌ AutoSave: save execution failed after cooldown:', error);
-            }
-          }, typingIdleMs);
-        } else {
-          try {
-            await performSaveRef.current();
-          } catch (error) {
-            console.error('❌ AutoSave: save execution failed after cooldown:', error);
-          }
+        // More aggressive about saving when cooldown ends
+        try {
+          await performSaveRef.current();
+        } catch (error) {
+          console.error('❌ AutoSave: save execution failed after cooldown:', error);
         }
       }, waitMs);
       return;
@@ -529,26 +521,29 @@ export const useSimpleAutoSave = (
       }
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      // Simplified, responsive debouncing
-      const debounceTime = isStructuralChange ? 100 : typingIdleMs;
-      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingActive: isTypingActive() });
+      const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
+      
+      // Faster saves during multi-user activity
+      const debounceTime = isStructuralChange ? 100 : (isMultiUserActive ? 300 : typingIdleMs);
+      
+      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
 
       saveTimeoutRef.current = setTimeout(async () => {
-        // Allow saves even during typing if enough time has passed
+        // Reduced typing interference for better multi-user flow
         const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-        if (isTypingActive() && timeSinceLastEdit < maxSaveDelay) {
-          console.log('⌨️ AutoSave(effect): brief typing defer, rescheduling');
-          // Brief reschedule but don't let it go too long
+        if (isTypingActive() && timeSinceLastEdit < (isMultiUserActive ? 500 : maxSaveDelay)) {
+          console.log('⌨️ AutoSave(effect): brief typing defer');
+          // Brief reschedule but don't let it delay too long in multi-user scenarios
           if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
           saveTimeoutRef.current = setTimeout(async () => {
-            console.log('⏱️ AutoSave: executing save now (post-typing)');
+            console.log('⏱️ AutoSave: executing save now (post-defer)');
             try {
               await performSaveRef.current();
               console.log('✅ AutoSave: save completed successfully');
             } catch (error) {
               console.error('❌ AutoSave: save execution failed:', error);
             }
-          }, typingIdleMs);
+          }, isMultiUserActive ? 200 : typingIdleMs);
           return;
         }
 
