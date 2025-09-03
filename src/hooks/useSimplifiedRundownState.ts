@@ -63,6 +63,7 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Tab visibility and focus tracking for stale tab prevention
+  const prevIsActiveRef = useRef(isTabActive);
   useEffect(() => {
     const handleVisibilityChange = () => {
       setIsTabActive(!document.hidden);
@@ -93,7 +94,18 @@ export const useSimplifiedRundownState = () => {
       window.removeEventListener('blur', handleFocusChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [rundownId, isInitialized]);
+  }, []);
+
+  // Enhanced dropdown/select field protection
+  const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
+  const DROPDOWN_PROTECTION_WINDOW_MS = 15000; // 15 seconds for dropdown changes
+
+  const markDropdownFieldChanged = useCallback((fieldKey: string) => {
+    const now = Date.now();
+    dropdownFieldProtectionRef.current.set(fieldKey, now);
+    recentlyEditedFieldsRef.current.set(fieldKey, now);
+    console.log(`🎛️ Dropdown field marked as protected: ${fieldKey}`);
+  }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -214,6 +226,16 @@ export const useSimplifiedRundownState = () => {
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
+
+    // Add dropdown fields that are recently changed with extended protection
+    dropdownFieldProtectionRef.current.forEach((timestamp, fieldKey) => {
+      if (now - timestamp < DROPDOWN_PROTECTION_WINDOW_MS) {
+        protectedFields.add(fieldKey);
+      } else {
+        // Clean up expired dropdown protections
+        dropdownFieldProtectionRef.current.delete(fieldKey);
+      }
+    });
     
     // Add global title/timing/notes fields if they're being edited
     if (typingSessionRef.current?.fieldKey === 'title' || activeFocusFieldRef.current === 'title') {
@@ -224,6 +246,9 @@ export const useSimplifiedRundownState = () => {
     }
     if (typingSessionRef.current?.fieldKey === 'timezone' || activeFocusFieldRef.current === 'timezone') {
       protectedFields.add('timezone');
+    }
+    if (typingSessionRef.current?.fieldKey === 'showDate' || activeFocusFieldRef.current === 'showDate') {
+      protectedFields.add('showDate');
     }
     if (typingSessionRef.current?.fieldKey === 'externalNotes' || activeFocusFieldRef.current === 'externalNotes') {
       protectedFields.add('externalNotes');
@@ -339,6 +364,7 @@ export const useSimplifiedRundownState = () => {
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
+          showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
           externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
         });
         
@@ -1086,6 +1112,9 @@ export const useSimplifiedRundownState = () => {
       }, 5000); // Extended timeout for start time editing
     }, [actions.setStartTime]),
     setTimezone: useCallback((newTimezone: string) => {
+      // Mark timezone as a dropdown field change for enhanced protection
+      markDropdownFieldChanged('timezone');
+      
       // Track timezone editing for protection
       recentlyEditedFieldsRef.current.set('timezone', Date.now());
       typingSessionRef.current = { fieldKey: 'timezone', startTime: Date.now() };
@@ -1100,6 +1129,9 @@ export const useSimplifiedRundownState = () => {
       }, 5000); // Extended timeout for timezone editing
     }, [actions.setTimezone]),
     setShowDate: useCallback((newShowDate: Date | null) => {
+      // Mark show date as a dropdown field change for enhanced protection
+      markDropdownFieldChanged('showDate');
+      
       // Track show date editing for protection
       recentlyEditedFieldsRef.current.set('showDate', Date.now());
       typingSessionRef.current = { fieldKey: 'showDate', startTime: Date.now() };
