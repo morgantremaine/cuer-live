@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,18 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const historyButtonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showHistoryDialog && historyButtonRef.current) {
+      // Find the actual button inside the RundownRevisionHistory component and click it
+      const button = historyButtonRef.current.querySelector('button');
+      if (button) {
+        button.click();
+      }
+      setShowHistoryDialog(false);
+    }
+  }, [showHistoryDialog]);
 
   const handleOpenBlueprint = () => {
     if (!rundownId) {
@@ -176,12 +188,10 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           
           {/* History - only show for non-demo rundowns */}
           {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
-            <div className="px-2 py-1">
-              <RundownRevisionHistory 
-                rundownId={rundownId} 
-                onRestore={() => window.location.reload()} 
-              />
-            </div>
+            <DropdownMenuItem onClick={() => setShowHistoryDialog(true)}>
+              <History className="h-4 w-4 mr-2" />
+              History
+            </DropdownMenuItem>
           )}
           
           <DropdownMenuItem onClick={handleOpenHelp}>
@@ -190,6 +200,18 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      {/* History Dialog - hidden but ready to be triggered */}
+      {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
+        <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden', pointerEvents: 'none' }}>
+          <div ref={historyButtonRef}>
+            <RundownRevisionHistory 
+              rundownId={rundownId} 
+              onRestore={() => window.location.reload()} 
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
