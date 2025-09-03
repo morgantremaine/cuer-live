@@ -236,7 +236,7 @@ const RundownHeader = ({
               {...timingStatus}
               size="compact"
             />
-            <span>Runtime: {totalRuntime}</span>
+            <span>TRT: {totalRuntime}</span>
             {isConnected !== undefined && (
               <div className="flex items-center">
                 {renderConnectionIcon()}
@@ -369,7 +369,7 @@ const RundownHeader = ({
                 </PopoverContent>
               </Popover>
             )}
-            <span>Runtime: {totalRuntime}</span>
+            <span>TRT: {totalRuntime}</span>
           </div>
         </div>
       </div>
@@ -490,7 +490,7 @@ const RundownHeader = ({
           )}
           
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            Runtime: {totalRuntime}
+            TRT: {totalRuntime}
           </span>
           
           {isConnected !== undefined && (
