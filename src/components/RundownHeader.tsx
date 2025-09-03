@@ -287,10 +287,7 @@ const RundownHeader = ({
                     target.style.height = 'auto';
                     target.style.height = target.scrollHeight + 'px';
                   }}
-                  data-field-key="title"
-                  name="title" 
-                  id="rundown-title-editor"
-                  autoFocus
+                    autoFocus
                   />
                 ) : (
                   <span 
@@ -421,9 +418,6 @@ const RundownHeader = ({
                   target.style.height = 'auto';
                   target.style.height = target.scrollHeight + 'px';
                 }}
-                data-field-key="title"
-                name="title" 
-                id="rundown-title-editor-desktop"
                 autoFocus
               />
             ) : (

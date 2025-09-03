@@ -28,7 +28,6 @@ export const useSimpleRealtimeRundown = ({
   const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
   const subscriptionRef = useRef<any>(null);
   const lastProcessedUpdateRef = useRef<string | null>(null);
-  const lastProcessedDocVersionRef = useRef<number>(0);
   const onRundownUpdateRef = useRef(onRundownUpdate);
   const trackOwnUpdateRef = useRef(trackOwnUpdate);
   const subscriptionKeyRef = useRef<string>('');
@@ -200,19 +199,10 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
 
-    // ENHANCED DOC VERSION DEDUPLICATION: Primary guard using doc_version, fallback to timestamp
+    // MONOTONIC DOC VERSION GUARD: Ignore updates with doc_version <= lastSeenDocVersion
     const incomingDocVersion = payload.new?.doc_version;
-    if (incomingDocVersion && incomingDocVersion <= lastProcessedDocVersionRef.current) {
-      console.log('🛡️ Doc version guard: ignoring processed update', {
-        incoming: incomingDocVersion,
-        lastProcessed: lastProcessedDocVersionRef.current
-      });
-      return;
-    }
-    
-    // Fallback monotonic guard using lastSeenDocVersion from parent
     if (incomingDocVersion && lastSeenDocVersion && incomingDocVersion <= lastSeenDocVersion) {
-      console.log('🛡️ Fallback monotonic guard: ignoring stale doc_version', {
+      console.log('🛡️ Monotonic guard: ignoring stale doc_version', {
         incoming: incomingDocVersion,
         lastSeen: lastSeenDocVersion
       });
@@ -297,11 +287,6 @@ export const useSimpleRealtimeRundown = ({
     }
     
     lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
-    
-    // Update doc version tracking
-    if (incomingDocVersion) {
-      lastProcessedDocVersionRef.current = incomingDocVersion;
-    }
     
     try {
       // Sync time from server timestamp
