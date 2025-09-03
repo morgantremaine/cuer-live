@@ -133,61 +133,63 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size={size} className={`flex items-center space-x-1 ${className}`}>
-          <Wrench className="h-4 w-4" />
-          <span>Tools</span>
-      </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {onShowFindReplace && (
-          <>
-            <DropdownMenuItem onClick={onShowFindReplace}>
-              <Search className="h-4 w-4 mr-2" />
-              Find & Replace
-            </DropdownMenuItem>
-          </>
-        )}
-        
-        <DropdownMenuItem onClick={handleOpenNotes}>
-          <StickyNote className="h-4 w-4 mr-2" />
-          Notes
-        </DropdownMenuItem>
-        
-        
-        <DropdownMenuItem onClick={handleOpenTeleprompter}>
-          <Monitor className="h-4 w-4 mr-2" />
-          Teleprompter
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleOpenBlueprint}>
-          <FileText className="h-4 w-4 mr-2" />
-          Blueprint
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={handleOpenADView}>
-          <Camera className="h-4 w-4 mr-2" />
-          AD View
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
-        {/* History - only show for non-demo rundowns */}
-        {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
-          <div className="p-1">
-            <RundownRevisionHistory 
-              rundownId={rundownId} 
-              onRestore={() => window.location.reload()} 
-            />
-          </div>
-        )}
-        
-        <DropdownMenuItem onClick={handleOpenHelp}>
-          <HelpCircle className="h-4 w-4 mr-2" />
-          User Guide
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size={size} className={`flex items-center space-x-1 ${className}`}>
+            <Wrench className="h-4 w-4" />
+            <span>Tools</span>
+        </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {onShowFindReplace && (
+            <>
+              <DropdownMenuItem onClick={onShowFindReplace}>
+                <Search className="h-4 w-4 mr-2" />
+                Find & Replace
+              </DropdownMenuItem>
+            </>
+          )}
+          
+          <DropdownMenuItem onClick={handleOpenNotes}>
+            <StickyNote className="h-4 w-4 mr-2" />
+            Notes
+          </DropdownMenuItem>
+          
+          
+          <DropdownMenuItem onClick={handleOpenTeleprompter}>
+            <Monitor className="h-4 w-4 mr-2" />
+            Teleprompter
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleOpenBlueprint}>
+            <FileText className="h-4 w-4 mr-2" />
+            Blueprint
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={handleOpenADView}>
+            <Camera className="h-4 w-4 mr-2" />
+            AD View
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
+          {/* History - only show for non-demo rundowns */}
+          {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
+            <div className="px-2 py-1">
+              <RundownRevisionHistory 
+                rundownId={rundownId} 
+                onRestore={() => window.location.reload()} 
+              />
+            </div>
+          )}
+          
+          <DropdownMenuItem onClick={handleOpenHelp}>
+            <HelpCircle className="h-4 w-4 mr-2" />
+            User Guide
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 };
