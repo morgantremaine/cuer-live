@@ -171,7 +171,7 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
         
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm text-muted-foreground">
-            Showing {revisions.length} recent revisions (now tracking every edit)
+            Showing {revisions.length} recent revisions
           </p>
           <Button variant="outline" size="sm" onClick={loadRevisions} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
