@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUnifiedNotes } from '@/hooks/useUnifiedNotes';
+import { useExternalNotes } from '@/hooks/useExternalNotes';
 import ScratchpadRichTextEditor from '@/components/blueprint/scratchpad/ScratchpadRichTextEditor';
 import ScratchpadStreamlinedToolbar from '@/components/blueprint/scratchpad/ScratchpadStreamlinedToolbar';
 
@@ -41,7 +41,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
     strikethrough: false
   });
 
-  // Use the unified notes hook
+  // Use the external notes hook for rundown notes
   const {
     notes,
     activeNote,
@@ -52,7 +52,7 @@ export const FloatingNotesWindow: React.FC<FloatingNotesWindowProps> = ({
     renameNote,
     deleteNote,
     reorderNotes
-  } = useUnifiedNotes(rundownId);
+  } = useExternalNotes(rundownId);
 
   // Mouse event handlers for dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

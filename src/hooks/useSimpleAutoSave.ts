@@ -238,6 +238,7 @@ export const useSimpleAutoSave = (
             start_time: state.startTime,
             timezone: state.timezone,
             show_date: state.showDate?.toISOString().split('T')[0] || null,
+            external_notes: state.externalNotes,
             team_id: teamData.team_id,
             user_id: currentUserId,
             folder_id: folderId,
@@ -306,6 +307,7 @@ export const useSimpleAutoSave = (
           start_time: state.startTime,
           timezone: state.timezone,
           show_date: state.showDate?.toISOString().split('T')[0] || null,
+          external_notes: state.externalNotes,
           updated_at: new Date().toISOString(),
           last_updated_by: currentUserId
         } as const;

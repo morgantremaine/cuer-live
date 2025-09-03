@@ -96,7 +96,8 @@ export const useSimplifiedRundownState = () => {
       title: mergedData.title || state.title,
       startTime: mergedData.start_time || state.startTime,
       timezone: mergedData.timezone || state.timezone,
-      showDate: mergedData.show_date ? new Date(mergedData.show_date) : state.showDate
+      showDate: mergedData.show_date ? new Date(mergedData.show_date) : state.showDate,
+      externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes
     });
     
     // Update timestamp
@@ -627,7 +628,8 @@ export const useSimplifiedRundownState = () => {
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
               timezone: data.timezone || 'America/New_York',
-              showDate: data.show_date ? new Date(data.show_date) : null
+              showDate: data.show_date ? new Date(data.show_date) : null,
+              externalNotes: data.external_notes
             });
           }
         }
