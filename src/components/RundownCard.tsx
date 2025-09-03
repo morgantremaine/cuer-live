@@ -17,6 +17,7 @@ interface SavedRundown {
   items: RundownItem[]
   created_at: string
   updated_at: string
+  show_date?: string | null
   archived?: boolean
 }
 
@@ -130,7 +131,7 @@ const RundownCard = ({
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-1" />
-                Modified: {format(new Date(rundown.updated_at), 'MMM d, yyyy')}
+                {rundown.show_date ? `Show: ${format(new Date(rundown.show_date), 'MMM d, yyyy')}` : `Modified: ${format(new Date(rundown.updated_at), 'MMM d, yyyy')}`}
               </div>
             </CardDescription>
           </div>

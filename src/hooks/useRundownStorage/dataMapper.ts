@@ -12,6 +12,7 @@ export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
     columns: dbRundown.columns,
     timezone: dbRundown.timezone,
     start_time: dbRundown.start_time,
+    show_date: dbRundown.show_date,
     icon: dbRundown.icon,
     archived: dbRundown.archived || false,
     created_at: dbRundown.created_at,
