@@ -12,6 +12,7 @@ interface TextAreaCellProps {
   onUpdateValue: (value: string) => void;
   onCellClick: (e: React.MouseEvent) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
+  fieldKeyForProtection?: string; // ensures focus-based protection matches merge keys
 }
 
 const TextAreaCell = ({
@@ -24,7 +25,8 @@ const TextAreaCell = ({
   isDuration = false,
   onUpdateValue,
   onCellClick,
-  onKeyDown
+  onKeyDown,
+  fieldKeyForProtection
 }: TextAreaCellProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measurementRef = useRef<HTMLDivElement>(null);
@@ -188,10 +190,10 @@ const TextAreaCell = ({
     }
   };
 
-  // Create the proper cell ref key
-  const cellKey = `${itemId}-${cellRefKey}`;
-
-  // Check if this is a header row based on itemId
+// Create the proper cell ref key
+const cellKey = `${itemId}-${cellRefKey}`;
+// Resolve field key used for protection (matches merge keys)
+const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName' || cellRefKey === 'name') ? 'name' : cellRefKey);
   const isHeaderRow = itemId.includes('header');
   const fontSize = isHeaderRow ? 'text-sm' : 'text-sm';
   const fontWeight = isHeaderRow && cellRefKey === 'segmentName' ? 'font-medium' : '';
@@ -245,6 +247,7 @@ const TextAreaCell = ({
         onBlur={handleBlur}
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
+        data-field-key={`${itemId}-${resolvedFieldKey}`}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}

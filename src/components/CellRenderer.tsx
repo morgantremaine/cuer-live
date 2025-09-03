@@ -163,6 +163,7 @@ const CellRenderer = ({
       textColor={textColor}
       backgroundColor={backgroundColor}
       isDuration={column.key === 'duration'}
+      fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
         markActiveTyping?.();
         // Handle custom fields vs built-in fields

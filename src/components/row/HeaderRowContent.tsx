@@ -128,6 +128,7 @@ const HeaderRowContent = ({
                     }}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+                    data-field-key={`${item.id}-name`}
                     className="bg-transparent border-none outline-none text-lg font-bold"
                     style={{ 
                       color: textColor,

@@ -303,6 +303,7 @@ const ExpandableScriptCell = ({
               onDragEnd={(e) => e.preventDefault()}
               data-cell-id={cellKey}
               data-cell-ref={cellKey}
+              data-field-key={`${itemId}-${fieldType}`}
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
               className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
