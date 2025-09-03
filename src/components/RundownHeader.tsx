@@ -76,6 +76,7 @@ const RundownHeader = ({
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -345,7 +346,7 @@ const RundownHeader = ({
                   className="w-20 text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0"
                 />
                 {onShowDateChange && (
-                  <Popover>
+                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="ghost"
@@ -362,7 +363,10 @@ const RundownHeader = ({
                       <CalendarComponent
                         mode="single"
                         selected={showDate || undefined}
-                        onSelect={(date) => onShowDateChange(date || null)}
+                        onSelect={(date) => {
+                          onShowDateChange(date || null);
+                          setIsDatePickerOpen(false);
+                        }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -465,7 +469,7 @@ const RundownHeader = ({
                 className="w-24 bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0"
               />
               {onShowDateChange && (
-                <Popover>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="ghost"
@@ -482,7 +486,10 @@ const RundownHeader = ({
                     <CalendarComponent
                       mode="single"
                       selected={showDate || undefined}
-                      onSelect={(date) => onShowDateChange(date || null)}
+                      onSelect={(date) => {
+                        onShowDateChange(date || null);
+                        setIsDatePickerOpen(false);
+                      }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
