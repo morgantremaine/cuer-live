@@ -456,9 +456,15 @@ export const useSimplifiedRundownState = () => {
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
   
-  // Enhanced sync-before-write with catch-up functionality
+  // Run sync on initial mount and only when tab transitions to active
+  const hasSyncedOnceRef = useRef(false);
+  
+  // Enhanced sync-before-write with catch-up functionality (only on activation or first run)
   useEffect(() => {
-    if (isTabActive && isInitialized && rundownId) {
+    const justActivated = isTabActive && !prevIsActiveRef.current;
+    const shouldSync = (justActivated || !hasSyncedOnceRef.current) && isInitialized && rundownId;
+
+    if (shouldSync) {
       console.log('👁️ Tab became active - performing safety sync and catch-up');
       syncBeforeWriteRef.current = true;
       
@@ -551,8 +557,12 @@ export const useSimplifiedRundownState = () => {
       };
 
       syncLatestData();
+      hasSyncedOnceRef.current = true;
     }
-  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes, performCatchupSync]);
+
+    // Track previous active state for transition detection
+    prevIsActiveRef.current = isTabActive;
+  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, performCatchupSync]);
 
   // Apply deferred updates when save completes
   useEffect(() => {
