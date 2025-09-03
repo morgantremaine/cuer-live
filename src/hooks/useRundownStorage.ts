@@ -114,6 +114,38 @@ export const useRundownStorage = () => {
     }
   }, [user, teamId, debouncedLoadRundowns]);
 
+  // Handle focus/visibility changes to refresh rundown data
+  useEffect(() => {
+    let lastFocusCheck = 0;
+    
+    const handleFocusRefresh = () => {
+      if (document.visibilityState === 'visible' || document.hasFocus()) {
+        const now = Date.now();
+        // Throttle to max once per 10 seconds to avoid excessive API calls
+        if (now - lastFocusCheck < 10000) return;
+        lastFocusCheck = now;
+        
+        // Only refresh if we have user and team data
+        if (user?.id && teamId && savedRundowns.length > 0) {
+          console.log('Dashboard: Refreshing rundown data after focus/visibility change');
+          // Force reload by clearing cache
+          lastLoadedUserRef.current = null;
+          lastLoadedTeamRef.current = null;
+          debouncedLoadRundowns();
+        }
+      }
+    };
+
+    // Listen to both visibility change and focus events
+    document.addEventListener('visibilitychange', handleFocusRefresh);
+    window.addEventListener('focus', handleFocusRefresh);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleFocusRefresh);
+      window.removeEventListener('focus', handleFocusRefresh);
+    };
+  }, [user?.id, teamId, savedRundowns.length, debouncedLoadRundowns]);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
