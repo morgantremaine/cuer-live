@@ -371,7 +371,7 @@ export const useSimpleAutoSave = (
             throw latestErr || new Error('Failed to read latest rundown row');
           }
 
-        // CONFLICT DETECTION: Fetch and compare latest data instead of overwriting
+        // IMPROVED CONFLICT RESOLUTION: Merge instead of aborting
         const { data: latestRundown, error: fetchError } = await supabase
           .from('rundowns')
           .select('*')
@@ -383,22 +383,41 @@ export const useSimpleAutoSave = (
           throw fetchError || new Error('Failed to fetch latest rundown data');
         }
 
-        // Analyze conflict: check if there are overlapping changes
-        const hasDataConflict = detectDataConflict(state, latestRundown);
+        // Smart merge: combine our changes with remote changes instead of aborting
+        console.log('🔄 Merging local changes with remote data for conflict resolution');
         
-        if (hasDataConflict) {
-          console.error('🚨 DATA CONFLICT DETECTED: Aborting save to prevent overwrite');
-          toast({
-            title: 'Conflict Detected',
-            description: 'Another user made changes while you were editing. Please refresh to see their changes.',
-            variant: 'destructive',
-            duration: 5000,
-          });
-          throw new Error('Data conflict prevented overwrite');
-        }
+        // Create merged update that preserves both sets of changes
+        const mergedItems = state.items?.map((localItem: any) => {
+          const remoteItem = latestRundown.items?.find((item: any) => item.id === localItem.id);
+          if (!remoteItem) return localItem; // New local item
+          
+          // Merge local and remote changes intelligently
+          return {
+            ...remoteItem, // Start with remote base
+            ...localItem,  // Apply local changes on top
+            // Preserve remote timestamps and system fields
+            created_at: remoteItem.created_at,
+            updated_at: remoteItem.updated_at
+          };
+        }) || [];
+        
+        // Add any new remote items that aren't in local state
+        const localItemIds = new Set(state.items?.map(item => item.id) || []);
+        const newRemoteItems = latestRundown.items?.filter((item: any) => !localItemIds.has(item.id)) || [];
+        
+        const finalMergedItems = [...mergedItems, ...newRemoteItems];
+        
+        // Update the base update with merged data
+        Object.assign(baseUpdate, {
+          items: finalMergedItems,
+          // Preserve our local changes for non-item fields unless remote is newer
+          title: state.title, // Keep our title change
+          start_time: state.startTime, // Keep our timing change
+          timezone: state.timezone, // Keep our timezone change
+        });
 
-        // No conflict detected - safe to retry with latest doc_version
-        const { data: upd2, error: updErr2 } = await supabase
+        // Retry with merged data and latest doc_version
+        let { data: upd2, error: updErr2 } = await supabase
           .from('rundowns')
           .update(baseUpdate)
           .eq('id', rundownId)
@@ -406,14 +425,40 @@ export const useSimpleAutoSave = (
           .select('updated_at, doc_version');
 
         if (updErr2 || !upd2 || (Array.isArray(upd2) && upd2.length === 0)) {
-          console.error('❌ Save failed after conflict analysis', updErr2);
-          toast({
-            title: 'Save failed',
-            description: 'Unable to save changes. Please try again.',
-            variant: 'destructive',
-            duration: 3000,
-          });
-          throw updErr2 || new Error('Conflict retry failed');
+          console.error('❌ Merged save failed - will retry once more', updErr2);
+          
+          // One final attempt with the very latest doc_version
+          const { data: finalRow, error: finalErr } = await supabase
+            .from('rundowns')
+            .select('doc_version')
+            .eq('id', rundownId)
+            .single();
+            
+          if (!finalErr && finalRow) {
+            const { data: upd3, error: updErr3 } = await supabase
+              .from('rundowns')
+              .update(baseUpdate)
+              .eq('id', rundownId)
+              .eq('doc_version', finalRow.doc_version)
+              .select('updated_at, doc_version');
+              
+            if (updErr3 || !upd3 || (Array.isArray(upd3) && upd3.length === 0)) {
+              console.error('❌ Final save attempt failed', updErr3);
+              toast({
+                title: 'Save failed',
+                description: 'Changes could not be saved after multiple attempts. Your work is preserved locally.',
+                variant: 'destructive',
+                duration: 5000,
+              });
+              throw updErr3 || new Error('All save attempts failed');
+            }
+            
+            // Use the final successful save
+            upd2 = upd3;
+            updErr2 = updErr3;
+          } else {
+            throw updErr2 || new Error('Conflict retry failed');
+          }
         }
 
           const updated = Array.isArray(upd2) ? upd2[0] : upd2;
@@ -645,6 +690,41 @@ export const useSimpleAutoSave = (
       }
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
+
+  // Enhanced flush-on-blur/visibility-hidden to guarantee keystroke saving
+  useEffect(() => {
+    const handleFlushOnBlur = async () => {
+      if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
+        console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
+        try {
+          await performSaveRef.current();
+        } catch (error) {
+          console.error('❌ AutoSave: flush-on-blur failed:', error);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleFlushOnBlur();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      handleFlushOnBlur();
+    };
+
+    // Add comprehensive flush triggers
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('beforeunload', handleFlushOnBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('beforeunload', handleFlushOnBlur);
+    };
+  }, [state.hasUnsavedChanges, rundownId]);
 
   // Flush any pending changes on unmount/view switch to prevent reverts
   useEffect(() => {

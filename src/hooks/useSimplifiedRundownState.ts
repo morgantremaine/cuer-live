@@ -270,8 +270,10 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // If we're currently saving or have pending structural changes, defer the update
-      if (isSaving || pendingStructuralChangeRef.current) {
+      // IMPROVED: Don't defer updates - use granular merge to handle concurrent editing
+      // Store deferred update only if actively saving structural changes
+      if (isSaving && pendingStructuralChangeRef.current) {
+        console.log('⏸️ Deferring update during structural save operation');
         deferredUpdateRef.current = updatedRundown;
         return;
       }
@@ -414,11 +416,23 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isInitialized]);
 
-  // Sync-before-write: When tab becomes active after being inactive, force sync
+  // Connect realtime to auto-save typing/unsaved state
+  realtimeConnection.setTypingChecker(() => isTypingActive());
+  realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
+  
+  // Get catch-up sync function from realtime connection
+  const performCatchupSync = realtimeConnection.performCatchupSync;
+  
+  // Enhanced sync-before-write with catch-up functionality
   useEffect(() => {
-    if (isTabActive && isInitialized && rundownId && !syncBeforeWriteRef.current) {
-      // Only sync if tab was previously inactive
+    if (isTabActive && isInitialized && rundownId) {
+      console.log('👁️ Tab became active - performing safety sync and catch-up');
       syncBeforeWriteRef.current = true;
+      
+      // Trigger catch-up sync to get any missed updates
+      if (performCatchupSync) {
+        performCatchupSync();
+      }
       
       const syncLatestData = async () => {
         try {
@@ -431,10 +445,39 @@ export const useSimplifiedRundownState = () => {
             .single();
 
           if (!error && latestRundown) {
-            // CRITICAL: Don't overwrite unsaved changes with remote data
+            // IMPROVED: Use granular merge instead of skipping entirely
             if (state.hasUnsavedChanges) {
-              console.log('🛡️ Skipping remote sync - preserving unsaved local changes');
-              return;
+              console.log('🔄 Merging remote data with unsaved local changes');
+              const protectedFields = getProtectedFields();
+              if (protectedFields.size > 0) {
+                // Apply granular merge for safety
+                const mergedData = {
+                  ...latestRundown,
+                  items: latestRundown.items?.map((remoteItem: any) => {
+                    const localItem = state.items.find(item => item.id === remoteItem.id);
+                    if (!localItem) return remoteItem;
+                    
+                    const merged = { ...remoteItem };
+                    protectedFields.forEach(fieldKey => {
+                      if (fieldKey.startsWith(remoteItem.id + '-')) {
+                        const field = fieldKey.substring(remoteItem.id.length + 1);
+                        if (localItem.hasOwnProperty(field)) {
+                          merged[field] = localItem[field];
+                        }
+                      }
+                    });
+                    return merged;
+                  }) || []
+                };
+                
+                actions.loadState({
+                  items: mergedData.items,
+                  title: protectedFields.has('title') ? state.title : mergedData.title,
+                  startTime: protectedFields.has('startTime') ? state.startTime : mergedData.start_time,
+                  timezone: protectedFields.has('timezone') ? state.timezone : mergedData.timezone
+                });
+                return;
+              }
             }
             
             // Check if remote data is newer than what we have
@@ -476,7 +519,7 @@ export const useSimplifiedRundownState = () => {
 
       syncLatestData();
     }
-  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
+  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes, performCatchupSync]);
 
   // Apply deferred updates when save completes
   useEffect(() => {

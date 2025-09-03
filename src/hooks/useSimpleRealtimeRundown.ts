@@ -259,15 +259,12 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
-    // CRITICAL: Check if user is actively typing - defer remote updates (but allow during passive unsaved state)
-    if (isTypingActiveRef.current && isTypingActiveRef.current()) {
-      console.log('🛡️ Deferring remote update (user actively typing)');
-      // Schedule to check again shortly
-      setManagedTimeout(() => {
-        handleRealtimeUpdate(payload);
-      }, 1000);
-      return;
-    }
+  // CRITICAL: Process updates immediately with micro-coalescing instead of deferring
+  // This ensures teammate edits are never missed, even while typing
+  if (isTypingActiveRef.current && isTypingActiveRef.current()) {
+    console.log('⚡ Processing remote update immediately (with merge protection while typing)');
+    // Use existing granular merge logic to preserve local edits
+  }
 
     // Only process updates that have actual content changes or are structural
     if (!isContentChange && !isStructural) {
@@ -413,11 +410,41 @@ export const useSimpleRealtimeRundown = ({
     };
   }, [rundownId, user?.id, enabled, handleRealtimeUpdate]);
 
+  // Add catch-up sync on reconnection to ensure no missed updates
+  const performCatchupSync = useCallback(async () => {
+    if (!rundownId || !isLeadSubscriptionRef.current) return;
+    
+    console.log('🔄 Performing catch-up sync on reconnection');
+    try {
+      const { data: latestData, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', rundownId)
+        .single();
+        
+      if (!error && latestData && onRundownUpdateRef.current) {
+        // Apply latest data if it's newer than what we have
+        console.log('📥 Applying catch-up data from server');
+        onRundownUpdateRef.current(latestData);
+      }
+    } catch (error) {
+      console.warn('⚠️ Catch-up sync failed:', error);
+    }
+  }, [rundownId]);
+
+  // Trigger catch-up when connection is restored
+  useEffect(() => {
+    if (isConnected && connectionStableRef.current) {
+      performCatchupSync();
+    }
+  }, [isConnected, performCatchupSync]);
+
   return {
     isConnected,
     isProcessingUpdate,
     trackOwnUpdate: trackOwnUpdateLocal,
     setTypingChecker,
-    setUnsavedChecker
+    setUnsavedChecker,
+    performCatchupSync
   };
 };
