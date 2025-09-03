@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { History, RefreshCw, AlertTriangle, Plus } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { History, RefreshCw, AlertTriangle, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -43,6 +44,7 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
   const [creating, setCreating] = useState(false);
   const [manualRestorePointName, setManualRestorePointName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [expandedRevisions, setExpandedRevisions] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const loadRevisions = async () => {
@@ -191,6 +193,75 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
     }
   };
 
+  const toggleRevisionExpansion = (revisionId: string) => {
+    const newExpanded = new Set(expandedRevisions);
+    if (newExpanded.has(revisionId)) {
+      newExpanded.delete(revisionId);
+    } else {
+      newExpanded.add(revisionId);
+    }
+    setExpandedRevisions(newExpanded);
+  };
+
+  const getDetailedChanges = (currentRevision: RundownRevision, index: number) => {
+    const previousRevision = revisions[index + 1];
+    const changes: string[] = [];
+
+    if (!previousRevision) {
+      return ['Initial revision - no previous version to compare'];
+    }
+
+    // Compare title
+    if (currentRevision.title !== previousRevision.title) {
+      changes.push(`Title changed: "${previousRevision.title}" → "${currentRevision.title}"`);
+    }
+
+    // Compare start time
+    if (currentRevision.start_time !== previousRevision.start_time) {
+      changes.push(`Start time changed: "${previousRevision.start_time || 'Not set'}" → "${currentRevision.start_time || 'Not set'}"`);
+    }
+
+    // Compare timezone
+    if (currentRevision.timezone !== previousRevision.timezone) {
+      changes.push(`Timezone changed: "${previousRevision.timezone || 'Not set'}" → "${currentRevision.timezone || 'Not set'}"`);
+    }
+
+    // Compare item count
+    const currentItemCount = currentRevision.items?.length || 0;
+    const previousItemCount = previousRevision.items?.length || 0;
+    
+    if (currentItemCount !== previousItemCount) {
+      const difference = currentItemCount - previousItemCount;
+      if (difference > 0) {
+        changes.push(`Added ${difference} item(s) (${previousItemCount} → ${currentItemCount})`);
+      } else {
+        changes.push(`Removed ${Math.abs(difference)} item(s) (${previousItemCount} → ${currentItemCount})`);
+      }
+    }
+
+    // Compare individual items for more detailed analysis
+    if (currentRevision.items && previousRevision.items) {
+      // Check for items that were modified (same position, different content)
+      const maxLength = Math.max(currentRevision.items.length, previousRevision.items.length);
+      let modifiedCount = 0;
+      
+      for (let i = 0; i < Math.min(currentRevision.items.length, previousRevision.items.length); i++) {
+        const currentItem = currentRevision.items[i];
+        const previousItem = previousRevision.items[i];
+        
+        if (JSON.stringify(currentItem) !== JSON.stringify(previousItem)) {
+          modifiedCount++;
+        }
+      }
+      
+      if (modifiedCount > 0) {
+        changes.push(`Modified ${modifiedCount} existing item(s)`);
+      }
+    }
+
+    return changes.length > 0 ? changes : ['No significant changes detected'];
+  };
+
   const getRevisionTypeLabel = (type: string) => {
     switch (type) {
       case 'initial': return 'Initial';
@@ -304,7 +375,7 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
               </div>
             )}
             
-            {revisions.map((revision) => (
+            {revisions.map((revision, index) => (
               <div key={revision.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -345,6 +416,38 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
                         Start time: {revision.start_time} ({revision.timezone})
                       </p>
                     )}
+                    
+                    {/* Detailed changes dropdown */}
+                    <Collapsible
+                      open={expandedRevisions.has(revision.id)}
+                      onOpenChange={() => toggleRevisionExpansion(revision.id)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 h-auto p-1 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          {expandedRevisions.has(revision.id) ? (
+                            <ChevronDown className="w-3 h-3 mr-1" />
+                          ) : (
+                            <ChevronRight className="w-3 h-3 mr-1" />
+                          )}
+                          View detailed changes
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        <div className="bg-secondary/50 rounded-md p-3 text-xs space-y-1">
+                          <div className="font-medium text-secondary-foreground mb-2">Changes from previous revision:</div>
+                          {getDetailedChanges(revision, index).map((change, changeIndex) => (
+                            <div key={changeIndex} className="text-secondary-foreground flex items-start gap-2">
+                              <span className="text-primary">•</span>
+                              <span>{change}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                   
                   <AlertDialog>
