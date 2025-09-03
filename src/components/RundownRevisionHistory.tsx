@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { History, RefreshCw, AlertTriangle, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { History, RefreshCw, AlertTriangle, Plus, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -41,6 +41,7 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
   const [revisions, setRevisions] = useState<RundownRevision[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [manualRestorePointName, setManualRestorePointName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -190,6 +191,40 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleDeleteRevision = async (revisionId: string) => {
+    setDeleting(revisionId);
+    try {
+      const { error } = await supabase
+        .from('rundown_revisions')
+        .delete()
+        .eq('id', revisionId);
+
+      if (error) {
+        console.error('Error deleting revision:', error);
+        toast({
+          title: "Delete failed",
+          description: error.message || "Could not delete this revision",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Revision deleted",
+          description: "Successfully deleted revision",
+        });
+        loadRevisions(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting revision:', error);
+      toast({
+        title: "Delete failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -448,46 +483,88 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
-                  </div>
-                  
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        disabled={restoring === revision.id}
-                      >
-                        {restoring === revision.id ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Restore'
-                        )}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Restore from Revision?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will restore your rundown to revision #{revision.revision_number} from{' '}
-                          {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}.
-                          A backup will be created before restoring.
-                          <br /><br />
-                          <strong>Title:</strong> {revision.title}<br />
-                          <strong>Items:</strong> {revision.items_count}<br />
-                          <strong>Type:</strong> {getRevisionTypeLabel(revision.revision_type)}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRestore(revision.id)}
-                          className="bg-primary text-primary-foreground"
-                        >
-                          Restore Revision
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                   </div>
+                   
+                   <div className="flex gap-2">
+                     <AlertDialog>
+                       <AlertDialogTrigger asChild>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           disabled={restoring === revision.id}
+                         >
+                           {restoring === revision.id ? (
+                             <RefreshCw className="w-4 h-4 animate-spin" />
+                           ) : (
+                             'Restore'
+                           )}
+                         </Button>
+                       </AlertDialogTrigger>
+                       <AlertDialogContent>
+                         <AlertDialogHeader>
+                           <AlertDialogTitle>Restore from Revision?</AlertDialogTitle>
+                           <AlertDialogDescription>
+                             This will restore your rundown to revision #{revision.revision_number} from{' '}
+                             {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}.
+                             A backup will be created before restoring.
+                             <br /><br />
+                             <strong>Title:</strong> {revision.title}<br />
+                             <strong>Items:</strong> {revision.items_count}<br />
+                             <strong>Type:</strong> {getRevisionTypeLabel(revision.revision_type)}
+                           </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         <AlertDialogFooter>
+                           <AlertDialogCancel>Cancel</AlertDialogCancel>
+                           <AlertDialogAction
+                             onClick={() => handleRestore(revision.id)}
+                             className="bg-primary text-primary-foreground"
+                           >
+                             Restore Revision
+                           </AlertDialogAction>
+                         </AlertDialogFooter>
+                       </AlertDialogContent>
+                     </AlertDialog>
+
+                     <AlertDialog>
+                       <AlertDialogTrigger asChild>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           disabled={deleting === revision.id}
+                           className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                         >
+                           {deleting === revision.id ? (
+                             <RefreshCw className="w-4 h-4 animate-spin" />
+                           ) : (
+                             <Trash2 className="w-4 h-4" />
+                           )}
+                         </Button>
+                       </AlertDialogTrigger>
+                       <AlertDialogContent>
+                         <AlertDialogHeader>
+                           <AlertDialogTitle>Delete Revision?</AlertDialogTitle>
+                           <AlertDialogDescription>
+                             This will permanently delete revision #{revision.revision_number} from{' '}
+                             {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}.
+                             This action cannot be undone.
+                             <br /><br />
+                             <strong>Title:</strong> {revision.title}<br />
+                             <strong>Items:</strong> {revision.items_count}<br />
+                             <strong>Type:</strong> {getRevisionTypeLabel(revision.revision_type)}
+                           </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         <AlertDialogFooter>
+                           <AlertDialogCancel>Cancel</AlertDialogCancel>
+                           <AlertDialogAction
+                             onClick={() => handleDeleteRevision(revision.id)}
+                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                           >
+                             Delete Revision
+                           </AlertDialogAction>
+                         </AlertDialogFooter>
+                       </AlertDialogContent>
+                     </AlertDialog>
+                   </div>
                 </div>
               </div>
             ))}
