@@ -68,7 +68,9 @@ const DashboardRundownGrid = ({
   const navigate = useNavigate()
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+    // Parse as local date to avoid timezone conversion issues
+    const date = new Date(dateString + 'T00:00:00')
+    return date.toLocaleDateString()
   }
 
   const formatTime = (dateString: string) => {
