@@ -334,41 +334,43 @@ const RundownHeader = ({
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span>Start:</span>
-              <input
-                ref={timeInputRef}
-                type="text"
-                value={rundownStartTime}
-                onChange={handleTimeInputChange}
-                onBlur={handleTimeInputBlur}
-                placeholder="HH:MM:SS"
-                className="w-20 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono"
-              />
+              <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
+                <input
+                  ref={timeInputRef}
+                  type="text"
+                  value={rundownStartTime}
+                  onChange={handleTimeInputChange}
+                  onBlur={handleTimeInputBlur}
+                  placeholder="HH:MM:SS"
+                  className="w-20 text-sm bg-transparent px-2 py-1 text-gray-900 dark:text-white focus:outline-none font-mono border-0"
+                />
+                {onShowDateChange && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-16 h-8 justify-start text-left font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                          !showDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {showDate ? format(showDate, "M/d") : "Date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={showDate || undefined}
+                        onSelect={(date) => onShowDateChange(date || null)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </div>
-            {onShowDateChange && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-16 justify-start text-left font-normal text-xs h-8",
-                      !showDate && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {showDate ? format(showDate, "M/d") : "Date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={showDate || undefined}
-                    onSelect={(date) => onShowDateChange(date || null)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
             <span>TRT: {totalRuntime}</span>
           </div>
         </div>
@@ -452,42 +454,43 @@ const RundownHeader = ({
           
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Start:</span>
-            <input
-              ref={timeInputRef}
-              type="text"
-              value={rundownStartTime}
-              onChange={handleTimeInputChange}
-              onBlur={handleTimeInputBlur}
-              placeholder="HH:MM:SS"
-              className="w-24 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
-            />
+            <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
+              <input
+                ref={timeInputRef}
+                type="text"
+                value={rundownStartTime}
+                onChange={handleTimeInputChange}
+                onBlur={handleTimeInputBlur}
+                placeholder="HH:MM:SS"
+                className="w-24 bg-transparent px-3 py-2 text-gray-900 dark:text-white focus:outline-none font-mono text-sm border-0"
+              />
+              {onShowDateChange && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-20 h-9 justify-start text-left font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                        !showDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {showDate ? format(showDate, "M/d") : "Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={showDate || undefined}
+                      onSelect={(date) => onShowDateChange(date || null)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
           </div>
-          
-          {onShowDateChange && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-20 justify-start text-left font-normal text-sm h-9",
-                    !showDate && "text-muted-foreground"
-                  )}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {showDate ? format(showDate, "M/d") : "Date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={showDate || undefined}
-                  onSelect={(date) => onShowDateChange(date || null)}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
           
           <span className="text-sm text-gray-600 dark:text-gray-400">
             TRT: {totalRuntime}
