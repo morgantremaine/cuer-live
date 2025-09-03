@@ -74,7 +74,7 @@ export const useSimpleAutoSave = (
       title: state.title || '',
       startTime: state.startTime || '',
       timezone: state.timezone || '',
-      showDate: state.showDate ? state.showDate.toISOString().split('T')[0] : null
+      showDate: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null
     });
     
     console.log('🔍 Creating signature with', cleanItems.length, 'items');
@@ -237,7 +237,7 @@ export const useSimpleAutoSave = (
             items: state.items,
             start_time: state.startTime,
             timezone: state.timezone,
-            show_date: state.showDate?.toISOString().split('T')[0] || null,
+            show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
             external_notes: state.externalNotes,
             team_id: teamData.team_id,
             user_id: currentUserId,
@@ -306,7 +306,7 @@ export const useSimpleAutoSave = (
           items: state.items,
           start_time: state.startTime,
           timezone: state.timezone,
-          show_date: state.showDate?.toISOString().split('T')[0] || null,
+          show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
           external_notes: state.externalNotes,
           updated_at: new Date().toISOString(),
           last_updated_by: currentUserId
