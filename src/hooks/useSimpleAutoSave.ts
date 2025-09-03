@@ -34,6 +34,7 @@ export const useSimpleAutoSave = (
   const typingIdleMs = 1200; // Wait 1.2s after typing stops
   const maxSaveDelay = 5000; // Maximum delay before forcing save
   const saveInProgressRef = useRef(false);
+  const saveInitiatedWhileActiveRef = useRef(false);
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -139,6 +140,9 @@ export const useSimpleAutoSave = (
     lastEditAtRef.current = Date.now();
     console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
+    // Record that this save will be initiated while tab is active
+    saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
+    
     // Always reschedule save when user types
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -164,11 +168,16 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // STALE TAB PROTECTION: Block saves if tab is hidden or inactive
-    if (document.hidden || !document.hasFocus()) {
-      debugLogger.autosave('Save blocked: tab hidden or inactive');
-      console.log('🛑 AutoSave: blocked - tab hidden or inactive (stale tab protection)');
+    // REFINED STALE TAB PROTECTION: Only block NEW saves, allow saves initiated while active
+    const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
+    if (isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current) {
+      debugLogger.autosave('Save blocked: tab hidden and save not initiated while active');
+      console.log('🛑 AutoSave: blocked - tab hidden and save not initiated while active');
       return;
+    }
+    
+    if (isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
+      console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
     }
 
     // Check suppression cooldown to prevent ping-pong
@@ -455,6 +464,7 @@ export const useSimpleAutoSave = (
     } finally {
       setIsSaving(false);
       saveInProgressRef.current = false; // Reset save progress flag
+      saveInitiatedWhileActiveRef.current = false; // Reset active initiation flag
       
       // Clear structural change flag after save completes
       if (pendingStructuralChangeRef) {
@@ -585,6 +595,9 @@ export const useSimpleAutoSave = (
     }
 
     if (state.hasUnsavedChanges) {
+      // Record that this save is being initiated while tab is active
+      saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
+      
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
