@@ -27,9 +27,10 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   
-  // Typing idle detection - increased window to ensure complete typing sessions
+  // Optimized typing detection for responsive autosave
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 5000; // Wait 5s after last edit before allowing saves (increased from 3s)
+  const typingIdleMs = 800; // Quick 800ms typing detection as requested
+  const maxSaveDelay = 3000; // Maximum delay before forcing a save
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -156,16 +157,22 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Check if user is currently typing - defer save if so
+    // Smart typing check - allow saves during brief pauses or if delay is too long
     if (isTypingActive()) {
-      debugLogger.autosave('Save deferred: user is actively typing');
-      console.log('⌨️ AutoSave: deferred - user is actively typing, rescheduling');
-      setTimeout(() => {
-        if (!isTypingActive()) {
+      const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+      const maxWaitTime = maxSaveDelay;
+      
+      // If user has been typing for too long, force save anyway to prevent data loss
+      if (timeSinceLastEdit < maxWaitTime) {
+        debugLogger.autosave('Save deferred: user is actively typing, will retry');
+        console.log('⌨️ AutoSave: deferred - user typing, rescheduling for', typingIdleMs, 'ms');
+        setTimeout(() => {
           performSave();
-        }
-      }, typingIdleMs);
-      return;
+        }, typingIdleMs);
+        return;
+      } else {
+        console.log('⚡ AutoSave: forcing save despite typing - preventing data loss');
+      }
     }
     
     // Final check before saving - only undo blocks saves  
@@ -393,15 +400,18 @@ export const useSimpleAutoSave = (
           retryCount: (saveQueueRef.current?.retryCount || 0) + 1 
         };
         
-        // Re-trigger save with short delay, but max 3 retries to prevent infinite loops
-        if ((saveQueueRef.current?.retryCount || 0) < 3) {
+        // Re-trigger save with optimized delay
+        if ((saveQueueRef.current?.retryCount || 0) < 5) {
+          const retryDelay = Math.min(typingIdleMs, 500); // Quick retries
+          console.log('🔄 AutoSave: queuing retry save in', retryDelay, 'ms');
           setTimeout(() => {
-            if (saveQueueRef.current && !isSaving && !isTypingActive()) {
+            if (saveQueueRef.current && !isSaving) {
               saveQueueRef.current = null;
               performSave();
             }
-          }, typingIdleMs);
+          }, retryDelay);
         } else {
+          console.log('⚠️ AutoSave: max retries reached, clearing queue');
           saveQueueRef.current = null;
         }
       } else {
@@ -451,9 +461,8 @@ export const useSimpleAutoSave = (
     });
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    // Ensure debounce is always longer than typing idle time to prevent partial saves
-    const minDebounce = typingIdleMs + 500; // 5.5s minimum to wait for typing to complete
-    const debounceTime = isStructuralChange ? 100 : Math.max(minDebounce, state.hasUnsavedChanges ? 2500 : 500);
+    // Optimized debouncing for responsive saves
+    const debounceTime = isStructuralChange ? 100 : typingIdleMs; // Use 800ms as requested
     console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingIdleMs });
 
     saveTimeoutRef.current = setTimeout(async () => {
@@ -489,7 +498,7 @@ export const useSimpleAutoSave = (
       }
       // Schedule a retry as soon as cooldown ends
       saveTimeoutRef.current = setTimeout(async () => {
-        // If still typing, wait for idle window then save
+        // If still typing, brief wait then save anyway to prevent data loss
         if (isTypingActive()) {
           saveTimeoutRef.current = setTimeout(async () => {
             try {
@@ -497,7 +506,7 @@ export const useSimpleAutoSave = (
             } catch (error) {
               console.error('❌ AutoSave: save execution failed after cooldown:', error);
             }
-          }, typingIdleMs + 200);
+          }, typingIdleMs);
         } else {
           try {
             await performSaveRef.current();
@@ -520,17 +529,16 @@ export const useSimpleAutoSave = (
       }
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      const baseDebounce = isStructuralChange ? 100 : 2500;
-      // Always ensure debounce is longer than typing idle time
-      const minDebounce = typingIdleMs + 500; // 5.5s minimum
-      const debounceTime = isTypingActive() ? Math.max(baseDebounce, minDebounce) : Math.max(baseDebounce, minDebounce);
+      // Simplified, responsive debouncing
+      const debounceTime = isStructuralChange ? 100 : typingIdleMs;
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingActive: isTypingActive() });
 
       saveTimeoutRef.current = setTimeout(async () => {
-        // Double-check typing state right before saving
-        if (isTypingActive()) {
-          console.log('⌨️ AutoSave(effect): deferred at trigger - user is typing, rescheduling');
-          // Re-schedule to try again after typing idle window
+        // Allow saves even during typing if enough time has passed
+        const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+        if (isTypingActive() && timeSinceLastEdit < maxSaveDelay) {
+          console.log('⌨️ AutoSave(effect): brief typing defer, rescheduling');
+          // Brief reschedule but don't let it go too long
           if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
           saveTimeoutRef.current = setTimeout(async () => {
             console.log('⏱️ AutoSave: executing save now (post-typing)');
