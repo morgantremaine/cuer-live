@@ -351,7 +351,7 @@ const RundownHeader = ({
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-16 h-8 justify-start text-left font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                          "w-16 h-8 justify-center text-center font-normal text-xs border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
                           !showDate && "text-muted-foreground"
                         )}
                       >
@@ -473,7 +473,7 @@ const RundownHeader = ({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-20 h-9 justify-start text-left font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
+                        "w-20 h-9 justify-center text-center font-normal text-sm border-0 border-l border-gray-300 dark:border-gray-600 rounded-none",
                         !showDate && "text-muted-foreground"
                       )}
                     >
