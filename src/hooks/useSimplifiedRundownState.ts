@@ -30,6 +30,7 @@ export const useSimplifiedRundownState = () => {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
+  const [lastSeenDocVersion, setLastSeenDocVersion] = useState<number>(0);
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
@@ -39,7 +40,8 @@ export const useSimplifiedRundownState = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
-  const PROTECTION_WINDOW_MS = 15000; // 15 second protection window (extended for better safety)
+  const PROTECTION_WINDOW_MS = 30000; // 30 second protection window (extended for better safety)
+  const TYPING_PROTECTION_WINDOW_MS = 12000; // 12 second typing protection window
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
@@ -108,8 +110,17 @@ export const useSimplifiedRundownState = () => {
       columns: [] // Remove columns from team sync
     }, 
     rundownId, 
-    () => {
+    (meta?: { updatedAt?: string; docVersion?: number }) => {
       actions.markSaved();
+      
+      // Update our doc version and timestamp tracking
+      if (meta?.docVersion) {
+        setLastSeenDocVersion(meta.docVersion);
+      }
+      if (meta?.updatedAt) {
+        setLastKnownTimestamp(meta.updatedAt);
+      }
+      
       // Prime lastSavedRef after initial load to prevent false autosave triggers
       if (isInitialized && !lastSavedPrimedRef.current) {
         lastSavedPrimedRef.current = true;
@@ -156,7 +167,10 @@ export const useSimplifiedRundownState = () => {
     
     // Add ALL recently edited fields within extended protection window
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < PROTECTION_WINDOW_MS) {
+      const isActiveTyping = typingSessionRef.current?.fieldKey === fieldKey;
+      const protectionWindow = isActiveTyping ? TYPING_PROTECTION_WINDOW_MS : PROTECTION_WINDOW_MS;
+      
+      if (now - timestamp < protectionWindow) {
         protectedFields.add(fieldKey);
       } else {
         // Clean up expired fields
@@ -180,16 +194,37 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced realtime connection with granular update logic and deferred updates during saves
   const deferredUpdateRef = useRef<any>(null);
+  const initialLoadGateRef = useRef(true);
+  const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
+  
   const realtimeConnection = useSimpleRealtimeRundown({
     rundownId,
+    lastSeenDocVersion,
     onRundownUpdate: useCallback((updatedRundown) => {
-      // Monotonic update guard: ignore stale updates
+      // Gate realtime processing for 500ms after initial load to let baseline prime
+      if (initialLoadGateRef.current) {
+        console.log('⏳ Gating realtime update - initial load in progress');
+        // Store deferred update and it will be processed when gate clears
+        deferredUpdateRef.current = updatedRundown;
+        return;
+      }
+      
+      // Monotonic doc version guard: ignore stale updates
+      if (updatedRundown.doc_version && updatedRundown.doc_version <= lastSeenDocVersion) {
+        console.log('⏭️ Stale doc_version ignored:', {
+          incoming: updatedRundown.doc_version,
+          lastSeen: lastSeenDocVersion
+        });
+        return;
+      }
+      
+      // Monotonic timestamp guard as fallback
       if (updatedRundown.updated_at && lastKnownTimestamp) {
         const incomingTime = new Date(updatedRundown.updated_at).getTime();
         const knownTime = new Date(lastKnownTimestamp).getTime();
         
         if (incomingTime <= knownTime) {
-          console.log('⏭️ Stale realtime update ignored:', {
+          console.log('⏭️ Stale timestamp ignored:', {
             incoming: updatedRundown.updated_at,
             known: lastKnownTimestamp
           });
@@ -217,9 +252,12 @@ export const useSimplifiedRundownState = () => {
         remoteSaveCooldownRef.current = Date.now() + 800; // 0.8 second cooldown for content
       }
       
-      // Update our known timestamp
+      // Update our known timestamp and doc version
       if (updatedRundown.updated_at) {
         setLastKnownTimestamp(updatedRundown.updated_at);
+      }
+      if (updatedRundown.doc_version) {
+        setLastSeenDocVersion(updatedRundown.doc_version);
       }
       
       // Get currently protected fields for granular merging
@@ -260,6 +298,18 @@ export const useSimplifiedRundownState = () => {
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
         
+        // Schedule reconciliation save if protected cells differed after merge
+        const hasProtectedDifferences = protectedFields.size > 0;
+        if (hasProtectedDifferences) {
+          if (reconciliationTimeoutRef.current) {
+            clearTimeout(reconciliationTimeoutRef.current);
+          }
+          reconciliationTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Scheduling reconciliation save after protected merge');
+            markActiveTyping();
+          }, 1000);
+        }
+        
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
         // Also ensure we only update fields that are actually present in the payload
@@ -292,6 +342,16 @@ export const useSimplifiedRundownState = () => {
       ownUpdateTimestampRef.current = timestamp;
     }
   });
+  
+  // Clear initial load gate after initialization
+  useEffect(() => {
+    if (isInitialized) {
+      setTimeout(() => {
+        initialLoadGateRef.current = false;
+        console.log('🚪 Initial load gate cleared - realtime updates enabled');
+      }, 500);
+    }
+  }, [isInitialized]);
 
   // Apply deferred updates when save completes
   useEffect(() => {
@@ -326,9 +386,12 @@ export const useSimplifiedRundownState = () => {
         remoteSaveCooldownRef.current = Date.now() + 800;
       }
       
-      // Update our known timestamp
+      // Update our known timestamp and doc version
       if (deferredUpdate.updated_at) {
         setLastKnownTimestamp(deferredUpdate.updated_at);
+      }
+      if (deferredUpdate.doc_version) {
+        setLastSeenDocVersion(deferredUpdate.doc_version);
       }
       
       // Get currently protected fields for granular merging

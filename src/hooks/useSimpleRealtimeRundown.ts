@@ -11,6 +11,7 @@ interface UseSimpleRealtimeRundownProps {
   onRundownUpdate: (data: any) => void;
   enabled?: boolean;
   trackOwnUpdate?: (timestamp: string) => void;
+  lastSeenDocVersion?: number;
 }
 
 // Global subscription tracking to prevent duplicates
@@ -20,7 +21,8 @@ export const useSimpleRealtimeRundown = ({
   rundownId,
   onRundownUpdate,
   enabled = true,
-  trackOwnUpdate
+  trackOwnUpdate,
+  lastSeenDocVersion
 }: UseSimpleRealtimeRundownProps) => {
   const { user } = useAuth();
   const { setTimeout: setManagedTimeout } = useUniversalTimer('SimpleRealtimeRundown');
@@ -188,11 +190,22 @@ export const useSimpleRealtimeRundown = ({
     debugLogger.realtime('Simple realtime update received:', {
       id: payload.new?.id,
       timestamp: payload.new?.updated_at,
-      itemCount: payload.new?.items?.length
+      itemCount: payload.new?.items?.length,
+      docVersion: payload.new?.doc_version
     });
 
     // Skip if not for the current rundown
     if (payload.new?.id !== rundownId) {
+      return;
+    }
+
+    // MONOTONIC DOC VERSION GUARD: Ignore updates with doc_version <= lastSeenDocVersion
+    const incomingDocVersion = payload.new?.doc_version;
+    if (incomingDocVersion && lastSeenDocVersion && incomingDocVersion <= lastSeenDocVersion) {
+      console.log('🛡️ Monotonic guard: ignoring stale doc_version', {
+        incoming: incomingDocVersion,
+        lastSeen: lastSeenDocVersion
+      });
       return;
     }
 
