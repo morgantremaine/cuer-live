@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,10 +8,11 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote } from 'lucide-react';
+import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import { RundownRevisionHistory } from '@/components/RundownRevisionHistory';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -30,6 +31,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
 
   const handleOpenBlueprint = () => {
     if (!rundownId) {
@@ -170,6 +172,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
+        
+        {/* History - only show for non-demo rundowns */}
+        {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
+          <div className="p-1">
+            <RundownRevisionHistory 
+              rundownId={rundownId} 
+              onRestore={() => window.location.reload()} 
+            />
+          </div>
+        )}
         
         <DropdownMenuItem onClick={handleOpenHelp}>
           <HelpCircle className="h-4 w-4 mr-2" />
