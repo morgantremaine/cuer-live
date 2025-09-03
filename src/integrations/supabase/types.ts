@@ -1080,7 +1080,7 @@ export type Database = {
       }
       migrate_rundown_to_normalized_items: {
         Args: { target_rundown_id: string }
-        Returns: number
+        Returns: boolean
       }
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 
 // Feature flag for per-row persistence rollout
 // Can be controlled via localStorage or environment variables
@@ -15,6 +16,8 @@ export const usePerRowFeatureFlag = () => {
     // In production, you might want to enable this gradually
     setIsEnabled(enabled || true); // Default to true for now
     setUserDismissed(dismissed);
+    
+    logger.info('🎛️ Per-row feature flag loaded:', { enabled: enabled || true, dismissed });
   }, []);
 
   const enablePerRowPersistence = () => {

@@ -187,19 +187,26 @@ export const usePerRowPersistence = ({ rundownId, onItemsChange }: PerRowPersist
     if (!rundownId) return false;
 
     try {
+      logger.info('🔄 Starting rundown migration to per-row persistence:', { rundownId });
+      
       const { data, error } = await supabase.rpc('migrate_rundown_to_normalized_items', {
         target_rundown_id: rundownId
       });
 
       if (error) throw error;
 
-      logger.debug('Migrated rundown to normalized format:', { itemsMigrated: data });
+      logger.info('✅ Rundown migration completed:', { rundownId, itemsMigrated: data });
+      
+      // Reload items after migration
+      const migratedItems = await loadItems();
+      onItemsChange(migratedItems);
+      
       return data > 0;
     } catch (error) {
-      logger.error('Failed to migrate rundown:', error);
+      logger.error('❌ Migration failed:', error);
       return false;
     }
-  }, [rundownId]);
+  }, [rundownId, loadItems, onItemsChange]);
 
   return {
     loadItems,
