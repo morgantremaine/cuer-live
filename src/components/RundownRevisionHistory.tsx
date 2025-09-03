@@ -21,6 +21,9 @@ interface RundownRevision {
   created_by: string;
   revision_type: string;
   items_count: number;
+  action_description: string;
+  creator_name: string;
+  creator_email: string;
 }
 
 interface RundownRevisionHistoryProps {
@@ -42,10 +45,14 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
     try {
       const { data, error } = await supabase
         .from('rundown_revisions')
-        .select('*')
+        .select(`
+          *,
+          creator_name:profiles!rundown_revisions_created_by_fkey(full_name),
+          creator_email:profiles!rundown_revisions_created_by_fkey(email)
+        `)
         .eq('rundown_id', rundownId)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(30);
 
       if (error) {
         console.error('Error loading revisions:', error);
@@ -55,7 +62,13 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
           variant: "destructive"
         });
       } else {
-        setRevisions(data || []);
+        // Transform the data to flatten the profile information
+        const transformedData = (data || []).map(revision => ({
+          ...revision,
+          creator_name: revision.creator_name?.full_name || 'Unknown User',
+          creator_email: revision.creator_email?.email || ''
+        }));
+        setRevisions(transformedData);
       }
     } catch (error) {
       console.error('Error loading revisions:', error);
@@ -103,6 +116,8 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
       case 'initial': return 'Initial';
       case 'pre_wipe': return 'Pre-Wipe';
       case 'pre_restore': return 'Pre-Restore';
+      case 'periodic': return 'Periodic';
+      case 'user_change': return 'User Change';
       case 'auto': return 'Auto Save';
       default: return 'Manual';
     }
@@ -113,6 +128,8 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
       case 'initial': return 'default';
       case 'pre_wipe': return 'destructive';
       case 'pre_restore': return 'secondary';
+      case 'periodic': return 'secondary';
+      case 'user_change': return 'default';
       case 'auto': return 'outline';
       default: return 'default';
     }
@@ -134,13 +151,13 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
         <DialogHeader>
           <DialogTitle>Rundown Revision History</DialogTitle>
           <DialogDescription>
-            View and restore from automatic snapshots of your rundown. Critical revisions are created before major changes.
+            View and restore from automatic snapshots of your rundown. Revisions are now created every 5 minutes and track who made what changes.
           </DialogDescription>
         </DialogHeader>
         
         <div className="flex justify-between items-center mb-4">
           <p className="text-sm text-muted-foreground">
-            Showing {revisions.length} recent revisions
+            Showing {revisions.length} recent revisions (now tracking every edit)
           </p>
           <Button variant="outline" size="sm" onClick={loadRevisions} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -170,9 +187,19 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
                       )}
                     </div>
                     <h4 className="font-medium">{revision.title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {revision.items_count} items • Created {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}
-                    </p>
+                    <div className="space-y-1">
+                      {revision.action_description && (
+                        <p className="text-sm font-medium text-primary">
+                          {revision.action_description}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {revision.items_count} items • {formatDistanceToNow(new Date(revision.created_at), { addSuffix: true })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        By: {revision.creator_name} {revision.creator_email && `(${revision.creator_email})`}
+                      </p>
+                    </div>
                     {revision.start_time && (
                       <p className="text-xs text-muted-foreground">
                         Start time: {revision.start_time} ({revision.timezone})

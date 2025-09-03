@@ -308,6 +308,7 @@ export type Database = {
       }
       rundown_revisions: {
         Row: {
+          action_description: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -321,6 +322,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          action_description?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -334,6 +336,7 @@ export type Database = {
           title: string
         }
         Update: {
+          action_description?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
