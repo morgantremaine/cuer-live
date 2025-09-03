@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Column } from '@/hooks/useColumnsManager';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
 
 interface LayoutData {
@@ -44,7 +45,58 @@ const HeaderContextMenu = ({
   savedLayouts = [],
   onLoadLayout
 }: HeaderContextMenuProps) => {
-  const hiddenColumns = allColumns.filter(col => col.isVisible === false);
+  const { teamColumns } = useTeamCustomColumns();
+
+  // Get all possible columns (built-in + team custom + any existing custom)
+  const allPossibleColumns = useMemo(() => {
+    // Default built-in columns
+    const defaultColumns: Column[] = [
+      { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'images', name: 'Images', key: 'images', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+      { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+      { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
+      { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
+    ];
+
+    // Add team custom columns
+    const teamCustomColumns: Column[] = teamColumns.map(teamCol => ({
+      id: teamCol.column_key,
+      name: teamCol.column_name,
+      key: teamCol.column_key,
+      width: '150px',
+      isCustom: true,
+      isEditable: true,
+      isVisible: true // Will be filtered out if currently visible
+    }));
+
+    // Combine all possible columns
+    const allPossible = [...defaultColumns, ...teamCustomColumns];
+    
+    // Add any existing custom columns from allColumns that aren't team columns
+    allColumns.forEach(existingCol => {
+      if (existingCol.isCustom && !teamColumns.some(tc => tc.column_key === existingCol.key)) {
+        // This is a user custom column not in team columns
+        const exists = allPossible.some(col => col.id === existingCol.id);
+        if (!exists) {
+          allPossible.push(existingCol);
+        }
+      }
+    });
+
+    return allPossible;
+  }, [teamColumns, allColumns]);
+
+  // Get columns that are not currently visible in the layout
+  const hiddenColumns = useMemo(() => {
+    const visibleColumnKeys = new Set(visibleColumns.map(col => col.key));
+    return allPossibleColumns.filter(col => !visibleColumnKeys.has(col.key));
+  }, [allPossibleColumns, visibleColumns]);
 
   // Find the position in the full columns array where we want to insert
   const getInsertPosition = () => {
