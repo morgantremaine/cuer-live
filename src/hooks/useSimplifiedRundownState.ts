@@ -424,12 +424,6 @@ export const useSimplifiedRundownState = () => {
         try {
           console.log('🔄 Tab became active - syncing latest data before allowing writes');
           
-          // CRITICAL: Never overwrite unsaved local changes
-          if (state.hasUnsavedChanges) {
-            console.log('🛡️ Skipping remote sync - preserving unsaved local changes');
-            return;
-          }
-          
           const { data: latestRundown, error } = await supabase
             .from('rundowns')
             .select('*')
@@ -437,6 +431,12 @@ export const useSimplifiedRundownState = () => {
             .single();
 
           if (!error && latestRundown) {
+            // CRITICAL: Don't overwrite unsaved changes with remote data
+            if (state.hasUnsavedChanges) {
+              console.log('🛡️ Skipping remote sync - preserving unsaved local changes');
+              return;
+            }
+            
             // Check if remote data is newer than what we have
             if (latestRundown.updated_at && lastKnownTimestamp) {
               const remoteTime = new Date(latestRundown.updated_at).getTime();
@@ -459,6 +459,8 @@ export const useSimplifiedRundownState = () => {
                 if (latestRundown.doc_version) {
                   setLastSeenDocVersion(latestRundown.doc_version);
                 }
+              } else {
+                console.log('📊 Local data is current or newer - no sync needed');
               }
             }
           }

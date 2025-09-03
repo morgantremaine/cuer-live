@@ -259,13 +259,13 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
-    // CRITICAL: Check if user is actively typing or has unsaved local changes - defer remote updates
-    if ((isTypingActiveRef.current && isTypingActiveRef.current()) || (isUnsavedActiveRef.current && isUnsavedActiveRef.current())) {
-      console.log('🛡️ Deferring remote update (typing or unsaved local changes present)');
+    // CRITICAL: Check if user is actively typing - defer remote updates (but allow during passive unsaved state)
+    if (isTypingActiveRef.current && isTypingActiveRef.current()) {
+      console.log('🛡️ Deferring remote update (user actively typing)');
       // Schedule to check again shortly
       setManagedTimeout(() => {
         handleRealtimeUpdate(payload);
-      }, 1500);
+      }, 1000);
       return;
     }
 
