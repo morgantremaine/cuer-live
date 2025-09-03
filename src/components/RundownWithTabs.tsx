@@ -5,11 +5,32 @@ import RundownIndexContent from '@/components/RundownIndexContent';
 import Blueprint from '@/pages/Blueprint';
 import CameraPlotEditor from '@/pages/CameraPlotEditor';
 import Teleprompter from '@/pages/Teleprompter';
+import { PerRowMigrationBanner } from '@/components/PerRowMigrationBanner';
+import { usePerRowFeatureFlag } from '@/hooks/usePerRowFeatureFlag';
+import { usePerRowPersistence } from '@/hooks/usePerRowPersistence';
 
 const RundownWithTabs = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Per-row feature flag and migration state
+  const { isEnabled: isPerRowEnabled, userDismissed } = usePerRowFeatureFlag();
+  const { migrateRundown } = usePerRowPersistence({ 
+    rundownId: id || '', 
+    onItemsChange: () => {} 
+  });
+  
+  const [showMigrationBanner, setShowMigrationBanner] = useState(false);
+
+  // Show migration banner for valid rundowns when per-row is enabled but user hasn't dismissed
+  useEffect(() => {
+    if (id && id !== 'new' && isPerRowEnabled && !userDismissed) {
+      setShowMigrationBanner(true);
+    } else {
+      setShowMigrationBanner(false);
+    }
+  }, [id, isPerRowEnabled, userDismissed]);
   
   
   // Determine active tab from URL path
@@ -51,8 +72,31 @@ const RundownWithTabs = () => {
     return <div>No rundown ID provided</div>;
   }
 
+  const handleMigration = async (): Promise<boolean> => {
+    if (!id) return false;
+    try {
+      const result = await migrateRundown();
+      setShowMigrationBanner(false);
+      return true;
+    } catch (error) {
+      console.error('Migration failed:', error);
+      return false;
+    }
+  };
+
+  const handleDismissBanner = () => {
+    setShowMigrationBanner(false);
+  };
+
   return (
     <div className="min-h-screen">
+      {showMigrationBanner && (
+        <PerRowMigrationBanner
+          rundownId={id!}
+          onMigrate={handleMigration}
+          onDismiss={handleDismissBanner}
+        />
+      )}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
         {/* Hidden tabs list - navigation happens through other UI elements */}
         <TabsList className="hidden">
