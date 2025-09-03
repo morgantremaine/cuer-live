@@ -618,7 +618,7 @@ export const useSimpleAutoSave = (
     }, debounceTime);
   }, [createContentSignature, state.hasUnsavedChanges, performSave, pendingStructuralChangeRef]);
 
-  // Simple effect that schedules a save when hasUnsavedChanges becomes true
+  // Typing-aware auto-save that waits for user to stop typing before saving
   useEffect(() => {
     if (!isInitiallyLoaded) {
       console.log('🛑 AutoSave(effect): blocked - initial load not complete');
@@ -638,9 +638,8 @@ export const useSimpleAutoSave = (
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      // Schedule retry after cooldown with optimized timing
+      // Schedule retry after cooldown
       saveTimeoutRef.current = setTimeout(async () => {
-        // More aggressive about saving when cooldown ends
         try {
           await performSaveRef.current();
         } catch (error) {
@@ -659,37 +658,56 @@ export const useSimpleAutoSave = (
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
       
+      // Clear any existing timeout
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
 
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
+      const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+      const currentlyTyping = timeSinceLastEdit < typingIdleMs;
       
-      // Faster saves during multi-user activity
-      const debounceTime = isStructuralChange ? 100 : (isMultiUserActive ? 300 : typingIdleMs);
-      
-      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        // Reduced typing interference for better multi-user flow
-        const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-        if (isTypingActive() && timeSinceLastEdit < (isMultiUserActive ? 500 : maxSaveDelay)) {
-          console.log('⌨️ AutoSave(effect): brief typing defer');
-          // Brief reschedule but don't let it delay too long in multi-user scenarios
-          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-          saveTimeoutRef.current = setTimeout(async () => {
-            console.log('⏱️ AutoSave: executing save now (post-defer)');
+      // CRITICAL FIX: Don't save immediately if user is actively typing
+      if (currentlyTyping && !isStructuralChange) {
+        console.log('⌨️ AutoSave(effect): user actively typing - waiting for idle period', { 
+          timeSinceLastEdit, 
+          typingIdleMs 
+        });
+        
+        // Wait for the remaining idle time before saving
+        const remainingIdleTime = typingIdleMs - timeSinceLastEdit;
+        const waitTime = Math.max(remainingIdleTime, 200); // At least 200ms
+        
+        saveTimeoutRef.current = setTimeout(async () => {
+          // Double-check that user has stopped typing
+          const finalTimeSinceEdit = Date.now() - lastEditAtRef.current;
+          if (finalTimeSinceEdit >= typingIdleMs || isStructuralChange) {
+            console.log('⏱️ AutoSave: user stopped typing - executing save now');
             try {
               await performSaveRef.current();
               console.log('✅ AutoSave: save completed successfully');
             } catch (error) {
               console.error('❌ AutoSave: save execution failed:', error);
             }
-          }, isMultiUserActive ? 200 : typingIdleMs);
-          return;
-        }
+          } else {
+            console.log('⌨️ AutoSave: user still typing - rescheduling');
+            // Re-trigger this effect to reschedule
+            markActiveTyping();
+          }
+        }, waitTime);
+        
+        return;
+      }
+      
+      // For structural changes or when not typing, save quickly
+      const debounceTime = isStructuralChange ? 100 : 300;
+      console.log('⏳ AutoSave: scheduling immediate save', { 
+        isStructuralChange, 
+        debounceTime, 
+        currentlyTyping 
+      });
 
+      saveTimeoutRef.current = setTimeout(async () => {
         console.log('⏱️ AutoSave: executing save now');
         try {
           await performSaveRef.current();
@@ -705,7 +723,7 @@ export const useSimpleAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
+  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef, markActiveTyping]);
 
   // Enhanced flush-on-blur/visibility-hidden to guarantee keystroke saving
   useEffect(() => {
