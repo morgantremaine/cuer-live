@@ -43,35 +43,49 @@ export const RundownRevisionHistory: React.FC<RundownRevisionHistoryProps> = ({
   const loadRevisions = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get the revisions
+      const { data: revisionsData, error: revisionsError } = await supabase
         .from('rundown_revisions')
-        .select(`
-          *,
-          creator_name:profiles!rundown_revisions_created_by_fkey(full_name),
-          creator_email:profiles!rundown_revisions_created_by_fkey(email)
-        `)
+        .select('*')
         .eq('rundown_id', rundownId)
         .order('created_at', { ascending: false })
         .limit(30);
 
-      if (error) {
-        console.error('Error loading revisions:', error);
-        toast({
-          title: "Error loading revisions",
-          description: "Could not load revision history",
-          variant: "destructive"
-        });
-      } else {
-        // Transform the data to flatten the profile information
-        const transformedData = (data || []).map(revision => ({
-          ...revision,
-          creator_name: revision.creator_name?.full_name || 'Unknown User',
-          creator_email: revision.creator_email?.email || ''
-        }));
-        setRevisions(transformedData);
+      if (revisionsError) {
+        throw revisionsError;
       }
+
+      // Get unique user IDs
+      const userIds = [...new Set(revisionsData?.map(r => r.created_by).filter(Boolean) || [])];
+      
+      // Get profile data for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.warn('Could not load user profiles:', profilesError);
+      }
+
+      // Create a map of user ID to profile
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      // Combine the data
+      const transformedData = (revisionsData || []).map(revision => ({
+        ...revision,
+        creator_name: profilesMap.get(revision.created_by)?.full_name || 'Unknown User',
+        creator_email: profilesMap.get(revision.created_by)?.email || ''
+      }));
+
+      setRevisions(transformedData);
     } catch (error) {
       console.error('Error loading revisions:', error);
+      toast({
+        title: "Error loading revisions",
+        description: "Could not load revision history",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
