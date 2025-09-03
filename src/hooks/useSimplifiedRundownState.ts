@@ -458,14 +458,19 @@ export const useSimplifiedRundownState = () => {
   
   // Run sync on initial mount and only when tab transitions to active
   const hasSyncedOnceRef = useRef(false);
+  const lastSyncTimeRef = useRef(0);
   
   // Enhanced sync-before-write with catch-up functionality (only on activation or first run)
   useEffect(() => {
+    const now = Date.now();
     const justActivated = isTabActive && !prevIsActiveRef.current;
     const shouldSync = (justActivated || !hasSyncedOnceRef.current) && isInitialized && rundownId;
-
-    if (shouldSync) {
+    
+    // Debounce rapid sync calls (prevent multiple syncs within 500ms)
+    const timeSinceLastSync = now - lastSyncTimeRef.current;
+    if (shouldSync && timeSinceLastSync > 500) {
       console.log('👁️ Tab became active - performing safety sync and catch-up');
+      lastSyncTimeRef.current = now;
       syncBeforeWriteRef.current = true;
       
       // Trigger catch-up sync to get any missed updates
