@@ -345,32 +345,29 @@ const RundownHeader = ({
               />
             </div>
             {onShowDateChange && (
-              <div className="flex items-center gap-2">
-                <span>Date:</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-24 justify-start text-left font-normal text-xs h-8",
-                        !showDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {showDate ? format(showDate, "M/d") : "Date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={showDate || undefined}
-                      onSelect={(date) => onShowDateChange(date || null)}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-16 justify-start text-left font-normal text-xs h-8",
+                      !showDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {showDate ? format(showDate, "M/d") : "Date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={showDate || undefined}
+                    onSelect={(date) => onShowDateChange(date || null)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             )}
             <span>Runtime: {totalRuntime}</span>
           </div>
@@ -467,32 +464,29 @@ const RundownHeader = ({
           </div>
           
           {onShowDateChange && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Date:</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-32 justify-start text-left font-normal text-sm h-9",
-                      !showDate && "text-muted-foreground"
-                    )}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {showDate ? format(showDate, "MMM d") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={showDate || undefined}
-                    onSelect={(date) => onShowDateChange(date || null)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-20 justify-start text-left font-normal text-sm h-9",
+                    !showDate && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {showDate ? format(showDate, "M/d") : "Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={showDate || undefined}
+                  onSelect={(date) => onShowDateChange(date || null)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           )}
           
           <span className="text-sm text-gray-600 dark:text-gray-400">
