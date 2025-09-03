@@ -298,8 +298,30 @@ export const useSimplifiedRundownState = () => {
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
         });
         
-        // Schedule reconciliation save if protected cells differed after merge
-        const hasProtectedDifferences = protectedFields.size > 0;
+        // Schedule reconciliation save only if merged content actually differs for protected fields
+        let hasProtectedDifferences = false;
+        for (const merged of mergedItems) {
+          if (hasProtectedDifferences) break;
+          const localItem = state.items.find(item => item.id === merged.id);
+          if (!localItem) continue;
+          protectedFields.forEach(fieldKey => {
+            if (hasProtectedDifferences) return;
+            if (fieldKey.startsWith(merged.id + '-')) {
+              const field = fieldKey.substring(merged.id.length + 1);
+              if (field.startsWith('customFields.')) {
+                const customFieldKey = field.replace('customFields.', '');
+                const mergedVal = merged.customFields?.[customFieldKey] ?? '';
+                const localVal = localItem.customFields?.[customFieldKey] ?? '';
+                if (mergedVal !== localVal) hasProtectedDifferences = true;
+              } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
+                const mergedVal = (merged as any)[field] ?? '';
+                const localVal = (localItem as any)[field] ?? '';
+                if (mergedVal !== localVal) hasProtectedDifferences = true;
+              }
+            }
+          });
+        }
+        
         if (hasProtectedDifferences) {
           if (reconciliationTimeoutRef.current) {
             clearTimeout(reconciliationTimeoutRef.current);
@@ -307,7 +329,7 @@ export const useSimplifiedRundownState = () => {
           reconciliationTimeoutRef.current = setTimeout(() => {
             console.log('🔄 Scheduling reconciliation save after protected merge');
             markActiveTyping();
-          }, 1000);
+          }, 600); // slightly faster to resolve conflicts sooner
         }
         
       } else {
