@@ -11,6 +11,7 @@ export interface RundownState {
   title: string;
   startTime: string;
   timezone: string;
+  showDate?: Date | null;
   currentSegmentId: string | null;
   isPlaying: boolean;
   hasUnsavedChanges: boolean;
@@ -29,6 +30,7 @@ type RundownAction =
   | { type: 'SET_TITLE'; payload: string }
   | { type: 'SET_START_TIME'; payload: string }
   | { type: 'SET_TIMEZONE'; payload: string }
+  | { type: 'SET_SHOW_DATE'; payload: Date | null }
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
@@ -40,6 +42,7 @@ const initialState: RundownState = {
   title: RUNDOWN_DEFAULTS.DEFAULT_RUNDOWN_TITLE,
   startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
   timezone: RUNDOWN_DEFAULTS.DEFAULT_TIMEZONE,
+  showDate: null,
   currentSegmentId: null,
   isPlaying: false,
   hasUnsavedChanges: false,
@@ -119,6 +122,9 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'SET_TIMEZONE':
       return markChanged({ timezone: action.payload });
+
+    case 'SET_SHOW_DATE':
+      return markChanged({ showDate: action.payload });
 
     case 'SET_CURRENT_SEGMENT':
       return { ...state, currentSegmentId: action.payload };
@@ -283,6 +289,8 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: startTime }),
     
     setTimezone: (timezone: string) => dispatch({ type: 'SET_TIMEZONE', payload: timezone }),
+
+    setShowDate: (showDate: Date | null) => dispatch({ type: 'SET_SHOW_DATE', payload: showDate }),
     
     setCurrentSegment: (id: string | null) => dispatch({ type: 'SET_CURRENT_SEGMENT', payload: id }),
     

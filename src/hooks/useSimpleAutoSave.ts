@@ -73,12 +73,13 @@ export const useSimpleAutoSave = (
       items: cleanItems,
       title: state.title || '',
       startTime: state.startTime || '',
-      timezone: state.timezone || ''
+      timezone: state.timezone || '',
+      showDate: state.showDate ? state.showDate.toISOString().split('T')[0] : null
     });
     
     console.log('🔍 Creating signature with', cleanItems.length, 'items');
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone]);
+  }, [state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // Stabilized baseline priming - only reset on actual rundown switches, not during init
   const lastPrimedRundownRef = useRef<string | null>(null);
@@ -236,6 +237,7 @@ export const useSimpleAutoSave = (
             items: state.items,
             start_time: state.startTime,
             timezone: state.timezone,
+            show_date: state.showDate?.toISOString().split('T')[0] || null,
             team_id: teamData.team_id,
             user_id: currentUserId,
             folder_id: folderId,
@@ -303,6 +305,7 @@ export const useSimpleAutoSave = (
           items: state.items,
           start_time: state.startTime,
           timezone: state.timezone,
+          show_date: state.showDate?.toISOString().split('T')[0] || null,
           updated_at: new Date().toISOString(),
           last_updated_by: currentUserId
         } as const;

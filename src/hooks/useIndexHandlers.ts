@@ -13,6 +13,7 @@ interface UseIndexHandlersProps {
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[], headerGroupItemIds?: string[]) => void;
   setRundownStartTime: (startTime: string) => void;
   setTimezone: (timezone: string) => void;
+  setShowDate?: (showDate: Date | null) => void;
   markAsChanged: () => void;
 }
 
@@ -26,6 +27,7 @@ export const useIndexHandlers = ({
   toggleRowSelection,
   setRundownStartTime,
   setTimezone,
+  setShowDate,
   markAsChanged
 }: UseIndexHandlersProps) => {
   const navigate = useNavigate();
@@ -39,6 +41,13 @@ export const useIndexHandlers = ({
     setTimezone(timezone);
     markAsChanged();
   }, [setTimezone, markAsChanged]);
+
+  const handleShowDateChange = useCallback((showDate: Date | null) => {
+    if (setShowDate) {
+      setShowDate(showDate);
+      markAsChanged();
+    }
+  }, [setShowDate, markAsChanged]);
 
   const handleOpenTeleprompter = useCallback(() => {
     if (!rundownId) return;
@@ -64,6 +73,7 @@ export const useIndexHandlers = ({
   return {
     handleRundownStartTimeChange,
     handleTimezoneChange,
+    handleShowDateChange,
     handleOpenTeleprompter,
     handleRowSelect,
     handleAddRow,

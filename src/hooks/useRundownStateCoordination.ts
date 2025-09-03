@@ -234,6 +234,7 @@ export const useRundownStateCoordination = () => {
       setTitle: simplifiedState.setTitle,
       setStartTime: simplifiedState.setStartTime,
       setTimezone: simplifiedState.setTimezone,
+      setShowDate: simplifiedState.setShowDate,
       addRow: simplifiedState.addRow,
       addHeader: simplifiedState.addHeader,
       addRowAtIndex,

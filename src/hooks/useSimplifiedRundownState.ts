@@ -71,7 +71,8 @@ export const useSimplifiedRundownState = () => {
     columns: [], // Empty - will be managed separately
     title: 'Untitled Rundown',
     startTime: '09:00:00',
-    timezone: 'America/New_York'
+    timezone: 'America/New_York',
+    showDate: null
   });
 
   // User-specific column preferences (separate from team sync)
@@ -94,7 +95,8 @@ export const useSimplifiedRundownState = () => {
       columns: [], // Keep columns separate
       title: mergedData.title || state.title,
       startTime: mergedData.start_time || state.startTime,
-      timezone: mergedData.timezone || state.timezone
+      timezone: mergedData.timezone || state.timezone,
+      showDate: mergedData.show_date ? new Date(mergedData.show_date) : state.showDate
     });
     
     // Update timestamp
@@ -352,13 +354,14 @@ export const useSimplifiedRundownState = () => {
         if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
         if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
         if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
+        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date) : null;
         
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {
           actions.loadState(updateData);
         }
       }
-    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone]),
+    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading,
     trackOwnUpdate: (timestamp: string) => {
       ownUpdateTimestampRef.current = timestamp;
@@ -451,7 +454,8 @@ export const useSimplifiedRundownState = () => {
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : deferredUpdate.title,
           startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone
+          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
+          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date) : null)
         });
         
       } else {
@@ -460,11 +464,12 @@ export const useSimplifiedRundownState = () => {
           items: deferredUpdate.items || [],
           title: deferredUpdate.title,
           startTime: deferredUpdate.start_time,
-          timezone: deferredUpdate.timezone
+          timezone: deferredUpdate.timezone,
+          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date) : null
         });
       }
     }
-  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone]);
+  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
@@ -621,7 +626,8 @@ export const useSimplifiedRundownState = () => {
               columns: [], // Never load columns from rundown - use user preferences
               title: data.title || 'Untitled Rundown',
               startTime: data.start_time || '09:00:00',
-              timezone: data.timezone || 'America/New_York'
+              timezone: data.timezone || 'America/New_York',
+              showDate: data.show_date ? new Date(data.show_date) : null
             });
           }
         }
@@ -667,7 +673,8 @@ export const useSimplifiedRundownState = () => {
       items: latestData.items || [],
       title: latestData.title,
       startTime: latestData.start_time,
-      timezone: latestData.timezone
+      timezone: latestData.timezone,
+      showDate: latestData.show_date ? new Date(latestData.show_date) : null
     });
   }, [actions, getProtectedFields]);
 
@@ -876,6 +883,7 @@ export const useSimplifiedRundownState = () => {
     rundownTitle: state.title,
     rundownStartTime: state.startTime,
     timezone: state.timezone,
+    showDate: state.showDate,
     lastKnownTimestamp,
     
     selectedRowId,
@@ -940,6 +948,20 @@ export const useSimplifiedRundownState = () => {
         }
       }, 5000); // Extended timeout for timezone editing
     }, [actions.setTimezone]),
+    setShowDate: useCallback((newShowDate: Date | null) => {
+      // Track show date editing for protection
+      recentlyEditedFieldsRef.current.set('showDate', Date.now());
+      typingSessionRef.current = { fieldKey: 'showDate', startTime: Date.now() };
+      
+      actions.setShowDate(newShowDate);
+      
+      // Clear typing session after delay
+      setTimeout(() => {
+        if (typingSessionRef.current?.fieldKey === 'showDate') {
+          typingSessionRef.current = null;
+        }
+      }, 5000); // Extended timeout for show date editing
+    }, [actions.setShowDate]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

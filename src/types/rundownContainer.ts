@@ -66,6 +66,8 @@ export interface RundownContainerProps {
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
   onRundownStartTimeChange: (startTime: string) => void;
+  showDate?: Date | null;
+  onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
   // Undo functionality

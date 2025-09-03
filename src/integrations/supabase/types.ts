@@ -361,6 +361,7 @@ export type Database = {
           items: Json
           last_updated_by: string | null
           logo_url: string | null
+          show_date: string | null
           showcaller_state: Json | null
           start_time: string | null
           team_id: string
@@ -383,6 +384,7 @@ export type Database = {
           items: Json
           last_updated_by?: string | null
           logo_url?: string | null
+          show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id: string
@@ -405,6 +407,7 @@ export type Database = {
           items?: Json
           last_updated_by?: string | null
           logo_url?: string | null
+          show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
           team_id?: string

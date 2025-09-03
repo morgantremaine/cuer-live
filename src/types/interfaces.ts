@@ -47,6 +47,7 @@ export interface CoreRundownState {
   setTitle: (title: string) => void;
   setStartTime: (startTime: string) => void;
   setTimezone: (timezone: string) => void;
+  setShowDate: (showDate: Date | null) => void;
   addRow: () => void;
   addHeader: () => void;
   addRowAtIndex: (insertIndex: number) => void;

@@ -26,6 +26,7 @@ const RundownIndexContent = () => {
     timezone,
     rundownTitle,
     rundownStartTime,
+    showDate,
     rundownId,
     items,
     currentSegmentId,
@@ -52,6 +53,7 @@ const RundownIndexContent = () => {
     setTitle,
     setStartTime,
     setTimezone,
+    setShowDate,
     undo,
     canUndo,
     lastAction,
@@ -362,6 +364,7 @@ const RundownIndexContent = () => {
   const {
     handleRundownStartTimeChange,
     handleTimezoneChange,
+    handleShowDateChange,
     handleOpenTeleprompter,
     handleRowSelect
   } = useIndexHandlers({
@@ -374,6 +377,7 @@ const RundownIndexContent = () => {
     toggleRowSelection,
     setRundownStartTime: setStartTime,
     setTimezone,
+    setShowDate,
     markAsChanged: () => {} // Handled internally by unified state
   });
 
@@ -529,6 +533,8 @@ const RundownIndexContent = () => {
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
         onRundownStartTimeChange={handleRundownStartTimeChange}
+        showDate={showDate}
+        onShowDateChange={handleShowDateChange}
         rundownId={rundownId}
         onOpenTeleprompter={handleOpenTeleprompter}
         onUndo={undo}
