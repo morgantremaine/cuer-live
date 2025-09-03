@@ -215,7 +215,7 @@ export const useSimplifiedRundownState = () => {
       }
     });
     
-    // Add global title/timing fields if they're being edited
+    // Add global title/timing/notes fields if they're being edited
     if (typingSessionRef.current?.fieldKey === 'title' || activeFocusFieldRef.current === 'title') {
       protectedFields.add('title');
     }
@@ -224,6 +224,9 @@ export const useSimplifiedRundownState = () => {
     }
     if (typingSessionRef.current?.fieldKey === 'timezone' || activeFocusFieldRef.current === 'timezone') {
       protectedFields.add('timezone');
+    }
+    if (typingSessionRef.current?.fieldKey === 'externalNotes' || activeFocusFieldRef.current === 'externalNotes') {
+      protectedFields.add('externalNotes');
     }
     
     return protectedFields;
@@ -335,7 +338,8 @@ export const useSimplifiedRundownState = () => {
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone
+          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
+          externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
         });
         
         // Schedule reconciliation save only if merged content actually differs for protected fields
@@ -393,6 +397,9 @@ export const useSimplifiedRundownState = () => {
         if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
         if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
         if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
+        
+        // Add external notes to update data
+        if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
         
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {

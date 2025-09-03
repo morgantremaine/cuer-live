@@ -35,6 +35,7 @@ export const useSimpleAutoSave = (
   const maxSaveDelay = 5000; // Maximum delay before forcing save
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
+  const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -78,7 +79,8 @@ export const useSimpleAutoSave = (
       title: state.title || '',
       startTime: state.startTime || '',
       timezone: state.timezone || '',
-      showDate: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null
+      showDate: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
+      externalNotes: state.externalNotes || ''
     });
     
     console.log('🔍 Creating signature with', cleanItems.length, 'items');
@@ -158,6 +160,17 @@ export const useSimpleAutoSave = (
   const isTypingActive = useCallback(() => {
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
+
+  // Schedule micro-resave for when content changes during save
+  const scheduleMicroResave = useCallback(() => {
+    if (microResaveTimeoutRef.current) {
+      clearTimeout(microResaveTimeoutRef.current);
+    }
+    microResaveTimeoutRef.current = setTimeout(() => {
+      console.log('🔄 Micro-resave: capturing changes made during previous save');
+      performSave();
+    }, 200); // Quick 200ms resave to capture fast typing
+  }, []);
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (): Promise<void> => {
@@ -292,7 +305,8 @@ export const useSimpleAutoSave = (
             lastSavedRef.current = finalSignature;
             console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
           } else {
-            console.log('⚠️ Content changed during save - keeping dirty state');
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
+            scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
@@ -475,7 +489,8 @@ export const useSimpleAutoSave = (
             lastSavedRef.current = finalSignature;
             console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
           } else {
-            console.log('⚠️ Content changed during save - keeping dirty state');
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
+            scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         } else {
@@ -493,7 +508,8 @@ export const useSimpleAutoSave = (
             lastSavedRef.current = finalSignature;
             console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
           } else {
-            console.log('⚠️ Content changed during save - keeping dirty state');
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
+            scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
