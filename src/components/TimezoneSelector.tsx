@@ -66,17 +66,17 @@ const TimezoneSelector = ({
       </Button>
       
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 z-50">
+        <div className="absolute top-full right-0 mt-1 z-[60]">
           <Select value={currentTimezone} onValueChange={handleTimezoneChange}>
-            <SelectTrigger className="w-48 bg-white dark:bg-gray-800">
+            <SelectTrigger className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-50">
+            <SelectContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 z-[60] shadow-lg">
               {timezones.map((tz) => (
                 <SelectItem 
                   key={tz.value} 
                   value={tz.value}
-                  className="hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer bg-white dark:bg-gray-800"
                 >
                   {tz.label}
                 </SelectItem>

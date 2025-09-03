@@ -1112,39 +1112,53 @@ export const useSimplifiedRundownState = () => {
       }, 5000); // Extended timeout for start time editing
     }, [actions.setStartTime]),
     setTimezone: useCallback((newTimezone: string) => {
+      console.log('🌍 setTimezone called with enhanced protection:', newTimezone);
+      
       // Mark timezone as a dropdown field change for enhanced protection
       markDropdownFieldChanged('timezone');
       
-      // Track timezone editing for protection
-      recentlyEditedFieldsRef.current.set('timezone', Date.now());
-      typingSessionRef.current = { fieldKey: 'timezone', startTime: Date.now() };
+      // Track timezone editing for protection with longer window
+      const now = Date.now();
+      recentlyEditedFieldsRef.current.set('timezone', now);
+      dropdownFieldProtectionRef.current.set('timezone', now);
+      typingSessionRef.current = { fieldKey: 'timezone', startTime: now };
+      
+      // Set cooldown to prevent immediate overwrites
+      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
       
       actions.setTimezone(newTimezone);
       
-      // Clear typing session after delay
+      // Clear typing session after extended delay
       setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === 'timezone') {
           typingSessionRef.current = null;
         }
-      }, 5000); // Extended timeout for timezone editing
-    }, [actions.setTimezone]),
+      }, 8000); // Even longer timeout for timezone editing
+    }, [actions.setTimezone, markDropdownFieldChanged]),
     setShowDate: useCallback((newShowDate: Date | null) => {
+      console.log('📅 setShowDate called with enhanced protection:', newShowDate);
+      
       // Mark show date as a dropdown field change for enhanced protection
       markDropdownFieldChanged('showDate');
       
-      // Track show date editing for protection
-      recentlyEditedFieldsRef.current.set('showDate', Date.now());
-      typingSessionRef.current = { fieldKey: 'showDate', startTime: Date.now() };
+      // Track show date editing for protection with longer window
+      const now = Date.now();
+      recentlyEditedFieldsRef.current.set('showDate', now);
+      dropdownFieldProtectionRef.current.set('showDate', now);
+      typingSessionRef.current = { fieldKey: 'showDate', startTime: now };
+      
+      // Set cooldown to prevent immediate overwrites
+      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
       
       actions.setShowDate(newShowDate);
       
-      // Clear typing session after delay
+      // Clear typing session after extended delay
       setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === 'showDate') {
           typingSessionRef.current = null;
         }
-      }, 5000); // Extended timeout for show date editing
-    }, [actions.setShowDate]),
+      }, 8000); // Even longer timeout for show date editing
+    }, [actions.setShowDate, markDropdownFieldChanged]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,
