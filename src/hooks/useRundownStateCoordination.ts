@@ -6,159 +6,17 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
-import { usePerRowFeatureFlag } from './usePerRowFeatureFlag';
-import { usePerRowRundownState } from './usePerRowRundownState';
-import { usePerRowCompatibilityAdapter } from './usePerRowCompatibilityAdapter';
-import { useRundownMetadata } from './useRundownMetadata';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
-import { useParams } from 'react-router-dom';
 
 export const useRundownStateCoordination = () => {
-  // Get user ID from auth and rundown ID from params
+  // Get user ID from auth
   const { user } = useAuth();
   const userId = user?.id;
-  const params = useParams<{ id: string }>();
-  const rundownId = params.id === 'new' ? null : params.id || null;
 
-  // Feature flag for per-row persistence
-  const { isEnabled: isPerRowEnabled } = usePerRowFeatureFlag();
-
-  // Choose state management system based on feature flag
-  const legacyState = usePersistedRundownState();
-  const perRowState = usePerRowRundownState({
-    rundownId: rundownId || '',
-    enableRealtime: true
-  });
-  const metadata = useRundownMetadata({ rundownId: rundownId || '' });
-
-  // Use per-row system if enabled and we have a valid rundown ID
-  const shouldUsePerRow = isPerRowEnabled && rundownId && rundownId !== 'new';
-  const activeState = shouldUsePerRow ? perRowState : legacyState;
-
-  // Create compatibility adapter for per-row system
-  const compatibilityAdapter = usePerRowCompatibilityAdapter({
-    items: shouldUsePerRow ? perRowState.items : legacyState.items,
-    onItemsChange: shouldUsePerRow ? 
-      (items) => logger.debug('Per-row onItemsChange called', { count: items.length }) : 
-      legacyState.setItems,
-    updateItem: shouldUsePerRow ? 
-      (itemId: string, field: string, value: any) => perRowState.updateItem(itemId, { [field]: value }) :
-      legacyState.updateItem,
-    deleteItem: shouldUsePerRow ? perRowState.deleteItem : (id) => {
-      const newItems = legacyState.items.filter(item => item.id !== id);
-      legacyState.setItems(newItems);
-    },
-    addItem: shouldUsePerRow ? 
-      (item: any, index?: number) => perRowState.addItem(item, index) :
-      (item: any, index?: number) => {
-        const newItems = [...legacyState.items];
-        if (typeof index === 'number') {
-          newItems.splice(index, 0, item);
-        } else {
-          newItems.push(item);
-        }
-        legacyState.setItems(newItems);
-      },
-    reorderItems: shouldUsePerRow ? perRowState.reorderItems : legacyState.setItems,
-    saveAllItems: shouldUsePerRow ? perRowState.saveAllItems : () => {
-      // Legacy system doesn't have explicit save all, trigger autosave
-      if (legacyState.markActiveTyping) {
-        legacyState.markActiveTyping();
-      }
-    }
-  });
-
-  // Unified state interface
-  const simplifiedState = shouldUsePerRow ? {
-    ...perRowState,
-    // Map per-row state to legacy interface
-    rundownId: rundownId,
-    rundownTitle: metadata.title,
-    rundownStartTime: metadata.startTime,
-    timezone: metadata.timezone,
-    currentTime: new Date(),
-    hasUnsavedChanges: perRowState.isSaving,
-    isConnected: true, // Per-row system manages its own connection
-    isProcessingRealtimeUpdate: false, // Per-row handles this internally
-    selectedRowId: null, // TODO: Add to per-row state
-    handleRowSelection: () => {}, // TODO: Add to per-row state
-    clearRowSelection: () => {}, // TODO: Add to per-row state
-    columns: [], // TODO: Get from user preferences
-    setColumns: () => {}, // TODO: Wire to user preferences
-    addColumn: () => {}, // TODO: Wire to user preferences
-    updateColumnWidth: () => {}, // TODO: Wire to user preferences
-    setTitle: metadata.updateTitle,
-    setStartTime: metadata.updateStartTime,
-    setTimezone: metadata.updateTimezone,
-
-    addRow: () => {
-      const newItem = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'regular' as const,
-        name: '',
-        duration: '00:00',
-        startTime: '00:00:00',
-        endTime: '00:00:00',
-        elapsedTime: '00:00:00',
-        isFloating: false,
-        isFloated: false,
-        talent: '',
-        script: '',
-        notes: '',
-        gfx: '',
-        video: '',
-        images: '',
-        color: '',
-        customFields: {},
-        rowNumber: (perRowState.items.length + 1).toString(),
-        segmentName: ''
-      };
-      perRowState.addItem(newItem);
-    },
-    addHeader: () => {
-      const newItem = {
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'header' as const,
-        name: 'New Header',
-        duration: '00:00',
-        startTime: '00:00:00',
-        endTime: '00:00:00',
-        elapsedTime: '00:00:00',
-        isFloating: false,
-        isFloated: false,
-        talent: '',
-        script: '',
-        notes: '',
-        gfx: '',
-        video: '',
-        images: '',
-        color: '',
-        customFields: {},
-        rowNumber: (perRowState.items.length + 1).toString(),
-        segmentName: ''
-      };
-      perRowState.addItem(newItem);
-    },
-    deleteRow: compatibilityAdapter.deleteRow,
-    toggleFloat: (itemId: string) => {
-      const item = perRowState.items.find(item => item.id === itemId);
-      if (item) {
-        perRowState.updateItem(itemId, { isFloated: !item.isFloated });
-      }
-    },
-    deleteMultipleItems: compatibilityAdapter.deleteMultipleItems,
-    addItem: perRowState.addItem,
-    setItems: compatibilityAdapter.setItems,
-    updateItem: compatibilityAdapter.updateItem,
-    markAsChanged: compatibilityAdapter.markAsChanged,
-    markActiveTyping: () => {}, // Per-row handles this internally
-    saveUndoState: () => {}, // TODO: Add undo to per-row
-    undo: () => {}, // TODO: Add undo to per-row
-    canUndo: false, // TODO: Add undo to per-row
-    lastAction: null // TODO: Add undo to per-row
-  } : legacyState;
+  // Single source of truth for all rundown state (with persistence)
+  const simplifiedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
@@ -230,20 +88,16 @@ export const useRundownStateCoordination = () => {
 
   // Add the missing functions that simplifiedState should provide
   const addRowAtIndex = (insertIndex: number) => {
-    if (shouldUsePerRow) {
-      simplifiedState.addRow(); // Per-row system will handle indexing
-    } else if ((simplifiedState as any).addRowAtIndex) {
-      (simplifiedState as any).addRowAtIndex(insertIndex);
+    if (simplifiedState.addRowAtIndex) {
+      simplifiedState.addRowAtIndex(insertIndex);
     } else {
       simplifiedState.addRow();
     }
   };
 
   const addHeaderAtIndex = (insertIndex: number) => {
-    if (shouldUsePerRow) {
-      simplifiedState.addHeader(); // Per-row system will handle indexing
-    } else if ((simplifiedState as any).addHeaderAtIndex) {
-      (simplifiedState as any).addHeaderAtIndex(insertIndex);
+    if (simplifiedState.addHeaderAtIndex) {
+      simplifiedState.addHeaderAtIndex(insertIndex);
     } else {
       simplifiedState.addHeader();
     }
@@ -342,7 +196,7 @@ export const useRundownStateCoordination = () => {
       rundownId: simplifiedState.rundownId,
       
       // State flags (NOW with separated processing states)
-      isLoading: shouldUsePerRow ? false : (simplifiedState as any).isLoading || false,
+      isLoading: simplifiedState.isLoading,
       hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
       isSaving: simplifiedState.isSaving,
       isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,

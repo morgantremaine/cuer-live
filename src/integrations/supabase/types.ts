@@ -216,45 +216,6 @@ export type Database = {
         }
         Relationships: []
       }
-      rundown_items: {
-        Row: {
-          created_at: string
-          id: string
-          item_data: Json
-          item_id: string
-          item_index: number
-          item_version: number
-          last_edited_at: string
-          last_edited_by: string | null
-          rundown_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          item_data: Json
-          item_id: string
-          item_index: number
-          item_version?: number
-          last_edited_at?: string
-          last_edited_by?: string | null
-          rundown_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          item_data?: Json
-          item_id?: string
-          item_index?: number
-          item_version?: number
-          last_edited_at?: string
-          last_edited_by?: string | null
-          rundown_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       rundown_presence: {
         Row: {
           created_at: string
@@ -972,10 +933,6 @@ export type Database = {
         Args: { rundown_uuid: string }
         Returns: Json
       }
-      get_rundown_items_array: {
-        Args: { target_rundown_id: string }
-        Returns: Json
-      }
       get_shared_layout_for_public_rundown: {
         Args: { rundown_uuid: string }
         Returns: Json
@@ -1077,10 +1034,6 @@ export type Database = {
       migrate_existing_custom_columns: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      migrate_rundown_to_normalized_items: {
-        Args: { target_rundown_id: string }
-        Returns: boolean
       }
       remove_team_member_with_transfer: {
         Args: { admin_id: string; member_id: string; team_id_param: string }
