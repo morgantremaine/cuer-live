@@ -5,7 +5,7 @@ const STORAGE_KEY = 'shared-rundown-column-order';
 
 interface UseLocalSharedColumnOrderReturn {
   orderedColumns: Column[];
-  reorderColumns: (startIndex: number, endIndex: number) => void;
+  reorderColumns: (newColumns: Column[]) => void;
   resetColumnOrder: () => void;
 }
 
@@ -61,18 +61,11 @@ export const useLocalSharedColumnOrder = (
     }
   }, []);
 
-  // Reorder columns by moving from startIndex to endIndex
-  const reorderColumns = useCallback((startIndex: number, endIndex: number) => {
-    setOrderedColumns(prev => {
-      const newColumns = [...prev];
-      const [removed] = newColumns.splice(startIndex, 1);
-      newColumns.splice(endIndex, 0, removed);
-      
-      // Save the new order
-      saveColumnOrder(newColumns);
-      
-      return newColumns;
-    });
+  // Reorder columns with new column array (consistent with main rundown system)
+  const reorderColumns = useCallback((newColumns: Column[]) => {
+    setOrderedColumns(newColumns);
+    // Save the new order
+    saveColumnOrder(newColumns);
   }, [saveColumnOrder]);
 
   // Reset to original column order

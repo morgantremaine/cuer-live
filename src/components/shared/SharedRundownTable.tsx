@@ -17,7 +17,7 @@ interface SharedRundownTableProps {
   isPlaying?: boolean;
   rundownStartTime?: string;
   isDark?: boolean;
-  onReorderColumns?: (startIndex: number, endIndex: number) => void;
+  onReorderColumns?: (newColumns: any[]) => void;
 }
 
 // Draggable column header component
@@ -133,7 +133,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     if (active.id !== over.id && onReorderColumns) {
       const oldIndex = visibleColumns.findIndex(col => col.id === active.id);
       const newIndex = visibleColumns.findIndex(col => col.id === over.id);
-      onReorderColumns(oldIndex, newIndex);
+      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+      onReorderColumns(newColumns);
     }
     
     setActiveColumn(null);
