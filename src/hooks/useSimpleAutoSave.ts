@@ -37,6 +37,7 @@ export const useSimpleAutoSave = (
   const saveInitiatedWhileActiveRef = useRef(false);
   const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
   const postTypingSafetyTimeoutRef = useRef<NodeJS.Timeout>();
+  const pendingFollowUpSaveRef = useRef(false);
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -235,6 +236,12 @@ export const useSimpleAutoSave = (
     if (saveInProgressRef.current || undoActiveRef.current) {
       debugLogger.autosave('Save blocked: already saving or undo active');
       console.log('🛑 AutoSave: blocked - already saving or undo active');
+      
+      // Ensure a follow-up save runs right after the current one finishes
+      if (saveInProgressRef.current) {
+        pendingFollowUpSaveRef.current = true;
+        console.log('🕒 AutoSave: follow-up save scheduled after in-progress save');
+      }
       return;
     }
     
@@ -546,6 +553,19 @@ export const useSimpleAutoSave = (
       // Clear structural change flag after save completes
       if (pendingStructuralChangeRef) {
         pendingStructuralChangeRef.current = false;
+      }
+      
+      // If a save request came in during the in-progress save, run it now
+      if (pendingFollowUpSaveRef.current) {
+        pendingFollowUpSaveRef.current = false;
+        console.log('🔁 AutoSave: executing pending follow-up save');
+        setTimeout(() => {
+          try {
+            performSaveRef.current();
+          } catch (e) {
+            console.error('❌ AutoSave: pending follow-up save failed', e);
+          }
+        }, 0);
       }
       
       // Optimized re-queuing for multi-user scenarios
