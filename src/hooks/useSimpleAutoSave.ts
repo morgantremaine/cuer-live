@@ -8,6 +8,7 @@ import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
+import { useKeystrokeJournal } from './useKeystrokeJournal';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -29,15 +30,24 @@ export const useSimpleAutoSave = (
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
   
-  // Enhanced idle-based autosave system
+  // Enhanced idle-based autosave system with keystroke journal integration
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 1800; // Wait 1.8s after typing stops - increased for better typing capture
-  const maxSaveDelay = 5000; // Maximum delay before forcing save
+  const typingIdleMs = 2200; // Increased to 2.2s for better typing capture
+  const maxSaveDelay = 8000; // Increased max delay to 8s
+  const microResaveMs = 350; // Micro-resave delay increased to 350ms
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
   const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
   const postTypingSafetyTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingFollowUpSaveRef = useRef(false);
+  const recentKeystrokes = useRef<number>(0);
+  
+  // Keystroke journal for reliable content tracking
+  const keystrokeJournal = useKeystrokeJournal({
+    rundownId,
+    state,
+    enabled: true
+  });
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
   const onSavedRef = useRef(onSaved);
@@ -45,10 +55,15 @@ export const useSimpleAutoSave = (
     onSavedRef.current = onSaved;
   }, [onSaved]);
 
-  // Create content signature that ONLY includes actual content (NO showcaller fields at all)
+  // Create content signature from current state (backwards compatibility)
   const createContentSignature = useCallback(() => {
+    return createContentSignatureFromState(state);
+  }, [state]);
+
+  // Create content signature from any state (for use with snapshots)
+  const createContentSignatureFromState = useCallback((targetState: RundownState) => {
     // Create signature with ONLY content fields - completely exclude ALL showcaller data
-    const cleanItems = state.items?.map((item: any) => {
+    const cleanItems = targetState.items?.map((item: any) => {
       // Create a clean copy with only the editable content fields
       const cleanItem: any = {
         id: item.id,
@@ -78,16 +93,16 @@ export const useSimpleAutoSave = (
 
     const signature = JSON.stringify({
       items: cleanItems,
-      title: state.title || '',
-      startTime: state.startTime || '',
-      timezone: state.timezone || '',
-      showDate: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
-      externalNotes: state.externalNotes || ''
+      title: targetState.title || '',
+      startTime: targetState.startTime || '',
+      timezone: targetState.timezone || '',
+      showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
+      externalNotes: targetState.externalNotes || ''
     });
     
     console.log('🔍 Creating signature with', cleanItems.length, 'items');
     return signature;
-  }, [state.items, state.title, state.startTime, state.timezone, state.showDate]);
+  }, []);
 
   // Stabilized baseline priming - only reset on actual rundown switches, not during init
   const lastPrimedRundownRef = useRef<string | null>(null);
@@ -142,10 +157,16 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Enhanced typing activity tracker with auto-rescheduling
+  // Enhanced typing activity tracker with keystroke journal integration
   const markActiveTyping = useCallback(() => {
-    lastEditAtRef.current = Date.now();
+    const now = Date.now();
+    lastEditAtRef.current = now;
+    recentKeystrokes.current = now;
+    
     console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
+    
+    // Record typing in journal for debugging and recovery
+    keystrokeJournal.recordTyping('user typing activity');
     
     // Record that this save will be initiated while tab is active
     saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
@@ -171,7 +192,7 @@ export const useSimpleAutoSave = (
       console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
       performSave();
     }, typingIdleMs + 2000);
-  }, [typingIdleMs]);
+  }, [typingIdleMs, keystrokeJournal]);
 
   // Check if user is currently typing
   const isTypingActive = useCallback(() => {
@@ -186,7 +207,7 @@ export const useSimpleAutoSave = (
     microResaveTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Micro-resave: capturing changes made during previous save');
       performSave();
-    }, 200); // Quick 200ms resave to capture fast typing
+    }, microResaveMs);
   }, []);
 
   // Enhanced save function with conflict prevention
@@ -200,11 +221,18 @@ export const useSimpleAutoSave = (
 
     // REFINED STALE TAB PROTECTION: Only block NEW saves, allow saves initiated while active
     // BUT: Always allow flush saves to proceed as they're specifically for preserving keystrokes
+    // ALSO: Don't block if recent keystrokes occurred (last 5 seconds) even if tab hidden
     const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
-    if (!isFlushSave && isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current) {
+    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
+    
+    if (!isFlushSave && isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
       debugLogger.autosave('Save blocked: tab hidden and save not initiated while active');
       console.log('🛑 AutoSave: blocked - tab hidden and save not initiated while active');
       return;
+    }
+    
+    if (hasRecentKeystrokes && isTabCurrentlyInactive) {
+      console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
     }
     
     if (isFlushSave && isTabCurrentlyInactive) {
@@ -250,11 +278,15 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Final signature check
-    const finalSignature = createContentSignature();
+    // Build save payload from latest snapshot for consistency
+    const latestSnapshot = keystrokeJournal.getLatestSnapshot();
+    const saveState = latestSnapshot || state;
+    
+    // Create signature from the snapshot we'll actually save
+    const finalSignature = createContentSignatureFromState(saveState);
 
     // ANTI-WIPE CIRCUIT BREAKER: Prevent saves that would drastically reduce items
-    const currentItemCount = state.items?.length || 0;
+    const currentItemCount = saveState.items?.length || 0;
     const lastSavedItemCount = lastSavedRef.current ? 
       (JSON.parse(lastSavedRef.current).items?.length || 0) : 0;
     
@@ -302,12 +334,12 @@ export const useSimpleAutoSave = (
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert({
-            title: state.title,
-            items: state.items,
-            start_time: state.startTime,
-            timezone: state.timezone,
-            show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
-            external_notes: state.externalNotes,
+            title: saveState.title,
+            items: saveState.items,
+            start_time: saveState.startTime,
+            timezone: saveState.timezone,
+            show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
+            external_notes: saveState.externalNotes,
             team_id: teamData.team_id,
             user_id: currentUserId,
             folder_id: folderId,
@@ -342,7 +374,7 @@ export const useSimpleAutoSave = (
       } else {
         // Enhanced update for existing rundowns with optimistic concurrency (doc_version)
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        console.log('💾 AutoSave: updating rundown', { rundownId, items: state.items?.length, title: state.title });
+        console.log('💾 AutoSave: updating rundown', { rundownId, items: saveState.items?.length, title: saveState.title });
 
         // 1) Read current doc_version with retry logic
         let currentRow: any = null;
@@ -378,12 +410,12 @@ export const useSimpleAutoSave = (
         }
 
         const baseUpdate = {
-          title: state.title,
-          items: state.items,
-          start_time: state.startTime,
-          timezone: state.timezone,
-          show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
-          external_notes: state.externalNotes,
+          title: saveState.title,
+          items: saveState.items,
+          start_time: saveState.startTime,
+          timezone: saveState.timezone,
+          show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
+          external_notes: saveState.externalNotes,
           updated_at: new Date().toISOString(),
           last_updated_by: currentUserId
         } as const;
@@ -429,7 +461,7 @@ export const useSimpleAutoSave = (
         console.log('🔄 Merging local changes with remote data for conflict resolution');
         
         // Create merged update that preserves both sets of changes
-        const mergedItems = state.items?.map((localItem: any) => {
+        const mergedItems = saveState.items?.map((localItem: any) => {
           const remoteItem = latestRundown.items?.find((item: any) => item.id === localItem.id);
           if (!remoteItem) return localItem; // New local item
           
@@ -444,7 +476,7 @@ export const useSimpleAutoSave = (
         }) || [];
         
         // Add any new remote items that aren't in local state
-        const localItemIds = new Set(state.items?.map(item => item.id) || []);
+        const localItemIds = new Set(saveState.items?.map(item => item.id) || []);
         const newRemoteItems = latestRundown.items?.filter((item: any) => !localItemIds.has(item.id)) || [];
         
         const finalMergedItems = [...mergedItems, ...newRemoteItems];
@@ -453,9 +485,9 @@ export const useSimpleAutoSave = (
         Object.assign(baseUpdate, {
           items: finalMergedItems,
           // Preserve our local changes for non-item fields unless remote is newer
-          title: state.title, // Keep our title change
-          start_time: state.startTime, // Keep our timing change
-          timezone: state.timezone, // Keep our timezone change
+          title: saveState.title, // Keep our title change
+          start_time: saveState.startTime, // Keep our timing change
+          timezone: saveState.timezone, // Keep our timezone change
         });
 
         // Retry with merged data and latest doc_version
@@ -812,6 +844,10 @@ export const useSimpleAutoSave = (
     setUndoActive,
     setTrackOwnUpdate,
     markActiveTyping,
-    isTypingActive
+    isTypingActive,
+    // Expose journal functions for debugging
+    getJournalStats: keystrokeJournal.getJournalStats,
+    setVerboseLogging: keystrokeJournal.setVerboseLogging,
+    clearJournal: keystrokeJournal.clearJournal
   };
 };
