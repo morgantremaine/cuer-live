@@ -41,6 +41,7 @@ export const useSimpleAutoSave = (
   const postTypingSafetyTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingFollowUpSaveRef = useRef(false);
   const recentKeystrokes = useRef<number>(0);
+  const maxDelayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
@@ -192,6 +193,15 @@ export const useSimpleAutoSave = (
       console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
       performSave();
     }, typingIdleMs + 2000);
+    
+    // Ensure a max-delay forced save will happen even during continuous typing
+    if (!maxDelayTimeoutRef.current) {
+      maxDelayTimeoutRef.current = setTimeout(() => {
+        console.log('⏲️ AutoSave: max delay reached - forcing save');
+        performSave(true);
+        maxDelayTimeoutRef.current = null;
+      }, maxSaveDelay);
+    }
   }, [typingIdleMs, keystrokeJournal]);
 
   // Check if user is currently typing
@@ -587,6 +597,21 @@ export const useSimpleAutoSave = (
       saveInProgressRef.current = false; // Reset save progress flag
       saveInitiatedWhileActiveRef.current = false; // Reset active initiation flag
       
+      // Reset max-delay timer and re-arm if user still typing
+      if (maxDelayTimeoutRef.current) {
+        clearTimeout(maxDelayTimeoutRef.current);
+        maxDelayTimeoutRef.current = null;
+      }
+      if (Date.now() - lastEditAtRef.current < typingIdleMs) {
+        if (!maxDelayTimeoutRef.current) {
+          maxDelayTimeoutRef.current = setTimeout(() => {
+            console.log('⏲️ AutoSave: max delay reached post-save - forcing save');
+            performSaveRef.current(true);
+            maxDelayTimeoutRef.current = null;
+          }, maxSaveDelay);
+        }
+      }
+      
       // Clear structural change flag after save completes
       if (pendingStructuralChangeRef) {
         pendingStructuralChangeRef.current = false;
@@ -779,6 +804,10 @@ export const useSimpleAutoSave = (
       }
       if (postTypingSafetyTimeoutRef.current) {
         clearTimeout(postTypingSafetyTimeoutRef.current);
+      }
+      if (maxDelayTimeoutRef.current) {
+        clearTimeout(maxDelayTimeoutRef.current);
+        maxDelayTimeoutRef.current = null;
       }
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
