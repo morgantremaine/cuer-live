@@ -31,7 +31,7 @@ export const useSimpleAutoSave = (
   
   // Enhanced idle-based autosave system
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 1200; // Wait 1.2s after typing stops
+  const typingIdleMs = 1800; // Wait 1.8s after typing stops - increased for better typing capture
   const maxSaveDelay = 5000; // Maximum delay before forcing save
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
