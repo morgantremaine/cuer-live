@@ -159,16 +159,17 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
     
+    // Schedule main save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       console.log('⏰ AutoSave: idle timeout reached - triggering save');
       performSave();
-      
-      // Schedule safety save 2 seconds after typing stops
-      postTypingSafetyTimeoutRef.current = setTimeout(() => {
-        console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
-        performSave();
-      }, 2000);
     }, typingIdleMs);
+    
+    // Schedule safety save that will fire regardless of main save status
+    postTypingSafetyTimeoutRef.current = setTimeout(() => {
+      console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
+      performSave();
+    }, typingIdleMs + 2000);
   }, [typingIdleMs]);
 
   // Check if user is currently typing
