@@ -190,7 +190,7 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Enhanced save function with conflict prevention
-  const performSave = useCallback(async (): Promise<void> => {
+  const performSave = useCallback(async (isFlushSave = false): Promise<void> => {
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -199,14 +199,19 @@ export const useSimpleAutoSave = (
     }
 
     // REFINED STALE TAB PROTECTION: Only block NEW saves, allow saves initiated while active
+    // BUT: Always allow flush saves to proceed as they're specifically for preserving keystrokes
     const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
-    if (isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current) {
+    if (!isFlushSave && isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current) {
       debugLogger.autosave('Save blocked: tab hidden and save not initiated while active');
       console.log('🛑 AutoSave: blocked - tab hidden and save not initiated while active');
       return;
     }
     
-    if (isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
+    if (isFlushSave && isTabCurrentlyInactive) {
+      console.log('🧯 AutoSave: flush save proceeding despite tab inactive - preserving keystrokes');
+    }
+    
+    if (!isFlushSave && isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
       console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
     }
 
@@ -752,7 +757,7 @@ export const useSimpleAutoSave = (
       if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
         console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
         try {
-          await performSaveRef.current();
+          await performSave(true); // Pass true to indicate this is a flush save
         } catch (error) {
           console.error('❌ AutoSave: flush-on-blur failed:', error);
         }
@@ -779,7 +784,7 @@ export const useSimpleAutoSave = (
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('beforeunload', handleFlushOnBlur);
     };
-  }, [state.hasUnsavedChanges, rundownId]);
+  }, [state.hasUnsavedChanges, rundownId, performSave]);
 
   // Flush any pending changes on unmount/view switch to prevent reverts
   useEffect(() => {
@@ -793,8 +798,8 @@ export const useSimpleAutoSave = (
       if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
         console.log('🧯 AutoSave: flushing pending changes on unmount');
         try {
-          // Fire-and-forget; ensures a network request is sent before teardown
-          performSaveRef.current();
+          // Fire-and-forget flush save that bypasses tab-hidden checks
+          performSaveRef.current(true);
         } catch (e) {
           console.error('❌ AutoSave: flush-on-unmount failed', e);
         }
