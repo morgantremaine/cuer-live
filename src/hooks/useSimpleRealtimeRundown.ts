@@ -269,11 +269,15 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
-  // CRITICAL: Process updates immediately with micro-coalescing instead of deferring
-  // This ensures teammate edits are never missed, even while typing
+  // CRITICAL: Handle typing state - block realtime updates when user is actively typing
+  // This prevents conflicts and save loops while preserving user input
   if (isTypingActiveRef.current && isTypingActiveRef.current()) {
-    console.log('⚡ Processing remote update immediately (with merge protection while typing)');
-    // Use existing granular merge logic to preserve local edits
+    console.log('⏸️ Blocking realtime update - user is typing');
+    lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
+    if (incomingDocVersion) {
+      lastProcessedDocVersionRef.current = incomingDocVersion;
+    }
+    return; // Block the update completely to prevent save loop
   }
 
     // Only process updates that have actual content changes or are structural
