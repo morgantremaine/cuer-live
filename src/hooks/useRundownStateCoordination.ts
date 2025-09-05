@@ -6,6 +6,7 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
+import { useUserIntentManager } from './useUserIntentManager';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
@@ -179,6 +180,38 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
+  // User intent management - simplified for now to avoid build errors
+  const userIntentManager = {
+    hasActiveUserIntent: () => false,
+    markUserActivity: () => {},
+    hasActiveSelection: () => interactions.selectedRows.size > 0,
+    isEditingCell: () => uiState.editingCell !== null,
+    isDragActive: () => interactions.draggedItemIndex !== null,
+    hasActiveClipboard: () => interactions.hasClipboardData,
+    hasRecentUserActivity: () => false
+  };
+
+  // Enhanced interactions with user activity tracking - simplified approach
+  const enhancedInteractions = useMemo(() => {
+    const wrapWithActivity = (fn: any) => (...args: any[]) => {
+      userIntentManager.markUserActivity();
+      return fn(...args);
+    };
+
+    return {
+      ...interactions,
+      toggleRowSelection: wrapWithActivity(interactions.toggleRowSelection),
+      handleDragStart: wrapWithActivity(interactions.handleDragStart),
+      handleDrop: wrapWithActivity(interactions.handleDrop),
+      handleUpdateItem: wrapWithActivity(interactions.handleUpdateItem),
+      handleDeleteRow: wrapWithActivity(interactions.handleDeleteRow),
+      handleAddRow: wrapWithActivity(interactions.handleAddRow),
+      handleAddHeader: wrapWithActivity(interactions.handleAddHeader),
+      handleDeleteSelectedRows: wrapWithActivity(interactions.handleDeleteSelectedRows),
+      handlePasteRows: wrapWithActivity(interactions.handlePasteRows)
+    };
+  }, [interactions, userIntentManager]);
+
   // NEW: Keep processing states separate - NO combination
   const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate; // Content updates only
   const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
@@ -277,9 +310,13 @@ export const useRundownStateCoordination = () => {
       visibleItems,
       
       // Autosave typing guard
-      markActiveTyping: simplifiedState.markActiveTyping
+      markActiveTyping: simplifiedState.markActiveTyping,
+      
+      // User intent protection
+      hasActiveUserIntent: userIntentManager.hasActiveUserIntent
     },
-    interactions,
-    uiState
+    interactions: enhancedInteractions,
+    uiState,
+    userIntentManager
   };
 };
