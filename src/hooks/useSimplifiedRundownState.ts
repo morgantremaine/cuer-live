@@ -50,9 +50,6 @@ export const useSimplifiedRundownState = () => {
   // Track cooldown after teammate updates to prevent ping-pong
   const remoteSaveCooldownRef = useRef<number>(0);
   
-  // Suppress autosave after silent refresh to prevent overwrites
-  const suppressAutosaveRef = useRef<number>(0);
-  
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
@@ -179,7 +176,7 @@ export const useSimplifiedRundownState = () => {
       }
     },
     pendingStructuralChangeRef,
-    suppressAutosaveRef, // Use suppression instead of cooldown
+    remoteSaveCooldownRef,
     isInitialized
   );
 
@@ -838,29 +835,22 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     const now = Date.now();
     const justActivated = isTabActive && !prevIsActiveRef.current;
-    
-    // Only perform refresh when transitioning from inactive to active (not on every focus)
-    if (!justActivated || !isInitialized || isLoading || !rundownId) {
-      prevIsActiveRef.current = isTabActive;
-      return;
-    }
+    const shouldSync = (
+      (justActivated || !hasSyncedOnceRef.current) &&
+      isInitialized && !isLoading && rundownId &&
+      !isTypingActive() && !isSaving && !pendingStructuralChangeRef.current
+    );
 
-    // Additional safety checks
-    if (isTypingActive() || isSaving || pendingStructuralChangeRef.current) {
-      prevIsActiveRef.current = isTabActive;
-      return;
-    }
-
-    // Debounce rapid activation events
+    // Debounce rapid focus/visibility flaps
     const timeSinceLast = now - lastSyncTimeRef.current;
-    if (timeSinceLast <= 500) {
+    if (!shouldSync || timeSinceLast <= 300) {
       prevIsActiveRef.current = isTabActive;
       return;
     }
 
     lastSyncTimeRef.current = now;
     let cancelled = false;
-    console.log('👁️ Tab activated - performing silent refresh for latest rundown');
+    console.log('👁️ Tab active - performing silent refresh for latest rundown');
 
     (async () => {
       try {
@@ -878,24 +868,12 @@ export const useSimplifiedRundownState = () => {
         const newerByTime = serverTs && (!lastKnownTimestamp || new Date(serverTs).getTime() > new Date(lastKnownTimestamp).getTime());
 
         if (newerByVersion || newerByTime) {
-          console.log('🔄 Silent refresh: applying newer data from server', { serverDoc, serverTs });
-          
-          // CRITICAL: Suppress autosave for 3 seconds after refresh to prevent overwrites
-          suppressAutosaveRef.current = Date.now() + 3000;
-          
-          // Apply latest without triggering save
+          // Apply latest without triggering save; reducer marks saved
           handleDataRefresh(data);
           if (serverTs) setLastKnownTimestamp(serverTs);
           if (serverDoc) setLastSeenDocVersion(serverDoc);
-          
-          // Reset autosave baseline immediately to prevent refresh-triggered saves
-          setTimeout(() => {
-            if (state.items && !isTypingActive()) {
-              console.log('🔄 Resetting autosave baseline after silent refresh');
-              // Force autosave system to re-baseline without saving
-              actions.markSaved();
-            }
-          }, 100);
+          // Brief cooldown to avoid ping-pong saves after refresh
+          remoteSaveCooldownRef.current = Date.now() + 800;
         }
       } catch (e) {
         console.error('❌ Silent refresh failed:', e);
