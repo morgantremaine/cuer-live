@@ -180,6 +180,11 @@ export const useSimpleRealtimeRundown = ({
 
   // Simplified update handler with global deduplication and typing awareness
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    // Block all realtime processing while user is actively typing to prevent signature churn
+    if (isTypingActiveRef.current?.() && !isShowcallerOnlyUpdate(payload.new)) {
+      console.log('⌨️ Realtime: blocking update during active typing to prevent micro-resave loops');
+      return;
+    }
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
     

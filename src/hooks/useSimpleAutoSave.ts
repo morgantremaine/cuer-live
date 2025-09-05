@@ -43,6 +43,7 @@ export const useSimpleAutoSave = (
   const recentKeystrokes = useRef<number>(0);
   const maxDelayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
+  const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
   
   // Keystroke journal for reliable content tracking
@@ -165,6 +166,7 @@ export const useSimpleAutoSave = (
     const now = Date.now();
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
+    microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
     console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
@@ -211,16 +213,36 @@ export const useSimpleAutoSave = (
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
 
-  // Simple micro-resave - no complex guards, just like the original
+  // Circuit-breaker protected micro-resave to prevent loops
   const scheduleMicroResave = useCallback(() => {
+    const currentSignature = createContentSignature();
+    
+    // Prevent micro-resave if signature hasn't actually changed
+    if (currentSignature === lastMicroResaveSignatureRef.current) {
+      console.log('🛑 Micro-resave: no signature change detected - skipping');
+      return;
+    }
+    
+    // Circuit breaker: prevent infinite loops
+    if (microResaveAttemptsRef.current >= 2) {
+      console.warn('🧯 Micro-resave: circuit breaker activated - max attempts reached');
+      microResaveAttemptsRef.current = 0; // Reset for next time
+      return;
+    }
+    
+    microResaveAttemptsRef.current += 1;
+    lastMicroResaveSignatureRef.current = currentSignature;
+    
     if (microResaveTimeoutRef.current) {
       clearTimeout(microResaveTimeoutRef.current);
     }
+    
+    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current);
     microResaveTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Micro-resave: capturing changes made during previous save');
       performSaveRef.current?.();
     }, microResaveMs);
-  }, [microResaveMs]);
+  }, [microResaveMs, createContentSignature]);
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false): Promise<void> => {
