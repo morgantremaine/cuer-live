@@ -117,6 +117,12 @@ const LayoutManager = ({
     return 'Unknown User';
   };
 
+  // Helper function to count visible columns in a layout
+  const getVisibleColumnCount = (layout: any) => {
+    if (!Array.isArray(layout.columns)) return 0;
+    return layout.columns.filter(col => col.visible !== false).length;
+  };
+
   const isUserLayout = (layout: any) => {
     return canEditLayout ? canEditLayout(layout) : true;
   };
@@ -211,11 +217,11 @@ const LayoutManager = ({
                         <button
                           onClick={() => handleLoadLayout(layout)}
                           className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
-                          title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
+                          title={`Load layout with ${getVisibleColumnCount(layout)} visible columns (${Array.isArray(layout.columns) ? layout.columns.length : 0} total)`}
                         >
                           <div className="font-medium">{layout.name}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {Array.isArray(layout.columns) ? layout.columns.length : 0} columns
+                            {getVisibleColumnCount(layout)} visible columns
                           </div>
                         </button>
                         <div className="flex items-center space-x-1">
@@ -268,14 +274,14 @@ const LayoutManager = ({
                     <button
                       onClick={() => handleLoadLayout(layout)}
                       className="flex-1 text-left text-sm text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 py-1"
-                      title={`Load layout with ${Array.isArray(layout.columns) ? layout.columns.length : 0} columns`}
+                      title={`Load layout with ${getVisibleColumnCount(layout)} visible columns (${Array.isArray(layout.columns) ? layout.columns.length : 0} total)`}
                     >
                       <div className="font-medium">{layout.name}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
                         <User className="h-3 w-3" />
                         <span>by {getCreatorDisplay(layout)}</span>
                         <span>•</span>
-                        <span>{Array.isArray(layout.columns) ? layout.columns.length : 0} columns</span>
+                        <span>{getVisibleColumnCount(layout)} visible columns</span>
                       </div>
                     </button>
                     <div className="flex items-center space-x-1">
