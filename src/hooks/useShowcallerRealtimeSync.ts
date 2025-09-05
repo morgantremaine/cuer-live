@@ -26,7 +26,6 @@ export const useShowcallerRealtimeSync = ({
   const [isProcessingVisualUpdate, setIsProcessingVisualUpdate] = useState(false);
   const processingLoopGuardRef = useRef<number>(0);
   const maxProcessingLoops = 5; // Prevent excessive processing loops
-  const latestVisualStateRef = useRef<any>(null);
   
   // Keep callback ref updated
   onExternalVisualStateReceivedRef.current = onExternalVisualStateReceived;
@@ -44,7 +43,6 @@ export const useShowcallerRealtimeSync = ({
     }
 
     const showcallerVisualState = payload.new.showcaller_state;
-    latestVisualStateRef.current = showcallerVisualState;
 
     // Skip if this update originated from this user
     if (showcallerVisualState.controllerId === user?.id) {
@@ -67,25 +65,10 @@ export const useShowcallerRealtimeSync = ({
       }
     }
 
-    // Loop guard: coalesce bursts but never drop the latest update
+    // Loop guard: prevent excessive processing
     processingLoopGuardRef.current++;
     if (processingLoopGuardRef.current > maxProcessingLoops) {
-      console.warn('📺 Processing loop guard triggered - coalescing burst, scheduling trailing update');
-      // Schedule a trailing process of the latest state instead of dropping it
-      timeoutManagerRef.current.clear('visual-processing');
-      timeoutManagerRef.current.set('visual-processing-trailing', () => {
-        if (!isMountedRef.current || !latestVisualStateRef.current) return;
-        try {
-          onExternalVisualStateReceivedRef.current(latestVisualStateRef.current);
-        } catch (error) {
-          logger.error('Error processing trailing showcaller visual update:', error);
-        }
-        // Clear processing flag shortly after applying
-        timeoutManagerRef.current.set('visual-processing-clear', () => {
-          if (isMountedRef.current) setIsProcessingVisualUpdate(false);
-        }, 300);
-        processingLoopGuardRef.current = 0; // reset after trailing update
-      }, 150);
+      console.warn('📺 Processing loop guard triggered - too many rapid updates');
       return;
     }
 
