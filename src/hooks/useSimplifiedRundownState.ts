@@ -831,14 +831,15 @@ export const useSimplifiedRundownState = () => {
     });
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
-  // TEMPORARILY DISABLE resumption handling to fix typing issues
-  // useRundownResumption({
-  //   rundownId,
-  //   onDataRefresh: handleDataRefresh,
-  //   lastKnownTimestamp,
-  //   enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
-  //   updateLastKnownTimestamp: setLastKnownTimestamp
-  // });
+  // Tab resumption - fetch latest data when returning to tab
+  // Only enabled when not actively typing/editing to prevent interference
+  useRundownResumption({
+    rundownId,
+    onDataRefresh: handleDataRefresh,
+    lastKnownTimestamp,
+    enabled: isInitialized && !isLoading && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
+    updateLastKnownTimestamp: setLastKnownTimestamp
+  });
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {

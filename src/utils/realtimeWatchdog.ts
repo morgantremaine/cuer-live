@@ -55,11 +55,11 @@ class RealtimeWatchdog {
     if (this.isActive) return;
     
     this.isActive = true;
-    console.log('🔍 Starting realtime watchdog for rundown (DISABLED FOR TYPING PROTECTION):', this.config.rundownId);
+    console.log('🔍 Starting realtime watchdog for rundown:', this.config.rundownId);
     
-    // TEMPORARILY DISABLE watchdog to fix typing issues
-    // this.scheduleCheck();
-    // this.setupFocusListeners();
+    // Re-enabled with proper safeguards for typing protection
+    this.scheduleCheck();
+    this.setupFocusListeners();
   }
 
   stop() {
