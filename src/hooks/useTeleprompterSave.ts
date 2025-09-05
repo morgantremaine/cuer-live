@@ -66,21 +66,21 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         item.id === itemId ? { ...item, script } : item
       );
 
-      const updateTimestamp = new Date().toISOString();
-      
-      const { error } = await supabase
+      // Use RETURNING to get the actual DB timestamp for precise tracking
+      const { data, error } = await supabase
         .from('rundowns')
         .update({ 
           items: updatedItems,
-          updated_at: updateTimestamp,
           last_updated_by: user?.id || null
         })
-        .eq('id', rundownId);
+        .eq('id', rundownId)
+        .select('updated_at')
+        .single();
       
-      // CRITICAL: Track this as our own update to prevent feedback loops
-      if (!error && trackOwnUpdate) {
-        console.log('📝 Teleprompter tracking own update:', updateTimestamp);
-        trackOwnUpdate(updateTimestamp);
+      // CRITICAL: Track using the actual DB timestamp to prevent feedback loops
+      if (!error && data?.updated_at && trackOwnUpdate) {
+        console.log('📝 Teleprompter tracking own update (DB timestamp):', data.updated_at);
+        trackOwnUpdate(data.updated_at);
       }
 
       if (error) {

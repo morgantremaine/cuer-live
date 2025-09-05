@@ -50,6 +50,9 @@ export const useSimplifiedRundownState = () => {
   // Track cooldown after teammate updates to prevent ping-pong
   const remoteSaveCooldownRef = useRef<number>(0);
   
+  // Suppress autosave after silent refresh to prevent overwrites
+  const suppressAutosaveRef = useRef<number>(0);
+  
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
@@ -176,7 +179,7 @@ export const useSimplifiedRundownState = () => {
       }
     },
     pendingStructuralChangeRef,
-    remoteSaveCooldownRef,
+    suppressAutosaveRef, // Use suppression instead of cooldown
     isInitialized
   );
 
@@ -876,12 +879,23 @@ export const useSimplifiedRundownState = () => {
 
         if (newerByVersion || newerByTime) {
           console.log('🔄 Silent refresh: applying newer data from server', { serverDoc, serverTs });
+          
+          // CRITICAL: Suppress autosave for 3 seconds after refresh to prevent overwrites
+          suppressAutosaveRef.current = Date.now() + 3000;
+          
           // Apply latest without triggering save
           handleDataRefresh(data);
           if (serverTs) setLastKnownTimestamp(serverTs);
           if (serverDoc) setLastSeenDocVersion(serverDoc);
-          // Brief cooldown to avoid ping-pong saves after refresh
-          remoteSaveCooldownRef.current = Date.now() + 800;
+          
+          // Reset autosave baseline immediately to prevent refresh-triggered saves
+          setTimeout(() => {
+            if (state.items && !isTypingActive()) {
+              console.log('🔄 Resetting autosave baseline after silent refresh');
+              // Force autosave system to re-baseline without saving
+              actions.markSaved();
+            }
+          }, 100);
         }
       } catch (e) {
         console.error('❌ Silent refresh failed:', e);
