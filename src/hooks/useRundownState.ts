@@ -172,14 +172,17 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
 
   // Pure calculation functions (no side effects)
   const calculations = useMemo(() => {
-    const timeToSeconds = (timeStr: string) => {
-      const parts = timeStr.split(':').map(Number);
+    const timeToSeconds = (timeStr: string | null | undefined) => {
+      if (!timeStr || typeof timeStr !== 'string') return 0;
+      const str = timeStr.trim();
+      if (!str) return 0;
+      const parts = str.split(':').map((p) => Number(p || 0));
       if (parts.length === 2) {
-        const [minutes, seconds] = parts;
-        return minutes * 60 + seconds;
+        const [minutes = 0, seconds = 0] = parts;
+        return (minutes || 0) * 60 + (seconds || 0);
       } else if (parts.length === 3) {
-        const [hours, minutes, seconds] = parts;
-        return hours * 3600 + minutes * 60 + seconds;
+        const [hours = 0, minutes = 0, seconds = 0] = parts;
+        return (hours || 0) * 3600 + (minutes || 0) * 60 + (seconds || 0);
       }
       return 0;
     };
