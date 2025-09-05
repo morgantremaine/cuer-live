@@ -166,84 +166,25 @@ export const useSimpleRealtimeRundown = ({
     return false; // Not a structural change - just content edits
   }, []);
 
-  // Enhanced user intent detection to prevent teammate disruption
+  // Add typing/unsaved state awareness to prevent overwrites during typing or pending changes
   const isTypingActiveRef = useRef<() => boolean>(() => false);
   const isUnsavedActiveRef = useRef<() => boolean>(() => false);
-  const hasActiveSelectionRef = useRef<() => boolean>(() => false);
-  const isEditingCellRef = useRef<() => boolean>(() => false);
-  const isDragActiveRef = useRef<() => boolean>(() => false);
-  const hasClipboardDataRef = useRef<() => boolean>(() => false);
   
-  // Queue for deferred structural updates
-  const deferredUpdatesRef = useRef<any[]>([]);
-  const deferredUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Functions to set state checkers from various hooks
+  // Functions to set state checkers from autosave/state hooks
   const setTypingChecker = useCallback((checker: () => boolean) => {
     isTypingActiveRef.current = checker;
   }, []);
   const setUnsavedChecker = useCallback((checker: () => boolean) => {
     isUnsavedActiveRef.current = checker;
   }, []);
-  const setSelectionChecker = useCallback((checker: () => boolean) => {
-    hasActiveSelectionRef.current = checker;
-  }, []);
-  const setEditingChecker = useCallback((checker: () => boolean) => {
-    isEditingCellRef.current = checker;
-  }, []);
-  const setDragChecker = useCallback((checker: () => boolean) => {
-    isDragActiveRef.current = checker;
-  }, []);
-  const setClipboardChecker = useCallback((checker: () => boolean) => {
-    hasClipboardDataRef.current = checker;
-  }, []);
 
-  // Comprehensive user intent detection
-  const hasActiveUserIntent = useCallback(() => {
-    return (
-      isTypingActiveRef.current?.() ||
-      isUnsavedActiveRef.current?.() ||
-      hasActiveSelectionRef.current?.() ||
-      isEditingCellRef.current?.() ||
-      isDragActiveRef.current?.() ||
-      hasClipboardDataRef.current?.()
-    );
-  }, []);
-
-  // Process deferred updates when user becomes idle
-  const processDeferredUpdates = useCallback(() => {
-    if (deferredUpdatesRef.current.length === 0 || hasActiveUserIntent()) {
+  // Simplified update handler with global deduplication and typing awareness
+  const handleRealtimeUpdate = useCallback(async (payload: any) => {
+    // Block all realtime processing while user is actively typing to prevent signature churn
+    if (isTypingActiveRef.current?.() && !isShowcallerOnlyUpdate(payload.new)) {
+      console.log('⌨️ Realtime: blocking update during active typing to prevent micro-resave loops');
       return;
     }
-
-    console.log('📥 Processing', deferredUpdatesRef.current.length, 'deferred structural updates');
-    const updates = [...deferredUpdatesRef.current];
-    deferredUpdatesRef.current = [];
-
-    // Process the most recent structural update (others are likely stale)
-    const mostRecentUpdate = updates[updates.length - 1];
-    if (mostRecentUpdate) {
-      handleRealtimeUpdateImmediate(mostRecentUpdate);
-    }
-  }, []);
-
-  // Schedule deferred update processing
-  const scheduleDeferredProcessing = useCallback(() => {
-    if (deferredUpdateTimeoutRef.current) {
-      clearTimeout(deferredUpdateTimeoutRef.current);
-    }
-    
-    deferredUpdateTimeoutRef.current = setTimeout(() => {
-      processDeferredUpdates();
-      // Keep checking periodically until queue is empty
-      if (deferredUpdatesRef.current.length > 0) {
-        scheduleDeferredProcessing();
-      }
-    }, 1000); // Check every second
-  }, [processDeferredUpdates]);
-
-  // Core update processing logic (extracted for reuse)
-  const handleRealtimeUpdateImmediate = useCallback(async (payload: any) => {
     const subscriptionKey = subscriptionKeyRef.current;
     const tracking = activeSubscriptions.get(subscriptionKey);
     
@@ -333,16 +274,16 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
-    // CRITICAL: Handle typing state - block realtime updates when user is actively typing
-    // This prevents conflicts and save loops while preserving user input
-    if (isTypingActiveRef.current && isTypingActiveRef.current()) {
-      console.log('⏸️ Blocking realtime update - user is typing');
-      lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
-      if (incomingDocVersion) {
-        lastProcessedDocVersionRef.current = incomingDocVersion;
-      }
-      return; // Block the update completely to prevent save loop
+  // CRITICAL: Handle typing state - block realtime updates when user is actively typing
+  // This prevents conflicts and save loops while preserving user input
+  if (isTypingActiveRef.current && isTypingActiveRef.current()) {
+    console.log('⏸️ Blocking realtime update - user is typing');
+    lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
+    if (incomingDocVersion) {
+      lastProcessedDocVersionRef.current = incomingDocVersion;
     }
+    return; // Block the update completely to prevent save loop
+  }
 
     // Only process updates that have actual content changes or are structural
     if (!isContentChange && !isStructural) {
@@ -364,11 +305,13 @@ export const useSimpleRealtimeRundown = ({
       setIsProcessingUpdate(true);
     }
     
+    lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
+    
     // Update doc version tracking
     if (incomingDocVersion) {
       lastProcessedDocVersionRef.current = incomingDocVersion;
     }
-
+    
     try {
       // Sync time from server timestamp
       if (payload.new?.updated_at) {
@@ -378,45 +321,15 @@ export const useSimpleRealtimeRundown = ({
       // Apply the update directly
       onRundownUpdateRef.current(payload.new);
     } catch (error) {
-      console.error('Error applying realtime update:', error);
-    } finally {
-      // Clear processing flags after a brief delay
-      setTimeout(() => {
-        setIsProcessingUpdate(false);
-      }, 300);
+      console.error('Error processing realtime update:', error);
     }
-  }, [user?.id, rundownId, lastSeenDocVersion, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
-
-  // Enhanced update handler with user intent protection
-  const handleRealtimeUpdate = useCallback(async (payload: any) => {
-    const isStructural = isStructuralChange(payload.new, payload.old);
-    const isShowcallerOnly = isShowcallerOnlyUpdate(payload.new, payload.old);
     
-    // Block all updates during active typing to prevent signature churn
-    if (isTypingActiveRef.current?.() && !isShowcallerOnly) {
-      console.log('⌨️ Realtime: blocking update during active typing');
-      return;
-    }
-
-    // Defer structural changes if user has active intent
-    if (isStructural && hasActiveUserIntent() && !isShowcallerOnly) {
-      console.log('🚧 Deferring structural update - user has active intent:', {
-        typing: isTypingActiveRef.current?.(),
-        unsaved: isUnsavedActiveRef.current?.(),
-        selection: hasActiveSelectionRef.current?.(),
-        editing: isEditingCellRef.current?.(),
-        dragging: isDragActiveRef.current?.(),
-        clipboard: hasClipboardDataRef.current?.()
-      });
-      
-      deferredUpdatesRef.current.push(payload);
-      scheduleDeferredProcessing();
-      return;
-    }
-
-    // Process update immediately
-    return handleRealtimeUpdateImmediate(payload);
-  }, [hasActiveUserIntent, scheduleDeferredProcessing, handleRealtimeUpdateImmediate, isStructuralChange, isShowcallerOnlyUpdate]);
+    // Clear processing state after short delay using managed timer
+    setManagedTimeout(() => {
+      setIsProcessingUpdate(false);
+    }, 500);
+    
+  }, [rundownId, isContentUpdate, isShowcallerOnlyUpdate, isStructuralChange]);
 
   useEffect(() => {
     // Only set up subscription if we have the required data
@@ -556,10 +469,6 @@ export const useSimpleRealtimeRundown = ({
     trackOwnUpdate: trackOwnUpdateLocal,
     setTypingChecker,
     setUnsavedChecker,
-    setSelectionChecker,
-    setEditingChecker,
-    setDragChecker,
-    setClipboardChecker,
     performCatchupSync
   };
 };
