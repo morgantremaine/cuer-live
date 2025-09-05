@@ -6,6 +6,7 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
+import { useDragAndDrop } from './useDragAndDrop';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
@@ -163,7 +164,7 @@ export const useRundownStateCoordination = () => {
     addHeaderAtIndex,
     // Pass undo-related parameters - use the correct property name now available
     simplifiedState.saveUndoState,
-    () => {}, // markStructuralChange - placeholder for now
+    simplifiedState.markStructuralChange, // Wire structural change signaling
     simplifiedState.columns,
     simplifiedState.rundownTitle,
     getHeaderGroupItemIds,
@@ -177,6 +178,25 @@ export const useRundownStateCoordination = () => {
     simplifiedState.updateItem,
     simplifiedState.setColumns,
     simplifiedState.columns
+  );
+
+  // Setup drag and drop with structural change integration
+  const dragAndDrop = useDragAndDrop(
+    performanceOptimization.calculatedItems,
+    (items) => {
+      // Update items through simplified state
+      simplifiedState.setItems(items);
+      // Clear structural change flag after items are set
+      setTimeout(() => simplifiedState.clearStructuralChange(), 50);
+    },
+    new Set<string>(), // selectedRows - placeholder for now
+    undefined, // scrollContainerRef - placeholder for now
+    simplifiedState.saveUndoState,
+    simplifiedState.columns,
+    simplifiedState.rundownTitle,
+    getHeaderGroupItemIds,
+    isHeaderCollapsed,
+    simplifiedState.markStructuralChange
   );
 
   // NEW: Keep processing states separate - NO combination
@@ -280,6 +300,7 @@ export const useRundownStateCoordination = () => {
       markActiveTyping: simplifiedState.markActiveTyping
     },
     interactions,
-    uiState
+    uiState,
+    dragAndDrop
   };
 };

@@ -143,6 +143,12 @@ export const useDragAndDrop = (
       console.log('🎯 Dragging single item:', item.id);
     }
     
+    // CRITICAL: Mark structural change BEFORE starting drag to prevent realtime interference
+    if (markStructuralChange) {
+      markStructuralChange();
+      console.log('🏗️ Marked structural change at drag start');
+    }
+    
     setActiveId(active.id);
     setDraggedItemIndex(activeIndex);
     setIsDraggingMultiple(draggedIds.length > 1);
@@ -257,12 +263,8 @@ export const useDragAndDrop = (
         saveUndoState(items, columns, title, actionDescription);
       }
       
-      // Mark as structural change before setting items
-      if (markStructuralChange) {
-        markStructuralChange();
-      }
-      
       setItems(newItems);
+      console.log('🏗️ Drag operation completed, items updated');
       
     } catch (error) {
       console.warn('@dnd-kit drag and drop error:', error);

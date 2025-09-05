@@ -47,6 +47,9 @@ export const useSimplifiedRundownState = () => {
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
   
+  // Track active drag operation to block realtime updates
+  const activeDragOperationRef = useRef(false);
+  
   // Track cooldown after teammate updates to prevent ping-pong
   const remoteSaveCooldownRef = useRef<number>(0);
   
@@ -301,6 +304,13 @@ export const useSimplifiedRundownState = () => {
       // CRITICAL: Don't process ANY updates while user is actively typing
       if (isTypingActive()) {
         console.log('⏸️ Blocking realtime update - user is typing');
+        deferredUpdateRef.current = updatedRundown;
+        return;
+      }
+      
+      // CRITICAL: Block ALL updates during active drag operations
+      if (activeDragOperationRef.current) {
+        console.log('⏸️ Blocking realtime update - drag operation in progress');
         deferredUpdateRef.current = updatedRundown;
         return;
       }
@@ -676,6 +686,44 @@ export const useSimplifiedRundownState = () => {
       actions.updateItem(id, { [updateField]: value });
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
+
+  // Mark field as recently edited helper
+  const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
+    const now = Date.now();
+    recentlyEditedFieldsRef.current.set(fieldKey, now);
+    console.log(`🛡️ Field marked as recently edited: ${fieldKey}`);
+  }, []);
+
+  // Mark structural change start to block realtime updates
+  const markStructuralChange = useCallback(() => {
+    console.log('🏗️ Marking structural change - blocking realtime updates');
+    activeDragOperationRef.current = true;
+    pendingStructuralChangeRef.current = true;
+    
+    // Auto-clear after 10 seconds as safety net
+    setTimeout(() => {
+      if (activeDragOperationRef.current) {
+        console.log('🏗️ Auto-clearing structural change flag (safety timeout)');
+        activeDragOperationRef.current = false;
+        pendingStructuralChangeRef.current = false;
+      }
+    }, 10000);
+  }, []);
+
+  // Clear structural change flag
+  const clearStructuralChange = useCallback(() => {
+    console.log('🏗️ Clearing structural change flag');
+    activeDragOperationRef.current = false;
+    pendingStructuralChangeRef.current = false;
+    
+    // Process any deferred updates now that structural operation is complete
+    if (deferredUpdateRef.current && isInitialized && !isTypingActive()) {
+      setTimeout(() => {
+        console.log('🚪 Processing deferred update after structural change cleared');
+        realtimeConnection.performCatchupSync();
+      }, 100);
+    }
+  }, [isInitialized, isTypingActive, realtimeConnection]);
 
   // Update current time every second
   useEffect(() => {
@@ -1215,6 +1263,13 @@ export const useSimplifiedRundownState = () => {
     },
     
     // Autosave typing guard
-    markActiveTyping
+    markActiveTyping,
+    
+    // Field tracking
+    markFieldAsRecentlyEdited,
+    
+    // Structural change handling
+    markStructuralChange,
+    clearStructuralChange
   };
 };
