@@ -71,7 +71,10 @@ const Teleprompter = () => {
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     onRundownUpdate: (updatedRundown) => {
-      if (updatedRundown && !saveState?.isSaving) {
+      // Always accept remote updates to ensure real-time sync
+      // Remove the isSaving guard that was blocking updates
+      if (updatedRundown) {
+        console.log('📥 Teleprompter receiving real-time update from team');
         setRundownData({
           title: updatedRundown.title || 'Untitled Rundown',
           items: updatedRundown.items || []
@@ -96,7 +99,9 @@ const Teleprompter = () => {
       }
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
-    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd
+    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd,
+    // CRITICAL: Pass trackOwnUpdate to integrate with real-time system
+    trackOwnUpdate: trackOwnUpdate
   });
 
   // Load rundown data with optional authentication (read-only if not authenticated)

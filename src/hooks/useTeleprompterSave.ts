@@ -14,9 +14,10 @@ interface UseTeleprompterSaveProps {
   onSaveSuccess?: (itemId: string, script: string) => void;
   onSaveStart?: () => void;
   onSaveEnd?: () => void;
+  trackOwnUpdate?: (timestamp: string) => void;
 }
 
-export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd }: UseTeleprompterSaveProps) => {
+export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
   const [saveState, setSaveState] = useState<SaveState>({
     isSaving: false,
     lastSaved: null,
@@ -63,13 +64,21 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         item.id === itemId ? { ...item, script } : item
       );
 
+      const updateTimestamp = new Date().toISOString();
+      
       const { error } = await supabase
         .from('rundowns')
         .update({ 
           items: updatedItems,
-          updated_at: new Date().toISOString()
+          updated_at: updateTimestamp
         })
         .eq('id', rundownId);
+      
+      // CRITICAL: Track this as our own update to prevent feedback loops
+      if (!error && trackOwnUpdate) {
+        console.log('📝 Teleprompter tracking own update:', updateTimestamp);
+        trackOwnUpdate(updateTimestamp);
+      }
 
       if (error) {
         throw error;
