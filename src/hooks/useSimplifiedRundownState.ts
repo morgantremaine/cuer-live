@@ -47,8 +47,8 @@ export const useSimplifiedRundownState = () => {
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
   
-  // Track active drag operation to block realtime updates
-  const activeDragOperationRef = useRef(false);
+  // Track active structural operations to block realtime updates
+  const activeStructuralOperationRef = useRef(false);
   
   // Track cooldown after teammate updates to prevent ping-pong
   const remoteSaveCooldownRef = useRef<number>(0);
@@ -308,9 +308,9 @@ export const useSimplifiedRundownState = () => {
         return;
       }
       
-      // CRITICAL: Block ALL updates during active drag operations
-      if (activeDragOperationRef.current) {
-        console.log('⏸️ Blocking realtime update - drag operation in progress');
+      // CRITICAL: Block ALL updates during active structural operations
+      if (activeStructuralOperationRef.current) {
+        console.log('⏸️ Blocking realtime update - structural operation in progress');
         deferredUpdateRef.current = updatedRundown;
         return;
       }
@@ -697,14 +697,14 @@ export const useSimplifiedRundownState = () => {
   // Mark structural change start to block realtime updates
   const markStructuralChange = useCallback(() => {
     console.log('🏗️ Marking structural change - blocking realtime updates');
-    activeDragOperationRef.current = true;
+    activeStructuralOperationRef.current = true;
     pendingStructuralChangeRef.current = true;
     
     // Auto-clear after 10 seconds as safety net
     setTimeout(() => {
-      if (activeDragOperationRef.current) {
+      if (activeStructuralOperationRef.current) {
         console.log('🏗️ Auto-clearing structural change flag (safety timeout)');
-        activeDragOperationRef.current = false;
+        activeStructuralOperationRef.current = false;
         pendingStructuralChangeRef.current = false;
       }
     }, 10000);
@@ -713,7 +713,7 @@ export const useSimplifiedRundownState = () => {
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
     console.log('🏗️ Clearing structural change flag');
-    activeDragOperationRef.current = false;
+    activeStructuralOperationRef.current = false;
     pendingStructuralChangeRef.current = false;
     
     // Process any deferred updates now that structural operation is complete
