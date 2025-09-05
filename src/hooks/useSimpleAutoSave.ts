@@ -32,7 +32,7 @@ export const useSimpleAutoSave = (
   
   // Enhanced idle-based autosave system with keystroke journal integration
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 1500; // Reduced to 1.5s for faster saves after typing stops
+  const typingIdleMs = 2000; // Back to a safe 2s - the original working timeout
   const maxSaveDelay = 8000; // Increased max delay to 8s
   const microResaveMs = 350; // Micro-resave delay increased to 350ms
   const saveInProgressRef = useRef(false);
@@ -165,7 +165,6 @@ export const useSimpleAutoSave = (
     const now = Date.now();
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
-    microResaveAttemptsRef.current = 0; // reset attempts on new typing
     
     console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
@@ -212,32 +211,16 @@ export const useSimpleAutoSave = (
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
 
-  // Schedule micro-resave for when content changes during save (with guards)
+  // Simple micro-resave - no complex guards, just like the original
   const scheduleMicroResave = useCallback(() => {
-    // If user is actively typing, let the typing handler manage next save
-    if (isTypingActive()) {
-      console.log('⌨️ Micro-resave skipped - user typing; typing handler will schedule save');
-      return;
-    }
-
-    // Prevent infinite loops
-    if (microResaveAttemptsRef.current >= 3) {
-      console.warn('🧯 Micro-resave: max attempts reached - suppressing further retries');
-      return;
-    }
-    microResaveAttemptsRef.current += 1;
-
     if (microResaveTimeoutRef.current) {
       clearTimeout(microResaveTimeoutRef.current);
     }
-
-    // Add small backoff per attempt to allow state to settle
-    const delay = microResaveMs + microResaveAttemptsRef.current * 150;
     microResaveTimeoutRef.current = setTimeout(() => {
-      console.log('🔄 Micro-resave attempt', microResaveAttemptsRef.current, '- capturing changes made during previous save');
+      console.log('🔄 Micro-resave: capturing changes made during previous save');
       performSaveRef.current?.();
-    }, delay);
-  }, [isTypingActive, microResaveMs]);
+    }, microResaveMs);
+  }, [microResaveMs]);
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false): Promise<void> => {
@@ -392,9 +375,9 @@ export const useSimpleAutoSave = (
           const currentSignatureAfterSave = createContentSignature();
           if (currentSignatureAfterSave === finalSignature) {
             lastSavedRef.current = finalSignature;
-            microResaveAttemptsRef.current = 0; // reset attempts on success
             console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
           } else {
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
             scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
@@ -576,9 +559,9 @@ export const useSimpleAutoSave = (
           const currentSignatureAfterSave = createContentSignature();
           if (currentSignatureAfterSave === finalSignature) {
             lastSavedRef.current = finalSignature;
-            microResaveAttemptsRef.current = 0; // reset attempts on success
             console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
           } else {
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
             scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
@@ -595,10 +578,9 @@ export const useSimpleAutoSave = (
           const currentSignatureAfterSave = createContentSignature();
           if (currentSignatureAfterSave === finalSignature) {
             lastSavedRef.current = finalSignature;
-            microResaveAttemptsRef.current = 0; // reset attempts on success
             console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
           } else {
-            // Typing-aware micro-resave scheduling
+            console.log('⚠️ Content changed during save - scheduling micro-resave');
             scheduleMicroResave();
           }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
