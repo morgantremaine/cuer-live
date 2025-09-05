@@ -374,7 +374,7 @@ const Dashboard = () => {
               <DashboardRundownGrid
                 title={folderTitle}
                 rundowns={filteredRundowns}
-                loading={loading && savedRundowns.length > 0}
+                loading={loading}
                 onOpen={handleOpenRundown}
                 onDelete={handleDeleteRundown}
                 onArchive={handleArchiveRundown}
