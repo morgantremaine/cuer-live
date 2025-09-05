@@ -850,7 +850,6 @@ export const useSimplifiedRundownState = () => {
 
   // Handle data refreshing from resumption
   const handleDataRefresh = useCallback((latestData: any) => {
-    
     // Update timestamp first
     if (latestData.updated_at) {
       setLastKnownTimestamp(latestData.updated_at);
@@ -860,22 +859,55 @@ export const useSimplifiedRundownState = () => {
     // Get currently protected fields to preserve local edits
     const protectedFields = getProtectedFields();
     
-    // Load new data directly
+    // If there are protected fields (typing/focused/recently edited), do a granular merge
+    if (protectedFields.size > 0) {
+      const mergedItems = (latestData.items || []).map((remoteItem: any) => {
+        const localItem = state.items.find(item => item.id === remoteItem.id);
+        if (!localItem) return remoteItem;
+        const merged = { ...remoteItem };
+        protectedFields.forEach(fieldKey => {
+          if (fieldKey.startsWith(remoteItem.id + '-')) {
+            const field = fieldKey.substring(remoteItem.id.length + 1);
+            if (field.startsWith('customFields.')) {
+              const customFieldKey = field.replace('customFields.', '');
+              merged.customFields = merged.customFields || {};
+              merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] ?? merged.customFields?.[customFieldKey];
+            } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
+              (merged as any)[field] = (localItem as any)[field];
+            }
+          }
+        });
+        return merged;
+      });
+      
+      actions.loadState({
+        items: mergedItems,
+        title: protectedFields.has('title') ? state.title : latestData.title,
+        startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
+        timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
+        showDate: protectedFields.has('showDate') ? state.showDate : (latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null),
+        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes
+      });
+      return;
+    }
+    
+    // No protected fields - safe to apply latest data
     actions.loadState({
       items: latestData.items || [],
       title: latestData.title,
       startTime: latestData.start_time,
       timezone: latestData.timezone,
-      showDate: latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null
+      showDate: latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null,
+      externalNotes: latestData.external_notes
     });
-  }, [actions, getProtectedFields]);
+  }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
-  // Set up resumption handling - disable if pending structural changes
+  // Set up resumption handling - disable if pending structural changes or user is typing
   useRundownResumption({
     rundownId,
     onDataRefresh: handleDataRefresh,
     lastKnownTimestamp,
-    enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current,
+    enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
     updateLastKnownTimestamp: setLastKnownTimestamp
   });
 
