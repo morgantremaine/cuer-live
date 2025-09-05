@@ -393,21 +393,23 @@ export const useSimpleAutoSave = (
             // Register this save to prevent false positives in resumption
             registerRecentSave(newRundown.id, normalizedTimestamp);
           }
+          // Update lastSavedRef immediately to prevent retry race condition
+          lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef immediately after NEW rundown save:', finalSignature.length);
+          
           // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave === finalSignature) {
-              lastSavedRef.current = finalSignature;
-              console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
-            } else {
+            if (currentSignatureAfterSave !== finalSignature) {
               // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
               if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
+                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
-                lastSavedRef.current = finalSignature;
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
+                lastSavedRef.current = currentSignatureAfterSave;
               }
             }
           }, 500); // Increased delay to let React state settle completely
@@ -586,21 +588,24 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
+          
+          // Update lastSavedRef immediately to prevent retry race condition
+          lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef immediately after UPDATE rundown save (post-conflict):', finalSignature.length);
+          
           // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave === finalSignature) {
-              lastSavedRef.current = finalSignature;
-              console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
-            } else {
+            if (currentSignatureAfterSave !== finalSignature) {
               // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
               if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
+                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
-                lastSavedRef.current = finalSignature;
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
+                lastSavedRef.current = currentSignatureAfterSave;
               }
             }
           }, 500); // Increased delay to let React state settle completely
@@ -614,21 +619,24 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
+          
+          // Update lastSavedRef immediately to prevent retry race condition
+          lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef immediately after UPDATE rundown save:', finalSignature.length);
+          
           // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave === finalSignature) {
-              lastSavedRef.current = finalSignature;
-              console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
-            } else {
+            if (currentSignatureAfterSave !== finalSignature) {
               // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
               if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
+                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
-                lastSavedRef.current = finalSignature;
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
+                lastSavedRef.current = currentSignatureAfterSave;
               }
             }
           }, 500); // Increased delay to let React state settle completely
