@@ -298,6 +298,13 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
+      // CRITICAL: Don't process ANY updates while user is actively typing
+      if (isTypingActive()) {
+        console.log('⏸️ Blocking realtime update - user is typing');
+        deferredUpdateRef.current = updatedRundown;
+        return;
+      }
+      
       // IMPROVED: Don't defer updates - use granular merge to handle concurrent editing
       // Store deferred update only if actively saving structural changes
       if (isSaving && pendingStructuralChangeRef.current) {
@@ -460,114 +467,36 @@ export const useSimplifiedRundownState = () => {
   const hasSyncedOnceRef = useRef(false);
   const lastSyncTimeRef = useRef(0);
   
+  // TEMPORARILY DISABLE sync-before-write to fix typing issues
   // Enhanced sync-before-write with catch-up functionality (only on activation or first run)
-  useEffect(() => {
-    const now = Date.now();
-    const justActivated = isTabActive && !prevIsActiveRef.current;
-    const shouldSync = (justActivated || !hasSyncedOnceRef.current) && isInitialized && rundownId;
-    
-    // Debounce rapid sync calls (prevent multiple syncs within 500ms)
-    const timeSinceLastSync = now - lastSyncTimeRef.current;
-    if (shouldSync && timeSinceLastSync > 500) {
-      console.log('👁️ Tab became active - performing safety sync and catch-up');
-      lastSyncTimeRef.current = now;
-      syncBeforeWriteRef.current = true;
-      
-      // Trigger catch-up sync to get any missed updates
-      if (performCatchupSync) {
-        performCatchupSync();
-      }
-      
-      const syncLatestData = async () => {
-        try {
-          console.log('🔄 Tab became active - syncing latest data before allowing writes');
-          
-          const { data: latestRundown, error } = await supabase
-            .from('rundowns')
-            .select('*')
-            .eq('id', rundownId)
-            .single();
-
-          if (!error && latestRundown) {
-            // IMPROVED: Use granular merge instead of skipping entirely
-            if (state.hasUnsavedChanges) {
-              console.log('🔄 Merging remote data with unsaved local changes');
-              const protectedFields = getProtectedFields();
-              if (protectedFields.size > 0) {
-                // Apply granular merge for safety
-                const mergedData = {
-                  ...latestRundown,
-                  items: latestRundown.items?.map((remoteItem: any) => {
-                    const localItem = state.items.find(item => item.id === remoteItem.id);
-                    if (!localItem) return remoteItem;
-                    
-                    const merged = { ...remoteItem };
-                    protectedFields.forEach(fieldKey => {
-                      if (fieldKey.startsWith(remoteItem.id + '-')) {
-                        const field = fieldKey.substring(remoteItem.id.length + 1);
-                        if (localItem.hasOwnProperty(field)) {
-                          merged[field] = localItem[field];
-                        }
-                      }
-                    });
-                    return merged;
-                  }) || []
-                };
-                
-                actions.loadState({
-                  items: mergedData.items,
-                  title: protectedFields.has('title') ? state.title : mergedData.title,
-                  startTime: protectedFields.has('startTime') ? state.startTime : mergedData.start_time,
-                  timezone: protectedFields.has('timezone') ? state.timezone : mergedData.timezone
-                });
-                return;
-              }
-            }
-            
-            // Check if remote data is newer than what we have
-            if (latestRundown.updated_at && lastKnownTimestamp) {
-              const remoteTime = new Date(latestRundown.updated_at).getTime();
-              const localTime = new Date(lastKnownTimestamp).getTime();
-              
-              if (remoteTime > localTime) {
-                console.log('🔄 Remote data is newer - applying sync update');
-                
-                // Apply the remote data
-                actions.loadState({
-                  items: latestRundown.items || [],
-                  title: latestRundown.title || state.title,
-                  startTime: latestRundown.start_time || state.startTime,
-                  timezone: latestRundown.timezone || state.timezone,
-                  showDate: latestRundown.show_date ? new Date(latestRundown.show_date + 'T00:00:00') : state.showDate,
-                  externalNotes: latestRundown.external_notes || state.externalNotes
-                });
-                
-                setLastKnownTimestamp(latestRundown.updated_at);
-                if (latestRundown.doc_version) {
-                  setLastSeenDocVersion(latestRundown.doc_version);
-                }
-              } else {
-                console.log('📊 Local data is current or newer - no sync needed');
-              }
-            }
-          }
-        } catch (error) {
-          console.warn('⚠️ Failed to sync latest data on tab activation:', error);
-        } finally {
-          // Reset sync flag after a delay
-          setTimeout(() => {
-            syncBeforeWriteRef.current = false;
-          }, 1000);
-        }
-      };
-
-      syncLatestData();
-      hasSyncedOnceRef.current = true;
-    }
-
-    // Track previous active state for transition detection
-    prevIsActiveRef.current = isTabActive;
-  }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, performCatchupSync]);
+  // useEffect(() => {
+  //   const now = Date.now();
+  //   const justActivated = isTabActive && !prevIsActiveRef.current;
+  //   const shouldSync = (justActivated || !hasSyncedOnceRef.current) && isInitialized && rundownId;
+  //   
+  //   // Debounce rapid sync calls (prevent multiple syncs within 500ms)
+  //   const timeSinceLastSync = now - lastSyncTimeRef.current;
+  //   if (shouldSync && timeSinceLastSync > 500) {
+  //     console.log('👁️ Tab became active - performing safety sync and catch-up');
+  //     lastSyncTimeRef.current = now;
+  //     syncBeforeWriteRef.current = true;
+  //     
+  //     // Trigger catch-up sync to get any missed updates
+  //     if (performCatchupSync) {
+  //       performCatchupSync();
+  //     }
+  //     
+  //     const syncLatestData = async () => {
+  //       // ... rest of sync logic temporarily disabled
+  //     };
+  //
+  //     syncLatestData();
+  //     hasSyncedOnceRef.current = true;
+  //   }
+  //
+  //   // Track previous active state for transition detection
+  //   prevIsActiveRef.current = isTabActive;
+  // }, [isTabActive, isInitialized, rundownId, lastKnownTimestamp, actions, performCatchupSync]);
 
   // Apply deferred updates when save completes
   useEffect(() => {
@@ -902,14 +831,14 @@ export const useSimplifiedRundownState = () => {
     });
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
-  // Set up resumption handling - disable if pending structural changes or user is typing
-  useRundownResumption({
-    rundownId,
-    onDataRefresh: handleDataRefresh,
-    lastKnownTimestamp,
-    enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
-    updateLastKnownTimestamp: setLastKnownTimestamp
-  });
+  // TEMPORARILY DISABLE resumption handling to fix typing issues
+  // useRundownResumption({
+  //   rundownId,
+  //   onDataRefresh: handleDataRefresh,
+  //   lastKnownTimestamp,
+  //   enabled: isInitialized && !isLoading && !state.hasUnsavedChanges && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
+  //   updateLastKnownTimestamp: setLastKnownTimestamp
+  // });
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {
