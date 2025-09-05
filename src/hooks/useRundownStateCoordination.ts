@@ -184,7 +184,7 @@ export const useRundownStateCoordination = () => {
   const userIntentManager = useEnhancedUserIntentManager(
     interactions.selectedRows,
     uiState.editingCell,
-    interactions.hasClipboardData,
+    interactions.hasClipboardData(), // Call the function to get boolean
     interactions.draggedItemIndex,
     simplifiedState.hasUnsavedChanges,
     () => false // Simplified typing checker for now
