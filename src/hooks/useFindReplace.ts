@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useDirectRundownState } from './useDirectRundownState';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { RundownItem } from '@/types/rundown';
 
 export interface FindReplaceOptions {
@@ -11,14 +11,15 @@ export interface FindReplaceOptions {
 }
 
 export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void, items?: any[]) => {
-  const directState = useDirectRundownState();
+  // FIXED: Use coordination pattern to prevent hook duplication
+  const { coreState } = useRundownStateCoordination();
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
     totalMatches: number;
   }>({ matches: [], totalMatches: 0 });
 
-  // Use provided items or fall back to directState items
-  const currentItems = items || directState.items;
+  // Use provided items or fall back to coreState items
+  const currentItems = items || coreState.items;
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, fields } = options;
@@ -155,7 +156,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
         if (onUpdateItem) {
           onUpdateItem(targetItem.id, currentMatch.field, newValue);
         } else {
-          directState.updateItem(targetItem.id, currentMatch.field, newValue);
+          coreState.updateItem(targetItem.id, currentMatch.field, newValue);
         }
         
         return { replacements: 1 };
@@ -163,7 +164,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     }
     
     return { replacements: 0 };
-  }, [currentItems, onUpdateItem, directState.updateItem, matchCapitalization, lastSearchResults.matches]);
+  }, [currentItems, onUpdateItem, coreState.updateItem, matchCapitalization, lastSearchResults.matches]);
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, replaceTerm, fields, caseSensitive } = options;
@@ -216,7 +217,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
             if (onUpdateItem) {
               onUpdateItem(item.id, field, newValue);
             } else {
-              directState.updateItem(item.id, field, newValue);
+              coreState.updateItem(item.id, field, newValue);
             }
             
             totalReplacements += beforeMatches.length;
@@ -229,7 +230,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [currentItems, onUpdateItem, directState.updateItem, matchCapitalization]);
+  }, [currentItems, onUpdateItem, coreState.updateItem, matchCapitalization]);
 
   const clearResults = useCallback(() => {
     setLastSearchResults({ matches: [], totalMatches: 0 });
