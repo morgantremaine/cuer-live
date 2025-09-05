@@ -50,7 +50,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     }
   }, [rundownId]);
 
-  // Retry mechanism with exponential backoff
+  // Retry mechanism with exponential backoff and optimistic concurrency
   const retrySave = useCallback(async (
     itemId: string, 
     script: string, 
@@ -61,30 +61,66 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     const baseDelay = 1000; // 1 second
 
     try {
-      // Update the database with retry logic
+      // Update the database with retry logic and optimistic concurrency
       const updatedItems = rundownData.items.map((item: any) =>
         item.id === itemId ? { ...item, script } : item
       );
 
       const updateTimestamp = new Date().toISOString();
       
-      const { error } = await supabase
+      // Use optimistic concurrency with doc_version to prevent overwrites
+      const { data, error } = await supabase
         .from('rundowns')
         .update({ 
           items: updatedItems,
           updated_at: updateTimestamp,
           last_updated_by: user?.id || null
         })
-        .eq('id', rundownId);
+        .eq('id', rundownId)
+        .eq('doc_version', rundownData.doc_version) // Optimistic concurrency guard
+        .select('doc_version, updated_at');
+
+      // Handle version conflict
+      if (!data || data.length === 0) {
+        // Version conflict detected - fetch latest data and merge
+        console.warn('📝 Teleprompter version conflict - merging with latest data');
+        
+        const { data: latestData, error: fetchError } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .single();
+          
+        if (fetchError || !latestData) {
+          throw fetchError || new Error('Failed to fetch latest rundown data for merge');
+        }
+        
+        // Merge script change with latest items
+        const mergedItems = latestData.items.map((item: any) =>
+          item.id === itemId ? { ...item, script } : item
+        );
+        
+        // Retry with latest doc_version
+        const { data: retryData, error: retryError } = await supabase
+          .from('rundowns')
+          .update({ 
+            items: mergedItems,
+            updated_at: updateTimestamp,
+            last_updated_by: user?.id || null
+          })
+          .eq('id', rundownId)
+          .eq('doc_version', latestData.doc_version)
+          .select('doc_version, updated_at');
+          
+        if (retryError || !retryData || retryData.length === 0) {
+          throw retryError || new Error('Failed to save after merge attempt');
+        }
+      }
       
       // CRITICAL: Track this as our own update to prevent feedback loops
-      if (!error && trackOwnUpdate) {
+      if (trackOwnUpdate) {
         console.log('📝 Teleprompter tracking own update:', updateTimestamp);
         trackOwnUpdate(updateTimestamp);
-      }
-
-      if (error) {
-        throw error;
       }
 
       return true;

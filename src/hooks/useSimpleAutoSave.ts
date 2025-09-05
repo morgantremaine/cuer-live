@@ -641,7 +641,6 @@ export const useSimpleAutoSave = (
             }
           }, 500); // Increased delay to let React state settle completely
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
-          onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
       }
     } catch (error) {

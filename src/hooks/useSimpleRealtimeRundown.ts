@@ -77,7 +77,7 @@ export const useSimpleRealtimeRundown = ({
     
     // Only these fields count as "content" - changes to other fields are meta-only
     const contentFields = [
-      'items', 'title', 'start_time', 'timezone', 'description', 'external_notes'
+      'items', 'title', 'start_time', 'timezone', 'description', 'external_notes', 'show_date'
     ];
     
     for (const field of contentFields) {
