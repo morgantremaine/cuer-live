@@ -120,7 +120,8 @@ const LayoutManager = ({
   // Helper function to count visible columns in a layout
   const getVisibleColumnCount = (layout: any) => {
     if (!Array.isArray(layout.columns)) return 0;
-    return layout.columns.filter(col => col.visible !== false).length;
+    // Backward-compat: honor both isVisible and visible flags; treat missing as visible
+    return layout.columns.filter(col => !(col?.isVisible === false || col?.visible === false)).length;
   };
 
   const isUserLayout = (layout: any) => {
