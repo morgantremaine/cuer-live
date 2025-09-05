@@ -98,7 +98,7 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true }: UseKey
     }
   }, [enabled, rundownId, state, createSnapshotSignature, addJournalEntry]);
 
-  // Track typing activity
+  // Track typing activity - don't auto-update snapshot to prevent cascade
   const recordTyping = useCallback((description: string = 'typing activity') => {
     if (!enabled || !rundownId) return;
 
@@ -108,9 +108,9 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true }: UseKey
       description
     });
 
-    // Update snapshot on typing to capture latest state
-    updateSnapshot(description);
-  }, [enabled, rundownId, addJournalEntry, updateSnapshot]);
+    // Don't auto-update snapshot on typing to prevent save cascades
+    // Snapshot will be updated when state actually changes via useEffect
+  }, [enabled, rundownId, addJournalEntry]);
 
   // Record edit operations (structural changes)
   const recordEdit = useCallback((description: string) => {

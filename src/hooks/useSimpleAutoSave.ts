@@ -161,7 +161,7 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Enhanced typing activity tracker with keystroke journal integration
+  // Simplified typing activity tracker - single save mechanism
   const markActiveTyping = useCallback(() => {
     const now = Date.now();
     lastEditAtRef.current = now;
@@ -170,42 +170,36 @@ export const useSimpleAutoSave = (
     
     console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
-    // Record typing in journal for debugging and recovery
+    // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
     keystrokeJournal.recordTyping('user typing activity');
     
     // Record that this save will be initiated while tab is active
     saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
     
-    // Clear any existing safety save timeout when new typing occurs
+    // Clear all existing timeouts to prevent multiple saves
     if (postTypingSafetyTimeoutRef.current) {
       clearTimeout(postTypingSafetyTimeoutRef.current);
     }
-    
-    // Always reschedule save when user types
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
+    if (maxDelayTimeoutRef.current) {
+      clearTimeout(maxDelayTimeoutRef.current);
+      maxDelayTimeoutRef.current = null;
+    }
     
-    // Schedule main save after idle period
+    // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       console.log('⏰ AutoSave: idle timeout reached - triggering save');
       performSave();
     }, typingIdleMs);
     
-    // Schedule safety save that will fire regardless of main save status
-    postTypingSafetyTimeoutRef.current = setTimeout(() => {
-      console.log('🛡️ AutoSave: post-typing safety save - capturing any missed content');
-      performSave();
-    }, typingIdleMs + 2000);
-    
-    // Ensure a max-delay forced save will happen even during continuous typing
-    if (!maxDelayTimeoutRef.current) {
-      maxDelayTimeoutRef.current = setTimeout(() => {
-        console.log('⏲️ AutoSave: max delay reached - forcing save');
-        performSave(true);
-        maxDelayTimeoutRef.current = null;
-      }, maxSaveDelay);
-    }
+    // Max-delay forced save only if user keeps typing continuously
+    maxDelayTimeoutRef.current = setTimeout(() => {
+      console.log('⏲️ AutoSave: max delay reached - forcing save');
+      performSave(true);
+      maxDelayTimeoutRef.current = null;
+    }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal]);
 
   // Check if user is currently typing
@@ -399,24 +393,24 @@ export const useSimpleAutoSave = (
             // Register this save to prevent false positives in resumption
             registerRecentSave(newRundown.id, normalizedTimestamp);
           }
-          // Delay signature comparison to avoid React state race conditions
+          // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
             if (currentSignatureAfterSave === finalSignature) {
               lastSavedRef.current = finalSignature;
               console.log('📝 Setting lastSavedRef after NEW rundown save:', finalSignature.length);
             } else {
-              // Only trigger micro-resave if we're not already in typing mode
+              // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > typingIdleMs) {
+              if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but user is typing - skipping micro-resave');
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
                 lastSavedRef.current = finalSignature;
               }
             }
-          }, 150); // Small delay to let React state settle
+          }, 500); // Increased delay to let React state settle completely
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
@@ -592,24 +586,24 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
-          // Delay signature comparison to avoid React state race conditions
+          // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
             if (currentSignatureAfterSave === finalSignature) {
               lastSavedRef.current = finalSignature;
               console.log('📝 Setting lastSavedRef after UPDATE rundown save (post-conflict):', finalSignature.length);
             } else {
-              // Only trigger micro-resave if we're not already in typing mode
+              // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > typingIdleMs) {
+              if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but user is typing - skipping micro-resave');
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
                 lastSavedRef.current = finalSignature;
               }
             }
-          }, 150); // Small delay to let React state settle
+          }, 500); // Increased delay to let React state settle completely
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         } else {
           const updated = Array.isArray(upd1) ? upd1[0] : upd1;
@@ -620,24 +614,24 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
-          // Delay signature comparison to avoid React state race conditions
+          // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
             if (currentSignatureAfterSave === finalSignature) {
               lastSavedRef.current = finalSignature;
               console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
             } else {
-              // Only trigger micro-resave if we're not already in typing mode
+              // Be more conservative about micro-resaves - only trigger if significant time has passed
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > typingIdleMs) {
+              if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
                 scheduleMicroResave();
               } else {
-                console.log('ℹ️ Content changed during save but user is typing - skipping micro-resave');
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved without micro-resave');
                 lastSavedRef.current = finalSignature;
               }
             }
-          }, 150); // Small delay to let React state settle
+          }, 500); // Increased delay to let React state settle completely
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
