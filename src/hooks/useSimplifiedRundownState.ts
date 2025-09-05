@@ -7,7 +7,7 @@ import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
-import { useRundownResumption } from './useRundownResumption';
+
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
 import { Column } from './useColumnsManager';
@@ -831,15 +831,60 @@ export const useSimplifiedRundownState = () => {
     });
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
-  // Tab resumption - fetch latest data when returning to tab
-  // Only enabled when not actively typing/editing to prevent interference
-  useRundownResumption({
-    rundownId,
-    onDataRefresh: handleDataRefresh,
-    lastKnownTimestamp,
-    enabled: isInitialized && !isLoading && !isSaving && !pendingStructuralChangeRef.current && !isTypingActive(),
-    updateLastKnownTimestamp: setLastKnownTimestamp
-  });
+  // Silent refresh on tab activation: fetch latest without saving
+  useEffect(() => {
+    const now = Date.now();
+    const justActivated = isTabActive && !prevIsActiveRef.current;
+    const shouldSync = (
+      (justActivated || !hasSyncedOnceRef.current) &&
+      isInitialized && !isLoading && rundownId &&
+      !isTypingActive() && !isSaving && !pendingStructuralChangeRef.current
+    );
+
+    // Debounce rapid focus/visibility flaps
+    const timeSinceLast = now - lastSyncTimeRef.current;
+    if (!shouldSync || timeSinceLast <= 300) {
+      prevIsActiveRef.current = isTabActive;
+      return;
+    }
+
+    lastSyncTimeRef.current = now;
+    let cancelled = false;
+    console.log('👁️ Tab active - performing silent refresh for latest rundown');
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId!)
+          .single();
+        
+        if (cancelled || error || !data) return;
+
+        const serverDoc = (data as any).doc_version || 0;
+        const serverTs = (data as any).updated_at as string | null;
+        const newerByVersion = serverDoc > lastSeenDocVersion;
+        const newerByTime = serverTs && (!lastKnownTimestamp || new Date(serverTs).getTime() > new Date(lastKnownTimestamp).getTime());
+
+        if (newerByVersion || newerByTime) {
+          // Apply latest without triggering save; reducer marks saved
+          handleDataRefresh(data);
+          if (serverTs) setLastKnownTimestamp(serverTs);
+          if (serverDoc) setLastSeenDocVersion(serverDoc);
+          // Brief cooldown to avoid ping-pong saves after refresh
+          remoteSaveCooldownRef.current = Date.now() + 800;
+        }
+      } catch (e) {
+        console.error('❌ Silent refresh failed:', e);
+      } finally {
+        hasSyncedOnceRef.current = true;
+      }
+    })();
+
+    prevIsActiveRef.current = isTabActive;
+    return () => { cancelled = true; };
+  }, [isTabActive, isInitialized, isLoading, rundownId, isTypingActive, isSaving, lastSeenDocVersion, lastKnownTimestamp, handleDataRefresh]);
 
   useEffect(() => {
     if (!rundownId && !isInitialized) {
