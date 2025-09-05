@@ -69,6 +69,11 @@ const Teleprompter = () => {
     };
   }, [rundownData?.title]);
 
+  // Track tab visibility/focus for silent refresh functionality
+  const [isTabActive, setIsTabActive] = useState(true);
+  const lastSyncTimeRef = useRef(0);
+  const prevIsActiveRef = useRef(true);
+
   // Enhanced real-time updates with doc version tracking
   const { isConnected: isRealtimeConnected, trackOwnUpdate } = useSimpleRealtimeRundown({
     rundownId: rundownId!,
@@ -91,6 +96,77 @@ const Teleprompter = () => {
       }
     }
   });
+
+  // Silent refresh when tab becomes active (same as main rundown)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabActive(!document.hidden);
+    };
+    
+    const handleFocusChange = () => {
+      setIsTabActive(document.hasFocus());
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocusChange);
+    window.addEventListener('blur', handleFocusChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocusChange);
+      window.removeEventListener('blur', handleFocusChange);
+    };
+  }, []);
+
+  // Perform silent refresh when tab becomes active
+  useEffect(() => {
+    if (!rundownId || !user) return;
+
+    // Only trigger on active transitions (not when going inactive)
+    const shouldSync = isTabActive && !prevIsActiveRef.current;
+    prevIsActiveRef.current = isTabActive;
+
+    if (!shouldSync) return;
+
+    // Debounce rapid focus/visibility flaps
+    const now = Date.now();
+    const timeSinceLast = now - lastSyncTimeRef.current;
+    if (timeSinceLast <= 300) return;
+
+    lastSyncTimeRef.current = now;
+    console.log('👁️ Teleprompter tab active - performing silent refresh for latest rundown');
+
+    const performSilentRefresh = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .single();
+        
+        if (!error && data) {
+          console.log('🔄 Teleprompter silent refresh: applying newer data from server', {
+            serverDoc: data.doc_version,
+            serverTs: data.updated_at
+          });
+          
+          setRundownData({
+            title: data.title || 'Untitled Rundown',
+            items: data.items || []
+          });
+          
+          if (data.doc_version) {
+            setLastSeenDocVersion(data.doc_version);
+            watchdogRef.current?.updateLastSeen(data.doc_version, data.updated_at);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Teleprompter silent refresh failed:', error);
+      }
+    };
+
+    performSilentRefresh();
+  }, [isTabActive, rundownId, user]);
 
   // Enhanced save system with realtime collaboration
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
