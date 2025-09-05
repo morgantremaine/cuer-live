@@ -631,6 +631,9 @@ export const useSimplifiedRundownState = () => {
     recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
     
     if (isTypingField) {
+      // CRITICAL: Tell autosave system that user is actively typing
+      markActiveTyping();
+      
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
         typingSessionRef.current = {

@@ -32,7 +32,7 @@ export const useSimpleAutoSave = (
   
   // Enhanced idle-based autosave system with keystroke journal integration
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 2200; // Increased to 2.2s for better typing capture
+  const typingIdleMs = 3500; // Increased to 3.5s for safer typing capture
   const maxSaveDelay = 8000; // Increased max delay to 8s
   const microResaveMs = 350; // Micro-resave delay increased to 350ms
   const saveInProgressRef = useRef(false);
