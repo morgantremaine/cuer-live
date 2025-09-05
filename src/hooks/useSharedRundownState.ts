@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
+import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -19,6 +20,8 @@ export const useSharedRundownState = () => {
     lastUpdated?: string;
     showcallerState?: any;
     visibility?: string;
+    docVersion?: number;
+    lastUpdatedBy?: string;
   } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -27,12 +30,15 @@ export const useSharedRundownState = () => {
   // Enhanced refs for better real-time handling
   const lastUpdateTimestamp = useRef<string | null>(null);
   const lastShowcallerTimestamp = useRef<string | null>(null);
+  const lastDocVersion = useRef<number>(0);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
   const realtimeSubscription = useRef<any>(null);
+  const contentSubscription = useRef<any>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
+  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
 
   // Enhanced time update with proper cleanup
   useEffect(() => {
@@ -90,13 +96,21 @@ export const useSharedRundownState = () => {
             timezone: data.timezone || 'UTC',
             lastUpdated: data.updated_at,
             showcallerState: data.showcaller_state,
-            visibility: data.visibility
+            visibility: data.visibility,
+            docVersion: data.doc_version,
+            lastUpdatedBy: data.last_updated_by
           };
           
           logger.debug(`Updated rundown data: ${newRundownData.title} ${showcallerChanged ? '(showcaller changed)' : '(content changed)'}`);
           setRundownData(newRundownData);
           lastUpdateTimestamp.current = data.updated_at;
           lastShowcallerTimestamp.current = JSON.stringify(data.showcaller_state);
+          
+          // Update watchdog tracking
+          if (watchdogRef.current && data.doc_version) {
+            watchdogRef.current.updateLastSeen(data.doc_version, data.updated_at);
+          }
+          lastDocVersion.current = data.doc_version || 0;
         }
         setError(null);
       } else {
@@ -116,20 +130,25 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Real-time subscription for immediate showcaller updates
+  // Enhanced real-time subscription for both content and showcaller updates
   useEffect(() => {
     if (!rundownId || !mountedRef.current) return;
 
-    // Clear existing subscription
+    // Clear existing subscriptions
     if (realtimeSubscription.current) {
       supabase.removeChannel(realtimeSubscription.current);
       realtimeSubscription.current = null;
     }
+    if (contentSubscription.current) {
+      supabase.removeChannel(contentSubscription.current);
+      contentSubscription.current = null;
+    }
 
-    logger.debug('Setting up real-time subscription for showcaller updates');
+    logger.debug('Setting up enhanced real-time subscriptions');
 
-    const channel = supabase
-      .channel(`shared-showcaller-${rundownId}`)
+    // Primary subscription for all content changes
+    const contentChannel = supabase
+      .channel(`shared-content-${rundownId}`)
       .on(
         'postgres_changes',
         {
@@ -141,29 +160,72 @@ export const useSharedRundownState = () => {
         (payload) => {
           if (!mountedRef.current) return;
           
-          logger.debug('Received real-time update', payload);
+          logger.debug('Received real-time content update', payload);
           
-          // Immediately update if showcaller state changed
-          if (payload.new?.showcaller_state) {
+          const newDocVersion = payload.new?.doc_version || 0;
+          const currentDocVersion = lastDocVersion.current;
+          
+          // Only process if this is a newer version
+          if (newDocVersion > currentDocVersion) {
+            logger.debug('Processing newer content update:', { 
+              newVersion: newDocVersion, 
+              currentVersion: currentDocVersion 
+            });
+            
+            // Update watchdog tracking immediately
+            if (watchdogRef.current) {
+              watchdogRef.current.updateLastSeen(newDocVersion, payload.new?.updated_at);
+            }
+            
+            loadRundownData(true);
+          } else if (payload.new?.showcaller_state) {
+            // Check for showcaller-only changes even on same doc version
             const newShowcallerState = JSON.stringify(payload.new.showcaller_state);
             if (newShowcallerState !== lastShowcallerTimestamp.current) {
-              logger.debug('Showcaller state changed via real-time, updating immediately');
+              logger.debug('Showcaller-only change detected');
               loadRundownData(true);
             }
           }
         }
       )
       .subscribe((status) => {
-        logger.debug(`Real-time subscription status: ${status}`);
+        logger.debug(`Content subscription status: ${status}`);
+        
+        if (status === 'SUBSCRIBED') {
+          // Start watchdog once we're connected
+          if (!watchdogRef.current && rundownId) {
+            watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'shared-viewer', {
+              onStaleData: (latestData) => {
+                logger.debug('Watchdog detected stale data, refreshing');
+                loadRundownData(true);
+              },
+              onReconnect: () => {
+                logger.debug('Watchdog triggered reconnect');
+                loadRundownData(true);
+              }
+            });
+            watchdogRef.current.start();
+          }
+        }
       });
 
-    realtimeSubscription.current = channel;
+    contentSubscription.current = contentChannel;
 
     return () => {
+      if (contentSubscription.current) {
+        logger.debug('Cleaning up content subscription');
+        supabase.removeChannel(contentSubscription.current);
+        contentSubscription.current = null;
+      }
       if (realtimeSubscription.current) {
-        logger.debug('Cleaning up real-time subscription');
+        logger.debug('Cleaning up showcaller subscription');
         supabase.removeChannel(realtimeSubscription.current);
         realtimeSubscription.current = null;
+      }
+      if (watchdogRef.current) {
+        watchdogRef.current.stop();
+        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
+        watchdogRef.current = null;
       }
     };
   }, [rundownId, loadRundownData]);
@@ -175,7 +237,7 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId, loadRundownData]);
 
-  // Enhanced polling system with much faster showcaller updates
+  // Reduced polling - now real-time is primary, polling is fallback only
   useEffect(() => {
     if (!rundownId || loading || !rundownData) return;
     
@@ -192,8 +254,8 @@ export const useSharedRundownState = () => {
     const isPlaying = rundownData?.showcallerState?.isPlaying;
     
     if (isPlaying) {
-      // Very fast polling for showcaller updates when playing (every 500ms)
-      logger.debug('Starting ultra-fast showcaller polling (500ms interval)');
+      // Fallback polling for showcaller when playing (every 2 seconds)
+      logger.debug('Starting fallback showcaller polling (2s interval)');
       showcallerPollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
@@ -203,10 +265,10 @@ export const useSharedRundownState = () => {
             showcallerPollingInterval.current = null;
           }
         }
-      }, 500); // Much faster for playing state
+      }, 2000); // Reduced frequency since real-time is primary
     } else {
-      // Moderate polling for general updates when not playing (every 5 seconds)
-      logger.debug('Starting moderate general polling (5s interval)');
+      // Light fallback polling for general updates (every 30 seconds)
+      logger.debug('Starting light fallback polling (30s interval)');
       pollingInterval.current = setInterval(() => {
         if (mountedRef.current) {
           loadRundownData();
@@ -216,7 +278,7 @@ export const useSharedRundownState = () => {
             pollingInterval.current = null;
           }
         }
-      }, 5000); // Faster than before even when not playing
+      }, 30000); // Much reduced since real-time handles most updates
     }
 
     return () => {
@@ -254,6 +316,15 @@ export const useSharedRundownState = () => {
       if (realtimeSubscription.current) {
         supabase.removeChannel(realtimeSubscription.current);
         realtimeSubscription.current = null;
+      }
+      if (contentSubscription.current) {
+        supabase.removeChannel(contentSubscription.current);
+        contentSubscription.current = null;
+      }
+      if (watchdogRef.current) {
+        watchdogRef.current.stop();
+        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
+        watchdogRef.current = null;
       }
     };
   }, []);

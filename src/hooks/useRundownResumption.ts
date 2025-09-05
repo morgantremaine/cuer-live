@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
 /**
  * Fetches the latest rundown data from the server
@@ -69,6 +70,7 @@ export const useRundownResumption = ({
 }: UseRundownResumptionProps) => {
   const { toast } = useToast();
   const hookIdRef = useRef(`hook-${Math.random().toString(36).substr(2, 9)}`);
+  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
   
   // Create content signature for comparison
   const createContentSignature = useCallback((data: any) => {
@@ -189,11 +191,32 @@ export const useRundownResumption = ({
       window.addEventListener('focus', handleFocus);
       window.addEventListener('online', handleOnline);
 
+      // Initialize watchdog for this rundown if not already done
+      if (!watchdogRef.current) {
+        watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'resumption-handler', {
+          onStaleData: (latestData) => {
+            console.log('🔄 Resumption watchdog detected stale data');
+            onDataRefresh(latestData);
+            if (updateLastKnownTimestamp && latestData.updated_at) {
+              updateLastKnownTimestamp(latestData.updated_at);
+            }
+          }
+        });
+        watchdogRef.current.start();
+      }
+
       // Store cleanup function in manager
       manager.cleanup = () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('focus', handleFocus);
         window.removeEventListener('online', handleOnline);
+        
+        // Clean up watchdog
+        if (watchdogRef.current) {
+          watchdogRef.current.stop();
+          RealtimeWatchdog.cleanup(rundownId, 'resumption-handler');
+          watchdogRef.current = null;
+        }
       };
     }
 

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
@@ -12,6 +12,7 @@ import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSav
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { toast } from 'sonner';
+import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
 const Teleprompter = () => {
   const { user } = useAuth();
@@ -27,6 +28,8 @@ const Teleprompter = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastSeenDocVersion, setLastSeenDocVersion] = useState(0);
+  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
 
   const {
     fontSize,
@@ -66,19 +69,25 @@ const Teleprompter = () => {
     };
   }, [rundownData?.title]);
 
-  // Add realtime updates for instant script synchronization
+  // Enhanced real-time updates with doc version tracking
   const { isConnected: isRealtimeConnected, trackOwnUpdate } = useSimpleRealtimeRundown({
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
+    lastSeenDocVersion,
     onRundownUpdate: (updatedRundown) => {
       // Always accept remote updates to ensure real-time sync
-      // Remove the isSaving guard that was blocking updates
       if (updatedRundown) {
         console.log('📥 Teleprompter receiving real-time update from team');
         setRundownData({
           title: updatedRundown.title || 'Untitled Rundown',
           items: updatedRundown.items || []
         });
+        
+        // Update doc version tracking
+        if (updatedRundown.doc_version) {
+          setLastSeenDocVersion(updatedRundown.doc_version);
+          watchdogRef.current?.updateLastSeen(updatedRundown.doc_version, updatedRundown.updated_at);
+        }
       }
     }
   });
@@ -104,7 +113,7 @@ const Teleprompter = () => {
     trackOwnUpdate: trackOwnUpdate
   });
 
-  // Load rundown data with optional authentication (read-only if not authenticated)
+  // Enhanced rundown data loading with doc version tracking
   const loadRundownData = async () => {
     if (!rundownId) {
       setLoading(false);
@@ -115,12 +124,9 @@ const Teleprompter = () => {
     setError(null);
 
     try {
-      // Access rundown (works for both authenticated and public access)
+      // Use the enhanced RPC function for better data access
       const { data, error: queryError } = await supabase
-        .from('rundowns')
-        .select('id, title, items, columns, created_at, updated_at')
-        .eq('id', rundownId)
-        .maybeSingle();
+        .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (queryError) {
         console.error('Database error:', queryError);
@@ -161,6 +167,28 @@ const Teleprompter = () => {
         
         setRundownData(loadedData);
         setError(null);
+        
+        // Initialize doc version tracking
+        if (data.doc_version) {
+          setLastSeenDocVersion(data.doc_version);
+        }
+        
+        // Initialize watchdog for reliable sync
+        if (user?.id) {
+          watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, user.id, {
+            onStaleData: (latestData) => {
+              console.log('🔄 Teleprompter watchdog detected stale data, refreshing');
+              setRundownData({
+                title: latestData.title || 'Untitled Rundown',
+                items: latestData.items || []
+              });
+              if (latestData.doc_version) {
+                setLastSeenDocVersion(latestData.doc_version);
+              }
+            }
+          });
+          watchdogRef.current.start();
+        }
       } else {
         setError('Rundown not found');
         setRundownData(null);
@@ -396,10 +424,18 @@ const Teleprompter = () => {
     }
   };
 
-  // Initial load
+  // Initial load with cleanup
   useEffect(() => {
     loadRundownData();
-  }, [rundownId]);
+    
+    return () => {
+      if (watchdogRef.current && user?.id) {
+        watchdogRef.current.stop();
+        RealtimeWatchdog.cleanup(rundownId || '', user.id);
+        watchdogRef.current = null;
+      }
+    };
+  }, [rundownId, user?.id]);
 
   // Remove polling - now using realtime updates for instant synchronization
   // Polling is no longer needed with realtime collaboration

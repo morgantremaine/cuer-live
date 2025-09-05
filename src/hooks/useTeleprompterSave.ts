@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SaveState {
   isSaving: boolean;
@@ -18,6 +19,7 @@ interface UseTeleprompterSaveProps {
 }
 
 export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
+  const { user } = useAuth();
   const [saveState, setSaveState] = useState<SaveState>({
     isSaving: false,
     lastSaved: null,
@@ -70,7 +72,8 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         .from('rundowns')
         .update({ 
           items: updatedItems,
-          updated_at: updateTimestamp
+          updated_at: updateTimestamp,
+          last_updated_by: user?.id || null
         })
         .eq('id', rundownId);
       
