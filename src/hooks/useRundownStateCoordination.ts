@@ -6,7 +6,7 @@ import { useShowcallerStateCoordination } from './useShowcallerStateCoordination
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
-import { useUserIntentManager } from './useUserIntentManager';
+import { useEnhancedUserIntentManager } from './useEnhancedUserIntentManager';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
@@ -180,16 +180,15 @@ export const useRundownStateCoordination = () => {
     simplifiedState.columns
   );
 
-  // User intent management - simplified for now to avoid build errors
-  const userIntentManager = {
-    hasActiveUserIntent: () => false,
-    markUserActivity: () => {},
-    hasActiveSelection: () => interactions.selectedRows.size > 0,
-    isEditingCell: () => uiState.editingCell !== null,
-    isDragActive: () => interactions.draggedItemIndex !== null,
-    hasActiveClipboard: () => interactions.hasClipboardData,
-    hasRecentUserActivity: () => false
-  };
+  // Enhanced user intent management for protecting against teammate disruption  
+  const userIntentManager = useEnhancedUserIntentManager(
+    interactions.selectedRows,
+    uiState.editingCell,
+    interactions.hasClipboardData,
+    interactions.draggedItemIndex,
+    simplifiedState.hasUnsavedChanges,
+    () => false // Simplified typing checker for now
+  );
 
   // Enhanced interactions with user activity tracking - simplified approach
   const enhancedInteractions = useMemo(() => {
