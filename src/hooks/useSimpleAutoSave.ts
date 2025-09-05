@@ -32,7 +32,7 @@ export const useSimpleAutoSave = (
   
   // Enhanced idle-based autosave system with keystroke journal integration
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 3500; // Increased to 3.5s for safer typing capture
+  const typingIdleMs = 1500; // Reduced to 1.5s for faster saves after typing stops
   const maxSaveDelay = 8000; // Increased max delay to 8s
   const microResaveMs = 350; // Micro-resave delay increased to 350ms
   const saveInProgressRef = useRef(false);
@@ -572,14 +572,19 @@ export const useSimpleAutoSave = (
             trackMyUpdate(normalizedTimestamp);
             registerRecentSave(rundownId, normalizedTimestamp);
           }
-          // Only update saved reference if content hasn't changed during save
+          // Enhanced change detection during save with typing awareness
           const currentSignatureAfterSave = createContentSignature();
           if (currentSignatureAfterSave === finalSignature) {
             lastSavedRef.current = finalSignature;
             console.log('📝 Setting lastSavedRef after UPDATE rundown save:', finalSignature.length);
           } else {
-            console.log('⚠️ Content changed during save - scheduling micro-resave');
-            scheduleMicroResave();
+            // Check if user is still typing - if so, let the typing handler manage the save
+            if (isTypingActive()) {
+              console.log('⌨️ Content changed during save but user still typing - letting typing handler manage next save');
+            } else {
+              console.log('⚠️ Content changed during save - scheduling micro-resave');
+              scheduleMicroResave();
+            }
           }
           onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
