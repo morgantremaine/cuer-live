@@ -210,13 +210,15 @@ export const useSimpleRealtimeRundown = ({
       return;
     }
     
-    // Fallback monotonic guard using lastSeenDocVersion from parent
+    // RELAXED: Don't use lastSeenDocVersion for blocking, only for logging
+    // This prevents missing updates due to small timing discrepancies
     if (incomingDocVersion && lastSeenDocVersion && incomingDocVersion <= lastSeenDocVersion) {
-      console.log('🛡️ Fallback monotonic guard: ignoring stale doc_version', {
+      console.log('📊 Doc version info: processing update despite parent tracking', {
         incoming: incomingDocVersion,
-        lastSeen: lastSeenDocVersion
+        lastSeen: lastSeenDocVersion,
+        willProcess: true
       });
-      return;
+      // Continue processing instead of returning
     }
 
     const updateTimestamp = payload.new?.updated_at;
@@ -296,8 +298,11 @@ export const useSimpleRealtimeRundown = ({
       setIsProcessingUpdate(true);
     }
     
-    lastProcessedUpdateRef.current = normalizedUpdateTimestamp;
     
+    // Update our processed doc version tracking
+    if (incomingDocVersion) {
+      lastProcessedDocVersionRef.current = incomingDocVersion;
+    }
     // Update doc version tracking
     if (incomingDocVersion) {
       lastProcessedDocVersionRef.current = incomingDocVersion;

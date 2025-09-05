@@ -835,22 +835,29 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     const now = Date.now();
     const justActivated = isTabActive && !prevIsActiveRef.current;
-    const shouldSync = (
-      (justActivated || !hasSyncedOnceRef.current) &&
-      isInitialized && !isLoading && rundownId &&
-      !isTypingActive() && !isSaving && !pendingStructuralChangeRef.current
-    );
+    
+    // Only perform refresh when transitioning from inactive to active (not on every focus)
+    if (!justActivated || !isInitialized || isLoading || !rundownId) {
+      prevIsActiveRef.current = isTabActive;
+      return;
+    }
 
-    // Debounce rapid focus/visibility flaps
+    // Additional safety checks
+    if (isTypingActive() || isSaving || pendingStructuralChangeRef.current) {
+      prevIsActiveRef.current = isTabActive;
+      return;
+    }
+
+    // Debounce rapid activation events
     const timeSinceLast = now - lastSyncTimeRef.current;
-    if (!shouldSync || timeSinceLast <= 300) {
+    if (timeSinceLast <= 500) {
       prevIsActiveRef.current = isTabActive;
       return;
     }
 
     lastSyncTimeRef.current = now;
     let cancelled = false;
-    console.log('👁️ Tab active - performing silent refresh for latest rundown');
+    console.log('👁️ Tab activated - performing silent refresh for latest rundown');
 
     (async () => {
       try {
@@ -868,7 +875,8 @@ export const useSimplifiedRundownState = () => {
         const newerByTime = serverTs && (!lastKnownTimestamp || new Date(serverTs).getTime() > new Date(lastKnownTimestamp).getTime());
 
         if (newerByVersion || newerByTime) {
-          // Apply latest without triggering save; reducer marks saved
+          console.log('🔄 Silent refresh: applying newer data from server', { serverDoc, serverTs });
+          // Apply latest without triggering save
           handleDataRefresh(data);
           if (serverTs) setLastKnownTimestamp(serverTs);
           if (serverDoc) setLastSeenDocVersion(serverDoc);
