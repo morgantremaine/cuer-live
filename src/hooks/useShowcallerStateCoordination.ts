@@ -62,6 +62,8 @@ export const useShowcallerStateCoordination = ({
 
   // Enhanced external state handler with suppression window
   const suppressionWindowRef = useRef<Map<string, number>>(new Map());
+  const prevSegmentRef = useRef<string | null>(null);
+  const lastManualActionRef = useRef<number>(0);
   
   const handleExternalVisualState = useCallback((externalState: any) => {
     console.log('📺 handleExternalVisualState called with:', {
@@ -145,12 +147,14 @@ export const useShowcallerStateCoordination = ({
           if (currentSegment) {
             const segmentDurationMs = parseDurationToSeconds(currentSegment.duration) * 1000;
             const elapsedMs = segmentDurationMs - (state.timeRemaining * 1000);
-            const adjustedStartTime = Date.now() - elapsedMs;
+            const targetStartTime = Date.now() - elapsedMs;
+            const currentStartTime = (visualState.playbackStartTime as number) || (Date.now() - (timeRemaining * 1000));
+            const smoothedStartTime = Math.round(currentStartTime + (targetStartTime - currentStartTime) * 0.3);
             
             applyExternalVisualState({
               isPlaying: !!state.isPlaying,
               currentSegmentId: state.currentSegmentId || null,
-              playbackStartTime: adjustedStartTime,
+              playbackStartTime: smoothedStartTime,
               isController: false,
               controllerId: state.userId,
               lastUpdate: new Date(state.timestamp).toISOString(),
@@ -251,6 +255,7 @@ export const useShowcallerStateCoordination = ({
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
+    lastManualActionRef.current = Date.now();
     
     // Compute target and remaining before local state updates
     const targetId = selectedSegmentId || currentSegmentId || (items.find(it => it.type === 'regular' && !isFloated(it))?.id ?? null);
@@ -314,6 +319,7 @@ export const useShowcallerStateCoordination = ({
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
+    lastManualActionRef.current = Date.now();
     
     // Compute next before local state updates
     const nextSeg = getNextSegment();
@@ -349,6 +355,7 @@ export const useShowcallerStateCoordination = ({
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
+    lastManualActionRef.current = Date.now();
     
     // Compute previous before local state updates
     const prevSeg = getPrevSegment();
@@ -381,6 +388,7 @@ export const useShowcallerStateCoordination = ({
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
+    lastManualActionRef.current = Date.now();
     
     // Compute current segment duration before local state updates
     const curr = getCurrentSegment();
@@ -413,6 +421,7 @@ export const useShowcallerStateCoordination = ({
     const timestamp = new Date().toISOString();
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
+    lastManualActionRef.current = Date.now();
     
     jumpToSegment(segmentId);
     
@@ -492,6 +501,34 @@ export const useShowcallerStateCoordination = ({
       }
     };
   }, [isController, isPlaying, currentSegmentId, broadcastTimingUpdate]); // Only essential deps
+
+  // Auto-broadcast on controller auto-advance (when segment changes without a manual action)
+  useEffect(() => {
+    const prev = prevSegmentRef.current;
+    const curr = currentSegmentId || null;
+
+    if (!isController) {
+      prevSegmentRef.current = curr;
+      return;
+    }
+
+    if (prev && curr && prev !== curr) {
+      const recentlyManual = Date.now() - lastManualActionRef.current < 800;
+      if (!recentlyManual) {
+        const seg = items.find(item => item.id === curr) || null;
+        const segRemaining = seg ? parseDurationToSeconds(seg.duration) : 0;
+        broadcastState({
+          action: 'forward',
+          isPlaying,
+          currentSegmentId: curr,
+          timeRemaining: segRemaining,
+          isController
+        });
+      }
+    }
+
+    prevSegmentRef.current = curr;
+  }, [currentSegmentId, isController, isPlaying, items, broadcastState, parseDurationToSeconds]);
 
   return {
     // State
