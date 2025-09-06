@@ -41,8 +41,8 @@ export const useSimplifiedRundownState = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
-  const PROTECTION_WINDOW_MS = 8000; // Shorter protection window
-  const TYPING_PROTECTION_WINDOW_MS = 5000; // Shorter typing protection
+  const PROTECTION_WINDOW_MS = 1500; // Much shorter protection window  
+  const TYPING_PROTECTION_WINDOW_MS = 1000; // Much shorter typing protection
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
@@ -101,7 +101,7 @@ export const useSimplifiedRundownState = () => {
 
   // Simplified dropdown protection
   const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
-  const DROPDOWN_PROTECTION_WINDOW_MS = 3000; // Shorter dropdown protection
+  const DROPDOWN_PROTECTION_WINDOW_MS = 800; // Much shorter dropdown protection
 
   const markDropdownFieldChanged = useCallback((fieldKey: string) => {
     const now = Date.now();
@@ -241,12 +241,11 @@ export const useSimplifiedRundownState = () => {
     rundownId,
     lastSeenDocVersion,
     onRundownUpdate: useCallback((updatedRundown) => {
-      // Gate realtime processing for 500ms after initial load to let baseline prime
+      // SIMPLIFIED: Remove initial load gating - just apply updates immediately
       if (initialLoadGateRef.current) {
-        console.log('⏳ Gating realtime update - initial load in progress');
-        // Store deferred update and it will be processed when gate clears
-        deferredUpdateRef.current = updatedRundown;
-        return;
+        console.log('⏳ Initial load in progress but applying update anyway');
+        // Don't defer - just set the gate to false and continue
+        initialLoadGateRef.current = false;
       }
       
       // Monotonic doc version guard: ignore stale updates
@@ -272,44 +271,18 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // Only block updates if user is actively typing in THIS tab
-      // Allow background updates for second monitor scenarios
-      if (isTypingActive() && !document.hidden) {
-        console.log('⏸️ Blocking realtime update - user is actively typing in focused tab');
-        deferredUpdateRef.current = updatedRundown;
+      // SIMPLIFIED: Only block updates for the exact field being typed
+      // Remove all complex deferring logic that causes stale state
+      if (isTypingActive() && !document.hidden && 
+          typingSessionRef.current && 
+          typingSessionRef.current.fieldKey) {
+        console.log('⏸️ Blocking realtime update - user is typing in field:', typingSessionRef.current.fieldKey);
+        // Don't defer - just skip this update, next one will come soon
         return;
       }
       
-      // CRITICAL: Block ALL updates during active structural operations
-      if (activeStructuralOperationRef.current) {
-        console.log('⏸️ Blocking realtime update - structural operation in progress');
-        deferredUpdateRef.current = updatedRundown;
-        return;
-      }
-      
-      // IMPROVED: Don't defer updates - use granular merge to handle concurrent editing
-      // Store deferred update only if actively saving structural changes
-      if (isSaving && pendingStructuralChangeRef.current) {
-        console.log('⏸️ Deferring update during structural save operation');
-        deferredUpdateRef.current = updatedRundown;
-        return;
-      }
-      
-      // Detect if this is a structural change (items array length or order change)
-      // CRITICAL FIX: Only compute structural changes if payload contains items
-      const isStructural = updatedRundown.items && state.items && (
-        updatedRundown.items.length !== state.items.length ||
-        JSON.stringify(updatedRundown.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
-      );
-      
-      // Set cooldown after applying teammate update to prevent ping-pong
-      if (isStructural) {
-        remoteSaveCooldownRef.current = Date.now() + 1500; // 1.5 second cooldown for structural
-      } else {
-        remoteSaveCooldownRef.current = Date.now() + 800; // 0.8 second cooldown for content
-      }
-      
-      // Update our known timestamp and doc version
+      // SIMPLIFIED: Remove complex structural change detection and cooldowns
+      // Just update timestamps and versions
       if (updatedRundown.updated_at) {
         setLastKnownTimestamp(updatedRundown.updated_at);
       }
@@ -698,13 +671,7 @@ export const useSimplifiedRundownState = () => {
     activeStructuralOperationRef.current = false;
     pendingStructuralChangeRef.current = false;
     
-    // Process any deferred updates now that structural operation is complete
-    if (deferredUpdateRef.current && isInitialized && !isTypingActive()) {
-      setTimeout(() => {
-        console.log('🚪 Processing deferred update after structural change cleared');
-        realtimeConnection.performCatchupSync();
-      }, 100);
-    }
+    // SIMPLIFIED: Remove deferred update processing
   }, [isInitialized, isTypingActive, realtimeConnection]);
 
   // Update current time every second
