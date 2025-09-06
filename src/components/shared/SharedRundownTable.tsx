@@ -966,11 +966,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
             }`}>
               <tr className="print-header-row">
                 <th 
-                  className={`px-2 py-1 text-center text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 print-row-number ${
-                    isDark 
-                      ? 'text-gray-300 border-gray-600 bg-gray-800' 
-                      : 'text-gray-500 border-gray-200 bg-gray-50'
-                  }`}
+                  className={`px-2 py-1 text-center text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 print-row-number text-white bg-blue-600 border-blue-700`}
                   style={{ width: '60px', minWidth: '60px', maxWidth: '60px' }}
                 >
                   <div className="flex items-center justify-center space-x-1">
@@ -980,11 +976,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                           e.stopPropagation();
                           handleToggleAllHeaders();
                         }}
-                        className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden ${
-                          isDark 
-                            ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-300'
-                            : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'
-                        }`}
+                        className={`flex-shrink-0 p-0.5 rounded transition-colors print:hidden hover:bg-blue-500 text-blue-100 hover:text-white`}
                         title="Toggle all header groups"
                       >
                         {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
