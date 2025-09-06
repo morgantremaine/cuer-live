@@ -263,30 +263,28 @@ const RundownContextMenu = memo(({
               <Palette className="mr-2 h-4 w-4" />
               {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
             </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-48">
-              {[
-                { name: 'Default', value: '' },
-                { name: 'Red', value: '#fca5a5' },
-                { name: 'Orange', value: '#fdba74' },
-                { name: 'Yellow', value: '#fde047' },
-                { name: 'Green', value: '#86efac' },
-                { name: 'Blue', value: '#93c5fd' },
-                { name: 'Purple', value: '#c4b5fd' },
-                { name: 'Pink', value: '#f9a8d4' },
-                { name: 'Gray', value: '#d1d5db' }
-              ].map((color) => (
-                <ContextMenuItem
-                  key={color.name}
-                  onClick={() => handleColorSelect(itemId, color.value)}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <div 
-                    className="w-4 h-4 rounded border border-gray-300 dark:border-gray-500"
+            <ContextMenuSubContent className="w-auto p-2">
+              <div className="grid grid-cols-3 gap-1">
+                {[
+                  { name: 'Default', value: '' },
+                  { name: 'Red', value: '#fca5a5' },
+                  { name: 'Orange', value: '#fdba74' },
+                  { name: 'Yellow', value: '#fde047' },
+                  { name: 'Green', value: '#86efac' },
+                  { name: 'Blue', value: '#93c5fd' },
+                  { name: 'Purple', value: '#c4b5fd' },
+                  { name: 'Pink', value: '#f9a8d4' },
+                  { name: 'Gray', value: '#d1d5db' }
+                ].map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => handleColorSelect(itemId, color.value)}
+                    className="w-8 h-8 rounded border border-gray-300 dark:border-gray-500 hover:scale-110 transition-transform cursor-pointer"
                     style={{ backgroundColor: color.value || '#ffffff' }}
+                    title={color.name}
                   />
-                  {color.name}
-                </ContextMenuItem>
-              ))}
+                ))}
+              </div>
             </ContextMenuSubContent>
           </ContextMenuSub>
           
