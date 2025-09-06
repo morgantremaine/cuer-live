@@ -433,30 +433,6 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Lightweight remote activity broadcasting (decoupled from saving)
-  const activityChannelRef = useRef<any>(null);
-  const activityPulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isRemoteActivityProcessing, setIsRemoteActivityProcessing] = useState(false);
-  const lastActivitySentAtRef = useRef(0);
-
-  const sendActivityPulse = useCallback((kind: 'typing' | 'structural' = 'typing') => {
-    if (!activityChannelRef.current || !rundownId || !currentUserId) return;
-    const now = Date.now();
-    // Throttle to avoid spamming
-    if (now - lastActivitySentAtRef.current < 300) return;
-    lastActivitySentAtRef.current = now;
-
-    try {
-      activityChannelRef.current.send({
-        type: 'broadcast',
-        event: 'activity',
-        payload: { userId: currentUserId, kind, at: now }
-      });
-    } catch (err) {
-      console.warn('⚠️ Failed to send activity pulse', err);
-    }
-  }, [rundownId, currentUserId]);
-
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
     if (!rundownId || !currentUserId) return;
@@ -553,45 +529,6 @@ export const useSimplifiedRundownState = () => {
       unsubscribe();
     };
   }, [rundownId, currentUserId, state.items, actions, executeWithCellUpdate]);
-  
-  // Presence/broadcast channel for remote editing activity (typing, structural, drag)
-  useEffect(() => {
-    if (!rundownId) return;
-
-    const channel = supabase.channel(`rundown-activity-${rundownId}`, {
-      config: { broadcast: { self: false } }
-    });
-
-    channel.on('broadcast', { event: 'activity' }, (payload: any) => {
-      const fromUser = payload?.payload?.userId;
-      if (!fromUser || fromUser === currentUserId) return;
-
-      // Mark remote activity active and extend while pulses keep arriving
-      setIsRemoteActivityProcessing(true);
-      if (activityPulseTimeoutRef.current) clearTimeout(activityPulseTimeoutRef.current);
-      activityPulseTimeoutRef.current = setTimeout(() => {
-        setIsRemoteActivityProcessing(false);
-      }, 700); // idle window before hiding
-    });
-
-    channel.subscribe((status) => {
-      console.log('📶 Activity channel status:', status);
-    });
-
-    activityChannelRef.current = channel;
-
-    return () => {
-      if (activityPulseTimeoutRef.current) {
-        clearTimeout(activityPulseTimeoutRef.current);
-        activityPulseTimeoutRef.current = null;
-      }
-      if (activityChannelRef.current) {
-        supabase.removeChannel(activityChannelRef.current);
-        activityChannelRef.current = null;
-      }
-      setIsRemoteActivityProcessing(false);
-    };
-  }, [rundownId, currentUserId]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
@@ -776,7 +713,6 @@ export const useSimplifiedRundownState = () => {
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
-      sendActivityPulse('typing');
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -833,9 +769,6 @@ export const useSimplifiedRundownState = () => {
     console.log('🏗️ Marking structural change - blocking realtime updates');
     activeStructuralOperationRef.current = true;
     pendingStructuralChangeRef.current = true;
-
-    // Broadcast structural activity so viewers see blue wifi immediately
-    sendActivityPulse('structural');
     
     // Auto-clear after 10 seconds as safety net
     setTimeout(() => {
@@ -1368,7 +1301,7 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced realtime activity indicator with debouncing and minimum duration
   const realtimeActivity = useRealtimeActivityIndicator({
-    isProcessingUpdate: (realtimeConnection.isProcessingUpdate || isRemoteActivityProcessing),
+    isProcessingUpdate: realtimeConnection.isProcessingUpdate,
     minimumDuration: 1500, // 1.5 seconds minimum to avoid flickering
     cooldownDuration: 1000  // 1 second cooldown after updates stop
   });
