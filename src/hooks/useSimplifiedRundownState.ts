@@ -44,6 +44,7 @@ export const useSimplifiedRundownState = () => {
   const activeFocusFieldRef = useRef<string | null>(null);
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
+  const realtimeUpdateRef = useRef<boolean>(false); // Flag to prevent AutoSave during realtime updates
   
   // Shorter protection windows to reduce overwrites
   const PROTECTION_WINDOW_MS = 800; // Very short protection
@@ -191,7 +192,8 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     remoteSaveCooldownRef,
-    isInitialized
+    isInitialized,
+    realtimeUpdateRef // Pass the flag to prevent AutoSave during realtime updates
   );
 
   // Standalone undo system - unchanged
@@ -443,6 +445,9 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update:', update);
       
+      // CRITICAL: Set realtime update flag to prevent AutoSave trigger
+      realtimeUpdateRef.current = true;
+      
       // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
         // Check if we're actively editing this rundown-level field
@@ -476,6 +481,11 @@ export const useSimplifiedRundownState = () => {
           default:
             console.warn('🚨 Unknown rundown-level field:', update.field);
         }
+        
+        // Clear realtime update flag after applying rundown-level changes
+        setTimeout(() => {
+          realtimeUpdateRef.current = false;
+        }, 50);
         return;
       }
       
@@ -514,6 +524,11 @@ export const useSimplifiedRundownState = () => {
       if (updatedItems.some((item, index) => item !== state.items[index])) {
         actions.setItems(updatedItems);
       }
+      
+      // Clear realtime update flag after a brief delay to prevent AutoSave
+      setTimeout(() => {
+        realtimeUpdateRef.current = false;
+      }, 50);
     });
 
     return () => {

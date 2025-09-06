@@ -17,7 +17,8 @@ export const useSimpleAutoSave = (
   onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
-  isInitiallyLoaded?: boolean
+  isInitiallyLoaded?: boolean,
+  skipSaveRef?: React.MutableRefObject<boolean> // New param to skip saves during realtime updates
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -261,6 +262,12 @@ export const useSimpleAutoSave = (
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
       console.log('🛑 AutoSave: blocked - initial load not complete');
+      return;
+    }
+
+    // CRITICAL: Skip save during realtime updates to prevent cross-saving
+    if (skipSaveRef?.current) {
+      console.log('🛑 AutoSave: blocked - realtime update in progress');
       return;
     }
 
