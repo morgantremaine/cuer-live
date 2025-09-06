@@ -297,7 +297,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               width: `${totalTableWidth}px`,
               minWidth: `${totalTableWidth}px`,
               margin: 0,
-              padding: 0
+              padding: 0,
+              marginTop: `-${zoomLevel}px`
             }}
             data-rundown-table="main"
           >
