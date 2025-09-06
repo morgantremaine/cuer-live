@@ -405,7 +405,8 @@ const Dashboard = () => {
                     Import CSV
                   </Button>
                 </CSVImportDialog>
-                <UpdateNotificationTrigger />
+                {/* Only show update notification trigger for app admin */}
+                {user?.email === 'moragn@cuer.live' && <UpdateNotificationTrigger />}
               </div>
 
               <DashboardRundownGrid

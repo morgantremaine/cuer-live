@@ -4,6 +4,7 @@ import { logger } from '@/utils/logger';
 /**
  * Triggers an app update notification to all active users
  * This should be called manually when you publish an update
+ * Only available to the app admin
  */
 export const triggerAppUpdateNotification = async (message?: string) => {
   try {
