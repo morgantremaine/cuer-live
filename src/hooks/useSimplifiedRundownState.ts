@@ -36,13 +36,18 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Simplified typing protection
+  // Enhanced conflict resolution system
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
-  const PROTECTION_WINDOW_MS = 1500; // Much shorter protection window  
-  const TYPING_PROTECTION_WINDOW_MS = 1000; // Much shorter typing protection
+  const lastRemoteUpdateRef = useRef<number>(0);
+  const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Shorter protection windows to reduce overwrites
+  const PROTECTION_WINDOW_MS = 800; // Very short protection
+  const TYPING_PROTECTION_WINDOW_MS = 500; // Very short typing protection
+  const CONFLICT_RESOLUTION_DELAY = 2000; // Time to wait before forcing reconciliation
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
@@ -297,27 +302,36 @@ export const useSimplifiedRundownState = () => {
       if (protectedFields.size > 0) {
         
         // Create merged items by protecting local edits
+        // Enhanced conflict resolution: merge changes at field level
         const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
           const localItem = state.items.find(item => item.id === remoteItem.id);
           if (!localItem) return remoteItem; // New item from remote
           
           const merged = { ...remoteItem };
           
-          // Protect specific fields that are currently being edited
-          protectedFields.forEach(fieldKey => {
-            if (fieldKey.startsWith(remoteItem.id + '-')) {
-              const field = fieldKey.substring(remoteItem.id.length + 1);
-              if (field.startsWith('customFields.')) {
-                const customFieldKey = field.replace('customFields.', '');
-                // Ensure customFields object exists
-                merged.customFields = merged.customFields || {};
-                localItem.customFields = localItem.customFields || {};
-                // Field-by-field protection: only protect the specific custom field being edited
-                merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields[customFieldKey];
-                console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id}`);
-              } else if (localItem.hasOwnProperty(field)) {
-                merged[field] = localItem[field]; // Keep local value
-                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id}`);
+          // Apply operational transformation: merge non-conflicting changes
+          Object.keys(localItem).forEach(key => {
+            if (key === 'id') return; // Never change IDs
+            
+            const isProtected = protectedFields.has(`${remoteItem.id}-${key}`);
+            const localValue = (localItem as any)[key];
+            const remoteValue = (remoteItem as any)[key];
+            
+            if (isProtected) {
+              // Keep local changes for actively edited fields
+              merged[key] = localValue;
+              console.log(`🛡️ Protected field ${key} for item ${remoteItem.id}: keeping local value`);
+            } else if (key === 'customFields') {
+              // Merge custom fields at field level
+              merged.customFields = { ...remoteValue };
+              if (localValue && typeof localValue === 'object') {
+                Object.keys(localValue).forEach(customKey => {
+                  const fieldKey = `${remoteItem.id}-customFields.${customKey}`;
+                  if (protectedFields.has(fieldKey)) {
+                    merged.customFields[customKey] = localValue[customKey];
+                    console.log(`🛡️ Protected custom field ${customKey} for item ${remoteItem.id}`);
+                  }
+                });
               }
             }
           });
@@ -335,38 +349,22 @@ export const useSimplifiedRundownState = () => {
           externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
         });
         
-        // Schedule reconciliation save only if merged content actually differs for protected fields
-        let hasProtectedDifferences = false;
-        for (const merged of mergedItems) {
-          if (hasProtectedDifferences) break;
-          const localItem = state.items.find(item => item.id === merged.id);
-          if (!localItem) continue;
-          protectedFields.forEach(fieldKey => {
-            if (hasProtectedDifferences) return;
-            if (fieldKey.startsWith(merged.id + '-')) {
-              const field = fieldKey.substring(merged.id.length + 1);
-              if (field.startsWith('customFields.')) {
-                const customFieldKey = field.replace('customFields.', '');
-                const mergedVal = merged.customFields?.[customFieldKey] ?? '';
-                const localVal = localItem.customFields?.[customFieldKey] ?? '';
-                if (mergedVal !== localVal) hasProtectedDifferences = true;
-              } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
-                const mergedVal = (merged as any)[field] ?? '';
-                const localVal = (localItem as any)[field] ?? '';
-                if (mergedVal !== localVal) hasProtectedDifferences = true;
-              }
-            }
-          });
-        }
+        // Track remote update time to prevent ping-pong saves
+        lastRemoteUpdateRef.current = Date.now();
         
-        if (hasProtectedDifferences) {
-          if (reconciliationTimeoutRef.current) {
-            clearTimeout(reconciliationTimeoutRef.current);
+        // Schedule reconciliation to merge any remaining conflicts
+        if (protectedFields.size > 0) {
+          if (conflictResolutionTimeoutRef.current) {
+            clearTimeout(conflictResolutionTimeoutRef.current);
           }
-          reconciliationTimeoutRef.current = setTimeout(() => {
-            console.log('🔄 Scheduling reconciliation save after protected merge');
-            markActiveTyping();
-          }, 600); // slightly faster to resolve conflicts sooner
+          
+          conflictResolutionTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Running conflict resolution reconciliation');
+            // Only save if we're not currently typing
+            if (!isTypingActive() && Date.now() - lastRemoteUpdateRef.current > 1000) {
+              markActiveTyping();
+            }
+          }, CONFLICT_RESOLUTION_DELAY);
         }
         
       } else {
