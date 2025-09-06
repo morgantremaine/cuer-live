@@ -16,6 +16,7 @@ import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuratio
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -276,7 +277,14 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // Apply updates even while typing, but protect the active field via granular merge below
+      // ALWAYS apply updates - never block them. Google Sheets style.
+      console.log('📨 Processing realtime update immediately:', {
+        docVersion: updatedRundown.doc_version,
+        hasItems: !!updatedRundown.items,
+        itemCount: updatedRundown.items?.length || 0,
+        isTyping: isTypingActive(),
+        activeField: typingSessionRef.current?.fieldKey
+      });
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
       // Just update timestamps and versions
@@ -409,6 +417,60 @@ export const useSimplifiedRundownState = () => {
   // Connect realtime to auto-save typing/unsaved state
   realtimeConnection.setTypingChecker(() => isTypingActive());
   realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
+
+  // Get current user ID for cell broadcasts
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
+
+  // Cell-level broadcast system for immediate sync
+  useEffect(() => {
+    if (!rundownId || !currentUserId) return;
+
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      // Skip our own updates
+      if (update.userId === currentUserId) return;
+      
+      console.log('📱 Applying cell broadcast update:', update);
+      
+      // Apply the cell update immediately to local state
+      const updatedItems = state.items.map(item => {
+        if (item.id === update.itemId) {
+          // Only apply if not actively editing this exact field
+          const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
+          if (isActivelyEditing) {
+            console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
+            return item;
+          }
+          
+          if (update.field === 'customFields') {
+            return {
+              ...item,
+              customFields: { ...item.customFields, ...update.value }
+            };
+          } else {
+            return {
+              ...item,
+              [update.field]: update.value
+            };
+          }
+        }
+        return item;
+      });
+      
+      if (updatedItems.some((item, index) => item !== state.items[index])) {
+        actions.setItems(updatedItems);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [rundownId, currentUserId, state.items, actions]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
@@ -585,6 +647,11 @@ export const useSimplifiedRundownState = () => {
     // ALWAYS track field edits for protection, regardless of type
     recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
     
+    // Broadcast cell update immediately for Google Sheets-style sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
+    
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
@@ -605,7 +672,7 @@ export const useSimplifiedRundownState = () => {
         if (typingSessionRef.current?.fieldKey === sessionKey) {
           typingSessionRef.current = null;
         }
-      }, 8000); // Extended to 8 seconds for better protection
+      }, 3000); // Reduced to 3 seconds for faster sync
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (field === 'color') {
