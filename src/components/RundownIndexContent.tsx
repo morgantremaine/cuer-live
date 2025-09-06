@@ -147,20 +147,57 @@ const RundownIndexContent = () => {
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Simple add operations
+  // Simple add operations - create complete RundownItem objects  
   const handleAddRow = () => {
-    addItem({
-      type: 'regular',
+    const newItem = {
+      id: `item_${Date.now()}`,
+      type: 'regular' as const,
+      rowNumber: (items.length + 1).toString(),
+      name: 'New Segment',
+      startTime: '00:00:00',
+      endTime: '00:00:30',
+      duration: '00:00:30',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      audio: '',
+      video: '',
+      lighting: '',
+      other: '',
+      notes: '',
       segmentName: 'New Segment',
-      duration: '0:30'
-    });
+      images: '',
+      color: '',
+      isFloating: false
+    };
+    bulletproofState.addItem(newItem);
   };
 
   const handleAddHeader = () => {
-    addItem({
-      type: 'header',
-      segmentName: 'New Header'
-    });
+    const newHeader = {
+      id: `header_${Date.now()}`,
+      type: 'header' as const,
+      rowNumber: (items.length + 1).toString(),
+      name: 'New Header',
+      startTime: '00:00:00',
+      endTime: '00:00:00',
+      duration: '00:00:00',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      gfx: '',
+      audio: '',
+      video: '',
+      lighting: '',
+      other: '',
+      notes: '',
+      segmentName: 'New Header',
+      images: '',
+      color: '',
+      isFloating: false
+    };
+    bulletproofState.addItem(newHeader);
   };
 
   // Mock functions for missing features to prevent errors
@@ -240,43 +277,12 @@ const RundownIndexContent = () => {
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
         onJumpToHere={() => {}}
-        onCellFocus={() => {}}
-        onCellBlur={() => {}}
-        onAddColumn={handleAddColumnWrapper}
-        onDeleteColumn={handleDeleteColumnWrapper}
-        onRenameColumn={() => {}}
-        onToggleColumnVisibility={() => {}}
-        onReorderColumns={() => {}}
-        onLoadLayout={() => {}}
         rundownId={rundownId || ''}
-        title={rundownTitle}
-        startTime={rundownStartTime}
-        showDate={showDate}
-        onTitleChange={setTitle}
-        onStartTimeChange={setStartTime}
-        onShowDateChange={setShowDate}
-        isLoading={isLoading}
-        isSaving={isSaving}
-        error={bulletproofState.error}
-        isPlaying={false}
-        timeRemaining={0}
-        onPlay={() => {}}
-        onPause={() => {}}
-        onForward={() => {}}
-        onBackward={() => {}}
-        onReset={() => {}}
-        showNotesWindow={showNotesWindow}
-        setShowNotesWindow={setShowNotesWindow}
         hasUnsavedChanges={bulletproofState.hasUnsavedChanges}
-        onSave={bulletproofState.saveNow}
         onUndo={() => {}}
         canUndo={false}
         lastAction={null}
         isConnected={isConnected}
-        hasOfflineChanges={bulletproofState.hasOfflineChanges}
-        hasUnresolvedConflicts={bulletproofState.hasUnresolvedConflicts}
-        isProcessingRealtimeUpdate={false}
-        onSyncNow={bulletproofState.syncNow}
         autoScrollEnabled={true}
         onToggleAutoScroll={() => {}}
         onToggleHeaderCollapse={() => {}}
@@ -295,7 +301,17 @@ const RundownIndexContent = () => {
           columns: userColumns,
           totalRuntime: "0:00"
         }}
-        modDeps={{}}
+        modDeps={{
+          items,
+          updateItem: (id: string, field: string, value: string) => handleFieldChange(`${id}-${field}`, value),
+          addRow: handleAddRow,
+          addHeader: handleAddHeader,
+          deleteRow: deleteItem,
+          addRowAtIndex: handleAddRow,
+          addHeaderAtIndex: handleAddHeader,
+          calculateEndTime: () => '00:00:00',
+          markAsChanged: () => {}
+        }}
       />
 
       {showNotesWindow && (
@@ -306,8 +322,8 @@ const RundownIndexContent = () => {
       )}
 
       <RealtimeDebugOverlay 
-        hasOfflineChanges={bulletproofState.hasOfflineChanges}
-        hasUnresolvedConflicts={bulletproofState.hasUnresolvedConflicts}
+        rundownId={rundownId || ''}
+        connectionStatus={isConnected}
       />
     </RealtimeConnectionProvider>
   );
