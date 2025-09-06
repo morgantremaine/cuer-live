@@ -195,9 +195,9 @@ const RundownTableHeader = ({
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: `${(66 * zoomLevel)}px`, 
-            minWidth: `${(66 * zoomLevel)}px`,
-            maxWidth: `${(66 * zoomLevel)}px`,
+            width: '66px', 
+            minWidth: '66px',
+            maxWidth: '66px',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)'
           }}
         >
@@ -300,9 +300,9 @@ const RundownTableHeader = ({
               <th 
                 className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border shadow-lg"
                 style={{ 
-                  width: getColumnWidth(activeColumn),
-                  minWidth: getColumnWidth(activeColumn),
-                  maxWidth: getColumnWidth(activeColumn),
+                  width: `${parseFloat(getColumnWidth(activeColumn)) * zoomLevel}px`,
+                  minWidth: `${parseFloat(getColumnWidth(activeColumn)) * zoomLevel}px`,
+                  maxWidth: `${parseFloat(getColumnWidth(activeColumn)) * zoomLevel}px`,
                   opacity: 0.95,
                   zIndex: 1000,
                   cursor: 'grabbing'
