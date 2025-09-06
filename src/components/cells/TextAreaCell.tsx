@@ -34,26 +34,74 @@ const TextAreaCell = ({
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
-  // Function to calculate required height using the actual textarea scrollHeight
+  // Function to calculate required height using a measurement div
   const calculateHeight = () => {
+    if (!textareaRef.current || !measurementRef.current) return;
+    
     const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    // Ensure width is current (for auto-resize events)
-    const w = textarea.getBoundingClientRect().width;
-    if (w !== currentWidth) setCurrentWidth(w);
-
-    const prevHeight = textarea.style.height;
-    // Temporarily set height to auto to measure natural content height with current width
-    textarea.style.height = 'auto';
-    const measured = Math.ceil(textarea.scrollHeight); // includes padding
-    // Restore inline height (React will set it via style below anyway)
-    textarea.style.height = prevHeight;
-
-    // Fallback minimum to avoid collapse
-    const min = 38; // matches initial single-line default
-    const newHeight = Math.max(measured, min);
-
+    const measurementDiv = measurementRef.current;
+    
+    // Get the current width of the textarea
+    const textareaWidth = textarea.getBoundingClientRect().width;
+    
+    // Update current width
+    setCurrentWidth(textareaWidth);
+    
+    // Copy textarea styles to measurement div
+    const computedStyle = window.getComputedStyle(textarea);
+    measurementDiv.style.width = `${textareaWidth}px`;
+    measurementDiv.style.fontSize = computedStyle.fontSize;
+    measurementDiv.style.fontFamily = computedStyle.fontFamily;
+    measurementDiv.style.fontWeight = computedStyle.fontWeight;
+    measurementDiv.style.lineHeight = computedStyle.lineHeight;
+    measurementDiv.style.padding = computedStyle.padding;
+    measurementDiv.style.border = computedStyle.border;
+    measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    measurementDiv.style.wordWrap = 'break-word';
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    
+    // Set the content and measure wrapped height
+    measurementDiv.textContent = value || ' ';
+    const wrappedHeight = measurementDiv.offsetHeight;
+    
+    // Now measure single-line height with same content
+    measurementDiv.style.whiteSpace = 'nowrap';
+    measurementDiv.style.overflow = 'hidden';
+    const singleLineHeight = measurementDiv.offsetHeight;
+    
+    // Restore original settings
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    measurementDiv.style.overflow = 'visible';
+    
+    // Calculate minimum height (single line + padding/border)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+    
+    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    
+    // If the wrapped height is significantly taller than single-line, text is wrapping
+    const heightDifference = wrappedHeight - singleLineHeight;
+    const isWrapping = heightDifference > 2; // Allow small rounding differences
+    
+    // Debug logging for the specific test text
+    if (value && value.includes('This is a test of the logging system')) {
+      console.log('🔍 Height calculation debug:', {
+        value: value.substring(0, 50),
+        textareaWidth,
+        wrappedHeight,
+        singleLineHeight,
+        heightDifference,
+        isWrapping,
+        minHeight
+      });
+    }
+    
+    const newHeight = isWrapping ? Math.max(wrappedHeight, minHeight) : minHeight;
+    
+    // Always update height if it's different
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
