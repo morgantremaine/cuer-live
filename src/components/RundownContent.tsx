@@ -63,6 +63,8 @@ interface RundownContentProps {
   visibleItems: RundownItem[];
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
+  // Zoom functionality
+  zoomLevel?: number;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -119,7 +121,8 @@ const RundownContent = React.memo<RundownContentProps>(({
   getHeaderGroupItemIds,
   visibleItems,
   savedLayouts,
-  onLoadLayout
+  onLoadLayout,
+  zoomLevel = 1.0
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -230,9 +233,17 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with Header Inside */}
+      {/* Scrollable Content with Header Inside - Apply Zoom Transform */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
-        <div className="bg-background" style={{ minWidth: `${totalTableWidth}px` }}>
+        <div 
+          className="bg-background zoom-container" 
+          style={{ 
+            minWidth: `${totalTableWidth}px`,
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+          }}
+        >
           {/* Single Table Structure for Perfect Alignment */}
           <table 
             className="border-collapse table-container" 

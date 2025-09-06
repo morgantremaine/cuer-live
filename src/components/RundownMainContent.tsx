@@ -47,6 +47,7 @@ const RundownMainContent = ({
         visibleItems={contentProps.visibleItems} // Pass visible items for display
         savedLayouts={savedLayouts}
         onLoadLayout={handleLoadLayout}
+        zoomLevel={contentProps.zoomLevel}
       />
       
       <ColumnManager

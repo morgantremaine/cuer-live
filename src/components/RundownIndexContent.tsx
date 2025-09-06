@@ -9,6 +9,7 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useTeam } from '@/hooks/useTeam';
+import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { supabase } from '@/integrations/supabase/client';
 
 
@@ -274,6 +275,17 @@ const RundownIndexContent = () => {
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
+
+  // Zoom functionality
+  const {
+    zoomLevel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    canZoomIn,
+    canZoomOut,
+    isDefaultZoom
+  } = useRundownZoom(rundownId);
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
@@ -547,6 +559,14 @@ const RundownIndexContent = () => {
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}
         onShowNotes={() => setShowNotesWindow(true)}
+        // Zoom controls
+        zoomLevel={zoomLevel}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onResetZoom={resetZoom}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+        isDefaultZoom={isDefaultZoom}
         // Header collapse functions
         toggleHeaderCollapse={toggleHeaderCollapse}
         isHeaderCollapsed={isHeaderCollapsed}

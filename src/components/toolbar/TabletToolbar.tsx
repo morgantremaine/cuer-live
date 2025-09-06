@@ -9,6 +9,7 @@ import {
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface TabletToolbarProps {
@@ -35,6 +36,14 @@ interface TabletToolbarProps {
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
 }
 
 const TabletToolbar = ({
@@ -60,7 +69,15 @@ const TabletToolbar = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  // Zoom props
+  zoomLevel = 1.0,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  canZoomIn = true,
+  canZoomOut = true,
+  isDefaultZoom = true
 }: TabletToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -117,6 +134,20 @@ const TabletToolbar = ({
             onToggleAutoScroll={onToggleAutoScroll}
           />
         </div>
+
+        {/* Zoom Controls */}
+        {onZoomIn && onZoomOut && onResetZoom && (
+          <ZoomControls
+            zoomLevel={zoomLevel}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onResetZoom={onResetZoom}
+            canZoomIn={canZoomIn}
+            canZoomOut={canZoomOut}
+            isDefaultZoom={isDefaultZoom}
+            size="sm"
+          />
+        )}
 
         <ThemeToggle />
       </div>

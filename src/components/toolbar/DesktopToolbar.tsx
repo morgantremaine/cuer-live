@@ -3,6 +3,7 @@ import React from 'react';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
 import PlaybackControls from './PlaybackControls';
+import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface DesktopToolbarProps {
@@ -29,6 +30,14 @@ interface DesktopToolbarProps {
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
 }
 
 const DesktopToolbar = ({
@@ -54,7 +63,15 @@ const DesktopToolbar = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  // Zoom props
+  zoomLevel = 1.0,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  canZoomIn = true,
+  canZoomOut = true,
+  isDefaultZoom = true
 }: DesktopToolbarProps) => {
   return (
     <div className="p-1 border-b bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
@@ -95,6 +112,20 @@ const DesktopToolbar = ({
             onToggleAutoScroll={onToggleAutoScroll}
           />
         </div>
+
+        {/* Zoom Controls */}
+        {onZoomIn && onZoomOut && onResetZoom && (
+          <ZoomControls
+            zoomLevel={zoomLevel}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onResetZoom={onResetZoom}
+            canZoomIn={canZoomIn}
+            canZoomOut={canZoomOut}
+            isDefaultZoom={isDefaultZoom}
+            size="sm"
+          />
+        )}
 
         <ThemeToggle />
       </div>

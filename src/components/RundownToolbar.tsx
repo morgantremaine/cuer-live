@@ -37,6 +37,14 @@ interface RundownToolbarProps {
   onToggleAutoScroll?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
 }
 
 const RundownToolbar = ({
@@ -62,7 +70,15 @@ const RundownToolbar = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  // Zoom props
+  zoomLevel,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  canZoomIn,
+  canZoomOut,
+  isDefaultZoom
 }: RundownToolbarProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
 
@@ -85,12 +101,19 @@ const RundownToolbar = ({
     onBackward,
     onReset,
     rundownTitle,
-    rundownData,
-    autoScrollEnabled,
-    onToggleAutoScroll,
-    onShowFindReplace,
-    onShowNotes
-  };
+      rundownData,
+      autoScrollEnabled,
+      onToggleAutoScroll,
+      onShowFindReplace,
+      onShowNotes,
+      zoomLevel,
+      onZoomIn,
+      onZoomOut,
+      onResetZoom,
+      canZoomIn,
+      canZoomOut,
+      isDefaultZoom
+    };
 
   if (isMobile) {
     return <MobileToolbar {...commonProps} />;

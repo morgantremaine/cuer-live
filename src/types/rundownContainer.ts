@@ -89,6 +89,15 @@ export interface RundownContainerProps {
   // Notes window functionality
   onShowNotes?: () => void;
   
+  // Zoom functionality
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
+  
   // Header collapse functions
   toggleHeaderCollapse: (headerId: string) => void;
   isHeaderCollapsed: (headerId: string) => boolean;

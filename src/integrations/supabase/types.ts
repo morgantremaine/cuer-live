@@ -858,6 +858,33 @@ export type Database = {
           },
         ]
       }
+      user_rundown_zoom_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          rundown_id: string
+          updated_at: string
+          user_id: string
+          zoom_level: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rundown_id: string
+          updated_at?: string
+          user_id: string
+          zoom_level?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rundown_id?: string
+          updated_at?: string
+          user_id?: string
+          zoom_level?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
