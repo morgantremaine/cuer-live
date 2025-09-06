@@ -260,6 +260,12 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
             data-rundown-table="header"
           >
+            <colgroup>
+              <col style={{ width: '64px' }} />
+              {visibleColumns.map((col) => (
+                <col key={`hcol-${col.id}`} style={{ width: getColumnWidth(col) }} />
+              ))}
+            </colgroup>
             <RundownTableHeader 
               visibleColumns={visibleColumns}
               allColumns={allColumns}
@@ -301,6 +307,12 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
             data-rundown-table="main"
           >
+            <colgroup>
+              <col style={{ width: '64px' }} />
+              {visibleColumns.map((col) => (
+                <col key={`bcol-${col.id}`} style={{ width: getColumnWidth(col) }} />
+              ))}
+            </colgroup>
             {/* Table Body - Content */}
             <OptimizedRundownTableWrapper
               items={items} // Pass original items for duration calculations

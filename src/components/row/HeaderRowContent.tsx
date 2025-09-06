@@ -58,7 +58,8 @@ const HeaderRowContent = ({
           backgroundColor,
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px'
+          maxWidth: '64px',
+          borderRight: '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center space-x-1">
@@ -94,7 +95,8 @@ const HeaderRowContent = ({
                 style={{ 
                   width: columnWidth, 
                   backgroundColor,
-                  overflow: 'visible'
+                  overflow: 'visible',
+                  borderRight: '1px solid hsl(var(--border))'
                 }}
             >
               <div 
@@ -162,7 +164,8 @@ const HeaderRowContent = ({
               className="align-middle min-h-[115px]"
               style={{ 
                 width: columnWidth, 
-                backgroundColor 
+                backgroundColor,
+                borderRight: '1px solid hsl(var(--border))' 
               }}
             >
               <div className="px-2 py-8">
@@ -181,7 +184,8 @@ const HeaderRowContent = ({
               className="align-middle min-h-[115px]"
               style={{ 
                 width: columnWidth, 
-                backgroundColor 
+                backgroundColor,
+                borderRight: '1px solid hsl(var(--border))' 
               }}
             >
               <div className="px-2 py-8"></div>
@@ -195,7 +199,8 @@ const HeaderRowContent = ({
               className="align-middle min-h-[115px]"
               style={{ 
                 width: columnWidth, 
-                backgroundColor 
+                backgroundColor,
+                borderRight: '1px solid hsl(var(--border))' 
               }}
             >
               <div className="px-2 py-8"></div>
