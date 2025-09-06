@@ -219,14 +219,17 @@ export const useSimplifiedRundownState = () => {
     // Add recently edited fields within protection window
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
       if (now - timestamp < PROTECTION_WINDOW_MS) {
-        protectedFields.add(fieldKey);
+        // Don't protect script fields during teleprompter saves
+        if (!fieldKey.includes('script') || !teleprompterSync.isTeleprompterSaving) {
+          protectedFields.add(fieldKey);
+        }
       } else {
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
     
     return protectedFields;
-  }, []);
+  }, [teleprompterSync.isTeleprompterSaving]);
 
   // Enhanced realtime connection with sync-before-write protection
   const deferredUpdateRef = useRef<any>(null);

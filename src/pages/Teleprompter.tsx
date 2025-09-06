@@ -25,6 +25,8 @@ const Teleprompter = () => {
   const [rundownData, setRundownData] = useState<{
     title: string;
     items: RundownItem[];
+    doc_version?: number;
+    updated_at?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,9 @@ const Teleprompter = () => {
         console.log('📥 Teleprompter receiving real-time update from team');
         setRundownData({
           title: updatedRundown.title || 'Untitled Rundown',
-          items: updatedRundown.items || []
+          items: updatedRundown.items || [],
+          doc_version: updatedRundown.doc_version, // Include doc_version for optimistic concurrency
+          updated_at: updatedRundown.updated_at
         });
         
         // Update doc version tracking
@@ -152,7 +156,9 @@ const Teleprompter = () => {
           
           setRundownData({
             title: data.title || 'Untitled Rundown',
-            items: data.items || []
+            items: data.items || [],
+            doc_version: data.doc_version,
+            updated_at: data.updated_at
           });
           
           if (data.doc_version) {
