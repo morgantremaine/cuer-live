@@ -282,60 +282,68 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content - both header and body scaled identically for perfect alignment */}
+      {/* Scrollable Content - header content scaled identically to body for perfect alignment */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
-        {/* Sticky Header - scaled exactly like body */}
+        {/* Sticky Header - container unscaled, content scaled exactly like body */}
         <div 
-          className="sticky top-0 z-20 bg-background border-b border-border"
+          className="sticky top-0 z-20 bg-background border-b border-border overflow-hidden"
           style={{ 
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+            width: '100%'
           }}
         >
           <div 
             ref={headerScrollRef}
             className="overflow-hidden"
             style={{ 
-              width: `${totalTableWidth}px`,
+              width: '100%',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
           >
-            <table 
-              className="border-collapse table-container" 
-              style={{ 
-                tableLayout: 'fixed', 
-                width: `${totalTableWidth}px`,
-                minWidth: `${totalTableWidth}px`,
-                margin: 0,
-                padding: 0
+            {/* Scale header content identically to body */}
+            <div
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+                width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+                minWidth: `${totalTableWidth}px`
               }}
-              data-rundown-table="header"
             >
-              <colgroup>
-                <col style={{ width: '66px' }} />
-                {visibleColumns.map((col) => (
-                  <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
-                ))}
-              </colgroup>
-              <RundownTableHeader 
-                visibleColumns={visibleColumns}
-                allColumns={allColumns}
-                getColumnWidth={(col) => normalizedGetColumnWidth(col)}
-                updateColumnWidth={updateColumnWidth}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                items={items}
-                columnExpandState={columnExpandState}
-                onToggleColumnExpand={handleToggleColumnExpand}
-                onToggleAllHeaders={handleToggleAllHeaders}
-                isHeaderCollapsed={isHeaderCollapsed}
-                savedLayouts={savedLayouts}
-                onLoadLayout={onLoadLayout}
-                zoomLevel={zoomLevel}
-              />
-            </table>
+              <table 
+                className="border-collapse table-container" 
+                style={{ 
+                  tableLayout: 'fixed', 
+                  width: `${totalTableWidth}px`,
+                  minWidth: `${totalTableWidth}px`,
+                  margin: 0,
+                  padding: 0
+                }}
+                data-rundown-table="header"
+              >
+                <colgroup>
+                  <col style={{ width: '66px' }} />
+                  {visibleColumns.map((col) => (
+                    <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                  ))}
+                </colgroup>
+                <RundownTableHeader 
+                  visibleColumns={visibleColumns}
+                  allColumns={allColumns}
+                  getColumnWidth={(col) => normalizedGetColumnWidth(col)}
+                  updateColumnWidth={updateColumnWidth}
+                  onReorderColumns={onReorderColumns}
+                  onToggleColumnVisibility={onToggleColumnVisibility}
+                  items={items}
+                  columnExpandState={columnExpandState}
+                  onToggleColumnExpand={handleToggleColumnExpand}
+                  onToggleAllHeaders={handleToggleAllHeaders}
+                  isHeaderCollapsed={isHeaderCollapsed}
+                  savedLayouts={savedLayouts}
+                  onLoadLayout={onLoadLayout}
+                  zoomLevel={zoomLevel}
+                />
+              </table>
+            </div>
           </div>
         </div>
         
