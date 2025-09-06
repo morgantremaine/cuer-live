@@ -212,14 +212,17 @@ export const useShowcallerStateCoordination = ({
     
     play(selectedSegmentId);
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'play',
+    // Broadcast first for instant sync - with debug logging
+    const broadcastPayload = {
+      action: 'play' as const,
       isPlaying: true,
       currentSegmentId: selectedSegmentId || currentSegmentId,
       timeRemaining,
       isController
-    });
+    };
+    console.log('📺 About to broadcast play state:', broadcastPayload);
+    broadcastState(broadcastPayload);
+    console.log('📺 Broadcast sent for play action');
     
     // Send cue trigger for play event
     const current = selectedSegmentId ? items.find(item => item.id === selectedSegmentId) : getCurrentSegment();
@@ -267,14 +270,17 @@ export const useShowcallerStateCoordination = ({
     
     forward();
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'forward',
+    // Broadcast first for instant sync - with debug logging
+    const broadcastPayload = {
+      action: 'forward' as const,
       isPlaying,
       currentSegmentId,
       timeRemaining,
       isController
-    });
+    };
+    console.log('📺 About to broadcast forward state:', broadcastPayload);
+    broadcastState(broadcastPayload);
+    console.log('📺 Broadcast sent for forward action');
     
     // Send cue trigger for forward event
     const current = getCurrentSegment();
@@ -371,6 +377,14 @@ export const useShowcallerStateCoordination = ({
   // Initialization coordination
   useEffect(() => {
     const isFullyConnected = isBroadcastConnected && isFallbackConnected;
+    console.log('📺 Showcaller coordination connection status:', {
+      isBroadcastConnected,
+      isFallbackConnected,
+      isFullyConnected,
+      rundownId,
+      userId
+    });
+    
     if (isInitialized && !initializationRef.current) {
       initializationRef.current = true;
       console.log('📺 Showcaller state coordination initialized with broadcast-first sync:', {
