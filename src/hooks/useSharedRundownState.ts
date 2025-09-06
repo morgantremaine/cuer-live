@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
-import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 
 export const useSharedRundownState = () => {
@@ -28,18 +27,11 @@ export const useSharedRundownState = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Enhanced refs for better real-time handling
-  const lastUpdateTimestamp = useRef<string | null>(null);
-  const lastShowcallerTimestamp = useRef<string | null>(null);
+  // Pure realtime tracking refs (no polling)
   const lastDocVersion = useRef<number>(0);
-  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
-  const showcallerPollingInterval = useRef<NodeJS.Timeout | null>(null);
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
-  const realtimeSubscription = useRef<any>(null);
-  const contentSubscription = useRef<any>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
-  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
 
   // Enhanced time update with proper cleanup
   useEffect(() => {
@@ -62,17 +54,17 @@ export const useSharedRundownState = () => {
     };
   }, []);
 
-  // Optimized load function with better showcaller change detection
+  // Pure realtime data loading function - only called on initial load or realtime updates
   const loadRundownData = useCallback(async (forceReload = false) => {
     if (!rundownId || isLoadingRef.current || !mountedRef.current) {
       return;
     }
 
-    logger.debug(`Loading rundown data for ID: ${rundownId}`);
+    logger.debug(`Loading rundown data for ID: ${rundownId} (realtime-driven)`);
     isLoadingRef.current = true;
 
     try {
-      // Use the updated RPC function that always returns data for shared rundowns
+      // Use the RPC function that returns data for shared rundowns
       const { data, error: queryError } = await supabase
         .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
@@ -83,36 +75,23 @@ export const useSharedRundownState = () => {
         setError(`Database error: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
-        // Check if we need to update based on timestamps
-        const showcallerChanged = lastShowcallerTimestamp.current !== JSON.stringify(data.showcaller_state);
-        const contentChanged = lastUpdateTimestamp.current !== data.updated_at;
+        const newRundownData = {
+          id: data.id,
+          title: data.title || 'Untitled Rundown',
+          items: data.items || [],
+          columns: data.columns || [],
+          startTime: data.start_time || '09:00:00',
+          timezone: data.timezone || 'UTC',
+          lastUpdated: data.updated_at,
+          showcallerState: data.showcaller_state,
+          visibility: data.visibility,
+          docVersion: data.doc_version,
+          lastUpdatedBy: data.last_updated_by
+        };
         
-        if (forceReload || contentChanged || showcallerChanged) {
-          const newRundownData = {
-            id: data.id,
-            title: data.title || 'Untitled Rundown',
-            items: data.items || [],
-            columns: data.columns || [],
-            startTime: data.start_time || '09:00:00',
-            timezone: data.timezone || 'UTC',
-            lastUpdated: data.updated_at,
-            showcallerState: data.showcaller_state,
-            visibility: data.visibility,
-            docVersion: data.doc_version,
-            lastUpdatedBy: data.last_updated_by
-          };
-          
-          logger.debug(`Updated rundown data: ${newRundownData.title} ${showcallerChanged ? '(showcaller changed)' : '(content changed)'}`);
-          setRundownData(newRundownData);
-          lastUpdateTimestamp.current = data.updated_at;
-          lastShowcallerTimestamp.current = JSON.stringify(data.showcaller_state);
-          
-          // Update watchdog tracking
-          if (watchdogRef.current && data.doc_version) {
-            watchdogRef.current.updateLastSeen(data.doc_version, data.updated_at);
-          }
-          lastDocVersion.current = data.doc_version || 0;
-        }
+        logger.debug(`Updated rundown data: ${newRundownData.title} (realtime update)`);
+        setRundownData(newRundownData);
+        lastDocVersion.current = data.doc_version || 0;
         setError(null);
       } else {
         setError('Rundown not found');
@@ -131,158 +110,89 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Enhanced real-time subscription for both content and showcaller updates using consolidated system
+  // Pure Supabase realtime subscription - handles all updates (content + showcaller)
   const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
       if (!mountedRef.current) return;
       
-      logger.debug('Shared view received real-time update', updatedRundown);
+      logger.debug('Shared view received realtime update', {
+        docVersion: updatedRundown?.doc_version,
+        hasShowcaller: !!updatedRundown?.showcaller_state,
+        timestamp: updatedRundown?.updated_at
+      });
       
       const newDocVersion = updatedRundown?.doc_version || 0;
       const currentDocVersion = lastDocVersion.current;
       
-      // Only process if this is a newer version
-      if (newDocVersion > currentDocVersion) {
-        logger.debug('Processing newer content update:', { 
+      // Always process updates - either content changed OR showcaller changed
+      if (newDocVersion !== currentDocVersion || updatedRundown?.showcaller_state) {
+        logger.debug('Processing realtime update:', { 
           newVersion: newDocVersion, 
-          currentVersion: currentDocVersion 
+          currentVersion: currentDocVersion,
+          updateType: newDocVersion > currentDocVersion ? 'content' : 'showcaller'
         });
         
-        // Update watchdog tracking immediately
-        if (watchdogRef.current) {
-          watchdogRef.current.updateLastSeen(newDocVersion, updatedRundown?.updated_at);
-        }
-        
-        loadRundownData(true);
-      } else if (updatedRundown?.showcaller_state) {
-        // Check for showcaller-only changes even on same doc version
-        const newShowcallerState = JSON.stringify(updatedRundown.showcaller_state);
-        if (newShowcallerState !== lastShowcallerTimestamp.current) {
-          logger.debug('Showcaller-only change detected');
-          loadRundownData(true);
+        // Apply update immediately without re-fetching
+        if (updatedRundown) {
+          const newRundownData = {
+            id: updatedRundown.id,
+            title: updatedRundown.title || 'Untitled Rundown',
+            items: updatedRundown.items || [],
+            columns: updatedRundown.columns || [],
+            startTime: updatedRundown.start_time || '09:00:00',
+            timezone: updatedRundown.timezone || 'UTC',
+            lastUpdated: updatedRundown.updated_at,
+            showcallerState: updatedRundown.showcaller_state,
+            visibility: updatedRundown.visibility,
+            docVersion: updatedRundown.doc_version,
+            lastUpdatedBy: updatedRundown.last_updated_by
+          };
+          
+          setRundownData(newRundownData);
+          lastDocVersion.current = newDocVersion;
+          setError(null);
         }
       }
-    }, [loadRundownData]),
+    }, []),
+    onShowcallerUpdate: useCallback((updatedData) => {
+      if (!mountedRef.current) return;
+      
+      logger.debug('Shared view received showcaller-only update');
+      
+      // Update showcaller state only
+      setRundownData(prev => prev ? {
+        ...prev,
+        showcallerState: updatedData.showcaller_state,
+        lastUpdated: updatedData.updated_at
+      } : null);
+    }, []),
     enabled: !!rundownId,
     isSharedView: true
   });
 
-  // Start watchdog for shared views
-  useEffect(() => {
-    if (realtimeConnected && !watchdogRef.current && rundownId) {
-      watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'shared-viewer', {
-        onStaleData: (latestData) => {
-          logger.debug('Watchdog detected stale data, refreshing');
-          loadRundownData(true);
-        },
-        onReconnect: () => {
-          logger.debug('Watchdog triggered reconnect');
-          loadRundownData(true);
-        }
-      });
-      watchdogRef.current.start();
-    }
-  }, [realtimeConnected, rundownId, loadRundownData]);
-
-  // Initial load
+  // Initial load only - no polling needed with pure realtime
   useEffect(() => {
     if (rundownId && mountedRef.current) {
+      logger.debug('Initial load for shared rundown');
       loadRundownData();
     }
   }, [rundownId, loadRundownData]);
 
-  // Reduced polling - now real-time is primary, polling is fallback only
-  useEffect(() => {
-    if (!rundownId || loading || !rundownData) return;
-    
-    // Clear any existing intervals
-    if (pollingInterval.current) {
-      clearInterval(pollingInterval.current);
-      pollingInterval.current = null;
-    }
-    if (showcallerPollingInterval.current) {
-      clearInterval(showcallerPollingInterval.current);
-      showcallerPollingInterval.current = null;
-    }
-    
-    const isPlaying = rundownData?.showcallerState?.isPlaying;
-    
-    if (isPlaying) {
-      // Fallback polling for showcaller when playing (every 2 seconds)
-      logger.debug('Starting fallback showcaller polling (2s interval)');
-      showcallerPollingInterval.current = setInterval(() => {
-        if (mountedRef.current) {
-          loadRundownData();
-        } else {
-          if (showcallerPollingInterval.current) {
-            clearInterval(showcallerPollingInterval.current);
-            showcallerPollingInterval.current = null;
-          }
-        }
-      }, 2000); // Reduced frequency since real-time is primary
-    } else {
-      // Light fallback polling for general updates (every 30 seconds)
-      logger.debug('Starting light fallback polling (30s interval)');
-      pollingInterval.current = setInterval(() => {
-        if (mountedRef.current) {
-          loadRundownData();
-        } else {
-          if (pollingInterval.current) {
-            clearInterval(pollingInterval.current);
-            pollingInterval.current = null;
-          }
-        }
-      }, 30000); // Much reduced since real-time handles most updates
-    }
-
-    return () => {
-      if (pollingInterval.current) {
-        clearInterval(pollingInterval.current);
-        pollingInterval.current = null;
-      }
-      if (showcallerPollingInterval.current) {
-        clearInterval(showcallerPollingInterval.current);
-        showcallerPollingInterval.current = null;
-      }
-    };
-  }, [rundownId, loading, rundownData?.showcallerState?.isPlaying, loadRundownData]);
-
-  // Enhanced cleanup on unmount
+  // Clean, simple cleanup on unmount - no polling to clean up
   useEffect(() => {
     mountedRef.current = true;
     
     return () => {
       mountedRef.current = false;
       
-      // Clear all intervals and subscriptions
-      if (pollingInterval.current) {
-        clearInterval(pollingInterval.current);
-        pollingInterval.current = null;
-      }
-      if (showcallerPollingInterval.current) {
-        clearInterval(showcallerPollingInterval.current);
-        showcallerPollingInterval.current = null;
-      }
+      // Clear time update interval only
       if (timeUpdateInterval.current) {
         clearInterval(timeUpdateInterval.current);
         timeUpdateInterval.current = null;
       }
-      if (realtimeSubscription.current) {
-        supabase.removeChannel(realtimeSubscription.current);
-        realtimeSubscription.current = null;
-      }
-      if (contentSubscription.current) {
-        supabase.removeChannel(contentSubscription.current);
-        contentSubscription.current = null;
-      }
-      if (watchdogRef.current) {
-        watchdogRef.current.stop();
-        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
-        watchdogRef.current = null;
-      }
     };
-  }, []);
+  }, [rundownId]);
 
   // Find the showcaller segment from showcaller_state or fallback to item status
   const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 
