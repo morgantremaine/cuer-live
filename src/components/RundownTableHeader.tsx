@@ -42,7 +42,9 @@ interface RundownTableHeaderProps {
   onLoadLayout?: (columns: Column[]) => void;
   zoomLevel?: number;
   headerTranslateY?: number; // compensate sticky drift when zoom is applied
+  activeColumn?: Column | null; // for DragOverlay
 }
+
 
 const RundownTableHeader = ({
   visibleColumns,
@@ -61,37 +63,9 @@ const RundownTableHeader = ({
   zoomLevel = 1,
   headerTranslateY = 0
 }: RundownTableHeaderProps) => {
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Minimum distance before drag starts
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  // Drag-and-drop context is provided by parent DndContext in RundownContent.
+  // This header remains DOM-valid by avoiding providers inside <tr>.
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const column = visibleColumns.find(col => col.id === event.active.id);
-    setActiveColumn(column || null);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id && onReorderColumns) {
-      const oldIndex = visibleColumns.findIndex((column) => column.id === active.id);
-      const newIndex = visibleColumns.findIndex((column) => column.id === over?.id);
-
-      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
-      onReorderColumns(newColumns);
-    }
-    
-    setActiveColumn(null);
-  };
 
   // Auto-resize column to fit content
   const handleAutoResize = (column: Column) => {
