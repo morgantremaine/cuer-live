@@ -58,8 +58,8 @@ const HeaderRowContent = ({
           backgroundColor,
           width: '66px',
           minWidth: '66px', 
-          maxWidth: '66px',
-          borderRight: '1px solid hsl(var(--border))'
+          maxWidth: '66px'
+          // Removed borderRight to create seamless header block
         }}
       >
         <div className="flex items-center space-x-1">
