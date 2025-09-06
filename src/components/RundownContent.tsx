@@ -185,38 +185,12 @@ const RundownContent = React.memo<RundownContentProps>(({
     items
   });
 
-// Initialize drag auto-scroll functionality
+  // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
   const { handleDragAutoScroll } = useDragAutoScroll({
     scrollContainerRef,
     isActive: isDragging
   });
-
-  // Sticky header zoom compensation
-  const [headerTranslateY, setHeaderTranslateY] = useState(0);
-  React.useEffect(() => {
-    const el = scrollContainerRef.current as HTMLElement | null;
-    if (!el) return;
-
-    const update = () => {
-      if (Math.abs(zoomLevel - 1) < 0.001) {
-        setHeaderTranslateY(0);
-        return;
-      }
-      const st = el.scrollTop || 0;
-      // Compensate drift caused by CSS scale on content
-      const compensation = st * (1 - 1 / zoomLevel);
-      const adjusted = compensation / zoomLevel; // translateY is affected by parent scale
-      setHeaderTranslateY(adjusted);
-    };
-
-    // Initial
-    update();
-    el.addEventListener('scroll', update, { passive: true } as any);
-    return () => {
-      el.removeEventListener('scroll', update as any);
-    };
-  }, [scrollContainerRef, zoomLevel]);
 
   // Enhanced drag over handler that includes auto-scroll
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
@@ -298,7 +272,6 @@ const RundownContent = React.memo<RundownContentProps>(({
               savedLayouts={savedLayouts}
               onLoadLayout={onLoadLayout}
               zoomLevel={zoomLevel}
-              headerTranslateY={headerTranslateY}
             />
             
             {/* Table Body - Content */}

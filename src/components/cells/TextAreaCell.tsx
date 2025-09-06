@@ -76,26 +76,10 @@ const TextAreaCell = ({
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
     
-    // Check if text actually needs to wrap by comparing the text width with available width
-    const tempSpan = document.createElement('span');
-    tempSpan.style.visibility = 'hidden';
-    tempSpan.style.position = 'absolute';
-    tempSpan.style.fontSize = computedStyle.fontSize;
-    tempSpan.style.fontFamily = computedStyle.fontFamily;
-    tempSpan.style.fontWeight = computedStyle.fontWeight;
-    tempSpan.style.whiteSpace = 'nowrap';
-    tempSpan.textContent = value || ' ';
-    document.body.appendChild(tempSpan);
+    // Use the larger of natural height or minimum height
+    const newHeight = Math.max(naturalHeight, minHeight);
     
-    const textWidth = tempSpan.offsetWidth;
-    const availableWidth = textareaWidth - paddingTop - paddingBottom;
-    document.body.removeChild(tempSpan);
-    
-    // If text fits on one line, use minimum height; otherwise use calculated height
-    const shouldWrap = textWidth > availableWidth;
-    const newHeight = shouldWrap ? Math.max(naturalHeight, minHeight) : minHeight;
-    
-    // Always update height if it's different
+    // Always update height if it's different (removed the conservative condition)
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
@@ -234,7 +218,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10 flex items-center`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -264,7 +248,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden flex items-center ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
