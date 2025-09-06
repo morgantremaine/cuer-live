@@ -16,7 +16,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useDashboardRundownRealtime } from '@/hooks/useDashboardRundownRealtime';
+import { useDashboardRundownOptimized } from '@/hooks/useDashboardRundownOptimized';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,12 +48,23 @@ const Dashboard = () => {
     );
   };
   
-  // Set up real-time subscription for dashboard rundowns
-  const { isConnected: realtimeConnected } = useDashboardRundownRealtime({
+  // Set up optimized real-time subscriptions for dashboard rundowns
+  const { isConnected: realtimeConnected, connectedCount, totalRundowns } = useDashboardRundownOptimized({
     rundowns: liveRundowns,
     onRundownUpdate: handleRundownUpdate,
     enabled: true
   });
+
+  // Log connection status for debugging
+  useEffect(() => {
+    if (totalRundowns > 0) {
+      console.log('🎯 Dashboard: Realtime status:', { 
+        connected: realtimeConnected, 
+        connectedCount, 
+        totalRundowns 
+      });
+    }
+  }, [realtimeConnected, connectedCount, totalRundowns]);
   
   // Improved loading state tracking
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);

@@ -17,6 +17,7 @@ import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -44,13 +45,8 @@ export const useSimplifiedRundownState = () => {
   const activeFocusFieldRef = useRef<string | null>(null);
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
-  // Get reference to AutoSave's cellUpdateInProgressRef to coordinate cross-saving prevention
-  const getCellUpdateRef = () => {
-    if (typeof window !== 'undefined') {
-      return (window as any).__cellUpdateInProgressRef;
-    }
-    return null;
-  };
+  // Use proper React context for cell update coordination
+  const { executeWithCellUpdate } = useCellUpdateCoordination();
   
   // Shorter protection windows to reduce overwrites
   const PROTECTION_WINDOW_MS = 800; // Very short protection
@@ -450,13 +446,9 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update:', update);
       
-      // CRITICAL: Set cell update flag to prevent AutoSave trigger for cell edits only
-      const cellUpdateRef = getCellUpdateRef();
-      if (cellUpdateRef) {
-        cellUpdateRef.current = true;
-      }
-      
-      // Handle rundown-level property updates (no itemId)
+      // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
+      executeWithCellUpdate(() => {
+        // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
         // Check if we're actively editing this rundown-level field
         const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
@@ -490,65 +482,51 @@ export const useSimplifiedRundownState = () => {
             console.warn('🚨 Unknown rundown-level field:', update.field);
         }
         
-        // Clear cell update flag after applying rundown-level changes
-        setTimeout(() => {
-          const cellUpdateRef = getCellUpdateRef();
-          if (cellUpdateRef) {
-            cellUpdateRef.current = false;
-          }
-        }, 50);
         return;
       }
       
-      // Handle item-level updates (existing logic)
-      if (update.field === 'structuralChange') {
-        // Handle structural changes - trigger refresh to sync new items/deletions
-        console.log('📱 Item structural change detected, performing refresh');
-        deferredUpdateRef.current = true;
-        return;
-      }
-      
-      const updatedItems = state.items.map(item => {
-        if (item.id === update.itemId) {
-          // Only apply if not actively editing this exact field
-          const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
-          if (isActivelyEditing) {
-            console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
-            return item;
-          }
-          
-          if (update.field === 'customFields') {
-            return {
-              ...item,
-              customFields: { ...item.customFields, ...update.value }
-            };
-          } else {
-            return {
-              ...item,
-              [update.field]: update.value
-            };
-          }
+        // Handle item-level updates (existing logic)
+        if (update.field === 'structuralChange') {
+          // Handle structural changes - trigger refresh to sync new items/deletions
+          console.log('📱 Item structural change detected, performing refresh');
+          deferredUpdateRef.current = true;
+          return;
         }
-        return item;
+        
+        const updatedItems = state.items.map(item => {
+          if (item.id === update.itemId) {
+            // Only apply if not actively editing this exact field
+            const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
+            if (isActivelyEditing) {
+              console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
+              return item;
+            }
+            
+            if (update.field === 'customFields') {
+              return {
+                ...item,
+                customFields: { ...item.customFields, ...update.value }
+              };
+            } else {
+              return {
+                ...item,
+                [update.field]: update.value
+              };
+            }
+          }
+          return item;
+        });
+        
+        if (updatedItems.some((item, index) => item !== state.items[index])) {
+          actions.setItems(updatedItems);
+        }
       });
-      
-      if (updatedItems.some((item, index) => item !== state.items[index])) {
-        actions.setItems(updatedItems);
-      }
-      
-      // Clear cell update flag after a brief delay to prevent AutoSave
-      setTimeout(() => {
-        const cellUpdateRef = getCellUpdateRef();
-        if (cellUpdateRef) {
-          cellUpdateRef.current = false;
-        }
-      }, 50);
     });
 
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId, state.items, actions]);
+  }, [rundownId, currentUserId, state.items, actions, executeWithCellUpdate]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;

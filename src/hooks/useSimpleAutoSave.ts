@@ -10,6 +10,7 @@ import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
+import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -22,6 +23,7 @@ export const useSimpleAutoSave = (
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { shouldBlockAutoSave } = useCellUpdateCoordination();
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -30,8 +32,6 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
-  const cellUpdateInProgressRef = useRef<boolean>(false);
-  
   // Simplified autosave system - reduce complexity
   const lastEditAtRef = useRef<number>(0);
   const typingIdleMs = 1500; // Shorter, more responsive timing
@@ -265,9 +265,8 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // CRITICAL: Skip save during cell broadcasts to prevent cross-saving (but allow showcaller saves)
-    if (cellUpdateInProgressRef.current) {
-      console.log('🛑 AutoSave: blocked - cell broadcast update in progress');
+    // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
+    if (shouldBlockAutoSave()) {
       return;
     }
 
@@ -753,13 +752,7 @@ export const useSimpleAutoSave = (
     };
   }, []);
 
-  // Expose cellUpdateInProgressRef to the parent component
-  useEffect(() => {
-    // Store reference in global scope for access by useSimplifiedRundownState
-    if (typeof window !== 'undefined') {
-      (window as any).__cellUpdateInProgressRef = cellUpdateInProgressRef;
-    }
-  }, []);
+  // Note: Cell update coordination now handled via React context instead of global variables
 
   return {
     isSaving,

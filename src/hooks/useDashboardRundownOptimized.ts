@@ -1,0 +1,131 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { SavedRundown } from '@/hooks/useRundownStorage/types';
+import { useAuth } from './useAuth';
+
+interface UseDashboardRundownOptimizedProps {
+  rundowns: SavedRundown[];
+  onRundownUpdate: (updatedRundown: SavedRundown) => void;
+  enabled?: boolean;
+}
+
+interface PartialRundownUpdate {
+  id: string;
+  updated_at: string;
+  title?: string;
+  show_date?: string;
+  items?: any[];
+  last_updated_by?: string;
+}
+
+export const useDashboardRundownOptimized = ({
+  rundowns,
+  onRundownUpdate,
+  enabled = true
+}: UseDashboardRundownOptimizedProps) => {
+  const { user } = useAuth();
+  const subscriptionsRef = useRef<Map<string, any>>(new Map());
+  const [connectedCount, setConnectedCount] = useState(0);
+  const rundownsRef = useRef(rundowns);
+
+  // Update rundowns ref when rundowns change
+  useEffect(() => {
+    rundownsRef.current = rundowns;
+  }, [rundowns]);
+
+  const handleRundownUpdate = useCallback((payload: { new: PartialRundownUpdate }) => {
+    const updatedData = payload.new;
+    
+    // Find the current rundown to merge with
+    const currentRundown = rundownsRef.current.find(r => r.id === updatedData.id);
+    if (!currentRundown) {
+      console.log('🎯 Dashboard: Rundown not found for update:', updatedData.id);
+      return;
+    }
+
+    // Create updated rundown by merging relevant fields
+    const updatedRundown: SavedRundown = {
+      ...currentRundown,
+      updated_at: updatedData.updated_at,
+      ...(updatedData.title !== undefined && { title: updatedData.title }),
+      ...(updatedData.show_date !== undefined && { show_date: updatedData.show_date }),
+      ...(updatedData.items !== undefined && { items: updatedData.items }),
+      ...(updatedData.last_updated_by !== undefined && { last_updated_by: updatedData.last_updated_by })
+    };
+
+    console.log('🎯 Dashboard: Processing rundown update:', {
+      id: updatedData.id,
+      title: updatedData.title,
+      itemCount: updatedData.items?.length,
+      updatedBy: updatedData.last_updated_by
+    });
+
+    onRundownUpdate(updatedRundown);
+  }, [onRundownUpdate]);
+
+  // Set up individual subscriptions for each rundown (more efficient than bulk filter)
+  useEffect(() => {
+    // Clean up existing subscriptions
+    subscriptionsRef.current.forEach((channel, rundownId) => {
+      console.log('🎯 Dashboard: Cleaning up subscription for:', rundownId);
+      supabase.removeChannel(channel);
+    });
+    subscriptionsRef.current.clear();
+    setConnectedCount(0);
+
+    if (!enabled || !user || rundowns.length === 0) {
+      console.log('🎯 Dashboard: Realtime subscription not ready:', { 
+        enabled, 
+        user: !!user, 
+        rundownCount: rundowns.length 
+      });
+      return;
+    }
+
+    console.log('🎯 Dashboard: Setting up optimized realtime subscriptions for', rundowns.length, 'rundowns');
+
+    // Create individual subscriptions for better performance
+    rundowns.forEach((rundown) => {
+      const channelName = `dashboard-rundown-${rundown.id}`;
+      
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'rundowns',
+            filter: `id=eq.${rundown.id}`
+          },
+          handleRundownUpdate
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setConnectedCount(prev => prev + 1);
+            console.log('🎯 Dashboard: Connected to rundown:', rundown.id);
+          } else if (status === 'CLOSED') {
+            setConnectedCount(prev => Math.max(0, prev - 1));
+            console.log('🎯 Dashboard: Disconnected from rundown:', rundown.id);
+          }
+        });
+
+      subscriptionsRef.current.set(rundown.id, channel);
+    });
+
+    return () => {
+      console.log('🎯 Dashboard: Cleaning up all realtime subscriptions');
+      subscriptionsRef.current.forEach((channel) => {
+        supabase.removeChannel(channel);
+      });
+      subscriptionsRef.current.clear();
+      setConnectedCount(0);
+    };
+  }, [enabled, user, rundowns.map(r => r.id).join(','), handleRundownUpdate]);
+
+  return {
+    isConnected: connectedCount > 0,
+    connectedCount,
+    totalRundowns: rundowns.length
+  };
+};
