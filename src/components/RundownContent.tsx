@@ -324,7 +324,8 @@ const RundownContent = React.memo<RundownContentProps>(({
             minWidth: `${totalTableWidth}px`,
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+            marginTop: '-1px'
           }}
         >
           {/* Single Table Structure for Perfect Alignment */}
