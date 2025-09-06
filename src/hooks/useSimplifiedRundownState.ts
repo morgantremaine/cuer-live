@@ -71,6 +71,7 @@ export const useSimplifiedRundownState = () => {
     return unsubscribe;
   }, []);
 
+
   // Tab visibility and focus tracking for stale tab prevention
   const prevIsActiveRef = useRef(isTabActive);
   useEffect(() => {
@@ -432,8 +433,13 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      console.log('📱 Cell broadcast received:', update);
+      
       // Skip our own updates
-      if (update.userId === currentUserId) return;
+      if (update.userId === currentUserId) {
+        console.log('📱 Skipping own cell broadcast update');
+        return;
+      }
       
       console.log('📱 Applying cell broadcast update:', update);
       
@@ -1126,6 +1132,7 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
   }, [state.items, state.title, saveUndoState, actions.setItems]);
+
 
   // Clean up timeouts on unmount
   useEffect(() => {
