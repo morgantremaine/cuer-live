@@ -79,7 +79,7 @@ const ResizableColumnHeader = ({
     isResizingRef.current = true;
     
     const startX = e.clientX;
-    const startWidth = parseInt(width.replace('px', ''));
+    const startWidth = parseFloat(width.replace('px', ''));
     initialWidthRef.current = startWidth;
 
     // Set cursor and disable text selection globally
@@ -149,7 +149,7 @@ const ResizableColumnHeader = ({
   }, [column.id, onWidthChange, width, minimumWidth]);
 
   // Parse width value and ensure it's a valid pixel value
-  const widthValue = parseInt(width.replace('px', ''));
+  const widthValue = parseFloat(width.replace('px', ''));
   const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
 
   const style = {

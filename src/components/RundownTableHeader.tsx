@@ -195,9 +195,9 @@ const RundownTableHeader = ({
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: `${Math.round(66 * zoomLevel)}px`, 
-            minWidth: `${Math.round(66 * zoomLevel)}px`,
-            maxWidth: `${Math.round(66 * zoomLevel)}px`,
+            width: `${(66 * zoomLevel)}px`, 
+            minWidth: `${(66 * zoomLevel)}px`,
+            maxWidth: `${(66 * zoomLevel)}px`,
             borderRight: '1px solid rgba(255, 255, 255, 0.2)'
           }}
         >
@@ -310,9 +310,9 @@ const RundownTableHeader = ({
                 <div 
                   className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
                   style={{
-                    width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                    minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                    maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                    width: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
+                    minWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
+                    maxWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`
                   }}
                 >
                   {activeColumn.name || activeColumn.key}

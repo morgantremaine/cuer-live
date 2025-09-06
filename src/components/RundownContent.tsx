@@ -252,7 +252,7 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   const normalizedGetColumnWidth = React.useCallback((column: Column) => {
     const raw = getColumnWidth(column);
-    const rawVal = parseInt(String(raw).replace('px', ''));
+    const rawVal = parseFloat(String(raw).replace('px', ''));
     const min = getMinimumColumnWidth(column);
     const constrained = Math.max(min, isNaN(rawVal) ? min : rawVal);
     return `${constrained}px`;
@@ -264,7 +264,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     let total = 66; // Row number column width (widened slightly for alignment)
     visibleColumns.forEach(column => {
       const width = normalizedGetColumnWidth(column);
-      const widthValue = parseInt(String(width).replace('px', ''));
+      const widthValue = parseFloat(String(width).replace('px', ''));
       total += isNaN(widthValue) ? 0 : widthValue;
     });
     return total;
@@ -305,23 +305,23 @@ const RundownContent = React.memo<RundownContentProps>(({
               className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
-                width: `${Math.round(totalTableWidth * zoomLevel)}px`,
-                minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`,
+                width: `${(totalTableWidth * zoomLevel)}px`,
+                minWidth: `${(totalTableWidth * zoomLevel)}px`,
                 margin: 0,
                 padding: 0
               }}
               data-rundown-table="header"
             >
               <colgroup>
-                <col style={{ width: `${Math.round(66 * zoomLevel)}px` }} />
+                <col style={{ width: `${(66 * zoomLevel)}px` }} />
                 {visibleColumns.map((col) => (
-                  <col key={`hcol-${col.id}`} style={{ width: `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
+                  <col key={`hcol-${col.id}`} style={{ width: `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
                 ))}
               </colgroup>
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 allColumns={allColumns}
-                getColumnWidth={(col) => `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px`}
+                getColumnWidth={(col) => `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px`}
                 updateColumnWidth={updateColumnWidth}
                 onReorderColumns={onReorderColumns}
                 onToggleColumnVisibility={onToggleColumnVisibility}
