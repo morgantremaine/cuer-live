@@ -443,7 +443,38 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update:', update);
       
-      // Apply the cell update immediately to local state
+      // Handle rundown-level property updates (no itemId)
+      if (!update.itemId) {
+        // Check if we're actively editing this rundown-level field
+        const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
+        if (isActivelyEditing) {
+          console.log('🛡️ Skipping rundown-level broadcast - actively editing:', update.field);
+          return;
+        }
+        
+        console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
+        
+        // Apply rundown-level property changes
+        switch (update.field) {
+          case 'title':
+            actions.setTitle(update.value);
+            break;
+          case 'startTime':
+            actions.setStartTime(update.value);
+            break;
+          case 'timezone':
+            actions.setTimezone(update.value);
+            break;
+          case 'showDate':
+            actions.setShowDate(update.value);
+            break;
+          default:
+            console.warn('🚨 Unknown rundown-level field:', update.field);
+        }
+        return;
+      }
+      
+      // Handle item-level updates (existing logic)
       const updatedItems = state.items.map(item => {
         if (item.id === update.itemId) {
           // Only apply if not actively editing this exact field
@@ -1025,6 +1056,11 @@ export const useSimplifiedRundownState = () => {
         recentlyEditedFieldsRef.current.set('title', Date.now());
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
+        // Broadcast rundown-level property change
+        if (rundownId && currentUserId) {
+          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
+        }
+        
         saveUndoState(state.items, [], state.title, 'Change title');
         actions.setTitle(newTitle);
         
@@ -1035,7 +1071,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState])
+    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId])
   };
 
   // Get visible columns from user preferences
@@ -1196,24 +1232,39 @@ export const useSimplifiedRundownState = () => {
       recentlyEditedFieldsRef.current.set('startTime', now);
       remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
+      }
+      
       actions.setStartTime(newStartTime);
-    }, [actions.setStartTime]),
+    }, [actions.setStartTime, rundownId, currentUserId]),
     setTimezone: useCallback((newTimezone: string) => {
       // Simple protection for timezone changes
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('timezone', now);
       remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
+      }
+      
       actions.setTimezone(newTimezone);
-    }, [actions.setTimezone]),
+    }, [actions.setTimezone, rundownId, currentUserId]),
     setShowDate: useCallback((newShowDate: Date | null) => {
       // Simple protection for show date changes
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('showDate', now);
       remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
+      }
+      
       actions.setShowDate(newShowDate);
-    }, [actions.setShowDate]),
+    }, [actions.setShowDate, rundownId, currentUserId]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

@@ -1,10 +1,10 @@
 // Per-cell broadcast system using Supabase Realtime (works across tabs, browsers, and devices)
 import { supabase } from '@/integrations/supabase/client';
 
-// Per-cell message payload
+// Per-cell message payload - now supports both item-level and rundown-level changes
 interface CellUpdate {
   rundownId: string;
-  itemId: string;
+  itemId?: string; // Optional - null for rundown-level properties
   field: string;
   value: any;
   userId: string;
@@ -61,7 +61,7 @@ class CellBroadcastManager {
     return channel;
   }
 
-  broadcastCellUpdate(rundownId: string, itemId: string, field: string, value: any, userId: string) {
+  broadcastCellUpdate(rundownId: string, itemId: string | undefined, field: string, value: any, userId: string) {
     const channel = this.ensureChannel(rundownId);
     const update: CellUpdate = {
       rundownId,
