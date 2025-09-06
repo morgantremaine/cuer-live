@@ -57,7 +57,7 @@ const DraggableColumnHeader = ({
       style={{...style, width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
       className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r print:border-gray-400 cursor-grab active:cursor-grabbing ${
         isDark 
-          ? 'text-gray-300 border-gray-600 bg-gray-800' 
+          ? 'text-muted-foreground border-border bg-muted' 
           : 'text-gray-500 border-gray-200 bg-gray-50'
       } ${
         ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
@@ -1271,11 +1271,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                       return (
                         <td
                           key={column.id}
-                          className={`px-2 py-2 text-sm border-r print:border-gray-400 print:h-auto print:max-h-none print:overflow-visible ${
+                          className={`px-2 py-2 text-sm border-r print:border-gray-400 print:h-auto print:max-h-none print:overflow-visible bg-background ${
                             ['duration', 'startTime', 'endTime', 'elapsedTime'].includes(column.key) 
                               ? 'print-time-column' 
                               : 'print-content-column'
-                          } ${isDark ? 'border-gray-600' : 'border-gray-200'} ${
+                          } ${isDark ? 'border-border' : 'border-gray-200'} ${
                             isCurrentSegmentName ? 'showcaller-highlight' : ''
                           }`}
                           style={{ 
@@ -1313,7 +1313,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
           <th 
             className={`px-2 py-1 text-left text-xs font-medium uppercase tracking-wider border-b border-r ${
               isDark 
-                ? 'text-gray-300 border-gray-600 bg-gray-800' 
+                ? 'text-muted-foreground border-border bg-muted' 
                 : 'text-gray-500 border-gray-200 bg-gray-50'
             }`}
             style={{ 
