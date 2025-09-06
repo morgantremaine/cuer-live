@@ -45,6 +45,7 @@ export const useConsolidatedRealtimeRundown = ({
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const callbackRefs = useRef({
     onRundownUpdate,
     onShowcallerUpdate,
@@ -122,7 +123,10 @@ export const useConsolidatedRealtimeRundown = ({
       });
       
       globalState.gapDetectionInProgress = true;
-      setIsProcessingUpdate(true);
+      // Only show processing indicator for gap detection if not initial load
+      if (!isInitialLoad) {
+        setIsProcessingUpdate(true);
+      }
       
       (async () => {
         try {
@@ -212,7 +216,10 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      setIsProcessingUpdate(true);
+      // Only show processing indicator for content changes if not initial load
+      if (!isInitialLoad) {
+        setIsProcessingUpdate(true);
+      }
       try {
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
           try { 
@@ -222,10 +229,12 @@ export const useConsolidatedRealtimeRundown = ({
           }
         });
       } finally {
-        // Keep processing indicator active for a short period to show blue wifi icon
-        setTimeout(() => {
-          setIsProcessingUpdate(false);
-        }, 500); // 500ms delay to ensure UI can show the activity
+        // Keep processing indicator active for a short period to show blue wifi icon if not initial load
+        if (!isInitialLoad) {
+          setTimeout(() => {
+            setIsProcessingUpdate(false);
+          }, 500); // 500ms delay to ensure UI can show the activity
+        }
       }
     }
 
@@ -236,6 +245,9 @@ export const useConsolidatedRealtimeRundown = ({
     if (!rundownId || (!user && !isSharedView) || !enabled) {
       return;
     }
+
+    // Reset initial load flag for new rundown
+    setIsInitialLoad(true);
 
     let globalState = globalSubscriptions.get(rundownId);
 
@@ -287,7 +299,7 @@ export const useConsolidatedRealtimeRundown = ({
           console.log('✅ Consolidated realtime connected successfully');
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
-            setIsProcessingUpdate(true);
+            // Don't show processing indicator during initial load
             const { data, error } = await supabase
               .from('rundowns')
               .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
@@ -306,10 +318,8 @@ export const useConsolidatedRealtimeRundown = ({
               console.warn('Initial catch-up fetch failed:', error);
             }
           } finally {
-            // Keep processing indicator active briefly for UI feedback
-            setTimeout(() => {
-              setIsProcessingUpdate(false);
-            }, 500);
+            // Mark initial load as complete
+            setIsInitialLoad(false);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
@@ -441,6 +451,7 @@ export const useConsolidatedRealtimeRundown = ({
       const state = globalSubscriptions.get(rundownId || '');
       if (!rundownId || !state) return;
       try {
+        // Manual catch-up sync should show processing indicator (not initial load)
         setIsProcessingUpdate(true);
         const { data, error } = await supabase
           .from('rundowns')
