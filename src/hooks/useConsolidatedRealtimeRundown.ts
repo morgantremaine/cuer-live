@@ -90,21 +90,23 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Enhanced own update detection with multiple checks
-    const isOwnUpdate = payload.new?.last_updated_by === user?.id ||
-                        (normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp));
-    if (isOwnUpdate) {
-      debugLogger.realtime('Skipping own update:', { 
-        normalizedTimestamp, 
-        incomingDocVersion,
-        userId: payload.new?.last_updated_by,
-        currentUserId: user?.id
-      });
-      globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
-      if (incomingDocVersion) {
-        globalState.lastProcessedDocVersion = incomingDocVersion;
+    // Enhanced own update detection with multiple checks (skip for shared views)
+    if (!isSharedView) {
+      const isOwnUpdate = payload.new?.last_updated_by === user?.id ||
+                          (normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp));
+      if (isOwnUpdate) {
+        debugLogger.realtime('Skipping own update:', { 
+          normalizedTimestamp, 
+          incomingDocVersion,
+          userId: payload.new?.last_updated_by,
+          currentUserId: user?.id
+        });
+        globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
+        if (incomingDocVersion) {
+          globalState.lastProcessedDocVersion = incomingDocVersion;
+        }
+        return;
       }
-      return;
     }
 
     // Enhanced gap detection with improved handling
@@ -221,10 +223,11 @@ export const useConsolidatedRealtimeRundown = ({
       }
     }
 
-  }, [rundownId, user?.id]);
+  }, [rundownId, user?.id, isSharedView]);
 
   useEffect(() => {
-    if (!rundownId || !user || !enabled) {
+    // For shared views, allow subscription without authentication
+    if (!rundownId || (!user && !isSharedView) || !enabled) {
       return;
     }
 
