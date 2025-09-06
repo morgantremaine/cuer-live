@@ -50,24 +50,24 @@ export const useShowcallerBroadcastSync = ({
 
   // Set up broadcast subscription
   useEffect(() => {
-    if (!rundownId || !user?.id || !enabled) return;
+    if (!rundownId || !enabled) return;
 
     console.log('📺 Setting up showcaller broadcast sync:', rundownId);
 
     const unsubscribe = showcallerBroadcast.subscribeToShowcallerBroadcasts(
       rundownId,
       handleBroadcast,
-      user.id
+      user?.id || ''
     );
 
     return () => {
       console.log('📺 Cleaning up showcaller broadcast sync');
       unsubscribe();
     };
-  }, [rundownId, user?.id, enabled, handleBroadcast]);
+  }, [rundownId, enabled, handleBroadcast, user?.id]);
 
   return {
     broadcastState,
-    isConnected: enabled && !!rundownId && !!user?.id
+    isConnected: enabled && !!rundownId
   };
 };

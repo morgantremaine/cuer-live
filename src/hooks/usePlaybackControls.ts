@@ -45,11 +45,30 @@ export const usePlaybackControls = (
     rundownId: rundownId || '',
     onBroadcastReceived: (state) => {
       console.log('📺 Playback controls received broadcast:', state);
+      const targetSegmentId = state.action === 'jump' && state.jumpToSegmentId
+        ? state.jumpToSegmentId
+        : state.currentSegmentId || null;
+      const buildStatus = () => {
+        if (!targetSegmentId) return undefined as any;
+        const status: Record<string, string> = {};
+        const selectedIndex = items.findIndex(i => i.id === targetSegmentId);
+        if (selectedIndex === -1) return undefined as any;
+        items.forEach((item, index) => {
+          if (item.type === 'regular') {
+            if (index < selectedIndex) status[item.id] = 'completed';
+            else if (index === selectedIndex) status[item.id] = 'current';
+          }
+        });
+        return status;
+      };
       applyExternalVisualState({
-        isPlaying: state.isPlaying,
-        currentSegmentId: state.currentSegmentId,
-        timeRemaining: state.timeRemaining,
-        isController: state.isController
+        isPlaying: !!state.isPlaying,
+        currentSegmentId: targetSegmentId,
+        timeRemaining: state.timeRemaining ?? 0,
+        isController: !!state.isController,
+        controllerId: state.userId,
+        lastUpdate: new Date(state.timestamp).toISOString(),
+        currentItemStatuses: buildStatus()
       });
     },
     enabled: !!rundownId

@@ -130,45 +130,38 @@ export const useShowcallerStateCoordination = ({
     rundownId,
     onBroadcastReceived: (state: ShowcallerBroadcastState) => {
       console.log('📺 Received showcaller broadcast in coordination:', state);
-      
-      // Apply broadcast state to visual state
-      if (state.action === 'play' && state.isPlaying !== undefined) {
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
+
+      // Determine target segment id based on action
+      const targetSegmentId = state.action === 'jump' && state.jumpToSegmentId
+        ? state.jumpToSegmentId
+        : state.currentSegmentId;
+
+      // Build a deterministic status map based on current items
+      const buildStatusMap = (segmentId?: string) => {
+        if (!segmentId) return undefined;
+        const status: Record<string, string> = {};
+        const selectedIndex = items.findIndex(item => item.id === segmentId);
+        if (selectedIndex === -1) return undefined;
+        items.forEach((item, index) => {
+          if (item.type === 'regular') {
+            if (index < selectedIndex) status[item.id] = 'completed';
+            else if (index === selectedIndex) status[item.id] = 'current';
+          }
         });
-      } else if (state.action === 'pause') {
-        applyExternalVisualState({ 
-          isPlaying: false,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else if (state.action === 'jump' && state.jumpToSegmentId) {
-        applyExternalVisualState({ 
-          currentSegmentId: state.jumpToSegmentId,
-          isPlaying: state.isPlaying,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else if (state.action === 'forward' || state.action === 'backward' || state.action === 'reset') {
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else {
-        // Generic state update
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      }
+        return status;
+      };
+
+      const externalState = {
+        isPlaying: !!state.isPlaying,
+        currentSegmentId: targetSegmentId || null,
+        timeRemaining: state.timeRemaining ?? 0,
+        isController: !!state.isController,
+        controllerId: state.userId,
+        lastUpdate: new Date(state.timestamp).toISOString(),
+        currentItemStatuses: buildStatusMap(targetSegmentId)
+      };
+
+      handleExternalVisualState(externalState);
     },
     enabled: isInitialized
   });
