@@ -269,38 +269,32 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Unified Table Structure with scaled container */}
+      {/* Scrollable Content with separate sticky header (unscaled) and zoomed body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
+        {/* Sticky Header Wrapper - NOT transformed to keep sticky behavior stable */}
         <div 
-          className="bg-background zoom-container" 
+          className="sticky top-0 z-20 bg-background"
           style={{ 
-            minWidth: `${totalTableWidth}px`,
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+            width: '100%'
           }}
         >
-          {/* Single Unified Table for Perfect Column Alignment */}
           <table 
             className="border-collapse table-container" 
             style={{ 
               tableLayout: 'fixed', 
-              width: `${totalTableWidth}px`,
-              minWidth: `${totalTableWidth}px`,
+              width: `${Math.round(totalTableWidth * zoomLevel)}px`,
+              minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`,
               margin: 0,
               padding: 0
             }}
-            data-rundown-table="unified"
+            data-rundown-table="header"
           >
-            {/* Unified Column Group */}
             <colgroup>
-              <col style={{ width: '66px' }} />
+              <col style={{ width: `${Math.round(66 * zoomLevel)}px` }} />
               {visibleColumns.map((col) => (
-                <col key={`col-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                <col key={`hcol-${col.id}`} style={{ width: `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
               ))}
             </colgroup>
-            
-            {/* Sticky Header */}
             <RundownTableHeader 
               visibleColumns={visibleColumns}
               allColumns={allColumns}
@@ -317,11 +311,41 @@ const RundownContent = React.memo<RundownContentProps>(({
               onLoadLayout={onLoadLayout}
               zoomLevel={zoomLevel}
             />
-            
-            {/* Table Body */}
+          </table>
+        </div>
+        
+        {/* Zoomed Body */}
+        <div 
+          className="bg-background zoom-container" 
+          style={{ 
+            minWidth: `${totalTableWidth}px`,
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+            marginTop: '-1px'
+          }}
+        >
+          {/* Main Table Body */}
+          <table 
+            className="border-collapse table-container" 
+            style={{ 
+              tableLayout: 'fixed', 
+              width: `${totalTableWidth}px`,
+              minWidth: `${totalTableWidth}px`,
+              margin: 0,
+              padding: 0
+            }}
+            data-rundown-table="main"
+          >
+            <colgroup>
+              <col style={{ width: '66px' }} />
+              {visibleColumns.map((col) => (
+                <col key={`bcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+              ))}
+            </colgroup>
             <OptimizedRundownTableWrapper
-              items={items} // Pass original items for duration calculations
-              visibleItems={visibleItems} // Pass visible items for display
+              items={items}
+              visibleItems={visibleItems}
               visibleColumns={visibleColumns}
               currentTime={currentTime}
               showColorPicker={showColorPicker}
