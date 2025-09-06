@@ -156,7 +156,7 @@ export const SharedRundownHeader = ({
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 <Clock className="h-4 w-4" />
-                <span>Runtime: {totalRuntime}</span>
+                <span>TRT: {totalRuntime}</span>
               </div>
             </div>
             
