@@ -36,9 +36,17 @@ export const detectDataConflict = (localState: ConflictableData, remoteData: Con
   // Check for significant content changes
   const hasItemConflict = localItemsSignature !== remoteItemsSignature;
   const hasTitleConflict = localState.title !== remoteData.title;
-  const hasTimingConflict = localState.start_time !== remoteData.start_time || 
-                           localState.timezone !== remoteData.timezone;
-  const hasNotesConflict = localState.external_notes !== remoteData.external_notes;
+  
+  // Be more lenient with timing conflicts - only flag if there's a meaningful difference
+  const hasTimingConflict = Boolean((localState.start_time !== remoteData.start_time && 
+                            localState.start_time && remoteData.start_time) || 
+                           (localState.timezone !== remoteData.timezone &&
+                            localState.timezone && remoteData.timezone));
+                            
+  // Be more lenient with notes conflicts - only flag if both have content and they differ
+  const hasNotesConflict = Boolean(localState.external_notes !== remoteData.external_notes &&
+                          localState.external_notes && remoteData.external_notes &&
+                          JSON.stringify(localState.external_notes) !== JSON.stringify(remoteData.external_notes));
 
   const conflictDetected = hasItemConflict || hasTitleConflict || hasTimingConflict || hasNotesConflict;
   

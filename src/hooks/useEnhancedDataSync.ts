@@ -165,9 +165,19 @@ export const useEnhancedDataSync = (
     };
   }, [getOfflineChanges]);
 
-  // Sync data with server
+  // Sync data with server with circuit breaker
   const syncWithServer = useCallback(async (forceCheck = false): Promise<SyncResult> => {
     if (!rundownId || !isConnected || syncInProgressRef.current) {
+      return { success: false, hadConflicts: false };
+    }
+
+    // Circuit breaker: prevent rapid re-syncing
+    const now = Date.now();
+    const timeSinceLastSync = syncState.lastSyncTimestamp ? 
+      now - new Date(syncState.lastSyncTimestamp).getTime() : Infinity;
+    
+    if (!forceCheck && timeSinceLastSync < 2000) {
+      console.log('🛑 Sync blocked by circuit breaker (< 2s since last sync)');
       return { success: false, hadConflicts: false };
     }
 
@@ -362,13 +372,23 @@ export const useEnhancedDataSync = (
     }
   }, [isConnected, recordOfflineChange]);
 
-  // Auto-sync when connection is restored
+  // Auto-sync when connection is restored with circuit breaker
   useEffect(() => {
     if (isConnected && connectionType === 'online') {
-      console.log('🔌 Connection restored - checking for updates...');
-      syncWithServer(true);
+      // Circuit breaker: don't sync if we just completed a sync recently
+      const now = Date.now();
+      const timeSinceLastSync = syncState.lastSyncTimestamp ? 
+        now - new Date(syncState.lastSyncTimestamp).getTime() : Infinity;
+      
+      // Only sync if it's been more than 5 seconds since last sync
+      if (timeSinceLastSync > 5000) {
+        console.log('🔌 Connection restored - checking for updates...');
+        syncWithServer(true);
+      } else {
+        console.log('🔌 Connection restored but sync cooldown active, skipping...');
+      }
     }
-  }, [isConnected, connectionType, syncWithServer]);
+  }, [isConnected, connectionType, syncWithServer, syncState.lastSyncTimestamp]);
 
   return {
     // Sync operations
