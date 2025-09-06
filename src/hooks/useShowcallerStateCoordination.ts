@@ -5,6 +5,7 @@ import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useCueIntegration } from './useCueIntegration';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { RundownItem } from '@/types/rundown';
+import { isFloated } from '@/utils/rundownCalculations';
 
 interface UseShowcallerStateCoordinationProps {
   items: RundownItem[];
@@ -177,16 +178,43 @@ export const useShowcallerStateCoordination = ({
   }, [items, currentSegmentId]);
 
   const getNextSegment = useCallback(() => {
-    const current = getCurrentSegment();
-    if (!current) return null;
-    
-    const currentIndex = items.findIndex(item => item.id === current.id);
-    if (currentIndex === -1 || currentIndex === items.length - 1) return null;
-    
-    return items[currentIndex + 1] || null;
+    const curr = getCurrentSegment();
+    if (!curr) return null;
+
+    const currentIndex = items.findIndex(item => item.id === curr.id);
+    for (let i = currentIndex + 1; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
+      }
+    }
+    return null;
   }, [items, getCurrentSegment]);
 
-  // Enhanced control functions with broadcast-first coordination and cue triggers
+  // Helper: previous non-floated regular item
+  const getPrevSegment = useCallback(() => {
+    const curr = getCurrentSegment();
+    if (!curr) return null;
+    const currentIndex = items.findIndex(item => item.id === curr.id);
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const item = items[i];
+      if (item.type === 'regular' && !isFloated(item)) {
+        return item;
+      }
+    }
+    return null;
+  }, [items, getCurrentSegment]);
+
+  // Helper: parse duration to seconds
+  const parseDurationToSeconds = useCallback((str: string | undefined) => {
+    if (!str) return 0;
+    const parts = str.split(':').map(n => Number(n) || 0);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 1) return parts[0];
+    return 0;
+  }, []);
+
   const coordinatedPlay = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Coordinated play called:', { selectedSegmentId, userId, isController });
     
@@ -195,14 +223,19 @@ export const useShowcallerStateCoordination = ({
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
+    // Compute target and remaining before local state updates
+    const targetId = selectedSegmentId || currentSegmentId || (items.find(it => it.type === 'regular' && !isFloated(it))?.id ?? null);
+    const target = targetId ? items.find(it => it.id === targetId) : null;
+    const targetRemaining = target ? parseDurationToSeconds(target.duration) : timeRemaining;
+
     play(selectedSegmentId);
-    
-    // Broadcast first for instant sync - with debug logging
+
+    // Broadcast with computed target
     const broadcastPayload = {
       action: 'play' as const,
       isPlaying: true,
-      currentSegmentId: selectedSegmentId || currentSegmentId,
-      timeRemaining,
+      currentSegmentId: targetId || null,
+      timeRemaining: targetRemaining,
       isController
     };
     console.log('📺 About to broadcast play state:', broadcastPayload);
@@ -253,14 +286,19 @@ export const useShowcallerStateCoordination = ({
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
+    // Compute next before local state updates
+    const nextSeg = getNextSegment();
+    const nextId = nextSeg?.id || currentSegmentId || null;
+    const nextRemaining = nextSeg ? parseDurationToSeconds(nextSeg.duration) : timeRemaining;
+
     forward();
-    
-    // Broadcast first for instant sync - with debug logging
+
+    // Broadcast with computed next
     const broadcastPayload = {
       action: 'forward' as const,
       isPlaying,
-      currentSegmentId,
-      timeRemaining,
+      currentSegmentId: nextId,
+      timeRemaining: nextRemaining,
       isController
     };
     console.log('📺 About to broadcast forward state:', broadcastPayload);
@@ -283,14 +321,19 @@ export const useShowcallerStateCoordination = ({
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
+    // Compute previous before local state updates
+    const prevSeg = getPrevSegment();
+    const prevId = prevSeg?.id || currentSegmentId || null;
+    const prevRemaining = prevSeg ? parseDurationToSeconds(prevSeg.duration) : timeRemaining;
+
     backward();
     
-    // Broadcast first for instant sync
+    // Broadcast with computed previous
     broadcastState({
       action: 'backward',
       isPlaying,
-      currentSegmentId,
-      timeRemaining,
+      currentSegmentId: prevId,
+      timeRemaining: prevRemaining,
       isController
     });
     
@@ -310,14 +353,19 @@ export const useShowcallerStateCoordination = ({
     trackOwnUpdate(timestamp);
     trackOwnVisualUpdate(timestamp);
     
+    // Compute current segment duration before local state updates
+    const curr = getCurrentSegment();
+    const resetId = curr?.id || currentSegmentId || null;
+    const resetRemaining = curr ? parseDurationToSeconds(curr.duration) : 0;
+
     reset();
     
-    // Broadcast first for instant sync
+    // Broadcast with computed reset state
     broadcastState({
       action: 'reset',
       isPlaying: false,
-      currentSegmentId,
-      timeRemaining: 0,
+      currentSegmentId: resetId,
+      timeRemaining: resetRemaining,
       isController
     });
     
@@ -340,12 +388,14 @@ export const useShowcallerStateCoordination = ({
     jumpToSegment(segmentId);
     
     // Broadcast first for instant sync
+    const seg = items.find(item => item.id === segmentId) || null;
+    const segRemaining = seg ? parseDurationToSeconds(seg.duration) : 0;
     broadcastState({
       action: 'jump',
       jumpToSegmentId: segmentId,
       isPlaying,
       currentSegmentId: segmentId,
-      timeRemaining,
+      timeRemaining: segRemaining,
       isController
     });
     
