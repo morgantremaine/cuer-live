@@ -88,6 +88,7 @@ const RundownContextMenu = memo(({
     if (onClearSelection) {
       onClearSelection();
     }
+
   };
 
   // Handle float toggle for multiple rows
@@ -278,7 +279,12 @@ const RundownContextMenu = memo(({
                 ].map((color) => (
                   <button
                     key={color.name}
-                    onClick={() => handleColorSelect(itemId, color.value)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleColorSelect(itemId, color.value);
+                      // Force close by clicking outside
+                      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                    }}
                     className="w-8 h-8 rounded border border-gray-300 dark:border-gray-500 hover:scale-110 transition-transform cursor-pointer"
                     style={{ backgroundColor: color.value || '#ffffff' }}
                     title={color.name}
