@@ -161,7 +161,10 @@ export const useConsolidatedRealtimeRundown = ({
           console.error('❌ Gap resolution error:', error);
         } finally {
           globalState.gapDetectionInProgress = false;
-          setIsProcessingUpdate(false);
+          // Keep processing indicator active briefly for UI feedback
+          setTimeout(() => {
+            setIsProcessingUpdate(false);
+          }, 500);
         }
       })();
       
@@ -219,7 +222,10 @@ export const useConsolidatedRealtimeRundown = ({
           }
         });
       } finally {
-        setIsProcessingUpdate(false);
+        // Keep processing indicator active for a short period to show blue wifi icon
+        setTimeout(() => {
+          setIsProcessingUpdate(false);
+        }, 500); // 500ms delay to ensure UI can show the activity
       }
     }
 
@@ -300,7 +306,10 @@ export const useConsolidatedRealtimeRundown = ({
               console.warn('Initial catch-up fetch failed:', error);
             }
           } finally {
-            setIsProcessingUpdate(false);
+            // Keep processing indicator active briefly for UI feedback
+            setTimeout(() => {
+              setIsProcessingUpdate(false);
+            }, 500);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
@@ -450,9 +459,12 @@ export const useConsolidatedRealtimeRundown = ({
         } else if (error) {
           console.warn('Manual catch-up fetch failed:', error);
         }
-      } finally {
-        setIsProcessingUpdate(false);
-      }
+        } finally {
+          // Keep processing indicator active briefly for UI feedback  
+          setTimeout(() => {
+            setIsProcessingUpdate(false);
+          }, 500);
+        }
     }
   };
 };
