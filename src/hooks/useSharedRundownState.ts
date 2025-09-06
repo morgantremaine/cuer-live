@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
+import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -130,105 +131,59 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Enhanced real-time subscription for both content and showcaller updates
-  useEffect(() => {
-    if (!rundownId || !mountedRef.current) return;
-
-    // Clear existing subscriptions
-    if (realtimeSubscription.current) {
-      supabase.removeChannel(realtimeSubscription.current);
-      realtimeSubscription.current = null;
-    }
-    if (contentSubscription.current) {
-      supabase.removeChannel(contentSubscription.current);
-      contentSubscription.current = null;
-    }
-
-    logger.debug('Setting up enhanced real-time subscriptions');
-
-    // Primary subscription for all content changes
-    const contentChannel = supabase
-      .channel(`shared-content-${rundownId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'rundowns',
-          filter: `id=eq.${rundownId}`
-        },
-        (payload) => {
-          if (!mountedRef.current) return;
-          
-          logger.debug('Received real-time content update', payload);
-          
-          const newDocVersion = payload.new?.doc_version || 0;
-          const currentDocVersion = lastDocVersion.current;
-          
-          // Only process if this is a newer version
-          if (newDocVersion > currentDocVersion) {
-            logger.debug('Processing newer content update:', { 
-              newVersion: newDocVersion, 
-              currentVersion: currentDocVersion 
-            });
-            
-            // Update watchdog tracking immediately
-            if (watchdogRef.current) {
-              watchdogRef.current.updateLastSeen(newDocVersion, payload.new?.updated_at);
-            }
-            
-            loadRundownData(true);
-          } else if (payload.new?.showcaller_state) {
-            // Check for showcaller-only changes even on same doc version
-            const newShowcallerState = JSON.stringify(payload.new.showcaller_state);
-            if (newShowcallerState !== lastShowcallerTimestamp.current) {
-              logger.debug('Showcaller-only change detected');
-              loadRundownData(true);
-            }
-          }
-        }
-      )
-      .subscribe((status) => {
-        logger.debug(`Content subscription status: ${status}`);
+  // Enhanced real-time subscription for both content and showcaller updates using consolidated system
+  const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
+    rundownId,
+    onRundownUpdate: useCallback((updatedRundown) => {
+      if (!mountedRef.current) return;
+      
+      logger.debug('Shared view received real-time update', updatedRundown);
+      
+      const newDocVersion = updatedRundown?.doc_version || 0;
+      const currentDocVersion = lastDocVersion.current;
+      
+      // Only process if this is a newer version
+      if (newDocVersion > currentDocVersion) {
+        logger.debug('Processing newer content update:', { 
+          newVersion: newDocVersion, 
+          currentVersion: currentDocVersion 
+        });
         
-        if (status === 'SUBSCRIBED') {
-          // Start watchdog once we're connected
-          if (!watchdogRef.current && rundownId) {
-            watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'shared-viewer', {
-              onStaleData: (latestData) => {
-                logger.debug('Watchdog detected stale data, refreshing');
-                loadRundownData(true);
-              },
-              onReconnect: () => {
-                logger.debug('Watchdog triggered reconnect');
-                loadRundownData(true);
-              }
-            });
-            watchdogRef.current.start();
-          }
+        // Update watchdog tracking immediately
+        if (watchdogRef.current) {
+          watchdogRef.current.updateLastSeen(newDocVersion, updatedRundown?.updated_at);
+        }
+        
+        loadRundownData(true);
+      } else if (updatedRundown?.showcaller_state) {
+        // Check for showcaller-only changes even on same doc version
+        const newShowcallerState = JSON.stringify(updatedRundown.showcaller_state);
+        if (newShowcallerState !== lastShowcallerTimestamp.current) {
+          logger.debug('Showcaller-only change detected');
+          loadRundownData(true);
+        }
+      }
+    }, [loadRundownData]),
+    enabled: !!rundownId,
+    isSharedView: true
+  });
+
+  // Start watchdog for shared views
+  useEffect(() => {
+    if (realtimeConnected && !watchdogRef.current && rundownId) {
+      watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'shared-viewer', {
+        onStaleData: (latestData) => {
+          logger.debug('Watchdog detected stale data, refreshing');
+          loadRundownData(true);
+        },
+        onReconnect: () => {
+          logger.debug('Watchdog triggered reconnect');
+          loadRundownData(true);
         }
       });
-
-    contentSubscription.current = contentChannel;
-
-    return () => {
-      if (contentSubscription.current) {
-        logger.debug('Cleaning up content subscription');
-        supabase.removeChannel(contentSubscription.current);
-        contentSubscription.current = null;
-      }
-      if (realtimeSubscription.current) {
-        logger.debug('Cleaning up showcaller subscription');
-        supabase.removeChannel(realtimeSubscription.current);
-        realtimeSubscription.current = null;
-      }
-      if (watchdogRef.current) {
-        watchdogRef.current.stop();
-        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
-        watchdogRef.current = null;
-      }
-    };
-  }, [rundownId, loadRundownData]);
+      watchdogRef.current.start();
+    }
+  }, [realtimeConnected, rundownId, loadRundownData]);
 
   // Initial load
   useEffect(() => {

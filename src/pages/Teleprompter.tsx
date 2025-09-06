@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
-import { useSimpleRealtimeRundown } from '@/hooks/useSimpleRealtimeRundown';
+import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeRundown';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
@@ -75,7 +75,7 @@ const Teleprompter = () => {
   const prevIsActiveRef = useRef(true);
 
   // Enhanced real-time updates with doc version tracking
-  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useSimpleRealtimeRundown({
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     lastSeenDocVersion,
