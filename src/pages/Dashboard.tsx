@@ -7,6 +7,7 @@ import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
+import UpdateNotificationTrigger from '@/components/UpdateNotificationTrigger';
 import { CSVImportResult } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
@@ -404,6 +405,7 @@ const Dashboard = () => {
                     Import CSV
                   </Button>
                 </CSVImportDialog>
+                <UpdateNotificationTrigger />
               </div>
 
               <DashboardRundownGrid
