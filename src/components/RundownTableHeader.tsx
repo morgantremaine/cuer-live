@@ -195,9 +195,9 @@ const RundownTableHeader = ({
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: `${(66 * zoomLevel)}px`, 
-            minWidth: `${(66 * zoomLevel)}px`,
-            maxWidth: `${(66 * zoomLevel)}px`,
+            width: '66px', 
+            minWidth: '66px',
+            maxWidth: '66px',
             borderRight: '1px solid rgba(255, 255, 255, 0.2)'
           }}
         >
@@ -300,9 +300,9 @@ const RundownTableHeader = ({
               <th 
                 className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border shadow-lg"
                 style={{ 
-                  width: getColumnWidth(activeColumn),
-                  minWidth: getColumnWidth(activeColumn),
-                  maxWidth: getColumnWidth(activeColumn),
+                  width: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1)}px`,
+                  minWidth: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1)}px`,
+                  maxWidth: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1)}px`,
                   opacity: 0.95,
                   zIndex: 1000,
                   cursor: 'grabbing'
@@ -311,9 +311,9 @@ const RundownTableHeader = ({
                 <div 
                   className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
                   style={{
-                    width: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
-                    minWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
-                    maxWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`
+                    width: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1) - 16}px`,
+                    minWidth: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1) - 16}px`,
+                    maxWidth: `${parseFloat(getColumnWidth(activeColumn)) * (zoomLevel || 1) - 16}px`
                   }}
                 >
                   {activeColumn.name || activeColumn.key}
