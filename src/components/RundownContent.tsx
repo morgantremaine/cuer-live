@@ -301,40 +301,50 @@ const RundownContent = React.memo<RundownContentProps>(({
               msOverflowStyle: 'none'
             }}
           >
-            <table 
-              className="border-collapse table-container" 
-              style={{ 
-                tableLayout: 'fixed', 
-                width: `${(totalTableWidth * zoomLevel)}px`,
-                minWidth: `${(totalTableWidth * zoomLevel)}px`,
-                margin: 0,
-                padding: 0
+            {/* Scale header content exactly like body to keep columns perfectly aligned */}
+            <div
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: 'top left',
+                width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+                minWidth: `${totalTableWidth}px`
               }}
-              data-rundown-table="header"
             >
-              <colgroup>
-                <col style={{ width: `${(66 * zoomLevel)}px` }} />
-                {visibleColumns.map((col) => (
-                  <col key={`hcol-${col.id}`} style={{ width: `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
-                ))}
-              </colgroup>
-              <RundownTableHeader 
-                visibleColumns={visibleColumns}
-                allColumns={allColumns}
-                getColumnWidth={(col) => `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px`}
-                updateColumnWidth={updateColumnWidth}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                items={items}
-                columnExpandState={columnExpandState}
-                onToggleColumnExpand={handleToggleColumnExpand}
-                onToggleAllHeaders={handleToggleAllHeaders}
-                isHeaderCollapsed={isHeaderCollapsed}
-                savedLayouts={savedLayouts}
-                onLoadLayout={onLoadLayout}
-                zoomLevel={zoomLevel}
-              />
-            </table>
+              <table 
+                className="border-collapse table-container" 
+                style={{ 
+                  tableLayout: 'fixed', 
+                  width: `${totalTableWidth}px`,
+                  minWidth: `${totalTableWidth}px`,
+                  margin: 0,
+                  padding: 0
+                }}
+                data-rundown-table="header"
+              >
+                <colgroup>
+                  <col style={{ width: '66px' }} />
+                  {visibleColumns.map((col) => (
+                    <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                  ))}
+                </colgroup>
+                <RundownTableHeader 
+                  visibleColumns={visibleColumns}
+                  allColumns={allColumns}
+                  getColumnWidth={(col) => normalizedGetColumnWidth(col)}
+                  updateColumnWidth={updateColumnWidth}
+                  onReorderColumns={onReorderColumns}
+                  onToggleColumnVisibility={onToggleColumnVisibility}
+                  items={items}
+                  columnExpandState={columnExpandState}
+                  onToggleColumnExpand={handleToggleColumnExpand}
+                  onToggleAllHeaders={handleToggleAllHeaders}
+                  isHeaderCollapsed={isHeaderCollapsed}
+                  savedLayouts={savedLayouts}
+                  onLoadLayout={onLoadLayout}
+                  zoomLevel={zoomLevel}
+                />
+              </table>
+            </div>
           </div>
         </div>
         
