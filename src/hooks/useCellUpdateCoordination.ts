@@ -28,10 +28,10 @@ export const useCellUpdateCoordination = () => {
     try {
       await callback();
     } finally {
-      // Clear after a brief delay to allow showcaller state to propagate
+      // Clear after a longer delay to ensure showcaller state fully propagates
       setTimeout(() => {
         setShowcallerOperation(false);
-      }, 100);
+      }, 300);
     }
   }, [setShowcallerOperation]);
 

@@ -267,6 +267,13 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
+      // Schedule retry if blocked by showcaller operation (short-term block)
+      if (!saveTimeoutRef.current) {
+        saveTimeoutRef.current = setTimeout(() => {
+          saveTimeoutRef.current = undefined;
+          performSave(isFlushSave);
+        }, 500);
+      }
       return;
     }
 

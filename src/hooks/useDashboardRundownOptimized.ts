@@ -65,52 +65,89 @@ export const useDashboardRundownOptimized = ({
 
   // Set up individual subscriptions for each rundown (more efficient than bulk filter)
   useEffect(() => {
-    // Clean up existing subscriptions
-    subscriptionsRef.current.forEach((channel, rundownId) => {
-      console.log('🎯 Dashboard: Cleaning up subscription for:', rundownId);
-      supabase.removeChannel(channel);
-    });
-    subscriptionsRef.current.clear();
-    setConnectedCount(0);
-
     if (!enabled || !user || rundowns.length === 0) {
       console.log('🎯 Dashboard: Realtime subscription not ready:', { 
         enabled, 
         user: !!user, 
         rundownCount: rundowns.length 
       });
+      
+      // Clean up if disabled
+      subscriptionsRef.current.forEach((channel, rundownId) => {
+        console.log('🎯 Dashboard: Cleaning up subscription for:', rundownId);
+        supabase.removeChannel(channel);
+      });
+      subscriptionsRef.current.clear();
+      setConnectedCount(0);
       return;
     }
 
-    console.log('🎯 Dashboard: Setting up optimized realtime subscriptions for', rundowns.length, 'rundowns');
+    // Only clean up if rundown list actually changed
+    const currentRundownIds = new Set(rundowns.map(r => r.id));
+    const subscribedRundownIds = new Set(subscriptionsRef.current.keys());
+    
+    // Check if we need to make changes
+    const idsMatch = currentRundownIds.size === subscribedRundownIds.size &&
+      [...currentRundownIds].every(id => subscribedRundownIds.has(id));
+    
+    if (idsMatch) {
+      // No changes needed, keep existing subscriptions
+      return;
+    }
 
-    // Create individual subscriptions for better performance
-    rundowns.forEach((rundown) => {
-      const channelName = `dashboard-rundown-${rundown.id}`;
-      
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'rundowns',
-            filter: `id=eq.${rundown.id}`
-          },
-          handleRundownUpdate
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setConnectedCount(prev => prev + 1);
-            console.log('🎯 Dashboard: Connected to rundown:', rundown.id);
-          } else if (status === 'CLOSED') {
-            setConnectedCount(prev => Math.max(0, prev - 1));
-            console.log('🎯 Dashboard: Disconnected from rundown:', rundown.id);
-          }
-        });
+    console.log('🎯 Dashboard: Rundown list changed, updating subscriptions:', {
+      before: [...subscribedRundownIds],
+      after: [...currentRundownIds]
+    });
 
-      subscriptionsRef.current.set(rundown.id, channel);
+    // Clean up removed rundowns
+    subscribedRundownIds.forEach(rundownId => {
+      if (!currentRundownIds.has(rundownId)) {
+        const channel = subscriptionsRef.current.get(rundownId);
+        if (channel) {
+          console.log('🎯 Dashboard: Removing subscription for:', rundownId);
+          supabase.removeChannel(channel);
+          subscriptionsRef.current.delete(rundownId);
+          setConnectedCount(prev => Math.max(0, prev - 1));
+        }
+      }
+    });
+
+    // Add subscriptions for new rundowns only
+    currentRundownIds.forEach(rundownId => {
+      if (!subscribedRundownIds.has(rundownId)) {
+        const rundown = rundowns.find(r => r.id === rundownId);
+        if (!rundown) return;
+        
+        console.log('🎯 Dashboard: Adding subscription for new rundown:', rundownId);
+        const channelName = `dashboard-rundown-${rundown.id}`;
+        
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'rundowns',
+              filter: `id=eq.${rundown.id}`
+            },
+            handleRundownUpdate
+          )
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              setConnectedCount(prev => prev + 1);
+              console.log('🎯 Dashboard: Connected to rundown:', rundown.id);
+            } else if (status === 'CLOSED') {
+              setConnectedCount(prev => Math.max(0, prev - 1));
+              console.log('🎯 Dashboard: Disconnected from rundown:', rundown.id);
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('🎯 Dashboard: Connection error for rundown:', rundown.id);
+            }
+          });
+
+        subscriptionsRef.current.set(rundown.id, channel);
+      }
     });
 
     return () => {
