@@ -76,23 +76,21 @@ const TextAreaCell = ({
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
     
-    // Check if text actually needs to wrap by comparing the text width with available width
-    const tempSpan = document.createElement('span');
-    tempSpan.style.visibility = 'hidden';
-    tempSpan.style.position = 'absolute';
-    tempSpan.style.fontSize = computedStyle.fontSize;
-    tempSpan.style.fontFamily = computedStyle.fontFamily;
-    tempSpan.style.fontWeight = computedStyle.fontWeight;
-    tempSpan.style.whiteSpace = 'nowrap';
-    tempSpan.textContent = value || ' ';
-    document.body.appendChild(tempSpan);
-    
-    const textWidth = tempSpan.offsetWidth;
-    const availableWidth = textareaWidth - paddingTop - paddingBottom;
-    document.body.removeChild(tempSpan);
-    
-    // If text fits on one line, use minimum height; otherwise use calculated height
-    const shouldWrap = textWidth > availableWidth;
+    // Determine if wrapping is actually required using single-line measurement
+    const previousWhiteSpace = measurementDiv.style.whiteSpace;
+    measurementDiv.style.whiteSpace = 'nowrap';
+    measurementDiv.textContent = value || ' ';
+    const singleLineWidth = measurementDiv.scrollWidth;
+    // Restore pre-wrap for height measurement
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    measurementDiv.textContent = value || ' ';
+
+    const paddingLeft = parseFloat(computedStyle.paddingLeft) || 8;
+    const paddingRight = parseFloat(computedStyle.paddingRight) || 8;
+    const contentWidth = textarea.clientWidth - paddingLeft - paddingRight;
+
+    // Use a small hysteresis (2px) to avoid flicker around the threshold
+    const shouldWrap = singleLineWidth > contentWidth + 2;
     const newHeight = shouldWrap ? Math.max(naturalHeight, minHeight) : minHeight;
     
     // Always update height if it's different
@@ -234,7 +232,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10 flex items-center`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -264,7 +262,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden flex items-center ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
