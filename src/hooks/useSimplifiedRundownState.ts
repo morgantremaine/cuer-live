@@ -132,7 +132,7 @@ export const useSimplifiedRundownState = () => {
     startTime: '09:00:00',
     timezone: 'America/New_York',
     showDate: null
-  });
+  }, rundownId || undefined); // Pass rundownId for broadcast functionality
 
   // User-specific column preferences (separate from team sync)
   const {

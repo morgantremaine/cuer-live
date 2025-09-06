@@ -1,5 +1,6 @@
 
 import { useReducer, useCallback, useMemo } from 'react';
+import { useRundownBroadcast } from './useRundownBroadcast';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
@@ -164,10 +165,17 @@ function clearHeaderNumbers(items: RundownItem[]): RundownItem[] {
   });
 }
 
-export const useRundownState = (initialData?: Partial<RundownState>) => {
+export const useRundownState = (initialData?: Partial<RundownState>, rundownId?: string) => {
   const [state, dispatch] = useReducer(rundownReducer, {
     ...initialState,
     ...initialData
+  });
+
+  // Set up live broadcast for real-time updates
+  const { broadcastLiveUpdate } = useRundownBroadcast({
+    rundownId: rundownId || '',
+    enabled: !!rundownId,
+    isSharedView: false
   });
 
   // Pure calculation functions (no side effects)
@@ -270,34 +278,86 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     };
   }, [state.items, state.startTime]);
 
-  // Action creators
+  // Action creators with live broadcast
   const actions = useMemo(() => ({
-    setItems: (items: RundownItem[]) => dispatch({ type: 'SET_ITEMS', payload: items }),
+    setItems: (items: RundownItem[]) => {
+      dispatch({ type: 'SET_ITEMS', payload: items });
+      if (rundownId) {
+        broadcastLiveUpdate('live_state', { items });
+      }
+    },
     
-    updateItem: (id: string, updates: Partial<RundownItem>) => 
-      dispatch({ type: 'UPDATE_ITEM', payload: { id, updates } }),
+    updateItem: (id: string, updates: Partial<RundownItem>) => {
+      dispatch({ type: 'UPDATE_ITEM', payload: { id, updates } });
+      if (rundownId) {
+        // Broadcast the updated items immediately
+        setTimeout(() => {
+          broadcastLiveUpdate('live_typing', { items: state.items });
+        }, 0);
+      }
+    },
     
-    addItem: (item: RundownItem, insertIndex?: number) =>
-      dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } }),
+    addItem: (item: RundownItem, insertIndex?: number) => {
+      dispatch({ type: 'ADD_ITEM', payload: { item, insertIndex } });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
     
-    deleteItem: (id: string) => dispatch({ type: 'DELETE_ITEM', payload: id }),
+    deleteItem: (id: string) => {
+      dispatch({ type: 'DELETE_ITEM', payload: id });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
     
-    deleteMultipleItems: (ids: string[]) => 
-      dispatch({ type: 'DELETE_MULTIPLE_ITEMS', payload: ids }),
+    deleteMultipleItems: (ids: string[]) => {
+      dispatch({ type: 'DELETE_MULTIPLE_ITEMS', payload: ids });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
     
-    reorderItems: (fromIndex: number, toIndex: number, count?: number) =>
-      dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } }),
+    reorderItems: (fromIndex: number, toIndex: number, count?: number) => {
+      dispatch({ type: 'REORDER_ITEMS', payload: { fromIndex, toIndex, count } });
+      if (rundownId) {
+        setTimeout(() => {
+          broadcastLiveUpdate('live_state', { items: state.items });
+        }, 0);
+      }
+    },
     
     setColumns: (columns: Column[]) => dispatch({ type: 'SET_COLUMNS', payload: columns }),
     
     updateColumn: (id: string, updates: Partial<Column>) =>
       dispatch({ type: 'UPDATE_COLUMN', payload: { id, updates } }),
     
-    setTitle: (title: string) => dispatch({ type: 'SET_TITLE', payload: title }),
+    setTitle: (title: string) => {
+      dispatch({ type: 'SET_TITLE', payload: title });
+      if (rundownId) {
+        broadcastLiveUpdate('live_typing', { title });
+      }
+    },
     
-    setStartTime: (startTime: string) => dispatch({ type: 'SET_START_TIME', payload: startTime }),
+    setStartTime: (startTime: string) => {
+      dispatch({ type: 'SET_START_TIME', payload: startTime });
+      if (rundownId) {
+        broadcastLiveUpdate('live_typing', { startTime });
+      }
+    },
     
-    setTimezone: (timezone: string) => dispatch({ type: 'SET_TIMEZONE', payload: timezone }),
+    setTimezone: (timezone: string) => {
+      dispatch({ type: 'SET_TIMEZONE', payload: timezone });
+      if (rundownId) {
+        broadcastLiveUpdate('live_typing', { timezone });
+      }
+    },
 
     setShowDate: (showDate: Date | null) => dispatch({ type: 'SET_SHOW_DATE', payload: showDate }),
     
@@ -310,7 +370,7 @@ export const useRundownState = (initialData?: Partial<RundownState>) => {
     markSaved: () => dispatch({ type: 'MARK_SAVED' }),
     
     loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState })
-  }), []);
+  }), [state.items, rundownId, broadcastLiveUpdate]);
 
   // Helper functions for common operations
   const helpers = useMemo(() => ({

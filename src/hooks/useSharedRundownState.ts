@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
+import { useRundownBroadcast } from './useRundownBroadcast';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -26,6 +27,12 @@ export const useSharedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [liveState, setLiveState] = useState<{
+    items?: RundownItem[];
+    title?: string;
+    startTime?: string;
+    timezone?: string;
+  } | null>(null);
 
   // Pure realtime tracking refs (no polling)
   const lastDocVersion = useRef<number>(0);
@@ -171,6 +178,24 @@ export const useSharedRundownState = () => {
     isSharedView: true
   });
 
+  // Live broadcast subscription for real-time typing updates
+  useRundownBroadcast({
+    rundownId,
+    onLiveUpdate: useCallback((payload) => {
+      if (!mountedRef.current) return;
+      
+      logger.debug('Shared view received live broadcast:', payload);
+      
+      // Update live state with broadcast data
+      setLiveState(prev => ({
+        ...prev,
+        ...payload
+      }));
+    }, []),
+    enabled: !!rundownId,
+    isSharedView: true
+  });
+
   // Initial load only - no polling needed with pure realtime
   useEffect(() => {
     if (rundownId && mountedRef.current) {
@@ -233,8 +258,18 @@ export const useSharedRundownState = () => {
     return remaining;
   })();
 
+  // Merge database state with live broadcast state
+  const mergedRundownData = rundownData ? {
+    ...rundownData,
+    // Override with live state if available
+    items: liveState?.items || rundownData.items,
+    title: liveState?.title || rundownData.title,
+    startTime: liveState?.startTime || rundownData.startTime,
+    timezone: liveState?.timezone || rundownData.timezone
+  } : null;
+
   return {
-    rundownData,
+    rundownData: mergedRundownData,
     currentTime,
     currentSegmentId,
     loading,
