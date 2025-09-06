@@ -15,7 +15,7 @@ export const triggerAppUpdateNotification = async (message?: string) => {
       .insert({
         type: 'update',
         title: 'Cuer has an update!',
-        message: message || 'A new version is available with improvements and bug fixes.',
+        message: message || '',
         active: true
       })
       .select()
