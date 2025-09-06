@@ -3,6 +3,7 @@ import { useCallback, useRef, useEffect } from 'react';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useCueIntegration } from './useCueIntegration';
+import { useSimpleShowcallerSync } from './useSimpleShowcallerSync';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
@@ -129,67 +130,18 @@ export const useShowcallerStateCoordination = ({
     }
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController, userId]);
 
-  // Broadcast-first real-time sync
+  // Use simple sync instead of complex coordination
+  const simpleSync = useSimpleShowcallerSync({
+    items,
+    rundownId,
+    userId
+  });
+
+  // Broadcast-first real-time sync (kept for compatibility but simplified)
   const { broadcastState, broadcastTimingUpdate, isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
     rundownId,
-    onBroadcastReceived: (state: ShowcallerBroadcastState) => {
-      console.log('📺 Received showcaller broadcast in coordination:', state);
-
-      // Handle timing updates with precise synchronization for smooth countdown
-      if (state.action === 'timing') {
-        console.log('📺 Received precise timing broadcast:', state.timeRemaining, 'playbackStart:', state.playbackStartTime);
-        // Only sync timing if we're not the controller and currently playing the same segment
-        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId && 
-            state.timeRemaining !== undefined && state.playbackStartTime !== undefined) {
-          console.log('📺 Synchronizing with controller precise timing base');
-          
-          // Apply the exact same playback start time from controller for perfect sync
-          applyExternalVisualState({
-            isPlaying: !!state.isPlaying,
-            currentSegmentId: state.currentSegmentId || null,
-            playbackStartTime: state.playbackStartTime, // Use controller's exact timing base
-            isController: false,
-            controllerId: state.userId,
-            lastUpdate: new Date(state.timestamp).toISOString(),
-            currentItemStatuses: visualState.currentItemStatuses
-          }, true); // Pass true for timing sync
-        }
-        return;
-      }
-
-      // Handle full state updates for navigation actions
-      const targetSegmentId = state.action === 'jump' && state.jumpToSegmentId
-        ? state.jumpToSegmentId
-        : state.currentSegmentId;
-
-      // Build a deterministic status map based on current items
-      const buildStatusMap = (segmentId?: string) => {
-        if (!segmentId) return undefined;
-        const status: Record<string, string> = {};
-        const selectedIndex = items.findIndex(item => item.id === segmentId);
-        if (selectedIndex === -1) return undefined;
-        items.forEach((item, index) => {
-          if (item.type === 'regular') {
-            if (index < selectedIndex) status[item.id] = 'completed';
-            else if (index === selectedIndex) status[item.id] = 'current';
-          }
-        });
-        return status;
-      };
-
-      const externalState = {
-        isPlaying: !!state.isPlaying,
-        currentSegmentId: targetSegmentId || null,
-        timeRemaining: state.timeRemaining ?? 0,
-        isController: !!state.isController,
-        controllerId: state.userId,
-        lastUpdate: new Date(state.timestamp).toISOString(),
-        currentItemStatuses: buildStatusMap(targetSegmentId)
-      };
-
-      handleExternalVisualState(externalState);
-    },
-    enabled: isInitialized
+    onBroadcastReceived: () => {}, // Handled by simpleSync
+    enabled: false // Disable this in favor of simpleSync
   });
 
   // Only use broadcast system - no realtime fallback for showcaller
@@ -529,31 +481,30 @@ export const useShowcallerStateCoordination = ({
   }, [currentSegmentId, isController, isPlaying, items, broadcastState, parseDurationToSeconds]);
 
   return {
-    // State
-    visualState,
-    isPlaying,
-    currentSegmentId,
-    timeRemaining,
-    isController,
-    isInitialized,
-    isConnected: isBroadcastConnected,
-    hasLoadedInitialState: isInitialized, // Add this to track when visual indicators are ready
+    // State - use simple sync
+    isPlaying: simpleSync.isPlaying,
+    currentSegmentId: simpleSync.currentSegmentId,
+    timeRemaining: simpleSync.timeRemaining,
+    isController: simpleSync.isController,
+    isInitialized: true, // Always initialized with simple sync
+    isConnected: simpleSync.isConnected,
+    hasLoadedInitialState: true,
     
-    // Visual state management
-    getItemVisualStatus,
-    setItemVisualStatus,
-    clearAllVisualStatuses,
+    // Visual state management - use simple sync
+    getItemVisualStatus: simpleSync.getItemVisualStatus,
+    setItemVisualStatus: () => {}, // Not needed with simple sync
+    clearAllVisualStatuses: () => {}, // Not needed with simple sync
     
-    // Coordinated controls
-    play: coordinatedPlay,
-    pause: coordinatedPause,
-    forward: coordinatedForward,
-    backward: coordinatedBackward,
-    reset: coordinatedReset,
-    jumpToSegment: coordinatedJumpToSegment,
+    // Coordinated controls - use simple sync
+    play: simpleSync.play,
+    pause: simpleSync.pause,
+    forward: simpleSync.forward,
+    backward: simpleSync.backward,
+    reset: simpleSync.reset,
+    jumpToSegment: simpleSync.jumpToSegment,
     
-    // Tracking
-    trackOwnUpdate,
-    trackOwnVisualUpdate
+    // Tracking - simplified
+    trackOwnUpdate: () => {},
+    trackOwnVisualUpdate: () => {}
   };
 };

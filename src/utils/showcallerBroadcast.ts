@@ -10,7 +10,7 @@ export interface ShowcallerBroadcastState {
   timeRemaining?: number;
   playbackStartTime?: number; // Add precise playback start time
   isController?: boolean;
-  action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump' | 'timing';
+  action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump' | 'timing' | 'sync';
   jumpToSegmentId?: string;
 }
 
