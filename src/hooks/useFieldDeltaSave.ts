@@ -170,24 +170,51 @@ export const useFieldDeltaSave = (
       }
     });
 
-    // For item changes, we still need to update the full items array
-    // but we can optimize by only including changed items
+    // For item changes, merge deltas onto latest server items to avoid overwriting teammates
     if (itemDeltas.length > 0) {
-      updateData.items = currentState.items;
+      const { data: latestRow, error: latestErr } = await supabase
+        .from('rundowns')
+        .select('items, doc_version')
+        .eq('id', rundownId)
+        .single();
+
+      if (latestErr) {
+        console.warn('⚠️ Delta save: failed to read latest items, falling back to full update', latestErr);
+        return await performFullUpdate(currentState, updateTimestamp);
+      }
+
+      const baseItems: any[] = Array.isArray(latestRow?.items) ? latestRow.items : [];
+      const baseMap = new Map<string, any>(baseItems.map((it: any) => [it.id, it]));
+
+      itemDeltas.forEach(delta => {
+        if (!delta.itemId) return;
+        if (delta.field === 'deleted') {
+          baseMap.delete(delta.itemId);
+          return;
+        }
+        if (delta.field === 'fullItem') {
+          baseMap.set(delta.itemId, delta.value);
+          return;
+        }
+        const existing = baseMap.get(delta.itemId) || { id: delta.itemId };
+        baseMap.set(delta.itemId, { ...existing, [delta.field]: delta.value });
+      });
+
+      updateData.items = Array.from(baseMap.values());
+      updateData.doc_version = (latestRow?.doc_version || 0) + 1;
+    } else {
+      // Only global changes: just bump version based on latest
+      const { data: currentDoc } = await supabase
+        .from('rundowns')
+        .select('doc_version')
+        .eq('id', rundownId)
+        .single();
+      updateData.doc_version = (currentDoc?.doc_version || 0) + 1;
     }
 
     // Add metadata
     updateData.updated_at = updateTimestamp;
     updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
-
-    // Increment doc version optimistically
-    const { data: currentDoc } = await supabase
-      .from('rundowns')
-      .select('doc_version')
-      .eq('id', rundownId)
-      .single();
-
-    updateData.doc_version = (currentDoc?.doc_version || 0) + 1;
 
     const { data, error } = await supabase
       .from('rundowns')

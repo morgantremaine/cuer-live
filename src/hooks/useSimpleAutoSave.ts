@@ -424,229 +424,54 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        // Enhanced update for existing rundowns with optimistic concurrency (doc_version)
-        const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-        console.log('💾 AutoSave: updating rundown', { rundownId, items: saveState.items?.length, title: saveState.title });
-
-        // 1) Read current doc_version with retry logic
-        let currentRow: any = null;
-        let readErr: any = null;
-        
-        // Retry reading current version up to 3 times to handle race conditions
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          const { data, error } = await supabase
-            .from('rundowns')
-            .select('doc_version, updated_at')
-            .eq('id', rundownId)
-            .single();
-            
-          if (error) {
-            readErr = error;
-            console.warn(`❌ Attempt ${attempt} failed to read current doc_version:`, error);
-            if (attempt < 3) {
-              // Wait briefly before retry
-              await new Promise(resolve => setTimeout(resolve, 100 * attempt));
-              continue;
-            }
-          } else {
-            currentRow = data;
-            readErr = null;
-            console.log(`✅ Read current doc_version on attempt ${attempt}:`, data?.doc_version);
-            break;
-          }
-        }
-
-        if (readErr || !currentRow) {
-          console.error('❌ Save failed: could not read current doc_version after retries', readErr);
-          throw readErr || new Error('Failed to read current rundown row');
-        }
-
-        const baseUpdate = {
-          title: saveState.title,
-          items: saveState.items,
-          start_time: saveState.startTime,
-          timezone: saveState.timezone,
-          show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
-          external_notes: saveState.externalNotes,
-          last_updated_by: currentUserId
-        } as const;
-
-        // 2) Attempt guarded update with current doc_version
-        let { data: upd1, error: updErr1 } = await supabase
-          .from('rundowns')
-          .update(baseUpdate)
-          .eq('id', rundownId)
-          .eq('doc_version', currentRow.doc_version)
-          .select('updated_at, doc_version');
-
-        // If no rows updated or error, treat as conflict and retry once
-        const noRowsUpdated = !upd1 || (Array.isArray(upd1) && upd1.length === 0);
-        if (updErr1 || noRowsUpdated) {
-          console.warn('⚠️ Version conflict detected. Retrying with latest doc_version...', { updErr1, noRowsUpdated });
-
-          // Fetch latest version
-          const { data: latestRow, error: latestErr } = await supabase
-            .from('rundowns')
-            .select('doc_version, updated_at')
-            .eq('id', rundownId)
-            .single();
-
-          if (latestErr || !latestRow) {
-            console.error('❌ Save failed: could not fetch latest doc_version after conflict', latestErr);
-            throw latestErr || new Error('Failed to read latest rundown row');
-          }
-
-        // IMPROVED CONFLICT RESOLUTION: Merge instead of aborting
-        const { data: latestRundown, error: fetchError } = await supabase
-          .from('rundowns')
-          .select('*')
-          .eq('id', rundownId)
-          .single();
-
-        if (fetchError || !latestRundown) {
-          console.error('❌ Save failed: could not fetch latest data for conflict resolution', fetchError);
-          throw fetchError || new Error('Failed to fetch latest rundown data');
-        }
-
-        // Smart merge: combine our changes with remote changes instead of aborting
-        console.log('🔄 Merging local changes with remote data for conflict resolution');
-        
-        // Create merged update that preserves both sets of changes
-        const mergedItems = saveState.items?.map((localItem: any) => {
-          const remoteItem = latestRundown.items?.find((item: any) => item.id === localItem.id);
-          if (!remoteItem) return localItem; // New local item
-          
-          // Merge local and remote changes intelligently
-          return {
-            ...remoteItem, // Start with remote base
-            ...localItem,  // Apply local changes on top
-            // Preserve remote timestamps and system fields
-            created_at: remoteItem.created_at,
-            updated_at: remoteItem.updated_at
-          };
-        }) || [];
-        
-        // Add any new remote items that aren't in local state
-        const localItemIds = new Set(saveState.items?.map(item => item.id) || []);
-        const newRemoteItems = latestRundown.items?.filter((item: any) => !localItemIds.has(item.id)) || [];
-        
-        const finalMergedItems = [...mergedItems, ...newRemoteItems];
-        
-        // Update the base update with merged data
-        Object.assign(baseUpdate, {
-          items: finalMergedItems,
-          // Preserve our local changes for non-item fields unless remote is newer
-          title: saveState.title, // Keep our title change
-          start_time: saveState.startTime, // Keep our timing change
-          timezone: saveState.timezone, // Keep our timezone change
+        console.log('⚡ AutoSave: using delta save for rundown', { 
+          rundownId, 
+          itemCount: saveState.items?.length || 0,
+          isFlushSave 
         });
-
-        // Retry with merged data and latest doc_version
-        let { data: upd2, error: updErr2 } = await supabase
-          .from('rundowns')
-          .update(baseUpdate)
-          .eq('id', rundownId)
-          .eq('doc_version', latestRundown.doc_version)
-          .select('updated_at, doc_version');
-
-        if (updErr2 || !upd2 || (Array.isArray(upd2) && upd2.length === 0)) {
-          console.error('❌ Merged save failed - will retry once more', updErr2);
+        
+        try {
+          // Use field-level delta save
+          const { updatedAt, docVersion } = await saveDeltaState(saveState);
           
-          // One final attempt with the very latest doc_version
-          const { data: finalRow, error: finalErr } = await supabase
-            .from('rundowns')
-            .select('doc_version')
-            .eq('id', rundownId)
-            .single();
-            
-          if (!finalErr && finalRow) {
-            const { data: upd3, error: updErr3 } = await supabase
-              .from('rundowns')
-              .update(baseUpdate)
-              .eq('id', rundownId)
-              .eq('doc_version', finalRow.doc_version)
-              .select('updated_at, doc_version');
-              
-            if (updErr3 || !upd3 || (Array.isArray(upd3) && upd3.length === 0)) {
-              console.error('❌ Final save attempt failed', updErr3);
-              toast({
-                title: 'Save failed',
-                description: 'Changes could not be saved after multiple attempts. Your work is preserved locally.',
-                variant: 'destructive',
-                duration: 5000,
-              });
-              throw updErr3 || new Error('All save attempts failed');
+          console.log('✅ AutoSave: delta save response', { 
+            updatedAt,
+            docVersion 
+          });
+
+          // Update lastSavedRef immediately to prevent retry race condition  
+          lastSavedRef.current = finalSignature;
+          console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
+
+          // Delay signature comparison longer to avoid React state race conditions and double saves
+          setTimeout(() => {
+            const currentSignatureAfterSave = createContentSignature();
+            if (currentSignatureAfterSave !== finalSignature) {
+              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+              if (timeSinceLastEdit > (typingIdleMs * 2)) {
+                console.log('⚠️ Content changed during save - scheduling micro-resave');
+                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
+                scheduleMicroResave();
+              } else {
+                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
+                lastSavedRef.current = currentSignatureAfterSave;
+              }
             }
-            
-            // Use the final successful save
-            upd2 = upd3;
-            updErr2 = updErr3;
+          }, 500);
+
+          // Invoke callback with metadata
+          onSavedRef.current?.({ 
+            updatedAt, 
+            docVersion 
+          });
+        } catch (deltaError: any) {
+          // If delta save fails due to no changes, that's OK
+          if (deltaError?.message === 'No changes to save') {
+            console.log('ℹ️ Delta save: no changes detected');
+            onSavedRef.current?.();
           } else {
-            throw updErr2 || new Error('Conflict retry failed');
+            throw deltaError;
           }
-        }
-
-          const updated = Array.isArray(upd2) ? upd2[0] : upd2;
-          console.log('✅ AutoSave: update (after conflict) response', { updated_at: updated?.updated_at });
-
-          if (updated?.updated_at) {
-            const normalizedTimestamp = normalizeTimestamp(updated.updated_at);
-            trackMyUpdate(normalizedTimestamp);
-            registerRecentSave(rundownId, normalizedTimestamp);
-          }
-          
-          // Update lastSavedRef immediately to prevent retry race condition
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after UPDATE rundown save (post-conflict):', finalSignature.length);
-          
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              // Be more conservative about micro-resaves - only trigger if significant time has passed
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
-            }
-          }, 500); // Increased delay to let React state settle completely
-          onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
-        } else {
-          const updated = Array.isArray(upd1) ? upd1[0] : upd1;
-          console.log('✅ AutoSave: update response', { updated_at: updated?.updated_at });
-
-          if (updated?.updated_at) {
-            const normalizedTimestamp = normalizeTimestamp(updated.updated_at);
-            trackMyUpdate(normalizedTimestamp);
-            registerRecentSave(rundownId, normalizedTimestamp);
-          }
-          
-          // Update lastSavedRef immediately to prevent retry race condition
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after UPDATE rundown save:', finalSignature.length);
-          
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              // Be more conservative about micro-resaves - only trigger if significant time has passed
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
-            }
-          }, 500); // Increased delay to let React state settle completely
-          onSavedRef.current?.({ updatedAt: updated?.updated_at ? normalizeTimestamp(updated.updated_at) : undefined, docVersion: (updated as any)?.doc_version });
         }
       }
     } catch (error) {
