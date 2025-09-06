@@ -192,31 +192,9 @@ const RundownContent = React.memo<RundownContentProps>(({
     isActive: isDragging
   });
 
-  // Sticky header zoom compensation
-  const [headerTranslateY, setHeaderTranslateY] = useState(0);
-  React.useEffect(() => {
-    const el = scrollContainerRef.current as HTMLElement | null;
-    if (!el) return;
+  // Sticky header compensation is no longer needed because the header is rendered
+  // inside a non-transformed sticky wrapper. Keeping logic simple to avoid drift.
 
-    const update = () => {
-      if (Math.abs(zoomLevel - 1) < 0.001) {
-        setHeaderTranslateY(0);
-        return;
-      }
-      const st = el.scrollTop || 0;
-      // Compensate drift caused by CSS scale on content
-      const compensation = st * (1 - 1 / zoomLevel);
-      const adjusted = compensation / zoomLevel; // translateY is affected by parent scale
-      setHeaderTranslateY(adjusted);
-    };
-
-    // Initial
-    update();
-    el.addEventListener('scroll', update, { passive: true } as any);
-    return () => {
-      el.removeEventListener('scroll', update as any);
-    };
-  }, [scrollContainerRef, zoomLevel]);
 
   // Enhanced drag over handler that includes auto-scroll
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, index?: number) => {
@@ -259,8 +237,51 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with Header Inside - Apply Zoom Transform */}
+      {/* Scrollable Content with separate sticky header and zoomed body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
+        {/* Sticky Header Wrapper (not transformed) */}
+        <div className="sticky top-0 z-20 bg-background">
+          <div 
+            className="bg-background"
+            style={{ 
+              minWidth: `${totalTableWidth}px`,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left',
+              width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+            }}
+          >
+            <table 
+              className="border-collapse table-container" 
+              style={{ 
+                tableLayout: 'fixed', 
+                width: `${totalTableWidth}px`,
+                minWidth: `${totalTableWidth}px`,
+                margin: 0,
+                padding: 0
+              }}
+              data-rundown-table="header"
+            >
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                allColumns={allColumns}
+                getColumnWidth={getColumnWidth}
+                updateColumnWidth={updateColumnWidth}
+                onReorderColumns={onReorderColumns}
+                onToggleColumnVisibility={onToggleColumnVisibility}
+                items={items}
+                columnExpandState={columnExpandState}
+                onToggleColumnExpand={handleToggleColumnExpand}
+                onToggleAllHeaders={handleToggleAllHeaders}
+                isHeaderCollapsed={isHeaderCollapsed}
+                savedLayouts={savedLayouts}
+                onLoadLayout={onLoadLayout}
+                zoomLevel={zoomLevel}
+              />
+            </table>
+          </div>
+        </div>
+        
+        {/* Zoomed Body */}
         <div 
           className="bg-background zoom-container" 
           style={{ 
@@ -282,69 +303,50 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
             data-rundown-table="main"
           >
-            {/* Sticky Header */}
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              allColumns={allColumns}
-              getColumnWidth={getColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
-              onToggleColumnVisibility={onToggleColumnVisibility}
-              items={items}
-              columnExpandState={columnExpandState}
-              onToggleColumnExpand={handleToggleColumnExpand}
-              onToggleAllHeaders={handleToggleAllHeaders}
-              isHeaderCollapsed={isHeaderCollapsed}
-              savedLayouts={savedLayouts}
-              onLoadLayout={onLoadLayout}
-              zoomLevel={zoomLevel}
-              headerTranslateY={headerTranslateY}
-            />
-            
             {/* Table Body - Content */}
             <OptimizedRundownTableWrapper
-            items={items} // Pass original items for duration calculations
-            visibleItems={visibleItems} // Pass visible items for display
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
-            startTime={startTime}
-            columnExpandState={columnExpandState}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={handleEnhancedDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragEnd={onDragEnd}
-            onCopySelectedRows={onCopySelectedRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows || (() => {})}
-            onClearSelection={onClearSelection || (() => {})}
-            onAddRow={onAddRow || (() => {})}
-            onAddHeader={onAddHeader || (() => {})}
-            onJumpToHere={onJumpToHere}
-            markActiveTyping={markActiveTyping}
-            // Header collapse functions
-            toggleHeaderCollapse={toggleHeaderCollapse}
-            isHeaderCollapsed={isHeaderCollapsed}
-            getHeaderGroupItemIds={getHeaderGroupItemIds}
+              items={items} // Pass original items for duration calculations
+              visibleItems={visibleItems} // Pass visible items for display
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              isDraggingMultiple={isDraggingMultiple}
+              dropTargetIndex={dropTargetIndex}
+              currentSegmentId={currentSegmentId}
+              hasClipboardData={hasClipboardData}
+              selectedRowId={selectedRowId}
+              startTime={startTime}
+              columnExpandState={columnExpandState}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={handleEnhancedDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows || (() => {})}
+              onClearSelection={onClearSelection || (() => {})}
+              onAddRow={onAddRow || (() => {})}
+              onAddHeader={onAddHeader || (() => {})}
+              onJumpToHere={onJumpToHere}
+              markActiveTyping={markActiveTyping}
+              // Header collapse functions
+              toggleHeaderCollapse={toggleHeaderCollapse}
+              isHeaderCollapsed={isHeaderCollapsed}
+              getHeaderGroupItemIds={getHeaderGroupItemIds}
             />
           </table>
         </div>
