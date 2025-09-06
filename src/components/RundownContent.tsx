@@ -278,7 +278,8 @@ const RundownContent = React.memo<RundownContentProps>(({
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
             width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
-            minWidth: `${totalTableWidth}px`
+            minWidth: `${totalTableWidth}px`,
+            marginBottom: '-2px'
           }}
         >
           <table 
