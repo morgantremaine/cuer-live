@@ -134,13 +134,14 @@ export const useShowcallerStateCoordination = ({
 
       // Handle timing updates differently - lightweight updates for countdown sync
       if (state.action === 'timing') {
+        console.log('📺 Received timing broadcast:', state.timeRemaining, 'for segment:', state.currentSegmentId);
         // Only apply timing if we're not the controller and currently playing the same segment
-        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId) {
-          console.log('📺 Applying timing update:', state.timeRemaining);
+        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId && state.timeRemaining !== undefined) {
+          console.log('📺 Applying timing update from controller:', state.timeRemaining);
           applyExternalVisualState({
             isPlaying: !!state.isPlaying,
             currentSegmentId: state.currentSegmentId || null,
-            timeRemaining: state.timeRemaining ?? 0,
+            timeRemaining: state.timeRemaining,
             isController: false,
             controllerId: state.userId,
             lastUpdate: new Date(state.timestamp).toISOString(),
@@ -447,17 +448,40 @@ export const useShowcallerStateCoordination = ({
     }
   }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected]);
 
-  // Enhanced timing broadcast for live synchronization
+  // Enhanced timing broadcast for live synchronization using setInterval with ref pattern
+  const timingStateRef = useRef({ timeRemaining, currentSegmentId, isPlaying });
+  const timingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Update ref with current values
+  timingStateRef.current = { timeRemaining, currentSegmentId, isPlaying };
+
   useEffect(() => {
+    // Clear any existing interval
+    if (timingIntervalRef.current) {
+      clearInterval(timingIntervalRef.current);
+      timingIntervalRef.current = null;
+    }
+
     if (!isController || !isPlaying || !currentSegmentId) return;
 
-    const timingInterval = setInterval(() => {
-      // Broadcast timing updates every 3 seconds during playback
-      broadcastTimingUpdate(timeRemaining, currentSegmentId, isPlaying);
-    }, 3000);
+    console.log('📺 Starting timing broadcast interval for controller');
+    
+    timingIntervalRef.current = setInterval(() => {
+      const state = timingStateRef.current;
+      if (state.isPlaying && state.currentSegmentId) {
+        console.log('📺 Broadcasting timing update:', state.timeRemaining, 'for segment:', state.currentSegmentId);
+        broadcastTimingUpdate(state.timeRemaining, state.currentSegmentId, state.isPlaying);
+      }
+    }, 2000);
 
-    return () => clearInterval(timingInterval);
-  }, [isController, isPlaying, currentSegmentId, timeRemaining, broadcastTimingUpdate]);
+    return () => {
+      console.log('📺 Clearing timing broadcast interval');
+      if (timingIntervalRef.current) {
+        clearInterval(timingIntervalRef.current);
+        timingIntervalRef.current = null;
+      }
+    };
+  }, [isController, isPlaying, currentSegmentId, broadcastTimingUpdate]); // Only essential deps
 
   return {
     // State

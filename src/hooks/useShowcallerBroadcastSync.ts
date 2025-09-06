@@ -64,6 +64,7 @@ export const useShowcallerBroadcastSync = ({
       isController: true
     };
 
+    console.log('📺 Broadcasting timing state:', timingState);
     showcallerBroadcast.broadcastState(timingState);
   }, [rundownId, user?.id, enabled]);
 
