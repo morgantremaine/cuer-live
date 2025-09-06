@@ -276,15 +276,7 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // SIMPLIFIED: Only block updates for the exact field being typed
-      // Remove all complex deferring logic that causes stale state
-      if (isTypingActive() && !document.hidden && 
-          typingSessionRef.current && 
-          typingSessionRef.current.fieldKey) {
-        console.log('⏸️ Blocking realtime update - user is typing in field:', typingSessionRef.current.fieldKey);
-        // Don't defer - just skip this update, next one will come soon
-        return;
-      }
+      // Apply updates even while typing, but protect the active field via granular merge below
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
       // Just update timestamps and versions
