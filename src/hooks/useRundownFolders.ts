@@ -226,7 +226,7 @@ export const useRundownFolders = (teamId?: string) => {
   useEffect(() => {
     console.log('🗂️ useRundownFolders: teamId or user changed', { teamId: !!teamId, user: !!user });
     fetchFolders();
-  }, [teamId, user]);
+  }, [teamId, user?.id]);
 
   return {
     folders,

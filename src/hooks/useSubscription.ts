@@ -207,7 +207,6 @@ export const useSubscription = () => {
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current) {
       console.log('🔄 useSubscription: Loading subscription data for user change:', user.id);
-      loadedUserRef.current = null; // Reset to allow new load
       checkSubscription();
     } else if (!user?.id) {
       console.log('🔄 useSubscription: Clearing subscription data (no user)');
@@ -220,8 +219,10 @@ export const useSubscription = () => {
     if (urlParams.get('subscription') === 'success') {
       // Wait a moment for Stripe to process, then check subscription
       setTimeout(() => {
-        loadedUserRef.current = null; // Reset to force reload
-        checkSubscription();
+        if (user?.id) {
+          loadedUserRef.current = null; // Reset to force reload
+          checkSubscription();
+        }
       }, 2000);
     }
   }, [user?.id]); // Only depend on user.id, not the checkSubscription function
@@ -237,9 +238,8 @@ export const useSubscription = () => {
         lastVisibilityCheck = now;
         
         // Only reload if we don't have subscription data and we should have it
-        if (user?.id && !isLoadingRef.current && status.loading) {
+        if (user?.id && !isLoadingRef.current && status.loading && loadedUserRef.current !== user.id) {
           console.log('🔄 useSubscription: Reloading subscription data after visibility change');
-          loadedUserRef.current = null; // Reset to allow reload
           checkSubscription();
         }
       }

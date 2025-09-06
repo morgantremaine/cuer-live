@@ -158,7 +158,7 @@ export const useDashboardRundownOptimized = ({
       subscriptionsRef.current.clear();
       setConnectedCount(0);
     };
-  }, [enabled, user, rundowns.map(r => r.id).join(','), handleRundownUpdate]);
+  }, [enabled, user?.id, rundowns.length, JSON.stringify(rundowns.map(r => r.id).sort())]);
 
   return {
     isConnected: connectedCount > 0,
