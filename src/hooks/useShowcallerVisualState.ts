@@ -760,6 +760,49 @@ export const useShowcallerVisualState = ({
     resetDriftCompensation
   ]);
 
+  // Persist final visual state on page hide/unmount to preserve position
+  useEffect(() => {
+    if (!rundownId) return;
+
+    const saveFinalState = () => {
+      try {
+        const lastUpdate = new Date().toISOString();
+        trackOwnUpdate(lastUpdate);
+        const finalState = {
+          ...visualState,
+          lastUpdate,
+          controllerId: visualState.controllerId || userId || null,
+          currentItemStatuses: Object.fromEntries(visualState.currentItemStatuses)
+        } as any;
+        import('@/integrations/supabase/client').then(({ supabase }) => {
+          supabase
+            .from('rundowns')
+            .update({ showcaller_state: finalState })
+            .eq('id', rundownId);
+        }).catch(() => {
+          // best effort
+        });
+      } catch {
+        // best effort
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveFinalState();
+      }
+    };
+
+    window.addEventListener('pagehide', saveFinalState);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      saveFinalState();
+      window.removeEventListener('pagehide', saveFinalState);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [rundownId, visualState, userId, trackOwnUpdate]);
+
   // Enhanced cleanup
   useEffect(() => {
     return () => {
