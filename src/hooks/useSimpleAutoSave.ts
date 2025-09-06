@@ -9,6 +9,7 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
+import { useFieldDeltaSave } from './useFieldDeltaSave';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -137,6 +138,10 @@ export const useSimpleAutoSave = (
       const sig = createContentSignature();
       lastSavedRef.current = sig;
       lastPrimedRundownRef.current = rundownId;
+      
+      // Initialize field delta system
+      initializeSavedState(state);
+      
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
         length: sig.length 
@@ -160,6 +165,12 @@ export const useSimpleAutoSave = (
   const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
     trackOwnUpdateRef.current = tracker;
   }, []);
+
+  // Field-level delta saving for collaborative editing (after trackMyUpdate is defined)
+  const { saveDeltaState, initializeSavedState, trackFieldChange } = useFieldDeltaSave(
+    rundownId,
+    trackMyUpdate
+  );
 
   // Simplified typing activity tracker - single save mechanism
   const markActiveTyping = useCallback(() => {
@@ -344,12 +355,8 @@ export const useSimpleAutoSave = (
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
     
-    try {
-      // Track this as our own update before saving
-      const updateTimestamp = new Date().toISOString();
-      trackMyUpdate(updateTimestamp);
-
-      if (!rundownId) {
+      try {
+        if (!rundownId) {
         const { data: teamData, error: teamError } = await supabase
           .from('team_members')
           .select('team_id')
