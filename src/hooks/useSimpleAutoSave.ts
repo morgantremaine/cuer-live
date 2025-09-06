@@ -253,15 +253,16 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // REFINED STALE TAB PROTECTION: Only block NEW saves, allow saves initiated while active
-    // BUT: Always allow flush saves to proceed as they're specifically for preserving keystrokes
-    // ALSO: Don't block if recent keystrokes occurred (last 5 seconds) even if tab hidden
+    // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
+    // Only block saves if tab has been hidden/unfocused for extended periods (indicating sleep/inactivity)
+    // OR if no recent activity and wasn't initiated while active
     const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
     const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
+    const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
     
-    if (!isFlushSave && isTabCurrentlyInactive && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
-      debugLogger.autosave('Save blocked: tab hidden and save not initiated while active');
-      console.log('🛑 AutoSave: blocked - tab hidden and save not initiated while active');
+    if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
+      debugLogger.autosave('Save blocked: tab inactive for extended period');
+      console.log('🛑 AutoSave: blocked - tab inactive for extended period');
       return;
     }
     

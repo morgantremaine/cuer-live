@@ -269,9 +269,10 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // CRITICAL: Don't process ANY updates while user is actively typing
-      if (isTypingActive()) {
-        console.log('⏸️ Blocking realtime update - user is typing');
+      // Only block updates if user is actively typing in THIS tab
+      // Allow background updates for second monitor scenarios
+      if (isTypingActive() && !document.hidden) {
+        console.log('⏸️ Blocking realtime update - user is actively typing in focused tab');
         deferredUpdateRef.current = updatedRundown;
         return;
       }
@@ -872,7 +873,9 @@ export const useSimplifiedRundownState = () => {
     const shouldSync = (
       (justActivated || !hasSyncedOnceRef.current) &&
       isInitialized && !isLoading && rundownId &&
-      !isTypingActive() && !isSaving && !pendingStructuralChangeRef.current
+      !isTypingActive() && !isSaving && !pendingStructuralChangeRef.current &&
+      // Only sync after long inactivity periods to avoid excessive refreshes on second monitor
+      (justActivated && (now - lastSyncTimeRef.current > 30000) || !hasSyncedOnceRef.current)
     );
 
     // Debounce rapid focus/visibility flaps
@@ -884,7 +887,7 @@ export const useSimplifiedRundownState = () => {
 
     lastSyncTimeRef.current = now;
     let cancelled = false;
-    console.log('👁️ Tab active - performing silent refresh for latest rundown');
+    console.log('👁️ Tab active after extended inactivity - performing silent refresh for latest rundown');
 
     (async () => {
       try {
