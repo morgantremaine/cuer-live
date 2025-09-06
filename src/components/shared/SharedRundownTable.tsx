@@ -1082,8 +1082,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                     style={rowStyles}
                   >
                     <td 
-                      className={`px-2 ${item.type === 'header' ? 'py-6' : 'py-2'} whitespace-nowrap text-sm ${item.type === 'header' ? '' : 'border-r'} print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible ${
-                        isDark ? 'border-gray-600' : 'border-gray-200'
+                      className={`px-2 ${item.type === 'header' ? 'py-6' : 'py-2'} whitespace-nowrap text-sm ${item.type === 'header' ? '' : 'border-r'} print:border-gray-400 print-row-number print:h-auto print:max-h-none print:overflow-visible bg-background ${
+                        isDark ? 'border-border' : 'border-gray-200'
                       }`}
                       style={{ 
                         width: '60px', 
