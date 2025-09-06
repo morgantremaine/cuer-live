@@ -174,16 +174,9 @@ export const useShowcallerStateCoordination = ({
     enabled: isInitialized
   });
 
-  // Fallback real-time synchronization (for new viewers and persistence)
-  const { 
-    isConnected: isFallbackConnected, 
-    isProcessingVisualUpdate, 
-    trackOwnVisualUpdate 
-  } = useShowcallerRealtimeSync({
-    rundownId,
-    onExternalVisualStateReceived: handleExternalVisualState,
-    enabled: isInitialized
-  });
+  // Only use broadcast system - no realtime fallback for showcaller
+  const isProcessingVisualUpdate = false;
+  const trackOwnVisualUpdate = trackOwnUpdate;
 
   // Helper to get current and next segments
   const getCurrentSegment = useCallback(() => {
@@ -376,27 +369,23 @@ export const useShowcallerStateCoordination = ({
 
   // Initialization coordination
   useEffect(() => {
-    const isFullyConnected = isBroadcastConnected && isFallbackConnected;
     console.log('📺 Showcaller coordination connection status:', {
       isBroadcastConnected,
-      isFallbackConnected,
-      isFullyConnected,
       rundownId,
       userId
     });
     
     if (isInitialized && !initializationRef.current) {
       initializationRef.current = true;
-      console.log('📺 Showcaller state coordination initialized with broadcast-first sync:', {
+      console.log('📺 Showcaller state coordination initialized with broadcast-only sync:', {
         rundownId,
         userId,
         currentSegmentId,
         isPlaying,
-        broadcastConnected: isBroadcastConnected,
-        fallbackConnected: isFallbackConnected
+        broadcastConnected: isBroadcastConnected
       });
     }
-  }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected, isFallbackConnected]);
+  }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected]);
 
   return {
     // State
@@ -406,7 +395,7 @@ export const useShowcallerStateCoordination = ({
     timeRemaining,
     isController,
     isInitialized,
-    isConnected: isBroadcastConnected && isFallbackConnected,
+    isConnected: isBroadcastConnected,
     isProcessingVisualUpdate,
     hasLoadedInitialState: isInitialized, // Add this to track when visual indicators are ready
     
