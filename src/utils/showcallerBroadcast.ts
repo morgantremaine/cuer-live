@@ -9,7 +9,7 @@ export interface ShowcallerBroadcastState {
   currentSegmentId?: string;
   timeRemaining?: number;
   isController?: boolean;
-  action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump';
+  action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump' | 'timing';
   jumpToSegmentId?: string;
 }
 

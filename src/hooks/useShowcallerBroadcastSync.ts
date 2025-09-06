@@ -45,7 +45,26 @@ export const useShowcallerBroadcastSync = ({
       timestamp: Date.now()
     };
 
+    console.log('📺 Broadcasting showcaller state:', state.action, fullState);
     showcallerBroadcast.broadcastState(fullState);
+  }, [rundownId, user?.id, enabled]);
+
+  // Periodic timing broadcast for live countdown sync
+  const broadcastTimingUpdate = useCallback((timeRemaining: number, currentSegmentId: string | null, isPlaying: boolean) => {
+    if (!rundownId || !user?.id || !enabled || !isPlaying || !currentSegmentId) return;
+
+    const timingState: ShowcallerBroadcastState = {
+      action: 'timing',
+      rundownId,
+      userId: user.id,
+      timestamp: Date.now(),
+      isPlaying,
+      currentSegmentId,
+      timeRemaining,
+      isController: true
+    };
+
+    showcallerBroadcast.broadcastState(timingState);
   }, [rundownId, user?.id, enabled]);
 
   // Set up broadcast subscription
@@ -68,6 +87,7 @@ export const useShowcallerBroadcastSync = ({
 
   return {
     broadcastState,
+    broadcastTimingUpdate,
     isConnected: enabled && !!rundownId
   };
 };

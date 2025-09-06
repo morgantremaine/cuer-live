@@ -127,12 +127,30 @@ export const useShowcallerStateCoordination = ({
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController, userId]);
 
   // Broadcast-first real-time sync
-  const { broadcastState, isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
+  const { broadcastState, broadcastTimingUpdate, isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
     rundownId,
     onBroadcastReceived: (state: ShowcallerBroadcastState) => {
       console.log('📺 Received showcaller broadcast in coordination:', state);
 
-      // Determine target segment id based on action
+      // Handle timing updates differently - lightweight updates for countdown sync
+      if (state.action === 'timing') {
+        // Only apply timing if we're not the controller and currently playing the same segment
+        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId) {
+          console.log('📺 Applying timing update:', state.timeRemaining);
+          applyExternalVisualState({
+            isPlaying: !!state.isPlaying,
+            currentSegmentId: state.currentSegmentId || null,
+            timeRemaining: state.timeRemaining ?? 0,
+            isController: false,
+            controllerId: state.userId,
+            lastUpdate: new Date(state.timestamp).toISOString(),
+            currentItemStatuses: visualState.currentItemStatuses
+          });
+        }
+        return;
+      }
+
+      // Handle full state updates for navigation actions
       const targetSegmentId = state.action === 'jump' && state.jumpToSegmentId
         ? state.jumpToSegmentId
         : state.currentSegmentId;
@@ -428,6 +446,18 @@ export const useShowcallerStateCoordination = ({
       });
     }
   }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected]);
+
+  // Enhanced timing broadcast for live synchronization
+  useEffect(() => {
+    if (!isController || !isPlaying || !currentSegmentId) return;
+
+    const timingInterval = setInterval(() => {
+      // Broadcast timing updates every 3 seconds during playback
+      broadcastTimingUpdate(timeRemaining, currentSegmentId, isPlaying);
+    }, 3000);
+
+    return () => clearInterval(timingInterval);
+  }, [isController, isPlaying, currentSegmentId, timeRemaining, broadcastTimingUpdate]);
 
   return {
     // State

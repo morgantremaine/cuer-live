@@ -297,6 +297,7 @@ export const useShowcallerVisualState = ({
             return prevState;
           }
 
+          // Only the controller can advance segments - non-controllers just stop
           if (isController) {
             isAdvancingRef.current = true;
             lastAdvancementTimeRef.current = now;
@@ -356,10 +357,10 @@ export const useShowcallerVisualState = ({
               return newState;
             }
           } else {
+            // Non-controllers just show time as 0 but don't advance
             return {
               ...prevState,
-              timeRemaining: 0,
-              isPlaying: false
+              timeRemaining: 0
             };
           }
         }
@@ -370,7 +371,7 @@ export const useShowcallerVisualState = ({
           lastUpdate: new Date().toISOString()
         };
         
-        // Reduced sync frequency: only save every 60 seconds to reduce database load
+        // Controllers save state periodically, non-controllers just update UI
         if (isController && remainingSeconds > 0 && remainingSeconds % 60 === 0) {
           debouncedSaveVisualState(newState, false);
         }
@@ -378,7 +379,7 @@ export const useShowcallerVisualState = ({
         return newState;
       });
 
-      // Schedule next precise update - aim for 100ms precision
+      // Schedule next precise update - aim for 100ms precision for all users
       precisionTimerRef.current = setTimeout(updatePrecisionTimer, 100);
     };
 
@@ -599,6 +600,7 @@ export const useShowcallerVisualState = ({
     
     setVisualState(synchronizedState);
     
+    // Start precision timer for all users when playing, not just controllers
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       setTimeout(() => startPrecisionTimer(), 50);
     }
