@@ -207,6 +207,30 @@ export const useBulletproofRundownState = () => {
     setTimeout(autoSave, 1500);
   }, [trackOfflineChange, state.items, actions, autoSave]);
 
+  // Enhanced updateItem function that matches interface expectations
+  const updateItem = useCallback((id: string, field: string, value: any) => {
+    const itemIndex = state.items.findIndex(item => item.id === id);
+    if (itemIndex !== -1) {
+      const updatedItems = [...state.items];
+      if (field.includes('.')) {
+        const [parentField, subField] = field.split('.');
+        if (!updatedItems[itemIndex][parentField]) {
+          updatedItems[itemIndex][parentField] = {};
+        }
+        updatedItems[itemIndex][parentField][subField] = value;
+      } else {
+        (updatedItems[itemIndex] as any)[field] = value;
+      }
+      actions.setItems(updatedItems);
+      
+      // Track for offline sync
+      trackOfflineChange(`${id}-${field}`, value);
+      
+      // Trigger auto-save
+      setTimeout(autoSave, 1500);
+    }
+  }, [state.items, actions, trackOfflineChange, autoSave]);
+
   // Handle row selection
   const handleRowSelection = useCallback((rowId: string | null) => {
     setSelectedRowId(rowId);
@@ -266,10 +290,11 @@ export const useBulletproofRundownState = () => {
     hasOfflineChanges,
     hasUnresolvedConflicts,
     
-    // Actions
+    // Enhanced actions
     ...actions,
     setColumns,
     handleFieldChange,
+    updateItem, // Use the enhanced updateItem
     handleRowSelection,
     forceFocusCheck,
     
