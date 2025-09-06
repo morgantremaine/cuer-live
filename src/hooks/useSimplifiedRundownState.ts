@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
@@ -22,6 +22,7 @@ import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
@@ -1051,9 +1052,8 @@ export const useSimplifiedRundownState = () => {
           
           console.log('✅ New rundown created with ID:', data.id);
           
-          // Navigate to the actual rundown URL without adding to history
-          window.history.replaceState(null, '', `/rundown/${data.id}`);
-          
+          // Navigate to the actual rundown URL via React Router (replace history)
+          navigate(`/rundown/${data.id}`, { replace: true });
           // Load the newly created rundown data
           actions.loadState({
             items: Array.isArray(data.items) ? data.items : createDefaultRundownItems(),
@@ -1099,7 +1099,7 @@ export const useSimplifiedRundownState = () => {
       setIsInitialized(true);
       console.log('✅ Initialization complete (new rundown)');
     }
-  }, [rundownId, isInitialized, actions, params.id, location.state]);
+  }, [rundownId, isInitialized, actions, params.id, location.state, navigate]);
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
