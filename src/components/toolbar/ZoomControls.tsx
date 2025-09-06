@@ -30,8 +30,6 @@ const ZoomControls = ({
 
   return (
     <div className="flex items-center space-x-1">
-      <Separator orientation="vertical" className="h-6" />
-      
       <Button
         variant="ghost"
         size={size}
@@ -41,19 +39,6 @@ const ZoomControls = ({
         title="Zoom Out"
       >
         <ZoomOut className="h-4 w-4" />
-      </Button>
-      
-      <Button
-        variant="ghost"
-        size={size}
-        onClick={onResetZoom}
-        disabled={isDefaultZoom}
-        className="h-8 px-2 disabled:opacity-30 min-w-[60px]"
-        title="Reset Zoom (100%)"
-      >
-        <span className="text-xs font-mono">
-          {formatZoomPercentage(zoomLevel)}
-        </span>
       </Button>
       
       <Button
