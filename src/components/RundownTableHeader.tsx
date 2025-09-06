@@ -41,7 +41,6 @@ interface RundownTableHeaderProps {
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
   zoomLevel?: number;
-  headerTranslateY?: number; // compensate sticky drift when zoom is applied
 }
 
 const RundownTableHeader = ({
@@ -58,8 +57,7 @@ const RundownTableHeader = ({
   isHeaderCollapsed,
   savedLayouts,
   onLoadLayout,
-  zoomLevel = 1,
-  headerTranslateY = 0
+  zoomLevel = 1
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -189,16 +187,16 @@ const RundownTableHeader = ({
   };
 
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700">
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: '66px', 
-            minWidth: '66px',
-            maxWidth: '66px',
-            borderRight: '1px solid rgba(255, 255, 255, 0.2)'
+            width: '64px', 
+            minWidth: '64px',
+            maxWidth: '64px',
+            borderRight: '1px solid hsl(var(--border))'
           }}
         >
           <div className="flex items-center space-x-1">
@@ -269,7 +267,6 @@ const RundownTableHeader = ({
                   onAutoResize={() => handleAutoResize(column)}
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
-                  zoomLevel={zoomLevel}
                 >
                    {onToggleColumnVisibility && allColumns.length > 0 ? (
                      <HeaderContextMenu
@@ -291,36 +288,34 @@ const RundownTableHeader = ({
             })}
           </SortableContext>
           
-          {/* Always show DragOverlay with zoom-adjusted width */}
-          <DragOverlay 
-            dropAnimation={null}
-            modifiers={[restrictToHorizontalAxis]}
-          >
-            {activeColumn ? (
-              <th 
-                className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border shadow-lg"
-                style={{ 
-                  width: getColumnWidth(activeColumn),
-                  minWidth: getColumnWidth(activeColumn),
-                  maxWidth: getColumnWidth(activeColumn),
-                  opacity: 0.95,
-                  zIndex: 1000,
-                  cursor: 'grabbing'
-                }}
-              >
-                <div 
-                  className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
-                  style={{
-                    width: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
-                    minWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
-                    maxWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`
+          {/* Only show DragOverlay when not zoomed to prevent positioning issues */}
+          {zoomLevel === 1 && (
+            <DragOverlay>
+              {activeColumn ? (
+                <th 
+                  className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
+                  style={{ 
+                    width: getColumnWidth(activeColumn),
+                    minWidth: getColumnWidth(activeColumn),
+                    maxWidth: getColumnWidth(activeColumn),
+                    opacity: 0.9,
+                    zIndex: 1000
                   }}
                 >
-                  {activeColumn.name || activeColumn.key}
-                </div>
-              </th>
-            ) : null}
-          </DragOverlay>
+                  <div 
+                    className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                    style={{
+                      width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                      minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                      maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                    }}
+                  >
+                    {activeColumn.name || activeColumn.key}
+                  </div>
+                </th>
+              ) : null}
+            </DragOverlay>
+          )}
         </DndContext>
       </tr>
     </thead>

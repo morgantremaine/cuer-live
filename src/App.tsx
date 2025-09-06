@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import AppUpdateNotification from "@/components/AppUpdateNotification";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -171,7 +170,6 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <AppUpdateNotification />
             <BrowserRouter>
               <AppRoutes />
             </BrowserRouter>

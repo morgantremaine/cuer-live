@@ -27,20 +27,11 @@ export const useShowcallerPersistence = ({
         rundownId
       });
 
-      // Build backward-compatible payload
-      const payload: ShowcallerState & { currentSegment?: string | null; controller?: string | null } = {
-        ...state,
-        currentSegmentId: (state as any).currentSegmentId ?? (state as any).currentSegment ?? null,
-        controllerId: (state as any).controllerId ?? (state as any).controller ?? null,
-        // Add legacy keys to avoid older readers defaulting incorrectly
-        currentSegment: (state as any).currentSegmentId ?? (state as any).currentSegment ?? null,
-        controller: (state as any).controllerId ?? (state as any).controller ?? null
-      };
-
+      // ENHANCED: Always allow saves, remove restrictive blocking
       const { error } = await supabase
         .from('rundowns')
         .update({ 
-          showcaller_state: payload,
+          showcaller_state: state,
           last_updated_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', rundownId);
@@ -83,22 +74,12 @@ export const useShowcallerPersistence = ({
       }
 
       if (data?.showcaller_state) {
-        const raw: any = data.showcaller_state;
-        const normalized: ShowcallerState = {
-          isPlaying: !!raw.isPlaying,
-          currentSegmentId: raw.currentSegmentId ?? raw.currentSegment ?? null,
-          timeRemaining: typeof raw.timeRemaining === 'number' ? raw.timeRemaining : 0,
-          playbackStartTime: raw.playbackStartTime ?? null,
-          lastUpdate: raw.lastUpdate ?? new Date().toISOString(),
-          controllerId: raw.controllerId ?? raw.controller ?? null
-        };
-
-        console.log('📺 Loaded showcaller state (normalized):', {
-          isPlaying: normalized.isPlaying,
-          currentSegmentId: normalized.currentSegmentId,
-          controllerId: normalized.controllerId
+        console.log('📺 Loaded showcaller state:', {
+          isPlaying: data.showcaller_state.isPlaying,
+          currentSegment: data.showcaller_state.currentSegmentId,
+          controller: data.showcaller_state.controllerId
         });
-        return normalized;
+        return data.showcaller_state as ShowcallerState;
       }
 
       return null;

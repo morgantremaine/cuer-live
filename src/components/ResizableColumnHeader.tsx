@@ -12,7 +12,6 @@ interface ResizableColumnHeaderProps {
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
-  zoomLevel?: number;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -45,8 +44,7 @@ const ResizableColumnHeader = ({
   onAutoResize,
   children, 
   showLeftSeparator = false,
-  isLastColumn = false,
-  zoomLevel = 1
+  isLastColumn = false
 }: ResizableColumnHeaderProps) => {
   const {
     attributes,
@@ -81,9 +79,8 @@ const ResizableColumnHeader = ({
     isResizingRef.current = true;
     
     const startX = e.clientX;
-    const displayWidth = parseFloat(width.replace('px', ''));
-    const startWidthRaw = (isNaN(displayWidth) ? minimumWidth * (zoomLevel || 1) : displayWidth) / (zoomLevel || 1);
-    initialWidthRef.current = startWidthRaw;
+    const startWidth = parseInt(width.replace('px', ''));
+    initialWidthRef.current = startWidth;
 
     // Set cursor and disable text selection globally
     document.body.style.cursor = 'col-resize';
@@ -105,9 +102,9 @@ const ResizableColumnHeader = ({
 
       // Use requestAnimationFrame for smooth updates
       animationFrameRef.current = requestAnimationFrame(() => {
-        const deltaRaw = (e.clientX - startX) / (zoomLevel || 1);
-        // Strictly enforce minimum width constraint during drag (raw pixels)
-        const calculatedWidth = initialWidthRef.current + deltaRaw;
+        const deltaX = e.clientX - startX;
+        // Strictly enforce minimum width constraint during drag
+        const calculatedWidth = initialWidthRef.current + deltaX;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
         // Update immediately during drag for visual feedback
@@ -126,8 +123,8 @@ const ResizableColumnHeader = ({
       }
       
       // Calculate final width and strictly enforce minimum constraint
-      const deltaRaw = (e.clientX - startX) / (zoomLevel || 1);
-      const calculatedWidth = initialWidthRef.current + deltaRaw;
+      const deltaX = e.clientX - startX;
+      const calculatedWidth = initialWidthRef.current + deltaX;
       const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
       // Final update on mouse up
@@ -149,23 +146,21 @@ const ResizableColumnHeader = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [column.id, onWidthChange, width, minimumWidth, zoomLevel]);
+  }, [column.id, onWidthChange, width, minimumWidth]);
 
-  // Parse width value for display (scaled) without enforcing minimum to avoid header/body mismatch
-  const widthValue = parseFloat(width.replace('px', ''));
-  const displayWidth = isNaN(widthValue) ? minimumWidth * (zoomLevel || 1) : widthValue;
+  // Parse width value and ensure it's a valid pixel value
+  const widthValue = parseInt(width.replace('px', ''));
+  const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? 'none' : transition,
-    width: `${displayWidth}px`,
-    minWidth: `${displayWidth}px`,
-    maxWidth: `${displayWidth}px`,
-    borderRight: '1px solid rgba(255, 255, 255, 0.2)',
+    transition,
+    width: `${constrainedWidth}px`,
+    minWidth: `${minimumWidth}px`,
+    maxWidth: `${constrainedWidth}px`,
+    borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   // Create listeners that exclude the resize handle and right-clicks
@@ -204,9 +199,9 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
         style={{
-          width: `${Math.max(displayWidth - 16, 0)}px`,
-          minWidth: `0px`,
-          maxWidth: `${Math.max(displayWidth - 16, 0)}px`
+          width: `${constrainedWidth - 16}px`,
+          minWidth: `${minimumWidth - 16}px`,
+          maxWidth: `${constrainedWidth - 16}px`
         }}
       >
         {children}

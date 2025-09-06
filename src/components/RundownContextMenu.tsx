@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy, Clock } from 'lucide-react';
 import {
   ContextMenu,
@@ -7,11 +7,8 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
 } from '@/components/ui/context-menu';
-
+import ColorPicker from './ColorPicker';
 
 interface RundownContextMenuProps {
   children: React.ReactNode;
@@ -65,7 +62,6 @@ const RundownContextMenu = memo(({
   allItems
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
-  
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -88,7 +84,6 @@ const RundownContextMenu = memo(({
     if (onClearSelection) {
       onClearSelection();
     }
-
   };
 
   // Handle float toggle for multiple rows
@@ -259,40 +254,13 @@ const RundownContextMenu = memo(({
             </ContextMenuItem>
           )}
           
-          <ContextMenuSub>
-            <ContextMenuSubTrigger className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Palette className="mr-2 h-4 w-4" />
-              {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-auto p-2">
-              <div className="grid grid-cols-3 gap-1">
-                {[
-                  { name: 'Default', value: '' },
-                  { name: 'Red', value: '#fca5a5' },
-                  { name: 'Orange', value: '#fdba74' },
-                  { name: 'Yellow', value: '#fde047' },
-                  { name: 'Green', value: '#86efac' },
-                  { name: 'Blue', value: '#93c5fd' },
-                  { name: 'Purple', value: '#c4b5fd' },
-                  { name: 'Pink', value: '#f9a8d4' },
-                  { name: 'Gray', value: '#d1d5db' }
-                ].map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleColorSelect(itemId, color.value);
-                      // Force close by clicking outside
-                      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-                    }}
-                    className="w-8 h-8 rounded border border-gray-300 dark:border-gray-500 hover:scale-110 transition-transform cursor-pointer"
-                    style={{ backgroundColor: color.value || '#ffffff' }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
+          <ContextMenuItem 
+            onClick={onColorPicker} 
+            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <Palette className="mr-2 h-4 w-4" />
+            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
+          </ContextMenuItem>
           
           <ContextMenuSeparator />
           
@@ -316,6 +284,21 @@ const RundownContextMenu = memo(({
         </ContextMenuContent>
       </ContextMenu>
       
+      {/* Color picker positioned outside the context menu */}
+      {showColorPicker === itemId && (
+        <div className="fixed z-[10000]" style={{ 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)'
+        }}>
+          <ColorPicker
+            itemId={itemId}
+            showColorPicker={showColorPicker}
+            onToggle={onColorPicker}
+            onColorSelect={handleColorSelect}
+          />
+        </div>
+      )}
     </>
   );
 });

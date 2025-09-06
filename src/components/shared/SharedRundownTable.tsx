@@ -961,7 +961,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       >
         <div className="print-scroll-container h-full overflow-auto print:overflow-visible print:h-auto print:max-h-none">
           <table className="w-full print:text-xs print-table table-fixed print:h-auto print:max-h-none">
-            <thead className={`sticky top-0 z-20 print:static print-sticky-header ${
+            <thead className={`sticky top-0 z-10 print:static print-sticky-header ${
               isDark ? 'bg-gray-800' : 'bg-gray-50 print:bg-gray-100'
             }`}>
               <tr className="print-header-row">
@@ -1274,7 +1274,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             } : {})
                           }}
                         >
-                          <div className="break-words whitespace-pre-wrap overflow-hidden flex items-center min-h-[2rem]">
+                          <div className="break-words whitespace-pre-wrap overflow-hidden">
                             {(column.key === 'script' || column.key === 'notes') ? 
                               renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime), item.id, column.key) ||
                               <div>{renderCellContent(item, column, calculatedStartTime)}</div> :

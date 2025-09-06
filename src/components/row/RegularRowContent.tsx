@@ -53,9 +53,9 @@ const RegularRowContent = ({
         className="px-2 py-1 text-sm font-mono align-middle"
         style={{ 
           backgroundColor,
-          width: '66px',
-          minWidth: '66px',
-          maxWidth: '66px',
+          width: '64px',
+          minWidth: '64px',
+          maxWidth: '64px',
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
