@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy, Clock } from 'lucide-react';
 import {
   ContextMenu,
@@ -62,6 +62,7 @@ const RundownContextMenu = memo(({
   allItems
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+  const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -152,6 +153,9 @@ const RundownContextMenu = memo(({
       <ContextMenu>
         <ContextMenuTrigger 
           asChild 
+          onContextMenu={(e) => {
+            setMousePosition({ x: e.clientX, y: e.clientY });
+          }}
           disabled={(() => {
             // Only disable if there's selected text in an editable element
             const selection = window.getSelection();
@@ -284,13 +288,15 @@ const RundownContextMenu = memo(({
         </ContextMenuContent>
       </ContextMenu>
       
-      {/* Color picker positioned outside the context menu */}
+      {/* Color picker positioned near cursor */}
       {showColorPicker === itemId && (
-        <div className="fixed z-[10000]" style={{ 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)'
-        }}>
+        <div 
+          className="fixed z-[10000]" 
+          style={{ 
+            top: Math.min(mousePosition.y + 10, window.innerHeight - 200),
+            left: Math.min(mousePosition.x + 10, window.innerWidth - 200),
+          }}
+        >
           <ColorPicker
             itemId={itemId}
             showColorPicker={showColorPicker}
