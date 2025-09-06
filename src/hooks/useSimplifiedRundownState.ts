@@ -1007,7 +1007,87 @@ export const useSimplifiedRundownState = () => {
   }, [isTabActive, isInitialized, isLoading, rundownId, isTypingActive, isSaving, lastSeenDocVersion, lastKnownTimestamp, handleDataRefresh]);
 
   useEffect(() => {
-    if (!rundownId && !isInitialized) {
+    if (!rundownId && !isInitialized && params.id === 'new') {
+      console.log('🆕 Creating new rundown automatically...');
+      setIsLoading(true);
+      
+      const createNewRundown = async () => {
+        try {
+          // Get current user and team info
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError || !userData.user) {
+            throw new Error('User not authenticated');
+          }
+          
+          const { data: teamData, error: teamError } = await supabase
+            .from('team_members')
+            .select('team_id')
+            .eq('user_id', userData.user.id)
+            .limit(1)
+            .single();
+          
+          if (teamError || !teamData) {
+            throw new Error('No team found for user');
+          }
+          
+          // Get folder ID from location state if available
+          const folderId = location.state?.folderId || null;
+          
+          // Create the rundown in the database
+          const { data, error } = await supabase
+            .from('rundowns')
+            .insert({
+              title: 'Untitled Rundown',
+              items: createDefaultRundownItems(),
+              user_id: userData.user.id,
+              team_id: teamData.team_id,
+              folder_id: folderId,
+              archived: false
+            })
+            .select()
+            .single();
+          
+          if (error) throw error;
+          
+          console.log('✅ New rundown created with ID:', data.id);
+          
+          // Navigate to the actual rundown URL without adding to history
+          window.history.replaceState(null, '', `/rundown/${data.id}`);
+          
+          // Load the newly created rundown data
+          actions.loadState({
+            items: Array.isArray(data.items) ? data.items : createDefaultRundownItems(),
+            columns: [],
+            title: data.title || 'Untitled Rundown',
+            startTime: data.start_time || '09:00:00',
+            timezone: data.timezone || 'America/New_York',
+            showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null
+          });
+          
+          setLastKnownTimestamp(data.updated_at);
+          setLastSeenDocVersion(data.doc_version || 0);
+          setIsInitialized(true);
+          setIsLoading(false);
+          
+        } catch (error) {
+          console.error('❌ Failed to create new rundown:', error);
+          // Fallback to local-only mode
+          actions.loadState({
+            items: createDefaultRundownItems(),
+            columns: [],
+            title: 'Untitled Rundown',
+            startTime: '09:00:00',
+            timezone: 'America/New_York'
+          });
+          setIsInitialized(true);
+          setIsLoading(false);
+          console.log('✅ Initialized with fallback data (new rundown)');
+        }
+      };
+      
+      createNewRundown();
+    } else if (!rundownId && !isInitialized) {
+      // Handle other cases where rundownId is null but not 'new'
       actions.loadState({
         items: createDefaultRundownItems(),
         columns: [],
@@ -1019,7 +1099,7 @@ export const useSimplifiedRundownState = () => {
       setIsInitialized(true);
       console.log('✅ Initialization complete (new rundown)');
     }
-  }, [rundownId, isInitialized, actions]);
+  }, [rundownId, isInitialized, actions, params.id, location.state]);
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
