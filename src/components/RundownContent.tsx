@@ -213,16 +213,47 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver, isDragging]);
 
+  // Shared minimum width map to match ResizableColumnHeader
+  const getMinimumColumnWidth = React.useCallback((column: Column): number => {
+    switch (column.key) {
+      case 'duration':
+      case 'startTime':
+      case 'endTime':
+      case 'elapsedTime':
+        return 95;
+      case 'segmentName':
+        return 100;
+      case 'talent':
+        return 60;
+      case 'script':
+      case 'notes':
+        return 120;
+      case 'gfx':
+      case 'video':
+        return 80;
+      default:
+        return 50;
+    }
+  }, []);
+
+  const normalizedGetColumnWidth = React.useCallback((column: Column) => {
+    const raw = getColumnWidth(column);
+    const rawVal = parseInt(String(raw).replace('px', ''));
+    const min = getMinimumColumnWidth(column);
+    const constrained = Math.max(min, isNaN(rawVal) ? min : rawVal);
+    return `${constrained}px`;
+  }, [getColumnWidth, getMinimumColumnWidth]);
+
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
-      const width = getColumnWidth(column);
-      const widthValue = parseInt(width.replace('px', ''));
-      total += widthValue;
+      const width = normalizedGetColumnWidth(column);
+      const widthValue = parseInt(String(width).replace('px', ''));
+      total += isNaN(widthValue) ? 0 : widthValue;
     });
     return total;
-  }, [visibleColumns, getColumnWidth]);
+  }, [visibleColumns, normalizedGetColumnWidth]);
 
   return (
     <div className="bg-background h-full rundown-container" data-rundown-table="true">
@@ -263,13 +294,13 @@ const RundownContent = React.memo<RundownContentProps>(({
             <colgroup>
               <col style={{ width: '64px' }} />
               {visibleColumns.map((col) => (
-                <col key={`hcol-${col.id}`} style={{ width: getColumnWidth(col) }} />
+                <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
               ))}
             </colgroup>
             <RundownTableHeader 
               visibleColumns={visibleColumns}
               allColumns={allColumns}
-              getColumnWidth={getColumnWidth}
+              getColumnWidth={normalizedGetColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onReorderColumns={onReorderColumns}
               onToggleColumnVisibility={onToggleColumnVisibility}
@@ -310,7 +341,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             <colgroup>
               <col style={{ width: '64px' }} />
               {visibleColumns.map((col) => (
-                <col key={`bcol-${col.id}`} style={{ width: getColumnWidth(col) }} />
+                <col key={`bcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
               ))}
             </colgroup>
             {/* Table Body - Content */}
@@ -330,7 +361,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               selectedRowId={selectedRowId}
               startTime={startTime}
               columnExpandState={columnExpandState}
-              getColumnWidth={getColumnWidth}
+              getColumnWidth={normalizedGetColumnWidth}
               updateColumnWidth={updateColumnWidth}
               onUpdateItem={onUpdateItem}
               onCellClick={onCellClick}
