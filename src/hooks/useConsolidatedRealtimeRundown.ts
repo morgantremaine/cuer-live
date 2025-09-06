@@ -15,7 +15,7 @@ interface UseConsolidatedRealtimeRundownProps {
   isSharedView?: boolean;
 }
 
-// Single global subscription per rundown to prevent conflicts
+// Enhanced global subscription state with better conflict prevention
 const globalSubscriptions = new Map<string, {
   subscription: any;
   callbacks: {
@@ -29,6 +29,7 @@ const globalSubscriptions = new Map<string, {
   lastProcessedDocVersion: number;
   isConnected: boolean;
   refCount: number;
+  gapDetectionInProgress: boolean; // New: prevent concurrent gap detection
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -59,7 +60,7 @@ export const useConsolidatedRealtimeRundown = ({
     trackOwnUpdate
   };
 
-  // Process realtime update with conflict prevention and gap handling
+  // Process realtime update with enhanced conflict prevention and proper doc version tracking
   const processRealtimeUpdate = useCallback((payload: any, globalState: any) => {
     const updateTimestamp = payload.new?.updated_at;
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
@@ -70,26 +71,35 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Primary guard: doc_version (monotonic). If stale, skip early
-    if (incomingDocVersion && incomingDocVersion <= globalState.lastProcessedDocVersion) {
+    // Enhanced doc version checking - prevent race conditions
+    const currentDocVersion = globalState.lastProcessedDocVersion;
+    
+    // Skip stale updates more aggressively 
+    if (incomingDocVersion && incomingDocVersion <= currentDocVersion) {
       debugLogger.realtime('Skipping stale doc version:', {
         incoming: incomingDocVersion,
-        lastProcessed: globalState.lastProcessedDocVersion
+        lastProcessed: currentDocVersion,
+        timestamp: normalizedTimestamp
       });
       return;
     }
 
-    // Timestamp dedup as secondary guard
+    // Enhanced timestamp deduplication
     if (normalizedTimestamp && normalizedTimestamp === globalState.lastProcessedTimestamp) {
       debugLogger.realtime('Skipping duplicate timestamp:', normalizedTimestamp);
       return;
     }
 
-    // Skip own updates by user id (authoritative) or timestamp (best-effort)
+    // Enhanced own update detection with multiple checks
     const isOwnUpdate = payload.new?.last_updated_by === user?.id ||
                         (normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp));
     if (isOwnUpdate) {
-      debugLogger.realtime('Skipping own update:', { normalizedTimestamp, incomingDocVersion });
+      debugLogger.realtime('Skipping own update:', { 
+        normalizedTimestamp, 
+        incomingDocVersion,
+        userId: payload.new?.last_updated_by,
+        currentUserId: user?.id
+      });
       globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
       if (incomingDocVersion) {
         globalState.lastProcessedDocVersion = incomingDocVersion;
@@ -97,68 +107,114 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Detect missed updates (doc_version gap) and perform catch-up read
-    if (incomingDocVersion && incomingDocVersion > (globalState.lastProcessedDocVersion + 1)) {
-      console.warn('⚠️ Realtime gap detected, performing catch-up sync', {
+    // Enhanced gap detection with improved handling
+    const expectedVersion = currentDocVersion + 1;
+    const hasSignificantGap = incomingDocVersion && incomingDocVersion > (expectedVersion + 1); // Allow 1 version tolerance
+    
+    if (hasSignificantGap && !globalState.gapDetectionInProgress) {
+      console.warn('⚠️ Significant version gap detected, performing smart catch-up', {
         incomingDocVersion,
-        lastProcessed: globalState.lastProcessedDocVersion
+        expectedVersion,
+        gap: incomingDocVersion - expectedVersion,
+        lastProcessed: currentDocVersion
       });
+      
+      globalState.gapDetectionInProgress = true;
       setIsProcessingUpdate(true);
+      
       (async () => {
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
-          .eq('id', rundownId as string)
-          .single();
-        setIsProcessingUpdate(false);
-        if (!error && data) {
-          globalState.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-          if (data.doc_version) {
-            globalState.lastProcessedDocVersion = data.doc_version;
+        try {
+          const { data, error } = await supabase
+            .from('rundowns')
+            .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, last_updated_by')
+            .eq('id', rundownId as string)
+            .single();
+            
+          if (!error && data) {
+            const serverVersion = data.doc_version || 0;
+            const serverTimestamp = normalizeTimestamp(data.updated_at);
+            
+            // Only apply if server data is newer than what we're processing
+            if (serverVersion >= incomingDocVersion) {
+              globalState.lastProcessedTimestamp = serverTimestamp;
+              globalState.lastProcessedDocVersion = serverVersion;
+              
+              // Apply complete server data to resolve gap
+              globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                try { cb(data); } catch (err) { console.error('Error in gap resolution callback:', err); }
+              });
+              
+              console.log('✅ Gap resolved with server data:', {
+                serverVersion,
+                targetVersion: incomingDocVersion
+              });
+            } else {
+              console.warn('⚠️ Server data outdated during gap resolution, continuing with update');
+              // Continue with normal processing below
+            }
+          } else {
+            console.error('❌ Gap resolution failed:', error);
           }
-          // Dispatch as content update (we fetched whole row)
-          globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-            try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
-          });
-        } else {
-          console.error('Catch-up sync failed:', error);
+        } catch (error) {
+          console.error('❌ Gap resolution error:', error);
+        } finally {
+          globalState.gapDetectionInProgress = false;
+          setIsProcessingUpdate(false);
         }
       })();
-      return;
+      
+      // If gap detection is handling it, skip normal processing
+      if (hasSignificantGap) {
+        return;
+      }
     }
 
-    // Determine update type
+    // Determine update type with better categorization
     const hasContentChanges = ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
       .some(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]));
     const hasShowcallerChanges = JSON.stringify(payload.new?.showcaller_state) !== JSON.stringify(payload.old?.showcaller_state);
     const hasBlueprintChanges = payload.table === 'blueprints';
 
-    console.log('📡 Consolidated realtime update:', {
+    console.log('📡 Enhanced realtime update processing:', {
       type: hasBlueprintChanges ? 'blueprint' : hasShowcallerChanges && !hasContentChanges ? 'showcaller' : 'content',
       docVersion: incomingDocVersion,
-      timestamp: normalizedTimestamp
+      timestamp: normalizedTimestamp,
+      hasGap: hasSignificantGap,
+      userId: payload.new?.last_updated_by
     });
 
-    // Update tracking
+    // Update tracking state
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
     }
 
-    // Dispatch to appropriate callbacks
+    // Dispatch to appropriate callbacks with enhanced error handling
     if (hasBlueprintChanges) {
       globalState.callbacks.onBlueprintUpdate.forEach((callback: (d: any) => void) => {
-        try { callback(payload.new); } catch (error) { console.error('Error in blueprint callback:', error); }
+        try { 
+          callback(payload.new); 
+        } catch (error) { 
+          console.error('Error in blueprint callback:', error);
+        }
       });
     } else if (hasShowcallerChanges && !hasContentChanges) {
       globalState.callbacks.onShowcallerUpdate.forEach((callback: (d: any) => void) => {
-        try { callback(payload.new); } catch (error) { console.error('Error in showcaller callback:', error); }
+        try { 
+          callback(payload.new); 
+        } catch (error) { 
+          console.error('Error in showcaller callback:', error);
+        }
       });
     } else if (hasContentChanges) {
       setIsProcessingUpdate(true);
       try {
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
-          try { callback(payload.new); } catch (error) { console.error('Error in rundown callback:', error); }
+          try { 
+            callback(payload.new); 
+          } catch (error) { 
+            console.error('Error in rundown callback:', error);
+          }
         });
       } finally {
         setIsProcessingUpdate(false);
@@ -175,8 +231,8 @@ export const useConsolidatedRealtimeRundown = ({
     let globalState = globalSubscriptions.get(rundownId);
 
     if (!globalState) {
-      // Create new global subscription
-      console.log('📡 Creating consolidated realtime subscription for', rundownId);
+      // Create new global subscription with enhanced state tracking
+      console.log('📡 Creating enhanced consolidated realtime subscription for', rundownId);
       
       const channel = supabase
         .channel(`consolidated-realtime-${rundownId}`)
@@ -189,7 +245,7 @@ export const useConsolidatedRealtimeRundown = ({
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
-            if (state) {
+            if (state && !state.gapDetectionInProgress) {
               processRealtimeUpdate(payload, state);
             }
           }
@@ -264,7 +320,8 @@ export const useConsolidatedRealtimeRundown = ({
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
-        refCount: 0
+        refCount: 0,
+        gapDetectionInProgress: false // Initialize gap detection state
       };
 
       globalSubscriptions.set(rundownId, globalState);

@@ -35,7 +35,7 @@ export const useCellUpdateCoordination = () => {
     }
   }, [setShowcallerOperation]);
 
-  // Check if AutoSave should be blocked
+  // Enhanced blocking check that considers all coordination states
   const shouldBlockAutoSave = useCallback(() => {
     const cellBlocked = cellUpdateInProgressRef.current;
     const showcallerBlocked = showcallerOperationRef.current;
@@ -53,10 +53,40 @@ export const useCellUpdateCoordination = () => {
     return false;
   }, [cellUpdateInProgressRef, showcallerOperationRef]);
 
+  // Check if teleprompter saves should be blocked
+  const shouldBlockTeleprompterSave = useCallback(() => {
+    // Teleprompter saves can proceed during showcaller operations
+    // but should wait for cell updates to complete
+    const cellBlocked = cellUpdateInProgressRef.current;
+    
+    if (cellBlocked) {
+      console.log('🛑 Teleprompter save blocked - cell update in progress');
+      return true;
+    }
+    
+    return false;
+  }, [cellUpdateInProgressRef]);
+
+  // Check if showcaller operations should be blocked
+  const shouldBlockShowcallerOperation = useCallback(() => {
+    // Showcaller operations can proceed during most other operations
+    // but should coordinate with ongoing showcaller operations
+    const showcallerBlocked = showcallerOperationRef.current;
+    
+    if (showcallerBlocked) {
+      console.log('📺 Showcaller operation blocked - another showcaller operation in progress');
+      return true;
+    }
+    
+    return false;
+  }, [showcallerOperationRef]);
+
   return {
     executeWithCellUpdate,
     executeWithShowcallerOperation,
     shouldBlockAutoSave,
+    shouldBlockTeleprompterSave,
+    shouldBlockShowcallerOperation,
     cellUpdateInProgressRef,
     showcallerOperationRef
   };
