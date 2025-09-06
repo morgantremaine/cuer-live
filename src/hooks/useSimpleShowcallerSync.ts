@@ -436,10 +436,8 @@ export const useSimpleShowcallerSync = ({
 
   const reset = useCallback(() => {
     const newState = {
+      ...state,
       isPlaying: false,
-      currentSegmentId: null,
-      timeRemaining: 0,
-      currentItemStatuses: {},
       isController: true,
       controllerId: userId || null,
       lastUpdate: new Date().toISOString()
@@ -461,12 +459,12 @@ export const useSimpleShowcallerSync = ({
     broadcastState({
       action: 'reset',
       isPlaying: false,
-      currentSegmentId: null,
-      timeRemaining: 0
+      currentSegmentId: state.currentSegmentId,
+      timeRemaining: state.timeRemaining
     });
     
     console.log('📺 Simple: Reset called');
-  }, [userId, stopTimer, broadcastState]);
+  }, [state, userId, stopTimer, broadcastState, saveShowcallerState]);
 
   const jumpToSegment = useCallback((segmentId: string) => {
     const segment = items.find(item => item.id === segmentId);
