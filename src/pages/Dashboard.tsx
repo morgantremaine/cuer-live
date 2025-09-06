@@ -16,6 +16,8 @@ import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
 import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDashboardRundownRealtime } from '@/hooks/useDashboardRundownRealtime';
+import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus } from 'lucide-react';
@@ -30,6 +32,28 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { handleLoadLayout } = useColumnsManager();
   const isMobile = useIsMobile();
+  
+  // Real-time rundown state with local updates
+  const [liveRundowns, setLiveRundowns] = useState<SavedRundown[]>([]);
+  
+  // Update local rundowns when storage changes
+  useEffect(() => {
+    setLiveRundowns(savedRundowns);
+  }, [savedRundowns]);
+  
+  // Handle real-time rundown updates
+  const handleRundownUpdate = (updatedRundown: SavedRundown) => {
+    setLiveRundowns(prev => 
+      prev.map(r => r.id === updatedRundown.id ? updatedRundown : r)
+    );
+  };
+  
+  // Set up real-time subscription for dashboard rundowns
+  const { isConnected: realtimeConnected } = useDashboardRundownRealtime({
+    rundowns: liveRundowns,
+    onRundownUpdate: handleRundownUpdate,
+    enabled: true
+  });
   
   // Improved loading state tracking
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
@@ -233,12 +257,12 @@ const Dashboard = () => {
 
   // Filter rundowns based on selected folder and search query
   const getFilteredRundowns = () => {
-    let baseRundowns = savedRundowns;
+    let baseRundowns = liveRundowns; // Use live rundowns for real-time updates
 
     // If searching, filter by search query across all rundowns
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      baseRundowns = savedRundowns.filter(rundown => 
+      baseRundowns = liveRundowns.filter(rundown => 
         rundown.title.toLowerCase().includes(query)
       );
       return baseRundowns;
@@ -346,7 +370,7 @@ const Dashboard = () => {
         <DashboardSidebar
           selectedFolder={selectedFolder}
           onFolderSelect={handleFolderSelect}
-          rundowns={savedRundowns}
+          rundowns={liveRundowns} // Use live rundowns for real-time updates
           teamId={teamId || undefined}
           onRundownDrop={handleRundownDrop}
           isCollapsed={sidebarCollapsed}
