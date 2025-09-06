@@ -4,7 +4,9 @@ import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
-import { useBulletproofRundownState } from '@/hooks/useBulletproofRundownState';
+import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
+import { useIndexHandlers } from '@/hooks/useIndexHandlers';
+import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useTeam } from '@/hooks/useTeam';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,33 +15,59 @@ import RealtimeDebugOverlay from '@/components/debug/RealtimeDebugOverlay';
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
-  // Use the bulletproof state management directly
-  const bulletproofState = useBulletproofRundownState();
+  const {
+    coreState,
+    interactions,
+    uiState
+  } = useRundownStateCoordination();
   
-  // Extract needed values from bulletproof state
+  // Extract all needed values from the unified state
   const {
     currentTime,
     timezone,
-    title: rundownTitle,
-    startTime: rundownStartTime,
+    rundownTitle,
+    rundownStartTime,
     showDate,
     rundownId,
     items,
+    currentSegmentId,
+    getRowNumber,
+    calculateHeaderDuration,
+    updateItem,
+    deleteRow,
+    toggleFloatRow,
+    addRow,
+    addHeader,
+    isPlaying,
+    timeRemaining,
+    play,
+    pause,
+    forward,
+    backward,
+    reset,
+    hasUnsavedChanges,
+    isSaving,
     isLoading,
     isInitialized,
-    isSaving,
-    isConnected,
-    selectedRowId,
-    handleFieldChange,
-    addItem,
-    deleteItem,
-    updateItem,
+    hasLoadedInitialState,
+    totalRuntime,
     setTitle,
     setStartTime,
     setTimezone,
     setShowDate,
-    handleRowSelection
-  } = bulletproofState;
+    undo,
+    canUndo,
+    lastAction,
+    isConnected,
+    isProcessingRealtimeUpdate,
+    autoScrollEnabled,
+    toggleAutoScroll,
+    // Header collapse functions
+    toggleHeaderCollapse,
+    isHeaderCollapsed,
+    getHeaderGroupItemIds,
+    visibleItems
+  } = coreState;
 
   // Get team data for column deletion
   const { team } = useTeam();
@@ -73,6 +101,11 @@ const RundownIndexContent = () => {
     setUserColumns(newColumns, true); // Immediate save
   }, [userColumns, setUserColumns]);
 
+  const handleReorderColumnsWrapper = useCallback((newColumns: any[]) => {
+    if (!Array.isArray(newColumns)) return;
+    setUserColumns(newColumns, true); // Immediate save
+  }, [setUserColumns]);
+
   const handleDeleteColumnWrapper = useCallback(async (columnId: string) => {
     console.log('🗑️ Delete column wrapper called with ID:', columnId);
     
@@ -82,8 +115,14 @@ const RundownIndexContent = () => {
       return;
     }
 
+    console.log('🗑️ Column to delete:', columnToDelete);
+    console.log('🗑️ Is team column:', (columnToDelete as any).isTeamColumn);
+    console.log('🗑️ Team ID:', team?.id);
+
     // If it's a team column, delete it from the database
     if ((columnToDelete as any).isTeamColumn && team?.id) {
+      console.log('🗑️ Deleting team column from database...');
+      
       try {
         const { error } = await supabase
           .from('team_custom_columns')
@@ -93,8 +132,10 @@ const RundownIndexContent = () => {
 
         if (error) {
           console.error('🗑️ Error deleting team custom column:', error);
-          return;
+          return; // Don't proceed with local deletion if database deletion failed
         }
+
+        console.log('🗑️ Successfully deleted team column from database');
 
         // Clean up this column from all user column preferences for this team
         const { error: cleanupError } = await supabase
@@ -105,26 +146,131 @@ const RundownIndexContent = () => {
 
         if (cleanupError) {
           console.warn('🗑️ Warning: Could not clean up deleted team column from user preferences:', cleanupError);
+        } else {
+          console.log('🗑️ Successfully cleaned up team column references');
         }
       } catch (dbError) {
         console.error('🗑️ Error deleting team column from database:', dbError);
-        return;
+        return; // Don't proceed with local deletion if database operation failed
       }
     }
 
     // Remove from local state
+    console.log('🗑️ Removing column from local state...');
     const filtered = userColumns.filter(col => col.id !== columnId);
     setUserColumns(filtered, true); // Immediate save
+    console.log('🗑️ Column deletion complete');
   }, [userColumns, setUserColumns, team?.id]);
 
-  // Check if we're still loading
-  const isFullyLoading = isLoading || !isInitialized || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
+    const updated = userColumns.map(col => {
+      if (col.id === columnId) {
+        return { ...col, name: newName };
+      }
+      return col;
+    });
+    setUserColumns(updated, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
+    const target = userColumns.find(col => col.id === columnId);
+    if (!target) return;
+
+    // If currently visible, hide it
+    if (target.isVisible !== false) {
+      const updated = userColumns.map(col => (
+        col.id === columnId ? { ...col, isVisible: false } : col
+      ));
+      setUserColumns(updated, true); // Immediate save
+      return;
+    }
+
+    // If currently hidden, show it and optionally reposition
+    const updated = userColumns.map(col => (
+      col.id === columnId ? { ...col, isVisible: true } : col
+    ));
+
+    if (typeof insertIndex === 'number') {
+      const currentIndex = updated.findIndex(col => col.id === columnId);
+      if (currentIndex !== -1) {
+        const [col] = updated.splice(currentIndex, 1);
+        const clampedIndex = Math.min(Math.max(insertIndex, 0), updated.length);
+        updated.splice(clampedIndex, 0, col);
+      }
+    }
+
+    setUserColumns(updated, true); // Immediate save
+  }, [userColumns, setUserColumns]);
+
+  // Keep these from useColumnsManager for compatibility
+  const debugColumns = useCallback(() => {
+    console.log('Current userColumns:', userColumns);
+  }, [userColumns]);
+
+  const resetToDefaults = useCallback(() => {
+    // Reset to default columns - this should reload from useUserColumnPreferences defaults
+    console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
+  }, []);
+
+  // Check if we're still loading - show spinner until everything is ready
+  // Include additional loading states to prevent awkward loading UI, including showcaller visual indicators
+  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
 
+  const {
+    selectedRows,
+    toggleRowSelection,
+    clearSelection,
+    draggedItemIndex,
+    isDraggingMultiple,
+    dropTargetIndex,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    hasClipboardData,
+    handleCopySelectedRows,
+    handlePasteRows,
+    handleDeleteSelectedRows,
+    handleRowSelection,
+    handleAddRow,
+    handleAddHeader
+  } = interactions;
+
+  const { 
+    showColorPicker, 
+    handleCellClick, 
+    handleKeyDown, 
+    handleToggleColorPicker, 
+    selectColor, 
+    getRowStatus,
+    getColumnWidth
+  } = uiState;
+
   // State for column manager
   const [showColumnManager, setShowColumnManager] = React.useState(false);
+  
+  // Enhanced column manager opener that ensures fresh data
+  useEffect(() => {
+    if (showColumnManager) {
+      console.log('📊 Column Manager opened - current columns:', {
+        totalColumns: userColumns.length,
+        visibleColumns: visibleColumns.length,
+        defaultColumns: userColumns.filter(col => !col.isCustom).length,
+        customColumns: userColumns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
+        teamColumns: userColumns.filter(col => (col as any).isTeamColumn).length,
+        columnDetails: userColumns.map(col => ({
+          name: col.name,
+          key: col.key,
+          isCustom: col.isCustom,
+          isTeamColumn: (col as any).isTeamColumn || false,
+          isVisible: col.isVisible
+        }))
+      });
+    }
+  }, [showColumnManager, userColumns, visibleColumns]);
   
   // State for notes window
   const [showNotesWindow, setShowNotesWindow] = React.useState(false);
@@ -137,92 +283,173 @@ const RundownIndexContent = () => {
       document.title = 'Cuer Live';
     }
 
+    // Cleanup: reset title when component unmounts
     return () => {
       document.title = 'Cuer Live';
     };
   }, [rundownTitle]);
 
-  // Simple wrappers for basic functionality
+  // Calculate end time helper
+  const calculateEndTime = (startTime: string, duration: string) => {
+    const startParts = startTime.split(':').map(Number);
+    const durationParts = duration.split(':').map(Number);
+    
+    let totalSeconds = 0;
+    if (startParts.length >= 2) {
+      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
+    }
+    if (durationParts.length >= 2) {
+      totalSeconds += durationParts[0] * 60 + durationParts[1];
+    }
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Create the handleJumpToHere function that respects current playing state
+  const handleJumpToHere = (segmentId: string) => {
+    
+    // Find the target segment to ensure it exists
+    const targetSegment = items.find(item => item.id === segmentId);
+    
+    
+    if (!targetSegment) {
+      console.error('🎯 IndexContent: Cannot jump - target segment not found');
+      return;
+    }
+    
+    // CRITICAL FIX: Check current playing state and act accordingly
+    if (isPlaying) {
+      
+      if (play) {
+        play();
+      }
+    } else {
+      
+      if (coreState.jumpToSegment) {
+        coreState.jumpToSegment(segmentId);
+      } else {
+        console.error('🎯 IndexContent: jumpToSegment function not available');
+      }
+    }
+    
+    // Clear the selection after jumping, like other context menu actions
+    clearSelection();
+  };
+
+  // Create wrapper for cell click to match signature
+  const handleCellClickWrapper = (itemId: string, field: string) => {
+    const mockEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+    handleCellClick(itemId, field, mockEvent);
+  };
+
+  // Create wrapper for key down to match signature
+  const handleKeyDownWrapper = (e: React.KeyboardEvent, itemId: string, field: string) => {
+    const itemIndex = items.findIndex(item => item.id === itemId);
+    handleKeyDown(e, itemId, field, itemIndex);
+  };
+
+  // Create wrapper for getRowStatus that filters out "header" for components that don't expect it
+  const getRowStatusForContainer = (item: any): 'upcoming' | 'current' | 'completed' => {
+    const status = getRowStatus(item);
+    if (status === 'header') {
+      return 'upcoming'; // Default fallback for headers
+    }
+    return status;
+  };
+
+  // Use simplified handlers for common operations (but NOT add operations)
+  const {
+    handleRundownStartTimeChange,
+    handleTimezoneChange,
+    handleShowDateChange,
+    handleOpenTeleprompter,
+    handleRowSelect
+  } = useIndexHandlers({
+    items,
+    selectedRows,
+    rundownId,
+    addRow: () => addRow(),
+    addHeader: () => addHeader(),
+    calculateEndTime,
+    toggleRowSelection,
+    setRundownStartTime: setStartTime,
+    setTimezone,
+    setShowDate,
+    markAsChanged: () => {} // Handled internally by unified state
+  });
+
+  const selectedRowsArray = Array.from(selectedRows);
+  const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
+
+  // Convert timeRemaining to number (assuming it's in seconds)
+  const timeRemainingNumber = typeof timeRemaining === 'string' ? 0 : timeRemaining;
+
+  // Remove duplicate handlers - using the ones from earlier in the file
+
+  const handleLoadLayoutWrapper = (layoutColumns: any[]) => {
+    console.log('🔄 RundownIndexContent: Loading layout with', layoutColumns.length, 'columns');
+    
+    if (!Array.isArray(layoutColumns)) {
+      console.error('❌ Invalid layout columns - not an array:', layoutColumns);
+      return;
+    }
+
+    // Validate and clean the layout columns
+    const validColumns = layoutColumns.filter(col => 
+      col && 
+      typeof col === 'object' && 
+      col.id && 
+      col.name && 
+      col.key
+    );
+
+    if (validColumns.length === 0) {
+      console.error('❌ No valid columns found in layout');
+      return;
+    }
+
+    console.log('✅ Applying layout while preserving all available columns');
+    // Use applyLayout instead of setColumns to preserve all available columns
+    applyUserLayout(validColumns);
+  };
+
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
+    // Use the specialized updateColumnWidth method from useUserColumnPreferences
+    // which handles proper debouncing during resize operations
     updateUserColumnWidth(columnId, `${width}px`);
   };
 
-  // Simple add operations - create complete RundownItem objects  
-  const handleAddRow = () => {
-    const newItem = {
-      id: `item_${Date.now()}`,
-      type: 'regular' as const,
-      rowNumber: (items.length + 1).toString(),
-      name: 'New Segment',
-      startTime: '00:00:00',
-      endTime: '00:00:30',
-      duration: '00:00:30',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      audio: '',
-      video: '',
-      lighting: '',
-      other: '',
-      notes: '',
-      segmentName: 'New Segment',
-      images: '',
-      color: '',
-      isFloating: false
-    };
-    bulletproofState.addItem(newItem);
+  // Prepare rundown data for Cuer AI
+  const rundownData = {
+    id: rundownId,
+    title: rundownTitle,
+    startTime: rundownStartTime,
+    timezone: timezone,
+    items: items,
+    columns: userColumns,
+    totalRuntime: totalRuntime
   };
 
-  const handleAddHeader = () => {
-    const newHeader = {
-      id: `header_${Date.now()}`,
-      type: 'header' as const,
-      rowNumber: (items.length + 1).toString(),
-      name: 'New Header',
-      startTime: '00:00:00',
-      endTime: '00:00:00',
-      duration: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      audio: '',
-      video: '',
-      lighting: '',
-      other: '',
-      notes: '',
-      segmentName: 'New Header',
-      images: '',
-      color: '',
-      isFloating: false
-    };
-    bulletproofState.addItem(newHeader);
+  // Create wrapper functions that match the expected signatures for drag operations
+  const handleDragStartWrapper = (e: React.DragEvent, index: number) => {
+    handleDragStart(e, index);
   };
 
-  // Mock functions for missing features to prevent errors
-  const getRowNumber = (index: number) => (index + 1).toString();
-  const getRowStatus = (item: any, currentTime: Date) => 'upcoming' as const;
-  const calculateHeaderDuration = (index: number) => '0:00';
-  const getColumnWidth = (column: any) => '150px';
+  const handleDragOverWrapper = (e: React.DragEvent, targetIndex?: number) => {
+    handleDragOver(e, targetIndex);
+  };
 
-  // Simple handlers
-  const handleCellClick = () => {};
-  const handleKeyDown = () => {};
-  const handleToggleColorPicker = () => {};
-  const selectColor = () => {};
-  const clearSelection = () => {};
+  const handleDragLeaveWrapper = (e: React.DragEvent) => {
+    handleDragLeave(e);
+  };
 
-  // Mock drag and drop handlers
-  const selectedRows = new Set<string>();
-  const handleDragStart = () => {};
-  const handleDragOver = () => {};
-  const handleDragLeave = () => {};
-  const handleDrop = () => {};
-  const handleCopySelectedRows = () => {};
-  const handlePasteRows = () => {};
-  const handleDeleteSelectedRows = () => {};
-  const hasClipboardData = () => false;
+  const handleDropWrapper = (e: React.DragEvent, targetIndex: number) => {
+    handleDrop(e, targetIndex);
+  };
 
   // Show loading spinner until everything is ready
   if (isFullyLoading) {
@@ -232,118 +459,127 @@ const RundownIndexContent = () => {
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
-      isProcessingUpdate={false}
+      isProcessingUpdate={isProcessingRealtimeUpdate || false}
     >
       <RundownContainer
         currentTime={currentTime}
         timezone={timezone}
-        onTimezoneChange={setTimezone}
-        totalRuntime="0:00"
+        onTimezoneChange={handleTimezoneChange}
+        totalRuntime={totalRuntime}
         showColumnManager={showColumnManager}
-        setShowColumnManager={setShowColumnManager}
+        setShowColumnManager={(show: boolean) => {
+          if (show) {
+            // Reload preferences to ensure we have all available columns including team columns
+            console.log('🔄 Opening column manager - reloading preferences to ensure all columns are available');
+            if (reloadPreferences) {
+              reloadPreferences();
+            }
+          }
+          setShowColumnManager(show);
+        }}
         items={items}
         visibleColumns={visibleColumns}
         columns={userColumns}
-        showColorPicker={null}
+        showColorPicker={showColorPicker}
         cellRefs={cellRefs}
         selectedRows={selectedRows}
-        draggedItemIndex={-1}
-        isDraggingMultiple={false}
-        dropTargetIndex={-1}
-        currentSegmentId={null}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
         getColumnWidth={getColumnWidth}
         updateColumnWidth={handleUpdateColumnWidthWrapper}
         getRowNumber={getRowNumber}
-        getRowStatus={getRowStatus}
+        getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={(id, field, value) => handleFieldChange(`${id}-${field}`, value)}
-        onCellClick={handleCellClick}
-        onKeyDown={handleKeyDown}
+        onUpdateItem={updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={selectColor}
-        onDeleteRow={deleteItem}
-        onToggleFloat={() => {}}
-        onRowSelect={(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds) => handleRowSelection(itemId)}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onColorSelect={(id, color) => selectColor(id, color)}
+        onDeleteRow={deleteRow}
+        onToggleFloat={toggleFloatRow}
+        onRowSelect={handleRowSelection} // Use the proper grid row selection handler
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
         onAddRow={handleAddRow}
         onAddHeader={handleAddHeader}
-        selectedCount={0}
+        selectedCount={selectedRows.size}
         hasClipboardData={hasClipboardData()}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
         selectedRowId={selectedRowId}
-        isPlaying={false}
-        timeRemaining={0}
-        onPlay={() => {}}
-        onPause={() => {}}
-        onForward={() => {}}
-        onBackward={() => {}}
-        onReset={() => {}}
+        isPlaying={isPlaying}
+        timeRemaining={timeRemainingNumber}
+        onPlay={play}
+        onPause={pause}
+        onForward={forward}
+        onBackward={backward}
+        onReset={reset}
         handleAddColumn={handleAddColumnWrapper}
-        handleReorderColumns={() => {}}
+        handleReorderColumns={handleReorderColumnsWrapper}
         handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
-        handleRenameColumn={() => {}}
-        handleToggleColumnVisibility={() => {}}
-        handleLoadLayout={() => {}}
-        hasUnsavedChanges={bulletproofState.hasUnsavedChanges}
-        isSaving={isSaving}
+        handleRenameColumn={handleRenameColumnWrapper}
+        handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
+        handleLoadLayout={handleLoadLayoutWrapper}
+        debugColumns={debugColumns}
+        resetToDefaults={resetToDefaults}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={setStartTime}
+        onRundownStartTimeChange={handleRundownStartTimeChange}
         showDate={showDate}
-        onShowDateChange={setShowDate}
-        rundownId={rundownId || ''}
-        onOpenTeleprompter={() => {}}
-        onUndo={() => {}}
-        canUndo={false}
-        lastAction={null}
+        onShowDateChange={handleShowDateChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={handleOpenTeleprompter}
+        onUndo={undo}
+        canUndo={canUndo}
+        lastAction={lastAction || ''}
         isConnected={isConnected}
-        autoScrollEnabled={true}
-        onToggleAutoScroll={() => {}}
-        toggleHeaderCollapse={() => {}}
-        isHeaderCollapsed={() => false}
-        getHeaderGroupItemIds={() => []}
-        visibleItems={items}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        onJumpToHere={handleJumpToHere}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={toggleAutoScroll}
+        onShowNotes={() => setShowNotesWindow(true)}
+        // Header collapse functions
+        toggleHeaderCollapse={toggleHeaderCollapse}
+        isHeaderCollapsed={isHeaderCollapsed}
+        getHeaderGroupItemIds={getHeaderGroupItemIds}
+        visibleItems={visibleItems}
       />
-
-      <CuerChatButton 
-        rundownData={{
-          id: rundownId,
-          title: rundownTitle,
-          startTime: rundownStartTime,
-          timezone: timezone,
-          items: items,
-          columns: userColumns,
-          totalRuntime: "0:00"
-        }}
-        modDeps={{
-          items,
-          updateItem: (id: string, field: string, value: string) => handleFieldChange(`${id}-${field}`, value),
-          addRow: handleAddRow,
-          addHeader: handleAddHeader,
-          deleteRow: deleteItem,
-          addRowAtIndex: handleAddRow,
-          addHeaderAtIndex: handleAddHeader,
-          calculateEndTime: () => '00:00:00',
-          markAsChanged: () => {}
-        }}
-      />
-
-      {showNotesWindow && (
+      
+      {/* Floating Notes Window */}
+      {showNotesWindow && rundownId && (
         <FloatingNotesWindow
-          rundownId={rundownId || ''}
+          rundownId={rundownId}
           onClose={() => setShowNotesWindow(false)}
         />
       )}
-
+      
+      <CuerChatButton 
+        rundownData={rundownData}
+        modDeps={{
+          items,
+          updateItem,
+          addRow,
+          addHeader,
+          addRowAtIndex: coreState.addRowAtIndex,
+          addHeaderAtIndex: coreState.addHeaderAtIndex,
+          deleteRow,
+          calculateEndTime: coreState.calculateEndTime,
+          markAsChanged: coreState.markAsChanged
+        }}
+      />
+      
+      {/* Debug overlay for development */}
       <RealtimeDebugOverlay 
-        rundownId={rundownId || ''}
+        rundownId={rundownId}
         connectionStatus={isConnected}
       />
     </RealtimeConnectionProvider>

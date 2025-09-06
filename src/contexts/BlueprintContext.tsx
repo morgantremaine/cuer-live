@@ -4,7 +4,7 @@ import { CameraPlotScene } from '@/hooks/cameraPlot/core/useCameraPlotData';
 import { RundownItem } from '@/types/rundown';
 import { useBlueprintPersistence } from '@/hooks/blueprint/useBlueprintPersistence';
 import { useBlueprintPartialSave } from '@/hooks/blueprint/useBlueprintPartialSave';
-
+import { useBlueprintRealtimeSync } from '@/hooks/blueprint/useBlueprintRealtimeSync';
 import { generateListFromColumn } from '@/utils/blueprintUtils';
 import { logger } from '@/utils/logger';
 
@@ -176,8 +176,15 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
     setSavedBlueprint
   );
 
-  // Note: Realtime sync removed - will be implemented with bulletproof system
-  // TODO: Implement blueprint realtime sync with consolidated system
+  // Setup realtime sync
+  useBlueprintRealtimeSync({
+    rundownId,
+    onRemoteUpdate: (remoteState) => {
+      logger.blueprint('Received remote blueprint update:', remoteState);
+      dispatch({ type: 'MERGE_REMOTE_STATE', payload: remoteState });
+    },
+    enabled: state.isInitialized
+  });
 
   // Initialize blueprint data
   useEffect(() => {
