@@ -261,11 +261,13 @@ export const useSharedRundownState = () => {
   // Merge database state with live broadcast state
   const mergedRundownData = rundownData ? {
     ...rundownData,
-    // Override with live state if available
+    // Override with live state if available, but preserve showcaller state
     items: liveState?.items || rundownData.items,
     title: liveState?.title || rundownData.title,
     startTime: liveState?.startTime || rundownData.startTime,
-    timezone: liveState?.timezone || rundownData.timezone
+    timezone: liveState?.timezone || rundownData.timezone,
+    // Always preserve showcaller state from database/realtime
+    showcallerState: rundownData.showcallerState
   } : null;
 
   return {
