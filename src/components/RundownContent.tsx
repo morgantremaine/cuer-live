@@ -261,7 +261,7 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
-    let total = 66; // Row number column width
+    let total = 66; // Row number column width (widened slightly for alignment)
     visibleColumns.forEach(column => {
       const width = normalizedGetColumnWidth(column);
       const widthValue = parseFloat(String(width).replace('px', ''));
@@ -283,11 +283,14 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with sticky header */}
+      {/* Scrollable Content with separate sticky header (unscaled) and zoomed body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
-        {/* Sticky Header */}
+        {/* Sticky Header Wrapper - NOT transformed to keep sticky behavior stable */}
         <div 
           className="sticky top-0 z-20 bg-background border-b border-border overflow-hidden"
+          style={{ 
+            width: '100%'
+          }}
         >
           <div 
             ref={headerScrollRef}
@@ -302,21 +305,23 @@ const RundownContent = React.memo<RundownContentProps>(({
               className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
-                width: `${totalTableWidth}px`,
-                minWidth: `${totalTableWidth}px`
+                width: `${(totalTableWidth * zoomLevel)}px`,
+                minWidth: `${(totalTableWidth * zoomLevel)}px`,
+                margin: 0,
+                padding: 0
               }}
               data-rundown-table="header"
             >
               <colgroup>
-                <col style={{ width: '66px' }} />
+                <col style={{ width: `${(66 * zoomLevel)}px` }} />
                 {visibleColumns.map((col) => (
-                  <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                  <col key={`hcol-${col.id}`} style={{ width: `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
                 ))}
               </colgroup>
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 allColumns={allColumns}
-                getColumnWidth={normalizedGetColumnWidth}
+                getColumnWidth={(col) => `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px`}
                 updateColumnWidth={updateColumnWidth}
                 onReorderColumns={onReorderColumns}
                 onToggleColumnVisibility={onToggleColumnVisibility}
@@ -327,72 +332,86 @@ const RundownContent = React.memo<RundownContentProps>(({
                 isHeaderCollapsed={isHeaderCollapsed}
                 savedLayouts={savedLayouts}
                 onLoadLayout={onLoadLayout}
+                zoomLevel={zoomLevel}
               />
             </table>
           </div>
         </div>
         
-        {/* Main Table Body */}
-        <table 
-          className="border-collapse table-container" 
+        {/* Zoomed Body */}
+        <div 
+          className="bg-background zoom-container" 
           style={{ 
-            tableLayout: 'fixed', 
-            width: `${totalTableWidth}px`,
-            minWidth: `${totalTableWidth}px`
+            minWidth: `${totalTableWidth}px`,
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
           }}
-          data-rundown-table="main"
         >
-          <colgroup>
-            <col style={{ width: '66px' }} />
-            {visibleColumns.map((col) => (
-              <col key={`bcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
-            ))}
-          </colgroup>
-          <OptimizedRundownTableWrapper
-            items={items}
-            visibleItems={visibleItems}
-            visibleColumns={visibleColumns}
-            currentTime={currentTime}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            hasClipboardData={hasClipboardData}
-            selectedRowId={selectedRowId}
-            startTime={startTime}
-            columnExpandState={columnExpandState}
-            getColumnWidth={normalizedGetColumnWidth}
-            updateColumnWidth={updateColumnWidth}
-            onUpdateItem={onUpdateItem}
-            onCellClick={onCellClick}
-            onKeyDown={onKeyDown}
-            onToggleColorPicker={onToggleColorPicker}
-            onColorSelect={onColorSelect}
-            onDeleteRow={onDeleteRow}
-            onToggleFloat={onToggleFloat}
-            onRowSelect={onRowSelect}
-            onDragStart={onDragStart}
-            onDragOver={handleEnhancedDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragEnd={onDragEnd}
-            onCopySelectedRows={onCopySelectedRows}
-            onDeleteSelectedRows={onDeleteSelectedRows}
-            onPasteRows={onPasteRows || (() => {})}
-            onClearSelection={onClearSelection || (() => {})}
-            onAddRow={onAddRow || (() => {})}
-            onAddHeader={onAddHeader || (() => {})}
-            onJumpToHere={onJumpToHere}
-            markActiveTyping={markActiveTyping}
-            // Header collapse functions
-            toggleHeaderCollapse={toggleHeaderCollapse}
-            isHeaderCollapsed={isHeaderCollapsed}
-            getHeaderGroupItemIds={getHeaderGroupItemIds}
-          />
-        </table>
+          {/* Main Table Body */}
+          <table 
+            className="border-collapse table-container" 
+            style={{ 
+              tableLayout: 'fixed', 
+              width: `${totalTableWidth}px`,
+              minWidth: `${totalTableWidth}px`,
+              margin: 0,
+              padding: 0
+            }}
+            data-rundown-table="main"
+          >
+            <colgroup>
+              <col style={{ width: '66px' }} />
+              {visibleColumns.map((col) => (
+                <col key={`bcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+              ))}
+            </colgroup>
+            <OptimizedRundownTableWrapper
+              items={items}
+              visibleItems={visibleItems}
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              isDraggingMultiple={isDraggingMultiple}
+              dropTargetIndex={dropTargetIndex}
+              currentSegmentId={currentSegmentId}
+              hasClipboardData={hasClipboardData}
+              selectedRowId={selectedRowId}
+              startTime={startTime}
+              columnExpandState={columnExpandState}
+              getColumnWidth={normalizedGetColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={handleEnhancedDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows || (() => {})}
+              onClearSelection={onClearSelection || (() => {})}
+              onAddRow={onAddRow || (() => {})}
+              onAddHeader={onAddHeader || (() => {})}
+              onJumpToHere={onJumpToHere}
+              markActiveTyping={markActiveTyping}
+              // Header collapse functions
+              toggleHeaderCollapse={toggleHeaderCollapse}
+              isHeaderCollapsed={isHeaderCollapsed}
+              getHeaderGroupItemIds={getHeaderGroupItemIds}
+            />
+          </table>
+        </div>
         <ScrollBar orientation="horizontal" />
         <ScrollBar orientation="vertical" />
       </ScrollArea>

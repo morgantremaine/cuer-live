@@ -195,9 +195,9 @@ const RundownTableHeader = ({
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: '66px', 
-            minWidth: '66px',
-            maxWidth: '66px',
+            width: `${(66 * zoomLevel)}px`, 
+            minWidth: `${(66 * zoomLevel)}px`,
+            maxWidth: `${(66 * zoomLevel)}px`,
             borderRight: '1px solid rgba(255, 255, 255, 0.2)'
           }}
         >
