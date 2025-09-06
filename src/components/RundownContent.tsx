@@ -244,14 +244,6 @@ const RundownContent = React.memo<RundownContentProps>(({
     return `${constrained}px`;
   }, [getColumnWidth, getMinimumColumnWidth]);
 
-  const scalePx = React.useCallback((px: string) => {
-    const n = parseInt(String(px).replace('px', '')) || 0;
-    return `${n * zoomLevel}px`;
-  }, [zoomLevel]);
-
-  const normalizedGetColumnWidthScaled = React.useCallback((column: Column) => {
-    return scalePx(normalizedGetColumnWidth(column));
-  }, [normalizedGetColumnWidth, scalePx]);
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
@@ -283,25 +275,27 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div 
           className="sticky top-0 z-20 bg-background"
           style={{ 
-            width: '100%',
-            minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+            minWidth: `${totalTableWidth}px`
           }}
         >
           <table 
             className="border-collapse table-container" 
             style={{ 
               tableLayout: 'fixed', 
-              width: `${totalTableWidth * zoomLevel}px`,
-              minWidth: `${totalTableWidth * zoomLevel}px`,
+              width: `${totalTableWidth}px`,
+              minWidth: `${totalTableWidth}px`,
               margin: 0,
               padding: 0
             }}
             data-rundown-table="header"
           >
             <colgroup>
-              <col style={{ width: scalePx('66px') }} />
+              <col style={{ width: '66px' }} />
               {visibleColumns.map((col) => (
-                <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidthScaled(col) }} />
+                <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
               ))}
             </colgroup>
             <RundownTableHeader 
