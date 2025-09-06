@@ -77,137 +77,72 @@ const HeaderRowContent = ({
           <span style={{ color: textColor }}>{rowNumber}</span>
         </div>
       </td>
-      {/* Dynamic columns */}
-      {columns.map((column, columnIndex) => {
-        const columnWidth = getColumnWidth(column);
-        const isLastColumn = columnIndex === columns.length - 1;
-        const widthValue = columnWidth.includes('%') ? 
-          parseFloat(columnWidth.replace('%', '')) : 
-          parseInt(columnWidth.replace('px', ''));
-        
-        // Always show header name and duration in the first column (after row number)
-        if (columnIndex === 0) {
-          const headerName = item.name || '';
-            return (
-              <td
-                key={column.id}
-                className="align-middle min-h-[115px] relative"
-                style={{ 
-                  width: columnWidth, 
-                  backgroundColor,
-                  overflow: 'visible',
-                  borderRight: '1px solid hsl(var(--border))'
-                }}
-            >
-              <div 
-                className="px-2 py-8 flex items-center"
-                style={{ 
-                  position: 'relative',
-                  zIndex: 10,
-                  minWidth: '100%'
-                }}
-              >
-                <span className="inline-flex items-center">
-                  <input
-                    ref={(el) => {
-                      if (el) {
-                        cellRefs.current[`${item.id}-name`] = el;
-                        // Auto-resize with buffer for cross-browser compatibility
-                        const contentLength = headerName.length || 1;
-                        const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                        el.style.width = `${bufferWidth}ch`;
-                      }
-                    }}
-                    type="text"
-                    value={headerName}
-                    onChange={(e) => {
-                      markActiveTyping?.();
-                      onUpdateItem(item.id, 'name', e.target.value);
-                      // Auto-resize on change with buffer
-                      const contentLength = e.target.value.length || 1;
-                      const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                      e.target.style.width = `${bufferWidth}ch`;
-                    }}
-                    onClick={() => onCellClick(item.id, 'name')}
-                    onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
-                    data-field-key={`${item.id}-name`}
-                    className="bg-transparent border-none outline-none text-lg font-bold"
-                    style={{ 
-                      color: textColor,
-                      fontFamily: 'inherit',
-                      fontSize: 'inherit',
-                      fontWeight: 'inherit',
-                      lineHeight: 'inherit',
-                      padding: 0,
-                      margin: 0,
-                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
-                      minWidth: '4ch'
-                    }}
-                    placeholder="Header Name"
-                  />
-                  <span 
-                    className="text-base font-medium whitespace-nowrap ml-6" 
-                    style={{ color: textColor }}
-                  >
-                    ({headerDuration})
-                  </span>
-                </span>
-              </div>
-            </td>
-          );
-        } else if (column.key === 'duration') {
-          // Don't show duration in duration column for headers since it's now part of the header name
-          // BUT show it for print view
-          return (
-            <td
-              key={column.id}
-              className="align-middle min-h-[115px]"
-              style={{ 
-                width: columnWidth, 
-                backgroundColor,
-                borderRight: '1px solid hsl(var(--border))' 
+      
+      {/* Single spanning cell for all content - no column borders */}
+      <td
+        colSpan={columns.length}
+        className="align-middle min-h-[115px] relative"
+        style={{ 
+          backgroundColor,
+          overflow: 'visible'
+        }}
+      >
+        <div 
+          className="px-2 py-8 flex items-center"
+          style={{ 
+            position: 'relative',
+            zIndex: 10,
+            minWidth: '100%'
+          }}
+        >
+          <span className="inline-flex items-center">
+            <input
+              ref={(el) => {
+                if (el) {
+                  cellRefs.current[`${item.id}-name`] = el;
+                  // Auto-resize with buffer for cross-browser compatibility
+                  const headerName = item.name || '';
+                  const contentLength = headerName.length || 1;
+                  const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                  el.style.width = `${bufferWidth}ch`;
+                }
               }}
-            >
-              <div className="px-2 py-8">
-                {/* Show duration in print only */}
-                <span className="hidden print:inline-block font-medium">
-                  {headerDuration}
-                </span>
-              </div>
-            </td>
-          );
-        } else if (column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime') {
-          // Don't show time fields for headers - empty cell
-          return (
-            <td
-              key={column.id}
-              className="align-middle min-h-[115px]"
-              style={{ 
-                width: columnWidth, 
-                backgroundColor,
-                borderRight: '1px solid hsl(var(--border))' 
+              type="text"
+              value={item.name || ''}
+              onChange={(e) => {
+                markActiveTyping?.();
+                onUpdateItem(item.id, 'name', e.target.value);
+                // Auto-resize on change with buffer
+                const contentLength = e.target.value.length || 1;
+                const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                e.target.style.width = `${bufferWidth}ch`;
               }}
-            >
-              <div className="px-2 py-8"></div>
-            </td>
-          );
-        } else {
-          // For other columns (including segmentName), show empty cell for headers
-          return (
-            <td
-              key={column.id}
-              className="align-middle min-h-[115px]"
+              onClick={() => onCellClick(item.id, 'name')}
+              onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
+              data-field-key={`${item.id}-name`}
+              className="bg-transparent border-none outline-none text-lg font-bold"
               style={{ 
-                width: columnWidth, 
-                backgroundColor,
-                borderRight: '1px solid hsl(var(--border))' 
+                color: textColor,
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                lineHeight: 'inherit',
+                padding: 0,
+                margin: 0,
+                width: `${Math.max((item.name || '').length + 3, 4)}ch`, // Add buffer
+                minWidth: '4ch'
               }}
+              placeholder="Header Name"
+            />
+            <span 
+              className="text-base font-medium whitespace-nowrap ml-6" 
+              style={{ color: textColor }}
             >
-              <div className="px-2 py-8"></div>
-            </td>
-          );
-        }
-      })}
+              ({headerDuration})
+            </span>
+          </span>
+        </div>
+      </td>
     </>
   );
 };
