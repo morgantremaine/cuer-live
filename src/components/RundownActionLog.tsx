@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { History, RefreshCw, Plus, Search, User, Clock, FileText, RotateCcw } from "lucide-react";
+
+import { History, RefreshCw, Search, User, Clock, FileText, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 import { formatDistanceToNow, format } from 'date-fns';
 
 interface ActionLogEntry {
@@ -20,7 +20,7 @@ interface ActionLogEntry {
   textChanged?: string;
   userName: string;
   userEmail: string;
-  revision?: {
+  revision: {
     id: string;
     revision_number: number;
     revision_type: string;
@@ -40,9 +40,6 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [manualRestorePointName, setManualRestorePointName] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const { toast } = useToast();
 
@@ -127,7 +124,13 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
               itemNumber: change.itemNumber,
               textChanged: change.textChanged,
               userName,
-              userEmail
+              userEmail,
+              revision: {
+                id: revision.id,
+                revision_number: revision.revision_number,
+                revision_type: revision.revision_type,
+                action_description: revision.action_description
+              }
             });
           });
         }
@@ -290,66 +293,6 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
     }
   };
 
-  const handleCreateManualRestorePoint = async () => {
-    if (!manualRestorePointName.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for the restore point",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setCreating(true);
-    try {
-      // Get current rundown data
-      const { data: rundownData, error: rundownError } = await supabase
-        .from('rundowns')
-        .select('items, title, start_time, timezone')
-        .eq('id', rundownId)
-        .single();
-
-      if (rundownError) {
-        throw rundownError;
-      }
-
-      // Create manual revision
-      const { error: revisionError } = await supabase
-        .from('rundown_revisions')
-        .insert({
-          rundown_id: rundownId,
-          revision_number: Date.now(),
-          items: rundownData.items,
-          title: rundownData.title,
-          start_time: rundownData.start_time,
-          timezone: rundownData.timezone,
-          revision_type: 'manual',
-          action_description: `Manual restore point: ${manualRestorePointName.trim()}`
-        });
-
-      if (revisionError) {
-        throw revisionError;
-      }
-
-      toast({
-        title: "Restore point created",
-        description: `Manual restore point "${manualRestorePointName.trim()}" has been created`,
-      });
-
-      setManualRestorePointName('');
-      setShowCreateDialog(false);
-      loadActionLog();
-    } catch (error) {
-      console.error('Error creating manual revision:', error);
-      toast({
-        title: "Creation failed",
-        description: "Could not create manual restore point",
-        variant: "destructive"
-      });
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const filteredActionLog = actionLog.filter(entry => {
     if (!searchFilter) return true;
@@ -374,11 +317,11 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
           Action Log
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-5xl max-h-[80vh]">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Rundown Action Log</DialogTitle>
           <DialogDescription>
-            View every action performed on this rundown, including text changes, item additions/deletions, and restore points.
+            View every action performed on this rundown, including text changes, item additions/deletions. Click "Restore to here" to revert to any point in time.
           </DialogDescription>
         </DialogHeader>
         
@@ -392,69 +335,18 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
               className="max-w-md"
             />
           </div>
-          <div className="flex gap-2">
-            <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Restore Point
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Create Manual Restore Point</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Create a manual restore point with a custom name to easily identify this state later.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="py-4">
-                  <Label htmlFor="restore-point-name">Restore Point Name</Label>
-                  <Input
-                    id="restore-point-name"
-                    value={manualRestorePointName}
-                    onChange={(e) => setManualRestorePointName(e.target.value)}
-                    placeholder="e.g., Before major script changes"
-                    className="mt-2"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleCreateManualRestorePoint();
-                      }
-                    }}
-                  />
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleCreateManualRestorePoint}
-                    disabled={creating || !manualRestorePointName.trim()}
-                  >
-                    {creating ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      'Create Restore Point'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            
-            <Button variant="outline" size="sm" onClick={loadActionLog} disabled={loading}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={loadActionLog} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         <div className="text-sm text-muted-foreground mb-4">
           Showing {filteredActionLog.length} actions {searchFilter && `(filtered from ${actionLog.length})`}
         </div>
 
-        <ScrollArea className="h-[500px]">
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-2 pr-4">
             {filteredActionLog.length === 0 && !loading && (
               <div className="text-center py-8 text-muted-foreground">
                 {searchFilter ? 'No actions match your search' : 'No actions found for this rundown'}
@@ -507,26 +399,24 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
                     </div>
                   </div>
                   
-                  {entry.type === 'restore_point' && entry.revision && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRestore(entry.revision!.id)}
-                      disabled={restoring === entry.revision!.id}
-                    >
-                      {restoring === entry.revision!.id ? (
-                        <>
-                          <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                          Restoring...
-                        </>
-                      ) : (
-                        <>
-                          <RotateCcw className="w-3 h-3 mr-1" />
-                          Restore
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRestore(entry.revision.id)}
+                    disabled={restoring === entry.revision.id}
+                  >
+                    {restoring === entry.revision.id ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                        Restoring...
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        Restore to here
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             ))}
