@@ -296,7 +296,9 @@ const RundownContent = React.memo<RundownContentProps>(({
             ref={headerScrollRef}
             className="overflow-hidden"
             style={{ 
-              width: '100%',
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left',
+              width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
@@ -305,17 +307,17 @@ const RundownContent = React.memo<RundownContentProps>(({
               className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
-                width: `${(totalTableWidth * zoomLevel)}px`,
-                minWidth: `${(totalTableWidth * zoomLevel)}px`,
+                width: `${totalTableWidth}px`,
+                minWidth: `${totalTableWidth}px`,
                 margin: 0,
                 padding: 0
               }}
               data-rundown-table="header"
             >
               <colgroup>
-                <col style={{ width: `${(66 * zoomLevel)}px` }} />
+                <col style={{ width: '66px' }} />
                 {visibleColumns.map((col) => (
-                  <col key={`hcol-${col.id}`} style={{ width: `${(parseFloat(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
+                  <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
                 ))}
               </colgroup>
               <RundownTableHeader 
