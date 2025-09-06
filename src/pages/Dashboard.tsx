@@ -406,7 +406,7 @@ const Dashboard = () => {
                   </Button>
                 </CSVImportDialog>
                 {/* Only show update notification trigger for app admin */}
-                {user?.email === 'moragn@cuer.live' && <UpdateNotificationTrigger />}
+                {user?.email === 'morgan@cuer.live' && <UpdateNotificationTrigger />}
               </div>
 
               <DashboardRundownGrid
