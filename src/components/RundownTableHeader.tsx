@@ -41,6 +41,7 @@ interface RundownTableHeaderProps {
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
   zoomLevel?: number;
+  headerTranslateY?: number; // compensate sticky drift when zoom is applied
 }
 
 const RundownTableHeader = ({
@@ -57,7 +58,8 @@ const RundownTableHeader = ({
   isHeaderCollapsed,
   savedLayouts,
   onLoadLayout,
-  zoomLevel = 1
+  zoomLevel = 1,
+  headerTranslateY = 0
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -187,7 +189,7 @@ const RundownTableHeader = ({
   };
 
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20" style={{ transform: headerTranslateY ? `translateY(${headerTranslateY}px)` : undefined, willChange: headerTranslateY ? 'transform' as const : undefined }}>
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
