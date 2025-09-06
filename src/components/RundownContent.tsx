@@ -281,7 +281,7 @@ const RundownContent = React.memo<RundownContentProps>(({
         
         {/* Zoomed Body */}
         <div 
-          className="bg-background zoom-container" 
+          className="bg-background zoom-container -mt-px" 
           style={{ 
             minWidth: `${totalTableWidth}px`,
             transform: `scale(${zoomLevel})`,
