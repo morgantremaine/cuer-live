@@ -17,6 +17,8 @@ export const useExternalNotes = (rundownId: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const realtimeChannelRef = useRef<any>(null);
+  const lastUpdateTimestampRef = useRef<string | null>(null);
   
   // Track manually renamed notes
   const [manuallyRenamedNotes, setManuallyRenamedNotes] = useState<Set<string>>(new Set());
@@ -150,6 +152,98 @@ export const useExternalNotes = (rundownId: string) => {
 
     initializeNotes();
   }, [rundownId, isInitialized]);
+
+  // Setup realtime sync for external notes
+  useEffect(() => {
+    if (!rundownId || !user || !isInitialized) return;
+
+    console.log('📝 Setting up external notes realtime sync for rundown:', rundownId);
+
+    const channel = supabase
+      .channel(`external-notes-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          console.log('📝 External notes realtime update received:', {
+            updatedByUserId: payload.new?.last_updated_by,
+            currentUserId: user?.id,
+            timestamp: payload.new?.updated_at
+          });
+
+          // Skip if this is our own update
+          if (payload.new?.last_updated_by === user?.id) {
+            console.log('⏭️ Skipping own external notes update');
+            return;
+          }
+
+          // Prevent processing duplicate updates
+          const updateTimestamp = payload.new?.updated_at;
+          if (updateTimestamp && updateTimestamp === lastUpdateTimestampRef.current) {
+            console.log('⏭️ Skipping duplicate external notes update');
+            return;
+          }
+          lastUpdateTimestampRef.current = updateTimestamp;
+
+          // Process remote external notes update
+          const rawNotes = payload.new?.external_notes;
+          if (rawNotes) {
+            console.log('✅ Processing remote external notes update');
+            try {
+              let parsedNotes: Note[] = [];
+              
+              if (typeof rawNotes === 'string') {
+                const parsed = JSON.parse(rawNotes);
+                if (Array.isArray(parsed)) {
+                  parsedNotes = parsed.filter(note => 
+                    note && typeof note === 'object' && note.id && note.title !== undefined && note.content !== undefined
+                  ).map(note => ({
+                    ...note,
+                    content: typeof note.content === 'string' ? cleanupMalformedJson(note.content) : ''
+                  }));
+                }
+              } else if (typeof rawNotes === 'object' && Array.isArray(rawNotes)) {
+                parsedNotes = rawNotes.filter(note => 
+                  note && typeof note === 'object' && note.id && note.title !== undefined && note.content !== undefined
+                ).map(note => ({
+                  ...note,
+                  content: typeof note.content === 'string' ? cleanupMalformedJson(note.content) : ''
+                }));
+              }
+
+              if (parsedNotes.length > 0) {
+                setNotes(parsedNotes);
+                // Keep active note if it still exists, otherwise select first
+                if (!parsedNotes.find(n => n.id === activeNoteId)) {
+                  setActiveNoteId(parsedNotes[0]?.id || null);
+                }
+                console.log('📝 External notes synced from realtime update');
+              }
+            } catch (error) {
+              console.error('Error processing external notes realtime update:', error);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📝 External notes realtime subscription status:', status);
+      });
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      if (realtimeChannelRef.current) {
+        console.log('🧹 Cleaning up external notes realtime subscription');
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [rundownId, user, isInitialized, activeNoteId]);
 
   // Save notes to rundown's external_notes field
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
@@ -318,6 +412,9 @@ export const useExternalNotes = (rundownId: string) => {
     return () => {
       if (saveTimeout) {
         clearTimeout(saveTimeout);
+      }
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
       }
     };
   }, [saveTimeout]);

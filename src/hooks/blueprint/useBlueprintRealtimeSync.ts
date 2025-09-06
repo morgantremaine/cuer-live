@@ -58,9 +58,8 @@ export const useBlueprintRealtimeSync = ({
         lists: payload.new?.lists || [],
         showDate: payload.new?.show_date || '',
         notes: payload.new?.notes || '',
-        crewData: payload.new?.crew_data || [],
         cameraPlots: payload.new?.camera_plots || [],
-        componentOrder: payload.new?.component_order || ['crew-list', 'camera-plot', 'scratchpad'],
+        componentOrder: payload.new?.component_order || ['camera-plot', 'scratchpad'], // Removed 'crew-list'
         // Flag this as a granular update
         isGranularUpdate: true,
         timestamp: updateTimestamp
