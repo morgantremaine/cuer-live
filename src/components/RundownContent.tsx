@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
@@ -283,72 +282,66 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with separate sticky header (unscaled) and zoomed body */}
+      {/* Scrollable Content - both header and body scaled identically for perfect alignment */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
-        {/* Sticky Header Wrapper - NOT transformed to keep sticky behavior stable */}
+        {/* Sticky Header - scaled exactly like body */}
         <div 
-          className="sticky top-0 z-20 bg-background border-b border-border overflow-hidden"
+          className="sticky top-0 z-20 bg-background border-b border-border"
           style={{ 
-            width: '100%'
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+            height: `${48 * zoomLevel}px`, // Scaled height to prevent clipping
+            overflow: 'visible'
           }}
         >
           <div 
             ref={headerScrollRef}
             className="overflow-hidden"
             style={{ 
-              width: '100%',
+              width: `${totalTableWidth}px`,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
           >
-            {/* Scale header content exactly like body to keep columns perfectly aligned */}
-            <div
-              style={{
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: 'top left',
-                width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
-                minWidth: `${totalTableWidth}px`
+            <table 
+              className="border-collapse table-container" 
+              style={{ 
+                tableLayout: 'fixed', 
+                width: `${totalTableWidth}px`,
+                minWidth: `${totalTableWidth}px`,
+                margin: 0,
+                padding: 0
               }}
+              data-rundown-table="header"
             >
-              <table 
-                className="border-collapse table-container" 
-                style={{ 
-                  tableLayout: 'fixed', 
-                  width: `${totalTableWidth}px`,
-                  minWidth: `${totalTableWidth}px`,
-                  margin: 0,
-                  padding: 0
-                }}
-                data-rundown-table="header"
-              >
-                <colgroup>
-                  <col style={{ width: '66px' }} />
-                  {visibleColumns.map((col) => (
-                    <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
-                  ))}
-                </colgroup>
-                <RundownTableHeader 
-                  visibleColumns={visibleColumns}
-                  allColumns={allColumns}
-                  getColumnWidth={(col) => normalizedGetColumnWidth(col)}
-                  updateColumnWidth={updateColumnWidth}
-                  onReorderColumns={onReorderColumns}
-                  onToggleColumnVisibility={onToggleColumnVisibility}
-                  items={items}
-                  columnExpandState={columnExpandState}
-                  onToggleColumnExpand={handleToggleColumnExpand}
-                  onToggleAllHeaders={handleToggleAllHeaders}
-                  isHeaderCollapsed={isHeaderCollapsed}
-                  savedLayouts={savedLayouts}
-                  onLoadLayout={onLoadLayout}
-                  zoomLevel={zoomLevel}
-                />
-              </table>
-            </div>
+              <colgroup>
+                <col style={{ width: '66px' }} />
+                {visibleColumns.map((col) => (
+                  <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                ))}
+              </colgroup>
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                allColumns={allColumns}
+                getColumnWidth={(col) => normalizedGetColumnWidth(col)}
+                updateColumnWidth={updateColumnWidth}
+                onReorderColumns={onReorderColumns}
+                onToggleColumnVisibility={onToggleColumnVisibility}
+                items={items}
+                columnExpandState={columnExpandState}
+                onToggleColumnExpand={handleToggleColumnExpand}
+                onToggleAllHeaders={handleToggleAllHeaders}
+                isHeaderCollapsed={isHeaderCollapsed}
+                savedLayouts={savedLayouts}
+                onLoadLayout={onLoadLayout}
+                zoomLevel={zoomLevel}
+              />
+            </table>
           </div>
         </div>
         
-        {/* Zoomed Body */}
+        {/* Zoomed Body - scaled identically to header */}
         <div 
           className="bg-background zoom-container" 
           style={{ 
