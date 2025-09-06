@@ -170,7 +170,25 @@ export const useRundownStateCoordination = () => {
       }
     },
     bulletproofState.updateItem,
-    (item: any) => bulletproofState.addItem(item), // Wrapper to match interface
+    () => bulletproofState.addItem({
+      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: 'regular' as const,
+      rowNumber: '',
+      name: '',
+      startTime: '00:00:00',
+      duration: '00:00',
+      endTime: '00:00:00',
+      elapsedTime: '00:00:00',
+      talent: '',
+      script: '',
+      notes: '',
+      gfx: '',
+      video: '',
+      images: '',
+      color: '',
+      isFloating: false,
+      customFields: {}
+    }),
     () => {
       const newHeader = {
         id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
