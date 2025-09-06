@@ -338,7 +338,16 @@ export const useConsolidatedRealtimeRundown = ({
 
       setIsConnected(false);
     };
-  }, [rundownId, user?.id, enabled, processRealtimeUpdate, lastSeenDocVersion, isSharedView]);
+  }, [rundownId, user?.id, enabled, processRealtimeUpdate, isSharedView]);
+
+  // Sync lastSeenDocVersion into global state without resubscribing
+  useEffect(() => {
+    if (!rundownId) return;
+    const state = globalSubscriptions.get(rundownId);
+    if (state && lastSeenDocVersion > state.lastProcessedDocVersion) {
+      state.lastProcessedDocVersion = lastSeenDocVersion;
+    }
+  }, [rundownId, lastSeenDocVersion]);
 
   // Provide own update tracking function
   const trackOwnUpdateFunc = useCallback((timestamp: string) => {
