@@ -73,7 +73,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         .from('rundowns')
         .update({ 
           items: updatedItems,
-          updated_at: updateTimestamp,
           last_updated_by: user?.id || null
         })
         .eq('id', rundownId)
@@ -105,7 +104,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
           .from('rundowns')
           .update({ 
             items: mergedItems,
-            updated_at: updateTimestamp,
             last_updated_by: user?.id || null
           })
           .eq('id', rundownId)

@@ -39,8 +39,7 @@ export class RundownOperations {
         icon,
         undo_history: undoHistory,
         team_id: teamId,
-        user_id: this.user.id,
-        updated_at: new Date().toISOString()
+        user_id: this.user.id
       };
 
       const { data, error } = await supabase

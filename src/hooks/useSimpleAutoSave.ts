@@ -377,7 +377,6 @@ export const useSimpleAutoSave = (
             team_id: teamData.team_id,
             user_id: currentUserId,
             folder_id: folderId,
-            updated_at: updateTimestamp,
             last_updated_by: currentUserId
           })
           .select()
@@ -461,7 +460,6 @@ export const useSimpleAutoSave = (
           timezone: saveState.timezone,
           show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
           external_notes: saveState.externalNotes,
-          updated_at: new Date().toISOString(),
           last_updated_by: currentUserId
         } as const;
 
