@@ -1274,7 +1274,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             } : {})
                           }}
                         >
-                          <div className="break-words whitespace-pre-wrap overflow-hidden">
+                          <div className="break-words whitespace-pre-wrap overflow-hidden flex items-center min-h-[2rem]">
                             {(column.key === 'script' || column.key === 'notes') ? 
                               renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime), item.id, column.key) ||
                               <div>{renderCellContent(item, column, calculatedStartTime)}</div> :
