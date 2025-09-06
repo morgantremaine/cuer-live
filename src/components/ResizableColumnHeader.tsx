@@ -158,7 +158,7 @@ const ResizableColumnHeader = ({
     width: `${constrainedWidth}px`,
     minWidth: `${constrainedWidth}px`,
     maxWidth: `${constrainedWidth}px`,
-    borderRight: '1px solid hsl(var(--border))',
+    borderRight: '1px solid rgba(255, 255, 255, 0.2)',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
     opacity: isDragging ? 0.5 : 1,
