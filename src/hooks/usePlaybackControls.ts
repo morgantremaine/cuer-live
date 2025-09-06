@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useDirectShowcallerRealtime } from './useDirectShowcallerRealtime';
+import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useAuth } from './useAuth';
 
 export const usePlaybackControls = (
@@ -40,8 +41,23 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Direct showcaller realtime - connects immediately, no initialization wait
-  const { isConnected, trackOwnUpdate: directTrackOwnUpdate } = useDirectShowcallerRealtime({
+  // Broadcast-first sync for instant updates
+  const { isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
+    rundownId,
+    onBroadcastReceived: (state) => {
+      console.log('📺 Playback controls received broadcast:', state);
+      applyExternalVisualState({
+        isPlaying: state.isPlaying,
+        currentSegmentId: state.currentSegmentId,
+        timeRemaining: state.timeRemaining,
+        isController: state.isController
+      });
+    },
+    enabled: true
+  });
+
+  // Fallback direct real-time connection
+  const { isConnected: isFallbackConnected, trackOwnUpdate: directTrackOwnUpdate } = useDirectShowcallerRealtime({
     rundownId,
     onShowcallerStateReceived: applyExternalVisualState,
     onShowcallerActivity
@@ -159,6 +175,6 @@ export const usePlaybackControls = (
     jumpToSegment: safeJumpToSegment,
     isController: controlsReady ? isController : false,
     isInitialized,
-    isConnected
+    isConnected: isBroadcastConnected && isFallbackConnected
   };
 };
