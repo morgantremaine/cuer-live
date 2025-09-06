@@ -23,6 +23,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { calculateTotalRuntime } from '@/utils/rundownCalculations'
+import { RundownSortingDropdown } from './dashboard/RundownSortingDropdown'
+import { useRundownSorting } from '@/hooks/useRundownSorting'
 
 interface TeamMember {
   id: string;
@@ -67,6 +69,9 @@ const DashboardRundownGrid = ({
   teamMembers = []
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
+  
+  // Use sorting hook
+  const { sortBy, setSortBy, sortedRundowns } = useRundownSorting(rundowns)
 
   const formatDate = (dateString: string) => {
     // Parse as local date to avoid timezone conversion issues
@@ -206,7 +211,12 @@ const DashboardRundownGrid = ({
   if (loading) {
     return (
       <div className="space-y-6">
-        {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
+        {title && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+            <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-64 bg-gray-800 rounded-lg animate-pulse" />
@@ -216,10 +226,15 @@ const DashboardRundownGrid = ({
     )
   }
 
-  if (rundowns.length === 0 && showEmptyState) {
+  if (sortedRundowns.length === 0 && showEmptyState) {
     return (
       <div className="space-y-6">
-        {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
+        {title && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+            <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
+          </div>
+        )}
         <div className="text-center py-12">
           <h3 className="text-xl font-semibold text-gray-300 mb-4">
             {isArchived ? 'No archived rundowns' : 'No rundowns yet'}
@@ -243,9 +258,14 @@ const DashboardRundownGrid = ({
 
   return (
     <div className="space-y-6">
-      {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
+      {title && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">{title}</h2>
+          <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rundowns.map((rundown) => {
+        {sortedRundowns.map((rundown) => {
           const preview = getRundownPreview(rundown.items || [])
           const activity = getActivityStatus(rundown)
           
