@@ -5,6 +5,7 @@ import RundownIndexContent from '@/components/RundownIndexContent';
 import Blueprint from '@/pages/Blueprint';
 import CameraPlotEditor from '@/pages/CameraPlotEditor';
 import Teleprompter from '@/pages/Teleprompter';
+import { CellUpdateProvider } from '@/contexts/CellUpdateContext';
 
 const RundownWithTabs = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,33 +53,35 @@ const RundownWithTabs = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-        {/* Hidden tabs list - navigation happens through other UI elements */}
-        <TabsList className="hidden">
-          <TabsTrigger value="rundown">Rundown</TabsTrigger>
-          <TabsTrigger value="blueprint">Blueprint</TabsTrigger>
-          <TabsTrigger value="camera-plot-editor">Camera Plot Editor</TabsTrigger>
-          <TabsTrigger value="teleprompter">Teleprompter</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="rundown" className="flex-1 mt-0">
-          <RundownIndexContent />
-        </TabsContent>
-        
-        <TabsContent value="blueprint" className="flex-1 mt-0">
-          <Blueprint />
-        </TabsContent>
-        
-        <TabsContent value="camera-plot-editor" className="flex-1 mt-0">
-          <CameraPlotEditor />
-        </TabsContent>
-        
-        <TabsContent value="teleprompter" className="flex-1 mt-0">
-          <Teleprompter />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <CellUpdateProvider>
+      <div className="min-h-screen">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+          {/* Hidden tabs list - navigation happens through other UI elements */}
+          <TabsList className="hidden">
+            <TabsTrigger value="rundown">Rundown</TabsTrigger>
+            <TabsTrigger value="blueprint">Blueprint</TabsTrigger>
+            <TabsTrigger value="camera-plot-editor">Camera Plot Editor</TabsTrigger>
+            <TabsTrigger value="teleprompter">Teleprompter</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="rundown" className="flex-1 mt-0">
+            <RundownIndexContent />
+          </TabsContent>
+          
+          <TabsContent value="blueprint" className="flex-1 mt-0">
+            <Blueprint />
+          </TabsContent>
+          
+          <TabsContent value="camera-plot-editor" className="flex-1 mt-0">
+            <CameraPlotEditor />
+          </TabsContent>
+          
+          <TabsContent value="teleprompter" className="flex-1 mt-0">
+            <Teleprompter />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </CellUpdateProvider>
   );
 };
 
