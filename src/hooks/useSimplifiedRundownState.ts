@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
-import { useSimpleRealtimeRundown } from './useSimpleRealtimeRundown';
+import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
@@ -266,10 +266,10 @@ export const useSimplifiedRundownState = () => {
   const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
   const syncBeforeWriteRef = useRef(false);
   
-  const realtimeConnection = useSimpleRealtimeRundown({
+  const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
     lastSeenDocVersion,
-    onRundownUpdate: useCallback((updatedRundown) => {
+    onContentUpdate: useCallback((updatedRundown) => {
       // Gate realtime processing for 500ms after initial load to let baseline prime
       if (initialLoadGateRef.current) {
         console.log('⏳ Gating realtime update - initial load in progress');

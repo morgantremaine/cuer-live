@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useDirectShowcallerRealtime } from './useDirectShowcallerRealtime';
+import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useAuth } from './useAuth';
 
 export const usePlaybackControls = (
@@ -40,10 +40,10 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Direct showcaller realtime - connects immediately, no initialization wait
-  const { isConnected, trackOwnUpdate: directTrackOwnUpdate } = useDirectShowcallerRealtime({
+  // Consolidated realtime - single subscription for both content and showcaller
+  const { isConnected, trackOwnUpdate: directTrackOwnUpdate } = useConsolidatedRealtimeRundown({
     rundownId,
-    onShowcallerStateReceived: applyExternalVisualState,
+    onShowcallerUpdate: applyExternalVisualState,
     onShowcallerActivity
   });
 
