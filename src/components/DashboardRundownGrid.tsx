@@ -212,7 +212,7 @@ const DashboardRundownGrid = ({
     return (
       <div className="space-y-6">
         {title && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white">{title}</h2>
             <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
           </div>
@@ -230,7 +230,7 @@ const DashboardRundownGrid = ({
     return (
       <div className="space-y-6">
         {title && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-white">{title}</h2>
             <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
           </div>
@@ -259,7 +259,7 @@ const DashboardRundownGrid = ({
   return (
     <div className="space-y-6">
       {title && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">{title}</h2>
           <RundownSortingDropdown sortBy={sortBy} onSortChange={setSortBy} />
         </div>
