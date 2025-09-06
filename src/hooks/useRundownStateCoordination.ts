@@ -369,11 +369,12 @@ export const useRundownStateCoordination = () => {
       canUndo: false, // Simplified undo state
       lastAction: null, // Simplified undo state
       
+      // Auto-save functions
+      markAsChanged: bulletproofState.markAsChanged,
+      triggerAutoSave: bulletproofState.triggerAutoSave,
+      
       // Additional functionality
       calculateEndTime,
-      markAsChanged: () => {
-        // Handled internally by bulletproof state
-      },
       addMultipleRows,
       
       // Autoscroll state with enhanced debugging

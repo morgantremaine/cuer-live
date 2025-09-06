@@ -162,15 +162,29 @@ export const useBulletproofRundownState = () => {
     initializeRundown();
   }, [initializeRundown]);
 
-  // Auto-save with offline queueing
+  // Auto-save with offline queueing and better debouncing
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const autoSave = useCallback(async () => {
     if (!isInitialized || state.hasUnsavedChanges === false) return;
 
+    console.log('🔄 Auto-saving rundown data...');
     const success = await saveToServer();
     if (success) {
       actions.markSaved();
+      console.log('✅ Auto-save completed successfully');
+    } else {
+      console.log('❌ Auto-save failed - will retry with offline queue');
     }
   }, [isInitialized, state.hasUnsavedChanges, saveToServer, actions]);
+  
+  // Debounced auto-save trigger
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(autoSave, 1500);
+  }, [autoSave]);
 
   // Enhanced field change tracking with offline support
   const handleFieldChange = useCallback((fieldKey: string, value: any) => {
@@ -226,10 +240,17 @@ export const useBulletproofRundownState = () => {
       // Track for offline sync
       trackOfflineChange(`${id}-${field}`, value);
       
-      // Trigger auto-save
-      setTimeout(autoSave, 1500);
+      // Auto-save (changes are automatically marked by the reducer)
+      triggerAutoSave();
     }
-  }, [state.items, actions, trackOfflineChange, autoSave]);
+  }, [state.items, actions, trackOfflineChange, triggerAutoSave]);
+
+  // Enhanced markAsChanged function for external use
+  const markAsChanged = useCallback(() => {
+    // Force mark as changed by updating lastChanged timestamp
+    actions.setItems([...state.items]); // This will trigger markChanged in reducer
+    triggerAutoSave();
+  }, [actions, triggerAutoSave]);
 
   // Handle row selection
   const handleRowSelection = useCallback((rowId: string | null) => {
@@ -297,6 +318,7 @@ export const useBulletproofRundownState = () => {
     updateItem, // Use the enhanced updateItem
     handleRowSelection,
     forceFocusCheck,
+    markAsChanged, // Export the enhanced markAsChanged
     
     // Helpers
     ...helpers,
@@ -309,6 +331,7 @@ export const useBulletproofRundownState = () => {
     
     // Manual sync control
     syncNow: () => syncWithServer(true),
-    saveNow: autoSave
+    saveNow: autoSave,
+    triggerAutoSave // Export for external triggering
   };
 };
