@@ -34,26 +34,68 @@ const TextAreaCell = ({
   const [currentWidth, setCurrentWidth] = useState<number>(0);
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
-  // Function to calculate required height using the actual textarea scrollHeight
+  // Function to calculate required height using a measurement div
   const calculateHeight = () => {
+    if (!textareaRef.current || !measurementRef.current) return;
+    
     const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    // Ensure width is current (for auto-resize events)
-    const w = textarea.getBoundingClientRect().width;
-    if (w !== currentWidth) setCurrentWidth(w);
-
-    const prevHeight = textarea.style.height;
-    // Temporarily set height to auto to measure natural content height with current width
-    textarea.style.height = 'auto';
-    const measured = Math.ceil(textarea.scrollHeight); // includes padding
-    // Restore inline height (React will set it via style below anyway)
-    textarea.style.height = prevHeight;
-
-    // Fallback minimum to avoid collapse
-    const min = 38; // matches initial single-line default
-    const newHeight = Math.max(measured, min);
-
+    const measurementDiv = measurementRef.current;
+    
+    // Get the current width of the textarea
+    const textareaWidth = textarea.getBoundingClientRect().width;
+    
+    // Update current width
+    setCurrentWidth(textareaWidth);
+    
+    // Copy textarea styles to measurement div
+    const computedStyle = window.getComputedStyle(textarea);
+    measurementDiv.style.width = `${textareaWidth}px`;
+    measurementDiv.style.fontSize = computedStyle.fontSize;
+    measurementDiv.style.fontFamily = computedStyle.fontFamily;
+    measurementDiv.style.fontWeight = computedStyle.fontWeight;
+    measurementDiv.style.lineHeight = computedStyle.lineHeight;
+    measurementDiv.style.padding = computedStyle.padding;
+    measurementDiv.style.border = computedStyle.border;
+    measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    // Always allow normal text wrapping in the measurement div
+    measurementDiv.style.wordWrap = 'break-word';
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    
+    // Set the content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
+    
+    // Get the natural height
+    const naturalHeight = measurementDiv.offsetHeight;
+    
+    // Calculate minimum height (single line)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+    const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
+    const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
+    const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
+    const borderBottom = parseFloat(computedStyle.borderBottomWidth) || 0;
+    
+    const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
+    
+    // Check if text actually needs to wrap by comparing the text width with available width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.fontSize = computedStyle.fontSize;
+    tempSpan.style.fontFamily = computedStyle.fontFamily;
+    tempSpan.style.fontWeight = computedStyle.fontWeight;
+    tempSpan.style.whiteSpace = 'nowrap';
+    tempSpan.textContent = value || ' ';
+    document.body.appendChild(tempSpan);
+    
+    const textWidth = tempSpan.offsetWidth;
+    const availableWidth = textareaWidth - paddingTop - paddingBottom;
+    document.body.removeChild(tempSpan);
+    
+    // If text fits on one line, use minimum height; otherwise use calculated height
+    const shouldWrap = textWidth > availableWidth;
+    const newHeight = shouldWrap ? Math.max(naturalHeight, minHeight) : minHeight;
+    
+    // Always update height if it's different
     if (newHeight !== calculatedHeight) {
       setCalculatedHeight(newHeight);
     }
@@ -192,7 +234,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
         <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10 flex items-center`}
           style={{ 
             color: textColor || 'inherit',
             lineHeight: '1.3',
@@ -222,7 +264,7 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-cell-id={cellKey}
         data-cell-ref={cellKey}
         data-field-key={`${itemId}-${resolvedFieldKey}`}
-        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
+        className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden flex items-center ${
           isDuration ? 'font-mono' : ''
         } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
