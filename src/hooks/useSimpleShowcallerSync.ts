@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
+import { useShowcallerPersistence } from './useShowcallerPersistence';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 
 export interface SimpleShowcallerState {
@@ -37,6 +38,16 @@ export const useSimpleShowcallerSync = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const hasLoadedInitialState = useRef(false);
+  const lastTrackedUpdate = useRef<string>('');
+
+  // Setup persistence
+  const { saveShowcallerState, loadShowcallerState } = useShowcallerPersistence({
+    rundownId,
+    trackOwnUpdate: (timestamp: string) => {
+      lastTrackedUpdate.current = timestamp;
+    }
+  });
 
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
@@ -85,6 +96,78 @@ export const useSimpleShowcallerSync = ({
     return status;
   }, [items]);
 
+  // Load initial state on mount
+  useEffect(() => {
+    if (!rundownId || !items.length || hasLoadedInitialState.current) return;
+
+    const loadInitialShowcallerState = async () => {
+      console.log('📺 Simple: Loading initial showcaller state...');
+      
+      try {
+        const savedState = await loadShowcallerState();
+        
+        if (savedState && savedState.currentSegmentId) {
+          // Apply saved state
+          console.log('📺 Simple: Loaded saved state:', savedState.currentSegmentId);
+          const statusMap = buildStatusMap(savedState.currentSegmentId);
+          
+          setState({
+            isPlaying: savedState.isPlaying || false,
+            currentSegmentId: savedState.currentSegmentId,
+            timeRemaining: savedState.timeRemaining || 0,
+            currentItemStatuses: statusMap,
+            isController: false, // Always start as non-controller
+            controllerId: savedState.controllerId || null,
+            lastUpdate: savedState.lastUpdate || new Date().toISOString()
+          });
+          
+          if (savedState.lastUpdate) {
+            lastTrackedUpdate.current = savedState.lastUpdate;
+          }
+        } else {
+          // No saved state - set default to first non-floated item
+          const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+          if (firstSegment) {
+            console.log('📺 Simple: Setting default to first item:', firstSegment.id);
+            const statusMap = buildStatusMap(firstSegment.id);
+            const defaultState = {
+              isPlaying: false,
+              currentSegmentId: firstSegment.id,
+              timeRemaining: parseDurationToSeconds(firstSegment.duration),
+              currentItemStatuses: statusMap,
+              isController: false,
+              controllerId: null,
+              lastUpdate: new Date().toISOString()
+            };
+            
+            setState(defaultState);
+            
+            // Save this default state to the database
+            await saveShowcallerState({
+              isPlaying: defaultState.isPlaying,
+              currentSegmentId: defaultState.currentSegmentId,
+              timeRemaining: defaultState.timeRemaining,
+              playbackStartTime: null,
+              lastUpdate: defaultState.lastUpdate,
+              controllerId: defaultState.controllerId
+            });
+          }
+        }
+      } catch (error) {
+        console.error('📺 Simple: Error loading initial state:', error);
+      } finally {
+        hasLoadedInitialState.current = true;
+      }
+    };
+
+    loadInitialShowcallerState();
+  }, [rundownId, items, loadShowcallerState, saveShowcallerState, buildStatusMap, parseDurationToSeconds]);
+
+  // Reset on rundown change
+  useEffect(() => {
+    hasLoadedInitialState.current = false;
+  }, [rundownId]);
+
   // Broadcast sync setup
   const { broadcastState, isConnected } = useShowcallerBroadcastSync({
     rundownId,
@@ -97,6 +180,9 @@ export const useSimpleShowcallerSync = ({
       // Skip duplicate updates
       if (broadcastState.timestamp.toString() === lastUpdateRef.current) return;
       lastUpdateRef.current = broadcastState.timestamp.toString();
+      
+      // Skip updates we've already processed from persistence
+      if (broadcastState.timestamp.toString() === lastTrackedUpdate.current) return;
 
       // Apply the complete state directly - no local calculations
       setState({
@@ -201,6 +287,16 @@ export const useSimpleShowcallerSync = ({
     setState(newState);
     startControllerTimer();
     
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
+    
     // Broadcast immediately
     broadcastState({
       action: 'play',
@@ -213,8 +309,19 @@ export const useSimpleShowcallerSync = ({
   const pause = useCallback(() => {
     console.log('📺 Simple: Pause called');
     
-    setState(prev => ({ ...prev, isPlaying: false, isController: true }));
+    const newState = { ...state, isPlaying: false, isController: true };
+    setState(newState);
     stopTimer();
+    
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
     
     broadcastState({
       action: 'pause',
@@ -240,6 +347,16 @@ export const useSimpleShowcallerSync = ({
     };
     
     setState(newState);
+    
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
     
     broadcastState({
       action: 'forward',
@@ -268,6 +385,16 @@ export const useSimpleShowcallerSync = ({
     
     setState(newState);
     
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
+    
     broadcastState({
       action: 'backward',
       isPlaying: state.isPlaying,
@@ -291,6 +418,16 @@ export const useSimpleShowcallerSync = ({
     
     setState(newState);
     stopTimer();
+    
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
     
     broadcastState({
       action: 'reset',
@@ -316,6 +453,16 @@ export const useSimpleShowcallerSync = ({
     };
     
     setState(newState);
+    
+    // Save to database
+    saveShowcallerState({
+      isPlaying: newState.isPlaying,
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining,
+      playbackStartTime: null,
+      lastUpdate: newState.lastUpdate,
+      controllerId: newState.controllerId
+    });
     
     broadcastState({
       action: 'jump',
