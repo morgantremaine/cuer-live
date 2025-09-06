@@ -40,6 +40,9 @@ export const useSimpleShowcallerSync = ({
   const lastUpdateRef = useRef<string>('');
   const hasLoadedInitialState = useRef(false);
   const lastTrackedUpdate = useRef<string>('');
+  const initializingRef = useRef(false);
+  const initialResolvedRef = useRef(false); // true once a non-null segment is applied
+  const defaultSavedRef = useRef(false); // prevent multiple default saves
 
   // Setup persistence
   const { saveShowcallerState, loadShowcallerState } = useShowcallerPersistence({
@@ -98,12 +101,14 @@ export const useSimpleShowcallerSync = ({
 
   // Load initial state on mount
   useEffect(() => {
-    if (!rundownId || !items.length || hasLoadedInitialState.current) return;
+    if (!rundownId || !items.length || hasLoadedInitialState.current || initializingRef.current) return;
 
     const loadInitialShowcallerState = async () => {
+      initializingRef.current = true;
       console.log('📺 Simple: Loading initial showcaller state...');
       
       try {
+        // First attempt
         const savedState = await loadShowcallerState();
         
         if (savedState && savedState.currentSegmentId) {
@@ -124,39 +129,60 @@ export const useSimpleShowcallerSync = ({
           if (savedState.lastUpdate) {
             lastTrackedUpdate.current = savedState.lastUpdate;
           }
+          initialResolvedRef.current = true;
         } else {
-          // No saved state - set default to first non-floated item
-          const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-          if (firstSegment) {
-            console.log('📺 Simple: Setting default to first item:', firstSegment.id);
-            const statusMap = buildStatusMap(firstSegment.id);
-            const defaultState = {
-              isPlaying: false,
-              currentSegmentId: firstSegment.id,
-              timeRemaining: parseDurationToSeconds(firstSegment.duration),
+          // Grace period: another client may save shortly after open
+          await new Promise((r) => setTimeout(r, 300));
+          const secondTry = await loadShowcallerState();
+          if (secondTry && secondTry.currentSegmentId) {
+            console.log('📺 Simple: Loaded saved state on second try:', secondTry.currentSegmentId);
+            const statusMap = buildStatusMap(secondTry.currentSegmentId);
+            setState({
+              isPlaying: secondTry.isPlaying || false,
+              currentSegmentId: secondTry.currentSegmentId,
+              timeRemaining: secondTry.timeRemaining || 0,
               currentItemStatuses: statusMap,
               isController: false,
-              controllerId: null,
-              lastUpdate: new Date().toISOString()
-            };
-            
-            setState(defaultState);
-            
-            // Save this default state to the database
-            await saveShowcallerState({
-              isPlaying: defaultState.isPlaying,
-              currentSegmentId: defaultState.currentSegmentId,
-              timeRemaining: defaultState.timeRemaining,
-              playbackStartTime: null,
-              lastUpdate: defaultState.lastUpdate,
-              controllerId: defaultState.controllerId
+              controllerId: secondTry.controllerId || null,
+              lastUpdate: secondTry.lastUpdate || new Date().toISOString()
             });
+            if (secondTry.lastUpdate) {
+              lastTrackedUpdate.current = secondTry.lastUpdate;
+            }
+            initialResolvedRef.current = true;
+          } else {
+            // No saved state - set default to first non-floated item once
+            const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+            if (firstSegment && !defaultSavedRef.current && !initialResolvedRef.current) {
+              console.log('📺 Simple: Setting default to first item:', firstSegment.id);
+              const statusMap = buildStatusMap(firstSegment.id);
+              const defaultState = {
+                isPlaying: false,
+                currentSegmentId: firstSegment.id,
+                timeRemaining: parseDurationToSeconds(firstSegment.duration),
+                currentItemStatuses: statusMap,
+                isController: false,
+                controllerId: null,
+                lastUpdate: new Date().toISOString()
+              };
+              setState(defaultState);
+              defaultSavedRef.current = true;
+              await saveShowcallerState({
+                isPlaying: defaultState.isPlaying,
+                currentSegmentId: defaultState.currentSegmentId,
+                timeRemaining: defaultState.timeRemaining,
+                playbackStartTime: null,
+                lastUpdate: defaultState.lastUpdate,
+                controllerId: defaultState.controllerId
+              });
+            }
           }
         }
       } catch (error) {
         console.error('📺 Simple: Error loading initial state:', error);
       } finally {
         hasLoadedInitialState.current = true;
+        initializingRef.current = false;
       }
     };
 
@@ -166,6 +192,9 @@ export const useSimpleShowcallerSync = ({
   // Reset on rundown change
   useEffect(() => {
     hasLoadedInitialState.current = false;
+    initializingRef.current = false;
+    initialResolvedRef.current = false;
+    defaultSavedRef.current = false;
   }, [rundownId]);
 
   // Broadcast sync setup
