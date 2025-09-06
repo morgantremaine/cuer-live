@@ -18,6 +18,7 @@ import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -1298,6 +1299,13 @@ export const useSimplifiedRundownState = () => {
     };
   }, []);
 
+  // Enhanced realtime activity indicator with debouncing and minimum duration
+  const realtimeActivity = useRealtimeActivityIndicator({
+    isProcessingUpdate: realtimeConnection.isProcessingUpdate,
+    minimumDuration: 1500, // 1.5 seconds minimum to avoid flickering
+    cooldownDuration: 1000  // 1 second cooldown after updates stop
+  });
+
   return {
     // Core state with calculated values
     items: calculatedItems,
@@ -1324,7 +1332,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate, // Clean realtime processing only
+    isProcessingRealtimeUpdate: realtimeActivity.isShowingRealtimeActivity, // Enhanced with proper debouncing
     
     // Calculations
     totalRuntime,
