@@ -345,7 +345,7 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
           Showing {filteredActionLog.length} actions {searchFilter && `(filtered from ${actionLog.length})`}
         </div>
 
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea className="h-[400px]">
           <div className="space-y-2 pr-4">
             {filteredActionLog.length === 0 && !loading && (
               <div className="text-center py-8 text-muted-foreground">
