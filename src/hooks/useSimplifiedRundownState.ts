@@ -468,6 +468,11 @@ export const useSimplifiedRundownState = () => {
           case 'showDate':
             actions.setShowDate(update.value);
             break;
+          case 'structuralChange':
+            // Handle structural changes - trigger refresh to sync new items/deletions
+            console.log('📱 Rundown structural change detected, performing refresh');
+            deferredUpdateRef.current = true;
+            break;
           default:
             console.warn('🚨 Unknown rundown-level field:', update.field);
         }
@@ -475,6 +480,13 @@ export const useSimplifiedRundownState = () => {
       }
       
       // Handle item-level updates (existing logic)
+      if (update.field === 'structuralChange') {
+        // Handle structural changes - trigger refresh to sync new items/deletions
+        console.log('📱 Item structural change detected, performing refresh');
+        deferredUpdateRef.current = true;
+        return;
+      }
+      
       const updatedItems = state.items.map(item => {
         if (item.id === update.itemId) {
           // Only apply if not actively editing this exact field
@@ -1036,19 +1048,34 @@ export const useSimplifiedRundownState = () => {
       pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
-    }, [actions.deleteItem, state.items, state.title, saveUndoState]),
+      
+      // Broadcast structural change for immediate sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemDeleted', currentUserId);
+      }
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addRow: useCallback(() => {
       pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
-    }, [helpers.addRow, state.items, state.title, saveUndoState]),
+      
+      // Broadcast structural change for immediate sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
+      }
+    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addHeader: useCallback(() => {
       pendingStructuralChangeRef.current = true;
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
-    }, [helpers.addHeader, state.items, state.title, saveUndoState]),
+      
+      // Broadcast structural change for immediate sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
+      }
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     setTitle: useCallback((newTitle: string) => {
       if (state.title !== newTitle) {
@@ -1135,7 +1162,12 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newItem);
     
     actions.setItems(newItems);
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    
+    // Broadcast structural change for immediate sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
+    }
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {

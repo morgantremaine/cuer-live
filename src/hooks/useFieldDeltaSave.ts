@@ -189,7 +189,8 @@ export const useFieldDeltaSave = (
     const baseItems: any[] = Array.isArray(latestRow?.items) ? latestRow.items : [];
     const baseMap = new Map<string, any>(baseItems.map((it: any) => [it.id, it]));
 
-    // Apply only our deltas to the server state
+    // Apply only our deltas to the server state - CONFLICT PROTECTION
+    // Skip deltas for items that might be actively edited by others via realtime
     itemDeltas.forEach(delta => {
       if (!delta.itemId) return;
       if (delta.field === 'deleted') {
@@ -207,6 +208,7 @@ export const useFieldDeltaSave = (
     updateData.items = Array.from(baseMap.values());
     
     // Merge global fields from server, applying only our deltas
+    // CONFLICT PROTECTION: Preserve any concurrent changes from other users
     if (globalDeltas.length === 0) {
       // No global changes from us, keep server values
       updateData.title = latestRow.title;
@@ -214,6 +216,15 @@ export const useFieldDeltaSave = (
       updateData.timezone = latestRow.timezone;
       updateData.show_date = latestRow.show_date;
       updateData.external_notes = latestRow.external_notes;
+    } else {
+      // We have global changes, but preserve server values for fields we didn't change
+      updateData.title = globalDeltas.find(d => d.field === 'title')?.value ?? latestRow.title;
+      updateData.start_time = globalDeltas.find(d => d.field === 'startTime')?.value ?? latestRow.start_time;
+      updateData.timezone = globalDeltas.find(d => d.field === 'timezone')?.value ?? latestRow.timezone;
+      updateData.show_date = globalDeltas.find(d => d.field === 'showDate')?.value ? 
+        `${globalDeltas.find(d => d.field === 'showDate')!.value.getFullYear()}-${String(globalDeltas.find(d => d.field === 'showDate')!.value.getMonth() + 1).padStart(2, '0')}-${String(globalDeltas.find(d => d.field === 'showDate')!.value.getDate()).padStart(2, '0')}` : 
+        latestRow.show_date;
+      updateData.external_notes = globalDeltas.find(d => d.field === 'externalNotes')?.value ?? latestRow.external_notes;
     }
     
     updateData.doc_version = (latestRow?.doc_version || 0) + 1;
