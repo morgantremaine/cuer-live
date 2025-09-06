@@ -6,6 +6,7 @@ import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useRundownBroadcast } from './useRundownBroadcast';
+import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -195,6 +196,38 @@ export const useSharedRundownState = () => {
     enabled: !!rundownId,
     isSharedView: true
   });
+
+  // Showcaller broadcast subscription for real-time showcaller updates
+  useEffect(() => {
+    if (!rundownId) return;
+
+    logger.debug('Setting up showcaller broadcast subscription for shared view');
+
+    const unsubscribe = showcallerBroadcast.subscribeToShowcallerBroadcasts(
+      rundownId,
+      (state) => {
+        if (!mountedRef.current) return;
+        
+        logger.debug('Shared view received showcaller broadcast:', state);
+        
+        // Update rundown data with new showcaller state
+        setRundownData(prev => prev ? {
+          ...prev,
+          showcallerState: {
+            currentSegmentId: state.currentSegmentId,
+            isPlaying: state.isPlaying,
+            timeRemaining: state.timeRemaining,
+            playbackStartTime: Date.now() - ((state.timeRemaining || 0) * 1000), // Approximate
+            controllerId: state.userId,
+            lastUpdate: new Date(state.timestamp).toISOString()
+          }
+        } : null);
+      },
+      'shared_view_anonymous' // Anonymous user ID for shared views
+    );
+
+    return unsubscribe;
+  }, [rundownId]);
 
   // Initial load only - no polling needed with pure realtime
   useEffect(() => {
