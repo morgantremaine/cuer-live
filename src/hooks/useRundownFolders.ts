@@ -105,7 +105,7 @@ export const useRundownFolders = (teamId?: string) => {
     try {
       const { data, error } = await supabase
         .from('rundown_folders')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -139,8 +139,7 @@ export const useRundownFolders = (teamId?: string) => {
         const { error } = await supabase
           .from('rundown_folders')
           .update({ 
-            position: folder.position,
-            updated_at: new Date().toISOString()
+            position: folder.position
           })
           .eq('id', folder.id);
 

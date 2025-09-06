@@ -32,7 +32,7 @@ export const useShowcallerPersistence = ({
         .from('rundowns')
         .update({ 
           showcaller_state: state,
-          updated_at: new Date().toISOString()
+          last_updated_by: (await supabase.auth.getUser()).data.user?.id
         })
         .eq('id', rundownId);
 

@@ -169,7 +169,7 @@ export const useExternalNotes = (rundownId: string) => {
           .from('rundowns')
           .update({
             external_notes: notesJson,
-            updated_at: new Date().toISOString()
+            last_updated_by: (await supabase.auth.getUser()).data.user?.id
           })
           .eq('id', rundownId);
 

@@ -1256,10 +1256,17 @@ export const useSimplifiedRundownState = () => {
     canUndo,
     lastAction,
     
-    // Teleprompter sync callbacks (exposed globally)
+    // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {
-      onSaveStart: teleprompterSync.handleTeleprompterSaveStart,
-      onSaveEnd: teleprompterSync.handleTeleprompterSaveEnd
+      onSaveStart: () => {
+        teleprompterSync.handleTeleprompterSaveStart();
+        console.log('📝 Teleprompter save started - will track updates');
+      },
+      onSaveEnd: () => {
+        teleprompterSync.handleTeleprompterSaveEnd();
+        console.log('📝 Teleprompter save ended');
+      },
+      trackOwnUpdate: realtimeConnection.trackOwnUpdate // Pass through to realtime system
     },
     
     // Autosave typing guard

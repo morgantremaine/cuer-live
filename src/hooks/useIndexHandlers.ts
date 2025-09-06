@@ -33,19 +33,22 @@ export const useIndexHandlers = ({
   const navigate = useNavigate();
 
   const handleRundownStartTimeChange = useCallback((startTime: string) => {
+    console.log('🕐 Start time changed:', startTime);
     setRundownStartTime(startTime);
-    markAsChanged();
+    markAsChanged(); // This triggers the same doc_version-protected autosave
   }, [setRundownStartTime, markAsChanged]);
 
   const handleTimezoneChange = useCallback((timezone: string) => {
+    console.log('🌍 Timezone changed:', timezone);
     setTimezone(timezone);
-    markAsChanged();
+    markAsChanged(); // This triggers the same doc_version-protected autosave
   }, [setTimezone, markAsChanged]);
 
   const handleShowDateChange = useCallback((showDate: Date | null) => {
+    console.log('📅 Show date changed:', showDate);
     if (setShowDate) {
       setShowDate(showDate);
-      markAsChanged();
+      markAsChanged(); // This triggers the same doc_version-protected autosave
     }
   }, [setShowDate, markAsChanged]);
 

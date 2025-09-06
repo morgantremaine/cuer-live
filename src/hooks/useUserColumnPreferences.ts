@@ -203,8 +203,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           .upsert({
             user_id: user.id,
             rundown_id: rundownId,
-            column_layout: personalColumns,
-            updated_at: new Date().toISOString()
+            column_layout: personalColumns
           }, {
             onConflict: 'user_id,rundown_id'
           });
