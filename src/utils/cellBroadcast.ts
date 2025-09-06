@@ -8,6 +8,7 @@ interface CellUpdate {
   field: string;
   value: any;
   userId: string;
+  clientId: string;
   timestamp: number;
 }
 
@@ -19,6 +20,29 @@ class CellBroadcastManager {
   private channels = new Map<string, RealtimeChannel>();
   private callbacks = new Map<string, Set<(update: CellUpdate) => void>>();
   private subscribed = new Map<string, boolean>();
+
+  // Unique client id per browser tab
+  private clientId: string = (() => {
+    try {
+      const key = 'cell_broadcast_client_id';
+      let id = sessionStorage.getItem(key);
+      if (!id) {
+        id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2);
+        sessionStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return Math.random().toString(36).slice(2);
+    }
+  })();
+
+  public getClientId() {
+    return this.clientId;
+  }
+
+  public isOwnUpdate(update: { clientId?: string }) {
+    return update?.clientId === this.clientId;
+  }
 
   private ensureChannel(rundownId: string): RealtimeChannel {
     const key = `rundown-cells-${rundownId}`;
@@ -69,6 +93,7 @@ class CellBroadcastManager {
       field,
       value,
       userId,
+      clientId: this.clientId,
       timestamp: Date.now()
     };
 
