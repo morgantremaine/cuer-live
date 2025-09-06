@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
-import { useBulletproofRundownState } from '@/hooks/useBulletproofRundownState';
+import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeRundown';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
@@ -80,9 +80,29 @@ const Teleprompter = () => {
   const prevIsActiveRef = useRef(true);
 
   // Enhanced real-time updates with doc version tracking
-  const bulletproofState = useBulletproofRundownState();
-  const isRealtimeConnected = bulletproofState.isConnected;
-  const trackOwnUpdate = () => {}; // Placeholder for now
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
+    rundownId: rundownId!,
+    enabled: !!rundownId && !!user && !!rundownData,
+    lastSeenDocVersion,
+    onRundownUpdate: (updatedRundown) => {
+      // Always accept remote updates to ensure real-time sync
+      if (updatedRundown) {
+        console.log('📥 Teleprompter receiving real-time update from team');
+        setRundownData({
+          title: updatedRundown.title || 'Untitled Rundown',
+          items: updatedRundown.items || [],
+          doc_version: updatedRundown.doc_version, // Include doc_version for optimistic concurrency
+          updated_at: updatedRundown.updated_at
+        });
+        
+        // Update doc version tracking
+        if (updatedRundown.doc_version) {
+          setLastSeenDocVersion(updatedRundown.doc_version);
+          watchdogRef.current?.updateLastSeen(updatedRundown.doc_version, updatedRundown.updated_at);
+        }
+      }
+    }
+  });
 
   // Silent refresh when tab becomes active (same as main rundown)
   useEffect(() => {

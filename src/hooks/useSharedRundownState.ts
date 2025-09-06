@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
-import { useBulletproofRundownState } from './useBulletproofRundownState';
+import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -131,9 +131,42 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Enhanced real-time subscription for both content and showcaller updates using bulletproof system
-  const { isConnected: realtimeConnected } = useBulletproofRundownState();
-  // Simple shared view - just check connection status
+  // Enhanced real-time subscription for both content and showcaller updates using consolidated system
+  const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
+    rundownId,
+    onRundownUpdate: useCallback((updatedRundown) => {
+      if (!mountedRef.current) return;
+      
+      logger.debug('Shared view received real-time update', updatedRundown);
+      
+      const newDocVersion = updatedRundown?.doc_version || 0;
+      const currentDocVersion = lastDocVersion.current;
+      
+      // Only process if this is a newer version
+      if (newDocVersion > currentDocVersion) {
+        logger.debug('Processing newer content update:', { 
+          newVersion: newDocVersion, 
+          currentVersion: currentDocVersion 
+        });
+        
+        // Update watchdog tracking immediately
+        if (watchdogRef.current) {
+          watchdogRef.current.updateLastSeen(newDocVersion, updatedRundown?.updated_at);
+        }
+        
+        loadRundownData(true);
+      } else if (updatedRundown?.showcaller_state) {
+        // Check for showcaller-only changes even on same doc version
+        const newShowcallerState = JSON.stringify(updatedRundown.showcaller_state);
+        if (newShowcallerState !== lastShowcallerTimestamp.current) {
+          logger.debug('Showcaller-only change detected');
+          loadRundownData(true);
+        }
+      }
+    }, [loadRundownData]),
+    enabled: !!rundownId,
+    isSharedView: true
+  });
 
   // Start watchdog for shared views
   useEffect(() => {

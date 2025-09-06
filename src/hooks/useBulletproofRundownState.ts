@@ -162,29 +162,15 @@ export const useBulletproofRundownState = () => {
     initializeRundown();
   }, [initializeRundown]);
 
-  // Auto-save with offline queueing and better debouncing
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+  // Auto-save with offline queueing
   const autoSave = useCallback(async () => {
     if (!isInitialized || state.hasUnsavedChanges === false) return;
 
-    console.log('🔄 Auto-saving rundown data...');
     const success = await saveToServer();
     if (success) {
       actions.markSaved();
-      console.log('✅ Auto-save completed successfully');
-    } else {
-      console.log('❌ Auto-save failed - will retry with offline queue');
     }
   }, [isInitialized, state.hasUnsavedChanges, saveToServer, actions]);
-  
-  // Debounced auto-save trigger
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    autoSaveTimeoutRef.current = setTimeout(autoSave, 1500);
-  }, [autoSave]);
 
   // Enhanced field change tracking with offline support
   const handleFieldChange = useCallback((fieldKey: string, value: any) => {
@@ -220,37 +206,6 @@ export const useBulletproofRundownState = () => {
     // Trigger auto-save
     setTimeout(autoSave, 1500);
   }, [trackOfflineChange, state.items, actions, autoSave]);
-
-  // Enhanced updateItem function that matches interface expectations
-  const updateItem = useCallback((id: string, field: string, value: any) => {
-    const itemIndex = state.items.findIndex(item => item.id === id);
-    if (itemIndex !== -1) {
-      const updatedItems = [...state.items];
-      if (field.includes('.')) {
-        const [parentField, subField] = field.split('.');
-        if (!updatedItems[itemIndex][parentField]) {
-          updatedItems[itemIndex][parentField] = {};
-        }
-        updatedItems[itemIndex][parentField][subField] = value;
-      } else {
-        (updatedItems[itemIndex] as any)[field] = value;
-      }
-      actions.setItems(updatedItems);
-      
-      // Track for offline sync
-      trackOfflineChange(`${id}-${field}`, value);
-      
-      // Auto-save (changes are automatically marked by the reducer)
-      triggerAutoSave();
-    }
-  }, [state.items, actions, trackOfflineChange, triggerAutoSave]);
-
-  // Enhanced markAsChanged function for external use
-  const markAsChanged = useCallback(() => {
-    // Force mark as changed by updating lastChanged timestamp
-    actions.setItems([...state.items]); // This will trigger markChanged in reducer
-    triggerAutoSave();
-  }, [actions, triggerAutoSave]);
 
   // Handle row selection
   const handleRowSelection = useCallback((rowId: string | null) => {
@@ -311,14 +266,12 @@ export const useBulletproofRundownState = () => {
     hasOfflineChanges,
     hasUnresolvedConflicts,
     
-    // Enhanced actions
+    // Actions
     ...actions,
     setColumns,
     handleFieldChange,
-    updateItem, // Use the enhanced updateItem
     handleRowSelection,
     forceFocusCheck,
-    markAsChanged, // Export the enhanced markAsChanged
     
     // Helpers
     ...helpers,
@@ -331,7 +284,6 @@ export const useBulletproofRundownState = () => {
     
     // Manual sync control
     syncNow: () => syncWithServer(true),
-    saveNow: autoSave,
-    triggerAutoSave // Export for external triggering
+    saveNow: autoSave
   };
 };
