@@ -72,6 +72,15 @@ export const useFieldDeltaSave = (
     // Check item changes
     const currentItems = currentState.items || [];
     const previousItems = previousState.items || [];
+
+    // Detect pure order changes (IDs same, order different) and force full update
+    const currentOrder = currentItems.map(it => it.id);
+    const previousOrder = previousItems.map(it => it.id);
+    const sameSet = currentOrder.length === previousOrder.length && currentOrder.every(id => previousOrder.includes(id));
+    const orderChanged = sameSet && JSON.stringify(currentOrder) !== JSON.stringify(previousOrder);
+    if (orderChanged) {
+      return [{ field: 'fullState', value: currentState, timestamp: Date.now() }];
+    }
     
     // Track by item ID for efficient comparison
     const previousItemsMap = new Map(previousItems.map(item => [item.id, item]));

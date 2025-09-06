@@ -339,7 +339,9 @@ export const useSimpleAutoSave = (
     
     // Build save payload from latest snapshot for consistency
     const latestSnapshot = keystrokeJournal.getLatestSnapshot();
-    const saveState = latestSnapshot || state;
+    // IMPORTANT: For structural changes (like row reorders), snapshots may not capture order
+    // Always use live state when a structural change is pending
+    const saveState = (pendingStructuralChangeRef?.current ? state : (latestSnapshot || state));
     
     // Create signature from the snapshot we'll actually save
     const finalSignature = createContentSignatureFromState(saveState);
