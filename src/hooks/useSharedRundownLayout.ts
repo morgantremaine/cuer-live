@@ -133,8 +133,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         .upsert({
           rundown_id: rundownId,
           layout_id: layoutId,
-          shared_by: user.id,
-          updated_at: new Date().toISOString()
+          shared_by: user.id
         }, {
           onConflict: 'rundown_id'
         });

@@ -177,8 +177,7 @@ export const useColumnLayoutStorage = () => {
       .from('column_layouts')
       .update({
         name,
-        columns,
-        updated_at: new Date().toISOString(),
+        columns
       })
       .eq('id', id)
       .eq('user_id', user.id)
@@ -208,8 +207,7 @@ export const useColumnLayoutStorage = () => {
     const { data, error } = await supabase
       .from('column_layouts')
       .update({
-        name: newName,
-        updated_at: new Date().toISOString(),
+        name: newName
       })
       .eq('id', id)
       .eq('user_id', user.id)

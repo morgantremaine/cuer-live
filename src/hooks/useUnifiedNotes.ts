@@ -249,8 +249,7 @@ export const useUnifiedNotes = (rundownId: string) => {
             const { error: updateError } = await supabase
               .from('blueprints')
               .update({
-                notes: notesJson,
-                updated_at: new Date().toISOString()
+                notes: notesJson
               })
               .eq('rundown_id', rundownId);
 
