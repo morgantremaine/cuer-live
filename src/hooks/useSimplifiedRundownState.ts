@@ -44,7 +44,13 @@ export const useSimplifiedRundownState = () => {
   const activeFocusFieldRef = useRef<string | null>(null);
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
-  const realtimeUpdateRef = useRef<boolean>(false); // Flag to prevent AutoSave during realtime updates
+  // Get reference to AutoSave's cellUpdateInProgressRef to coordinate cross-saving prevention
+  const getCellUpdateRef = () => {
+    if (typeof window !== 'undefined') {
+      return (window as any).__cellUpdateInProgressRef;
+    }
+    return null;
+  };
   
   // Shorter protection windows to reduce overwrites
   const PROTECTION_WINDOW_MS = 800; // Very short protection
@@ -192,8 +198,7 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     remoteSaveCooldownRef,
-    isInitialized,
-    realtimeUpdateRef // Pass the flag to prevent AutoSave during realtime updates
+    isInitialized
   );
 
   // Standalone undo system - unchanged
@@ -445,8 +450,11 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update:', update);
       
-      // CRITICAL: Set realtime update flag to prevent AutoSave trigger
-      realtimeUpdateRef.current = true;
+      // CRITICAL: Set cell update flag to prevent AutoSave trigger for cell edits only
+      const cellUpdateRef = getCellUpdateRef();
+      if (cellUpdateRef) {
+        cellUpdateRef.current = true;
+      }
       
       // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
@@ -482,9 +490,12 @@ export const useSimplifiedRundownState = () => {
             console.warn('🚨 Unknown rundown-level field:', update.field);
         }
         
-        // Clear realtime update flag after applying rundown-level changes
+        // Clear cell update flag after applying rundown-level changes
         setTimeout(() => {
-          realtimeUpdateRef.current = false;
+          const cellUpdateRef = getCellUpdateRef();
+          if (cellUpdateRef) {
+            cellUpdateRef.current = false;
+          }
         }, 50);
         return;
       }
@@ -525,9 +536,12 @@ export const useSimplifiedRundownState = () => {
         actions.setItems(updatedItems);
       }
       
-      // Clear realtime update flag after a brief delay to prevent AutoSave
+      // Clear cell update flag after a brief delay to prevent AutoSave
       setTimeout(() => {
-        realtimeUpdateRef.current = false;
+        const cellUpdateRef = getCellUpdateRef();
+        if (cellUpdateRef) {
+          cellUpdateRef.current = false;
+        }
       }, 50);
     });
 

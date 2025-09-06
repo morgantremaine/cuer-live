@@ -17,8 +17,7 @@ export const useSimpleAutoSave = (
   onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
-  isInitiallyLoaded?: boolean,
-  skipSaveRef?: React.MutableRefObject<boolean> // New param to skip saves during realtime updates
+  isInitiallyLoaded?: boolean
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +30,7 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
+  const cellUpdateInProgressRef = useRef<boolean>(false);
   
   // Simplified autosave system - reduce complexity
   const lastEditAtRef = useRef<number>(0);
@@ -265,9 +265,9 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // CRITICAL: Skip save during realtime updates to prevent cross-saving
-    if (skipSaveRef?.current) {
-      console.log('🛑 AutoSave: blocked - realtime update in progress');
+    // CRITICAL: Skip save during cell broadcasts to prevent cross-saving (but allow showcaller saves)
+    if (cellUpdateInProgressRef.current) {
+      console.log('🛑 AutoSave: blocked - cell broadcast update in progress');
       return;
     }
 
@@ -751,6 +751,14 @@ export const useSimpleAutoSave = (
         }
       }
     };
+  }, []);
+
+  // Expose cellUpdateInProgressRef to the parent component
+  useEffect(() => {
+    // Store reference in global scope for access by useSimplifiedRundownState
+    if (typeof window !== 'undefined') {
+      (window as any).__cellUpdateInProgressRef = cellUpdateInProgressRef;
+    }
   }, []);
 
   return {
