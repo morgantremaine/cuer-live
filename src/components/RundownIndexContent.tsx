@@ -263,7 +263,7 @@ const RundownIndexContent = () => {
         onColorSelect={selectColor}
         onDeleteRow={deleteItem}
         onToggleFloat={() => {}}
-        onRowSelect={handleRowSelection}
+        onRowSelect={(itemId, index, isShiftClick, isCtrlClick, headerGroupItemIds) => handleRowSelection(itemId)}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -276,16 +276,37 @@ const RundownIndexContent = () => {
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
         onClearSelection={clearSelection}
-        onJumpToHere={() => {}}
-        rundownId={rundownId || ''}
+        selectedRowId={selectedRowId}
+        isPlaying={false}
+        timeRemaining={0}
+        onPlay={() => {}}
+        onPause={() => {}}
+        onForward={() => {}}
+        onBackward={() => {}}
+        onReset={() => {}}
+        handleAddColumn={handleAddColumnWrapper}
+        handleReorderColumns={() => {}}
+        handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
+        handleRenameColumn={() => {}}
+        handleToggleColumnVisibility={() => {}}
+        handleLoadLayout={() => {}}
         hasUnsavedChanges={bulletproofState.hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={setTitle}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={setStartTime}
+        showDate={showDate}
+        onShowDateChange={setShowDate}
+        rundownId={rundownId || ''}
+        onOpenTeleprompter={() => {}}
         onUndo={() => {}}
         canUndo={false}
         lastAction={null}
         isConnected={isConnected}
         autoScrollEnabled={true}
         onToggleAutoScroll={() => {}}
-        onToggleHeaderCollapse={() => {}}
+        toggleHeaderCollapse={() => {}}
         isHeaderCollapsed={() => false}
         getHeaderGroupItemIds={() => []}
         visibleItems={items}
