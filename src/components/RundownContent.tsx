@@ -244,6 +244,15 @@ const RundownContent = React.memo<RundownContentProps>(({
     return `${constrained}px`;
   }, [getColumnWidth, getMinimumColumnWidth]);
 
+  const scalePx = React.useCallback((px: string) => {
+    const n = parseInt(String(px).replace('px', '')) || 0;
+    return `${n * zoomLevel}px`;
+  }, [zoomLevel]);
+
+  const normalizedGetColumnWidthScaled = React.useCallback((column: Column) => {
+    return scalePx(normalizedGetColumnWidth(column));
+  }, [normalizedGetColumnWidth, scalePx]);
+
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
     let total = 66; // Row number column width (widened slightly for alignment)
@@ -274,27 +283,25 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div 
           className="sticky top-0 z-20 bg-background"
           style={{ 
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
-            minWidth: `${totalTableWidth}px`
+            width: '100%',
+            minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`
           }}
         >
           <table 
             className="border-collapse table-container" 
             style={{ 
               tableLayout: 'fixed', 
-              width: `${totalTableWidth}px`,
-              minWidth: `${totalTableWidth}px`,
+              width: `${totalTableWidth * zoomLevel}px`,
+              minWidth: `${totalTableWidth * zoomLevel}px`,
               margin: 0,
               padding: 0
             }}
             data-rundown-table="header"
           >
             <colgroup>
-              <col style={{ width: '66px' }} />
+              <col style={{ width: scalePx('66px') }} />
               {visibleColumns.map((col) => (
-                <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
+                <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidthScaled(col) }} />
               ))}
             </colgroup>
             <RundownTableHeader 
