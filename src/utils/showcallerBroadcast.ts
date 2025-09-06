@@ -8,6 +8,7 @@ export interface ShowcallerBroadcastState {
   isPlaying?: boolean;
   currentSegmentId?: string;
   timeRemaining?: number;
+  playbackStartTime?: number; // Add precise playback start time
   isController?: boolean;
   action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump' | 'timing';
   jumpToSegmentId?: string;

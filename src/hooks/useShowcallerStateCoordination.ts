@@ -53,7 +53,8 @@ export const useShowcallerStateCoordination = ({
     timeRemaining,
     isController,
     trackOwnUpdate,
-    isInitialized
+    isInitialized,
+    getPreciseTime // Add getPreciseTime from visual state
   } = useShowcallerVisualState({
     items,
     rundownId,
@@ -134,33 +135,24 @@ export const useShowcallerStateCoordination = ({
     onBroadcastReceived: (state: ShowcallerBroadcastState) => {
       console.log('📺 Received showcaller broadcast in coordination:', state);
 
-      // Handle timing updates differently - lightweight synchronization for smooth countdown
+      // Handle timing updates with precise synchronization for smooth countdown
       if (state.action === 'timing') {
-        console.log('📺 Received timing broadcast:', state.timeRemaining, 'for segment:', state.currentSegmentId);
+        console.log('📺 Received precise timing broadcast:', state.timeRemaining, 'playbackStart:', state.playbackStartTime);
         // Only sync timing if we're not the controller and currently playing the same segment
-        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId && state.timeRemaining !== undefined) {
-          console.log('📺 Synchronizing timing from controller:', state.timeRemaining);
+        if (!isController && isPlaying && currentSegmentId === state.currentSegmentId && 
+            state.timeRemaining !== undefined && state.playbackStartTime !== undefined) {
+          console.log('📺 Synchronizing with controller precise timing base');
           
-          // Instead of setting timeRemaining directly, sync the playback start time
-          // This allows local countdown to continue smoothly while staying synchronized
-          const currentSegment = items.find(item => item.id === currentSegmentId);
-          if (currentSegment) {
-            const segmentDurationMs = parseDurationToSeconds(currentSegment.duration) * 1000;
-            const elapsedMs = segmentDurationMs - (state.timeRemaining * 1000);
-            const targetStartTime = Date.now() - elapsedMs;
-            const currentStartTime = (visualState.playbackStartTime as number) || (Date.now() - (timeRemaining * 1000));
-            const smoothedStartTime = Math.round(currentStartTime + (targetStartTime - currentStartTime) * 0.3);
-            
-            applyExternalVisualState({
-              isPlaying: !!state.isPlaying,
-              currentSegmentId: state.currentSegmentId || null,
-              playbackStartTime: smoothedStartTime,
-              isController: false,
-              controllerId: state.userId,
-              lastUpdate: new Date(state.timestamp).toISOString(),
-              currentItemStatuses: visualState.currentItemStatuses
-            }, true); // Pass true for timing sync
-          }
+          // Apply the exact same playback start time from controller for perfect sync
+          applyExternalVisualState({
+            isPlaying: !!state.isPlaying,
+            currentSegmentId: state.currentSegmentId || null,
+            playbackStartTime: state.playbackStartTime, // Use controller's exact timing base
+            isController: false,
+            controllerId: state.userId,
+            lastUpdate: new Date(state.timestamp).toISOString(),
+            currentItemStatuses: visualState.currentItemStatuses
+          }, true); // Pass true for timing sync
         }
         return;
       }
@@ -264,12 +256,13 @@ export const useShowcallerStateCoordination = ({
 
     play(selectedSegmentId);
 
-    // Broadcast with computed target
+    // Broadcast with computed target and precise timing
     const broadcastPayload = {
       action: 'play' as const,
       isPlaying: true,
       currentSegmentId: targetId || null,
       timeRemaining: targetRemaining,
+      playbackStartTime: getPreciseTime(), // Include precise timing base
       isController
     };
     console.log('📺 About to broadcast play state:', broadcastPayload);
@@ -295,12 +288,13 @@ export const useShowcallerStateCoordination = ({
     
     pause();
     
-    // Broadcast first for instant sync
+    // Broadcast first for instant sync with precise timing
     broadcastState({
       action: 'pause',
       isPlaying: false,
       currentSegmentId,
       timeRemaining,
+      playbackStartTime: null, // No playback when paused
       isController
     });
     
@@ -328,12 +322,13 @@ export const useShowcallerStateCoordination = ({
 
     forward();
 
-    // Broadcast with computed next
+    // Broadcast with computed next and precise timing
     const broadcastPayload = {
       action: 'forward' as const,
       isPlaying,
       currentSegmentId: nextId,
       timeRemaining: nextRemaining,
+      playbackStartTime: isPlaying ? getPreciseTime() : null, // Include timing base if playing
       isController
     };
     console.log('📺 About to broadcast forward state:', broadcastPayload);
@@ -364,12 +359,13 @@ export const useShowcallerStateCoordination = ({
 
     backward();
     
-    // Broadcast with computed previous
+    // Broadcast with computed previous and precise timing
     broadcastState({
       action: 'backward',
       isPlaying,
       currentSegmentId: prevId,
       timeRemaining: prevRemaining,
+      playbackStartTime: isPlaying ? getPreciseTime() : null, // Include timing base if playing
       isController
     });
     
@@ -403,6 +399,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying: false,
       currentSegmentId: resetId,
       timeRemaining: resetRemaining,
+      playbackStartTime: null, // No playback when reset
       isController
     });
     
@@ -425,7 +422,7 @@ export const useShowcallerStateCoordination = ({
     
     jumpToSegment(segmentId);
     
-    // Broadcast first for instant sync
+    // Broadcast first for instant sync with precise timing
     const seg = items.find(item => item.id === segmentId) || null;
     const segRemaining = seg ? parseDurationToSeconds(seg.duration) : 0;
     broadcastState({
@@ -434,6 +431,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying,
       currentSegmentId: segmentId,
       timeRemaining: segRemaining,
+      playbackStartTime: isPlaying ? getPreciseTime() : null, // Include timing base if playing
       isController
     });
     
@@ -468,11 +466,11 @@ export const useShowcallerStateCoordination = ({
   }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected]);
 
   // Enhanced timing broadcast for live synchronization using setInterval with ref pattern
-  const timingStateRef = useRef({ timeRemaining, currentSegmentId, isPlaying });
+  const timingStateRef = useRef({ timeRemaining, currentSegmentId, isPlaying, playbackStartTime: visualState.playbackStartTime });
   const timingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Update ref with current values
-  timingStateRef.current = { timeRemaining, currentSegmentId, isPlaying };
+  // Update ref with current values including playbackStartTime
+  timingStateRef.current = { timeRemaining, currentSegmentId, isPlaying, playbackStartTime: visualState.playbackStartTime };
 
   useEffect(() => {
     // Clear any existing interval
@@ -489,9 +487,9 @@ export const useShowcallerStateCoordination = ({
       const state = timingStateRef.current;
       if (state.isPlaying && state.currentSegmentId) {
         console.log('📺 Broadcasting timing sync:', state.timeRemaining, 'for segment:', state.currentSegmentId);
-        broadcastTimingUpdate(state.timeRemaining, state.currentSegmentId, state.isPlaying);
+        broadcastTimingUpdate(state.timeRemaining, state.currentSegmentId, state.isPlaying, state.playbackStartTime);
       }
-    }, 3000);
+    }, 2000);
 
     return () => {
       console.log('📺 Clearing timing broadcast interval');
@@ -500,7 +498,7 @@ export const useShowcallerStateCoordination = ({
         timingIntervalRef.current = null;
       }
     };
-  }, [isController, isPlaying, currentSegmentId, broadcastTimingUpdate]); // Only essential deps
+  }, [isController, isPlaying, currentSegmentId, broadcastTimingUpdate, visualState.playbackStartTime]); // Include playback start time in deps
 
   // Auto-broadcast on controller auto-advance (when segment changes without a manual action)
   useEffect(() => {

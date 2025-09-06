@@ -833,6 +833,7 @@ export const useShowcallerVisualState = ({
     timeRemaining: visualState.timeRemaining,
     isController: visualState.controllerId === userId,
     trackOwnUpdate,
-    isInitialized
+    isInitialized,
+    getPreciseTime // Export getPreciseTime for coordination layer
   };
 };

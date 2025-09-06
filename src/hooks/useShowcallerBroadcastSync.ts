@@ -34,7 +34,7 @@ export const useShowcallerBroadcastSync = ({
     callbackRef.current(state);
   }, []);
 
-  // Broadcast showcaller state
+  // Broadcast showcaller state with precise timing
   const broadcastState = useCallback((state: Omit<ShowcallerBroadcastState, 'rundownId' | 'userId' | 'timestamp'>) => {
     if (!rundownId || !user?.id || !enabled) return;
 
@@ -49,9 +49,9 @@ export const useShowcallerBroadcastSync = ({
     showcallerBroadcast.broadcastState(fullState);
   }, [rundownId, user?.id, enabled]);
 
-  // Periodic timing broadcast for live countdown sync
-  const broadcastTimingUpdate = useCallback((timeRemaining: number, currentSegmentId: string | null, isPlaying: boolean) => {
-    if (!rundownId || !user?.id || !enabled || !isPlaying || !currentSegmentId) return;
+  // Enhanced timing broadcast with precise playback start time
+  const broadcastTimingUpdate = useCallback((timeRemaining: number, currentSegmentId: string | null, isPlaying: boolean, playbackStartTime: number | null) => {
+    if (!rundownId || !user?.id || !enabled || !isPlaying || !currentSegmentId || !playbackStartTime) return;
 
     const timingState: ShowcallerBroadcastState = {
       action: 'timing',
@@ -61,6 +61,7 @@ export const useShowcallerBroadcastSync = ({
       isPlaying,
       currentSegmentId,
       timeRemaining,
+      playbackStartTime, // Include precise timing base
       isController: true
     };
 
