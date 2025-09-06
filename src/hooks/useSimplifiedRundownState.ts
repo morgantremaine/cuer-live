@@ -36,13 +36,13 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced typing session tracking with global focus integration
+  // Simplified typing protection
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
-  const PROTECTION_WINDOW_MS = 30000; // 30 second protection window (extended for better safety)
-  const TYPING_PROTECTION_WINDOW_MS = 12000; // 12 second typing protection window
+  const PROTECTION_WINDOW_MS = 8000; // Shorter protection window
+  const TYPING_PROTECTION_WINDOW_MS = 5000; // Shorter typing protection
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
@@ -99,15 +99,14 @@ export const useSimplifiedRundownState = () => {
     };
   }, []);
 
-  // Enhanced dropdown/select field protection
+  // Simplified dropdown protection
   const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
-  const DROPDOWN_PROTECTION_WINDOW_MS = 15000; // 15 seconds for dropdown changes
+  const DROPDOWN_PROTECTION_WINDOW_MS = 3000; // Shorter dropdown protection
 
   const markDropdownFieldChanged = useCallback((fieldKey: string) => {
     const now = Date.now();
     dropdownFieldProtectionRef.current.set(fieldKey, now);
     recentlyEditedFieldsRef.current.set(fieldKey, now);
-    console.log(`🎛️ Dropdown field marked as protected: ${fieldKey}`);
   }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
@@ -207,60 +206,24 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Create protected fields set for granular updates with enhanced detection
+  // Simplified protected fields - just basic typing protection
   const getProtectedFields = useCallback(() => {
     const protectedFields = new Set<string>();
     const now = Date.now();
     
     // Add currently typing field if any
-    if (typingSessionRef.current) {
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_PROTECTION_WINDOW_MS) {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
-    // Add active focus field (from DOM focus events)
-    if (activeFocusFieldRef.current) {
-      protectedFields.add(activeFocusFieldRef.current);
-    }
-    
-    // Add ALL recently edited fields within extended protection window
+    // Add recently edited fields within protection window
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      const isActiveTyping = typingSessionRef.current?.fieldKey === fieldKey;
-      const protectionWindow = isActiveTyping ? TYPING_PROTECTION_WINDOW_MS : PROTECTION_WINDOW_MS;
-      
-      if (now - timestamp < protectionWindow) {
+      if (now - timestamp < PROTECTION_WINDOW_MS) {
         protectedFields.add(fieldKey);
       } else {
-        // Clean up expired fields
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
-
-    // Add dropdown fields that are recently changed with extended protection
-    dropdownFieldProtectionRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < DROPDOWN_PROTECTION_WINDOW_MS) {
-        protectedFields.add(fieldKey);
-      } else {
-        // Clean up expired dropdown protections
-        dropdownFieldProtectionRef.current.delete(fieldKey);
-      }
-    });
-    
-    // Add global title/timing/notes fields if they're being edited
-    if (typingSessionRef.current?.fieldKey === 'title' || activeFocusFieldRef.current === 'title') {
-      protectedFields.add('title');
-    }
-    if (typingSessionRef.current?.fieldKey === 'startTime' || activeFocusFieldRef.current === 'startTime') {
-      protectedFields.add('startTime');
-    }
-    if (typingSessionRef.current?.fieldKey === 'timezone' || activeFocusFieldRef.current === 'timezone') {
-      protectedFields.add('timezone');
-    }
-    if (typingSessionRef.current?.fieldKey === 'showDate' || activeFocusFieldRef.current === 'showDate') {
-      protectedFields.add('showDate');
-    }
-    if (typingSessionRef.current?.fieldKey === 'externalNotes' || activeFocusFieldRef.current === 'externalNotes') {
-      protectedFields.add('externalNotes');
-    }
     
     return protectedFields;
   }, []);
@@ -1169,7 +1132,7 @@ export const useSimplifiedRundownState = () => {
     
     // Realtime connection status
     isConnected,
-    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate || teleprompterSync.isTeleprompterSaving,
+    isProcessingRealtimeUpdate: realtimeConnection.isProcessingUpdate, // Clean realtime processing only
     
     // Calculations
     totalRuntime,
@@ -1191,77 +1154,29 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      console.log('🕐 setStartTime called with enhanced protection:', newStartTime);
-      
-      // Mark start time as a dropdown field change for enhanced protection
-      markDropdownFieldChanged('startTime');
-      
-      // Track start time editing for protection with longer window
+      // Simple protection for start time changes
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('startTime', now);
-      dropdownFieldProtectionRef.current.set('startTime', now);
-      typingSessionRef.current = { fieldKey: 'startTime', startTime: now };
-      
-      // Set cooldown to prevent immediate overwrites
-      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
+      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       actions.setStartTime(newStartTime);
-      
-      // Clear typing session after extended delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'startTime') {
-          typingSessionRef.current = null;
-        }
-      }, 8000); // Even longer timeout for start time editing
-    }, [actions.setStartTime, markDropdownFieldChanged]),
+    }, [actions.setStartTime]),
     setTimezone: useCallback((newTimezone: string) => {
-      console.log('🌍 setTimezone called with enhanced protection:', newTimezone);
-      
-      // Mark timezone as a dropdown field change for enhanced protection
-      markDropdownFieldChanged('timezone');
-      
-      // Track timezone editing for protection with longer window
+      // Simple protection for timezone changes
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('timezone', now);
-      dropdownFieldProtectionRef.current.set('timezone', now);
-      typingSessionRef.current = { fieldKey: 'timezone', startTime: now };
-      
-      // Set cooldown to prevent immediate overwrites
-      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
+      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       actions.setTimezone(newTimezone);
-      
-      // Clear typing session after extended delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'timezone') {
-          typingSessionRef.current = null;
-        }
-      }, 8000); // Even longer timeout for timezone editing
-    }, [actions.setTimezone, markDropdownFieldChanged]),
+    }, [actions.setTimezone]),
     setShowDate: useCallback((newShowDate: Date | null) => {
-      console.log('📅 setShowDate called with enhanced protection:', newShowDate);
-      
-      // Mark show date as a dropdown field change for enhanced protection
-      markDropdownFieldChanged('showDate');
-      
-      // Track show date editing for protection with longer window
+      // Simple protection for show date changes
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('showDate', now);
-      dropdownFieldProtectionRef.current.set('showDate', now);
-      typingSessionRef.current = { fieldKey: 'showDate', startTime: now };
-      
-      // Set cooldown to prevent immediate overwrites
-      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
+      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       actions.setShowDate(newShowDate);
-      
-      // Clear typing session after extended delay
-      setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === 'showDate') {
-          typingSessionRef.current = null;
-        }
-      }, 8000); // Even longer timeout for show date editing
-    }, [actions.setShowDate, markDropdownFieldChanged]),
+    }, [actions.setShowDate]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

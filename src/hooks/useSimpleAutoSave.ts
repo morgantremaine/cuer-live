@@ -30,11 +30,11 @@ export const useSimpleAutoSave = (
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
   
-  // Enhanced idle-based autosave system with keystroke journal integration
+  // Simplified autosave system - reduce complexity
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 2000; // Back to a safe 2s - the original working timeout
-  const maxSaveDelay = 8000; // Increased max delay to 8s
-  const microResaveMs = 350; // Micro-resave delay increased to 350ms
+  const typingIdleMs = 1500; // Shorter, more responsive timing
+  const maxSaveDelay = 5000; // Reduced max delay for faster saves
+  const microResaveMs = 200; // Faster micro-resave
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
   const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -687,33 +687,22 @@ export const useSimpleAutoSave = (
         }, 0);
       }
       
-      // Optimized re-queuing for multi-user scenarios
+      // Simplified retry logic - reduce complexity
       const currentSignature = createContentSignature();
       if (currentSignature !== currentSaveSignatureRef.current && currentSignature !== lastSavedRef.current) {
         const retryCount = (saveQueueRef.current?.retryCount || 0) + 1;
-        saveQueueRef.current = { 
-          signature: currentSignature, 
-          retryCount 
-        };
         
-        // More aggressive retries for multi-user scenarios
-        if (retryCount < 8) {
-          const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
-          const retryDelay = isMultiUserActive ? 200 : Math.min(typingIdleMs, 400);
-          console.log('🔄 AutoSave: queuing retry save in', retryDelay, 'ms (attempt', retryCount, ')');
+        // Simple retry with conservative backoff
+        if (retryCount < 3) {
+          console.log('🔄 AutoSave: queuing retry save in 400 ms (attempt', retryCount, ')');
           setTimeout(() => {
-            if (saveQueueRef.current && !isSaving) {
-              saveQueueRef.current = null;
+            if (!isSaving) {
               performSave();
             }
-          }, retryDelay);
+          }, 400);
         } else {
-          console.log('⚠️ AutoSave: max retries reached, clearing queue');
-          saveQueueRef.current = null;
+          console.log('ℹ️ AutoSave: no content changes detected');
         }
-      } else {
-        // Clear queue if no more changes
-        saveQueueRef.current = null;
       }
     }
   }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
@@ -757,9 +746,9 @@ export const useSimpleAutoSave = (
     });
 
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    // Optimized debouncing for responsive saves
-    const debounceTime = isStructuralChange ? 100 : typingIdleMs; // Use 800ms as requested
-    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, typingIdleMs });
+    // Simplified debouncing
+    const debounceTime = isStructuralChange ? 50 : 1000; // Faster, simpler timing
+    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive: false });
 
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('⏱️ AutoSave: executing save now');

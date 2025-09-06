@@ -198,9 +198,8 @@ export const useRundownStateCoordination = () => {
     persistedState.markStructuralChange
   );
 
-  // NEW: Keep processing states separate - NO combination
-  const contentProcessingState = persistedState.isProcessingRealtimeUpdate; // Content updates only
-  const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
+  // Simplified processing state - no teleprompter interference
+  const isProcessingRealtimeUpdate = persistedState.isProcessingRealtimeUpdate;
 
   return {
     coreState: {
@@ -220,7 +219,7 @@ export const useRundownStateCoordination = () => {
       hasUnsavedChanges: persistedState.hasUnsavedChanges,
       isSaving: persistedState.isSaving,
       isConnected: persistedState.isConnected || showcallerCoordination.isConnected,
-      isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
+      isProcessingRealtimeUpdate, // Clean, simple content processing indicator
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerCoordination.currentSegmentId,
