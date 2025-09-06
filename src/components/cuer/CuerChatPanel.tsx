@@ -4,16 +4,17 @@ import { GripVertical } from 'lucide-react';
 import CuerChatPanelContainer from './CuerChatPanel/CuerChatPanelContainer';
 import ApiKeySetupSection from './CuerChatPanel/ApiKeySetupSection';
 import { useCuerChatPanelLogic } from './CuerChatPanel/useCuerChatPanelLogic';
-import { useCuerModifications } from '@/hooks/useCuerModifications';
+import { useCuerModifications, CuerModDeps } from '@/hooks/useCuerModifications';
 import { useDraggable } from '@/hooks/useDraggable';
 
 interface CuerChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
   rundownData?: any;
+  modDeps: CuerModDeps;
 }
 
-const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => {
+const CuerChatPanel = ({ isOpen, onClose, rundownData, modDeps }: CuerChatPanelProps) => {
   const {
     inputValue,
     setInputValue,
@@ -30,7 +31,7 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData }: CuerChatPanelProps) => 
     clearChat
   } = useCuerChatPanelLogic(isOpen, rundownData);
   
-  const { applyModifications } = useCuerModifications();
+  const { applyModifications } = useCuerModifications(modDeps);
   
   const { position, isDragging, dragRef, startDrag } = useDraggable({
     initialPosition: { x: window.innerWidth - 400, y: window.innerHeight - 620 },

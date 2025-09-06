@@ -1,25 +1,20 @@
 
-import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useModificationApplier } from './useCuerModifications/useModificationApplier';
 
-export const useCuerModifications = () => {
-  // FIXED: Use clean state coordination instead of direct state to prevent hook duplication
-  // This ensures we don't create multiple instances of useSimplifiedRundownState
-  const { coreState } = useRundownStateCoordination();
+export interface CuerModDeps {
+  items: any[];
+  updateItem: (id: string, field: string, value: string) => void;
+  addRow: () => void;
+  addHeader: () => void;
+  addRowAtIndex: (index: number) => void;
+  addHeaderAtIndex: (index: number) => void;
+  deleteRow: (id: string) => void;
+  calculateEndTime: (startTime: string, duration: string) => string;
+  markAsChanged: () => void;
+}
 
-  // Debug logging removed for cleaner console output
-
-  const { applyModifications } = useModificationApplier({
-    items: coreState.items,
-    updateItem: coreState.updateItem,
-    addRow: coreState.addRow,
-    addHeader: coreState.addHeader,
-    addRowAtIndex: coreState.addRowAtIndex,
-    addHeaderAtIndex: coreState.addHeaderAtIndex,
-    deleteRow: coreState.deleteRow,
-    calculateEndTime: coreState.calculateEndTime,
-    markAsChanged: coreState.markAsChanged
-  });
+export const useCuerModifications = (deps: CuerModDeps) => {
+  const { applyModifications } = useModificationApplier(deps);
 
   return {
     applyModifications

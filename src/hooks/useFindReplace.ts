@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { RundownItem } from '@/types/rundown';
 
 export interface FindReplaceOptions {
@@ -10,16 +9,13 @@ export interface FindReplaceOptions {
   wholeWord: boolean;
 }
 
-export const useFindReplace = (onUpdateItem?: (id: string, field: string, value: string) => void, items?: any[]) => {
-  // FIXED: Use coordination pattern to prevent hook duplication
-  const { coreState } = useRundownStateCoordination();
+export const useFindReplace = (onUpdateItem: (id: string, field: string, value: string) => void, items: RundownItem[]) => {
   const [lastSearchResults, setLastSearchResults] = useState<{
     matches: Array<{ itemId: string, field: string, matchCount: number }>;
     totalMatches: number;
   }>({ matches: [], totalMatches: 0 });
 
-  // Use provided items or fall back to coreState items
-  const currentItems = items || coreState.items;
+  const currentItems = items || [] as RundownItem[];
 
   const findMatches = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, fields } = options;
@@ -152,19 +148,14 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
       }
       
       if (replacementCount > 0) {
-        // Use the same update mechanism as manual user edits
-        if (onUpdateItem) {
-          onUpdateItem(targetItem.id, currentMatch.field, newValue);
-        } else {
-          coreState.updateItem(targetItem.id, currentMatch.field, newValue);
-        }
+        onUpdateItem(targetItem.id, currentMatch.field, newValue);
         
         return { replacements: 1 };
       }
     }
     
     return { replacements: 0 };
-  }, [currentItems, onUpdateItem, coreState.updateItem, matchCapitalization, lastSearchResults.matches]);
+  }, [currentItems, onUpdateItem, matchCapitalization, lastSearchResults.matches]);
 
   const replaceAll = useCallback((options: FindReplaceOptions) => {
     const { searchTerm, replaceTerm, fields, caseSensitive } = options;
@@ -213,12 +204,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
               newValue = fieldValue.replace(searchRegex, replaceTerm);
             }
             
-            // Use the same update mechanism as manual user edits
-            if (onUpdateItem) {
-              onUpdateItem(item.id, field, newValue);
-            } else {
-              coreState.updateItem(item.id, field, newValue);
-            }
+            onUpdateItem(item.id, field, newValue);
             
             totalReplacements += beforeMatches.length;
           }
@@ -230,7 +216,7 @@ export const useFindReplace = (onUpdateItem?: (id: string, field: string, value:
     setLastSearchResults({ matches: [], totalMatches: 0 });
     
     return { replacements: totalReplacements };
-  }, [currentItems, onUpdateItem, coreState.updateItem, matchCapitalization]);
+  }, [currentItems, onUpdateItem, matchCapitalization]);
 
   const clearResults = useCallback(() => {
     setLastSearchResults({ matches: [], totalMatches: 0 });

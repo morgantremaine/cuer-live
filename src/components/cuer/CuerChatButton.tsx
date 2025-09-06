@@ -7,9 +7,10 @@ import { useDraggable } from '@/hooks/useDraggable';
 
 interface CuerChatButtonProps {
   rundownData?: any;
+  modDeps: import('@/hooks/useCuerModifications').CuerModDeps;
 }
 
-const CuerChatButton = ({ rundownData }: CuerChatButtonProps) => {
+const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   
   const { position, isDragging, dragRef, startDrag, handleClick } = useDraggable({
@@ -44,6 +45,7 @@ const CuerChatButton = ({ rundownData }: CuerChatButtonProps) => {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         rundownData={rundownData}
+        modDeps={modDeps}
       />
     </>
   );

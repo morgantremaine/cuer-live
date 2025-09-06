@@ -562,7 +562,20 @@ const RundownIndexContent = () => {
         />
       )}
       
-      <CuerChatButton rundownData={rundownData} />
+      <CuerChatButton 
+        rundownData={rundownData}
+        modDeps={{
+          items,
+          updateItem,
+          addRow,
+          addHeader,
+          addRowAtIndex: coreState.addRowAtIndex,
+          addHeaderAtIndex: coreState.addHeaderAtIndex,
+          deleteRow,
+          calculateEndTime: coreState.calculateEndTime,
+          markAsChanged: coreState.markAsChanged
+        }}
+      />
       
       {/* Debug overlay for development */}
       <RealtimeDebugOverlay 
