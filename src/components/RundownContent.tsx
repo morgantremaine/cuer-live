@@ -290,9 +290,7 @@ const RundownContent = React.memo<RundownContentProps>(({
           style={{ 
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
-            height: `${48 * zoomLevel}px`, // Scaled height to prevent clipping
-            overflow: 'visible'
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
           }}
         >
           <div 
