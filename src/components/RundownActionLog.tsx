@@ -309,6 +309,30 @@ export const RundownActionLog: React.FC<RundownActionLogProps> = ({
     loadActionLog();
   }, [rundownId]);
 
+  // Set up real-time updates for new revisions
+  useEffect(() => {
+    const channel = supabase
+      .channel('revision-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'rundown_revisions',
+          filter: `rundown_id=eq.${rundownId}`
+        },
+        () => {
+          // Refresh the action log when a new revision is created
+          loadActionLog();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [rundownId]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
