@@ -565,7 +565,7 @@ export const useShowcallerVisualState = ({
   }, [visualState, items, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
 
   // Enhanced apply external visual state with precision synchronization
-  const applyExternalVisualState = useCallback((externalState: any) => {
+  const applyExternalVisualState = useCallback((externalState: any, isTiming: boolean = false) => {
     // Skip if this is our own update
     if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
       console.log('⏭️ Skipping own showcaller update');
@@ -581,6 +581,18 @@ export const useShowcallerVisualState = ({
     lastProcessedUpdateRef.current = externalState.lastUpdate;
     
     console.log('📺 Applying external visual state from controller:', externalState.controllerId);
+    
+    // For timing updates, don't stop the precision timer - just sync smoothly
+    if (isTiming && visualState.isPlaying) {
+      console.log('📺 Smooth timing sync - adjusting playback start time');
+      setVisualState(prev => ({
+        ...prev,
+        playbackStartTime: externalState.playbackStartTime,
+        controllerId: externalState.controllerId,
+        lastUpdate: externalState.lastUpdate
+      }));
+      return;
+    }
     
     stopPrecisionTimer();
     
@@ -604,7 +616,7 @@ export const useShowcallerVisualState = ({
     if (synchronizedState.isPlaying && synchronizedState.timeRemaining > 0) {
       setTimeout(() => startPrecisionTimer(), 50);
     }
-  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer]);
+  }, [stopPrecisionTimer, synchronizeWithExternalState, startPrecisionTimer, visualState.isPlaying]);
 
   // Initialize current segment - skip floated items, but only after state is loaded
   useEffect(() => {

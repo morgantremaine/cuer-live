@@ -132,21 +132,31 @@ export const useShowcallerStateCoordination = ({
     onBroadcastReceived: (state: ShowcallerBroadcastState) => {
       console.log('📺 Received showcaller broadcast in coordination:', state);
 
-      // Handle timing updates differently - lightweight updates for countdown sync
+      // Handle timing updates differently - lightweight synchronization for smooth countdown
       if (state.action === 'timing') {
         console.log('📺 Received timing broadcast:', state.timeRemaining, 'for segment:', state.currentSegmentId);
-        // Only apply timing if we're not the controller and currently playing the same segment
+        // Only sync timing if we're not the controller and currently playing the same segment
         if (!isController && isPlaying && currentSegmentId === state.currentSegmentId && state.timeRemaining !== undefined) {
-          console.log('📺 Applying timing update from controller:', state.timeRemaining);
-          applyExternalVisualState({
-            isPlaying: !!state.isPlaying,
-            currentSegmentId: state.currentSegmentId || null,
-            timeRemaining: state.timeRemaining,
-            isController: false,
-            controllerId: state.userId,
-            lastUpdate: new Date(state.timestamp).toISOString(),
-            currentItemStatuses: visualState.currentItemStatuses
-          });
+          console.log('📺 Synchronizing timing from controller:', state.timeRemaining);
+          
+          // Instead of setting timeRemaining directly, sync the playback start time
+          // This allows local countdown to continue smoothly while staying synchronized
+          const currentSegment = items.find(item => item.id === currentSegmentId);
+          if (currentSegment) {
+            const segmentDurationMs = parseDurationToSeconds(currentSegment.duration) * 1000;
+            const elapsedMs = segmentDurationMs - (state.timeRemaining * 1000);
+            const adjustedStartTime = Date.now() - elapsedMs;
+            
+            applyExternalVisualState({
+              isPlaying: !!state.isPlaying,
+              currentSegmentId: state.currentSegmentId || null,
+              playbackStartTime: adjustedStartTime,
+              isController: false,
+              controllerId: state.userId,
+              lastUpdate: new Date(state.timestamp).toISOString(),
+              currentItemStatuses: visualState.currentItemStatuses
+            }, true); // Pass true for timing sync
+          }
         }
         return;
       }
@@ -469,10 +479,10 @@ export const useShowcallerStateCoordination = ({
     timingIntervalRef.current = setInterval(() => {
       const state = timingStateRef.current;
       if (state.isPlaying && state.currentSegmentId) {
-        console.log('📺 Broadcasting timing update:', state.timeRemaining, 'for segment:', state.currentSegmentId);
+        console.log('📺 Broadcasting timing sync:', state.timeRemaining, 'for segment:', state.currentSegmentId);
         broadcastTimingUpdate(state.timeRemaining, state.currentSegmentId, state.isPlaying);
       }
-    }, 2000);
+    }, 3000);
 
     return () => {
       console.log('📺 Clearing timing broadcast interval');
