@@ -56,9 +56,9 @@ const HeaderRowContent = ({
         className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
         style={{ 
           backgroundColor,
-          width: '64px',
-          minWidth: '64px', 
-          maxWidth: '64px',
+          width: '66px',
+          minWidth: '66px', 
+          maxWidth: '66px',
           borderRight: '1px solid hsl(var(--border))'
         }}
       >

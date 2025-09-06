@@ -246,7 +246,7 @@ const RundownContent = React.memo<RundownContentProps>(({
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
-    let total = 64; // Row number column width
+    let total = 66; // Row number column width (widened slightly for alignment)
     visibleColumns.forEach(column => {
       const width = normalizedGetColumnWidth(column);
       const widthValue = parseInt(String(width).replace('px', ''));
@@ -292,7 +292,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             data-rundown-table="header"
           >
             <colgroup>
-              <col style={{ width: '64px' }} />
+              <col style={{ width: '66px' }} />
               {visibleColumns.map((col) => (
                 <col key={`hcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
               ))}
@@ -339,7 +339,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             data-rundown-table="main"
           >
             <colgroup>
-              <col style={{ width: '64px' }} />
+              <col style={{ width: '66px' }} />
               {visibleColumns.map((col) => (
                 <col key={`bcol-${col.id}`} style={{ width: normalizedGetColumnWidth(col) }} />
               ))}
