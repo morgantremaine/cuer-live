@@ -6,7 +6,7 @@ import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useRundownBroadcast } from './useRundownBroadcast';
-import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
+import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -197,15 +197,37 @@ export const useSharedRundownState = () => {
     isSharedView: true
   });
 
-  // Use the same showcaller system as the main rundown
-  const showcallerCoordination = useShowcallerStateCoordination({
-    items: rundownData?.items || [],
-    rundownId,
-    userId: 'shared_view_anonymous', // Anonymous user ID for shared views
-    teamId: null,
-    rundownTitle: rundownData?.title || '',
-    rundownStartTime: rundownData?.startTime || '09:00:00'
-  });
+  // Showcaller broadcast subscription for real-time showcaller updates
+  useEffect(() => {
+    if (!rundownId) return;
+
+    logger.debug('Setting up showcaller broadcast subscription for shared view');
+
+    const unsubscribe = showcallerBroadcast.subscribeToShowcallerBroadcasts(
+      rundownId,
+      (state) => {
+        if (!mountedRef.current) return;
+        
+        logger.debug('Shared view received showcaller broadcast:', state);
+        
+        // Update rundown data with new showcaller state
+        setRundownData(prev => prev ? {
+          ...prev,
+          showcallerState: {
+            currentSegmentId: state.currentSegmentId,
+            isPlaying: state.isPlaying,
+            timeRemaining: state.timeRemaining,
+            playbackStartTime: Date.now() - ((state.timeRemaining || 0) * 1000), // Approximate
+            controllerId: state.userId,
+            lastUpdate: new Date(state.timestamp).toISOString()
+          }
+        } : null);
+      },
+      'shared_view_anonymous' // Anonymous user ID for shared views
+    );
+
+    return unsubscribe;
+  }, [rundownId]);
 
   // Initial load only - no polling needed with pure realtime
   useEffect(() => {
@@ -230,14 +252,44 @@ export const useSharedRundownState = () => {
     };
   }, [rundownId]);
 
-  // Find the showcaller segment from showcaller coordination system
-  const currentSegmentId = showcallerCoordination.currentSegmentId ||
+  // Find the showcaller segment from showcaller_state or fallback to item status
+  const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 
     rundownData?.items.find(item => 
       item.type !== 'header' && item.status === 'current'
     )?.id || null;
 
-  // Calculate live time remaining from showcaller coordination system
-  const timeRemaining = showcallerCoordination.timeRemaining;
+  // Calculate live time remaining based on showcaller state
+  const timeRemaining = (() => {
+    const showcallerState = rundownData?.showcallerState;
+    
+    if (!showcallerState?.isPlaying || !showcallerState?.playbackStartTime || !currentSegmentId) {
+      return showcallerState?.timeRemaining || 0;
+    }
+
+    // Find current segment duration
+    const currentSegment = rundownData.items.find(item => item.id === currentSegmentId);
+    if (!currentSegment?.duration) {
+      return showcallerState?.timeRemaining || 0;
+    }
+
+    // Calculate time remaining based on playback start time
+    const timeToSeconds = (timeStr: string) => {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 2) {
+        return Math.floor(parts[0] * 60 + parts[1]);
+      } else if (parts.length === 3) {
+        return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]);
+      }
+      return 0;
+    };
+
+    const segmentDuration = timeToSeconds(currentSegment.duration);
+    const elapsedTime = Math.floor((Date.now() - showcallerState.playbackStartTime) / 1000);
+    const remaining = Math.max(0, segmentDuration - elapsedTime);
+    
+    return remaining;
+  })();
 
   // Merge database state with live broadcast state
   const mergedRundownData = rundownData ? {
@@ -257,9 +309,6 @@ export const useSharedRundownState = () => {
     currentSegmentId,
     loading,
     error,
-    timeRemaining,
-    // Export showcaller coordination state and controls for consistency with main rundown
-    isPlaying: showcallerCoordination.isPlaying,
-    showcallerCoordination
+    timeRemaining
   };
 };

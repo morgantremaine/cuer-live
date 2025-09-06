@@ -30,26 +30,18 @@ const DEFAULT_COLUMNS = [
 
 
 const SharedRundown = () => {
-  const { 
-    rundownData, 
-    currentTime, 
-    currentSegmentId, 
-    loading, 
-    error, 
-    timeRemaining, 
-    isPlaying,
-    showcallerCoordination
-  } = useSharedRundownState();
+  const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [layoutColumns, setLayoutColumns] = useState(null);
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [layoutName, setLayoutName] = useState('Default Layout');
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
-  
+  const [realtimeShowcallerState, setRealtimeShowcallerState] = useState(null);
   const { isDark, toggleTheme } = useTheme();
   
   // Better refs to prevent duplicate loads and ensure cleanup
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
+  const realtimeChannelRef = useRef<any>(null);
   const isMountedRef = useRef(true);
 
   // Get rundownId from the rundownData
@@ -69,7 +61,64 @@ const SharedRundown = () => {
     };
   }, [rundownData?.title]);
 
-  // Use showcaller coordination for all state - much simpler than the old complex system
+  // Use real-time showcaller state if available, otherwise fall back to stored state
+  const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
+  const isPlaying = showcallerState?.isPlaying || false;
+  
+  // Local countdown state for real-time display
+  const [localTimeRemaining, setLocalTimeRemaining] = useState<number>(0);
+  const localTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRealtimeUpdate = useRef<number>(0);
+  
+  // Update local countdown when real-time state changes
+  useEffect(() => {
+    if (realtimeShowcallerState?.timeRemaining !== undefined) {
+      const newTimeRemaining = realtimeShowcallerState.timeRemaining;
+      if (newTimeRemaining !== lastRealtimeUpdate.current) {
+        console.log('🔄 Updating local countdown from real-time:', newTimeRemaining);
+        setLocalTimeRemaining(newTimeRemaining);
+        lastRealtimeUpdate.current = newTimeRemaining;
+      }
+    }
+  }, [realtimeShowcallerState?.timeRemaining]);
+  
+  // Local countdown timer
+  useEffect(() => {
+    if (localTimerRef.current) {
+      clearInterval(localTimerRef.current);
+      localTimerRef.current = null;
+    }
+    
+    if (isPlaying && localTimeRemaining > 0) {
+      localTimerRef.current = setInterval(() => {
+        setLocalTimeRemaining(prev => {
+          const newValue = Math.max(0, prev - 1);
+          if (newValue === 0) {
+            if (localTimerRef.current) {
+              clearInterval(localTimerRef.current);
+              localTimerRef.current = null;
+            }
+          }
+          return newValue;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (localTimerRef.current) {
+        clearInterval(localTimerRef.current);
+        localTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, localTimeRemaining > 0]);
+  
+  // IMPORTANT: Use local countdown when playing, otherwise use stored state
+  const currentTimeRemaining = isPlaying && realtimeShowcallerState ? 
+    localTimeRemaining : 
+    (rundownData?.showcallerState?.timeRemaining || 0);
+  
+  // Use current segment from real-time state when available
+  const realtimeCurrentSegmentId = realtimeShowcallerState?.currentSegmentId || currentSegmentId;
 
   // Use the unified timing calculation from useShowcallerTiming hook (same as main showcaller)
   const timingStatus = useShowcallerTiming({
@@ -77,19 +126,69 @@ const SharedRundown = () => {
     rundownStartTime: rundownData?.startTime || '09:00:00',
     timezone: rundownData?.timezone || 'UTC',
     isPlaying,
-    currentSegmentId,
-    timeRemaining
+    currentSegmentId: realtimeCurrentSegmentId,
+    timeRemaining: currentTimeRemaining
   });
 
   // Initialize autoscroll functionality
   const { scrollContainerRef } = useRundownAutoscroll({
-    currentSegmentId,
+    currentSegmentId: realtimeCurrentSegmentId,
     isPlaying,
     autoScrollEnabled,
     items: rundownData?.items || []
   });
 
-  // Showcaller coordination handles all real-time updates automatically
+  // Enhanced real-time subscription cleanup
+  useEffect(() => {
+    // Clean up existing subscription
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+
+    // Only set up subscription if we have a rundown ID and component is mounted
+    if (!rundownId || !isMountedRef.current) {
+      return;
+    }
+
+    logger.log('Setting up real-time subscription for showcaller state:', rundownId);
+
+    const channel = supabase
+      .channel(`shared-showcaller-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rundowns',
+          filter: `id=eq.${rundownId}`
+        },
+        (payload) => {
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) return;
+          
+          logger.log('Received showcaller update:', payload);
+          // Only update if showcaller_state changed
+          if (payload.new?.showcaller_state) {
+            logger.log('Updating showcaller state:', payload.new.showcaller_state);
+            setRealtimeShowcallerState(payload.new.showcaller_state);
+          }
+        }
+      )
+      .subscribe((status) => {
+        logger.log('Subscription status:', status);
+      });
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      if (realtimeChannelRef.current) {
+        logger.log('Cleaning up subscription');
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [rundownId]);
 
   // Helper function to format time remaining from seconds to string (using same logic as main showcaller)
   const formatTimeRemaining = (seconds: number): string => {
@@ -169,12 +268,17 @@ const SharedRundown = () => {
     }
   }, [rundownId, rundownData]);
 
-  // Cleanup on unmount
+  // Enhanced cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     
     return () => {
       isMountedRef.current = false;
+      
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
     };
   }, []);
 
@@ -240,9 +344,9 @@ const SharedRundown = () => {
             startTime={rundownData.startTime || '09:00:00'}
             timezone={rundownData.timezone || 'UTC'}
             layoutName={layoutName}
-            currentSegmentId={currentSegmentId}
+            currentSegmentId={realtimeCurrentSegmentId}
             isPlaying={isPlaying}
-            timeRemaining={typeof timeRemaining === 'number' ? formatTimeRemaining(timeRemaining) : timeRemaining}
+            timeRemaining={typeof currentTimeRemaining === 'number' ? formatTimeRemaining(currentTimeRemaining) : currentTimeRemaining}
             isDark={isDark}
             onToggleTheme={toggleTheme}
             autoScrollEnabled={autoScrollEnabled}
