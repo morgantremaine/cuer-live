@@ -271,6 +271,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               isHeaderCollapsed={isHeaderCollapsed}
               savedLayouts={savedLayouts}
               onLoadLayout={onLoadLayout}
+              zoomLevel={zoomLevel}
             />
             
             {/* Table Body - Content */}

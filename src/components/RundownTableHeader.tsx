@@ -40,6 +40,7 @@ interface RundownTableHeaderProps {
   isHeaderCollapsed?: (headerId: string) => boolean;
   savedLayouts?: any[];
   onLoadLayout?: (columns: Column[]) => void;
+  zoomLevel?: number;
 }
 
 const RundownTableHeader = ({
@@ -55,7 +56,8 @@ const RundownTableHeader = ({
   onToggleAllHeaders,
   isHeaderCollapsed,
   savedLayouts,
-  onLoadLayout
+  onLoadLayout,
+  zoomLevel = 1
 }: RundownTableHeaderProps) => {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   
@@ -286,7 +288,12 @@ const RundownTableHeader = ({
             })}
           </SortableContext>
           
-          <DragOverlay>
+          <DragOverlay 
+            style={{
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left'
+            }}
+          >
             {activeColumn ? (
               <th 
                 className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
