@@ -87,6 +87,11 @@ const HeaderRowContent = ({
           overflow: 'visible'
         }}
       >
+        {/* Overlay to hide any seam between the # column and content at zoomed scales */}
+        <div 
+          className="pointer-events-none absolute top-0 bottom-0 -left-px w-2"
+          style={{ backgroundColor: backgroundColor || 'hsl(var(--header-background))' }}
+        />
         <div 
           className="px-2 py-8 flex items-center"
           style={{ 
