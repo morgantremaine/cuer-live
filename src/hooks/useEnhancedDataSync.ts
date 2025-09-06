@@ -269,11 +269,8 @@ export const useEnhancedDataSync = (
     }
 
     try {
-      // Sync before save to prevent conflicts
-      const syncResult = await syncWithServer(true);
-      
-      // If sync had conflicts, use the merged data for saving
-      const dataToSave = syncResult.mergedData || saveState;
+      // Skip sync-before-save to prevent infinite loops - just save current state
+      const dataToSave = saveState;
 
       const { data, error } = await supabase
         .from('rundowns')
@@ -362,11 +359,16 @@ export const useEnhancedDataSync = (
     }
   }, [isConnected, recordOfflineChange]);
 
-  // Auto-sync when connection is restored
+  // Auto-sync when connection is restored (with throttle to prevent infinite loops)
   useEffect(() => {
     if (isConnected && connectionType === 'online') {
-      console.log('🔌 Connection restored - checking for updates...');
-      syncWithServer(true);
+      // Add delay to prevent rapid re-syncing
+      const timeoutId = setTimeout(() => {
+        console.log('🔌 Connection restored - checking for updates...');
+        syncWithServer(true);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [isConnected, connectionType, syncWithServer]);
 
