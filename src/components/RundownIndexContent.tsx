@@ -10,7 +10,7 @@ import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useTeam } from '@/hooks/useTeam';
 import { supabase } from '@/integrations/supabase/client';
-import RealtimeDebugOverlay from '@/components/debug/RealtimeDebugOverlay';
+
 
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
@@ -575,12 +575,6 @@ const RundownIndexContent = () => {
           calculateEndTime: coreState.calculateEndTime,
           markAsChanged: coreState.markAsChanged
         }}
-      />
-      
-      {/* Debug overlay for development */}
-      <RealtimeDebugOverlay 
-        rundownId={rundownId}
-        connectionStatus={isConnected}
       />
     </RealtimeConnectionProvider>
   );
