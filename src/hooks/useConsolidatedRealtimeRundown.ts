@@ -65,14 +65,25 @@ export const useConsolidatedRealtimeRundown = ({
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
     const incomingDocVersion = payload.new?.doc_version || 0;
 
+    console.log('🔄 Consolidated realtime received:', {
+      table: payload.table || 'rundowns',
+      rundownId: payload.new?.id || payload.new?.rundown_id,
+      targetRundownId: rundownId,
+      lastUpdatedBy: payload.new?.last_updated_by,
+      currentUserId: user?.id,
+      docVersion: incomingDocVersion,
+      timestamp: normalizedTimestamp
+    });
+
     // Skip if not for current rundown 
     if (payload.new?.id !== rundownId && payload.new?.rundown_id !== rundownId) {
+      console.log('❌ Skipping - wrong rundown ID');
       return;
     }
 
     // Primary guard: doc_version (monotonic). If stale, skip early
     if (incomingDocVersion && incomingDocVersion <= globalState.lastProcessedDocVersion) {
-      debugLogger.realtime('Skipping stale doc version:', {
+      console.log('❌ Skipping stale doc version:', {
         incoming: incomingDocVersion,
         lastProcessed: globalState.lastProcessedDocVersion
       });
@@ -81,7 +92,7 @@ export const useConsolidatedRealtimeRundown = ({
 
     // Timestamp dedup as secondary guard
     if (normalizedTimestamp && normalizedTimestamp === globalState.lastProcessedTimestamp) {
-      debugLogger.realtime('Skipping duplicate timestamp:', normalizedTimestamp);
+      console.log('❌ Skipping duplicate timestamp:', normalizedTimestamp);
       return;
     }
 
@@ -89,7 +100,11 @@ export const useConsolidatedRealtimeRundown = ({
     const isOwnUpdate = payload.new?.last_updated_by === user?.id ||
                         (normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp));
     if (isOwnUpdate) {
-      debugLogger.realtime('Skipping own update:', { normalizedTimestamp, incomingDocVersion });
+      console.log('❌ Skipping own update:', { 
+        reason: payload.new?.last_updated_by === user?.id ? 'user_id_match' : 'timestamp_tracked',
+        normalizedTimestamp, 
+        incomingDocVersion 
+      });
       globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
       if (incomingDocVersion) {
         globalState.lastProcessedDocVersion = incomingDocVersion;
@@ -133,10 +148,18 @@ export const useConsolidatedRealtimeRundown = ({
     const hasShowcallerChanges = JSON.stringify(payload.new?.showcaller_state) !== JSON.stringify(payload.old?.showcaller_state);
     const hasBlueprintChanges = payload.table === 'blueprints';
 
-    console.log('📡 Consolidated realtime update:', {
+    console.log('✅ Processing consolidated realtime update:', {
       type: hasBlueprintChanges ? 'blueprint' : hasShowcallerChanges && !hasContentChanges ? 'showcaller' : 'content',
       docVersion: incomingDocVersion,
-      timestamp: normalizedTimestamp
+      timestamp: normalizedTimestamp,
+      hasContentChanges,
+      hasShowcallerChanges,
+      hasBlueprintChanges,
+      callbackCounts: {
+        rundown: globalState.callbacks.onRundownUpdate.size,
+        showcaller: globalState.callbacks.onShowcallerUpdate.size,
+        blueprint: globalState.callbacks.onBlueprintUpdate.size
+      }
     });
 
     // Update tracking
@@ -147,14 +170,17 @@ export const useConsolidatedRealtimeRundown = ({
 
     // Dispatch to appropriate callbacks
     if (hasBlueprintChanges) {
+      console.log('📧 Dispatching to blueprint callbacks:', globalState.callbacks.onBlueprintUpdate.size);
       globalState.callbacks.onBlueprintUpdate.forEach((callback: (d: any) => void) => {
         try { callback(payload.new); } catch (error) { console.error('Error in blueprint callback:', error); }
       });
     } else if (hasShowcallerChanges && !hasContentChanges) {
+      console.log('📧 Dispatching to showcaller callbacks:', globalState.callbacks.onShowcallerUpdate.size);
       globalState.callbacks.onShowcallerUpdate.forEach((callback: (d: any) => void) => {
         try { callback(payload.new); } catch (error) { console.error('Error in showcaller callback:', error); }
       });
     } else if (hasContentChanges) {
+      console.log('📧 Dispatching to rundown callbacks:', globalState.callbacks.onRundownUpdate.size);
       setIsProcessingUpdate(true);
       try {
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
