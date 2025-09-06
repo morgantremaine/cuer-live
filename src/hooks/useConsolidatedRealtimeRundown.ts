@@ -65,8 +65,9 @@ export const useConsolidatedRealtimeRundown = ({
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
     const incomingDocVersion = payload.new?.doc_version || 0;
 
-    // Skip if not for current rundown
-    if (payload.new?.id !== rundownId) {
+    // Skip if not for current rundown (handle blueprints using rundown_id)
+    const targetRundownId = payload.table === 'blueprints' ? payload.new?.rundown_id : payload.new?.id;
+    if (targetRundownId !== rundownId) {
       return;
     }
 
@@ -185,8 +186,7 @@ export const useConsolidatedRealtimeRundown = ({
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'rundowns',
-            filter: `id=eq.${rundownId}`
+            table: 'rundowns'
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
@@ -203,8 +203,7 @@ export const useConsolidatedRealtimeRundown = ({
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'blueprints',
-            filter: `rundown_id=eq.${rundownId}`
+            table: 'blueprints'
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
