@@ -185,8 +185,7 @@ export const useConsolidatedRealtimeRundown = ({
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'rundowns',
-            filter: `id=eq.${rundownId}`
+            table: 'rundowns'
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
@@ -203,8 +202,7 @@ export const useConsolidatedRealtimeRundown = ({
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'blueprints',
-            filter: `rundown_id=eq.${rundownId}`
+            table: 'blueprints'
           },
           (payload) => {
             const state = globalSubscriptions.get(rundownId);
