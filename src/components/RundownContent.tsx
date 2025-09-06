@@ -239,46 +239,44 @@ const RundownContent = React.memo<RundownContentProps>(({
       
       {/* Scrollable Content with separate sticky header and zoomed body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
-        {/* Sticky Header Wrapper (not transformed) */}
-        <div className="sticky top-0 z-20 bg-background">
-          <div 
-            className="bg-background"
+        {/* Sticky Header Wrapper (scaled to match zoom) */}
+        <div 
+          className="sticky top-0 z-20 bg-background"
+          style={{ 
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
+            minWidth: `${totalTableWidth}px`
+          }}
+        >
+          <table 
+            className="border-collapse table-container" 
             style={{ 
+              tableLayout: 'fixed', 
+              width: `${totalTableWidth}px`,
               minWidth: `${totalTableWidth}px`,
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top left',
-              width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+              margin: 0,
+              padding: 0
             }}
+            data-rundown-table="header"
           >
-            <table 
-              className="border-collapse table-container" 
-              style={{ 
-                tableLayout: 'fixed', 
-                width: `${totalTableWidth}px`,
-                minWidth: `${totalTableWidth}px`,
-                margin: 0,
-                padding: 0
-              }}
-              data-rundown-table="header"
-            >
-              <RundownTableHeader 
-                visibleColumns={visibleColumns}
-                allColumns={allColumns}
-                getColumnWidth={getColumnWidth}
-                updateColumnWidth={updateColumnWidth}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                items={items}
-                columnExpandState={columnExpandState}
-                onToggleColumnExpand={handleToggleColumnExpand}
-                onToggleAllHeaders={handleToggleAllHeaders}
-                isHeaderCollapsed={isHeaderCollapsed}
-                savedLayouts={savedLayouts}
-                onLoadLayout={onLoadLayout}
-                zoomLevel={zoomLevel}
-              />
-            </table>
-          </div>
+            <RundownTableHeader 
+              visibleColumns={visibleColumns}
+              allColumns={allColumns}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onReorderColumns={onReorderColumns}
+              onToggleColumnVisibility={onToggleColumnVisibility}
+              items={items}
+              columnExpandState={columnExpandState}
+              onToggleColumnExpand={handleToggleColumnExpand}
+              onToggleAllHeaders={handleToggleAllHeaders}
+              isHeaderCollapsed={isHeaderCollapsed}
+              savedLayouts={savedLayouts}
+              onLoadLayout={onLoadLayout}
+              zoomLevel={zoomLevel}
+            />
+          </table>
         </div>
         
         {/* Zoomed Body */}
