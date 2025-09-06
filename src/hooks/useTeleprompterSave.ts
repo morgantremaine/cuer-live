@@ -138,12 +138,24 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     // Backup the change immediately
     backupChange(itemId, newScript);
     
+    // Signal save start to parent (for blue Wi-Fi indicator)
+    onSaveStart?.();
+    
+    setSaveState(prev => ({ 
+      ...prev, 
+      isSaving: true, 
+      hasUnsavedChanges: true,
+      saveError: null 
+    }));
+    
     // Use unified coordination for teleprompter saves
     const success = await coordinateTeleprompterSave(
       () => executeSave(itemId, newScript, rundownData),
       {
         immediate: true, // Teleprompter saves should be immediate
         onComplete: (saveSuccess) => {
+          console.log('📝 Teleprompter save completed:', { itemId, saveSuccess });
+          
           if (saveSuccess) {
             // Clear backup and update state
             clearBackup(itemId);
@@ -185,18 +197,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         }
       }
     );
-
-    if (success) {
-      // Signal save start to parent (for blue Wi-Fi indicator)
-      onSaveStart?.();
-      
-      setSaveState(prev => ({ 
-        ...prev, 
-        isSaving: true, 
-        hasUnsavedChanges: true,
-        saveError: null 
-      }));
-    }
 
     return success;
   }, [coordinateTeleprompterSave, executeSave, backupChange, clearBackup, onSaveSuccess, onSaveStart, onSaveEnd]);
