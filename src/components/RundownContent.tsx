@@ -294,7 +294,7 @@ const RundownContent = React.memo<RundownContentProps>(({
         >
           <div 
             ref={headerScrollRef}
-            className="overflow-x-auto overflow-y-hidden"
+            className="overflow-x-auto"
             style={{ 
               width: '100%',
               scrollbarWidth: 'none',
@@ -304,7 +304,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             <div 
               className="header-zoom-container"
               style={{ 
-                transform: `scale(${zoomLevel})`,
+                transform: `scaleX(${zoomLevel})`,
                 transformOrigin: 'top left',
                 width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
               }}

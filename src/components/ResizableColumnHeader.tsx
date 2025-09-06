@@ -166,6 +166,8 @@ const ResizableColumnHeader = ({
     position: isDragging ? 'relative' as const : undefined,
     opacity: isDragging ? 0.5 : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
+    paddingTop: `${4 * (zoomLevel || 1)}px`,
+    paddingBottom: `${4 * (zoomLevel || 1)}px`,
   };
 
   // Create listeners that exclude the resize handle and right-clicks
