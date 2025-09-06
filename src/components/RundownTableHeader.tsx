@@ -269,6 +269,7 @@ const RundownTableHeader = ({
                   onAutoResize={() => handleAutoResize(column)}
                   showLeftSeparator={index > 0}
                   isLastColumn={isLastColumn}
+                  zoomLevel={zoomLevel}
                 >
                    {onToggleColumnVisibility && allColumns.length > 0 ? (
                      <HeaderContextMenu

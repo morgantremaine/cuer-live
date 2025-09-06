@@ -12,6 +12,7 @@ interface ResizableColumnHeaderProps {
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
+  zoomLevel?: number;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -44,7 +45,8 @@ const ResizableColumnHeader = ({
   onAutoResize,
   children, 
   showLeftSeparator = false,
-  isLastColumn = false
+  isLastColumn = false,
+  zoomLevel = 1
 }: ResizableColumnHeaderProps) => {
   const {
     attributes,
@@ -79,8 +81,9 @@ const ResizableColumnHeader = ({
     isResizingRef.current = true;
     
     const startX = e.clientX;
-    const startWidth = parseFloat(width.replace('px', ''));
-    initialWidthRef.current = startWidth;
+    const displayWidth = parseFloat(width.replace('px', ''));
+    const startWidthRaw = (isNaN(displayWidth) ? minimumWidth * (zoomLevel || 1) : displayWidth) / (zoomLevel || 1);
+    initialWidthRef.current = startWidthRaw;
 
     // Set cursor and disable text selection globally
     document.body.style.cursor = 'col-resize';
@@ -102,9 +105,9 @@ const ResizableColumnHeader = ({
 
       // Use requestAnimationFrame for smooth updates
       animationFrameRef.current = requestAnimationFrame(() => {
-        const deltaX = e.clientX - startX;
-        // Strictly enforce minimum width constraint during drag
-        const calculatedWidth = initialWidthRef.current + deltaX;
+        const deltaRaw = (e.clientX - startX) / (zoomLevel || 1);
+        // Strictly enforce minimum width constraint during drag (raw pixels)
+        const calculatedWidth = initialWidthRef.current + deltaRaw;
         const newWidth = Math.max(minimumWidth, calculatedWidth);
         
         // Update immediately during drag for visual feedback
@@ -123,8 +126,8 @@ const ResizableColumnHeader = ({
       }
       
       // Calculate final width and strictly enforce minimum constraint
-      const deltaX = e.clientX - startX;
-      const calculatedWidth = initialWidthRef.current + deltaX;
+      const deltaRaw = (e.clientX - startX) / (zoomLevel || 1);
+      const calculatedWidth = initialWidthRef.current + deltaRaw;
       const finalWidth = Math.max(minimumWidth, calculatedWidth);
       
       // Final update on mouse up
@@ -146,18 +149,18 @@ const ResizableColumnHeader = ({
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [column.id, onWidthChange, width, minimumWidth]);
+  }, [column.id, onWidthChange, width, minimumWidth, zoomLevel]);
 
-  // Parse width value and ensure it's a valid pixel value
+  // Parse width value for display (scaled) without enforcing minimum to avoid header/body mismatch
   const widthValue = parseFloat(width.replace('px', ''));
-  const constrainedWidth = Math.max(minimumWidth, isNaN(widthValue) ? minimumWidth : widthValue);
+  const displayWidth = isNaN(widthValue) ? minimumWidth * (zoomLevel || 1) : widthValue;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? 'none' : transition,
-    width: `${constrainedWidth}px`,
-    minWidth: `${constrainedWidth}px`,
-    maxWidth: `${constrainedWidth}px`,
+    width: `${displayWidth}px`,
+    minWidth: `${displayWidth}px`,
+    maxWidth: `${displayWidth}px`,
     borderRight: '1px solid rgba(255, 255, 255, 0.2)',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
@@ -201,9 +204,9 @@ const ResizableColumnHeader = ({
       <div 
         className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
         style={{
-          width: `${constrainedWidth - 16}px`,
-          minWidth: `${minimumWidth - 16}px`,
-          maxWidth: `${constrainedWidth - 16}px`
+          width: `${Math.max(displayWidth - 16, 0)}px`,
+          minWidth: `0px`,
+          maxWidth: `${Math.max(displayWidth - 16, 0)}px`
         }}
       >
         {children}
