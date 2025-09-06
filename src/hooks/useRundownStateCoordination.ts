@@ -16,13 +16,13 @@ export const useRundownStateCoordination = () => {
   const userId = user?.id;
 
   // Single source of truth for all rundown state (with persistence)
-  const simplifiedState = usePersistedRundownState();
+  const persistedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
-    items: simplifiedState.items,
-    columns: simplifiedState.columns,
-    startTime: simplifiedState.rundownStartTime
+    items: persistedState.items,
+    columns: persistedState.columns,
+    startTime: persistedState.rundownStartTime
   });
 
   // Autoscroll state with localStorage persistence
@@ -48,11 +48,11 @@ export const useRundownStateCoordination = () => {
   // Showcaller coordination for playback controls and visual state
   const showcallerCoordination = useShowcallerStateCoordination({
     items: performanceOptimization.calculatedItems,
-    rundownId: simplifiedState.rundownId,
+    rundownId: persistedState.rundownId,
     userId,
     teamId: null,
-    rundownTitle: simplifiedState.rundownTitle,
-    rundownStartTime: simplifiedState.rundownStartTime
+    rundownTitle: persistedState.rundownTitle,
+    rundownStartTime: persistedState.rundownStartTime
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -83,23 +83,23 @@ export const useRundownStateCoordination = () => {
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    simplifiedState.setItems(itemsToAdd);
+    persistedState.setItems(itemsToAdd);
   };
 
   // Add the missing functions that simplifiedState should provide
   const addRowAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addRowAtIndex) {
-      simplifiedState.addRowAtIndex(insertIndex);
+    if (persistedState.addRowAtIndex) {
+      persistedState.addRowAtIndex(insertIndex);
     } else {
-      simplifiedState.addRow();
+      persistedState.addRow();
     }
   };
 
   const addHeaderAtIndex = (insertIndex: number) => {
-    if (simplifiedState.addHeaderAtIndex) {
-      simplifiedState.addHeaderAtIndex(insertIndex);
+    if (persistedState.addHeaderAtIndex) {
+      persistedState.addHeaderAtIndex(insertIndex);
     } else {
-      simplifiedState.addHeader();
+      persistedState.addHeader();
     }
   };
 
@@ -135,37 +135,37 @@ export const useRundownStateCoordination = () => {
           rowNumber: item.rowNumber,
           segmentName: item.segmentName
         }));
-        simplifiedState.setItems(updater(coreItems));
+        persistedState.setItems(updater(coreItems));
       } else {
-        simplifiedState.setItems(updater);
+        persistedState.setItems(updater);
       }
     },
-    simplifiedState.updateItem,
-    simplifiedState.addRow,
-    simplifiedState.addHeader,
-    simplifiedState.deleteRow,
-    simplifiedState.toggleFloat,
-    simplifiedState.deleteMultipleItems,
+    persistedState.updateItem,
+    persistedState.addRow,
+    persistedState.addHeader,
+    persistedState.deleteRow,
+    persistedState.toggleFloat,
+    persistedState.deleteMultipleItems,
     addMultipleRows,
     (columnId: string) => {
-      const newColumns = simplifiedState.columns.filter(col => col.id !== columnId);
-      simplifiedState.setColumns(newColumns);
+      const newColumns = persistedState.columns.filter(col => col.id !== columnId);
+      persistedState.setColumns(newColumns);
     },
     calculateEndTime,
     (id: string, color: string) => {
-      simplifiedState.updateItem(id, 'color', color);
+      persistedState.updateItem(id, 'color', color);
     },
     () => {
-      // markAsChanged - handled internally by simplified state
+      // markAsChanged - handled internally by persisted state
     },
-    simplifiedState.setTitle,
+    persistedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
     // Pass undo-related parameters - use the correct property name now available
-    simplifiedState.saveUndoState,
-    simplifiedState.markStructuralChange, // Wire structural change signaling
-    simplifiedState.columns,
-    simplifiedState.rundownTitle,
+    persistedState.saveUndoState,
+    persistedState.markStructuralChange, // Wire structural change signaling
+    persistedState.columns,
+    persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed
   );
@@ -174,52 +174,52 @@ export const useRundownStateCoordination = () => {
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
     performanceOptimization.visibleColumns,
-    simplifiedState.updateItem,
-    simplifiedState.setColumns,
-    simplifiedState.columns
+    persistedState.updateItem,
+    persistedState.setColumns,
+    persistedState.columns
   );
 
   // Setup drag and drop with structural change integration
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Update items through simplified state
-      simplifiedState.setItems(items);
+      // Update items through persisted state
+      persistedState.setItems(items);
       // Clear structural change flag after items are set
-      setTimeout(() => simplifiedState.clearStructuralChange(), 50);
+      setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
     new Set<string>(), // selectedRows - placeholder for now
     undefined, // scrollContainerRef - placeholder for now
-    simplifiedState.saveUndoState,
-    simplifiedState.columns,
-    simplifiedState.rundownTitle,
+    persistedState.saveUndoState,
+    persistedState.columns,
+    persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
-    simplifiedState.markStructuralChange
+    persistedState.markStructuralChange
   );
 
   // NEW: Keep processing states separate - NO combination
-  const contentProcessingState = simplifiedState.isProcessingRealtimeUpdate; // Content updates only
+  const contentProcessingState = persistedState.isProcessingRealtimeUpdate; // Content updates only
   const showcallerProcessingState = showcallerCoordination.isProcessingVisualUpdate; // Showcaller only
 
   return {
     coreState: {
       // Core data (performance optimized but same interface)
       items: performanceOptimization.calculatedItems,
-      columns: simplifiedState.columns,
+      columns: persistedState.columns,
       visibleColumns: performanceOptimization.visibleColumns,
-      rundownTitle: simplifiedState.rundownTitle,
-      rundownStartTime: simplifiedState.rundownStartTime,
-      timezone: simplifiedState.timezone,
-      showDate: simplifiedState.showDate,
-      currentTime: simplifiedState.currentTime,
-      rundownId: simplifiedState.rundownId,
+      rundownTitle: persistedState.rundownTitle,
+      rundownStartTime: persistedState.rundownStartTime,
+      timezone: persistedState.timezone,
+      showDate: persistedState.showDate,
+      currentTime: persistedState.currentTime,
+      rundownId: persistedState.rundownId,
       
       // State flags (NOW with separated processing states)
-      isLoading: simplifiedState.isLoading,
-      hasUnsavedChanges: simplifiedState.hasUnsavedChanges,
-      isSaving: simplifiedState.isSaving,
-      isConnected: simplifiedState.isConnected || showcallerCoordination.isConnected,
+      isLoading: persistedState.isLoading,
+      hasUnsavedChanges: persistedState.hasUnsavedChanges,
+      isSaving: persistedState.isSaving,
+      isConnected: persistedState.isConnected || showcallerCoordination.isConnected,
       isProcessingRealtimeUpdate: contentProcessingState, // ONLY content updates for blue Wi-Fi
       
       // Showcaller visual state from completely separate system
@@ -235,9 +235,9 @@ export const useRundownStateCoordination = () => {
       getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
       
       // Selection state
-      selectedRowId: simplifiedState.selectedRowId,
-      handleRowSelection: simplifiedState.handleRowSelection,
-      clearRowSelection: simplifiedState.clearRowSelection,
+      selectedRowId: persistedState.selectedRowId,
+      handleRowSelection: persistedState.handleRowSelection,
+      clearRowSelection: persistedState.clearRowSelection,
       
       // Calculations (performance optimized)
       totalRuntime: performanceOptimization.totalRuntime,
@@ -246,24 +246,24 @@ export const useRundownStateCoordination = () => {
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
       // Core actions (NO showcaller interference)
-      updateItem: simplifiedState.updateItem,
-      deleteRow: simplifiedState.deleteRow,
-      toggleFloatRow: simplifiedState.toggleFloat,
-      deleteMultipleItems: simplifiedState.deleteMultipleItems,
-      addItem: simplifiedState.addItem,
-      setTitle: simplifiedState.setTitle,
-      setStartTime: simplifiedState.setStartTime,
-      setTimezone: simplifiedState.setTimezone,
-      setShowDate: simplifiedState.setShowDate,
-      addRow: simplifiedState.addRow,
-      addHeader: simplifiedState.addHeader,
+      updateItem: persistedState.updateItem,
+      deleteRow: persistedState.deleteRow,
+      toggleFloatRow: persistedState.toggleFloat,
+      deleteMultipleItems: persistedState.deleteMultipleItems,
+      addItem: persistedState.addItem,
+      setTitle: persistedState.setTitle,
+      setStartTime: persistedState.setStartTime,
+      setTimezone: persistedState.setTimezone,
+      setShowDate: persistedState.setShowDate,
+      addRow: persistedState.addRow,
+      addHeader: persistedState.addHeader,
       addRowAtIndex,
       addHeaderAtIndex,
       
       // Column management
-      addColumn: simplifiedState.addColumn,
-      updateColumnWidth: simplifiedState.updateColumnWidth,
-      setColumns: simplifiedState.setColumns,
+      addColumn: persistedState.addColumn,
+      updateColumnWidth: persistedState.updateColumnWidth,
+      setColumns: persistedState.setColumns,
       
       // Showcaller visual controls (completely separate from main state)
       play: showcallerCoordination.play,
@@ -274,9 +274,9 @@ export const useRundownStateCoordination = () => {
       jumpToSegment: showcallerCoordination.jumpToSegment,
       
       // Undo functionality
-      undo: simplifiedState.undo,
-      canUndo: simplifiedState.canUndo,
-      lastAction: simplifiedState.lastAction,
+      undo: persistedState.undo,
+      canUndo: persistedState.canUndo,
+      lastAction: persistedState.lastAction,
       
       // Additional functionality
       calculateEndTime,
@@ -296,7 +296,7 @@ export const useRundownStateCoordination = () => {
       visibleItems,
       
       // Autosave typing guard
-      markActiveTyping: simplifiedState.markActiveTyping
+      markActiveTyping: persistedState.markActiveTyping
     },
     interactions,
     uiState,
