@@ -154,13 +154,15 @@ const ResizableColumnHeader = ({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? 'none' : transition,
     width: `${constrainedWidth}px`,
-    minWidth: `${minimumWidth}px`,
+    minWidth: `${constrainedWidth}px`,
     maxWidth: `${constrainedWidth}px`,
     borderRight: '1px solid hsl(var(--border))',
     zIndex: isDragging ? 1000 : 'auto',
     position: isDragging ? 'relative' as const : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   // Create listeners that exclude the resize handle and right-clicks

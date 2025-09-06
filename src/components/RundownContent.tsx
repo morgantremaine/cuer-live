@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -185,15 +185,29 @@ const RundownContent = React.memo<RundownContentProps>(({
     items
   });
 
-// Initialize drag auto-scroll functionality
+  // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
   const { handleDragAutoScroll } = useDragAutoScroll({
     scrollContainerRef,
     isActive: isDragging
   });
 
-  // Sticky header compensation is no longer needed because the header is rendered
-  // inside a non-transformed sticky wrapper. Keeping logic simple to avoid drift.
+  // Header scroll sync - keep header horizontally aligned with body
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const scrollViewport = scrollContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    const headerContainer = headerScrollRef.current;
+    
+    if (!scrollViewport || !headerContainer) return;
+    
+    const handleScroll = () => {
+      headerContainer.scrollLeft = scrollViewport.scrollLeft;
+    };
+    
+    scrollViewport.addEventListener('scroll', handleScroll);
+    return () => scrollViewport.removeEventListener('scroll', handleScroll);
+  }, []);
 
 
   // Enhanced drag over handler that includes auto-scroll
@@ -273,45 +287,55 @@ const RundownContent = React.memo<RundownContentProps>(({
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
         {/* Sticky Header Wrapper - NOT transformed to keep sticky behavior stable */}
         <div 
-          className="sticky top-0 z-20 bg-background"
+          className="sticky top-0 z-20 bg-background border-b border-border overflow-hidden"
           style={{ 
             width: '100%'
           }}
         >
-          <table 
-            className="border-collapse table-container" 
+          <div 
+            ref={headerScrollRef}
+            className="overflow-hidden"
             style={{ 
-              tableLayout: 'fixed', 
-              width: `${Math.round(totalTableWidth * zoomLevel)}px`,
-              minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`,
-              margin: 0,
-              padding: 0
+              width: '100%',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
             }}
-            data-rundown-table="header"
           >
-            <colgroup>
-              <col style={{ width: `${Math.round(66 * zoomLevel)}px` }} />
-              {visibleColumns.map((col) => (
-                <col key={`hcol-${col.id}`} style={{ width: `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
-              ))}
-            </colgroup>
-            <RundownTableHeader 
-              visibleColumns={visibleColumns}
-              allColumns={allColumns}
-              getColumnWidth={normalizedGetColumnWidth}
-              updateColumnWidth={updateColumnWidth}
-              onReorderColumns={onReorderColumns}
-              onToggleColumnVisibility={onToggleColumnVisibility}
-              items={items}
-              columnExpandState={columnExpandState}
-              onToggleColumnExpand={handleToggleColumnExpand}
-              onToggleAllHeaders={handleToggleAllHeaders}
-              isHeaderCollapsed={isHeaderCollapsed}
-              savedLayouts={savedLayouts}
-              onLoadLayout={onLoadLayout}
-              zoomLevel={zoomLevel}
-            />
-          </table>
+            <table 
+              className="border-collapse table-container" 
+              style={{ 
+                tableLayout: 'fixed', 
+                width: `${Math.round(totalTableWidth * zoomLevel)}px`,
+                minWidth: `${Math.round(totalTableWidth * zoomLevel)}px`,
+                margin: 0,
+                padding: 0
+              }}
+              data-rundown-table="header"
+            >
+              <colgroup>
+                <col style={{ width: `${Math.round(66 * zoomLevel)}px` }} />
+                {visibleColumns.map((col) => (
+                  <col key={`hcol-${col.id}`} style={{ width: `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px` }} />
+                ))}
+              </colgroup>
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                allColumns={allColumns}
+                getColumnWidth={(col) => `${Math.round(parseInt(normalizedGetColumnWidth(col)) * zoomLevel)}px`}
+                updateColumnWidth={updateColumnWidth}
+                onReorderColumns={onReorderColumns}
+                onToggleColumnVisibility={onToggleColumnVisibility}
+                items={items}
+                columnExpandState={columnExpandState}
+                onToggleColumnExpand={handleToggleColumnExpand}
+                onToggleAllHeaders={handleToggleAllHeaders}
+                isHeaderCollapsed={isHeaderCollapsed}
+                savedLayouts={savedLayouts}
+                onLoadLayout={onLoadLayout}
+                zoomLevel={zoomLevel}
+              />
+            </table>
+          </div>
         </div>
         
         {/* Zoomed Body */}
@@ -321,8 +345,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             minWidth: `${totalTableWidth}px`,
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top left',
-            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%',
-            marginTop: '-1px'
+            width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
           }}
         >
           {/* Main Table Body */}

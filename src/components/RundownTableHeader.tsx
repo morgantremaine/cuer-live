@@ -189,15 +189,15 @@ const RundownTableHeader = ({
   };
 
   return (
-    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20" style={{ transform: headerTranslateY ? `translateY(${headerTranslateY}px)` : undefined, willChange: headerTranslateY ? 'transform' as const : undefined }}>
+    <thead className="bg-blue-600 dark:bg-blue-700">
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
           className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
-            width: '66px', 
-            minWidth: '66px',
-            maxWidth: '66px',
+            width: `${Math.round(66 * zoomLevel)}px`, 
+            minWidth: `${Math.round(66 * zoomLevel)}px`,
+            maxWidth: `${Math.round(66 * zoomLevel)}px`,
             borderRight: '1px solid hsl(var(--border))'
           }}
         >
@@ -290,34 +290,36 @@ const RundownTableHeader = ({
             })}
           </SortableContext>
           
-          {/* Only show DragOverlay when not zoomed to prevent positioning issues */}
-          {zoomLevel === 1 && (
-            <DragOverlay>
-              {activeColumn ? (
-                <th 
-                  className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
-                  style={{ 
-                    width: getColumnWidth(activeColumn),
-                    minWidth: getColumnWidth(activeColumn),
-                    maxWidth: getColumnWidth(activeColumn),
-                    opacity: 0.9,
-                    zIndex: 1000
+          {/* Always show DragOverlay with zoom-adjusted width */}
+          <DragOverlay 
+            dropAnimation={null}
+            modifiers={[restrictToHorizontalAxis]}
+          >
+            {activeColumn ? (
+              <th 
+                className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border shadow-lg"
+                style={{ 
+                  width: getColumnWidth(activeColumn),
+                  minWidth: getColumnWidth(activeColumn),
+                  maxWidth: getColumnWidth(activeColumn),
+                  opacity: 0.95,
+                  zIndex: 1000,
+                  cursor: 'grabbing'
+                }}
+              >
+                <div 
+                  className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                  style={{
+                    width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                    maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
                   }}
                 >
-                  <div 
-                    className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
-                    style={{
-                      width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                      minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                      maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
-                    }}
-                  >
-                    {activeColumn.name || activeColumn.key}
-                  </div>
-                </th>
-              ) : null}
-            </DragOverlay>
-          )}
+                  {activeColumn.name || activeColumn.key}
+                </div>
+              </th>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </tr>
     </thead>
