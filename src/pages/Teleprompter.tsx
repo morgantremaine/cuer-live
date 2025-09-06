@@ -5,13 +5,12 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
-import { useBulletproofRundownState } from '@/hooks/useBulletproofRundownState';
+import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeRundown';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
-import { cellBroadcast } from '@/utils/cellBroadcast';
 import { toast } from 'sonner';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
@@ -33,8 +32,6 @@ const Teleprompter = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState(0);
   const watchdogRef = useRef<RealtimeWatchdog | null>(null);
-  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
-  const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
 
   const {
     fontSize,
@@ -80,9 +77,29 @@ const Teleprompter = () => {
   const prevIsActiveRef = useRef(true);
 
   // Enhanced real-time updates with doc version tracking
-  const bulletproofState = useBulletproofRundownState();
-  const isRealtimeConnected = bulletproofState.isConnected;
-  const trackOwnUpdate = () => {}; // Placeholder for now
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
+    rundownId: rundownId!,
+    enabled: !!rundownId && !!user && !!rundownData,
+    lastSeenDocVersion,
+    onRundownUpdate: (updatedRundown) => {
+      // Always accept remote updates to ensure real-time sync
+      if (updatedRundown) {
+        console.log('📥 Teleprompter receiving real-time update from team');
+        setRundownData({
+          title: updatedRundown.title || 'Untitled Rundown',
+          items: updatedRundown.items || [],
+          doc_version: updatedRundown.doc_version, // Include doc_version for optimistic concurrency
+          updated_at: updatedRundown.updated_at
+        });
+        
+        // Update doc version tracking
+        if (updatedRundown.doc_version) {
+          setLastSeenDocVersion(updatedRundown.doc_version);
+          watchdogRef.current?.updateLastSeen(updatedRundown.doc_version, updatedRundown.updated_at);
+        }
+      }
+    }
+  });
 
   // Silent refresh when tab becomes active (same as main rundown)
   useEffect(() => {
@@ -155,44 +172,6 @@ const Teleprompter = () => {
     };
 
     performSilentRefresh();
-  }, [isTabActive, rundownId, user]);
-
-  // Set up cell broadcast for instant collaboration
-  useEffect(() => {
-    if (!rundownId || !user?.id) return;
-
-    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates
-      if (update.userId === user.id) {
-        console.log('📱 Teleprompter skipping own cell broadcast update');
-        return;
-      }
-
-      // Only handle script field updates for teleprompter
-      if (update.itemId && update.field === 'script') {
-        // Check if actively editing this field
-        const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-script`;
-        if (isActivelyEditing) {
-          console.log('🛡️ Teleprompter skipping cell broadcast - actively editing:', update.itemId, update.field);
-          return;
-        }
-
-        console.log('📱 Teleprompter applying cell broadcast script update:', update.itemId, update.value);
-        
-        // Apply the script update immediately
-        if (rundownData) {
-          const updatedItems = rundownData.items.map(item =>
-            item.id === update.itemId ? { ...item, script: update.value } : item
-          );
-          setRundownData({
-            ...rundownData,
-            items: updatedItems
-          });
-        }
-      }
-    });
-
-    return unsubscribe;
   }, [isTabActive, rundownId, user]);
 
   // Enhanced save system with realtime collaboration
@@ -305,18 +284,9 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
-  // Enhanced script update with instant cell broadcast
+  // Enhanced script update with realtime collaboration (only for authenticated users)
   const updateScriptContent = async (itemId: string, newScript: string) => {
     if (!rundownData || !user) return;
-    
-    // Track typing session for conflict protection
-    recentlyEditedFieldsRef.current.set(`${itemId}-script`, Date.now());
-    typingSessionRef.current = { fieldKey: `${itemId}-script`, startTime: Date.now() };
-    
-    // Broadcast script change instantly for real-time collaboration
-    if (rundownId && user?.id) {
-      cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
-    }
     
     // Update local state immediately for responsiveness
     const updatedItems = rundownData.items.map(item =>
@@ -328,15 +298,8 @@ const Teleprompter = () => {
       items: updatedItems
     });
 
-    // Use debounced save for persistence (500ms)
+    // Use faster debounced save (500ms instead of 1500ms)
     debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems }, 500);
-    
-    // Clear typing session after delay
-    setTimeout(() => {
-      if (typingSessionRef.current?.fieldKey === `${itemId}-script`) {
-        typingSessionRef.current = null;
-      }
-    }, 3000);
   };
 
   // Print function with improved formatting

@@ -1,4 +1,4 @@
-import { useBulletproofRundownState } from './useBulletproofRundownState';
+import { usePersistedRundownState } from './usePersistedRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
@@ -15,14 +15,14 @@ export const useRundownStateCoordination = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
-  // Single source of truth for all rundown state (bulletproof with offline support)
-  const bulletproofState = useBulletproofRundownState();
+  // Single source of truth for all rundown state (with persistence)
+  const persistedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
-    items: bulletproofState.items,
-    columns: bulletproofState.columns,
-    startTime: bulletproofState.startTime
+    items: persistedState.items,
+    columns: persistedState.columns,
+    startTime: persistedState.rundownStartTime
   });
 
   // Autoscroll state with localStorage persistence
@@ -48,11 +48,11 @@ export const useRundownStateCoordination = () => {
   // Showcaller coordination for playback controls and visual state
   const showcallerCoordination = useShowcallerStateCoordination({
     items: performanceOptimization.calculatedItems,
-    rundownId: bulletproofState.rundownId,
+    rundownId: persistedState.rundownId,
     userId,
     teamId: null,
-    rundownTitle: bulletproofState.title,
-    rundownStartTime: bulletproofState.startTime
+    rundownTitle: persistedState.rundownTitle,
+    rundownStartTime: persistedState.rundownStartTime
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -83,62 +83,33 @@ export const useRundownStateCoordination = () => {
       endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    bulletproofState.setItems([...bulletproofState.items, ...itemsToAdd]);
+    persistedState.setItems(itemsToAdd);
   };
 
-  // Add the missing functions that bulletproof state should provide
+  // Add the missing functions that simplifiedState should provide
   const addRowAtIndex = (insertIndex: number) => {
-    const newItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular' as const,
-      rowNumber: '',
-      name: '',
-      startTime: '00:00:00',
-      duration: '00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      notes: '',
-      gfx: '',
-      video: '',
-      images: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-    bulletproofState.addItem(newItem);
+    if (persistedState.addRowAtIndex) {
+      persistedState.addRowAtIndex(insertIndex);
+    } else {
+      persistedState.addRow();
+    }
   };
 
   const addHeaderAtIndex = (insertIndex: number) => {
-    const newHeader = {
-      id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'header' as const,
-      rowNumber: '',
-      name: 'New Header',
-      startTime: '00:00:00',
-      duration: '00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      notes: '',
-      gfx: '',
-      video: '',
-      images: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
-    bulletproofState.addItem(newHeader);
+    if (persistedState.addHeaderAtIndex) {
+      persistedState.addHeaderAtIndex(insertIndex);
+    } else {
+      persistedState.addHeader();
+    }
   };
 
   // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
-  // UI interactions that depend on the core state
+  // UI interactions that depend on the core state (NO showcaller interference)
+  // Now passing undo-related parameters
   const interactions = useRundownGridInteractions(
-    // Use performance-optimized calculated items
+    // Use performance-optimized calculated items, but still pass the original updateItem function
     performanceOptimization.calculatedItems,
     (updater) => {
       if (typeof updater === 'function') {
@@ -164,76 +135,37 @@ export const useRundownStateCoordination = () => {
           rowNumber: item.rowNumber,
           segmentName: item.segmentName
         }));
-        bulletproofState.setItems(updater(coreItems));
+        persistedState.setItems(updater(coreItems));
       } else {
-        bulletproofState.setItems(updater);
+        persistedState.setItems(updater);
       }
     },
-    bulletproofState.updateItem,
-    () => bulletproofState.addItem({
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular' as const,
-      rowNumber: '',
-      name: '',
-      startTime: '00:00:00',
-      duration: '00:00',
-      endTime: '00:00:00',
-      elapsedTime: '00:00:00',
-      talent: '',
-      script: '',
-      notes: '',
-      gfx: '',
-      video: '',
-      images: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    }),
-    () => {
-      const newHeader = {
-        id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        type: 'header' as const,
-        rowNumber: '',
-        name: 'New Header',
-        startTime: '00:00:00',
-        duration: '00:00',
-        endTime: '00:00:00',
-        elapsedTime: '00:00:00',
-        talent: '',
-        script: '',
-        notes: '',
-        gfx: '',
-        video: '',
-        images: '',
-        color: '',
-        isFloating: false,
-        customFields: {}
-      };
-      bulletproofState.addItem(newHeader);
-    },
-    bulletproofState.deleteItem,
-    bulletproofState.toggleFloat || (() => {}),
-    bulletproofState.deleteMultipleItems || (() => {}),
+    persistedState.updateItem,
+    persistedState.addRow,
+    persistedState.addHeader,
+    persistedState.deleteRow,
+    persistedState.toggleFloat,
+    persistedState.deleteMultipleItems,
     addMultipleRows,
     (columnId: string) => {
-      const newColumns = bulletproofState.columns.filter(col => col.id !== columnId);
-      bulletproofState.setColumns(newColumns);
+      const newColumns = persistedState.columns.filter(col => col.id !== columnId);
+      persistedState.setColumns(newColumns);
     },
     calculateEndTime,
     (id: string, color: string) => {
-      bulletproofState.updateItem(id, 'color', color);
+      persistedState.updateItem(id, 'color', color);
     },
     () => {
-      // markAsChanged - handled internally by bulletproof state
+      // markAsChanged - handled internally by persisted state
     },
-    bulletproofState.setTitle,
+    persistedState.setTitle,
     addRowAtIndex,
     addHeaderAtIndex,
-    // Pass undo-related parameters - use fallback if not available
-    () => {}, // saveUndoState fallback
-    () => {}, // markStructuralChange fallback
-    bulletproofState.columns,
-    bulletproofState.title,
+    // Pass undo-related parameters - use the correct property name now available
+    persistedState.saveUndoState,
+    persistedState.markStructuralChange, // Wire structural change signaling
+    persistedState.columns,
+    persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed
   );
@@ -242,55 +174,52 @@ export const useRundownStateCoordination = () => {
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
     performanceOptimization.visibleColumns,
-    bulletproofState.updateItem,
-    bulletproofState.setColumns,
-    bulletproofState.columns
+    persistedState.updateItem,
+    persistedState.setColumns,
+    persistedState.columns
   );
 
   // Setup drag and drop with structural change integration
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Update items through bulletproof state
-      bulletproofState.setItems(items);
+      // Update items through persisted state
+      persistedState.setItems(items);
+      // Clear structural change flag after items are set
+      setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
     new Set<string>(), // selectedRows - placeholder for now
     undefined, // scrollContainerRef - placeholder for now
-    () => {}, // saveUndoState fallback
-    bulletproofState.columns,
-    bulletproofState.title,
+    persistedState.saveUndoState,
+    persistedState.columns,
+    persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
-    () => {} // markStructuralChange fallback
+    persistedState.markStructuralChange
   );
 
-  // Simplified processing state
-  const isProcessingRealtimeUpdate = bulletproofState.isSaving;
+  // Simplified processing state - no teleprompter interference
+  const isProcessingRealtimeUpdate = persistedState.isProcessingRealtimeUpdate;
 
   return {
     coreState: {
       // Core data (performance optimized but same interface)
       items: performanceOptimization.calculatedItems,
-      columns: bulletproofState.columns,
+      columns: persistedState.columns,
       visibleColumns: performanceOptimization.visibleColumns,
-      rundownTitle: bulletproofState.title,
-      rundownStartTime: bulletproofState.startTime,
-      timezone: bulletproofState.timezone,
-      showDate: bulletproofState.showDate,
-      currentTime: bulletproofState.currentTime,
-      rundownId: bulletproofState.rundownId,
+      rundownTitle: persistedState.rundownTitle,
+      rundownStartTime: persistedState.rundownStartTime,
+      timezone: persistedState.timezone,
+      showDate: persistedState.showDate,
+      currentTime: persistedState.currentTime,
+      rundownId: persistedState.rundownId,
       
       // State flags (NOW with separated processing states)
-      isLoading: bulletproofState.isLoading,
-      hasUnsavedChanges: bulletproofState.hasUnsavedChanges,
-      isSaving: bulletproofState.isSaving,
-      isConnected: bulletproofState.isConnected || showcallerCoordination.isConnected,
+      isLoading: persistedState.isLoading,
+      hasUnsavedChanges: persistedState.hasUnsavedChanges,
+      isSaving: persistedState.isSaving,
+      isConnected: persistedState.isConnected || showcallerCoordination.isConnected,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator
-      
-      // Network status from bulletproof system
-      connectionType: bulletproofState.connectionType,
-      staleness: bulletproofState.staleness,
-      hasOfflineChanges: bulletproofState.hasOfflineChanges,
       
       // Showcaller visual state from completely separate system
       currentSegmentId: showcallerCoordination.currentSegmentId,
@@ -305,9 +234,9 @@ export const useRundownStateCoordination = () => {
       getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
       
       // Selection state
-      selectedRowId: bulletproofState.selectedRowId,
-      handleRowSelection: bulletproofState.handleRowSelection,
-      clearRowSelection: () => bulletproofState.handleRowSelection(null),
+      selectedRowId: persistedState.selectedRowId,
+      handleRowSelection: persistedState.handleRowSelection,
+      clearRowSelection: persistedState.clearRowSelection,
       
       // Calculations (performance optimized)
       totalRuntime: performanceOptimization.totalRuntime,
@@ -315,46 +244,25 @@ export const useRundownStateCoordination = () => {
       getHeaderDuration: performanceOptimization.getHeaderDuration,
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
-      // Core actions
-      updateItem: bulletproofState.updateItem,
-      deleteRow: bulletproofState.deleteItem,
-      toggleFloatRow: bulletproofState.toggleFloat || (() => {}),
-      deleteMultipleItems: bulletproofState.deleteMultipleItems || (() => {}),
-      addItem: bulletproofState.addItem,
-      setTitle: bulletproofState.setTitle,
-      setStartTime: bulletproofState.setStartTime,
-      setTimezone: bulletproofState.setTimezone,
-      setShowDate: bulletproofState.setShowDate,
-      addRow: bulletproofState.addItem,
-      addHeader: () => {
-        const newHeader = {
-          id: `header_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: 'header' as const,
-          rowNumber: '',
-          name: 'New Header',
-          startTime: '00:00:00',
-          duration: '00:00',
-          endTime: '00:00:00',
-          elapsedTime: '00:00:00',
-          talent: '',
-          script: '',
-          notes: '',
-          gfx: '',
-          video: '',
-          images: '',
-          color: '',
-          isFloating: false,
-          customFields: {}
-        };
-        bulletproofState.addItem(newHeader);
-      },
+      // Core actions (NO showcaller interference)
+      updateItem: persistedState.updateItem,
+      deleteRow: persistedState.deleteRow,
+      toggleFloatRow: persistedState.toggleFloat,
+      deleteMultipleItems: persistedState.deleteMultipleItems,
+      addItem: persistedState.addItem,
+      setTitle: persistedState.setTitle,
+      setStartTime: persistedState.setStartTime,
+      setTimezone: persistedState.setTimezone,
+      setShowDate: persistedState.setShowDate,
+      addRow: persistedState.addRow,
+      addHeader: persistedState.addHeader,
       addRowAtIndex,
       addHeaderAtIndex,
       
       // Column management
-      addColumn: () => {}, // Column management handled separately
-      updateColumnWidth: () => {}, // Column management handled separately
-      setColumns: bulletproofState.setColumns,
+      addColumn: persistedState.addColumn,
+      updateColumnWidth: persistedState.updateColumnWidth,
+      setColumns: persistedState.setColumns,
       
       // Showcaller visual controls (completely separate from main state)
       play: showcallerCoordination.play,
@@ -364,17 +272,16 @@ export const useRundownStateCoordination = () => {
       reset: showcallerCoordination.reset,
       jumpToSegment: showcallerCoordination.jumpToSegment,
       
-      // Undo functionality (simplified for now)
-      undo: () => {}, // Undo handled by underlying state if available
-      canUndo: false, // Simplified undo state
-      lastAction: null, // Simplified undo state
-      
-      // Auto-save functions
-      markAsChanged: bulletproofState.markAsChanged,
-      triggerAutoSave: bulletproofState.triggerAutoSave,
+      // Undo functionality
+      undo: persistedState.undo,
+      canUndo: persistedState.canUndo,
+      lastAction: persistedState.lastAction,
       
       // Additional functionality
       calculateEndTime,
+      markAsChanged: () => {
+        // Handled internally by simplified state
+      },
       addMultipleRows,
       
       // Autoscroll state with enhanced debugging
@@ -387,13 +294,8 @@ export const useRundownStateCoordination = () => {
       getHeaderGroupItemIds,
       visibleItems,
       
-      // Enhanced bulletproof features
-      syncNow: bulletproofState.syncNow,
-      saveNow: bulletproofState.saveNow,
-      handleFieldChange: bulletproofState.handleFieldChange,
-      
-      // Simplified typing activity tracking
-      markActiveTyping: () => {} // Handled internally by bulletproof state
+      // Autosave typing guard
+      markActiveTyping: persistedState.markActiveTyping
     },
     interactions,
     uiState,

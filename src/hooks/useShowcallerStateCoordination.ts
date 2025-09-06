@@ -2,9 +2,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
 import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
-import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useCueIntegration } from './useCueIntegration';
-import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { RundownItem } from '@/types/rundown';
 
 interface UseShowcallerStateCoordinationProps {
@@ -126,60 +124,8 @@ export const useShowcallerStateCoordination = ({
     }
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController, userId]);
 
-  // Broadcast-first real-time sync
-  const { broadcastState, isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
-    rundownId,
-    onBroadcastReceived: (state: ShowcallerBroadcastState) => {
-      console.log('📺 Received showcaller broadcast in coordination:', state);
-      
-      // Apply broadcast state to visual state
-      if (state.action === 'play' && state.isPlaying !== undefined) {
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else if (state.action === 'pause') {
-        applyExternalVisualState({ 
-          isPlaying: false,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else if (state.action === 'jump' && state.jumpToSegmentId) {
-        applyExternalVisualState({ 
-          currentSegmentId: state.jumpToSegmentId,
-          isPlaying: state.isPlaying,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else if (state.action === 'forward' || state.action === 'backward' || state.action === 'reset') {
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      } else {
-        // Generic state update
-        applyExternalVisualState({ 
-          isPlaying: state.isPlaying,
-          currentSegmentId: state.currentSegmentId,
-          timeRemaining: state.timeRemaining,
-          isController: state.isController
-        });
-      }
-    },
-    enabled: isInitialized
-  });
-
-  // Fallback real-time synchronization (for new viewers and persistence)
-  const { 
-    isConnected: isFallbackConnected, 
-    isProcessingVisualUpdate, 
-    trackOwnVisualUpdate 
-  } = useShowcallerRealtimeSync({
+  // Realtime synchronization with processing state
+  const { isConnected, isProcessingVisualUpdate, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
     rundownId,
     onExternalVisualStateReceived: handleExternalVisualState,
     enabled: isInitialized
@@ -201,7 +147,7 @@ export const useShowcallerStateCoordination = ({
     return items[currentIndex + 1] || null;
   }, [items, getCurrentSegment]);
 
-  // Enhanced control functions with broadcast-first coordination and cue triggers
+  // Enhanced control functions with better coordination and cue triggers
   const coordinatedPlay = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Coordinated play called:', { selectedSegmentId, userId, isController });
     
@@ -212,15 +158,6 @@ export const useShowcallerStateCoordination = ({
     
     play(selectedSegmentId);
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'play',
-      isPlaying: true,
-      currentSegmentId: selectedSegmentId || currentSegmentId,
-      timeRemaining,
-      isController
-    });
-    
     // Send cue trigger for play event
     const current = selectedSegmentId ? items.find(item => item.id === selectedSegmentId) : getCurrentSegment();
     const next = getNextSegment();
@@ -229,7 +166,7 @@ export const useShowcallerStateCoordination = ({
       timeRemaining,
       playbackStartTime: Date.now(),
     });
-  }, [play, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, currentSegmentId, timeRemaining, items, getCurrentSegment, getNextSegment, sendCueTrigger]);
+  }, [play, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, getCurrentSegment, getNextSegment, sendCueTrigger, timeRemaining]);
 
   const coordinatedPause = useCallback(() => {
     console.log('📺 Coordinated pause called:', { userId, isController });
@@ -240,15 +177,6 @@ export const useShowcallerStateCoordination = ({
     
     pause();
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'pause',
-      isPlaying: false,
-      currentSegmentId,
-      timeRemaining,
-      isController
-    });
-    
     // Send cue trigger for pause event
     const current = getCurrentSegment();
     const next = getNextSegment();
@@ -256,7 +184,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying: false,
       timeRemaining,
     });
-  }, [pause, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, currentSegmentId, timeRemaining, getCurrentSegment, getNextSegment, sendCueTrigger]);
+  }, [pause, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, timeRemaining]);
 
   const coordinatedForward = useCallback(() => {
     console.log('📺 Coordinated forward called:', { userId, isController });
@@ -267,15 +195,6 @@ export const useShowcallerStateCoordination = ({
     
     forward();
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'forward',
-      isPlaying,
-      currentSegmentId,
-      timeRemaining,
-      isController
-    });
-    
     // Send cue trigger for forward event
     const current = getCurrentSegment();
     const next = getNextSegment();
@@ -283,7 +202,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying,
       timeRemaining,
     });
-  }, [forward, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, isPlaying, currentSegmentId, timeRemaining, getCurrentSegment, getNextSegment, sendCueTrigger]);
+  }, [forward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, isPlaying, timeRemaining]);
 
   const coordinatedBackward = useCallback(() => {
     console.log('📺 Coordinated backward called:', { userId, isController });
@@ -294,15 +213,6 @@ export const useShowcallerStateCoordination = ({
     
     backward();
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'backward',
-      isPlaying,
-      currentSegmentId,
-      timeRemaining,
-      isController
-    });
-    
     // Send cue trigger for backward event
     const current = getCurrentSegment();
     const next = getNextSegment();
@@ -310,7 +220,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying,
       timeRemaining,
     });
-  }, [backward, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, isPlaying, currentSegmentId, timeRemaining, getCurrentSegment, getNextSegment, sendCueTrigger]);
+  }, [backward, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, getCurrentSegment, getNextSegment, sendCueTrigger, isPlaying, timeRemaining]);
 
   const coordinatedReset = useCallback(() => {
     console.log('📺 Coordinated reset called:', { userId, isController });
@@ -321,15 +231,6 @@ export const useShowcallerStateCoordination = ({
     
     reset();
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'reset',
-      isPlaying: false,
-      currentSegmentId,
-      timeRemaining: 0,
-      isController
-    });
-    
     // Send cue trigger for reset event
     const current = items[0] || null;
     const next = items[1] || null;
@@ -337,7 +238,7 @@ export const useShowcallerStateCoordination = ({
       isPlaying: false,
       timeRemaining: 0,
     });
-  }, [reset, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, currentSegmentId, isController, items, sendCueTrigger]);
+  }, [reset, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, sendCueTrigger]);
 
   const coordinatedJumpToSegment = useCallback((segmentId: string) => {
     console.log('📺 Coordinated jump to segment called:', { segmentId, userId, isController });
@@ -348,16 +249,6 @@ export const useShowcallerStateCoordination = ({
     
     jumpToSegment(segmentId);
     
-    // Broadcast first for instant sync
-    broadcastState({
-      action: 'jump',
-      jumpToSegmentId: segmentId,
-      isPlaying,
-      currentSegmentId: segmentId,
-      timeRemaining,
-      isController
-    });
-    
     // Send cue trigger for jump event
     const current = items.find(item => item.id === segmentId) || null;
     const currentIndex = current ? items.findIndex(item => item.id === segmentId) : -1;
@@ -366,23 +257,21 @@ export const useShowcallerStateCoordination = ({
       isPlaying,
       timeRemaining,
     });
-  }, [jumpToSegment, broadcastState, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, isPlaying, timeRemaining, items, sendCueTrigger]);
+  }, [jumpToSegment, userId, isController, trackOwnUpdate, trackOwnVisualUpdate, items, sendCueTrigger, isPlaying, timeRemaining]);
 
   // Initialization coordination
   useEffect(() => {
-    const isFullyConnected = isBroadcastConnected && isFallbackConnected;
     if (isInitialized && !initializationRef.current) {
       initializationRef.current = true;
-      console.log('📺 Showcaller state coordination initialized with broadcast-first sync:', {
+      console.log('📺 Showcaller state coordination initialized:', {
         rundownId,
         userId,
         currentSegmentId,
         isPlaying,
-        broadcastConnected: isBroadcastConnected,
-        fallbackConnected: isFallbackConnected
+        isConnected
       });
     }
-  }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isBroadcastConnected, isFallbackConnected]);
+  }, [isInitialized, rundownId, userId, currentSegmentId, isPlaying, isConnected]);
 
   return {
     // State
@@ -392,7 +281,7 @@ export const useShowcallerStateCoordination = ({
     timeRemaining,
     isController,
     isInitialized,
-    isConnected: isBroadcastConnected && isFallbackConnected,
+    isConnected,
     isProcessingVisualUpdate,
     hasLoadedInitialState: isInitialized, // Add this to track when visual indicators are ready
     
