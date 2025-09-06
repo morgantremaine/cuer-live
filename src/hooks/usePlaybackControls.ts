@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useDirectShowcallerRealtime } from './useDirectShowcallerRealtime';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useAuth } from './useAuth';
 
@@ -41,9 +40,9 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Broadcast-first sync for instant updates
+  // Use broadcast sync only (more reliable for real-time coordination)
   const { isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
-    rundownId,
+    rundownId: rundownId || '',
     onBroadcastReceived: (state) => {
       console.log('📺 Playback controls received broadcast:', state);
       applyExternalVisualState({
@@ -53,25 +52,15 @@ export const usePlaybackControls = (
         isController: state.isController
       });
     },
-    enabled: true
+    enabled: !!rundownId
   });
 
-  // Fallback direct real-time connection
-  const { isConnected: isFallbackConnected, trackOwnUpdate: directTrackOwnUpdate } = useDirectShowcallerRealtime({
-    rundownId,
-    onShowcallerStateReceived: applyExternalVisualState,
-    onShowcallerActivity
-  });
-
-  // Create a combined tracking function
+  // Track own updates for broadcast system only
   const combinedTrackOwnUpdate = useCallback((timestamp: string) => {
     if (trackOwnUpdate) {
       trackOwnUpdate(timestamp);
     }
-    if (directTrackOwnUpdate) {
-      directTrackOwnUpdate(timestamp);
-    }
-  }, [trackOwnUpdate, directTrackOwnUpdate]);
+  }, [trackOwnUpdate]);
 
   // Standard initialization timeout - mobile detection was causing issues
   useEffect(() => {
@@ -175,6 +164,6 @@ export const usePlaybackControls = (
     jumpToSegment: safeJumpToSegment,
     isController: controlsReady ? isController : false,
     isInitialized,
-    isConnected: isBroadcastConnected && isFallbackConnected
+    isConnected: isBroadcastConnected
   };
 };

@@ -1,7 +1,6 @@
 
 import { useCallback, useRef, useEffect } from 'react';
 import { useShowcallerVisualState } from './useShowcallerVisualState';
-import { useShowcallerRealtimeSync } from './useShowcallerRealtimeSync';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { useCueIntegration } from './useCueIntegration';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
@@ -396,7 +395,6 @@ export const useShowcallerStateCoordination = ({
     isController,
     isInitialized,
     isConnected: isBroadcastConnected,
-    isProcessingVisualUpdate,
     hasLoadedInitialState: isInitialized, // Add this to track when visual indicators are ready
     
     // Visual state management
