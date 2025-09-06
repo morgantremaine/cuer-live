@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
-import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
+import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -38,7 +38,7 @@ export const useSharedRundownState = () => {
   const contentSubscription = useRef<any>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
-  const watchdogRef = useRef<any>(null);
+  const watchdogRef = useRef<RealtimeWatchdog | null>(null);
 
   // Enhanced time update with proper cleanup
   useEffect(() => {
@@ -194,12 +194,17 @@ export const useSharedRundownState = () => {
         if (status === 'SUBSCRIBED') {
           // Start watchdog once we're connected
           if (!watchdogRef.current && rundownId) {
-            // Simple watchdog replacement
-            watchdogRef.current = {
-              start: () => {},
-              stop: () => {},
-              updateLastSeen: () => {}
-            };
+            watchdogRef.current = RealtimeWatchdog.getInstance(rundownId, 'shared-viewer', {
+              onStaleData: (latestData) => {
+                logger.debug('Watchdog detected stale data, refreshing');
+                loadRundownData(true);
+              },
+              onReconnect: () => {
+                logger.debug('Watchdog triggered reconnect');
+                loadRundownData(true);
+              }
+            });
+            watchdogRef.current.start();
           }
         }
       });
@@ -219,7 +224,7 @@ export const useSharedRundownState = () => {
       }
       if (watchdogRef.current) {
         watchdogRef.current.stop();
-        // RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
+        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
         watchdogRef.current = null;
       }
     };
@@ -318,7 +323,7 @@ export const useSharedRundownState = () => {
       }
       if (watchdogRef.current) {
         watchdogRef.current.stop();
-        // RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
+        RealtimeWatchdog.cleanup(rundownId || '', 'shared-viewer');
         watchdogRef.current = null;
       }
     };

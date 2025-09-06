@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
-import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeRundown';
+import { useSimpleRealtimeRundown } from '@/hooks/useSimpleRealtimeRundown';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
@@ -75,11 +75,11 @@ const Teleprompter = () => {
   const prevIsActiveRef = useRef(true);
 
   // Enhanced real-time updates with doc version tracking
-  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
+  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useSimpleRealtimeRundown({
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
     lastSeenDocVersion,
-    onContentUpdate: (updatedRundown) => {
+    onRundownUpdate: (updatedRundown) => {
       // Always accept remote updates to ensure real-time sync
       if (updatedRundown) {
         console.log('📥 Teleprompter receiving real-time update from team');

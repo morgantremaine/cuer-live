@@ -124,12 +124,12 @@ export const useShowcallerStateCoordination = ({
     }
   }, [isInitialized, applyExternalVisualState, visualState.controllerId, isController, userId]);
 
-  // Realtime synchronization using consolidated system (disabled - now handled by main state)
-  const { isConnected, isProcessingVisualUpdate, trackOwnVisualUpdate } = {
-    isConnected: true, // Always connected through main state
-    isProcessingVisualUpdate: false,
-    trackOwnVisualUpdate: (timestamp: string) => {}
-  };
+  // Realtime synchronization with processing state
+  const { isConnected, isProcessingVisualUpdate, trackOwnVisualUpdate } = useShowcallerRealtimeSync({
+    rundownId,
+    onExternalVisualStateReceived: handleExternalVisualState,
+    enabled: isInitialized
+  });
 
   // Helper to get current and next segments
   const getCurrentSegment = useCallback(() => {
