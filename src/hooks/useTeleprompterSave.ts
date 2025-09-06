@@ -118,7 +118,8 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
       // CRITICAL: Track this as our own update to prevent feedback loops
       if (trackOwnUpdate) {
         console.log('📝 Teleprompter tracking own update:', updateTimestamp);
-        trackOwnUpdate(updateTimestamp);
+        // Track with actual DB timestamp, not client timestamp
+        trackOwnUpdate(data?.[0]?.updated_at || updateTimestamp);
       }
 
       return true;

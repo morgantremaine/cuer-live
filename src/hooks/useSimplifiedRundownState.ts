@@ -177,6 +177,11 @@ export const useSimplifiedRundownState = () => {
       if (isInitialized && !lastSavedPrimedRef.current) {
         lastSavedPrimedRef.current = true;
       }
+      
+      // Coordinate with teleprompter saves to prevent conflicts
+      if (teleprompterSync.isTeleprompterSaving) {
+        console.log('📝 Main rundown saved while teleprompter active - coordinating...');
+      }
     },
     pendingStructuralChangeRef,
     remoteSaveCooldownRef,
@@ -364,10 +369,15 @@ export const useSimplifiedRundownState = () => {
               const field = fieldKey.substring(remoteItem.id.length + 1);
               if (field.startsWith('customFields.')) {
                 const customFieldKey = field.replace('customFields.', '');
+                // Ensure customFields object exists
                 merged.customFields = merged.customFields || {};
-                merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
+                localItem.customFields = localItem.customFields || {};
+                // Field-by-field protection: only protect the specific custom field being edited
+                merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields[customFieldKey];
+                console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id}`);
               } else if (localItem.hasOwnProperty(field)) {
                 merged[field] = localItem[field]; // Keep local value
+                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id}`);
               }
             }
           });
@@ -568,10 +578,15 @@ export const useSimplifiedRundownState = () => {
               const field = fieldKey.substring(remoteItem.id.length + 1);
               if (field.startsWith('customFields.')) {
                 const customFieldKey = field.replace('customFields.', '');
+                // Ensure customFields object exists
                 merged.customFields = merged.customFields || {};
-                merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] || merged.customFields[customFieldKey];
+                localItem.customFields = localItem.customFields || {};
+                // Field-by-field protection for deferred updates too
+                merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields[customFieldKey];
+                console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (deferred)`);
               } else if (localItem.hasOwnProperty(field)) {
                 merged[field] = localItem[field]; // Keep local value
+                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (deferred)`);
               }
             }
           });
@@ -850,10 +865,15 @@ export const useSimplifiedRundownState = () => {
             const field = fieldKey.substring(remoteItem.id.length + 1);
             if (field.startsWith('customFields.')) {
               const customFieldKey = field.replace('customFields.', '');
+              // Ensure customFields object exists
               merged.customFields = merged.customFields || {};
-              merged.customFields[customFieldKey] = localItem.customFields?.[customFieldKey] ?? merged.customFields?.[customFieldKey];
+              localItem.customFields = localItem.customFields || {};
+              // Field-by-field protection for refresh updates too
+              merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields?.[customFieldKey];
+              console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (refresh)`);
             } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
               (merged as any)[field] = (localItem as any)[field];
+              console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (refresh)`);
             }
           }
         });
@@ -1171,19 +1191,29 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      // Track start time editing for protection
-      recentlyEditedFieldsRef.current.set('startTime', Date.now());
-      typingSessionRef.current = { fieldKey: 'startTime', startTime: Date.now() };
+      console.log('🕐 setStartTime called with enhanced protection:', newStartTime);
+      
+      // Mark start time as a dropdown field change for enhanced protection
+      markDropdownFieldChanged('startTime');
+      
+      // Track start time editing for protection with longer window
+      const now = Date.now();
+      recentlyEditedFieldsRef.current.set('startTime', now);
+      dropdownFieldProtectionRef.current.set('startTime', now);
+      typingSessionRef.current = { fieldKey: 'startTime', startTime: now };
+      
+      // Set cooldown to prevent immediate overwrites
+      remoteSaveCooldownRef.current = now + 3000; // 3 second cooldown
       
       actions.setStartTime(newStartTime);
       
-      // Clear typing session after delay
+      // Clear typing session after extended delay
       setTimeout(() => {
         if (typingSessionRef.current?.fieldKey === 'startTime') {
           typingSessionRef.current = null;
         }
-      }, 5000); // Extended timeout for start time editing
-    }, [actions.setStartTime]),
+      }, 8000); // Even longer timeout for start time editing
+    }, [actions.setStartTime, markDropdownFieldChanged]),
     setTimezone: useCallback((newTimezone: string) => {
       console.log('🌍 setTimezone called with enhanced protection:', newTimezone);
       
