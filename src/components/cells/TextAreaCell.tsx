@@ -57,23 +57,17 @@ const TextAreaCell = ({
     measurementDiv.style.padding = computedStyle.padding;
     measurementDiv.style.border = computedStyle.border;
     measurementDiv.style.boxSizing = computedStyle.boxSizing;
+    // Always allow normal text wrapping in the measurement div
     measurementDiv.style.wordWrap = 'break-word';
     measurementDiv.style.whiteSpace = 'pre-wrap';
     
-    // Set the content and measure wrapped height
-    measurementDiv.textContent = value || ' ';
-    const wrappedHeight = measurementDiv.offsetHeight;
+    // Set the content
+    measurementDiv.textContent = value || ' '; // Use space for empty content
     
-    // Now measure single-line height with same content
-    measurementDiv.style.whiteSpace = 'nowrap';
-    measurementDiv.style.overflow = 'hidden';
-    const singleLineHeight = measurementDiv.offsetHeight;
+    // Get the natural height
+    const naturalHeight = measurementDiv.offsetHeight;
     
-    // Restore original settings
-    measurementDiv.style.whiteSpace = 'pre-wrap';
-    measurementDiv.style.overflow = 'visible';
-    
-    // Calculate minimum height (single line + padding/border)
+    // Calculate minimum height (single line)
     const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
@@ -82,24 +76,22 @@ const TextAreaCell = ({
     
     const minHeight = lineHeight + paddingTop + paddingBottom + borderTop + borderBottom;
     
-    // If the wrapped height is significantly taller than single-line, text is wrapping
-    const heightDifference = wrappedHeight - singleLineHeight;
-    const isWrapping = heightDifference > 2; // Allow small rounding differences
-    
-    // Debug logging for the specific test text
-    if (value && value.includes('This is a test of the logging system')) {
-      console.log('🔍 Height calculation debug:', {
-        value: value.substring(0, 50),
-        textareaWidth,
-        wrappedHeight,
-        singleLineHeight,
-        heightDifference,
-        isWrapping,
-        minHeight
-      });
-    }
-    
-    const newHeight = isWrapping ? Math.max(wrappedHeight, minHeight) : minHeight;
+    // Determine if wrapping is actually required using single-line measurement
+    const previousWhiteSpace = measurementDiv.style.whiteSpace;
+    measurementDiv.style.whiteSpace = 'nowrap';
+    measurementDiv.textContent = value || ' ';
+    const singleLineWidth = measurementDiv.scrollWidth;
+    // Restore pre-wrap for height measurement
+    measurementDiv.style.whiteSpace = 'pre-wrap';
+    measurementDiv.textContent = value || ' ';
+
+    const paddingLeft = parseFloat(computedStyle.paddingLeft) || 8;
+    const paddingRight = parseFloat(computedStyle.paddingRight) || 8;
+    const contentWidth = textarea.clientWidth - paddingLeft - paddingRight;
+
+    // Use a small hysteresis (2px) to avoid flicker around the threshold
+    const shouldWrap = singleLineWidth > contentWidth + 2;
+    const newHeight = shouldWrap ? Math.max(naturalHeight, minHeight) : minHeight;
     
     // Always update height if it's different
     if (newHeight !== calculatedHeight) {
