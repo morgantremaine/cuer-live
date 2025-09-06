@@ -86,7 +86,15 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     handleLoadLayout,
     autoScrollEnabled,
     onToggleAutoScroll,
-    onShowNotes
+    onShowNotes,
+    // Zoom controls
+    zoomLevel,
+    onZoomIn,
+    onZoomOut,
+    onResetZoom,
+    canZoomIn,
+    canZoomOut,
+    isDefaultZoom
   } = props;
 
   // Create rundown data for CSV export
@@ -147,6 +155,14 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onUpdateItem={onUpdateItem}
         onShowFindReplace={() => setShowFindReplace(true)}
         onShowNotes={onShowNotes}
+        // Zoom controls
+        zoomLevel={zoomLevel}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetZoom={onResetZoom}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+        isDefaultZoom={isDefaultZoom}
       />
 
       {/* Main Content */}

@@ -50,6 +50,14 @@ interface RundownHeaderSectionProps {
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
 }
 
 const RundownHeaderSection = ({
@@ -97,7 +105,15 @@ const RundownHeaderSection = ({
   onToggleAutoScroll,
   onUpdateItem,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  // Zoom controls
+  zoomLevel,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  canZoomIn,
+  canZoomOut,
+  isDefaultZoom
 }: RundownHeaderSectionProps) => {
   return (
     <div>
@@ -153,6 +169,14 @@ const RundownHeaderSection = ({
         onToggleAutoScroll={onToggleAutoScroll}
         onShowFindReplace={onShowFindReplace}
         onShowNotes={onShowNotes}
+        // Zoom controls
+        zoomLevel={zoomLevel}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetZoom={onResetZoom}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+        isDefaultZoom={isDefaultZoom}
       />
     </div>
   );
