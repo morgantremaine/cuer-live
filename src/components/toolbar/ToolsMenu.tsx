@@ -12,7 +12,7 @@ import { Wrench, Monitor, FileText, Camera, Search, HelpCircle, StickyNote, Hist
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { RundownRevisionHistory } from '@/components/RundownRevisionHistory';
+import { RundownActionLog } from '@/components/RundownActionLog';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -205,7 +205,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       {rundownId && rundownId !== DEMO_RUNDOWN_ID && (
         <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden', pointerEvents: 'none' }}>
           <div ref={historyButtonRef}>
-            <RundownRevisionHistory 
+            <RundownActionLog 
               rundownId={rundownId} 
               onRestore={() => window.location.reload()} 
             />
