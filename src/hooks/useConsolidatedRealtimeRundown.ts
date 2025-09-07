@@ -213,10 +213,8 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Only show processing indicator for content changes if not initial load
-      if (!isInitialLoad) {
-        setIsProcessingUpdate(true);
-      }
+      // Show processing indicator for content changes (but not during initial subscription)
+      setIsProcessingUpdate(true);
       try {
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
           try { 
@@ -226,12 +224,10 @@ export const useConsolidatedRealtimeRundown = ({
           }
         });
       } finally {
-        // Keep processing indicator active for a short period to show blue wifi icon if not initial load
-        if (!isInitialLoad) {
-          setTimeout(() => {
-            setIsProcessingUpdate(false);
-          }, 500); // 500ms delay to ensure UI can show the activity
-        }
+        // Keep processing indicator active for visual feedback
+        setTimeout(() => {
+          setIsProcessingUpdate(false);
+        }, 800); // 800ms for clear blue wifi visibility
       }
     }
 
@@ -315,8 +311,10 @@ export const useConsolidatedRealtimeRundown = ({
               console.warn('Initial catch-up fetch failed:', error);
             }
           } finally {
-            // Mark initial load as complete
-            setIsInitialLoad(false);
+            // Mark initial load as complete after first successful subscription
+            setTimeout(() => {
+              setIsInitialLoad(false);
+            }, 100);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
