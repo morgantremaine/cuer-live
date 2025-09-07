@@ -10,7 +10,6 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
-import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -95,15 +94,14 @@ const RundownIndexContent = () => {
   // Track layout stabilization to prevent flashing
   const [isLayoutStabilized, setIsLayoutStabilized] = useState(false);
   
-  // Also wait for team custom columns to finish loading to avoid second-phase layout hydrate
-  const { loading: isLoadingTeamColumns } = useTeamCustomColumns();
+  // Removed redundant useTeamCustomColumns - useUserColumnPreferences handles team columns internally
 
   // Prevent skeleton from reappearing after first reveal - but keep it lightweight
   const [hasRevealed, setHasRevealed] = useState(false);
 
   // Mark layout as stabilized after a brief delay when all loading is complete  
   useEffect(() => {
-    if (!isLoadingPreferences && !isLoadingSharedLayout && !isLoadingTeamColumns && userColumns.length > 0) {
+    if (!isLoadingPreferences && !isLoadingSharedLayout && userColumns.length > 0) {
       const stabilizationTimer = setTimeout(() => {
         setIsLayoutStabilized(true);
       }, 100); // Shorter delay for faster reveal
@@ -112,7 +110,7 @@ const RundownIndexContent = () => {
     } else {
       setIsLayoutStabilized(false);
     }
-  }, [isLoadingPreferences, isLoadingSharedLayout, isLoadingTeamColumns, userColumns.length]);
+  }, [isLoadingPreferences, isLoadingSharedLayout, userColumns.length]);
 
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
@@ -244,7 +242,7 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton until ALL systems are ready, including column prefs, team columns, and layout stabilization
+  // Show skeleton until ALL systems are ready, including column prefs and layout stabilization
   const isFullyLoading = (
     isLoading ||
     !isInitialized ||
@@ -253,7 +251,6 @@ const RundownIndexContent = () => {
     !items || items.length === 0 ||
     isLoadingPreferences ||
     isLoadingSharedLayout ||
-    isLoadingTeamColumns ||
     !hasInitialColumnLoad ||
     !isLayoutStabilized
   );
