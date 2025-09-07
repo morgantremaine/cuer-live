@@ -236,22 +236,20 @@ const RundownContent = React.memo<RundownContentProps>(({
       {/* Scrollable Content with Separate Header and Body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
         <div className="relative">
-          {/* Sticky Header - Now uses consistent scaling with body */}
+          {/* Sticky Header - Outside of Transform */}
           <div 
-            className="sticky top-0 z-20 bg-background zoom-container"
+            className="sticky top-0 z-20 bg-background"
             style={{ 
-              minWidth: `${totalTableWidth}px`,
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top left',
-              width: zoomLevel !== 1 ? `${100 / zoomLevel}%` : '100%'
+              width: `${totalTableWidth * zoomLevel}px`,
+              minWidth: `${totalTableWidth * zoomLevel}px`
             }}
           >
             <table 
               className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
-                width: `${totalTableWidth}px`,
-                minWidth: `${totalTableWidth}px`,
+                width: `${totalTableWidth * zoomLevel}px`,
+                minWidth: `${totalTableWidth * zoomLevel}px`,
                 margin: 0,
                 padding: 0
               }}
@@ -260,8 +258,8 @@ const RundownContent = React.memo<RundownContentProps>(({
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 allColumns={allColumns}
-                getColumnWidth={getColumnWidth}
-                updateColumnWidth={updateColumnWidth}
+                getColumnWidth={(column) => `${parseInt(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
+                updateColumnWidth={(columnId, width) => updateColumnWidth(columnId, width / zoomLevel)}
                 onReorderColumns={onReorderColumns}
                 onToggleColumnVisibility={onToggleColumnVisibility}
                 items={items}
@@ -271,7 +269,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                 isHeaderCollapsed={isHeaderCollapsed}
                 savedLayouts={savedLayouts}
                 onLoadLayout={onLoadLayout}
-                zoomLevel={1}
+                zoomLevel={zoomLevel}
               />
             </table>
           </div>
