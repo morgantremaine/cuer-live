@@ -328,7 +328,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     loadColumnPreferences();
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change - completely prevent during initial load
+  // Update columns when team columns change - but only once after initial load
   useEffect(() => {
     // CRITICAL: Only block during the actual loading phase, not after
     if (isLoading) {
@@ -338,7 +338,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     // Also ensure team columns are loaded before processing
     if (teamColumns.length === 0) {
-      console.log('📊 Team column effect skipped - no team columns available');
+      // Only set hasInitialLoad if we haven't already and we're not loading
+      if (!hasInitialLoad) {
+        setHasInitialLoad(true);
+        console.log('📊 Initial column load complete (no team columns)');
+      }
       return;
     }
     
@@ -349,17 +353,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     
     // Only update if columns actually changed
     if (currentColumnKeys !== newColumnKeys) {
-      console.log('📊 Team columns changed after initial load - updating (no autosave)');
+      console.log('📊 Team columns merged - updating layout');
       setColumns(newMerged);
       // Don't auto-save here - let user interactions trigger saves
     }
     
-    // Mark initial load complete after team column processing is done
+    // Mark initial load complete after team column processing is done (only once)
     if (!hasInitialLoad) {
       setHasInitialLoad(true);
-      console.log('📊 Initial column load now complete with team columns merged');
+      console.log('📊 Initial column load complete with team columns');
     }
-  }, [teamColumns, isLoading, hasInitialLoad, mergeColumnsWithTeamColumns, columns]);
+  }, [teamColumns.length, isLoading, hasInitialLoad, columns.length]); // Simplified dependencies
 
   // Cleanup timeouts on unmount
   useEffect(() => {
