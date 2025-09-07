@@ -83,7 +83,6 @@ const RundownIndexContent = () => {
   const userColumns = columns;
   const isLoadingPreferences = isLoading;
   const isSavingPreferences = isSaving;
-  const hasInitialColumnLoad = true; // Always true since columns come from main state
 
   // Get shared layout information to prevent flashing during layout loads
   const { 
@@ -241,16 +240,14 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton until ALL systems are ready, including column prefs and layout stabilization
+  // Show skeleton until ALL systems are ready, including layout stabilization
   const isFullyLoading = (
     isLoading ||
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
     !items || items.length === 0 ||
-    isLoadingPreferences ||
     isLoadingSharedLayout ||
-    !hasInitialColumnLoad ||
     !isLayoutStabilized
   );
   const showSkeleton = !hasRevealed ? isFullyLoading : false;

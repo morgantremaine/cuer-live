@@ -328,42 +328,27 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     loadColumnPreferences();
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change - but only once after initial load
+  // Update columns when team columns change - wait until all loading is done
   useEffect(() => {
-    // CRITICAL: Only block during the actual loading phase, not after
-    if (isLoading) {
-      console.log('📊 Team column effect blocked - still loading');
+    // Block while either preferences or team columns are loading
+    if (isLoading || teamColumnsLoading) {
       return;
     }
 
-    // Also ensure team columns are loaded before processing
+    // If no team columns, nothing to merge
     if (teamColumns.length === 0) {
-      // Only set hasInitialLoad if we haven't already and we're not loading
-      if (!hasInitialLoad) {
-        setHasInitialLoad(true);
-        console.log('📊 Initial column load complete (no team columns)');
-      }
       return;
     }
     
-    // Use a ref to track if we've already processed team columns for this load
+    // Merge and update only if the result actually changes
     const currentColumnKeys = columns.map(c => c.key).sort().join(',');
     const newMerged = mergeColumnsWithTeamColumns(columns);
     const newColumnKeys = newMerged.map(c => c.key).sort().join(',');
     
-    // Only update if columns actually changed
     if (currentColumnKeys !== newColumnKeys) {
-      console.log('📊 Team columns merged - updating layout');
       setColumns(newMerged);
-      // Don't auto-save here - let user interactions trigger saves
     }
-    
-    // Mark initial load complete after team column processing is done (only once)
-    if (!hasInitialLoad) {
-      setHasInitialLoad(true);
-      console.log('📊 Initial column load complete with team columns');
-    }
-  }, [teamColumns.length, isLoading, hasInitialLoad, columns.length]); // Simplified dependencies
+  }, [isLoading, teamColumnsLoading, teamColumns.length, columns.length]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -374,6 +359,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     };
   }, []);
 
+  // Signal initial load completion only when both sources are ready
+  useEffect(() => {
+    if (!isLoading && !teamColumnsLoading && !hasInitialLoad) {
+      setHasInitialLoad(true);
+    }
+  }, [isLoading, teamColumnsLoading, hasInitialLoad]);
   return {
     columns,
     setColumns: updateColumns,
