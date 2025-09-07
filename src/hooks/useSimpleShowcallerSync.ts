@@ -40,6 +40,7 @@ export const useSimpleShowcallerSync = ({
   const lastUpdateRef = useRef<string>('');
   const hasLoadedInitialState = useRef<boolean>(false);
   const isLoadingInitialState = useRef<boolean>(false);
+  const lastActionTimeRef = useRef<number | null>(null);
 
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
@@ -233,6 +234,14 @@ export const useSimpleShowcallerSync = ({
     const nextSegment = findNextSegment(state.currentSegmentId);
     if (!nextSegment) return;
     
+    // Prevent rapid successive calls within 300ms to fix double-jump issue
+    const now = Date.now();
+    if (lastActionTimeRef.current && (now - lastActionTimeRef.current) < 300) {
+      console.log('📺 Simple: Forward ignored - too rapid, preventing double-jump');
+      return;
+    }
+    lastActionTimeRef.current = now;
+    
     const duration = parseDurationToSeconds(nextSegment.duration);
     const newState = {
       ...state,
@@ -259,6 +268,14 @@ export const useSimpleShowcallerSync = ({
     
     const prevSegment = findPrevSegment(state.currentSegmentId);
     if (!prevSegment) return;
+    
+    // Prevent rapid successive calls within 300ms to fix double-jump issue
+    const now = Date.now();
+    if (lastActionTimeRef.current && (now - lastActionTimeRef.current) < 300) {
+      console.log('📺 Simple: Backward ignored - too rapid, preventing double-jump');
+      return;
+    }
+    lastActionTimeRef.current = now;
     
     const duration = parseDurationToSeconds(prevSegment.duration);
     const newState = {
