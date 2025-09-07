@@ -72,6 +72,8 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
   teamMembers = [],
   onDragStart
 }) => {
+  const navigate = useNavigate();
+  
   // Use live activity status that updates every minute
   const activityStatus = useLiveActivityStatus(rundown, currentUserId, teamMembers);
 
@@ -364,7 +366,7 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => window.location.href = `/rundown/${rundown.id}/blueprint`}
+            onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
             className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
           >
             <FileText className="h-4 w-4 mr-1" />
