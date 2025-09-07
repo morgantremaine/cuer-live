@@ -59,13 +59,8 @@ const RegularRowContent = ({
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
-        <div className="flex items-center justify-center relative w-full h-6">
-          {isCurrentlyPlaying && (
-            <Play 
-              className="h-4 w-4 text-blue-500 fill-blue-500 absolute left-1" 
-            />
-          )}
-          <span style={{ color: textColor }} className="text-center flex-1">{rowNumber}</span>
+        <div className="flex items-center justify-center w-full h-6">
+          <span style={{ color: textColor }}>{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
@@ -85,20 +80,42 @@ const RegularRowContent = ({
               borderRight: '1px solid hsl(var(--border))'
             }}
           >
-            <CellRenderer
-              column={column}
-              item={item}
-              cellRefs={cellRefs}
-              textColor={isCurrentSegmentName ? '#ffffff' : textColor}
-              backgroundColor="transparent"
-              currentSegmentId={currentSegmentId}
-              columnExpandState={columnExpandState}
-              onUpdateItem={onUpdateItem}
-              onCellClick={onCellClick}
-              onKeyDown={onKeyDown}
-              markActiveTyping={markActiveTyping}
-              width={columnWidth}
-            />
+            {isCurrentSegmentName ? (
+              <div className="flex items-center gap-2">
+                <Play className="h-4 w-4 text-white fill-blue-500" />
+                <div className="flex-1">
+                  <CellRenderer
+                    column={column}
+                    item={item}
+                    cellRefs={cellRefs}
+                    textColor="#ffffff"
+                    backgroundColor="transparent"
+                    currentSegmentId={currentSegmentId}
+                    columnExpandState={columnExpandState}
+                    onUpdateItem={onUpdateItem}
+                    onCellClick={onCellClick}
+                    onKeyDown={onKeyDown}
+                    markActiveTyping={markActiveTyping}
+                    width={columnWidth}
+                  />
+                </div>
+              </div>
+            ) : (
+              <CellRenderer
+                column={column}
+                item={item}
+                cellRefs={cellRefs}
+                textColor={textColor}
+                backgroundColor="transparent"
+                currentSegmentId={currentSegmentId}
+                columnExpandState={columnExpandState}
+                onUpdateItem={onUpdateItem}
+                onCellClick={onCellClick}
+                onKeyDown={onKeyDown}
+                markActiveTyping={markActiveTyping}
+                width={columnWidth}
+              />
+            )}
           </td>
         );
       })}
