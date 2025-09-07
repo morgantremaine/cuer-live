@@ -452,6 +452,15 @@ export const useSimpleAutoSave = (
             docVersion 
           });
 
+          // Track the actual timestamp returned by the database
+          if (updatedAt) {
+            const normalizedTs = normalizeTimestamp(updatedAt);
+            trackMyUpdate(normalizedTs);
+            if (rundownId) {
+              registerRecentSave(rundownId, normalizedTs);
+            }
+          }
+
           // Update lastSavedRef immediately to prevent retry race condition  
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
