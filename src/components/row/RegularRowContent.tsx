@@ -49,12 +49,11 @@ const RegularRowContent = ({
   return (
     <>
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle"
+        className="px-2 py-1 text-sm font-mono align-middle relative"
         style={{ 
           width: '64px',
           minWidth: '64px',
-          maxWidth: '64px',
-          borderRight: '1px solid hsl(var(--border))'
+          maxWidth: '64px'
         }}
       >
         <div className="flex items-center justify-center relative w-full">
@@ -65,6 +64,11 @@ const RegularRowContent = ({
           )}
           <span style={{ color: textColor }} className={isCurrentlyPlaying ? 'ml-5' : ''}>{rowNumber}</span>
         </div>
+        {/* Vertical divider */}
+        <div 
+          className="absolute top-0 right-0 h-full w-px bg-border"
+          style={{ zIndex: 1 }}
+        />
       </td>
       {/* Dynamic columns */}
       {columns.map((column, index) => {
@@ -76,11 +80,10 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
+            className={`align-middle relative ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
-              backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent',
-              borderRight: '1px solid hsl(var(--border))'
+              backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent'
             }}
           >
             <CellRenderer
@@ -97,6 +100,13 @@ const RegularRowContent = ({
               markActiveTyping={markActiveTyping}
               width={columnWidth}
             />
+            {/* Vertical divider - only show if not the last column */}
+            {!isLastColumn && (
+              <div 
+                className="absolute top-0 right-0 h-full w-px bg-border"
+                style={{ zIndex: 1 }}
+              />
+            )}
           </td>
         );
       })}
