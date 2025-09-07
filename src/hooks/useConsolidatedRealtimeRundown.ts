@@ -235,9 +235,21 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
+      // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
+      console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
+        hasContentChanges,
+        isInitialLoad,
+        docVersion: incomingDocVersion,
+        timestamp: normalizedTimestamp,
+        shouldTriggerIndicator: !isInitialLoad,
+        payloadTable: payload.table,
+        changedFields: ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
+          .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
+      });
+
       // Show processing indicator for ALL content changes from remote sources (not during initial load)
       if (!isInitialLoad) {
-        console.log('🔵 Blue Wi-Fi: Triggering indicator for remote content change', {
+        console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
           docVersion: incomingDocVersion,
           timestamp: normalizedTimestamp,
           hasContentChanges: true
@@ -246,11 +258,11 @@ export const useConsolidatedRealtimeRundown = ({
         
         // Keep indicator visible for clear visibility
         setTimeout(() => {
-          console.log('🔵 Blue Wi-Fi: Hiding indicator after timeout');
+          console.log('🔵 Blue Wi-Fi: HIDING indicator after timeout');
           setIsProcessingUpdate(false);
         }, 1500); // Extended to 1.5s for better visibility
       } else {
-        console.log('🔵 Blue Wi-Fi: Skipping indicator - initial load in progress');
+        console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
       }
       
       try {
