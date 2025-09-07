@@ -54,7 +54,14 @@ export const useSimpleAutoSave = (
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
   const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
-  
+
+  // Suppress saving indicator briefly after initial load to avoid flashing
+  const savingIndicatorSuppressedUntilRef = useRef<number>(0);
+  useEffect(() => {
+    if (isInitiallyLoaded) {
+      savingIndicatorSuppressedUntilRef.current = Date.now() + 1200;
+    }
+  }, [isInitiallyLoaded]);
   // Keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
     rundownId,
@@ -393,7 +400,9 @@ export const useSimpleAutoSave = (
     }
     
     // Mark save in progress and capture what we're saving
-    setIsSaving(true);
+    if (Date.now() >= savingIndicatorSuppressedUntilRef.current) {
+      setIsSaving(true);
+    }
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
     
