@@ -33,7 +33,15 @@ export type Database = {
           notification_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_app_notification_dismissals_notification_id"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "app_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       app_notifications: {
         Row: {
