@@ -171,8 +171,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <AppUpdateNotification />
             <BrowserRouter>
-              <AppUpdateNotification />
               <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
