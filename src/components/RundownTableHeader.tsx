@@ -195,8 +195,7 @@ const RundownTableHeader = ({
           style={{ 
             width: `${64 * zoomLevel}px`, 
             minWidth: `${64 * zoomLevel}px`,
-            maxWidth: `${64 * zoomLevel}px`,
-            borderRight: '1px solid hsl(var(--border))'
+            maxWidth: `${64 * zoomLevel}px`
           }}
         >
           <div className="flex items-center space-x-1">
