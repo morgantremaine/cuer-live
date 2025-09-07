@@ -49,20 +49,8 @@ export const useSimplifiedRundownState = () => {
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
-  // Validation: Log cooldown flag states for debugging
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (blockUntilLocalEditRef.current || cooldownUntilRef.current > Date.now()) {
-        console.log('🛑 AutoSave cooldown status:', {
-          blockUntilLocalEdit: blockUntilLocalEditRef.current,
-          cooldownUntil: cooldownUntilRef.current > Date.now() ? new Date(cooldownUntilRef.current).toISOString() : 'none',
-          timeRemaining: cooldownUntilRef.current > Date.now() ? cooldownUntilRef.current - Date.now() : 0
-        });
-      }
-    }, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Track when cell broadcasts are being applied to prevent AutoSave triggers
+  const applyingCellBroadcastRef = useRef(false);
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
@@ -188,7 +176,8 @@ export const useSimplifiedRundownState = () => {
     undefined, // Legacy ref no longer needed
     isInitialized,
     blockUntilLocalEditRef,
-    cooldownUntilRef
+    cooldownUntilRef,
+    applyingCellBroadcastRef // Pass the cell broadcast flag
   );
 
   // Standalone undo system - unchanged
@@ -477,108 +466,118 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
-      // LAST WRITER WINS: Just apply the change immediately
-      // No protection, no AutoSave triggering - this is already saved by the sender
-        // Handle rundown-level property updates (no itemId)
-      if (!update.itemId) {
-        // Check if we're actively editing this rundown-level field
-        const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
-        if (isActivelyEditing) {
-          console.log('🛡️ Skipping rundown-level broadcast - actively editing:', update.field);
-          return;
-        }
-        
-        console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
-        
-        // Apply rundown-level property changes
-        switch (update.field) {
-          case 'title':
-            actions.setTitle(update.value);
-            break;
-          case 'startTime':
-            actions.setStartTime(update.value);
-            break;
-          case 'timezone':
-            actions.setTimezone(update.value);
-            break;
-          case 'showDate':
-            actions.setShowDate(update.value);
-            break;
-          case 'items:reorder': {
-            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
-            if (order.length > 0) {
-              const indexMap = new Map(order.map((id, idx) => [id, idx]));
-              const reordered = [...state.items].sort((a, b) => {
-                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-                return ai - bi;
-              });
-              actions.setItems(reordered);
-            }
-            break;
+      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
+      applyingCellBroadcastRef.current = true;
+      
+      try {
+        // LAST WRITER WINS: Just apply the change immediately
+        // No protection, no AutoSave triggering - this is already saved by the sender
+          // Handle rundown-level property updates (no itemId)
+        if (!update.itemId) {
+          // Check if we're actively editing this rundown-level field
+          const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
+          if (isActivelyEditing) {
+            console.log('🛡️ Skipping rundown-level broadcast - actively editing:', update.field);
+            return;
           }
-          case 'items:add': {
-            const payload = update.value || {};
-            const item = payload.item;
-            const index = Math.max(0, Math.min(payload.index ?? state.items.length, state.items.length));
-            if (item && !state.items.find(i => i.id === item.id)) {
-              const newItems = [...state.items];
-              newItems.splice(index, 0, item);
-              actions.setItems(newItems);
+          
+          console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
+          
+          // Apply rundown-level property changes
+          switch (update.field) {
+            case 'title':
+              actions.setTitle(update.value);
+              break;
+            case 'startTime':
+              actions.setStartTime(update.value);
+              break;
+            case 'timezone':
+              actions.setTimezone(update.value);
+              break;
+            case 'showDate':
+              actions.setShowDate(update.value);
+              break;
+            case 'items:reorder': {
+              const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+              if (order.length > 0) {
+                const indexMap = new Map(order.map((id, idx) => [id, idx]));
+                const reordered = [...state.items].sort((a, b) => {
+                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                  return ai - bi;
+                });
+                actions.setItems(reordered);
+              }
+              break;
             }
-            break;
-          }
-          case 'items:remove': {
-            const id = update.value?.id as string;
-            if (id) {
-              const newItems = state.items.filter(i => i.id !== id);
-              if (newItems.length !== state.items.length) {
+            case 'items:add': {
+              const payload = update.value || {};
+              const item = payload.item;
+              const index = Math.max(0, Math.min(payload.index ?? state.items.length, state.items.length));
+              if (item && !state.items.find(i => i.id === item.id)) {
+                const newItems = [...state.items];
+                newItems.splice(index, 0, item);
                 actions.setItems(newItems);
               }
+              break;
             }
-            break;
+            case 'items:remove': {
+              const id = update.value?.id as string;
+              if (id) {
+                const newItems = state.items.filter(i => i.id !== id);
+                if (newItems.length !== state.items.length) {
+                  actions.setItems(newItems);
+                }
+              }
+              break;
+            }
+            default:
+              console.warn('🚨 Unknown rundown-level field:', update.field);
           }
-          default:
-            console.warn('🚨 Unknown rundown-level field:', update.field);
-        }
-        
-        return;
-      }
-      
-        // Handle item-level updates (existing logic)
-        if (update.field === 'structuralChange') {
-          // Structural changes are handled by the normal realtime update flow
-          console.log('📱 Item structural change detected - handled by realtime');
+          
           return;
         }
         
-        const updatedItems = state.items.map(item => {
-          if (item.id === update.itemId) {
-            // Only apply if not actively editing this exact field
-            const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
-            if (isActivelyEditing) {
-              console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
-              return item;
-            }
-            
-            if (update.field === 'customFields') {
-              return {
-                ...item,
-                customFields: { ...item.customFields, ...update.value }
-              };
-            } else {
-              return {
-                ...item,
-                [update.field]: update.value
-              };
-            }
+          // Handle item-level updates (existing logic)
+          if (update.field === 'structuralChange') {
+            // Structural changes are handled by the normal realtime update flow
+            console.log('📱 Item structural change detected - handled by realtime');
+            return;
           }
-          return item;
-        });
-        
-        if (updatedItems.some((item, index) => item !== state.items[index])) {
-          actions.setItems(updatedItems);
-        }
+          
+          const updatedItems = state.items.map(item => {
+            if (item.id === update.itemId) {
+              // Only apply if not actively editing this exact field
+              const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
+              if (isActivelyEditing) {
+                console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
+                return item;
+              }
+              
+              if (update.field === 'customFields') {
+                return {
+                  ...item,
+                  customFields: { ...item.customFields, ...update.value }
+                };
+              } else {
+                return {
+                  ...item,
+                  [update.field]: update.value
+                };
+              }
+            }
+            return item;
+          });
+          
+          if (updatedItems.some((item, index) => item !== state.items[index])) {
+            actions.setItems(updatedItems);
+          }
+      } finally {
+        // CRITICAL: Reset flag after applying changes
+        setTimeout(() => {
+          applyingCellBroadcastRef.current = false;
+        }, 0);
+      }
     });
 
     return () => {

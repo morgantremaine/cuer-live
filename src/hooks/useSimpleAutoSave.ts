@@ -21,7 +21,8 @@ export const useSimpleAutoSave = (
   suppressUntilRef?: React.MutableRefObject<number>,
   isInitiallyLoaded?: boolean,
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
-  cooldownUntilRef?: React.MutableRefObject<number>
+  cooldownUntilRef?: React.MutableRefObject<number>,
+  applyingCellBroadcastRef?: React.MutableRefObject<boolean>
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -687,6 +688,12 @@ export const useSimpleAutoSave = (
     }
 
     if (state.hasUnsavedChanges) {
+      // CRITICAL: Skip AutoSave if cell broadcast is being applied
+      if (applyingCellBroadcastRef?.current) {
+        console.log('📱 AutoSave: skipped - cell broadcast being applied');
+        return;
+      }
+      
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
       
