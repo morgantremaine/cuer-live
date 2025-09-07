@@ -210,9 +210,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Only save columns that have user-specific settings (order, visibility, width)
     // But include ALL columns so we maintain the complete layout state
     const columnsToSaveFiltered = columnsToSave.filter(col => {
-      // Keep all columns that are visible or have been modified by user
-      // This ensures we save the complete layout state
-      return true; // Save everything for complete state preservation
+      // Keep all columns for complete state preservation
+      return true;
     });
 
     const currentSignature = JSON.stringify(columnsToSaveFiltered);
@@ -225,8 +224,37 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       clearTimeout(saveTimeoutRef.current);
     }
 
+    if (isImmediate) {
+      // Bypass debounce for structural changes (e.g., applying a saved layout)
+      setIsSaving(true);
+      try {
+        const { error } = await supabase
+          .from('user_column_preferences')
+          .upsert({
+            user_id: user.id,
+            rundown_id: rundownId,
+            column_layout: columnsToSaveFiltered
+          }, {
+            onConflict: 'user_id,rundown_id'
+          });
+
+        if (error) {
+          console.error('Error saving column preferences (immediate):', error);
+          debugLogger.preferences('Immediate save error: ' + error.message);
+        } else {
+          lastSavedRef.current = currentSignature;
+          debugLogger.preferences('Immediate save of ' + columnsToSaveFiltered.length + ' columns to preferences');
+        }
+      } catch (error) {
+        console.error('Failed to save column preferences (immediate):', error);
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
     // Use shorter debounce for resize operations, immediate for structural changes
-    const saveDelay = isImmediate ? 100 : 800;
+    const saveDelay = 800;
 
     // Debounce the save
     saveTimeoutRef.current = setTimeout(async () => {
