@@ -66,8 +66,8 @@ export const useSimplifiedRundownState = () => {
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
-  // Shorter protection windows to reduce overwrites
-  const PROTECTION_WINDOW_MS = 800; // Very short protection
+  // Extended protection windows for cell broadcast synchronization
+  const PROTECTION_WINDOW_MS = 6000; // Extended to cover cell broadcast timing
   const TYPING_PROTECTION_WINDOW_MS = 500; // Very short typing protection
   const CONFLICT_RESOLUTION_DELAY = 2000; // Time to wait before forcing reconciliation
   
