@@ -145,8 +145,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         .select('*')
         .eq('user_id', user.id)
         .eq('rundown_id', rundownId)
-        .order('updated_at', { ascending: false })
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading column preferences:', error);
@@ -235,7 +236,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           .upsert({
             user_id: user.id,
             rundown_id: rundownId,
-            column_layout: columnsToSaveFiltered
+            column_layout: columnsToSaveFiltered,
+            updated_at: new Date().toISOString()
           }, {
             onConflict: 'user_id,rundown_id'
           })
@@ -269,7 +271,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           .upsert({
             user_id: user.id,
             rundown_id: rundownId,
-            column_layout: columnsToSaveFiltered
+            column_layout: columnsToSaveFiltered,
+            updated_at: new Date().toISOString()
           }, {
             onConflict: 'user_id,rundown_id'
           });
