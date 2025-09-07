@@ -189,12 +189,14 @@ const ResizableColumnHeader = ({
         {children}
       </div>
       
-      <div 
-        className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
-        onMouseDown={handleMouseDown}
-        onDoubleClick={handleDoubleClick}
-        title="Double-click to auto-resize column"
-      />
+      {!isLastColumn && (
+        <div 
+          className="resize-handle absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400 transition-colors z-10 pointer-events-auto"
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClick}
+          title="Double-click to auto-resize column"
+        />
+      )}
     </th>
   );
 };
