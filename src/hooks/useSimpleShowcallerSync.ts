@@ -43,6 +43,7 @@ export const useSimpleShowcallerSync = ({
   const hasLoadedInitialState = useRef<boolean>(false);
   const isLoadingInitialState = useRef<boolean>(false);
   const lastActionTimeRef = useRef<number | null>(null);
+  const skipNextSaveRef = useRef<boolean>(false);
 
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
@@ -421,6 +422,7 @@ export const useSimpleShowcallerSync = ({
           }
         }
         
+        skipNextSaveRef.current = true;
         hasLoadedInitialState.current = true;
       } catch (error) {
         console.error('📺 Simple: Error loading initial state:', error);
@@ -439,6 +441,8 @@ export const useSimpleShowcallerSync = ({
   // Save showcaller state to database whenever it changes
   const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
     if (!rundownId || !hasLoadedInitialState.current) return;
+    // Only controllers persist state; viewers never write
+    if (!stateToSave.isController) return;
 
     try {
       // Signal that this is a showcaller operation to prevent false change detection
@@ -480,6 +484,13 @@ export const useSimpleShowcallerSync = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (!hasLoadedInitialState.current) return;
+    // Do not persist for non-controllers
+    if (!state.isController) return;
+    // Skip the first save after initial load
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
 
     // Debounce saves to prevent too frequent updates
     if (saveTimeoutRef.current) {
