@@ -18,6 +18,7 @@ class ShowcallerBroadcastManager {
   private channels: Map<string, any> = new Map();
   private callbacks: Map<string, Set<(state: ShowcallerBroadcastState) => void>> = new Map();
   private ownUpdateTracking: Map<string, Set<string>> = new Map();
+  private connectionStatus: Map<string, string> = new Map();
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -37,6 +38,15 @@ class ShowcallerBroadcastManager {
       })
       .subscribe((status) => {
         console.log('📺 Showcaller broadcast status:', status, rundownId);
+        this.connectionStatus.set(rundownId, status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
+        } else if (status === 'CLOSED') {
+          console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
+        }
       });
 
     this.channels.set(rundownId, channel);
@@ -128,6 +138,7 @@ class ShowcallerBroadcastManager {
     
     this.callbacks.delete(rundownId);
     this.ownUpdateTracking.delete(rundownId);
+    this.connectionStatus.delete(rundownId);
   }
 
   // Check if user's update should be skipped (for deduplication)
@@ -135,6 +146,16 @@ class ShowcallerBroadcastManager {
     const updateId = `${userId}-${timestamp}`;
     const ownUpdates = this.ownUpdateTracking.get(rundownId) || new Set();
     return ownUpdates.has(updateId);
+  }
+
+  // Get connection status for a rundown
+  getConnectionStatus(rundownId: string): string | null {
+    return this.connectionStatus.get(rundownId) || null;
+  }
+
+  // Check if channel is connected
+  isChannelConnected(rundownId: string): boolean {
+    return this.connectionStatus.get(rundownId) === 'SUBSCRIBED';
   }
 }
 
