@@ -366,8 +366,9 @@ export const useSimplifiedRundownState = () => {
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-        // Extended cooldown to prevent ping-pong saves and disappearing edits
-        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange ? 3000 : 2000);
+         // CRITICAL: Block all autosaves for 4 seconds after teammate update
+        console.log('🛑 AutoSave: BLOCKING all saves after teammate update - 4s cooldown active');
+        remoteSaveCooldownRef.current = Date.now() + 4000;
         
         // Schedule reconciliation to merge any remaining conflicts
         if (protectedFields.size > 0) {
@@ -420,8 +421,9 @@ export const useSimplifiedRundownState = () => {
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-        // Extended cooldown to prevent ping-pong saves and disappearing edits  
-        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange2 ? 3000 : 2000);
+         // CRITICAL: Block all autosaves for 4 seconds after teammate update
+        console.log('🛑 AutoSave: BLOCKING all saves after teammate update - 4s cooldown active');
+        remoteSaveCooldownRef.current = Date.now() + 4000;
 
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),

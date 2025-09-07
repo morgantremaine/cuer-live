@@ -237,13 +237,20 @@ export const useConsolidatedRealtimeRundown = ({
     } else if (hasContentChanges) {
       // Show processing indicator for ALL content changes from remote sources (not during initial load)
       if (!isInitialLoad) {
-        console.log('📺 Realtime: Showing blue Wi-Fi indicator for remote content change');
+        console.log('🔵 Blue Wi-Fi: Triggering indicator for remote content change', {
+          docVersion: incomingDocVersion,
+          timestamp: normalizedTimestamp,
+          hasContentChanges: true
+        });
         setIsProcessingUpdate(true);
         
         // Keep indicator visible for clear visibility
         setTimeout(() => {
+          console.log('🔵 Blue Wi-Fi: Hiding indicator after timeout');
           setIsProcessingUpdate(false);
-        }, 1200); // Extended to 1.2s for better visibility
+        }, 1500); // Extended to 1.5s for better visibility
+      } else {
+        console.log('🔵 Blue Wi-Fi: Skipping indicator - initial load in progress');
       }
       
       try {
