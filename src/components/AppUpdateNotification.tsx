@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AppNotification {
@@ -137,25 +137,15 @@ const AppUpdateNotification = () => {
     <div className="fixed bottom-4 right-4 z-50 max-w-sm animate-in slide-in-from-bottom-2">
       <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 shadow-lg">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-blue-900 dark:text-blue-100 text-base">
-                {notification.title}
-              </CardTitle>
-              {notification.message && (
-                <CardDescription className="text-blue-700 dark:text-blue-300 mt-1">
-                  {notification.message}
-                </CardDescription>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDismiss}
-              className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-200 dark:hover:bg-blue-900"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          <div>
+            <CardTitle className="text-blue-900 dark:text-blue-100 text-base">
+              {notification.title}
+            </CardTitle>
+            {notification.message && (
+              <CardDescription className="text-blue-700 dark:text-blue-300 mt-1">
+                {notification.message}
+              </CardDescription>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-0">
