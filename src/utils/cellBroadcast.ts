@@ -1,5 +1,6 @@
 // Per-cell broadcast system using Supabase Realtime (simplified for single sessions)
 import { supabase } from '@/integrations/supabase/client';
+import { getReconnectDelay } from '@/utils/realtimeUtils';
 
 // Simplified message payload for single sessions
 interface CellUpdate {
@@ -82,7 +83,6 @@ export class CellBroadcastManager {
     this.reconnectAttempts.set(rundownId, attempts + 1);
 
     // Use exponential backoff from realtimeUtils
-    const { getReconnectDelay } = require('@/utils/realtimeUtils');
     const delay = getReconnectDelay(attempts);
 
     console.log(`🔌 Cell channel disconnected, reconnecting in ${delay}ms (attempt ${attempts + 1})`);
