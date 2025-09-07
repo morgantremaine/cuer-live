@@ -45,10 +45,14 @@ const LayoutManager = ({
   };
 
   const handleUpdateLayout = async (layoutId: string, layoutNameToUpdate: string) => {
+    console.log('🔄 LayoutManager: Updating layout', layoutId, 'with', columns.length, 'current columns');
+    console.log('📊 Current columns:', columns.map(c => ({ id: c.id, name: c.name, isVisible: c.isVisible })));
+    
     try {
       await onUpdateLayout(layoutId, layoutNameToUpdate, columns);
+      console.log('✅ Layout update completed successfully');
     } catch (error) {
-      console.error('Error updating layout:', error);
+      console.error('❌ Error updating layout:', error);
     }
   };
 

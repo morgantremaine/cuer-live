@@ -179,7 +179,20 @@ export const useColumnLayoutStorage = () => {
 
     // CRITICAL: Update with only visible columns to preserve exact layout state  
     const visibleColumns = columns.filter(col => col.isVisible !== false)
-    console.log('🔄 Updating layout with', visibleColumns.length, 'visible columns out of', columns.length, 'total')
+    console.log('🔄 useColumnLayoutStorage: Updating layout', id)
+    console.log('📊 Input columns:', columns.length, 'total, filtering to', visibleColumns.length, 'visible')
+    console.log('📋 Visible columns being saved:', visibleColumns.map(c => ({ id: c.id, name: c.name, width: c.width })))
+
+    // Safety check: prevent saving empty layouts
+    if (visibleColumns.length === 0) {
+      console.error('❌ Cannot update layout with 0 visible columns')
+      toast({
+        title: 'Error',
+        description: 'Cannot update layout - no visible columns found',
+        variant: 'destructive',
+      })
+      return
+    }
 
     const { data, error } = await supabase
       .from('column_layouts')
@@ -194,6 +207,7 @@ export const useColumnLayoutStorage = () => {
       .single()
 
     if (error) {
+      console.error('❌ Database error updating layout:', error)
       toast({
         title: 'Error',
         description: 'Failed to update column layout',
@@ -201,9 +215,10 @@ export const useColumnLayoutStorage = () => {
       })
       throw error
     } else {
+      console.log('✅ Database update successful:', data)
       toast({
         title: 'Success',
-        description: 'Column layout updated successfully!',
+        description: `Layout "${name}" updated with ${visibleColumns.length} columns!`,
       })
       
       // Force immediate cache invalidation and reload
@@ -213,6 +228,7 @@ export const useColumnLayoutStorage = () => {
           : layout
       ))
       
+      console.log('🔄 Cache invalidated, reloading layouts from database')
       // Reload layouts to ensure consistency
       await loadLayouts()
       return data
