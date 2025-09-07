@@ -175,12 +175,16 @@ export const useSimplifiedRundownState = () => {
       startTime: mergedData.start_time || state.startTime,
       timezone: mergedData.timezone || state.timezone,
       showDate: mergedData.show_date ? new Date(mergedData.show_date + 'T00:00:00') : state.showDate,
-      externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes
+      externalNotes: mergedData.external_notes !== undefined ? mergedData.external_notes : state.externalNotes,
+      docVersion: mergedData.doc_version || 0 // CRITICAL: Include docVersion for OCC
     });
     
-    // Update timestamp
+    // Update timestamp and docVersion tracking
     if (mergedData.updated_at) {
       setLastKnownTimestamp(mergedData.updated_at);
+    }
+    if (mergedData.doc_version) {
+      setLastSeenDocVersion(mergedData.doc_version);
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
@@ -428,6 +432,12 @@ export const useSimplifiedRundownState = () => {
         
         // Add external notes to update data
         if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
+        
+        // CRITICAL: Update docVersion for OCC if present
+        if (updatedRundown.hasOwnProperty('doc_version')) {
+          updateData.docVersion = updatedRundown.doc_version;
+          setLastSeenDocVersion(updatedRundown.doc_version); // Also update tracking
+        }
         
         // Only apply if we have fields to update
         if (Object.keys(updateData).length > 0) {
@@ -924,6 +934,11 @@ export const useSimplifiedRundownState = () => {
               updateTimeFromServer(data.updated_at);
               setLastKnownTimestamp(data.updated_at);
             }
+            
+            // CRITICAL: Set docVersion for OCC
+            if (data.doc_version) {
+              setLastSeenDocVersion(data.doc_version);
+            }
 
             // Load content only (columns handled by useUserColumnPreferences)
             actions.loadState({
@@ -933,7 +948,8 @@ export const useSimplifiedRundownState = () => {
               startTime: data.start_time || '09:00:00',
               timezone: data.timezone || 'America/New_York',
               showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
-              externalNotes: data.external_notes
+              externalNotes: data.external_notes,
+              docVersion: data.doc_version || 0 // CRITICAL: Include docVersion for OCC
             });
           }
         }
@@ -968,6 +984,11 @@ export const useSimplifiedRundownState = () => {
     if (latestData.updated_at) {
       setLastKnownTimestamp(latestData.updated_at);
       updateTimeFromServer(latestData.updated_at);
+    }
+    
+    // CRITICAL: Update docVersion for OCC
+    if (latestData.doc_version) {
+      setLastSeenDocVersion(latestData.doc_version);
     }
     
     // Get currently protected fields to preserve local edits
@@ -1005,7 +1026,8 @@ export const useSimplifiedRundownState = () => {
         startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
         timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
         showDate: protectedFields.has('showDate') ? state.showDate : (latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null),
-        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes
+        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes,
+        docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
       });
       return;
     }
@@ -1017,7 +1039,8 @@ export const useSimplifiedRundownState = () => {
       startTime: latestData.start_time,
       timezone: latestData.timezone,
       showDate: latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null,
-      externalNotes: latestData.external_notes
+      externalNotes: latestData.external_notes,
+      docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
     });
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
@@ -1144,7 +1167,8 @@ export const useSimplifiedRundownState = () => {
             title: data.title || 'Untitled Rundown',
             startTime: data.start_time || '09:00:00',
             timezone: data.timezone || 'America/New_York',
-            showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null
+            showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
+            docVersion: data.doc_version || 0 // CRITICAL: Include docVersion for OCC
           });
           
           setLastKnownTimestamp(data.updated_at);

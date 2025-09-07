@@ -18,6 +18,7 @@ export interface RundownState {
   isPlaying: boolean;
   hasUnsavedChanges: boolean;
   lastChanged: number;
+  docVersion?: number; // Add docVersion to track server version for OCC
 }
 
 type RundownAction = 
@@ -37,6 +38,7 @@ type RundownAction =
   | { type: 'SET_CURRENT_SEGMENT'; payload: string | null }
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
+  | { type: 'SET_DOC_VERSION'; payload: number } // Add action to set docVersion
   | { type: 'LOAD_STATE'; payload: Partial<RundownState> };
 
 const initialState: RundownState = {
@@ -50,7 +52,8 @@ const initialState: RundownState = {
   currentSegmentId: null,
   isPlaying: false,
   hasUnsavedChanges: false,
-  lastChanged: 0
+  lastChanged: 0,
+  docVersion: 0 // Initialize docVersion
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
@@ -141,6 +144,9 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'MARK_SAVED':
       return { ...state, hasUnsavedChanges: false };
+
+    case 'SET_DOC_VERSION':
+      return { ...state, docVersion: action.payload };
 
     case 'LOAD_STATE':
       return {
@@ -368,6 +374,8 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     setPlaying: (playing: boolean) => dispatch({ type: 'SET_PLAYING', payload: playing }),
     
     markSaved: () => dispatch({ type: 'MARK_SAVED' }),
+    
+    setDocVersion: (version: number) => dispatch({ type: 'SET_DOC_VERSION', payload: version }),
     
     loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState })
   }), [state.items, rundownId, broadcastLiveUpdate]);
