@@ -245,7 +245,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
           >
             <table 
-              className="border-separate border-spacing-0 table-container" 
+              className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
                 width: `${totalTableWidth * zoomLevel}px`,
@@ -285,7 +285,7 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
           >
             <table 
-              className="border-separate border-spacing-0 table-container" 
+              className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
                 width: `${totalTableWidth}px`,
