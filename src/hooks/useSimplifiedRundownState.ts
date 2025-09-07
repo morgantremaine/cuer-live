@@ -508,11 +508,16 @@ export const useSimplifiedRundownState = () => {
           value: update.value,
           clientId: update.userId // Use userId as clientId for single sessions
         });
+        
+        // CRITICAL FIX: Also update recentlyEditedFieldsRef so getProtectedFields() will protect this field
+        recentlyEditedFieldsRef.current.set(updateKey, Date.now());
+        console.log('🛡️ Cell broadcast: Protected field from realtime overwrites:', updateKey);
       
-      // Clean up old entries after 5 seconds
-      setTimeout(() => {
-        recentCellUpdates.delete(updateKey);
-      }, 5000);
+        // Clean up old entries after 5 seconds
+        setTimeout(() => {
+          recentCellUpdates.delete(updateKey);
+          recentlyEditedFieldsRef.current.delete(updateKey);
+        }, 5000);
       
       // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
       // ALSO: Block autosave when receiving cell broadcast updates
