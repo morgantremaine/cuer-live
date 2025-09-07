@@ -424,8 +424,8 @@ const RundownIndexContent = () => {
       return;
     }
 
-    console.log('✅ Applying layout while preserving all available columns');
-    // Use applyLayout instead of setColumns to preserve all available columns
+    console.log('✅ Applying layout as persistent user preference for this rundown');
+    // Use applyLayout to permanently set this as the user's preference for this rundown  
     applyUserLayout(validColumns);
   };
 

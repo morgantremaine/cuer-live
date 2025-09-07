@@ -365,8 +365,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   }, []);
 
   // Apply layout while preserving all available columns (defaults + team customs + user customs)
-  const applyLayout = useCallback((layoutColumns: Column[]) => {
-    debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns');
+  const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
+    debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
     // Create master list of all available columns (defaults + team + existing user columns)
     const masterColumns = [...defaultColumns];
@@ -447,17 +447,23 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     
     setColumns(finalColumns);
     
-    // Save the layout application
-    if (!isLoadingRef.current) {
+    // Only save if shouldPersist is true (prevents saved layouts from overwriting user prefs)
+    if (shouldPersist && !isLoadingRef.current) {
       saveColumnPreferences(finalColumns, true);
     }
   }, [columns, teamColumns, saveColumnPreferences]);
+
+  // Temporary layout preview (doesn't save to user preferences)
+  const previewLayout = useCallback((layoutColumns: Column[]) => {
+    applyLayout(layoutColumns, false); // Don't persist - just preview
+  }, [applyLayout]);
 
   return {
     columns,
     setColumns: updateColumns,
     updateColumnWidth,
     applyLayout,
+    previewLayout,
     isLoading,
     isSaving,
     reloadPreferences: loadColumnPreferences

@@ -185,7 +185,8 @@ export const useColumnLayoutStorage = () => {
       .from('column_layouts')
       .update({
         name,
-        columns: visibleColumns // Update with only visible columns
+        columns: visibleColumns, // Update with only visible columns
+        updated_at: new Date().toISOString() // Force timestamp update for cache invalidation
       })
       .eq('id', id)
       .eq('user_id', user.id)
@@ -204,7 +205,16 @@ export const useColumnLayoutStorage = () => {
         title: 'Success',
         description: 'Column layout updated successfully!',
       })
-      loadLayouts()
+      
+      // Force immediate cache invalidation and reload
+      setSavedLayouts(prev => prev.map(layout => 
+        layout.id === id 
+          ? { ...layout, columns: visibleColumns, name, updated_at: new Date().toISOString() }
+          : layout
+      ))
+      
+      // Reload layouts to ensure consistency
+      await loadLayouts()
       return data
     }
   }

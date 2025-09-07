@@ -93,7 +93,7 @@ const LayoutManager = ({
       return;
     }
 
-    console.log('✅ LayoutManager: Loading', validColumns.length, 'valid columns');
+    console.log('✅ LayoutManager: Applying layout as persistent user preference');
     onLoadLayout(validColumns);
   };
 

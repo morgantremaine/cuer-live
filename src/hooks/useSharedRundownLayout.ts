@@ -75,7 +75,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
 
       const teamIds = teamMemberships?.map(membership => membership.team_id) || [];
 
-      // Load layouts that user can access (own layouts + team layouts)
+      // Load layouts that user can access (own layouts + team layouts) with fresh data
       const { data: layoutsData, error } = await supabase
         .from('column_layouts')
         .select('*')
@@ -117,6 +117,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         };
       });
 
+      console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
       setAvailableLayouts(mappedLayouts);
     } catch (error) {
       console.error('Failed to load available layouts:', error);
