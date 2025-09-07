@@ -189,7 +189,7 @@ const ResizableColumnHeader = ({
         setNodeRef(node);
         headerRef.current = node;
       }}
-      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-blue-600 ${
+      className={`px-2 py-1 text-left text-sm font-semibold text-white relative select-none bg-transparent ${
         isDragging ? 'opacity-50' : ''
       } cursor-move`}
       style={style}

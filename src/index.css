@@ -9,6 +9,13 @@
   border-bottom: none !important;
 }
 
+/* Normalize backgrounds on colored rows and headers to avoid hairline seams */
+.table-container tr[data-custom-color="true"] td,
+.table-container tr[data-type="header"] td {
+  background-color: inherit !important;
+  background-clip: padding-box;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

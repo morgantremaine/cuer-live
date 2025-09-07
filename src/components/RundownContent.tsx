@@ -245,14 +245,13 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
           >
             <table 
-              className="border-separate table-container" 
+              className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
                 width: `${totalTableWidth * zoomLevel}px`,
                 minWidth: `${totalTableWidth * zoomLevel}px`,
                 margin: 0,
-                padding: 0,
-                borderSpacing: 0
+                padding: 0
               }}
               data-rundown-table="header"
             >
@@ -286,14 +285,13 @@ const RundownContent = React.memo<RundownContentProps>(({
             }}
           >
             <table 
-              className="border-separate table-container" 
+              className="border-collapse table-container" 
               style={{ 
                 tableLayout: 'fixed', 
                 width: `${totalTableWidth}px`,
                 minWidth: `${totalTableWidth}px`,
                 margin: 0,
-                padding: 0,
-                borderSpacing: 0
+                padding: 0
               }}
               data-rundown-table="body"
             >
