@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, RefreshCw } from 'lucide-react';
@@ -14,11 +15,22 @@ interface AppNotification {
 }
 
 const AppUpdateNotification = () => {
+  const location = useLocation();
   const [notification, setNotification] = useState<AppNotification | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [sessionStartTime] = useState(new Date().toISOString());
+
+  // Only show on app pages, not landing page
+  const shouldShowNotifications = 
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/rundown') ||
+    location.pathname.startsWith('/shared/rundown');
 
   useEffect(() => {
-    // Fetch current active notification that user hasn't dismissed
+    // Only fetch notifications on relevant pages
+    if (!shouldShowNotifications) return;
+
+    // Fetch current active notification that user hasn't dismissed and was created after session started
     const fetchActiveNotification = async () => {
       try {
         const { data: user } = await supabase.auth.getUser();
@@ -32,6 +44,7 @@ const AppUpdateNotification = () => {
           `)
           .eq('active', true)
           .eq('type', 'update')
+          .gt('created_at', sessionStartTime)
           .is('app_notification_dismissals.id', null)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -43,7 +56,7 @@ const AppUpdateNotification = () => {
         }
       } catch (error) {
         // No active notification found or user already dismissed it
-        console.log('No active notifications for this user');
+        console.log('No active notifications for this user session');
       }
     };
 
@@ -89,7 +102,7 @@ const AppUpdateNotification = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [notification?.id]);
+  }, [notification?.id, shouldShowNotifications, sessionStartTime]);
 
   const handleRefresh = () => {
     window.location.reload();
