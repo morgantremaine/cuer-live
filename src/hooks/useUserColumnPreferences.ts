@@ -329,20 +329,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Special handler for column width updates during resize
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
-    console.log('📏 updateColumnWidth called:', columnId, 'to width:', width);
-    console.log('📊 Loading state check - isLoadingRef.current:', isLoadingRef.current);
-    
     setColumns(prevColumns => {
       const updatedColumns = prevColumns.map(col => 
         col.id === columnId ? { ...col, width } : col
       );
       
-      console.log('💾 updateColumnWidth: Triggering save with debounce');
       // Save with debounce for resize operations
       if (!isLoadingRef.current) {
         saveColumnPreferences(updatedColumns, false);
-      } else {
-        console.log('🚫 updateColumnWidth: Save blocked by loading state');
       }
       
       return updatedColumns;
@@ -404,8 +398,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Apply layout while preserving all available columns (defaults + team customs + user customs)
   const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
-    console.log('🎯 applyLayout called with', layoutColumns.length, 'columns, shouldPersist:', shouldPersist);
-    console.log('📊 Current loading state - isLoadingRef.current:', isLoadingRef.current);
     debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
     // Create master list of all available columns (defaults + team + existing user columns)
@@ -489,14 +481,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     
     // Force save when applying layout (user explicitly chose this layout)
     if (shouldPersist) {
-      console.log('💾 applyLayout: Forcing immediate save of layout to user preferences');
-      console.log('📋 Columns being saved:', finalColumns.filter(c => c.isVisible).length, 'visible out of', finalColumns.length, 'total');
-      
       // Bypass loading check for explicit layout application - user chose this layout
       setIsSaving(true);
       saveColumnPreferences(finalColumns, true);
-    } else {
-      console.log('⏭️ applyLayout: Skipping save (shouldPersist = false) - this is a preview');
     }
   }, [columns, teamColumns, saveColumnPreferences]);
 
