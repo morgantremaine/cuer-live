@@ -199,6 +199,7 @@ const RundownIndexContent = () => {
       return col;
     });
     setColumns(updated); // Auto-save
+  }, [userColumns, setColumns]);
 
   const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
     const target = userColumns.find(col => col.id === columnId);
