@@ -215,10 +215,13 @@ export const useFieldDeltaSave = (
       
       // CRITICAL: Get comprehensive field protection - not just focus, but recent typing too
       let protectedFields = new Set<string>();
+      const TYPING_PROTECTION_MS = 3000; // 3 second protection window
+      let focusTracker: any = null;
       
       try {
-        // Import the focus tracker to get active field
+        // Import the focus tracker to get active field and recent typing
         const { globalFocusTracker } = await import('@/utils/focusTracker');
+        focusTracker = globalFocusTracker;
         const activeField = globalFocusTracker.getActiveField();
         
         if (activeField) {
@@ -226,13 +229,12 @@ export const useFieldDeltaSave = (
           console.log('🛡️ OCC Conflict: protecting actively focused field:', activeField);
         }
         
-        // Also check for recently typed fields (from typing sessions)
-        // This covers edge cases where focus might have just changed but typing is still recent
-        const now = Date.now();
-        const TYPING_PROTECTION_MS = 3000; // 3 second protection window
-        
-        // Check if there was recent typing activity (this would need to be passed from the calling context)
-        // For now, we'll protect based on active field, but this can be enhanced
+        // Also protect recently typed fields (covers quick focus changes)
+        const recentFields = globalFocusTracker.getRecentlyTypedFields?.(TYPING_PROTECTION_MS) || [];
+        recentFields.forEach((fk: string) => protectedFields.add(fk));
+        if (recentFields.length > 0) {
+          console.log('🛡️ OCC Conflict: protecting recently typed fields:', recentFields);
+        }
         
       } catch (err) {
         console.warn('⚠️ OCC Conflict: could not get field protection info', err);
@@ -252,12 +254,19 @@ export const useFieldDeltaSave = (
           
           let mergedItem = { ...serverItem };
           
-          // Check each protected field and preserve current value if it matches this item
+          // Check each protected field and preserve current or typed buffer value if it matches this item
           protectedFields.forEach(fieldKey => {
             const [itemId, fieldName] = fieldKey.split('-');
-            if (itemId === serverItem.id && fieldName && currentItem[fieldName] !== undefined) {
-              console.log('🛡️ OCC Conflict: preserving field', { itemId, fieldName, currentValue: currentItem[fieldName], serverValue: serverItem[fieldName] });
-              mergedItem[fieldName] = currentItem[fieldName];
+            if (itemId === serverItem.id && fieldName) {
+              // Prefer the most recent typed value from the typing buffer
+              const typedEntry = focusTracker?.getLatestValue?.(fieldKey);
+              const now = Date.now();
+              let valueToKeep: any = currentItem[fieldName];
+              if (typedEntry && (now - typedEntry.timestamp) <= TYPING_PROTECTION_MS) {
+                valueToKeep = typedEntry.value;
+              }
+              console.log('🛡️ OCC Conflict: preserving field', { itemId, fieldName, currentValue: valueToKeep, serverValue: serverItem[fieldName] });
+              mergedItem[fieldName] = valueToKeep;
             }
           });
           

@@ -5,6 +5,7 @@ class FocusTracker {
   private activeField: string | null = null;
   private listeners: ((fieldKey: string | null) => void)[] = [];
   private lastBlurTime: number = 0;
+  private typingBuffer: Map<string, { value: any; timestamp: number }> = new Map();
   
   constructor() {
     this.setupGlobalListeners();
@@ -43,6 +44,28 @@ class FocusTracker {
           }, 1000);
         }
       }
+    });
+
+    // Track input values to build a typing buffer for OCC protection
+    document.addEventListener('input', (event) => {
+      const target = event.target as HTMLElement;
+      if (!this.isEditableElement(target)) return;
+      const fieldKey = this.extractFieldKey(target);
+      if (!fieldKey) return;
+
+      // Extract value from various editable elements
+      let value: any = null;
+      if ((target as HTMLInputElement).value !== undefined) {
+        value = (target as HTMLInputElement).value;
+      } else if ((target as HTMLTextAreaElement).value !== undefined) {
+        value = (target as HTMLTextAreaElement).value;
+      } else if (target.isContentEditable) {
+        value = target.textContent;
+      } else {
+        value = (target as any).value ?? null;
+      }
+
+      this.typingBuffer.set(fieldKey, { value, timestamp: Date.now() });
     });
   }
   
@@ -138,7 +161,20 @@ class FocusTracker {
       this.setActiveField(null);
     }
   }
+
+  // Typing buffer API
+  public getLatestValue(fieldKey: string): { value: any; timestamp: number } | null {
+    return this.typingBuffer.get(fieldKey) || null;
+  }
+
+  public getRecentlyTypedFields(windowMs: number = 3000): string[] {
+    const now = Date.now();
+    return Array.from(this.typingBuffer.entries())
+      .filter(([_, entry]) => now - entry.timestamp <= windowMs)
+      .map(([key]) => key);
+  }
 }
+
 
 // Create global instance
 export const globalFocusTracker = new FocusTracker();
