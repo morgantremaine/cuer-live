@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
@@ -234,12 +235,50 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with Unified Table */}
+      {/* Scrollable Content with Separate Header and Body */}
       <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
         <div className="relative">
-          {/* Unified Table with Consistent Scaling */}
+          {/* Sticky Header - Outside of Transform */}
           <div 
-            className="zoom-container" 
+            className="sticky top-0 z-20 bg-background"
+            style={{ 
+              width: `${totalTableWidth * zoomLevel}px`,
+              minWidth: `${totalTableWidth * zoomLevel}px`
+            }}
+          >
+            <table 
+              className="border-collapse table-container" 
+              style={{ 
+                tableLayout: 'fixed', 
+                width: `${totalTableWidth * zoomLevel}px`,
+                minWidth: `${totalTableWidth * zoomLevel}px`,
+                margin: 0,
+                padding: 0
+              }}
+              data-rundown-table="header"
+            >
+              <RundownTableHeader 
+                visibleColumns={visibleColumns}
+                allColumns={allColumns}
+                getColumnWidth={(column) => `${parseInt(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
+                updateColumnWidth={(columnId, width) => updateColumnWidth(columnId, width / zoomLevel)}
+                onReorderColumns={onReorderColumns}
+                onToggleColumnVisibility={onToggleColumnVisibility}
+                items={items}
+                columnExpandState={columnExpandState}
+                onToggleColumnExpand={handleToggleColumnExpand}
+                onToggleAllHeaders={handleToggleAllHeaders}
+                isHeaderCollapsed={isHeaderCollapsed}
+                savedLayouts={savedLayouts}
+                onLoadLayout={onLoadLayout}
+                zoomLevel={zoomLevel}
+              />
+            </table>
+          </div>
+          
+          {/* Scaled Table Body */}
+          <div 
+            className="bg-background zoom-container" 
             style={{ 
               minWidth: `${totalTableWidth}px`,
               transform: `scale(${zoomLevel})`,
@@ -256,27 +295,9 @@ const RundownContent = React.memo<RundownContentProps>(({
                 margin: 0,
                 padding: 0
               }}
-              data-rundown-table="unified"
+              data-rundown-table="body"
             >
-              {/* Sticky Header */}
-              <RundownTableHeader 
-                visibleColumns={visibleColumns}
-                allColumns={allColumns}
-                getColumnWidth={getColumnWidth}
-                updateColumnWidth={updateColumnWidth}
-                onReorderColumns={onReorderColumns}
-                onToggleColumnVisibility={onToggleColumnVisibility}
-                items={items}
-                columnExpandState={columnExpandState}
-                onToggleColumnExpand={handleToggleColumnExpand}
-                onToggleAllHeaders={handleToggleAllHeaders}
-                isHeaderCollapsed={isHeaderCollapsed}
-                savedLayouts={savedLayouts}
-                onLoadLayout={onLoadLayout}
-                zoomLevel={1}
-              />
-              
-              {/* Table Body */}
+              {/* Table Body - Content */}
               <OptimizedRundownTableWrapper
               items={items} // Pass original items for duration calculations
               visibleItems={visibleItems} // Pass visible items for display
