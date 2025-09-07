@@ -119,50 +119,13 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Pure Supabase realtime subscription - handles all updates (content + showcaller)
+  // Disable realtime DB updates for shared views - rely only on cell broadcasts for instant sync
+  // Only use showcaller broadcasts for showcaller state updates  
   const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
     rundownId,
     onRundownUpdate: useCallback((updatedRundown) => {
-      if (!mountedRef.current) return;
-      
-      logger.debug('Shared view received realtime update', {
-        docVersion: updatedRundown?.doc_version,
-        hasShowcaller: !!updatedRundown?.showcaller_state,
-        timestamp: updatedRundown?.updated_at
-      });
-      
-      const newDocVersion = updatedRundown?.doc_version || 0;
-      const currentDocVersion = lastDocVersion.current;
-      
-      // Always process updates - either content changed OR showcaller changed
-      if (newDocVersion !== currentDocVersion || updatedRundown?.showcaller_state) {
-        logger.debug('Processing realtime update:', { 
-          newVersion: newDocVersion, 
-          currentVersion: currentDocVersion,
-          updateType: newDocVersion > currentDocVersion ? 'content' : 'showcaller'
-        });
-        
-        // Apply update immediately without re-fetching
-        if (updatedRundown) {
-          const newRundownData = {
-            id: updatedRundown.id,
-            title: updatedRundown.title || 'Untitled Rundown',
-            items: updatedRundown.items || [],
-            columns: updatedRundown.columns || [],
-            startTime: updatedRundown.start_time || '09:00:00',
-            timezone: updatedRundown.timezone || 'UTC',
-            lastUpdated: updatedRundown.updated_at,
-            showcallerState: updatedRundown.showcaller_state,
-            visibility: updatedRundown.visibility,
-            docVersion: updatedRundown.doc_version,
-            lastUpdatedBy: updatedRundown.last_updated_by
-          };
-          
-          setRundownData(newRundownData);
-          lastDocVersion.current = newDocVersion;
-          setError(null);
-        }
-      }
+      // Skip all content updates in shared views - cell broadcasts handle them instantly
+      return;
     }, []),
     onShowcallerUpdate: useCallback((updatedData) => {
       if (!mountedRef.current) return;

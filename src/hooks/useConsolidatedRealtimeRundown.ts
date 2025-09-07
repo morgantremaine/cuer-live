@@ -245,23 +245,30 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
-      if (!isSharedView) {
-        console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
-          hasContentChanges,
-          isInitialLoad,
+      // Skip content updates for shared views - they use cell broadcasts for instant updates
+      if (isSharedView) {
+        console.log('📱 Shared view: Skipping consolidated realtime content update (using cell broadcasts instead)', {
           docVersion: incomingDocVersion,
-          timestamp: normalizedTimestamp,
-          shouldTriggerIndicator: !isInitialLoad,
-          payloadTable: payload.table,
-          changedFields: ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
-            .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
+          timestamp: normalizedTimestamp
         });
+        return;
       }
+
+      // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
+      console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
+        hasContentChanges,
+        isInitialLoad,
+        docVersion: incomingDocVersion,
+        timestamp: normalizedTimestamp,
+        shouldTriggerIndicator: !isInitialLoad,
+        payloadTable: payload.table,
+        changedFields: ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
+          .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
+      });
 
       // Show processing indicator ONLY for genuine remote content changes
       // Enhanced validation: not initial load AND not own update AND has real content changes
-      const shouldShowBlueWifi = !isInitialLoadRef.current && hasContentChanges && !isSharedView;
+      const shouldShowBlueWifi = !isInitialLoadRef.current && hasContentChanges;
       
       if (shouldShowBlueWifi) {
         console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
@@ -278,7 +285,7 @@ export const useConsolidatedRealtimeRundown = ({
           console.log('🔵 Blue Wi-Fi: HIDING indicator after timeout');
           setIsProcessingUpdate(false);
         }, 1500); // Extended to 1.5s for better visibility
-      } else if (!isSharedView) {
+      } else {
         if (isInitialLoadRef.current) {
           console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
         } else if (!hasContentChanges) {
