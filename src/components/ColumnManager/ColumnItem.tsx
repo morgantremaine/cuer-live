@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { GripVertical, Eye, EyeOff, Trash2, Edit, Check, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface ColumnItemProps {
   column: Column;

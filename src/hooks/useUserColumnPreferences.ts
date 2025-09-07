@@ -3,7 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
-import { Column } from './useColumnsManager';
+// Column interface moved here to avoid circular dependencies
+export interface Column {
+  id: string;
+  name: string;
+  key: string;
+  width: string;
+  isCustom: boolean;
+  isEditable: boolean;
+  isVisible?: boolean;
+}
 import { debugLogger } from '@/utils/debugLogger';
 
 interface UserColumnPreferences {

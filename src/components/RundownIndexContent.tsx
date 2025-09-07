@@ -6,7 +6,6 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
@@ -233,15 +232,15 @@ const RundownIndexContent = () => {
     setUserColumns(updated); // Auto-save
   }, [userColumns, setUserColumns]);
 
-  // Keep these from useColumnsManager for compatibility
+  // Utility functions for column management
   const debugColumns = useCallback(() => {
     console.log('Current userColumns:', userColumns);
   }, [userColumns]);
 
   const resetToDefaults = useCallback(() => {
-    // Reset to default columns - this should reload from useUserColumnPreferences defaults
-    console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
-  }, []);
+    // This will be handled by reloadPreferences from useUserColumnPreferences
+    reloadPreferences();
+  }, [reloadPreferences]);
 
   // Show skeleton only for core rundown data, allow smooth column transitions
   const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || !rundownId || !items || items.length === 0;

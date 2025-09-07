@@ -5,7 +5,7 @@ import TimeDisplayCell from './cells/TimeDisplayCell';
 import ImageCell from './cells/ImageCell';
 import ExpandableScriptCell from './ExpandableScriptCell';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface CellRendererProps {
   column: Column;

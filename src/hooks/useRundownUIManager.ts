@@ -4,7 +4,7 @@ import { useColorPicker } from './useColorPicker';
 import { useEditingState } from './useEditingState';
 import { useCellNavigation } from './useCellNavigation';
 import { CalculatedRundownItem } from '@/utils/rundownCalculations';
-import { Column } from './useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 export const useRundownUIManager = (
   items: CalculatedRundownItem[],

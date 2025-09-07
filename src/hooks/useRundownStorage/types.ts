@@ -1,6 +1,6 @@
 
 import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
+import { Column } from '@/hooks/useUserColumnPreferences'
 
 export interface SavedRundown {
   id: string

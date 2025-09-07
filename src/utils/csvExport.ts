@@ -1,7 +1,7 @@
 
 import Papa from 'papaparse';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 import { isHeaderItem } from '@/types/rundown';
 import { calculateItemsWithTiming, timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 import { generateHeaderLabel } from '@/utils/headerUtils';

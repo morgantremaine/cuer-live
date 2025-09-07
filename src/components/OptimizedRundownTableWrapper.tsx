@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import RundownTable from './RundownTable';
 import { useRundownMemoization } from '@/hooks/useRundownMemoization';
 import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface OptimizedRundownTableWrapperProps {
   items: RundownItem[];

@@ -2,7 +2,7 @@
 import React, { useRef, useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface ResizableColumnHeaderProps {
   column: Column;

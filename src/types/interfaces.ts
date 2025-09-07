@@ -1,6 +1,6 @@
 
 import { RundownItem } from './rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 export interface CoreRundownState {
   // Core data

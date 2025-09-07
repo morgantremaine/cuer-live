@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Column } from '@/hooks/useColumnsManager'
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface ColumnLayout {
   id: string

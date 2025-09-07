@@ -3,7 +3,7 @@ import React from 'react';
 import HeaderRow from './HeaderRow';
 import RegularRow from './RegularRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface RundownRowProps {
   item: RundownItem;

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Save, FolderOpen, Edit, RefreshCw, Trash2, Check, XIcon, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/hooks/useUserColumnPreferences';
 
 interface LayoutManagerProps {
   columns: Column[];
