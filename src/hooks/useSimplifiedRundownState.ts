@@ -478,10 +478,8 @@ export const useSimplifiedRundownState = () => {
             actions.setShowDate(update.value);
             break;
           case 'structuralChange':
-            // Handle structural changes - skip any immediate action to prevent infinite loops
-            console.log('📱 Rundown structural change detected - will refresh on next focus');
-            // Mark for refresh on next tab focus instead of immediate refresh
-            shouldRefreshOnFocusRef.current = true;
+            // Structural changes are handled by the normal realtime update flow
+            console.log('📱 Rundown structural change detected - handled by realtime');
             break;
           default:
             console.warn('🚨 Unknown rundown-level field:', update.field);
@@ -492,10 +490,8 @@ export const useSimplifiedRundownState = () => {
       
         // Handle item-level updates (existing logic)
         if (update.field === 'structuralChange') {
-          // Handle structural changes - skip any immediate action to prevent infinite loops  
-          console.log('📱 Item structural change detected - will refresh on next focus');
-          // Mark for refresh on next tab focus instead of immediate refresh
-          shouldRefreshOnFocusRef.current = true;
+          // Structural changes are handled by the normal realtime update flow
+          console.log('📱 Item structural change detected - handled by realtime');
           return;
         }
         
