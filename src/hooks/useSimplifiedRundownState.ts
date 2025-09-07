@@ -536,10 +536,10 @@ export const useSimplifiedRundownState = () => {
         clientId: update.clientId
       });
       
-      // Clean up old entries after 5 seconds
+      // Clean up old entries after 15 seconds (longer window to prevent revert)
       setTimeout(() => {
         recentCellUpdates.delete(updateKey);
-      }, 5000);
+      }, 15000);
       
       // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
       // ALSO: Block autosave when receiving cell broadcast updates
@@ -648,6 +648,9 @@ export const useSimplifiedRundownState = () => {
           actions.setItems(updatedItems);
         }
       });
+      
+      // Brief autosave cooldown so the keystroke snapshot catches up, preventing stale saves
+      cooldownUntilRef.current = Date.now() + 2000;
     });
 
     return () => {
