@@ -59,10 +59,10 @@ export class CellBroadcastManager {
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
         console.log('✅ Cell realtime channel subscribed:', key);
-      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        // Channel lost connection - attempt reconnection with backoff
+      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        // Avoid manual reconnect loops; rely on Supabase auto-reconnect
         this.subscribed.set(rundownId, false);
-        this.handleChannelReconnect(rundownId);
+        console.warn('🔌 Cell realtime channel status (no manual reconnect):', key, status);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }

@@ -174,7 +174,7 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     undefined, // Legacy ref no longer needed
-    isInitialized,
+    (isInitialized && !isLoadingColumns),
     blockUntilLocalEditRef,
     cooldownUntilRef,
     applyingCellBroadcastRef // Pass the cell broadcast flag

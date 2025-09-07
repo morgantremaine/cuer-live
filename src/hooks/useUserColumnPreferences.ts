@@ -193,10 +193,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const cleanColumns = loadedColumns.filter(col => col && col.id && col.key && col.name);
         const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
         setColumns(mergedColumns);
+        console.log('✅ Column preferences hydrated:', mergedColumns.length);
         debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
+        console.log('✅ Column preferences hydrated (defaults):', mergedDefaults.length);
         debugLogger.preferences('No saved preferences - using defaults');
       }
     } catch (error) {

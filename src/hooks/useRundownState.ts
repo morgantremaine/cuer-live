@@ -58,6 +58,7 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>) => {
+    console.log('📝 Content change flagged (hasUnsavedChanges=true)');
     return {
       ...state,
       ...newState,
@@ -109,8 +110,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return markChanged({ items: clearHeaderNumbers(items) });
     }
 
-    case 'SET_COLUMNS':
-      return markChanged({ columns: action.payload });
+    case 'SET_COLUMNS': {
+      // Columns are user-specific presentation; do not mark content as dirty
+      console.log('📊 SET_COLUMNS applied (no content change) - count:', action.payload?.length ?? 0);
+      return { ...state, columns: action.payload };
+    }
 
     case 'UPDATE_COLUMN': {
       const columns = state.columns.map(col =>
@@ -118,7 +122,9 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
           ? { ...col, ...action.payload.updates }
           : col
       );
-      return markChanged({ columns });
+      // Column tweak shouldn't flip hasUnsavedChanges
+      console.log('📊 UPDATE_COLUMN applied (no content change) - id:', action.payload.id);
+      return { ...state, columns };
     }
 
     case 'SET_TITLE':
@@ -148,14 +154,15 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     case 'SET_DOC_VERSION':
       return { ...state, docVersion: action.payload };
 
-    case 'LOAD_STATE':
+    case 'LOAD_STATE': {
+      console.log('🧩 LOAD_STATE applied; resetting hasUnsavedChanges=false');
       return {
         ...state,
         ...action.payload,
         hasUnsavedChanges: false,
         lastChanged: 0
       };
-
+    }
     default:
       return state;
   }
