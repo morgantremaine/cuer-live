@@ -97,6 +97,9 @@ const RundownIndexContent = () => {
   // Also wait for team custom columns to finish loading to avoid second-phase layout hydrate
   const { loading: isLoadingTeamColumns } = useTeamCustomColumns();
 
+  // Prevent skeleton from reappearing after first reveal
+  const [hasRevealed, setHasRevealed] = useState(false);
+
   // Mark layout as stabilized after a brief delay when all loading is complete
   useEffect(() => {
     if (!isLoadingPreferences && !isLoadingSharedLayout && !isLoadingTeamColumns && userColumns.length > 0) {
@@ -109,6 +112,7 @@ const RundownIndexContent = () => {
       setIsLayoutStabilized(false);
     }
   }, [isLoadingPreferences, isLoadingSharedLayout, isLoadingTeamColumns, userColumns.length]);
+
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
   const handleAddColumnWrapper = useCallback((name: string) => {
@@ -240,7 +244,15 @@ const RundownIndexContent = () => {
   }, []);
 
   // Check if we're still loading - show spinner until everything is ready including layout stabilization
-  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || isLoadingSharedLayout || !isLayoutStabilized || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || isLoadingSharedLayout || isLoadingTeamColumns || !isLayoutStabilized || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  const showSkeleton = !hasRevealed ? isFullyLoading : false;
+
+  // After first full-ready render, prevent skeleton from reappearing
+  useEffect(() => {
+    if (!isFullyLoading && !hasRevealed) {
+      setHasRevealed(true);
+    }
+  }, [isFullyLoading, hasRevealed]);
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
