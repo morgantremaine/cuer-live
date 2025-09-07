@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownState } from './useRundownState';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { registerRecentSave } from './useRundownResumption';
+import { getTabId } from '@/utils/tabUtils';
 
 // Field delta tracking for granular saves
 interface FieldDelta {
@@ -251,6 +252,7 @@ export const useFieldDeltaSave = (
     // Add metadata
     updateData.updated_at = updateTimestamp;
     updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
+    updateData.tab_id = getTabId();
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -288,8 +290,7 @@ export const useFieldDeltaSave = (
       external_notes: currentState.externalNotes,
       updated_at: updateTimestamp,
       last_updated_by: (await supabase.auth.getUser()).data.user?.id,
-      // Include tab_id for proper own-update detection
-      tab_id: crypto.randomUUID()
+      tab_id: getTabId()
     };
 
     const { data, error } = await supabase

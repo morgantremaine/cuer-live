@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
+import { getTabId } from '@/utils/tabUtils';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -48,8 +49,8 @@ export const useConsolidatedRealtimeRundown = ({
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
   
-  // Generate a unique tab identifier for own-update detection
-  const tabIdRef = useRef(crypto.randomUUID());
+  // Use unified tab identifier for consistent own-update detection
+  const tabIdRef = useRef(getTabId());
   
   const callbackRefs = useRef({
     onRundownUpdate,
@@ -248,22 +249,31 @@ export const useConsolidatedRealtimeRundown = ({
           .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
       });
 
-      // Show processing indicator for ALL content changes from remote sources (not during initial load)
-      if (!isInitialLoadRef.current) {
+      // Show processing indicator ONLY for genuine remote content changes
+      // Enhanced validation: not initial load AND not own update AND has real content changes
+      const shouldShowBlueWifi = !isInitialLoadRef.current && hasContentChanges;
+      
+      if (shouldShowBlueWifi) {
         console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
           docVersion: incomingDocVersion,
           timestamp: normalizedTimestamp,
-          hasContentChanges: true
+          hasContentChanges: true,
+          tabId: payload.new?.tab_id,
+          ownTabId: tabIdRef.current
         });
         setIsProcessingUpdate(true);
         
-        // Keep indicator visible for clear visibility
+        // Keep indicator visible for clear visibility  
         setTimeout(() => {
           console.log('🔵 Blue Wi-Fi: HIDING indicator after timeout');
           setIsProcessingUpdate(false);
         }, 1500); // Extended to 1.5s for better visibility
       } else {
-        console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
+        if (isInitialLoadRef.current) {
+          console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
+        } else if (!hasContentChanges) {
+          console.log('🔵 Blue Wi-Fi: BLOCKED - no content changes detected');
+        }
       }
       
       try {

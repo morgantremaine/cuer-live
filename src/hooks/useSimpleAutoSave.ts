@@ -11,6 +11,7 @@ import { detectDataConflict } from '@/utils/conflictDetection';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { getTabId } from '@/utils/tabUtils';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -18,7 +19,9 @@ export const useSimpleAutoSave = (
   onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
-  isInitiallyLoaded?: boolean
+  isInitiallyLoaded?: boolean,
+  blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
+  cooldownUntilRef?: React.MutableRefObject<number>
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +35,8 @@ export const useSimpleAutoSave = (
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
+  
+  // Enhanced cooldown management with explicit flags (passed as parameters)
   // Simplified autosave system - reduce complexity
   const lastEditAtRef = useRef<number>(0);
   const typingIdleMs = 1500; // Shorter, more responsive timing
@@ -302,7 +307,20 @@ export const useSimpleAutoSave = (
       console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
     }
 
-    // Check suppression cooldown to prevent ping-pong
+    // Check new cooldown flags
+    if (blockUntilLocalEditRef?.current) {
+      debugLogger.autosave('Save blocked: waiting for local edit after teammate update');
+      console.log('🛑 AutoSave: blocked - waiting for local edit after teammate update');
+      return;
+    }
+    
+    if (cooldownUntilRef && cooldownUntilRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: cooldown period active');
+      console.log('🛑 AutoSave: blocked - cooldown period active');
+      return;
+    }
+    
+    // Legacy suppression cooldown for compatibility
     if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: teammate update cooldown active');
       console.log('🛑 AutoSave: blocked - teammate update cooldown active');
@@ -398,7 +416,8 @@ export const useSimpleAutoSave = (
             team_id: teamData.team_id,
             user_id: currentUserId,
             folder_id: folderId,
-            last_updated_by: currentUserId
+            last_updated_by: currentUserId,
+            tab_id: getTabId()
           })
           .select()
           .single();

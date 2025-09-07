@@ -40,13 +40,28 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced conflict resolution system
+  // Enhanced conflict resolution system with validation
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Validation: Log cooldown flag states for debugging
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (blockUntilLocalEditRef.current || cooldownUntilRef.current > Date.now()) {
+        console.log('🛑 AutoSave cooldown status:', {
+          blockUntilLocalEdit: blockUntilLocalEditRef.current,
+          cooldownUntil: cooldownUntilRef.current > Date.now() ? new Date(cooldownUntilRef.current).toISOString() : 'none',
+          timeRemaining: cooldownUntilRef.current > Date.now() ? cooldownUntilRef.current - Date.now() : 0
+        });
+      }
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
@@ -63,8 +78,9 @@ export const useSimplifiedRundownState = () => {
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
   
-  // Track cooldown after teammate updates to prevent ping-pong
-  const remoteSaveCooldownRef = useRef<number>(0);
+  // Enhanced cooldown management with explicit flags  
+  const blockUntilLocalEditRef = useRef(false);
+  const cooldownUntilRef = useRef<number>(0);
   
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
@@ -197,8 +213,10 @@ export const useSimplifiedRundownState = () => {
       }
     },
     pendingStructuralChangeRef,
-    remoteSaveCooldownRef,
-    isInitialized
+    undefined, // Legacy ref no longer needed
+    isInitialized,
+    blockUntilLocalEditRef,
+    cooldownUntilRef
   );
 
   // Standalone undo system - unchanged
@@ -368,7 +386,7 @@ export const useSimplifiedRundownState = () => {
         );
          // CRITICAL: Block all autosaves until the user makes a local edit
          console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
-         remoteSaveCooldownRef.current = Number.POSITIVE_INFINITY;
+         blockUntilLocalEditRef.current = true;
         
         // Schedule reconciliation to merge any remaining conflicts
         if (protectedFields.size > 0) {
@@ -423,7 +441,7 @@ export const useSimplifiedRundownState = () => {
         );
          // CRITICAL: Block all autosaves until the user makes a local edit
          console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
-         remoteSaveCooldownRef.current = Number.POSITIVE_INFINITY;
+         blockUntilLocalEditRef.current = true;
 
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
@@ -647,9 +665,9 @@ export const useSimplifiedRundownState = () => {
       
       // Set cooldown after applying deferred teammate update
       if (isStructural) {
-        remoteSaveCooldownRef.current = Date.now() + 1500;
+        cooldownUntilRef.current = Date.now() + 1500;
       } else {
-        remoteSaveCooldownRef.current = Date.now() + 800;
+        cooldownUntilRef.current = Date.now() + 800;
       }
       
       // Update our known timestamp and doc version
@@ -748,9 +766,9 @@ export const useSimplifiedRundownState = () => {
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Re-enable autosave after local edit if it was blocked due to teammate update
-    if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+    if (blockUntilLocalEditRef.current) {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
-      remoteSaveCooldownRef.current = 0;
+      blockUntilLocalEditRef.current = false;
     }
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
@@ -1054,7 +1072,7 @@ export const useSimplifiedRundownState = () => {
           });
           
           // Extended cooldown to prevent immediate autosave after forced refresh
-          remoteSaveCooldownRef.current = Date.now() + 2000;
+          cooldownUntilRef.current = Date.now() + 2000;
         }
       } catch (e) {
         console.error('❌ Silent refresh failed:', e);
@@ -1247,9 +1265,9 @@ export const useSimplifiedRundownState = () => {
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
-      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+      if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        remoteSaveCooldownRef.current = 0;
+        blockUntilLocalEditRef.current = false;
       }
       if (state.title !== newTitle) {
         // Track title editing for protection
@@ -1456,9 +1474,9 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+      if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        remoteSaveCooldownRef.current = 0;
+        blockUntilLocalEditRef.current = false;
       }
       // Track local edit for coordination/debugging
       const now = Date.now();
@@ -1472,9 +1490,9 @@ export const useSimplifiedRundownState = () => {
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId]),
     setTimezone: useCallback((newTimezone: string) => {
-      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+      if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        remoteSaveCooldownRef.current = 0;
+        blockUntilLocalEditRef.current = false;
       }
       // Track local edit for coordination/debugging
       const now = Date.now();
@@ -1488,9 +1506,9 @@ export const useSimplifiedRundownState = () => {
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId]),
     setShowDate: useCallback((newShowDate: Date | null) => {
-      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+      if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        remoteSaveCooldownRef.current = 0;
+        blockUntilLocalEditRef.current = false;
       }
       // Track local edit for coordination/debugging
       const now = Date.now();
