@@ -174,7 +174,7 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     undefined, // Legacy ref no longer needed
-    (isInitialized), // Simplified: just check if rundown is initialized
+    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
     blockUntilLocalEditRef,
     cooldownUntilRef,
     applyingCellBroadcastRef // Pass the cell broadcast flag
