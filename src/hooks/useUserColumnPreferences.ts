@@ -208,6 +208,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
+    // CRITICAL: Never save during initial load phase
+    if (isLoadingRef.current || isLoading) {
+      debugLogger.preferences('🛑 BLOCKED save during loading phase');
+      return;
+    }
+
     // Only save columns that have user-specific settings (order, visibility, width)
     // But include ALL columns so we maintain the complete layout state
     const columnsToSaveFiltered = columnsToSave.filter(col => {
@@ -324,8 +330,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     const merged = mergeColumnsWithTeamColumns(newColumns);
     setColumns(merged);
-    // Only save if we're not currently loading
-    if (!isLoadingRef.current) {
+    // NEVER save during loading - user changes only
+    if (!isLoadingRef.current && !isLoading) {
       saveColumnPreferences(merged, isImmediate);
     }
   }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
@@ -337,8 +343,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         col.id === columnId ? { ...col, width } : col
       );
       
-      // Save with debounce for resize operations
-      if (!isLoadingRef.current) {
+      // NEVER save during loading - user actions only  
+      if (!isLoadingRef.current && !isLoading) {
         saveColumnPreferences(updatedColumns, false);
       }
       
@@ -380,7 +386,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const newKeys = new Set(merged.map(c => c.key));
         const hasNewColumns = merged.some(c => !prevKeys.has(c.key)) || prevColumns.some(c => !newKeys.has(c.key));
         
-        if (hasNewColumns && !isLoadingRef.current && prevColumns.length > 0) {
+        // NEVER save during loading - only save user-initiated team column changes
+        if (hasNewColumns && !isLoadingRef.current && !isLoading && prevColumns.length > 0) {
           debugLogger.preferences('Team columns updated - refreshing available columns');
           saveColumnPreferences(merged, true);
         }
@@ -403,9 +410,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
     debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
-    // Prevent saves during initial loading phase
-    if (isLoadingRef.current) {
-      debugLogger.preferences('Skipping layout application - still loading');
+    // CRITICAL: Prevent ANY saves during initial loading phase
+    if (isLoadingRef.current || isLoading) {
+      debugLogger.preferences('🛑 BLOCKED layout application during loading phase');
       return;
     }
     
