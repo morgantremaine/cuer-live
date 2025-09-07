@@ -59,8 +59,13 @@ const RegularRowContent = ({
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
-        <div className="flex items-center justify-center w-full h-6">
-          <span style={{ color: textColor }}>{rowNumber}</span>
+        <div className="flex items-center justify-center relative w-full h-6">
+          {isCurrentlyPlaying && (
+            <Play 
+              className="h-4 w-4 text-blue-500 fill-blue-500 absolute left-1" 
+            />
+          )}
+          <span style={{ color: textColor }} className="text-center flex-1">{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
@@ -73,39 +78,27 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
+            className="align-middle"
             style={{ 
               width: columnWidth, 
-              backgroundColor: isCurrentSegmentName ? '#3b82f6' : backgroundColor,
+              backgroundColor: isCurrentSegmentName ? 'transparent' : backgroundColor,
               borderRight: '1px solid hsl(var(--border))'
             }}
           >
-            {isCurrentSegmentName ? (
-              <div className="flex items-center gap-2">
-                <Play className="h-4 w-4 text-white fill-blue-500" />
-                <div className="flex-1">
-                  <CellRenderer
-                    column={column}
-                    item={item}
-                    cellRefs={cellRefs}
-                    textColor="#ffffff"
-                    backgroundColor="transparent"
-                    currentSegmentId={currentSegmentId}
-                    columnExpandState={columnExpandState}
-                    onUpdateItem={onUpdateItem}
-                    onCellClick={onCellClick}
-                    onKeyDown={onKeyDown}
-                    markActiveTyping={markActiveTyping}
-                    width={columnWidth}
-                  />
-                </div>
-              </div>
-            ) : (
+            <div 
+              className={isCurrentSegmentName ? 'bg-blue-600 text-white rounded px-2 py-1' : ''}
+              style={{ 
+                width: '100%',
+                minHeight: '24px',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
               <CellRenderer
                 column={column}
                 item={item}
                 cellRefs={cellRefs}
-                textColor={textColor}
+                textColor={isCurrentSegmentName ? '#ffffff' : textColor}
                 backgroundColor="transparent"
                 currentSegmentId={currentSegmentId}
                 columnExpandState={columnExpandState}
@@ -115,7 +108,7 @@ const RegularRowContent = ({
                 markActiveTyping={markActiveTyping}
                 width={columnWidth}
               />
-            )}
+            </div>
           </td>
         );
       })}
