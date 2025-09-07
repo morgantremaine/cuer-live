@@ -54,7 +54,8 @@ export const useRundownStateCoordination = () => {
     userId,
     teamId: null,
     rundownTitle: persistedState.rundownTitle,
-    rundownStartTime: persistedState.rundownStartTime
+    rundownStartTime: persistedState.rundownStartTime,
+    setShowcallerUpdate: undefined // Add this when change tracking is available
   });
 
   // Helper function to calculate end time - memoized for performance

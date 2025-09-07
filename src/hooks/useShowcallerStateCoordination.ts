@@ -15,6 +15,7 @@ interface UseShowcallerStateCoordinationProps {
   teamId?: string | null;
   rundownTitle?: string;
   rundownStartTime?: string;
+  setShowcallerUpdate?: (isUpdate: boolean) => void;
 }
 
 export const useShowcallerStateCoordination = ({ 
@@ -23,7 +24,8 @@ export const useShowcallerStateCoordination = ({
   userId,
   teamId,
   rundownTitle = '',
-  rundownStartTime
+  rundownStartTime,
+  setShowcallerUpdate
 }: UseShowcallerStateCoordinationProps) => {
   const initializationRef = useRef<boolean>(false);
   const lastProcessedTimestampRef = useRef<string | null>(null);
@@ -134,7 +136,8 @@ export const useShowcallerStateCoordination = ({
   const simpleSync = useSimpleShowcallerSync({
     items,
     rundownId,
-    userId
+    userId,
+    setShowcallerUpdate
   });
 
   // Broadcast-first real-time sync (DISABLED to prevent duplicate broadcasts)

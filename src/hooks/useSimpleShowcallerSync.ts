@@ -19,12 +19,14 @@ interface UseSimpleShowcallerSyncProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
+  setShowcallerUpdate?: (isUpdate: boolean) => void;
 }
 
 export const useSimpleShowcallerSync = ({
   items,
   rundownId,
-  userId
+  userId,
+  setShowcallerUpdate
 }: UseSimpleShowcallerSyncProps) => {
   const [state, setState] = useState<SimpleShowcallerState>({
     isPlaying: false,
@@ -439,6 +441,11 @@ export const useSimpleShowcallerSync = ({
     if (!rundownId || !hasLoadedInitialState.current) return;
 
     try {
+      // Signal that this is a showcaller operation to prevent false change detection
+      if (setShowcallerUpdate) {
+        setShowcallerUpdate(true);
+      }
+      
       console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
       
       // Convert to the format expected by the database
@@ -461,8 +468,13 @@ export const useSimpleShowcallerSync = ({
       }
     } catch (error) {
       console.error('📺 Simple: Error saving showcaller state:', error);
+    } finally {
+      // Clear the showcaller operation flag after a delay
+      if (setShowcallerUpdate) {
+        setTimeout(() => setShowcallerUpdate(false), 1000);
+      }
     }
-  }, [rundownId]);
+  }, [rundownId, setShowcallerUpdate]);
 
   // Auto-save state changes (debounced)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
