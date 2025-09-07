@@ -33,7 +33,7 @@ const defaultColumns: Column[] = [
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const { team } = useTeam();
-  const { teamColumns, addTeamColumn } = useTeamCustomColumns();
+  const { teamColumns, loading: teamColumnsLoading, addTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -154,13 +154,19 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }, 500);
   }, [user?.id, rundownId, isLoading]);
 
-  // Load user's column preferences for this rundown
+  // Load user's column preferences for this rundown (waits for team columns to be ready)
   const loadColumnPreferences = useCallback(async () => {
     if (!user?.id || !rundownId) {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
       setColumns(mergedDefaults);
       setIsLoading(false);
       debugLogger.preferences('No user/rundown - using defaults');
+      return;
+    }
+
+    // If team context exists, wait until team columns have loaded to avoid two-phase layout
+    if (team?.id && teamColumnsLoading) {
+      debugLogger.preferences('Deferring column load until team columns are ready');
       return;
     }
 
@@ -184,25 +190,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         
         // Clean and validate loaded columns
-        const cleanColumns = loadedColumns.map(col => {
-          if (col.key === 'images' || col.id === 'images') {
-            return {
-              ...col,
-              id: 'images',
-              key: 'images',
-              name: col.name || 'Images',
-              isCustom: false,
-              isEditable: true
-            };
-          }
-          return col;
-        }).filter(col => col && col.id && col.key && col.name);
-        
+        const cleanColumns = loadedColumns.filter(col => col && col.id && col.key && col.name);
         const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
         setColumns(mergedColumns);
         debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
-        // No saved preferences - use defaults
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
         debugLogger.preferences('No saved preferences - using defaults');
@@ -214,7 +206,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, rundownId, mergeColumnsWithTeamColumns]);
+  }, [user?.id, rundownId, team?.id, teamColumnsLoading, mergeColumnsWithTeamColumns]);
 
   // Update columns and auto-save
   const updateColumns = useCallback(async (newColumns: Column[]) => {
@@ -338,9 +330,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           // Auto-save when new team columns are added
           saveColumnPreferences(merged);
           debugLogger.preferences('New team columns detected - auto-saving');
+          return merged;
         }
         
-        return merged;
+        // Avoid unnecessary re-renders if nothing actually changed
+        return prevColumns;
       });
     }
   }, [teamColumns, isLoading, mergeColumnsWithTeamColumns, saveColumnPreferences]);
