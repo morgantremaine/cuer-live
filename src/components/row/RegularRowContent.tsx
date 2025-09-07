@@ -68,8 +68,9 @@ const RegularRowContent = ({
         <div 
           className="absolute top-0 right-0 h-full w-px"
           style={{ 
-            zIndex: 1,
-            backgroundColor: 'hsl(var(--border))'
+            zIndex: 10,
+            backgroundColor: 'red', // Make it red for debugging
+            width: '2px' // Make it thicker for debugging
           }}
         />
       </td>
@@ -108,8 +109,9 @@ const RegularRowContent = ({
               <div 
                 className="absolute top-0 right-0 h-full w-px"
                 style={{ 
-                  zIndex: 1,
-                  backgroundColor: 'hsl(var(--border))'
+                  zIndex: 10,
+                  backgroundColor: 'red', // Make it red for debugging
+                  width: '2px' // Make it thicker for debugging
                 }}
               />
             )}
