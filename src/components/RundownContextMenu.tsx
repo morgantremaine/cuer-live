@@ -6,9 +6,12 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import ColorPicker from './ColorPicker';
+
 
 interface RundownContextMenuProps {
   children: React.ReactNode;
@@ -62,6 +65,13 @@ const RundownContextMenu = memo(({
   allItems
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
+
+  // Define color options for the submenu
+  const colorOptions = [
+    { name: 'Red', value: '#fca5a5' },
+    { name: 'Green', value: '#86efac' },
+    { name: 'Blue', value: '#93c5fd' }
+  ];
 
   // Handle color selection for multiple rows
   const handleColorSelect = (id: string, color: string) => {
@@ -254,13 +264,30 @@ const RundownContextMenu = memo(({
             </ContextMenuItem>
           )}
           
-          <ContextMenuItem 
-            onClick={onColorPicker} 
-            className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <Palette className="mr-2 h-4 w-4" />
-            {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
-          </ContextMenuItem>
+          
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+              <Palette className="mr-2 h-4 w-4" />
+              {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-auto min-w-0 p-2">
+              <div className="flex gap-2">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => handleColorSelect(itemId, color.value)}
+                    className="flex flex-col items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-xs text-gray-900 dark:text-gray-100 min-w-0"
+                    title={color.name}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded border border-gray-300 dark:border-gray-500"
+                      style={{ backgroundColor: color.value }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
           
           <ContextMenuSeparator />
           
@@ -283,22 +310,6 @@ const RundownContextMenu = memo(({
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-      
-      {/* Color picker positioned outside the context menu */}
-      {showColorPicker === itemId && (
-        <div className="fixed z-[10000]" style={{ 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)'
-        }}>
-          <ColorPicker
-            itemId={itemId}
-            showColorPicker={showColorPicker}
-            onToggle={onColorPicker}
-            onColorSelect={handleColorSelect}
-          />
-        </div>
-      )}
     </>
   );
 });
