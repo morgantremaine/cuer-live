@@ -477,10 +477,40 @@ export const useSimplifiedRundownState = () => {
           case 'showDate':
             actions.setShowDate(update.value);
             break;
-          case 'structuralChange':
-            // Structural changes are handled by the normal realtime update flow
-            console.log('📱 Rundown structural change detected - handled by realtime');
+          case 'items:reorder': {
+            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+            if (order.length > 0) {
+              const indexMap = new Map(order.map((id, idx) => [id, idx]));
+              const reordered = [...state.items].sort((a, b) => {
+                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                return ai - bi;
+              });
+              actions.setItems(reordered);
+            }
             break;
+          }
+          case 'items:add': {
+            const payload = update.value || {};
+            const item = payload.item;
+            const index = Math.max(0, Math.min(payload.index ?? state.items.length, state.items.length));
+            if (item && !state.items.find(i => i.id === item.id)) {
+              const newItems = [...state.items];
+              newItems.splice(index, 0, item);
+              actions.setItems(newItems);
+            }
+            break;
+          }
+          case 'items:remove': {
+            const id = update.value?.id as string;
+            if (id) {
+              const newItems = state.items.filter(i => i.id !== id);
+              if (newItems.length !== state.items.length) {
+                actions.setItems(newItems);
+              }
+            }
+            break;
+          }
           default:
             console.warn('🚨 Unknown rundown-level field:', update.field);
         }
@@ -1118,15 +1148,56 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
-      // Auto-save will handle this change - no special handling needed
+      saveUndoState(state.items, [], state.title, 'Delete row');
+      actions.deleteItem(id);
+      
+      // Broadcast row removal for immediate realtime sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:remove',
+          { id },
+          currentUserId
+        );
+      }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addRow: useCallback(() => {
-      // Auto-save will handle this change - no special handling needed
+      saveUndoState(state.items, [], state.title, 'Add segment');
+      helpers.addRow();
+      
+      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        }, 0);
+      }
     }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addHeader: useCallback(() => {
-      // Auto-save will handle this change - no special handling needed
+      saveUndoState(state.items, [], state.title, 'Add header');
+      helpers.addHeader();
+      
+      if (rundownId && currentUserId) {
+        const order = state.items.map(i => i.id);
+        setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        }, 0);
+      }
     }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     setTitle: useCallback((newTitle: string) => {
@@ -1215,9 +1286,15 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast structural change for immediate sync
+    // Broadcast add at index for immediate realtime sync
     if (rundownId && currentUserId) {
-      // Auto-save will handle this change - no special handling needed
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newItem, index: actualIndex },
+        currentUserId
+      );
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId]);
 
@@ -1251,6 +1328,17 @@ export const useSimplifiedRundownState = () => {
     newItems.splice(actualIndex, 0, newHeader);
     
     actions.setItems(newItems);
+    
+    // Broadcast header add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newHeader, index: actualIndex },
+        currentUserId
+      );
+    }
   }, [state.items, state.title, saveUndoState, actions.setItems]);
 
 
