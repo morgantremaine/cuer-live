@@ -450,9 +450,6 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update:', update);
       
-      // Show blue wifi icon when receiving updates from other users
-      realtimeConnection.triggerProcessingState();
-      
       // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
       executeWithCellUpdate(() => {
         // Handle rundown-level property updates (no itemId)
