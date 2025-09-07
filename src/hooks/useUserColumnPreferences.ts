@@ -403,6 +403,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
     debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
+    // Prevent saves during initial loading phase
+    if (isLoadingRef.current) {
+      debugLogger.preferences('Skipping layout application - still loading');
+      return;
+    }
+    
     // Create master list of all available columns (defaults + team + existing user columns)
     const masterColumns = [...defaultColumns];
     
