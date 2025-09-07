@@ -48,6 +48,7 @@ const CameraPlotElementContextMenu = ({
   const handleColorChange = (elementId: string, color: string) => {
     onUpdate(elementId, { color });
     handleColorSelect(elementId, color);
+    onClose();
   };
 
   const isFurniture = element.type === 'furniture';
