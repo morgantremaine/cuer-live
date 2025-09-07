@@ -89,13 +89,19 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className="align-middle min-h-[115px]"
+                className="align-middle min-h-[115px] relative"
                 style={{ 
-                  width: columnWidth
+                  width: columnWidth, 
+                  overflow: 'visible'
                 }}
             >
               <div 
                 className="px-2 py-8 flex items-center"
+                style={{ 
+                  position: 'relative',
+                  zIndex: 10,
+                  minWidth: '100%'
+                }}
               >
                 <span className="inline-flex items-center">
                   <input
@@ -151,14 +157,12 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle min-h-[115px] relative overflow-hidden"
+              className="align-middle min-h-[115px]"
               style={{ 
                 width: columnWidth 
               }}
             >
-              {/* Overlay to mask underlying column dividers */}
-              <div className="absolute inset-0" style={{ backgroundColor: backgroundColor || 'transparent', zIndex: 5 }} />
-              <div className="px-2 py-8" style={{ position: 'relative', zIndex: 10 }}>
+              <div className="px-2 py-8">
                 {/* Show duration in print only */}
                 <span className="hidden print:inline-block font-medium">
                   {headerDuration}

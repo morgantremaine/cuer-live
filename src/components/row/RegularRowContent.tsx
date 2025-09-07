@@ -49,11 +49,12 @@ const RegularRowContent = ({
   return (
     <>
       <td 
-        className="px-2 py-1 text-sm font-mono align-middle relative"
+        className="px-2 py-1 text-sm font-mono align-middle"
         style={{ 
           width: '64px',
           minWidth: '64px',
-          maxWidth: '64px'
+          maxWidth: '64px',
+          borderRight: '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center justify-center relative w-full">
@@ -75,10 +76,11 @@ const RegularRowContent = ({
         return (
           <td
             key={column.id}
-            className={`align-middle relative ${isCurrentSegmentName ? 'relative' : ''}`}
+            className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
               width: columnWidth, 
-              backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent'
+              backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent',
+              borderRight: '1px solid hsl(var(--border))'
             }}
           >
             <CellRenderer

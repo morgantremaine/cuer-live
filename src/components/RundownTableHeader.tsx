@@ -191,11 +191,12 @@ const RundownTableHeader = ({
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
-          className="px-2 py-1 text-left text-sm font-semibold text-white bg-transparent"
+          className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
           style={{ 
             width: `${64 * zoomLevel}px`, 
             minWidth: `${64 * zoomLevel}px`,
-            maxWidth: `${64 * zoomLevel}px`
+            maxWidth: `${64 * zoomLevel}px`,
+            borderRight: '1px solid hsl(var(--border))'
           }}
         >
           <div className="flex items-center space-x-1">
