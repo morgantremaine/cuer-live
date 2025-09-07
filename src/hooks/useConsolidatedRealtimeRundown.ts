@@ -444,6 +444,13 @@ export const useConsolidatedRealtimeRundown = ({
     isConnected,
     isProcessingUpdate,
     trackOwnUpdate: trackOwnUpdateFunc,
+    // Method to trigger processing state (for cell broadcasts)
+    triggerProcessingState: () => {
+      setIsProcessingUpdate(true);
+      setTimeout(() => {
+        setIsProcessingUpdate(false);
+      }, 800);
+    },
     // Legacy compatibility methods (no-ops maintained)
     setTypingChecker: (checker: any) => {},
     setUnsavedChecker: (checker: any) => {},
