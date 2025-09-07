@@ -108,25 +108,17 @@ class ShowcallerBroadcastManager {
   subscribeToShowcallerBroadcasts(
     rundownId: string, 
     callback: (state: ShowcallerBroadcastState) => void,
-    userId: string
+    currentUserId: string
   ): () => void {
     this.ensureChannel(rundownId);
     
     const callbacks = this.callbacks.get(rundownId) || new Set();
     
-    // Wrap callback to filter own updates
+    // Wrap callback to filter own updates (simplified for single sessions)
     const wrappedCallback = (state: ShowcallerBroadcastState) => {
-      // Skip own updates
-      if (state.userId === userId) {
-        console.log('📺 Skipping own showcaller broadcast');
-        return;
-      }
-
-      // Check if this is a duplicate of our own update
-      const updateId = `${state.userId}-${state.timestamp}`;
-      const ownUpdates = this.ownUpdateTracking.get(rundownId) || new Set();
-      if (ownUpdates.has(updateId)) {
-        console.log('📺 Skipping echoed showcaller broadcast');
+      // Skip own updates to prevent loops (simplified for single sessions)
+      if (this.isOwnUpdate(rundownId, state.userId, currentUserId)) {
+        console.log('⏭️ Skipping own showcaller broadcast');
         return;
       }
 
@@ -165,11 +157,9 @@ class ShowcallerBroadcastManager {
     this.connectionStatus.delete(rundownId);
   }
 
-  // Check if user's update should be skipped (for deduplication)
-  isOwnUpdate(rundownId: string, userId: string, timestamp: number): boolean {
-    const updateId = `${userId}-${timestamp}`;
-    const ownUpdates = this.ownUpdateTracking.get(rundownId) || new Set();
-    return ownUpdates.has(updateId);
+  // Simple own-update detection using userId (single session per user)
+  private isOwnUpdate(rundownId: string, userId: string, currentUserId: string): boolean {
+    return userId === currentUserId;
   }
 
   // Get connection status for a rundown

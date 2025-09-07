@@ -86,8 +86,8 @@ const SharedRundown = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (per-tab, not per-user) - shared rundowns get all updates
-      if (cellBroadcast.isOwnUpdate(update)) {
+      // Skip own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, 'shared-view')) {
         console.log('📱 Shared rundown skipping own cell broadcast update');
         return;
       }

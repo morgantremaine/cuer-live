@@ -51,9 +51,7 @@ export const useConsolidatedRealtimeRundown = ({
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
   
-  // Use unified tab identifier for consistent own-update detection
-  const tabIdRef = useRef(getTabId());
-  
+  // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({
     onRundownUpdate,
     onShowcallerUpdate,
@@ -99,24 +97,11 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-  // SIMPLIFIED: Use ONLY tab_id for own-update detection
-  if (!isSharedView) {
-    const updateTabId = payload.new?.tab_id;
-    const isOwnTabUpdate = updateTabId && updateTabId === tabIdRef.current;
-    
-    if (isOwnTabUpdate) {
-      debugLogger.realtime('Skipping own tab update:', { 
-        normalizedTimestamp, 
-        incomingDocVersion,
-        tabId: updateTabId
-      });
-      globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
-      if (incomingDocVersion) {
-        globalState.lastProcessedDocVersion = incomingDocVersion;
-      }
-      return;
-    }
-  }
+        // Simplified conflict prevention: Skip updates from same user (single session)
+        if (payload.new?.user_id === user?.id) {
+          console.log('⏭️ Skipping realtime update - own update (single session)');
+          return;
+        }
 
     // Enhanced gap detection with improved handling
     const expectedVersion = currentDocVersion + 1;
@@ -254,7 +239,7 @@ export const useConsolidatedRealtimeRundown = ({
           timestamp: normalizedTimestamp,
           hasContentChanges: true,
           tabId: payload.new?.tab_id,
-          ownTabId: tabIdRef.current
+          ownTabId: 'single-session'
         });
         setIsProcessingUpdate(true);
         
@@ -486,7 +471,7 @@ export const useConsolidatedRealtimeRundown = ({
     isConnected,
     isProcessingUpdate,
     trackOwnUpdate: trackOwnUpdateFunc,
-    tabId: tabIdRef.current, // Expose tab ID for save operations
+    tabId: 'single-session', // Single session - no tab tracking needed
     // Legacy compatibility methods (no-ops maintained)
     setTypingChecker: (checker: any) => {},
     setUnsavedChecker: (checker: any) => {},

@@ -74,10 +74,7 @@ const Teleprompter = () => {
     };
   }, [rundownData?.title]);
 
-  // Track tab visibility/focus for silent refresh functionality
-  const [isTabActive, setIsTabActive] = useState(true);
-  const lastSyncTimeRef = useRef(0);
-  const prevIsActiveRef = useRef(true);
+  // Simplified: No tab tracking needed with single sessions
 
   // Enhanced real-time updates with doc version tracking
   const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
@@ -104,92 +101,16 @@ const Teleprompter = () => {
     }
   });
 
-  // Silent refresh when tab becomes active (same as main rundown)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsTabActive(!document.hidden);
-    };
-    
-    const handleFocusChange = () => {
-      setIsTabActive(document.hasFocus());
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocusChange);
-    window.addEventListener('blur', handleFocusChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocusChange);
-      window.removeEventListener('blur', handleFocusChange);
-    };
-  }, []);
-
-  // Perform silent refresh when tab becomes active (only if realtime is disconnected)
-  useEffect(() => {
-    if (!rundownId || !user) return;
-
-    // Only trigger on active transitions (not when going inactive)
-    const shouldSync = isTabActive && !prevIsActiveRef.current;
-    prevIsActiveRef.current = isTabActive;
-
-    if (!shouldSync) return;
-
-    // Skip if realtime is connected and working
-    if (isRealtimeConnected) {
-      console.log('✅ Teleprompter: Skipping silent refresh - realtime connected and working');
-      return;
-    }
-
-    // Debounce rapid focus/visibility flaps
-    const now = Date.now();
-    const timeSinceLast = now - lastSyncTimeRef.current;
-    if (timeSinceLast <= 300) return;
-
-    lastSyncTimeRef.current = now;
-    console.log('👁️ Teleprompter tab active - performing silent refresh (realtime disconnected)');
-
-    const performSilentRefresh = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('rundowns')
-          .select('*')
-          .eq('id', rundownId)
-          .single();
-        
-        if (!error && data) {
-          console.log('🔄 Teleprompter silent refresh: applying newer data from server', {
-            serverDoc: data.doc_version,
-            serverTs: data.updated_at
-          });
-          
-          setRundownData({
-            title: data.title || 'Untitled Rundown',
-            items: data.items || [],
-            doc_version: data.doc_version,
-            updated_at: data.updated_at
-          });
-          
-          if (data.doc_version) {
-            setLastSeenDocVersion(data.doc_version);
-            watchdogRef.current?.updateLastSeen(data.doc_version, data.updated_at);
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ Teleprompter silent refresh failed:', error);
-      }
-    };
-
-    performSilentRefresh();
-  }, [isTabActive, rundownId, user, isRealtimeConnected]);
+  // Simplified: No tab-based refresh needed with single sessions
+  // Data freshness maintained through realtime updates only
 
   // Set up cell broadcast for instant collaboration (per-tab, not per-user)
   useEffect(() => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (per-tab using clientId, not userId)
-      if (cellBroadcast.isOwnUpdate(update)) {
+      // Skip own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, user?.id || '')) {
         console.log('📱 Teleprompter skipping own cell broadcast update');
         return;
       }

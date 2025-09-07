@@ -35,7 +35,7 @@ export const useSimplifiedRundownState = () => {
   const [showcallerActivity, setShowcallerActivity] = useState(false);
   const [lastKnownTimestamp, setLastKnownTimestamp] = useState<string | null>(null);
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState<number>(0);
-  const [isTabActive, setIsTabActive] = useState(true);
+  
   
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
@@ -96,39 +96,6 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
 
-  // Tab visibility and focus tracking for stale tab prevention
-  const prevIsActiveRef = useRef(isTabActive);
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsTabActive(!document.hidden);
-      console.log('👁️ Tab visibility changed:', !document.hidden ? 'visible' : 'hidden');
-    };
-
-    const handleFocusChange = () => {
-      setIsTabActive(document.hasFocus());
-      console.log('🎯 Tab focus changed:', document.hasFocus() ? 'focused' : 'blurred');
-    };
-
-    const handleBeforeUnload = () => {
-      // Force sync latest data before tab closes
-      if (rundownId && isInitialized) {
-        console.log('🔄 Tab closing - forcing final sync');
-        // Could trigger a final save here if needed
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocusChange);
-    window.addEventListener('blur', handleFocusChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocusChange);
-      window.removeEventListener('blur', handleFocusChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
 
   // Simplified dropdown protection
   const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
@@ -525,22 +492,22 @@ export const useSimplifiedRundownState = () => {
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
       console.log('📱 Cell broadcast received:', update);
       
-      // Skip our own updates (per-tab, not per-user)
-      if (cellBroadcast.isOwnUpdate(update)) {
+      // Skip our own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
         console.log('📱 Skipping own cell broadcast update');
         return;
       }
       
       console.log('📱 Applying cell broadcast update:', update);
       
-      // CRITICAL: Track this update to prevent realtime database overwrites
-      const updateKey = `${update.itemId || 'rundown'}-${update.field}`;
-      const recentCellUpdates = recentCellUpdatesRef.current;
-      recentCellUpdates.set(updateKey, {
-        timestamp: Date.now(),
-        value: update.value,
-        clientId: update.clientId
-      });
+        // CRITICAL: Track this update to prevent realtime database overwrites
+        const updateKey = `${update.itemId || 'rundown'}-${update.field}`;
+        const recentCellUpdates = recentCellUpdatesRef.current;
+        recentCellUpdates.set(updateKey, {
+          timestamp: Date.now(),
+          value: update.value,
+          clientId: update.userId // Use userId as clientId for single sessions
+        });
       
       // Clean up old entries after 5 seconds
       setTimeout(() => {
