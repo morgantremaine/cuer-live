@@ -64,12 +64,13 @@ const RegularRowContent = ({
           )}
           <span style={{ color: textColor }} className={isCurrentlyPlaying ? 'ml-5' : ''}>{rowNumber}</span>
         </div>
-        {/* Vertical divider */}
+        {/* Vertical divider - make it very visible for debugging */}
         <div 
-          className="absolute top-0 right-0 h-full w-px"
+          className="absolute top-0 right-0 h-full"
           style={{ 
-            zIndex: 1,
-            backgroundColor: 'hsl(var(--border))'
+            zIndex: 10,
+            backgroundColor: 'hsl(var(--border))',
+            width: '1px'
           }}
         />
       </td>
@@ -106,10 +107,11 @@ const RegularRowContent = ({
             {/* Vertical divider - only show if not the last column */}
             {!isLastColumn && (
               <div 
-                className="absolute top-0 right-0 h-full w-px"
+                className="absolute top-0 right-0 h-full"
                 style={{ 
-                  zIndex: 1,
-                  backgroundColor: 'hsl(var(--border))'
+                  zIndex: 10,
+                  backgroundColor: 'hsl(var(--border))',
+                  width: '1px'
                 }}
               />
             )}
