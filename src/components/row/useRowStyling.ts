@@ -46,13 +46,8 @@ export const useRowStyling = ({
 
   // Selection styling with inset shadow to avoid misalignment
   if (isSelected) {
-    if (isHeader) {
-      // For headers: use stronger inset shadow and background overlay for visibility
-      rowClass += ' ![box-shadow:inset_0_0_0_3px_rgb(59_130_246)] !bg-blue-100/30 dark:!bg-blue-900/30';
-    } else {
-      // Use inset box-shadow for regular rows to avoid adding outside borders
-      rowClass += ' ![box-shadow:inset_0_0_0_2px_rgb(59_130_246)]';
-    }
+    // Use inset box-shadow for all selected rows to avoid adding outside borders
+    rowClass += ' ![box-shadow:inset_0_0_0_2px_rgb(59_130_246)]';
     
     // Add subtle background highlight for non-header, non-colored rows only
     if (!isHeader && (!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
