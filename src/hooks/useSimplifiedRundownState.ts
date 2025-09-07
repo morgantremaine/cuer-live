@@ -366,9 +366,9 @@ export const useSimplifiedRundownState = () => {
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-         // CRITICAL: Block all autosaves for 4 seconds after teammate update
-        console.log('🛑 AutoSave: BLOCKING all saves after teammate update - 4s cooldown active');
-        remoteSaveCooldownRef.current = Date.now() + 4000;
+         // CRITICAL: Block all autosaves until the user makes a local edit
+         console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
+         remoteSaveCooldownRef.current = Number.POSITIVE_INFINITY;
         
         // Schedule reconciliation to merge any remaining conflicts
         if (protectedFields.size > 0) {
@@ -421,9 +421,9 @@ export const useSimplifiedRundownState = () => {
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-         // CRITICAL: Block all autosaves for 4 seconds after teammate update
-        console.log('🛑 AutoSave: BLOCKING all saves after teammate update - 4s cooldown active');
-        remoteSaveCooldownRef.current = Date.now() + 4000;
+         // CRITICAL: Block all autosaves until the user makes a local edit
+         console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
+         remoteSaveCooldownRef.current = Number.POSITIVE_INFINITY;
 
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
@@ -747,6 +747,11 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    // Re-enable autosave after local edit if it was blocked due to teammate update
+    if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+      console.log('✅ AutoSave: local edit detected - re-enabling saves');
+      remoteSaveCooldownRef.current = 0;
+    }
     // Check if this is a typing field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
@@ -1241,6 +1246,11 @@ export const useSimplifiedRundownState = () => {
     }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     setTitle: useCallback((newTitle: string) => {
+      // Re-enable autosave after local edit if previously blocked
+      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        remoteSaveCooldownRef.current = 0;
+      }
       if (state.title !== newTitle) {
         // Track title editing for protection
         recentlyEditedFieldsRef.current.set('title', Date.now());
@@ -1446,6 +1456,10 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
+      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        remoteSaveCooldownRef.current = 0;
+      }
       // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('startTime', now);
@@ -1458,6 +1472,10 @@ export const useSimplifiedRundownState = () => {
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId]),
     setTimezone: useCallback((newTimezone: string) => {
+      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        remoteSaveCooldownRef.current = 0;
+      }
       // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('timezone', now);
@@ -1470,6 +1488,10 @@ export const useSimplifiedRundownState = () => {
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId]),
     setShowDate: useCallback((newShowDate: Date | null) => {
+      if (remoteSaveCooldownRef.current === Number.POSITIVE_INFINITY) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        remoteSaveCooldownRef.current = 0;
+      }
       // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('showDate', now);

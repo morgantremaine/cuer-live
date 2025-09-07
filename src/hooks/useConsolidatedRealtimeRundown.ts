@@ -46,6 +46,7 @@ export const useConsolidatedRealtimeRundown = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const isInitialLoadRef = useRef(true);
   
   // Generate a unique tab identifier for own-update detection
   const tabIdRef = useRef(crypto.randomUUID());
@@ -143,7 +144,7 @@ export const useConsolidatedRealtimeRundown = ({
       
       globalState.gapDetectionInProgress = true;
       // Only show processing indicator for gap detection if not initial load
-      if (!isInitialLoad) {
+      if (!isInitialLoadRef.current) {
         setIsProcessingUpdate(true);
       }
       
@@ -248,7 +249,7 @@ export const useConsolidatedRealtimeRundown = ({
       });
 
       // Show processing indicator for ALL content changes from remote sources (not during initial load)
-      if (!isInitialLoad) {
+      if (!isInitialLoadRef.current) {
         console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
           docVersion: incomingDocVersion,
           timestamp: normalizedTimestamp,
@@ -288,6 +289,7 @@ export const useConsolidatedRealtimeRundown = ({
 
     // Reset initial load flag for new rundown
     setIsInitialLoad(true);
+    isInitialLoadRef.current = true;
 
     let globalState = globalSubscriptions.get(rundownId);
 
@@ -361,6 +363,7 @@ export const useConsolidatedRealtimeRundown = ({
             // Mark initial load as complete after first successful subscription
             setTimeout(() => {
               setIsInitialLoad(false);
+              isInitialLoadRef.current = false;
             }, 100);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
