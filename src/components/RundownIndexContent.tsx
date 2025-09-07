@@ -244,8 +244,19 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton until ALL systems are ready, including columns
-  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || !rundownId || !items || items.length === 0 || !hasInitialColumnLoad;
+  // Show skeleton until ALL systems are ready, including column prefs, team columns, and layout stabilization
+  const isFullyLoading = (
+    isLoading ||
+    !isInitialized ||
+    !hasLoadedInitialState ||
+    !rundownId ||
+    !items || items.length === 0 ||
+    isLoadingPreferences ||
+    isLoadingSharedLayout ||
+    isLoadingTeamColumns ||
+    !hasInitialColumnLoad ||
+    !isLayoutStabilized
+  );
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
   // After core rundown loads, prevent skeleton from reappearing
