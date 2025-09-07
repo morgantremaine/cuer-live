@@ -212,6 +212,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Update columns and auto-save
   const updateColumns = useCallback(async (newColumns: Column[]) => {
+    // CRITICAL: Don't auto-save during initial load
+    if (isLoading) {
+      console.log('📊 Column update blocked - still loading');
+      return;
+    }
+    
     // Check if any new custom columns were added that need to be saved to team
     const existingCustomKeys = new Set(
       columns.filter(col => col.isCustom).map(col => col.key)
@@ -230,8 +236,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     const merged = mergeColumnsWithTeamColumns(newColumns);
     setColumns(merged);
+    console.log('📊 Columns updated via updateColumns - auto-saving');
     saveColumnPreferences(merged);
-  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
+  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns, isLoading]);
 
   // Update column width and auto-save
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
@@ -312,33 +319,38 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     loadColumnPreferences();
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change
+  // Update columns when team columns change - but not during initial load
   useEffect(() => {
-    if (!isLoading && teamColumns.length > 0) {
-      setColumns(prevColumns => {
-        const merged = mergeColumnsWithTeamColumns(prevColumns);
-        
-        // Check if there are actually new team columns
-        const prevTeamColumnKeys = new Set(
-          prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
-        );
-        const newTeamColumnKeys = new Set(
-          merged.filter(c => (c as any).isTeamColumn).map(c => c.key)
-        );
-        
-        const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
-        
-        if (hasNewTeamColumns) {
-          // Auto-save when new team columns are added
-          saveColumnPreferences(merged);
-          debugLogger.preferences('New team columns detected - auto-saving');
-          return merged;
-        }
-        
-        // Avoid unnecessary re-renders if nothing actually changed
-        return prevColumns;
-      });
+    // CRITICAL: Skip team column merging during initial load to prevent autosave triggers
+    if (isLoading || teamColumns.length === 0) {
+      console.log('📊 Skipping team column merge - still loading or no team columns');
+      return;
     }
+    
+    setColumns(prevColumns => {
+      const merged = mergeColumnsWithTeamColumns(prevColumns);
+      
+      // Check if there are actually new team columns
+      const prevTeamColumnKeys = new Set(
+        prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
+      );
+      const newTeamColumnKeys = new Set(
+        merged.filter(c => (c as any).isTeamColumn).map(c => c.key)
+      );
+      
+      const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
+      
+      if (hasNewTeamColumns) {
+        // Auto-save when new team columns are added - but only after initial load
+        console.log('📊 New team columns detected post-load - auto-saving');
+        saveColumnPreferences(merged);
+        debugLogger.preferences('New team columns detected - auto-saving');
+        return merged;
+      }
+      
+      // Avoid unnecessary re-renders if nothing actually changed
+      return prevColumns;
+    });
   }, [teamColumns, isLoading, mergeColumnsWithTeamColumns, saveColumnPreferences]);
 
   // Cleanup timeouts on unmount
