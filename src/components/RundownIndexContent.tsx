@@ -97,15 +97,15 @@ const RundownIndexContent = () => {
   // Also wait for team custom columns to finish loading to avoid second-phase layout hydrate
   const { loading: isLoadingTeamColumns } = useTeamCustomColumns();
 
-  // Prevent skeleton from reappearing after first reveal
+  // Prevent skeleton from reappearing after first reveal - but keep it lightweight
   const [hasRevealed, setHasRevealed] = useState(false);
 
-  // Mark layout as stabilized after a brief delay when all loading is complete
+  // Mark layout as stabilized after a brief delay when all loading is complete  
   useEffect(() => {
     if (!isLoadingPreferences && !isLoadingSharedLayout && !isLoadingTeamColumns && userColumns.length > 0) {
       const stabilizationTimer = setTimeout(() => {
         setIsLayoutStabilized(true);
-      }, 200); // Small delay to ensure all layout refreshes are complete
+      }, 100); // Shorter delay for faster reveal
       
       return () => clearTimeout(stabilizationTimer);
     } else {
@@ -243,11 +243,11 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Check if we're still loading - show spinner until everything is ready including layout stabilization
-  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || isLoadingSharedLayout || isLoadingTeamColumns || !isLayoutStabilized || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  // Show skeleton only for core rundown data, allow smooth column transitions
+  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || !rundownId || !items || items.length === 0;
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
-  // After first full-ready render, prevent skeleton from reappearing
+  // After core rundown loads, prevent skeleton from reappearing
   useEffect(() => {
     if (!isFullyLoading && !hasRevealed) {
       setHasRevealed(true);
@@ -500,8 +500,8 @@ const RundownIndexContent = () => {
     handleDrop(e, targetIndex);
   };
 
-  // Show loading spinner until everything is ready
-  if (isFullyLoading) {
+  // Show loading spinner only for core data, let column layout settle smoothly
+  if (showSkeleton) {
     return <RundownLoadingSkeleton />;
   }
 

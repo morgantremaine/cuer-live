@@ -57,7 +57,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
     }
   }, [rundownId]);
 
-  // Load user's available layouts (both own and team layouts)
+  // Load user's available layouts (both own and team layouts) - debounced to prevent excessive calls
   const loadAvailableLayouts = useCallback(async () => {
     if (!user?.id) return;
 
@@ -117,8 +117,18 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
         };
       });
 
-      console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
-      setAvailableLayouts(mappedLayouts);
+      // Only update if the data actually changed to prevent unnecessary re-renders
+      setAvailableLayouts(prev => {
+        const prevLength = prev.length;
+        const newLength = mappedLayouts.length;
+        
+        if (prevLength !== newLength || JSON.stringify(prev) !== JSON.stringify(mappedLayouts)) {
+          console.log('🔄 SharedRundownLayout: Refreshed available layouts:', mappedLayouts.length);
+          return mappedLayouts;
+        }
+        
+        return prev; // No change, avoid re-render
+      });
     } catch (error) {
       console.error('Failed to load available layouts:', error);
     }
