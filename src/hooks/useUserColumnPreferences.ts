@@ -37,8 +37,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false); // Track if we've completed the initial load
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const hasLoadedRef = useRef(false); // Prevent multiple initial loads
 
   // Merge columns with team columns to ensure completeness
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
@@ -215,9 +216,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
-      // Don't set hasInitialLoad yet - wait for team column processing to complete
     }
-  }, [user?.id, rundownId, team?.id, teamColumnsLoading, mergeColumnsWithTeamColumns]);
+  }, [user?.id, rundownId, team?.id, teamColumnsLoading]); // Removed mergeColumnsWithTeamColumns to prevent recreation
 
   // Update columns and auto-save
   const updateColumns = useCallback(async (newColumns: Column[]) => {
@@ -323,10 +323,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Don't save - this is just a preview
   }, [isLoading, mergeColumnsWithTeamColumns]);
 
-  // Load preferences when rundown changes
+  // Load preferences when rundown changes - but only once per rundown
   useEffect(() => {
-    loadColumnPreferences();
-  }, [rundownId, user?.id, loadColumnPreferences]);
+    // Reset the loaded flag when rundown changes
+    hasLoadedRef.current = false;
+    
+    if (rundownId && user?.id) {
+      hasLoadedRef.current = true;
+      loadColumnPreferences();
+    }
+  }, [rundownId, user?.id]);
 
   // Update columns when team columns change - wait until all loading is done
   useEffect(() => {
