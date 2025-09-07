@@ -44,6 +44,7 @@ export const useShowcallerVisualState = ({
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
   const precisionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const suppressPersistence = useRef<boolean>(false);
 
   // Use precision timing utility
   const {
@@ -74,6 +75,9 @@ export const useShowcallerVisualState = ({
   const handleInitialStateLoaded = useCallback((loadedState: any) => {
     console.log('📺 Applying loaded initial state with precision timing');
     
+    // Suppress persistence during restoration
+    suppressPersistence.current = true;
+    
     // Convert plain object back to Map for statuses
     const statusMap = new Map();
     if (loadedState.currentItemStatuses) {
@@ -96,6 +100,12 @@ export const useShowcallerVisualState = ({
       console.log('📺 Restarting precision timer from saved state');
       setTimeout(() => startPrecisionTimer(), 50);
     }
+    
+    // Re-enable persistence after restoration is complete
+    setTimeout(() => {
+      suppressPersistence.current = false;
+      console.log('📺 Persistence re-enabled after initial restoration');
+    }, 200);
   }, [synchronizeWithExternalState]);
 
   // Initialize state loading
@@ -156,6 +166,12 @@ export const useShowcallerVisualState = ({
 
   // Enhanced debounced save with longer delay and critical change detection
   const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState, isCritical: boolean = false) => {
+    // Skip save if persistence is suppressed
+    if (suppressPersistence.current) {
+      console.log('📺 Save suppressed during restoration/self-healing');
+      return;
+    }
+    
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -684,6 +700,9 @@ export const useShowcallerVisualState = ({
       if (fallbackSegment) {
         console.log('🔧 Self-healing: Moving to fallback segment:', fallbackSegment.id);
         
+        // Suppress persistence during self-healing
+        suppressPersistence.current = true;
+        
         // Rebuild status map for the new current segment
         const newStatuses = new Map();
         const fallbackIndex = items.findIndex(item => item.id === fallbackSegment.id);
@@ -709,7 +728,13 @@ export const useShowcallerVisualState = ({
           currentItemStatuses: newStatuses,
           isPlaying: wasPlaying,
           controllerId: userId
-        }, true, true); // Save changes if we're the controller
+        }, false, false); // Don't save during self-healing
+        
+        // Re-enable persistence after self-healing
+        setTimeout(() => {
+          suppressPersistence.current = false;
+          console.log('📺 Persistence re-enabled after self-healing');
+        }, 100);
         
         // Restart timer if was playing
         if (wasPlaying) {
@@ -719,6 +744,9 @@ export const useShowcallerVisualState = ({
       } else {
         console.log('🔧 Self-healing: No valid segments found, clearing state');
         
+        // Suppress persistence during self-healing
+        suppressPersistence.current = true;
+        
         // No valid segments exist, clear the showcaller state
         updateVisualState({
           currentSegmentId: null,
@@ -727,7 +755,13 @@ export const useShowcallerVisualState = ({
           currentItemStatuses: new Map(),
           isPlaying: false,
           controllerId: null
-        }, true, true);
+        }, false, false); // Don't save during self-healing
+        
+        // Re-enable persistence after self-healing
+        setTimeout(() => {
+          suppressPersistence.current = false;
+          console.log('📺 Persistence re-enabled after self-healing');
+        }, 100);
         
         stopPrecisionTimer();
         resetDriftCompensation();
@@ -751,9 +785,19 @@ export const useShowcallerVisualState = ({
       // Update status map if any invalid items were removed (throttled)
       if (statusMapChanged && (now - lastSelfHealingRef.current) >= selfHealingThrottleMs) {
         lastSelfHealingRef.current = now;
+        
+        // Suppress persistence during self-healing cleanup
+        suppressPersistence.current = true;
+        
         updateVisualState({
           currentItemStatuses: newStatuses
-        }, visualState.controllerId === userId, false);
+        }, false, false); // Don't save during self-healing
+        
+        // Re-enable persistence after cleanup
+        setTimeout(() => {
+          suppressPersistence.current = false;
+          console.log('📺 Persistence re-enabled after status cleanup');
+        }, 100);
       }
     }
   }, [
