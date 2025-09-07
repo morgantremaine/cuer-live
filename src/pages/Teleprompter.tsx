@@ -177,18 +177,18 @@ const Teleprompter = () => {
     performSilentRefresh();
   }, [isTabActive, rundownId, user]);
 
-  // Set up cell broadcast for instant collaboration
+  // Set up cell broadcast for instant collaboration (per-tab, not per-user)
   useEffect(() => {
-    if (!rundownId || !user?.id) return;
+    if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (per-tab, not per-user)
+      // Skip own updates (per-tab using clientId, not userId)
       if (cellBroadcast.isOwnUpdate(update)) {
         console.log('📱 Teleprompter skipping own cell broadcast update');
         return;
       }
 
-      // Only handle script field updates for teleprompter
+      // Handle script field updates and rundown-level updates for teleprompter
       if (update.itemId && update.field === 'script') {
         // Check if actively editing this field
         const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-script`;
@@ -209,11 +209,20 @@ const Teleprompter = () => {
             items: updatedItems
           });
         }
+      } else if (!update.itemId) {
+        // Rundown-level updates (title changes, etc.)
+        console.log('📱 Teleprompter applying rundown-level broadcast update:', update.field, update.value);
+        if (rundownData) {
+          setRundownData({
+            ...rundownData,
+            [update.field]: update.value
+          });
+        }
       }
     });
 
     return unsubscribe;
-  }, [isTabActive, rundownId, user]);
+  }, [rundownId, rundownData]);
 
   // Enhanced save system with realtime collaboration
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
@@ -325,15 +334,15 @@ const Teleprompter = () => {
     setLoading(false);
   };
 
-  // Enhanced script update with instant cell broadcast
+  // Enhanced script update with instant cell broadcast (per-tab, not per-user)
   const updateScriptContent = async (itemId: string, newScript: string) => {
-    if (!rundownData || !user) return;
+    if (!rundownData) return;
     
     // Track typing session for conflict protection
     recentlyEditedFieldsRef.current.set(`${itemId}-script`, Date.now());
     typingSessionRef.current = { fieldKey: `${itemId}-script`, startTime: Date.now() };
     
-    // Broadcast script change instantly for real-time collaboration
+    // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
       cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
     }

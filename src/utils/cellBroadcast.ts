@@ -21,18 +21,21 @@ class CellBroadcastManager {
   private callbacks = new Map<string, Set<(update: CellUpdate) => void>>();
   private subscribed = new Map<string, boolean>();
 
-  // Unique client id per browser tab
+  // Unique client id per browser tab (ensures per-tab functionality instead of per-account)
   private clientId: string = (() => {
     try {
       const key = 'cell_broadcast_client_id';
       let id = sessionStorage.getItem(key);
       if (!id) {
-        id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? (crypto as any).randomUUID() : Math.random().toString(36).slice(2);
+        id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto) ? 
+          (crypto as any).randomUUID() : 
+          `tab_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         sessionStorage.setItem(key, id);
       }
+      console.log('📱 Cell broadcast client ID for this tab:', id);
       return id;
     } catch {
-      return Math.random().toString(36).slice(2);
+      return `tab_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     }
   })();
 

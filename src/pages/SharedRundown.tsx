@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useSharedRundownState } from '@/hooks/useSharedRundownState';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
@@ -13,6 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 
 // Default columns to use when rundown has no columns defined - excludes notes for shared rundown
 const DEFAULT_COLUMNS = [
@@ -28,7 +28,6 @@ const DEFAULT_COLUMNS = [
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true }
 ];
 
-
 const SharedRundown = () => {
   const { rundownData, currentTime, currentSegmentId, loading, error, timeRemaining } = useSharedRundownState();
   const [layoutColumns, setLayoutColumns] = useState(null);
@@ -41,16 +40,61 @@ const SharedRundown = () => {
   // Better refs to prevent duplicate loads and ensure cleanup
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
-  const realtimeChannelRef = useRef<any>(null);
   const isMountedRef = useRef(true);
+  const [localRundownData, setLocalRundownData] = useState(rundownData);
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
 
+  // Sync local state with shared state
+  useEffect(() => {
+    setLocalRundownData(rundownData);
+  }, [rundownData]);
+
+  // Set up cell broadcast for instant collaboration in shared rundown
+  useEffect(() => {
+    if (!rundownId) return;
+
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      // Skip own updates (per-tab, not per-user) - shared rundowns get all updates
+      if (cellBroadcast.isOwnUpdate(update)) {
+        console.log('📱 Shared rundown skipping own cell broadcast update');
+        return;
+      }
+
+      console.log('📱 Shared rundown applying cell broadcast update:', update.itemId, update.field, update.value);
+      
+      // Apply all cell updates immediately for shared rundown
+      setLocalRundownData(prevData => {
+        if (!prevData) return prevData;
+        
+        if (update.itemId) {
+          // Item-level updates
+          const updatedItems = prevData.items.map(item =>
+            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
+          );
+          return {
+            ...prevData,
+            items: updatedItems
+          };
+        } else {
+          // Rundown-level updates (title, start_time, etc.)
+          return {
+            ...prevData,
+            [update.field]: update.value
+          };
+        }
+      });
+    });
+
+    return unsubscribe;
+  }, [rundownId]);
+
   // Update browser tab title when rundown title changes
   useEffect(() => {
-    if (rundownData?.title && rundownData.title !== 'Untitled Rundown') {
-      document.title = rundownData.title;
+    const titleToUse = localRundownData?.title || rundownData?.title;
+    if (titleToUse && titleToUse !== 'Untitled Rundown') {
+      document.title = titleToUse;
     } else {
       document.title = 'Cuer Live';
     }
@@ -59,10 +103,10 @@ const SharedRundown = () => {
     return () => {
       document.title = 'Cuer Live';
     };
-  }, [rundownData?.title]);
+  }, [localRundownData?.title, rundownData?.title]);
 
   // Use real-time showcaller state if available, otherwise fall back to stored state
-  const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
+  const showcallerState = realtimeShowcallerState || localRundownData?.showcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
   
   // Local countdown state for real-time display
@@ -115,16 +159,16 @@ const SharedRundown = () => {
   // IMPORTANT: Use local countdown when playing, otherwise use stored state
   const currentTimeRemaining = isPlaying && realtimeShowcallerState ? 
     localTimeRemaining : 
-    (rundownData?.showcallerState?.timeRemaining || 0);
+    (localRundownData?.showcallerState?.timeRemaining || rundownData?.showcallerState?.timeRemaining || 0);
   
   // Use current segment from real-time state when available
   const realtimeCurrentSegmentId = realtimeShowcallerState?.currentSegmentId || currentSegmentId;
 
   // Use the unified timing calculation from useShowcallerTiming hook (same as main showcaller)
   const timingStatus = useShowcallerTiming({
-    items: rundownData?.items || [],
-    rundownStartTime: rundownData?.startTime || '09:00:00',
-    timezone: rundownData?.timezone || 'UTC',
+    items: localRundownData?.items || rundownData?.items || [],
+    rundownStartTime: localRundownData?.startTime || rundownData?.startTime || '09:00:00',
+    timezone: localRundownData?.timezone || rundownData?.timezone || 'UTC',
     isPlaying,
     currentSegmentId: realtimeCurrentSegmentId,
     timeRemaining: currentTimeRemaining
@@ -135,60 +179,8 @@ const SharedRundown = () => {
     currentSegmentId: realtimeCurrentSegmentId,
     isPlaying,
     autoScrollEnabled,
-    items: rundownData?.items || []
+    items: localRundownData?.items || rundownData?.items || []
   });
-
-  // Enhanced real-time subscription cleanup
-  useEffect(() => {
-    // Clean up existing subscription
-    if (realtimeChannelRef.current) {
-      supabase.removeChannel(realtimeChannelRef.current);
-      realtimeChannelRef.current = null;
-    }
-
-    // Only set up subscription if we have a rundown ID and component is mounted
-    if (!rundownId || !isMountedRef.current) {
-      return;
-    }
-
-    logger.log('Setting up real-time subscription for showcaller state:', rundownId);
-
-    const channel = supabase
-      .channel(`shared-showcaller-${rundownId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'rundowns',
-          filter: `id=eq.${rundownId}`
-        },
-        (payload) => {
-          // Check if component is still mounted before updating state
-          if (!isMountedRef.current) return;
-          
-          logger.log('Received showcaller update:', payload);
-          // Only update if showcaller_state changed
-          if (payload.new?.showcaller_state) {
-            logger.log('Updating showcaller state:', payload.new.showcaller_state);
-            setRealtimeShowcallerState(payload.new.showcaller_state);
-          }
-        }
-      )
-      .subscribe((status) => {
-        logger.log('Subscription status:', status);
-      });
-
-    realtimeChannelRef.current = channel;
-
-    return () => {
-      if (realtimeChannelRef.current) {
-        logger.log('Cleaning up subscription');
-        supabase.removeChannel(realtimeChannelRef.current);
-        realtimeChannelRef.current = null;
-      }
-    };
-  }, [rundownId]);
 
   // Helper function to format time remaining from seconds to string (using same logic as main showcaller)
   const formatTimeRemaining = (seconds: number): string => {
@@ -212,7 +204,7 @@ const SharedRundown = () => {
   // Simplified layout loading using the updated RPC function
   useEffect(() => {
     const loadSharedLayout = async () => {
-      if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
+      if (!rundownId || !(localRundownData || rundownData) || isLayoutLoadingRef.current || !isMountedRef.current) {
         return;
       }
       
@@ -263,10 +255,10 @@ const SharedRundown = () => {
       }
     };
 
-    if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
+    if ((localRundownData || rundownData) && rundownId && layoutLoadedRef.current !== rundownId) {
       loadSharedLayout();
     }
-  }, [rundownId, rundownData]);
+  }, [rundownId, localRundownData, rundownData]);
 
   // Enhanced cleanup on unmount
   useEffect(() => {
@@ -274,16 +266,11 @@ const SharedRundown = () => {
     
     return () => {
       isMountedRef.current = false;
-      
-      if (realtimeChannelRef.current) {
-        supabase.removeChannel(realtimeChannelRef.current);
-        realtimeChannelRef.current = null;
-      }
     };
   }, []);
 
   // Determine columns early so hooks are always called in the same order
-  const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
+  const columnsToUse = layoutColumns || localRundownData?.columns || rundownData?.columns || DEFAULT_COLUMNS;
 
   // Use local column ordering for anonymous users to persist their preferred column order
   const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
@@ -311,7 +298,7 @@ const SharedRundown = () => {
     );
   }
 
-  if (!rundownData) {
+  if (!rundownData && !localRundownData) {
     return (
       <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
@@ -332,7 +319,7 @@ const SharedRundown = () => {
     );
   }
 
-  
+  const displayData = localRundownData || rundownData;
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">
@@ -340,9 +327,9 @@ const SharedRundown = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           
           <SharedRundownHeader
-            title={rundownData.title}
-            startTime={rundownData.startTime || '09:00:00'}
-            timezone={rundownData.timezone || 'UTC'}
+            title={displayData.title}
+            startTime={displayData.startTime || '09:00:00'}
+            timezone={displayData.timezone || 'UTC'}
             layoutName={layoutName}
             currentSegmentId={realtimeCurrentSegmentId}
             isPlaying={isPlaying}
@@ -351,17 +338,17 @@ const SharedRundown = () => {
             onToggleTheme={toggleTheme}
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={handleToggleAutoScroll}
-            items={rundownData.items || []}
+            items={displayData.items || []}
           />
 
           <div className="flex-1 min-h-0 p-4 print:p-2">
             <SharedRundownTable
               ref={scrollContainerRef}
-              items={rundownData.items}
+              items={displayData.items}
               visibleColumns={visibleColumns}
               currentSegmentId={currentSegmentId}
               isPlaying={isPlaying}
-              rundownStartTime={rundownData.startTime || '09:00:00'}
+              rundownStartTime={displayData.startTime || '09:00:00'}
               isDark={isDark}
               onReorderColumns={reorderColumns}
             />
