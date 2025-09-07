@@ -53,12 +53,11 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px] !border-r-0"
+        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
         style={{ 
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px',
-          borderRight: 'none !important'
+          maxWidth: '64px'
         }}
       >
         <div className="flex items-center space-x-1">
@@ -90,11 +89,10 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className="align-middle min-h-[115px] relative !border-r-0"
+                className="align-middle min-h-[115px] relative"
                 style={{ 
                   width: columnWidth, 
-                  overflow: 'visible',
-                  borderRight: 'none !important'
+                  overflow: 'visible'
                 }}
             >
               <div 
@@ -159,10 +157,9 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle min-h-[115px] !border-r-0"
+              className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth,
-                borderRight: 'none !important'
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8">
@@ -178,10 +175,9 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle min-h-[115px] !border-r-0"
+              className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth,
-                borderRight: 'none !important'
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8"></div>
@@ -192,10 +188,9 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle min-h-[115px] !border-r-0"
+              className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth,
-                borderRight: 'none !important'
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8"></div>
