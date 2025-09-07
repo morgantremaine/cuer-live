@@ -222,8 +222,8 @@ export const useRundownStateCoordination = () => {
       isLoading: persistedState.isLoading,
       hasUnsavedChanges: persistedState.hasUnsavedChanges,
       isSaving: persistedState.isSaving,
-      // Show steady green as soon as core data is loaded; don't gate on channel handshakes
-      isConnected: (!persistedState.isLoading) ? true : (persistedState.isConnected || showcallerCoordination.isConnected),
+      // Show steady green immediately when rundown has data and is ready for editing
+      isConnected: (persistedState.rundownId && !persistedState.isLoading) ? true : false,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator
       
       // Showcaller visual state from completely separate system
