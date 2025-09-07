@@ -517,8 +517,19 @@ export const useConsolidatedRealtimeRundown = ({
       // Clean up subscription if no more references
       if (state.refCount <= 0) {
         console.log('📡 Closing consolidated realtime subscription for', rundownId);
-        supabase.removeChannel(state.subscription);
+        
+        // Prevent recursive cleanup
+        const subscription = state.subscription;
         globalSubscriptions.delete(rundownId);
+        
+        // Safe async cleanup
+        setTimeout(() => {
+          try {
+            supabase.removeChannel(subscription);
+          } catch (error) {
+            console.warn('📡 Error during consolidated cleanup:', error);
+          }
+        }, 0);
       }
 
       setIsConnected(false);

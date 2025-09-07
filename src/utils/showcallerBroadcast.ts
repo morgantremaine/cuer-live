@@ -148,13 +148,21 @@ class ShowcallerBroadcastManager {
     const channel = this.channels.get(rundownId);
     if (channel) {
       console.log('📺 Cleaning up showcaller broadcast channel:', rundownId);
-      supabase.removeChannel(channel);
+      // Prevent recursive cleanup
       this.channels.delete(rundownId);
+      this.callbacks.delete(rundownId);
+      this.ownUpdateTracking.delete(rundownId);
+      this.connectionStatus.delete(rundownId);
+      
+      // Safe async cleanup
+      setTimeout(() => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.warn('📺 Error during channel cleanup:', error);
+        }
+      }, 0);
     }
-    
-    this.callbacks.delete(rundownId);
-    this.ownUpdateTracking.delete(rundownId);
-    this.connectionStatus.delete(rundownId);
   }
 
   // Simple own-update detection using userId (single session per user)

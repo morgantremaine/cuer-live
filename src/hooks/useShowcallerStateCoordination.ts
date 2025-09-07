@@ -137,11 +137,11 @@ export const useShowcallerStateCoordination = ({
     userId
   });
 
-  // Broadcast-first real-time sync (kept for compatibility but simplified)
+  // Broadcast-first real-time sync (DISABLED to prevent duplicate broadcasts)
   const { broadcastState, broadcastTimingUpdate, isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
     rundownId,
     onBroadcastReceived: () => {}, // Handled by simpleSync
-    enabled: false // Disable this in favor of simpleSync
+    enabled: false // DISABLED - simpleSync handles all broadcasting
   });
 
   // Only use broadcast system - no realtime fallback for showcaller

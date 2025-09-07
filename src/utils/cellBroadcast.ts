@@ -117,12 +117,19 @@ export class CellBroadcastManager {
           this.callbacks.delete(rundownId);
           const ch = this.channels.get(rundownId);
           if (ch) {
-            try {
-              supabase.removeChannel(ch);
-            } catch {}
+            // Prevent recursive cleanup
             this.channels.delete(rundownId);
             this.subscribed.delete(rundownId);
-            console.log('🧹 Cleaned up cell channel for rundown:', rundownId);
+            
+            // Safe async cleanup  
+            setTimeout(() => {
+              try {
+                supabase.removeChannel(ch);
+                console.log('🧹 Cleaned up cell channel for rundown:', rundownId);
+              } catch (error) {
+                console.warn('🧹 Error during cell channel cleanup:', error);
+              }
+            }, 0);
           }
         }
       }
@@ -132,13 +139,21 @@ export class CellBroadcastManager {
   cleanup(rundownId: string) {
     const ch = this.channels.get(rundownId);
     if (ch) {
-      try {
-        supabase.removeChannel(ch);
-      } catch {}
+      // Prevent recursive cleanup
       this.channels.delete(rundownId);
       this.subscribed.delete(rundownId);
+      this.callbacks.delete(rundownId);
+      
+      // Safe async cleanup
+      setTimeout(() => {
+        try {
+          supabase.removeChannel(ch);
+          console.log('🧹 Cleaned up cell channel for rundown:', rundownId);
+        } catch (error) {
+          console.warn('🧹 Error during cell channel cleanup:', error);
+        }
+      }, 0);
     }
-    this.callbacks.delete(rundownId);
   }
 }
 

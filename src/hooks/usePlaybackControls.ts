@@ -40,38 +40,11 @@ export const usePlaybackControls = (
     userId: user?.id
   });
 
-  // Use broadcast sync only (more reliable for real-time coordination)
+  // Use broadcast sync only (DISABLED to prevent conflicts with simpleSync)
   const { isConnected: isBroadcastConnected } = useShowcallerBroadcastSync({
     rundownId: rundownId || '',
-    onBroadcastReceived: (state) => {
-      console.log('📺 Playback controls received broadcast:', state);
-      const targetSegmentId = state.action === 'jump' && state.jumpToSegmentId
-        ? state.jumpToSegmentId
-        : state.currentSegmentId || null;
-      const buildStatus = () => {
-        if (!targetSegmentId) return undefined as any;
-        const status: Record<string, string> = {};
-        const selectedIndex = items.findIndex(i => i.id === targetSegmentId);
-        if (selectedIndex === -1) return undefined as any;
-        items.forEach((item, index) => {
-          if (item.type === 'regular') {
-            if (index < selectedIndex) status[item.id] = 'completed';
-            else if (index === selectedIndex) status[item.id] = 'current';
-          }
-        });
-        return status;
-      };
-      applyExternalVisualState({
-        isPlaying: !!state.isPlaying,
-        currentSegmentId: targetSegmentId,
-        timeRemaining: state.timeRemaining ?? 0,
-        isController: !!state.isController,
-        controllerId: state.userId,
-        lastUpdate: new Date(state.timestamp).toISOString(),
-        currentItemStatuses: buildStatus()
-      });
-    },
-    enabled: !!rundownId
+    onBroadcastReceived: () => {}, // Handled by simpleSync in useShowcallerStateCoordination
+    enabled: false // DISABLED to prevent duplicate broadcasts
   });
 
   // Track own updates for broadcast system only

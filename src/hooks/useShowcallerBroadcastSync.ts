@@ -46,6 +46,15 @@ export const useShowcallerBroadcastSync = ({
       timestamp: Date.now()
     };
 
+    // Prevent duplicate broadcasts within 100ms
+    const key = `${state.action}-${state.currentSegmentId}-${state.isPlaying}`;
+    const now = Date.now();
+    if (lastBroadcastRef.current > 0 && (now - lastBroadcastRef.current < 100)) {
+      console.log('📺 Deduplicating showcase broadcast:', key);
+      return;
+    }
+    lastBroadcastRef.current = now;
+
     console.log('📺 Broadcasting showcaller state:', state.action, fullState);
     showcallerBroadcast.broadcastState(fullState);
   }, [rundownId, user?.id, enabled]);
