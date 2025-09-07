@@ -1,4 +1,14 @@
 
+/* Force remove all table cell borders */
+.table-container td,
+.table-container th {
+  border: none !important;
+  border-right: none !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
