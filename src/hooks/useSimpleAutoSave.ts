@@ -32,6 +32,7 @@ export const useSimpleAutoSave = (
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const undoActiveRef = useRef(false);
   const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
@@ -149,6 +150,9 @@ export const useSimpleAutoSave = (
       
       // Initialize field delta system
       initializeSavedState(state);
+      
+      // Clear bootstrapping flag to prevent spinner flicker
+      setIsBootstrapping(false);
       
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
@@ -815,7 +819,7 @@ export const useSimpleAutoSave = (
   // Note: Cell update coordination now handled via React context instead of global variables
 
   return {
-    isSaving,
+    isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
     setUndoActive,
     setTrackOwnUpdate,
     markActiveTyping,

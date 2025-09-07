@@ -48,7 +48,7 @@ const AppUpdateNotification = () => {
           .is('app_notification_dismissals.id', null)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setNotification(data);

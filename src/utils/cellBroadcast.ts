@@ -19,6 +19,8 @@ export class CellBroadcastManager {
   private channels: Map<string, any> = new Map();
   private callbacks = new Map<string, Set<(update: CellUpdate) => void>>();
   private subscribed = new Map<string, boolean>();
+  private reconnectAttempts = new Map<string, number>();
+  private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   
   constructor() {
     console.log('📱 CellBroadcast initialized (simplified for single sessions)');
@@ -56,6 +58,10 @@ export class CellBroadcastManager {
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
         console.log('✅ Cell realtime channel subscribed:', key);
+      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+        // Channel lost connection - attempt reconnection with backoff
+        this.subscribed.set(rundownId, false);
+        this.handleChannelReconnect(rundownId);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
@@ -63,6 +69,47 @@ export class CellBroadcastManager {
 
     this.channels.set(rundownId, channel);
     return channel;
+  }
+
+  private handleChannelReconnect(rundownId: string): void {
+    // Clear any existing reconnect timeout
+    const existingTimeout = this.reconnectTimeouts.get(rundownId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    const attempts = this.reconnectAttempts.get(rundownId) || 0;
+    this.reconnectAttempts.set(rundownId, attempts + 1);
+
+    // Use exponential backoff from realtimeUtils
+    const { getReconnectDelay } = require('@/utils/realtimeUtils');
+    const delay = getReconnectDelay(attempts);
+
+    console.log(`🔌 Cell channel disconnected, reconnecting in ${delay}ms (attempt ${attempts + 1})`);
+
+    const timeout = setTimeout(() => {
+      this.reconnectTimeouts.delete(rundownId);
+      
+      // Remove and recreate the channel
+      const oldChannel = this.channels.get(rundownId);
+      if (oldChannel) {
+        try {
+          supabase.removeChannel(oldChannel);
+        } catch (error) {
+          console.warn('Error removing old channel during reconnect:', error);
+        }
+      }
+      
+      this.channels.delete(rundownId);
+      this.subscribed.delete(rundownId);
+      
+      // Recreate channel if callbacks still exist
+      if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+        this.ensureChannel(rundownId);
+      }
+    }, delay);
+
+    this.reconnectTimeouts.set(rundownId, timeout);
   }
 
   broadcastCellUpdate(
@@ -115,34 +162,25 @@ export class CellBroadcastManager {
         set.delete(callback);
         if (set.size === 0) {
           this.callbacks.delete(rundownId);
-          const ch = this.channels.get(rundownId);
-          if (ch) {
-            // Prevent recursive cleanup
-            this.channels.delete(rundownId);
-            this.subscribed.delete(rundownId);
-            
-            // Safe async cleanup  
-            setTimeout(() => {
-              try {
-                supabase.removeChannel(ch);
-                console.log('🧹 Cleaned up cell channel for rundown:', rundownId);
-              } catch (error) {
-                console.warn('🧹 Error during cell channel cleanup:', error);
-              }
-            }, 0);
-          }
+          this.cleanupChannel(rundownId);
         }
       }
     };
   }
 
-  cleanup(rundownId: string) {
+  private cleanupChannel(rundownId: string): void {
+    // Clear reconnect attempts and timeouts
+    this.reconnectAttempts.delete(rundownId);
+    const timeout = this.reconnectTimeouts.get(rundownId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.reconnectTimeouts.delete(rundownId);
+    }
+
     const ch = this.channels.get(rundownId);
     if (ch) {
-      // Prevent recursive cleanup
       this.channels.delete(rundownId);
       this.subscribed.delete(rundownId);
-      this.callbacks.delete(rundownId);
       
       // Safe async cleanup
       setTimeout(() => {
@@ -154,6 +192,11 @@ export class CellBroadcastManager {
         }
       }, 0);
     }
+  }
+
+  cleanup(rundownId: string) {
+    this.callbacks.delete(rundownId);
+    this.cleanupChannel(rundownId);
   }
 }
 
