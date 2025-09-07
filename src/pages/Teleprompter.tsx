@@ -188,6 +188,18 @@ const Teleprompter = () => {
         return;
       }
 
+      // Handle structural events for instant collaboration
+      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
+        console.log('📱 Teleprompter applying structural broadcast:', update.field);
+        if (rundownData) {
+          setRundownData({
+            ...rundownData,
+            items: update.value // Complete items array from broadcast
+          });
+        }
+        return;
+      }
+
       // Handle script field updates and rundown-level updates for teleprompter
       if (update.itemId && update.field === 'script') {
         // Check if actively editing this field

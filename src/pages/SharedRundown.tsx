@@ -13,6 +13,7 @@ import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { useTabFocus } from '@/hooks/useTabFocus';
 
 // Default columns to use when rundown has no columns defined - excludes notes for shared rundown
 const DEFAULT_COLUMNS = [
@@ -36,6 +37,7 @@ const SharedRundown = () => {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(false);
   const [realtimeShowcallerState, setRealtimeShowcallerState] = useState(null);
   const { isDark, toggleTheme } = useTheme();
+  const { isTabActive } = useTabFocus();
   
   // Better refs to prevent duplicate loads and ensure cleanup
   const layoutLoadedRef = useRef<string | null>(null);
@@ -64,6 +66,19 @@ const SharedRundown = () => {
 
       console.log('📱 Shared rundown applying cell broadcast update:', update.itemId, update.field, update.value);
       
+      // Handle structural events for instant collaboration
+      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
+        console.log('📱 Shared rundown applying structural broadcast:', update.field);
+        setLocalRundownData(prevData => {
+          if (!prevData) return prevData;
+          return {
+            ...prevData,
+            items: update.value // Complete items array from broadcast
+          };
+        });
+        return;
+      }
+      
       // Apply all cell updates immediately for shared rundown
       setLocalRundownData(prevData => {
         if (!prevData) return prevData;
@@ -89,6 +104,42 @@ const SharedRundown = () => {
 
     return unsubscribe;
   }, [rundownId]);
+
+  // Handle tab refocus - refresh data and reconnect realtime
+  useEffect(() => {
+    if (!isTabActive || !rundownId) return;
+
+    const performSilentRefresh = async () => {
+      try {
+        console.log('📱 SharedRundown performing silent refresh on tab refocus');
+        
+        // Refresh the shared rundown data silently
+        const { data: freshData, error } = await supabase
+          .from('rundowns')
+          .select('*')
+          .eq('id', rundownId)
+          .eq('is_public', true)
+          .single();
+
+        if (error) {
+          console.warn('Silent refresh failed for shared rundown:', error);
+          return;
+        }
+
+        if (freshData && isMountedRef.current) {
+          console.log('📱 SharedRundown data refreshed silently');
+          setLocalRundownData(freshData);
+          
+          // Reconnect realtime - the cellBroadcast system handles this automatically
+          // when the useEffect above re-runs due to rundownId dependency
+        }
+      } catch (error) {
+        console.warn('SharedRundown silent refresh error:', error);
+      }
+    };
+
+    performSilentRefresh();
+  }, [isTabActive, rundownId]);
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
