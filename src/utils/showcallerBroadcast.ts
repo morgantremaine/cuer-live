@@ -44,13 +44,37 @@ class ShowcallerBroadcastManager {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
+          // Attempt reconnection after error
+          this.reconnectChannel(rundownId);
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
+          // Attempt reconnection after close
+          this.reconnectChannel(rundownId);
         }
       });
 
     this.channels.set(rundownId, channel);
     return channel;
+  }
+
+  // Reconnect channel after error or close
+  private reconnectChannel(rundownId: string): void {
+    console.log('📺 🔄 Attempting to reconnect showcaller broadcast channel:', rundownId);
+    
+    // Clean up existing channel
+    const existingChannel = this.channels.get(rundownId);
+    if (existingChannel) {
+      supabase.removeChannel(existingChannel);
+      this.channels.delete(rundownId);
+    }
+    
+    // Recreate channel after delay
+    setTimeout(() => {
+      if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+        console.log('📺 🔄 Recreating showcaller broadcast channel:', rundownId);
+        this.ensureChannel(rundownId);
+      }
+    }, 2000);
   }
 
   // Broadcast showcaller state change
