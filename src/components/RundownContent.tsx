@@ -7,6 +7,7 @@ import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
+import { getMinimumWidth } from '@/utils/columnSizing';
 
 interface RundownContentProps {
   title?: string;
@@ -215,7 +216,8 @@ const RundownContent = React.memo<RundownContentProps>(({
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
       const widthValue = parseInt(width.replace('px', ''));
-      total += widthValue;
+      const normalized = Math.max(isNaN(widthValue) ? 0 : widthValue, getMinimumWidth(column));
+      total += normalized;
     });
     return total;
   }, [visibleColumns, getColumnWidth]);

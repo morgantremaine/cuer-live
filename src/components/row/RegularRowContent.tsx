@@ -4,6 +4,7 @@ import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { getMinimumWidth } from '@/utils/columnSizing';
 
 interface RegularRowContentProps {
   item: RundownItem;
@@ -73,12 +74,18 @@ const RegularRowContent = ({
         const isCurrentSegmentName = currentSegmentId === item.id && 
           (column.key === 'segmentName' || column.key === 'name');
         
+        // Normalize width to enforce the same minimums as the header
+        const rawWidth = parseInt(columnWidth.replace('px', ''));
+        const normalizedWidth = `${Math.max(isNaN(rawWidth) ? 0 : rawWidth, getMinimumWidth(column))}px`;
+        
         return (
           <td
             key={column.id}
             className={`align-middle ${isCurrentSegmentName ? 'relative' : ''}`}
             style={{ 
-              width: columnWidth, 
+              width: normalizedWidth,
+              minWidth: normalizedWidth,
+              maxWidth: normalizedWidth,
               backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent',
               borderRight: '1px solid hsl(var(--border))'
             }}
@@ -95,7 +102,7 @@ const RegularRowContent = ({
               onCellClick={onCellClick}
               onKeyDown={onKeyDown}
               markActiveTyping={markActiveTyping}
-              width={columnWidth}
+              width={normalizedWidth}
             />
           </td>
         );

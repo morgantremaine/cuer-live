@@ -4,6 +4,7 @@ import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/hooks/useColumnsManager';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { getMinimumWidth } from '@/utils/columnSizing';
 
 interface HeaderRowContentProps {
   item: RundownItem;
@@ -79,9 +80,9 @@ const HeaderRowContent = ({
       {columns.map((column, columnIndex) => {
         const columnWidth = getColumnWidth(column);
         const isLastColumn = columnIndex === columns.length - 1;
-        const widthValue = columnWidth.includes('%') ? 
-          parseFloat(columnWidth.replace('%', '')) : 
-          parseInt(columnWidth.replace('px', ''));
+        // Normalize width to enforce the same minimums as the header
+        const rawWidth = parseInt(columnWidth.replace('px', ''));
+        const normalizedWidth = `${Math.max(isNaN(rawWidth) ? 0 : rawWidth, getMinimumWidth(column))}px`;
         
         // Always show header name and duration in the first column (after row number)
         if (columnIndex === 0) {
@@ -91,7 +92,9 @@ const HeaderRowContent = ({
                 key={column.id}
                 className="align-middle min-h-[115px] relative"
                 style={{ 
-                  width: columnWidth, 
+                  width: normalizedWidth,
+                  minWidth: normalizedWidth,
+                  maxWidth: normalizedWidth,
                   overflow: 'visible'
                 }}
             >
@@ -159,7 +162,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth 
+                width: normalizedWidth,
+                minWidth: normalizedWidth,
+                maxWidth: normalizedWidth
               }}
             >
               <div className="px-2 py-8">
@@ -177,7 +182,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth 
+                width: normalizedWidth,
+                minWidth: normalizedWidth,
+                maxWidth: normalizedWidth
               }}
             >
               <div className="px-2 py-8"></div>
@@ -190,7 +197,9 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth 
+                width: normalizedWidth,
+                minWidth: normalizedWidth,
+                maxWidth: normalizedWidth
               }}
             >
               <div className="px-2 py-8"></div>
