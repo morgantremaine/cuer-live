@@ -32,10 +32,10 @@ export const useRowStyling = ({
       rowClass = isHeader ? 'bg-[hsl(var(--header-background))] opacity-50' : 'opacity-50';
     }
   } else if (isHeader) {
-    rowClass = 'bg-[hsl(var(--header-background))] border-l-4 border-border font-semibold';
+    rowClass = 'bg-[hsl(var(--header-background))] font-semibold';
   } else if (isFloating || isFloated) {
     // Apply full red background for floated rows
-    rowClass = 'border-l-4 border-red-600';
+    rowClass = '';
     backgroundColorOverride = '#ef4444'; // Full red background
   } else if (color && color !== '#FFFFFF' && color !== '#ffffff') {
     // For colored rows, no additional styling needed
@@ -47,14 +47,14 @@ export const useRowStyling = ({
   // Selection styling with special handling for headers
   if (isSelected) {
     if (isHeader) {
-      // For headers: add blue selection border while preserving left border, but NO background change
-      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
+      // For headers: add blue selection border, no background change
+      rowClass += ' !border-2 !border-blue-500';
     } else if (isFloating || isFloated) {
-      // For floated rows: add blue selection border while preserving red left border
-      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-red-600';
+      // For floated rows: add blue selection border
+      rowClass += ' !border-2 !border-blue-500';
     } else {
-      // For regular rows: clean blue border all around with left emphasis
-      rowClass += ' !border-2 !border-blue-500 !border-l-4 !border-l-blue-500';
+      // For regular rows: clean blue border all around
+      rowClass += ' !border-2 !border-blue-500';
     }
     
     // Add subtle background highlight for non-header, non-colored rows only
