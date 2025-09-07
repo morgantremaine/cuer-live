@@ -215,7 +215,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
-      setHasInitialLoad(true); // Mark that we've completed initial load
+      // Don't set hasInitialLoad yet - wait for team column processing to complete
     }
   }, [user?.id, rundownId, team?.id, teamColumnsLoading, mergeColumnsWithTeamColumns]);
 
@@ -352,6 +352,12 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       console.log('📊 Team columns changed after initial load - updating (no autosave)');
       setColumns(newMerged);
       // Don't auto-save here - let user interactions trigger saves
+    }
+    
+    // Mark initial load complete after team column processing is done
+    if (!hasInitialLoad) {
+      setHasInitialLoad(true);
+      console.log('📊 Initial column load now complete with team columns merged');
     }
   }, [teamColumns, isLoading, hasInitialLoad, mergeColumnsWithTeamColumns, columns]);
 
