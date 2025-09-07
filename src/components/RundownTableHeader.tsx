@@ -340,9 +340,9 @@ const RundownTableHeader = ({
                   <div 
                     className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
                     style={{
-                      width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                      minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
-                      maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                      width: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
+                      minWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`,
+                      maxWidth: `${parseFloat(getColumnWidth(activeColumn)) - 16}px`
                     }}
                   >
                     {activeColumn.name || activeColumn.key}

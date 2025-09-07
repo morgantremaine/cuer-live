@@ -81,7 +81,7 @@ const HeaderRowContent = ({
         const columnWidth = getColumnWidth(column);
         const isLastColumn = columnIndex === columns.length - 1;
         // Normalize width to enforce the same minimums as the header
-        const rawWidth = parseInt(columnWidth.replace('px', ''));
+        const rawWidth = parseFloat(columnWidth.replace('px', ''));
         const normalizedWidth = `${Math.max(isNaN(rawWidth) ? 0 : rawWidth, getMinimumWidth(column))}px`;
         
         // Always show header name and duration in the first column (after row number)

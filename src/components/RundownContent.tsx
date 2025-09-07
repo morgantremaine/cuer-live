@@ -215,7 +215,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     let total = 64; // Row number column width
     visibleColumns.forEach(column => {
       const width = getColumnWidth(column);
-      const widthValue = parseInt(width.replace('px', ''));
+      const widthValue = parseFloat(width.replace('px', ''));
       const normalized = Math.max(isNaN(widthValue) ? 0 : widthValue, getMinimumWidth(column));
       total += normalized;
     });
@@ -250,7 +250,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               id: col.id,
               key: col.key,
               width: getColumnWidth(col),
-              scaledWidth: `${parseInt(getColumnWidth(col).replace('px', '')) * zoomLevel}px`
+              scaledWidth: `${parseFloat(getColumnWidth(col).replace('px', '')) * zoomLevel}px`
             }))
           });
           
@@ -311,7 +311,7 @@ const RundownContent = React.memo<RundownContentProps>(({
               <RundownTableHeader 
                 visibleColumns={visibleColumns}
                 allColumns={allColumns}
-                getColumnWidth={(column) => `${parseInt(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
+                getColumnWidth={(column) => `${parseFloat(getColumnWidth(column).replace('px', '')) * zoomLevel}px`}
                 updateColumnWidth={(columnId, width) => updateColumnWidth(columnId, width / zoomLevel)}
                 onReorderColumns={onReorderColumns}
                 onToggleColumnVisibility={onToggleColumnVisibility}

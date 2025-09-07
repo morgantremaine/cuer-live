@@ -75,7 +75,7 @@ const RegularRowContent = ({
           (column.key === 'segmentName' || column.key === 'name');
         
         // Normalize width to enforce the same minimums as the header
-        const rawWidth = parseInt(columnWidth.replace('px', ''));
+        const rawWidth = parseFloat(columnWidth.replace('px', ''));
         const normalizedWidth = `${Math.max(isNaN(rawWidth) ? 0 : rawWidth, getMinimumWidth(column))}px`;
         
         return (
