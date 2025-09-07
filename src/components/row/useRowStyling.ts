@@ -44,18 +44,10 @@ export const useRowStyling = ({
     rowClass = 'bg-background';
   }
 
-  // Selection styling with special handling for headers
+  // Selection styling with inset shadow to avoid misalignment
   if (isSelected) {
-    if (isHeader) {
-      // For headers: add blue selection border, no background change
-      rowClass += ' !border-2 !border-blue-500';
-    } else if (isFloating || isFloated) {
-      // For floated rows: add blue selection border
-      rowClass += ' !border-2 !border-blue-500';
-    } else {
-      // For regular rows: clean blue border all around
-      rowClass += ' !border-2 !border-blue-500';
-    }
+    // Use inset box-shadow for all selected rows to avoid adding outside borders
+    rowClass += ' ![box-shadow:inset_0_0_0_2px_rgb(59_130_246)]';
     
     // Add subtle background highlight for non-header, non-colored rows only
     if (!isHeader && (!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
