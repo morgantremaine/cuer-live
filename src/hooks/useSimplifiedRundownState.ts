@@ -66,9 +66,9 @@ export const useSimplifiedRundownState = () => {
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
-  // Extended protection windows for cell broadcast synchronization
-  const PROTECTION_WINDOW_MS = 6000; // Extended to cover cell broadcast timing
-  const TYPING_PROTECTION_WINDOW_MS = 500; // Very short typing protection
+  // Simplified protection - only protect active typing
+  const PROTECTION_WINDOW_MS = 200; // Very short protection, just for active typing
+  const TYPING_PROTECTION_WINDOW_MS = 500; // Short typing protection
   const CONFLICT_RESOLUTION_DELAY = 2000; // Time to wait before forcing reconciliation
   
   // Track pending structural changes to prevent overwrite during save
@@ -221,14 +221,15 @@ export const useSimplifiedRundownState = () => {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
-    // Add recently edited fields within protection window
+    // SIMPLIFIED: Only protect fields that are actively being typed in
+    // Don't protect based on recent edits - only active typing
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_PROTECTION_WINDOW_MS) {
+      protectedFields.add(typingSessionRef.current.fieldKey);
+    }
+    
+    // Clean up old recently edited fields
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < PROTECTION_WINDOW_MS) {
-        // Don't protect script fields during teleprompter saves
-        if (!fieldKey.includes('script') || !teleprompterSync.isTeleprompterSaving) {
-          protectedFields.add(fieldKey);
-        }
-      } else {
+      if (now - timestamp > PROTECTION_WINDOW_MS) {
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
@@ -498,33 +499,10 @@ export const useSimplifiedRundownState = () => {
         return;
       }
       
-      console.log('📱 Applying cell broadcast update:', update);
+      console.log('📱 Applying cell broadcast update (simplified):', update);
       
-        // CRITICAL: Track this update to prevent realtime database overwrites
-        const updateKey = `${update.itemId || 'rundown'}-${update.field}`;
-        const recentCellUpdates = recentCellUpdatesRef.current;
-        recentCellUpdates.set(updateKey, {
-          timestamp: Date.now(),
-          value: update.value,
-          clientId: update.userId // Use userId as clientId for single sessions
-        });
-        
-        // CRITICAL FIX: Also update recentlyEditedFieldsRef so getProtectedFields() will protect this field
-        recentlyEditedFieldsRef.current.set(updateKey, Date.now());
-        console.log('🛡️ Cell broadcast: Protected field from realtime overwrites:', updateKey);
-      
-        // Clean up old entries after 5 seconds
-        setTimeout(() => {
-          recentCellUpdates.delete(updateKey);
-          recentlyEditedFieldsRef.current.delete(updateKey);
-        }, 5000);
-      
-      // CRITICAL: Cell broadcasts are already-saved changes from other users
-      // We should update local state but NEVER trigger AutoSave for them
-      console.log('🛑 Cell broadcast: Applying remote change without triggering AutoSave');
-      
-      // Apply cell broadcast update directly without triggering any saves
-      // This is a remote change that's already been saved by another user
+      // SIMPLIFIED: Just apply the change directly, no complex protection
+      // Latest change wins - if there are conflicts, the last person typing wins
         // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
         // Check if we're actively editing this rundown-level field
