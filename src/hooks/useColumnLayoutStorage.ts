@@ -137,13 +137,17 @@ export const useColumnLayoutStorage = () => {
 
       const teamId = teamMemberships?.[0]?.team_id || null
 
+      // CRITICAL: Save only visible columns to preserve exact layout state
+      const visibleColumns = columns.filter(col => col.isVisible !== false)
+      console.log('💾 Saving layout with', visibleColumns.length, 'visible columns out of', columns.length, 'total')
+
       const { data, error } = await supabase
         .from('column_layouts')
         .insert({
           user_id: user.id,
           team_id: teamId,
           name,
-          columns,
+          columns: visibleColumns, // Save only visible columns
           is_default: isDefault,
         })
         .select()
@@ -173,11 +177,15 @@ export const useColumnLayoutStorage = () => {
   const updateLayout = async (id: string, name: string, columns: Column[]) => {
     if (!user) return
 
+    // CRITICAL: Update with only visible columns to preserve exact layout state  
+    const visibleColumns = columns.filter(col => col.isVisible !== false)
+    console.log('🔄 Updating layout with', visibleColumns.length, 'visible columns out of', columns.length, 'total')
+
     const { data, error } = await supabase
       .from('column_layouts')
       .update({
         name,
-        columns
+        columns: visibleColumns // Update with only visible columns
       })
       .eq('id', id)
       .eq('user_id', user.id)

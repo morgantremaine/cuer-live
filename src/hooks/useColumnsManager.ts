@@ -198,23 +198,14 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   const handleLoadLayout = useCallback((layoutColumns: Column[]) => {
     // Validate that layoutColumns is an array
     if (!Array.isArray(layoutColumns)) {
-      
+      console.error('Invalid layout columns - not an array:', layoutColumns);
       return;
     }
 
-    
+    console.log('🔄 Loading exact layout columns:', layoutColumns.length);
 
     setColumns(prevColumns => {
-      // Ensure prevColumns is an array
-      if (!Array.isArray(prevColumns)) {
-        
-        return layoutColumns; // Return the layout columns as fallback
-      }
-
-      // Get the default columns to ensure all built-ins are included
-      const defaultColumns = getDefaultColumns();
-
-      // Filter out the "Element" column from layout columns
+      // Filter out the deprecated "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
         col.id !== 'element' && col.key !== 'element'
       );
@@ -233,35 +224,29 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return col;
       });
 
-      // Use the layout columns directly, ensuring essential columns are included
-      const mergedColumns: Column[] = [];
-      const layoutColumnIds = new Set(updatedLayoutColumns.map(col => col.id));
-
-
-      // First, add all columns from updated layout (preserving order, custom columns, and widths)
-      updatedLayoutColumns.forEach(layoutCol => {
-        mergedColumns.push(layoutCol);
-      });
-
-      // Then, add any missing default columns (including gfx and video)
-      const addedColumns: string[] = [];
-      defaultColumns.forEach(defaultCol => {
-        if (!layoutColumnIds.has(defaultCol.id)) {
-          mergedColumns.push(defaultCol);
-          addedColumns.push(defaultCol.id);
+      // CRITICAL FIX: Load exactly what was saved without automatic merging
+      // Only merge team columns that were actually part of the saved layout
+      const finalColumns = updatedLayoutColumns.map(col => {
+        // Preserve team column metadata if it exists
+        const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
+        if (teamColumn && col.isCustom) {
+          return {
+            ...col,
+            isTeamColumn: true,
+            createdBy: teamColumn.created_by
+          };
         }
+        return col;
       });
 
-      // CRITICAL: Merge with all available team columns to ensure they're always available
-      const finalColumns = mergeWithTeamColumns(mergedColumns);
-
+      console.log('✅ Loaded exact layout with', finalColumns.length, 'columns');
       
       if (markAsChanged) {
         markAsChanged();
       }
       return finalColumns;
     });
-  }, [markAsChanged, mergeWithTeamColumns]);
+  }, [markAsChanged, teamColumns]);
 
   // Reset to default columns function for new rundowns
   const resetToDefaults = useCallback(() => {
