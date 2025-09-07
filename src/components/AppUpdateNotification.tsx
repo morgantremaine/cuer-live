@@ -18,14 +18,21 @@ const AppUpdateNotification = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Fetch current active notification
+    // Fetch current active notification that user hasn't dismissed
     const fetchActiveNotification = async () => {
       try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+
         const { data, error } = await supabase
           .from('app_notifications')
-          .select('*')
+          .select(`
+            *,
+            app_notification_dismissals!left(id)
+          `)
           .eq('active', true)
           .eq('type', 'update')
+          .is('app_notification_dismissals.id', null)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
@@ -35,8 +42,8 @@ const AppUpdateNotification = () => {
           setIsVisible(true);
         }
       } catch (error) {
-        // No active notification found
-        console.log('No active notifications');
+        // No active notification found or user already dismissed it
+        console.log('No active notifications for this user');
       }
     };
 
@@ -91,13 +98,18 @@ const AppUpdateNotification = () => {
   const handleDismiss = async () => {
     setIsVisible(false);
     
-    // Optionally mark as inactive for this specific notification
+    // Record that this user has dismissed this notification
     if (notification) {
       try {
-        await supabase
-          .from('app_notifications')
-          .update({ active: false })
-          .eq('id', notification.id);
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user) {
+          await supabase
+            .from('app_notification_dismissals')
+            .insert({
+              user_id: user.user.id,
+              notification_id: notification.id
+            });
+        }
       } catch (error) {
         console.error('Error dismissing notification:', error);
       }
