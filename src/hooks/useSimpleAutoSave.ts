@@ -22,7 +22,8 @@ export const useSimpleAutoSave = (
   isInitiallyLoaded?: boolean,
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
   cooldownUntilRef?: React.MutableRefObject<number>,
-  applyingCellBroadcastRef?: React.MutableRefObject<boolean>
+  applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
+  isSharedView = false
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -215,13 +216,13 @@ export const useSimpleAutoSave = (
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       console.log('⏰ AutoSave: idle timeout reached - triggering save');
-      performSave();
+      performSave(false, isSharedView);
     }, typingIdleMs);
     
     // Max-delay forced save only if user keeps typing continuously
     maxDelayTimeoutRef.current = setTimeout(() => {
       console.log('⏲️ AutoSave: max delay reached - forcing save');
-      performSave(true);
+      performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef]);
@@ -269,7 +270,7 @@ export const useSimpleAutoSave = (
   }, [microResaveMs, createContentSignature]);
 
   // Enhanced save function with conflict prevention
-  const performSave = useCallback(async (isFlushSave = false): Promise<void> => {
+  const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -283,7 +284,7 @@ export const useSimpleAutoSave = (
       if (!saveTimeoutRef.current) {
         saveTimeoutRef.current = setTimeout(() => {
           saveTimeoutRef.current = undefined;
-          performSave(isFlushSave);
+          performSave(isFlushSave, isSharedView);
         }, 500);
       }
       return;
@@ -296,14 +297,17 @@ export const useSimpleAutoSave = (
     const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
     const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
     
-    if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
-      debugLogger.autosave('Save blocked: tab inactive for extended period');
-      console.log('🛑 AutoSave: blocked - tab inactive for extended period');
-      return;
-    }
-    
-    if (hasRecentKeystrokes && isTabCurrentlyInactive) {
-      console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
+    // Skip tab inactivity checks for shared views since users often view them in background tabs
+    if (!isSharedView) {
+      if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
+        debugLogger.autosave('Save blocked: tab inactive for extended period');
+        console.log('🛑 AutoSave: blocked - tab inactive for extended period');
+        return;
+      }
+      
+      if (hasRecentKeystrokes && isTabCurrentlyInactive) {
+        console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
+      }
     }
     
     if (isFlushSave && isTabCurrentlyInactive) {
@@ -586,7 +590,7 @@ export const useSimpleAutoSave = (
           console.log('🔄 AutoSave: queuing retry save in 400 ms (attempt', retryCount, ')');
           setTimeout(() => {
             if (!isSaving) {
-              performSave();
+              performSave(false, isSharedView);
             }
           }, 400);
         } else {
@@ -642,7 +646,7 @@ export const useSimpleAutoSave = (
     saveTimeoutRef.current = setTimeout(async () => {
       console.log('⏱️ AutoSave: executing save now');
       try {
-        await performSave();
+        await performSave(false, isSharedView);
         console.log('✅ AutoSave: save completed successfully');
       } catch (error) {
         console.error('❌ AutoSave: save execution failed:', error);
@@ -758,7 +762,7 @@ export const useSimpleAutoSave = (
       if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
         console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
         try {
-          await performSave(true); // Pass true to indicate this is a flush save
+          await performSave(true, isSharedView); // Pass true to indicate this is a flush save
         } catch (error) {
           console.error('❌ AutoSave: flush-on-blur failed:', error);
         }
