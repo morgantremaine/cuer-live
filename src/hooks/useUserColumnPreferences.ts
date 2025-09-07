@@ -226,9 +226,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     if (isImmediate) {
       // Bypass debounce for structural changes (e.g., applying a saved layout)
+      console.log('⚡ saveColumnPreferences: IMMEDIATE save requested');
       setIsSaving(true);
       try {
-        const { error } = await supabase
+        console.log('💾 Executing immediate upsert to database...');
+        const { data, error } = await supabase
           .from('user_column_preferences')
           .upsert({
             user_id: user.id,
@@ -236,17 +238,19 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
             column_layout: columnsToSaveFiltered
           }, {
             onConflict: 'user_id,rundown_id'
-          });
+          })
+          .select();
 
         if (error) {
-          console.error('Error saving column preferences (immediate):', error);
+          console.error('❌ Error saving column preferences (immediate):', error);
           debugLogger.preferences('Immediate save error: ' + error.message);
         } else {
+          console.log('✅ Immediate save SUCCESS:', data);
           lastSavedRef.current = currentSignature;
           debugLogger.preferences('Immediate save of ' + columnsToSaveFiltered.length + ' columns to preferences');
         }
       } catch (error) {
-        console.error('Failed to save column preferences (immediate):', error);
+        console.error('❌ Failed to save column preferences (immediate):', error);
       } finally {
         setIsSaving(false);
       }
@@ -325,14 +329,20 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Special handler for column width updates during resize
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
+    console.log('📏 updateColumnWidth called:', columnId, 'to width:', width);
+    console.log('📊 Loading state check - isLoadingRef.current:', isLoadingRef.current);
+    
     setColumns(prevColumns => {
       const updatedColumns = prevColumns.map(col => 
         col.id === columnId ? { ...col, width } : col
       );
       
+      console.log('💾 updateColumnWidth: Triggering save with debounce');
       // Save with debounce for resize operations
       if (!isLoadingRef.current) {
         saveColumnPreferences(updatedColumns, false);
+      } else {
+        console.log('🚫 updateColumnWidth: Save blocked by loading state');
       }
       
       return updatedColumns;
