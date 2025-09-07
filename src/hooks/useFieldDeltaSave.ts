@@ -39,6 +39,7 @@ export const useFieldDeltaSave = (
     
     if (!previousState) {
       // Initial save - save everything
+      console.warn('🧪 TRACE Delta: previousState missing - initial fullState delta would be created');
       return [{
         field: 'fullState',
         value: currentState,
@@ -459,6 +460,11 @@ export const useFieldDeltaSave = (
     if (deltas.length === 0) {
       console.log('ℹ️ No deltas detected - skipping save');
       throw new Error('No changes to save');
+    }
+
+    const hasFullState = deltas.some(d => d.field === 'fullState');
+    if (hasFullState) {
+      console.warn('🧪 TRACE Delta: fullState save path triggered (likely initial). lastSavedStateRef is null:', !lastSavedStateRef.current);
     }
 
     console.log('📊 Detected deltas:', deltas.map(d => ({ 

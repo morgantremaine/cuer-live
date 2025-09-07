@@ -282,6 +282,20 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
+    // TRACE: Entry flags
+    console.log('🧪 TRACE performSave(entry)', {
+      isFlushSave,
+      isSharedView,
+      isInitiallyLoaded,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      rundownId,
+      typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
+      suppressUntil: suppressUntilRef?.current,
+      blockUntilLocalEdit: blockUntilLocalEditRef?.current,
+      cooldownUntil: cooldownUntilRef?.current,
+      applyingCellBroadcast: applyingCellBroadcastRef?.current,
+      pendingStructuralChange: pendingStructuralChangeRef?.current
+    });
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -667,6 +681,14 @@ export const useSimpleAutoSave = (
 
   // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
+    console.log('🧪 TRACE AutoSave(effect) enter', {
+      isInitiallyLoaded,
+      rundownId,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      suppressUntil: suppressUntilRef?.current,
+      undoActive: undoActiveRef.current,
+      applyingCellBroadcast: applyingCellBroadcastRef?.current
+    });
     if (!isInitiallyLoaded) {
       console.log('🛑 AutoSave(effect): blocked - initial load not complete');
       return;

@@ -57,8 +57,11 @@ const initialState: RundownState = {
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
-  const markChanged = (newState: Partial<RundownState>) => {
-    console.log('📝 Content change flagged (hasUnsavedChanges=true)');
+  const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
+    console.log('📝 Content change flagged (hasUnsavedChanges=true) via action:', actionType);
+    try {
+      console.trace('🧭 Save cause trace');
+    } catch {}
     return {
       ...state,
       ...newState,
@@ -69,7 +72,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
   switch (action.type) {
     case 'SET_ITEMS':
-      return markChanged({ items: action.payload });
+      return markChanged({ items: action.payload }, 'SET_ITEMS');
 
     case 'UPDATE_ITEM': {
       const items = state.items.map(item =>
@@ -77,7 +80,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
           ? { ...item, ...action.payload.updates }
           : item
       );
-      return markChanged({ items });
+      return markChanged({ items }, 'UPDATE_ITEM');
     }
 
     case 'ADD_ITEM': {
@@ -89,17 +92,17 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       } else {
         items = [...state.items, item];
       }
-      return markChanged({ items: clearHeaderNumbers(items) });
+      return markChanged({ items: clearHeaderNumbers(items) }, 'ADD_ITEM');
     }
 
     case 'DELETE_ITEM': {
       const items = state.items.filter(item => item.id !== action.payload);
-      return markChanged({ items: clearHeaderNumbers(items) });
+      return markChanged({ items: clearHeaderNumbers(items) }, 'DELETE_ITEM');
     }
 
     case 'DELETE_MULTIPLE_ITEMS': {
       const items = state.items.filter(item => !action.payload.includes(item.id));
-      return markChanged({ items: clearHeaderNumbers(items) });
+      return markChanged({ items: clearHeaderNumbers(items) }, 'DELETE_MULTIPLE_ITEMS');
     }
 
     case 'REORDER_ITEMS': {
@@ -107,7 +110,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       const items = [...state.items];
       const movedItems = items.splice(fromIndex, count);
       items.splice(toIndex, 0, ...movedItems);
-      return markChanged({ items: clearHeaderNumbers(items) });
+      return markChanged({ items: clearHeaderNumbers(items) }, 'REORDER_ITEMS');
     }
 
     case 'SET_COLUMNS': {
@@ -128,16 +131,16 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
     }
 
     case 'SET_TITLE':
-      return markChanged({ title: action.payload });
+      return markChanged({ title: action.payload }, 'SET_TITLE');
 
     case 'SET_START_TIME':
-      return markChanged({ startTime: action.payload });
+      return markChanged({ startTime: action.payload }, 'SET_START_TIME');
 
     case 'SET_TIMEZONE':
-      return markChanged({ timezone: action.payload });
+      return markChanged({ timezone: action.payload }, 'SET_TIMEZONE');
 
     case 'SET_SHOW_DATE':
-      return markChanged({ showDate: action.payload });
+      return markChanged({ showDate: action.payload }, 'SET_SHOW_DATE');
       
     case 'SET_EXTERNAL_NOTES':
       return markChanged({ externalNotes: action.payload });
