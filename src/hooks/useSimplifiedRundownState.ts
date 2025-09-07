@@ -1354,10 +1354,9 @@ export const useSimplifiedRundownState = () => {
     addItem: actions.addItem,
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      // Simple protection for start time changes
+      // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('startTime', now);
-      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1367,10 +1366,9 @@ export const useSimplifiedRundownState = () => {
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId]),
     setTimezone: useCallback((newTimezone: string) => {
-      // Simple protection for timezone changes
+      // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('timezone', now);
-      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1380,10 +1378,9 @@ export const useSimplifiedRundownState = () => {
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId]),
     setShowDate: useCallback((newShowDate: Date | null) => {
-      // Simple protection for show date changes
+      // Track local edit for coordination/debugging
       const now = Date.now();
       recentlyEditedFieldsRef.current.set('showDate', now);
-      remoteSaveCooldownRef.current = now + 1000; // Short cooldown
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
