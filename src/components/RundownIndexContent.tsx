@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
@@ -8,6 +8,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,6 +84,27 @@ const RundownIndexContent = () => {
     isSaving: isSavingPreferences,
     reloadPreferences
   } = useUserColumnPreferences(rundownId);
+
+  // Get shared layout information to prevent flashing during layout loads
+  const { 
+    isLoading: isLoadingSharedLayout 
+  } = useSharedRundownLayout(rundownId);
+
+  // Track layout stabilization to prevent flashing
+  const [isLayoutStabilized, setIsLayoutStabilized] = useState(false);
+  
+  // Mark layout as stabilized after a brief delay when all loading is complete
+  useEffect(() => {
+    if (!isLoadingPreferences && !isLoadingSharedLayout && userColumns.length > 0) {
+      const stabilizationTimer = setTimeout(() => {
+        setIsLayoutStabilized(true);
+      }, 200); // Small delay to ensure all layout refreshes are complete
+      
+      return () => clearTimeout(stabilizationTimer);
+    } else {
+      setIsLayoutStabilized(false);
+    }
+  }, [isLoadingPreferences, isLoadingSharedLayout, userColumns.length]);
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
   const handleAddColumnWrapper = useCallback((name: string) => {
@@ -213,9 +235,8 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Check if we're still loading - show spinner until everything is ready
-  // Include additional loading states to prevent awkward loading UI, including showcaller visual indicators
-  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
+  // Check if we're still loading - show spinner until everything is ready including layout stabilization
+  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || isLoadingPreferences || isLoadingSharedLayout || !isLayoutStabilized || !rundownId || !items || items.length === 0 || !userColumns || userColumns.length === 0;
 
   // Filter visible columns
   const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
