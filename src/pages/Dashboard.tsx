@@ -20,6 +20,7 @@ import { useDashboardRundownOptimized } from '@/hooks/useDashboardRundownOptimiz
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import AdminNotificationSender from '@/components/AdminNotificationSender';
 import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -396,7 +397,7 @@ const Dashboard = () => {
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
               {/* Action buttons */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-4 mb-6 flex-wrap">
                 <CreateNewButton onClick={handleCreateNew} />
                 <CSVImportDialog onImport={handleCSVImport}>
                   <Button size="lg" className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2">
@@ -404,6 +405,7 @@ const Dashboard = () => {
                     Import CSV
                   </Button>
                 </CSVImportDialog>
+                <AdminNotificationSender userEmail={user?.email} />
               </div>
 
               <DashboardRundownGrid
