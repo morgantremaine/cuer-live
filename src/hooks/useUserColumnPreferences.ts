@@ -43,6 +43,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const isLoadingRef = useRef(false);
   const loadedRundownRef = useRef<string | null>(null);
   const isFirstTimeViewRef = useRef<boolean>(false);
+  const teamHydratedRef = useRef<boolean>(false);
 
   // Create comprehensive column merge that ALWAYS includes all available columns
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], isFirstTimeLoad = false) => {
@@ -128,11 +129,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     if (!user?.id || !rundownId || isLoadingRef.current) {
       const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
       setColumns(mergedDefaults);
+      // Align baseline to post-merge state; no DB writes on load
+      lastSavedRef.current = JSON.stringify(mergedDefaults);
       setIsLoading(false);
       isFirstTimeViewRef.current = true; // Mark as first time view for new rundowns
       if (!rundownId) {
         loadedRundownRef.current = 'new_rundown_loaded';
       }
+      debugLogger.preferences('Initialized with defaults; baseline aligned to merged state');
       return;
     }
 
@@ -153,6 +157,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         console.error('Error loading column preferences:', error);
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
+        lastSavedRef.current = JSON.stringify(mergedDefaults);
+        debugLogger.preferences('Load error; using defaults and aligning baseline');
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         
@@ -179,15 +185,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
         
         setColumns(mergedColumns);
-        lastSavedRef.current = JSON.stringify(cleanColumns);
-        debugLogger.preferences('Loaded saved preferences with ' + mergedColumns.length + ' total columns');
+        lastSavedRef.current = JSON.stringify(mergedColumns);
+        debugLogger.preferences('Loaded saved preferences; baseline aligned; total columns: ' + mergedColumns.length);
       } else {
         // First time loading - create a clean slate with all defaults visible
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
-        lastSavedRef.current = JSON.stringify(defaultColumns);
+        lastSavedRef.current = JSON.stringify(mergedDefaults);
         isFirstTimeViewRef.current = true;
-        debugLogger.preferences('No saved preferences - using defaults with ' + mergedDefaults.length + ' columns');
+        debugLogger.preferences('No saved preferences - using defaults; baseline aligned; total columns: ' + mergedDefaults.length);
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
@@ -381,7 +387,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         // Always refresh the complete column set to include new team columns
         const merged = mergeColumnsWithTeamColumns(prevColumns, false);
         
-        // Only save if there are ACTUAL new team columns (not just initial merge)
+        // Determine if any new team columns were added
         const prevTeamColumnKeys = new Set(
           prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
         );
@@ -391,10 +397,20 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         
         const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
         
-        // Only save when there are genuinely new team columns added
-        if (hasNewTeamColumns && prevColumns.length > 0) {
-          debugLogger.preferences('New team columns detected - saving updated layout');
-          saveColumnPreferences(merged, true);
+        if (hasNewTeamColumns) {
+          if (!teamHydratedRef.current) {
+            // First hydration: align baseline, do NOT save
+            lastSavedRef.current = JSON.stringify(merged);
+            teamHydratedRef.current = true;
+            debugLogger.preferences('Team columns first hydration - baseline aligned, no save');
+          } else {
+            debugLogger.preferences('New team columns detected - saving updated layout');
+            saveColumnPreferences(merged, true);
+          }
+        } else if (!teamHydratedRef.current) {
+          // No new columns but team data present: mark hydrated
+          teamHydratedRef.current = true;
+          debugLogger.preferences('Team columns present - hydration complete, no save');
         }
         
         return merged;
