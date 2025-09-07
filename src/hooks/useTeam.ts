@@ -36,6 +36,8 @@ export const useTeam = () => {
   const [error, setError] = useState<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
+  const lastInvitationLoadRef = useRef<number>(0);
+  const lastMemberLoadRef = useRef<number>(0);
 
   const loadTeamData = async () => {
     debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current });
@@ -201,6 +203,15 @@ export const useTeam = () => {
   };
 
   const loadTeamMembers = async (teamId: string) => {
+    // Add debouncing to prevent excessive API calls when switching accounts
+    const now = Date.now();
+    const lastMemberLoad = lastMemberLoadRef.current;
+    if (lastMemberLoad && (now - lastMemberLoad) < 2000) {
+      console.log('⏭️ Skipping member load - too frequent');
+      return;
+    }
+    lastMemberLoadRef.current = now;
+    
     try {
       // First get team members
       const { data: membersData, error: membersError } = await supabase
@@ -257,6 +268,15 @@ export const useTeam = () => {
   };
 
   const loadPendingInvitations = async (teamId: string) => {
+    // Add debouncing to prevent excessive API calls when switching accounts
+    const now = Date.now();
+    const lastInvitationLoad = lastInvitationLoadRef.current;
+    if (lastInvitationLoad && (now - lastInvitationLoad) < 2000) {
+      console.log('⏭️ Skipping invitation load - too frequent');
+      return;
+    }
+    lastInvitationLoadRef.current = now;
+    
     try {
       const { data, error } = await supabase
         .from('team_invitations')

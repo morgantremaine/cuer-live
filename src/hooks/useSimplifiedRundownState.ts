@@ -1097,9 +1097,23 @@ export const useSimplifiedRundownState = () => {
       (justActivated && (now - lastSyncTimeRef.current > 30000) || !hasSyncedOnceRef.current)
     );
 
-    // Debounce rapid focus/visibility flaps
+    // EXTRA CHECK: Don't refresh if we have very recent cell updates (indicates active collaboration)
+    const recentCellUpdates = recentCellUpdatesRef.current;
+    const hasVeryRecentCellUpdates = Array.from(recentCellUpdates.values()).some(
+      update => Date.now() - update.timestamp < 5000 // Within last 5 seconds
+    );
+    
+    if (hasVeryRecentCellUpdates) {
+      console.log('🚫 Skipping tab refresh - recent cell updates detected (active collaboration)');
+      prevIsActiveRef.current = isTabActive;
+      lastSyncTimeRef.current = now; // Update timestamp to prevent immediate retry
+      return;
+    }
+    
+    // Debounce rapid focus/visibility flaps with longer delay for account switching
     const timeSinceLast = now - lastSyncTimeRef.current;
-    if (!shouldSync || timeSinceLast <= 300) {
+    const minimumDebounceTime = 2000; // Increased from 300ms to 2 seconds for account switching
+    if (!shouldSync || timeSinceLast <= minimumDebounceTime) {
       prevIsActiveRef.current = isTabActive;
       return;
     }
