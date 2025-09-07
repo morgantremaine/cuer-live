@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Upload, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { transformCSVData, CSVImportResult } from '@/utils/csvImport';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 

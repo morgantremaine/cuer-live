@@ -1,10 +1,16 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useTeamCustomColumns } from './useTeamCustomColumns';
-import { Column } from './useUserColumnPreferences';
 
-// Column interface moved to useUserColumnPreferences to avoid conflicts
-export type { Column } from './useUserColumnPreferences';
+export interface Column {
+  id: string;
+  name: string;
+  key: string;
+  width: string;
+  isCustom: boolean;
+  isEditable: boolean;
+  isVisible?: boolean;
+}
 
 const getDefaultColumns = (): Column[] => [
   { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },

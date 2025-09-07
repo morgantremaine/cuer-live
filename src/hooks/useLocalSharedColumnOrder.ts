@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 
 const STORAGE_KEY = 'shared-rundown-column-order';
 

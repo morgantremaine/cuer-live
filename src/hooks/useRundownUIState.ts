@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from './useColumnsManager';
 
 export const useRundownUIState = (
   items: RundownItem[],

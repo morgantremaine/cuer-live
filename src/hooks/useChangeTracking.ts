@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from './useColumnsManager';
 import { useUniversalTimer } from './useUniversalTimer';
 
 export const useChangeTracking = (

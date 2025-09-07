@@ -4,7 +4,7 @@ import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 import { getMinimumWidth } from '@/utils/columnSizing';

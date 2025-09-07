@@ -9,7 +9,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
 

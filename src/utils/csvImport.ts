@@ -1,6 +1,6 @@
 
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ColumnMapping {

@@ -5,7 +5,7 @@ import RegularRowContent from './row/RegularRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { calculateScriptDuration } from '@/utils/scriptTiming';
 
 interface RegularRowProps {

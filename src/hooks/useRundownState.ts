@@ -2,7 +2,7 @@
 import { useReducer, useCallback, useMemo } from 'react';
 import { useRundownBroadcast } from './useRundownBroadcast';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 

@@ -5,7 +5,7 @@ import HeaderRowContent from './row/HeaderRowContent';
 import { useRowEventHandlers } from './row/useRowEventHandlers';
 import { useRowStyling } from './row/useRowStyling';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useUserColumnPreferences';
+import { Column } from '@/hooks/useColumnsManager';
 
 interface HeaderRowProps {
   item: RundownItem;
