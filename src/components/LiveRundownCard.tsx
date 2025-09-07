@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -360,8 +361,8 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             size="sm"
             onClick={() => window.location.href = `/rundown/${rundown.id}/blueprint`}
             className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"

@@ -1,4 +1,5 @@
 
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,6 +41,8 @@ const RundownCard = ({
   onDuplicate,
   isArchived = false 
 }: RundownCardProps) => {
+  const navigate = useNavigate();
+
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     window.location.href = `/rundown/${rundown.id}/blueprint`

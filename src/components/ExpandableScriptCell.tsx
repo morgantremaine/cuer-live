@@ -284,10 +284,22 @@ const ExpandableScriptCell = ({
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => {
+                // Integrate with LocalShadow for bulletproof protection
+                import('@/state/localShadows').then(({ localShadowStore }) => {
+                  localShadowStore.setShadow(itemId, 'script', value, true);
+                  console.log('🔒 ScriptCell: Activated shadow protection', { itemId });
+                });
+                
                 setIsFocused(true);
                 setShowOverlay(false); // Hide overlay when focused for native selection
               }}
               onBlur={() => {
+                // Mark shadow as inactive when user stops typing
+                import('@/state/localShadows').then(({ localShadowStore }) => {
+                  localShadowStore.markInactive(itemId, 'script');
+                  console.log('🔓 ScriptCell: Deactivated shadow protection', { itemId });
+                });
+                
                 setIsFocused(false);
                 setShowOverlay(true); // Show overlay when not focused
               }}

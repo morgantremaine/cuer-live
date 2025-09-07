@@ -207,8 +207,30 @@ const RundownHeader = ({
             {isEditingTitle ? (
               <Input
                 value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                onBlur={handleTitleSubmit}
+                onChange={(e) => {
+                  // Update LocalShadow with bulletproof protection for title
+                  import('@/state/localShadows').then(({ localShadowStore }) => {
+                    localShadowStore.setGlobalShadow('title', e.target.value, true);
+                  });
+                  
+                  onTitleChange(e.target.value);
+                }}
+                onFocus={() => {
+                  // Activate LocalShadow protection for title
+                  import('@/state/localShadows').then(({ localShadowStore }) => {
+                    localShadowStore.setGlobalShadow('title', title, true);
+                    console.log('🔒 Title: Activated shadow protection');
+                  });
+                }}
+                onBlur={() => {
+                  // Deactivate LocalShadow protection for title
+                  import('@/state/localShadows').then(({ localShadowStore }) => {
+                    localShadowStore.markGlobalInactive('title');
+                    console.log('🔓 Title: Deactivated shadow protection');
+                  });
+                  
+                  handleTitleSubmit();
+                }}
                 onKeyDown={handleTitleKeyPress}
                 className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
                 placeholder="Untitled Rundown"
