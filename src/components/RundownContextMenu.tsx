@@ -66,11 +66,17 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
-  // Define color options for the submenu
+  // Define color options for the submenu (same as original ColorPicker)
   const colorOptions = [
+    { name: 'Default', value: '' },
     { name: 'Red', value: '#fca5a5' },
+    { name: 'Orange', value: '#fdba74' },
+    { name: 'Yellow', value: '#fde047' },
     { name: 'Green', value: '#86efac' },
-    { name: 'Blue', value: '#93c5fd' }
+    { name: 'Blue', value: '#93c5fd' },
+    { name: 'Purple', value: '#c4b5fd' },
+    { name: 'Pink', value: '#f9a8d4' },
+    { name: 'Gray', value: '#d1d5db' }
   ];
 
   // Handle color selection for multiple rows
@@ -271,7 +277,7 @@ const RundownContextMenu = memo(({
               {isMultipleSelection ? `Color ${selectedCount} rows` : 'Color row'}
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-auto min-w-0 p-2">
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {colorOptions.map((color) => (
                   <button
                     key={color.name}
@@ -281,7 +287,7 @@ const RundownContextMenu = memo(({
                   >
                     <div 
                       className="w-6 h-6 rounded border border-gray-300 dark:border-gray-500"
-                      style={{ backgroundColor: color.value }}
+                      style={{ backgroundColor: color.value || '#ffffff' }}
                     />
                   </button>
                 ))}
