@@ -97,9 +97,9 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-        // Simplified conflict prevention: Skip updates from same user (single session)
-        if (payload.new?.user_id === user?.id) {
-          console.log('⏭️ Skipping realtime update - own update (single session)');
+        // FIXED: Skip updates from same tab (not same user)
+        if (payload.new?.tab_id === getTabId()) {
+          console.log('⏭️ Skipping realtime update - own update (same tab)');
           return;
         }
 
@@ -239,7 +239,7 @@ export const useConsolidatedRealtimeRundown = ({
           timestamp: normalizedTimestamp,
           hasContentChanges: true,
           tabId: payload.new?.tab_id,
-          ownTabId: 'single-session'
+          ownTabId: getTabId()
         });
         setIsProcessingUpdate(true);
         
