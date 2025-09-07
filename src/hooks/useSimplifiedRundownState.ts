@@ -360,6 +360,14 @@ export const useSimplifiedRundownState = () => {
         // Track remote update time to prevent ping-pong saves
         lastRemoteUpdateRef.current = Date.now();
         
+        // Set autosave suppression cooldown after applying teammate update
+        const hasIncomingItems = Array.isArray(updatedRundown.items);
+        const isStructuralChange = hasIncomingItems && state.items && (
+          (updatedRundown.items?.length ?? 0) !== state.items.length ||
+          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
+        );
+        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange ? 1500 : 1000);
+        
         // Schedule reconciliation to merge any remaining conflicts
         if (protectedFields.size > 0) {
           if (conflictResolutionTimeoutRef.current) {
@@ -404,6 +412,15 @@ export const useSimplifiedRundownState = () => {
         if (Object.keys(updateData).length > 0) {
           actions.loadState(updateData);
         }
+        
+        // Apply autosave suppression cooldown after teammate update
+        const hasIncomingItems2 = Array.isArray(updatedRundown.items);
+        const isStructuralChange2 = hasIncomingItems2 && state.items && (
+          (updatedRundown.items?.length ?? 0) !== state.items.length ||
+          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
+        );
+        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange2 ? 1500 : 1000);
+
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading,
