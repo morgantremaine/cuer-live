@@ -99,12 +99,12 @@ const RundownIndexContent = () => {
     // Insert the new column right after the segment name column (index 1)
     const newColumns = [...userColumns];
     newColumns.splice(1, 0, newColumn);
-    setUserColumns(newColumns, true); // Immediate save
+    setUserColumns(newColumns); // Auto-save
   }, [userColumns, setUserColumns]);
 
   const handleReorderColumnsWrapper = useCallback((newColumns: any[]) => {
     if (!Array.isArray(newColumns)) return;
-    setUserColumns(newColumns, true); // Immediate save
+    setUserColumns(newColumns); // Auto-save
   }, [setUserColumns]);
 
   const handleDeleteColumnWrapper = useCallback(async (columnId: string) => {
@@ -159,7 +159,7 @@ const RundownIndexContent = () => {
     // Remove from local state
     console.log('🗑️ Removing column from local state...');
     const filtered = userColumns.filter(col => col.id !== columnId);
-    setUserColumns(filtered, true); // Immediate save
+    setUserColumns(filtered); // Auto-save
     console.log('🗑️ Column deletion complete');
   }, [userColumns, setUserColumns, team?.id]);
 
@@ -170,7 +170,7 @@ const RundownIndexContent = () => {
       }
       return col;
     });
-    setUserColumns(updated, true); // Immediate save
+    setUserColumns(updated); // Auto-save
   }, [userColumns, setUserColumns]);
 
   const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
@@ -182,7 +182,7 @@ const RundownIndexContent = () => {
       const updated = userColumns.map(col => (
         col.id === columnId ? { ...col, isVisible: false } : col
       ));
-      setUserColumns(updated, true); // Immediate save
+      setUserColumns(updated); // Auto-save
       return;
     }
 
@@ -200,7 +200,7 @@ const RundownIndexContent = () => {
       }
     }
 
-    setUserColumns(updated, true); // Immediate save
+    setUserColumns(updated); // Auto-save
   }, [userColumns, setUserColumns]);
 
   // Keep these from useColumnsManager for compatibility

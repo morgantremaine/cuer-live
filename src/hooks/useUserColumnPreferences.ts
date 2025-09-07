@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,20 +33,14 @@ const defaultColumns: Column[] = [
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
   const { team } = useTeam();
-  const { teamColumns, addTeamColumn, deleteTeamColumn } = useTeamCustomColumns();
+  const { teamColumns, addTeamColumn } = useTeamCustomColumns();
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastSavedRef = useRef<string>('');
-  const isLoadingRef = useRef(false);
-  const loadedRundownRef = useRef<string | null>(null);
-  const isFirstTimeViewRef = useRef<boolean>(false);
-  const teamHydratedRef = useRef<boolean>(false);
 
-  // Create comprehensive column merge that ALWAYS includes all available columns
-  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], isFirstTimeLoad = false) => {
-    // Start with a clean foundation - all default columns
+  // Merge columns with team columns to ensure completeness
+  const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
     const allAvailableColumns = [...defaultColumns];
     
     // Build a map of user's existing column preferences
@@ -56,7 +49,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       userColumnMap.set(col.key, col);
     });
     
-    // Add ALL team columns to the available set (always present in column manager)
+    // Add ALL team columns to the available set
     teamColumns.forEach(teamCol => {
       const existingUserPref = userColumnMap.get(teamCol.column_key);
       if (existingUserPref) {
@@ -68,7 +61,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           name: teamCol.column_name // Always use latest team column name
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       } else {
-        // New team column - add with default visibility based on context
+        // New team column - add with default visibility
         allAvailableColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -76,7 +69,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: false, // Always start team columns as hidden to prevent layout jumping
+          isVisible: false, // Start team columns as hidden
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
@@ -86,7 +79,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Add any user's personal custom columns that aren't team columns
     userColumns.forEach(col => {
       if (col.isCustom && !(col as any).isTeamColumn && !teamColumns.some(tc => tc.column_key === col.key)) {
-        // Check if we already have this column (prevent duplicates)
         const exists = allAvailableColumns.some(existingCol => existingCol.key === col.key);
         if (!exists) {
           allAvailableColumns.push(col);
@@ -94,15 +86,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     });
     
-    // Now apply user's column order preferences while maintaining all columns
+    // Apply user's column order preferences while maintaining all columns
     const orderedColumns = [];
     const usedKeys = new Set<string>();
     
-    // First, add columns in user's preferred order (if they have preferences)
+    // First, add columns in user's preferred order
     userColumns.forEach(userCol => {
       const matchingCol = allAvailableColumns.find(col => col.key === userCol.key);
       if (matchingCol && !usedKeys.has(userCol.key)) {
-        // Apply user's preferences to the comprehensive column
         orderedColumns.push({
           ...matchingCol,
           ...userCol, // User preferences override
@@ -124,24 +115,56 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     return orderedColumns;
   }, [teamColumns]);
 
-  // Load user's column preferences for this rundown
-  const loadColumnPreferences = useCallback(async () => {
-    if (!user?.id || !rundownId || isLoadingRef.current) {
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
-      setColumns(mergedDefaults);
-      // Align baseline to post-merge state; no DB writes on load
-      lastSavedRef.current = JSON.stringify(mergedDefaults);
-      setIsLoading(false);
-      isFirstTimeViewRef.current = true; // Mark as first time view for new rundowns
-      if (!rundownId) {
-        loadedRundownRef.current = 'new_rundown_loaded';
-      }
-      debugLogger.preferences('Initialized with defaults; baseline aligned to merged state');
+  // Auto-save any column changes
+  const saveColumnPreferences = useCallback(async (columnsToSave: Column[]) => {
+    if (!user?.id || !rundownId || isLoading) {
       return;
     }
 
-    // Mark loading state
-    isLoadingRef.current = true;
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce saves slightly to avoid excessive database calls during rapid changes
+    saveTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        const { error } = await supabase
+          .from('user_column_preferences')
+          .upsert({
+            user_id: user.id,
+            rundown_id: rundownId,
+            column_layout: columnsToSave,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,rundown_id'
+          });
+
+        if (error) {
+          console.error('Error saving column preferences:', error);
+        } else {
+          debugLogger.preferences('Auto-saved ' + columnsToSave.length + ' columns');
+        }
+      } catch (error) {
+        console.error('Failed to save column preferences:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 500);
+  }, [user?.id, rundownId, isLoading]);
+
+  // Load user's column preferences for this rundown
+  const loadColumnPreferences = useCallback(async () => {
+    if (!user?.id || !rundownId) {
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
+      setColumns(mergedDefaults);
+      setIsLoading(false);
+      debugLogger.preferences('No user/rundown - using defaults');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       const { data, error } = await supabase
@@ -155,16 +178,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading column preferences:', error);
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
+        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
-        lastSavedRef.current = JSON.stringify(mergedDefaults);
-        debugLogger.preferences('Load error; using defaults and aligning baseline');
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         
         // Clean and validate loaded columns
         const cleanColumns = loadedColumns.map(col => {
-          // Fix any legacy naming issues
           if (col.key === 'images' || col.id === 'images') {
             return {
               ...col,
@@ -176,145 +196,35 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
             };
           }
           return col;
-        }).filter(col => {
-          // Remove any corrupted or invalid columns
-          return col && col.id && col.key && col.name;
-        });
+        }).filter(col => col && col.id && col.key && col.name);
         
-        // Apply comprehensive merge to ensure ALL columns are available
         const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
-        
         setColumns(mergedColumns);
-        lastSavedRef.current = JSON.stringify(mergedColumns);
-        debugLogger.preferences('Loaded saved preferences; baseline aligned; total columns: ' + mergedColumns.length);
+        debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
-        // First time loading - create a clean slate with all defaults visible
-        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
+        // No saved preferences - use defaults
+        const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
-        lastSavedRef.current = JSON.stringify(mergedDefaults);
-        isFirstTimeViewRef.current = true;
-        debugLogger.preferences('No saved preferences - using defaults; baseline aligned; total columns: ' + mergedDefaults.length);
+        debugLogger.preferences('No saved preferences - using defaults');
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
-      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
+      const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
       setColumns(mergedDefaults);
     } finally {
       setIsLoading(false);
-      isLoadingRef.current = false;
-      if (rundownId) {
-        loadedRundownRef.current = rundownId;
-      }
     }
   }, [user?.id, rundownId, mergeColumnsWithTeamColumns]);
 
-  // Save column preferences with proper debouncing
-  const saveColumnPreferences = useCallback(async (columnsToSave: Column[], isImmediate = false) => {
-    if (!user?.id || !rundownId) {
-      return;
-    }
-
-    // Only save columns that have user-specific settings (order, visibility, width)
-    // But include ALL columns so we maintain the complete layout state
-    const columnsToSaveFiltered = columnsToSave.filter(col => {
-      // Keep all columns for complete state preservation
-      return true;
-    });
-
-    const currentSignature = JSON.stringify(columnsToSaveFiltered);
-    if (currentSignature === lastSavedRef.current) {
-      return;
-    }
-
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    if (isImmediate) {
-      // Bypass debounce for structural changes (e.g., applying a saved layout)
-      console.log('⚡ saveColumnPreferences: IMMEDIATE save requested');
-      setIsSaving(true);
-      try {
-        console.log('💾 Executing immediate upsert to database...');
-        const { data, error } = await supabase
-          .from('user_column_preferences')
-          .upsert({
-            user_id: user.id,
-            rundown_id: rundownId,
-            column_layout: columnsToSaveFiltered,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,rundown_id'
-          })
-          .select();
-
-        if (error) {
-          console.error('❌ Error saving column preferences (immediate):', error);
-          debugLogger.preferences('Immediate save error: ' + error.message);
-        } else {
-          console.log('✅ Immediate save SUCCESS:', data);
-          lastSavedRef.current = currentSignature;
-          debugLogger.preferences('Immediate save of ' + columnsToSaveFiltered.length + ' columns to preferences');
-        }
-      } catch (error) {
-        console.error('❌ Failed to save column preferences (immediate):', error);
-      } finally {
-        setIsSaving(false);
-      }
-      return;
-    }
-
-    // Use shorter debounce for resize operations, immediate for structural changes
-    const saveDelay = 800;
-
-    // Debounce the save
-    saveTimeoutRef.current = setTimeout(async () => {
-      setIsSaving(true);
-      try {
-        const { error } = await supabase
-          .from('user_column_preferences')
-          .upsert({
-            user_id: user.id,
-            rundown_id: rundownId,
-            column_layout: columnsToSaveFiltered,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,rundown_id'
-          });
-
-        if (error) {
-          console.error('Error saving column preferences:', error);
-          debugLogger.preferences('Save error: ' + error.message);
-        } else {
-          lastSavedRef.current = currentSignature;
-          debugLogger.preferences('Saved ' + columnsToSaveFiltered.length + ' columns to preferences');
-        }
-      } catch (error) {
-        console.error('Failed to save column preferences:', error);
-      } finally {
-        setIsSaving(false);
-      }
-    }, saveDelay);
-  }, [user?.id, rundownId]);
-
-  // Enhanced column update function that handles team column creation and deletion
-  const updateColumns = useCallback(async (newColumns: Column[], isImmediate = false) => {
-    // Check if any new custom columns were added
+  // Update columns and auto-save
+  const updateColumns = useCallback(async (newColumns: Column[]) => {
+    // Check if any new custom columns were added that need to be saved to team
     const existingCustomKeys = new Set(
       columns.filter(col => col.isCustom).map(col => col.key)
     );
     
     const newCustomColumns = newColumns.filter(col => 
       col.isCustom && !existingCustomKeys.has(col.key)
-    );
-
-    // Check if any team custom columns were deleted
-    const newColumnKeys = new Set(newColumns.map(col => col.key));
-    const deletedTeamColumns = columns.filter(col => 
-      col.isCustom && 
-      (col as any).isTeamColumn && 
-      !newColumnKeys.has(col.key)
     );
 
     // Add new custom columns to team_custom_columns table
@@ -324,70 +234,60 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     }
 
-    // Note: We no longer automatically delete team columns to prevent accidental removal
-    // Team columns should only be deleted through explicit team management actions
-    console.log('🔧 Prevented automatic deletion of team columns:', deletedTeamColumns.map(c => c.name));
-
     const merged = mergeColumnsWithTeamColumns(newColumns);
     setColumns(merged);
-    // Only save if we're not currently loading
-    if (!isLoadingRef.current) {
-      saveColumnPreferences(merged, isImmediate);
-    }
-  }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
+    saveColumnPreferences(merged);
+  }, [columns, saveColumnPreferences, addTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
 
-  // Special handler for column width updates during resize
+  // Update column width and auto-save
   const updateColumnWidth = useCallback((columnId: string, width: string) => {
     setColumns(prevColumns => {
       const updatedColumns = prevColumns.map(col => 
         col.id === columnId ? { ...col, width } : col
       );
-      
-      // Save with debounce for resize operations
-      if (!isLoadingRef.current) {
-        saveColumnPreferences(updatedColumns, false);
-      }
-      
+      saveColumnPreferences(updatedColumns);
       return updatedColumns;
     });
   }, [saveColumnPreferences]);
 
-  // Load preferences when rundown changes, but prevent duplicate loads
-  useEffect(() => {
-    debugLogger.preferences('useEffect triggered', { 
-      rundownId, 
-      loadedRundownRefCurrent: loadedRundownRef.current,
-      userId: user?.id 
-    });
+  // Apply a saved layout (this becomes the new current layout)
+  const applyLayout = useCallback((layoutColumns: Column[]) => {
+    debugLogger.preferences('Applying saved layout with ' + layoutColumns.length + ' columns');
     
-    if (rundownId) {
-      if (rundownId !== loadedRundownRef.current) {
-        setIsLoading(true);
-        loadColumnPreferences();
-      }
-    } else {
-      // Handle new rundowns (rundownId is null)
-      if (loadedRundownRef.current !== 'new_rundown_loaded') {
-        setIsLoading(true);
-        loadColumnPreferences();
-      }
-    }
-  }, [rundownId, user?.id, loadColumnPreferences]);
-
-  // Update columns when team columns change - but ONLY after initial load is complete
-  useEffect(() => {
-    // Don't trigger during initial load or if rundown hasn't loaded yet
-    if (isLoadingRef.current || !loadedRundownRef.current) {
+    if (isLoading) {
+      debugLogger.preferences('Skipping layout application - still loading');
       return;
     }
+
+    // Merge with team columns to ensure completeness
+    const mergedLayout = mergeColumnsWithTeamColumns(layoutColumns);
     
-    // Only proceed if we have team columns and the rundown is fully loaded
-    if (teamColumns.length > 0) {
+    setColumns(mergedLayout);
+    saveColumnPreferences(mergedLayout);
+    debugLogger.preferences('Applied saved layout - now auto-saving as current layout');
+  }, [isLoading, mergeColumnsWithTeamColumns, saveColumnPreferences]);
+
+  // Temporary layout preview (doesn't save to user preferences)
+  const previewLayout = useCallback((layoutColumns: Column[]) => {
+    if (isLoading) return;
+    
+    const mergedLayout = mergeColumnsWithTeamColumns(layoutColumns);
+    setColumns(mergedLayout);
+    // Don't save - this is just a preview
+  }, [isLoading, mergeColumnsWithTeamColumns]);
+
+  // Load preferences when rundown changes
+  useEffect(() => {
+    loadColumnPreferences();
+  }, [rundownId, user?.id, loadColumnPreferences]);
+
+  // Update columns when team columns change
+  useEffect(() => {
+    if (!isLoading && teamColumns.length > 0) {
       setColumns(prevColumns => {
-        // Always refresh the complete column set to include new team columns
-        const merged = mergeColumnsWithTeamColumns(prevColumns, false);
+        const merged = mergeColumnsWithTeamColumns(prevColumns);
         
-        // Determine if any new team columns were added
+        // Check if there are actually new team columns
         const prevTeamColumnKeys = new Set(
           prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
         );
@@ -398,25 +298,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
         
         if (hasNewTeamColumns) {
-          if (!teamHydratedRef.current) {
-            // First hydration: align baseline, do NOT save
-            lastSavedRef.current = JSON.stringify(merged);
-            teamHydratedRef.current = true;
-            debugLogger.preferences('Team columns first hydration - baseline aligned, no save');
-          } else {
-            debugLogger.preferences('New team columns detected - saving updated layout');
-            saveColumnPreferences(merged, true);
-          }
-        } else if (!teamHydratedRef.current) {
-          // No new columns but team data present: mark hydrated
-          teamHydratedRef.current = true;
-          debugLogger.preferences('Team columns present - hydration complete, no save');
+          // Auto-save when new team columns are added
+          saveColumnPreferences(merged);
+          debugLogger.preferences('New team columns detected - auto-saving');
         }
         
         return merged;
       });
     }
-  }, [teamColumns, mergeColumnsWithTeamColumns, saveColumnPreferences]);
+  }, [teamColumns, isLoading, mergeColumnsWithTeamColumns, saveColumnPreferences]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -426,108 +316,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     };
   }, []);
-
-  // Apply layout while preserving all available columns (defaults + team customs + user customs)
-  const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
-    debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
-    
-    // Prevent saves during initial loading phase
-    if (isLoadingRef.current) {
-      debugLogger.preferences('Skipping layout application - still loading');
-      return;
-    }
-    
-    // Create master list of all available columns (defaults + team + existing user columns)
-    const masterColumns = [...defaultColumns];
-    
-    // Add all team custom columns to master list
-    teamColumns.forEach(teamCol => {
-      const existsInMaster = masterColumns.some(col => col.key === teamCol.column_key);
-      if (!existsInMaster) {
-        masterColumns.push({
-          id: teamCol.column_key,
-          name: teamCol.column_name,
-          key: teamCol.column_key,
-          width: '150px',
-          isCustom: true,
-          isEditable: true,
-          isVisible: false,
-          isTeamColumn: true,
-          createdBy: teamCol.created_by
-        } as Column & { isTeamColumn?: boolean; createdBy?: string });
-      }
-    });
-    
-    // Add any existing user custom columns not in team columns
-    columns.forEach(col => {
-      if (col.isCustom && !(col as any).isTeamColumn) {
-        const existsInMaster = masterColumns.some(masterCol => masterCol.key === col.key);
-        if (!existsInMaster) {
-          masterColumns.push(col);
-        }
-      }
-    });
-    
-    // Create a map of layout column preferences with sort order
-    const layoutColumnMap = new Map<string, Column & { sortOrder: number }>();
-    layoutColumns.forEach((col, index) => {
-      layoutColumnMap.set(col.key, { ...col, sortOrder: index });
-    });
-    
-    // Apply layout preferences to master columns
-    const appliedColumns = masterColumns.map(masterCol => {
-      const layoutCol = layoutColumnMap.get(masterCol.key);
-      if (layoutCol) {
-        // Column exists in layout - use layout preferences but preserve master column metadata
-        const { sortOrder, ...layoutColWithoutSort } = layoutCol;
-        return {
-          ...masterCol, // Preserve original metadata (isCustom, isTeamColumn, etc.)
-          ...layoutColWithoutSort, // Apply layout preferences (visibility, width, etc.)
-          isCustom: masterCol.isCustom, // Ensure we don't lose custom flag
-          isTeamColumn: (masterCol as any).isTeamColumn, // Preserve team flag
-          createdBy: (masterCol as any).createdBy, // Preserve creator info
-          sortOrder // Add sort order for sorting
-        };
-      } else {
-        // Column not in layout - keep it but mark as hidden
-        return {
-          ...masterCol,
-          isVisible: false,
-          sortOrder: 9999 // Put non-layout columns at the end
-        };
-      }
-    });
-    
-    // Sort by layout order first, then by original order for non-layout columns
-    appliedColumns.sort((a, b) => {
-      const aOrder = (a as any).sortOrder ?? 9999;
-      const bOrder = (b as any).sortOrder ?? 9999;
-      return aOrder - bOrder;
-    });
-    
-    // Remove sortOrder property and return clean columns
-    const finalColumns = appliedColumns.map(col => {
-      const { sortOrder, ...cleanCol } = col as any;
-      return cleanCol as Column;
-    });
-    
-    debugLogger.preferences('Layout applied - total columns: ' + finalColumns.length + 
-      ', visible: ' + finalColumns.filter(c => c.isVisible).length);
-    
-    setColumns(finalColumns);
-    
-    // Force save when applying layout (user explicitly chose this layout)
-    if (shouldPersist) {
-      // Bypass loading check for explicit layout application - user chose this layout
-      setIsSaving(true);
-      saveColumnPreferences(finalColumns, true);
-    }
-  }, [columns, teamColumns, saveColumnPreferences]);
-
-  // Temporary layout preview (doesn't save to user preferences)
-  const previewLayout = useCallback((layoutColumns: Column[]) => {
-    applyLayout(layoutColumns, false); // Don't persist - just preview
-  }, [applyLayout]);
 
   return {
     columns,
