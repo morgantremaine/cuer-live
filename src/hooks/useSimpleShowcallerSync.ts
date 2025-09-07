@@ -445,7 +445,7 @@ export const useSimpleShowcallerSync = ({
 
   // Save showcaller state to database whenever it changes
   const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
-    if (!rundownId || !hasLoadedInitialState.current) return;
+    if (!rundownId || !hasLoadedInitialState.current || isRestoringInitialState.current) return;
 
     try {
       console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);

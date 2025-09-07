@@ -19,12 +19,14 @@ interface UseShowcallerVisualStateProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
+  disableAutoSave?: boolean; // Add flag to disable auto-save when used with simple sync
 }
 
 export const useShowcallerVisualState = ({
   items,
   rundownId,
-  userId
+  userId,
+  disableAutoSave = false
 }: UseShowcallerVisualStateProps) => {
   const [visualState, setVisualState] = useState<ShowcallerVisualState>({
     currentItemStatuses: new Map(),
@@ -166,9 +168,13 @@ export const useShowcallerVisualState = ({
 
   // Enhanced debounced save with longer delay and critical change detection
   const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState, isCritical: boolean = false) => {
-    // Skip save if persistence is suppressed
-    if (suppressPersistence.current) {
-      console.log('📺 Save suppressed during restoration/self-healing');
+    // Skip save if persistence is suppressed or auto-save is disabled
+    if (suppressPersistence.current || disableAutoSave) {
+      if (disableAutoSave) {
+        console.log('📺 Save skipped - auto-save disabled (using simple sync)');
+      } else {
+        console.log('📺 Save suppressed during restoration/self-healing');
+      }
       return;
     }
     
@@ -182,7 +188,7 @@ export const useShowcallerVisualState = ({
     saveTimeoutRef.current = setTimeout(() => {
       saveShowcallerVisualState(state);
     }, delay);
-  }, [saveShowcallerVisualState]);
+  }, [saveShowcallerVisualState, disableAutoSave]);
 
   // Update visual state without touching main rundown state
   const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false, isCritical: boolean = false) => {
