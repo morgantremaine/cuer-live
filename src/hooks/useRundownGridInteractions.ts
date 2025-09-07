@@ -24,7 +24,9 @@ export const useRundownGridInteractions = (
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
-  isHeaderCollapsed?: (headerId: string) => boolean
+  isHeaderCollapsed?: (headerId: string) => boolean,
+  rundownId?: string,
+  currentUserId?: string
 ) => {
   const {
     selectedRows,
@@ -76,7 +78,9 @@ export const useRundownGridInteractions = (
     columns,
     title,
     getHeaderGroupItemIds,
-    isHeaderCollapsed
+    isHeaderCollapsed,
+    rundownId,
+    currentUserId
   );
 
   return {

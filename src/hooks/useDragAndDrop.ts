@@ -272,6 +272,7 @@ export const useDragAndDrop = (
       // Broadcast reorder for immediate realtime sync
       if (rundownId && currentUserId) {
         const order = newItems.map(item => item.id);
+        console.log('📡 Broadcasting reorder for rundown:', rundownId, 'order:', order.length, 'items');
         cellBroadcast.broadcastCellUpdate(
           rundownId,
           undefined,
@@ -279,6 +280,8 @@ export const useDragAndDrop = (
           { order },
           currentUserId
         );
+      } else {
+        console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
       }
       
     } catch (error) {

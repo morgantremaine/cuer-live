@@ -27,7 +27,9 @@ export const useRundownInteractionHandlers = (
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
-  isHeaderCollapsed?: (headerId: string) => boolean
+  isHeaderCollapsed?: (headerId: string) => boolean,
+  rundownId?: string,
+  currentUserId?: string
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -58,8 +60,8 @@ export const useRundownInteractionHandlers = (
     getHeaderGroupItemIds,
     isHeaderCollapsed,
     markStructuralChange,
-    undefined, // rundownId - not available in this context
-    undefined  // currentUserId - not available in this context
+    rundownId,
+    currentUserId
   );
 
   // Clipboard functionality

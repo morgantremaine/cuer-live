@@ -167,7 +167,9 @@ export const useRundownStateCoordination = () => {
     persistedState.columns,
     persistedState.rundownTitle,
     getHeaderGroupItemIds,
-    isHeaderCollapsed
+    isHeaderCollapsed,
+    persistedState.rundownId,
+    userId
   );
 
   // Get UI state with enhanced navigation - use performance-optimized data
