@@ -66,6 +66,7 @@ const RundownContextMenu = memo(({
 }: RundownContextMenuProps) => {
   const isMultipleSelection = selectedCount > 1;
 
+  
   // Define color options for the submenu (same as original ColorPicker)
   const colorOptions = [
     { name: 'Default', value: '' },
@@ -100,6 +101,7 @@ const RundownContextMenu = memo(({
     if (onClearSelection) {
       onClearSelection();
     }
+
   };
 
   // Handle float toggle for multiple rows
@@ -279,17 +281,17 @@ const RundownContextMenu = memo(({
             <ContextMenuSubContent className="w-auto min-w-0 p-2">
               <div className="grid grid-cols-3 gap-2">
                 {colorOptions.map((color) => (
-                  <button
+                  <ContextMenuItem
                     key={color.name}
-                    onClick={() => handleColorSelect(itemId, color.value)}
-                    className="flex flex-col items-center p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-xs text-gray-900 dark:text-gray-100 min-w-0"
-                    title={color.name}
+                    onSelect={() => handleColorSelect(itemId, color.value)}
+                    className="p-1 flex items-center justify-center"
                   >
                     <div 
                       className="w-6 h-6 rounded border border-gray-300 dark:border-gray-500"
                       style={{ backgroundColor: color.value || '#ffffff' }}
+                      title={color.name}
                     />
-                  </button>
+                  </ContextMenuItem>
                 ))}
               </div>
             </ContextMenuSubContent>
