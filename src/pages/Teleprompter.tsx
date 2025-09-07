@@ -125,7 +125,7 @@ const Teleprompter = () => {
     };
   }, []);
 
-  // Perform silent refresh when tab becomes active
+  // Perform silent refresh when tab becomes active (only if realtime is disconnected)
   useEffect(() => {
     if (!rundownId || !user) return;
 
@@ -135,13 +135,19 @@ const Teleprompter = () => {
 
     if (!shouldSync) return;
 
+    // Skip if realtime is connected and working
+    if (isRealtimeConnected) {
+      console.log('✅ Teleprompter: Skipping silent refresh - realtime connected and working');
+      return;
+    }
+
     // Debounce rapid focus/visibility flaps
     const now = Date.now();
     const timeSinceLast = now - lastSyncTimeRef.current;
     if (timeSinceLast <= 300) return;
 
     lastSyncTimeRef.current = now;
-    console.log('👁️ Teleprompter tab active - performing silent refresh for latest rundown');
+    console.log('👁️ Teleprompter tab active - performing silent refresh (realtime disconnected)');
 
     const performSilentRefresh = async () => {
       try {
@@ -175,7 +181,7 @@ const Teleprompter = () => {
     };
 
     performSilentRefresh();
-  }, [isTabActive, rundownId, user]);
+  }, [isTabActive, rundownId, user, isRealtimeConnected]);
 
   // Set up cell broadcast for instant collaboration (per-tab, not per-user)
   useEffect(() => {

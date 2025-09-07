@@ -489,6 +489,12 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
+  // Update connection state from realtime hook
+  useEffect(() => {
+    setIsConnected(realtimeConnection.isConnected);
+    console.log('🔌 Realtime connection status changed:', realtimeConnection.isConnected);
+  }, [realtimeConnection.isConnected]);
+  
   // Clear initial load gate after initialization and implement sync-before-write
   useEffect(() => {
     if (isInitialized) {
@@ -814,10 +820,6 @@ export const useSimplifiedRundownState = () => {
     }
   }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
-  // Update connection status from realtime
-  useEffect(() => {
-    setIsConnected(realtimeConnection.isConnected);
-  }, [realtimeConnection.isConnected]);
 
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -1151,12 +1153,16 @@ export const useSimplifiedRundownState = () => {
         const newerByVersion = serverDoc > lastSeenDocVersion;
         const newerByTime = serverTs && (!lastKnownTimestamp || new Date(serverTs).getTime() > new Date(lastKnownTimestamp).getTime());
 
-        // Always apply server data after wake/reconnect to ensure consistency, even if timestamps are equal
-        if (newerByVersion || newerByTime || justActivated) {
-          console.log('🔄 Applying fresh server data after tab activation (forced sync)', {
+        // Only apply server data if genuinely newer OR if realtime is disconnected (failsafe mode)
+        const realtimeIsConnected = realtimeConnection?.isConnected ?? false;
+        
+        if (newerByVersion || newerByTime || (!realtimeIsConnected && justActivated)) {
+          console.log('🔄 Applying fresh server data', {
+            reason: newerByVersion ? 'newer version' : newerByTime ? 'newer timestamp' : 'realtime disconnected',
             newerByVersion,
             newerByTime,
             justActivated,
+            realtimeIsConnected,
             serverDoc,
             localDoc: lastSeenDocVersion
           });
@@ -1170,6 +1176,8 @@ export const useSimplifiedRundownState = () => {
           
           // Extended cooldown to prevent immediate autosave after forced refresh
           cooldownUntilRef.current = Date.now() + 2000;
+        } else if (justActivated && realtimeIsConnected) {
+          console.log('✅ Skipping forced sync - realtime connected and working properly');
         }
       } catch (e) {
         console.error('❌ Silent refresh failed:', e);
