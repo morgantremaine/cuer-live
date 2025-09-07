@@ -73,6 +73,24 @@ export const useFieldDeltaSave = (
     const currentItems = currentState.items || [];
     const previousItems = previousState.items || [];
     
+    // CRITICAL: Check for reordering first - compare item IDs in order
+    const currentItemIds = currentItems.map(item => item.id);
+    const previousItemIds = previousItems.map(item => item.id);
+    
+    // If the order of items has changed, this is a reorder operation
+    const isReordered = currentItemIds.length === previousItemIds.length && 
+                       JSON.stringify(currentItemIds) !== JSON.stringify(previousItemIds);
+    
+    if (isReordered) {
+      console.log('🔄 Delta: detected item reordering - triggering full items update');
+      deltas.push({
+        field: 'fullItemsReorder',
+        value: currentItems,
+        timestamp: Date.now()
+      });
+      return deltas; // Return early for reorder - no need to check individual items
+    }
+    
     // Track by item ID for efficient comparison
     const previousItemsMap = new Map(previousItems.map(item => [item.id, item]));
     const currentItemsMap = new Map(currentItems.map(item => [item.id, item]));
@@ -137,9 +155,10 @@ export const useFieldDeltaSave = (
     const globalDeltas = deltas.filter(d => !d.itemId);
     const itemDeltas = deltas.filter(d => d.itemId);
     const hasFullUpdate = deltas.some(d => d.field === 'fullState' || d.field === 'fullItem');
+    const hasReorder = deltas.some(d => d.field === 'fullItemsReorder');
 
-    if (hasFullUpdate || globalDeltas.length > 5) {
-      // Fall back to full update for major changes
+    if (hasFullUpdate || hasReorder || globalDeltas.length > 5) {
+      // Fall back to full update for major changes or reordering
       console.log('💾 Performing full rundown update (major changes detected)');
       return await performFullUpdate(currentState, updateTimestamp);
     }
