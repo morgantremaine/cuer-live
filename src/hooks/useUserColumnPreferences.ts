@@ -116,9 +116,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     return orderedColumns;
   }, [teamColumns]);
 
-  // Auto-save any column changes
+  // Auto-save any column changes - but NOT during initial load
   const saveColumnPreferences = useCallback(async (columnsToSave: Column[]) => {
-    if (!user?.id || !rundownId || isLoading) {
+    if (!user?.id || !rundownId) {
+      return;
+    }
+
+    // CRITICAL: Prevent autosave during initial hydration
+    if (isLoading || !hasInitialLoad) {
+      console.log('📊 AutoSave blocked - initial column load not complete');
       return;
     }
 
@@ -145,6 +151,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         if (error) {
           console.error('Error saving column preferences:', error);
         } else {
+          console.log('📊 Column preferences auto-saved successfully');
           debugLogger.preferences('Auto-saved ' + columnsToSave.length + ' columns');
         }
       } catch (error) {
@@ -153,7 +160,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         setIsSaving(false);
       }
     }, 500);
-  }, [user?.id, rundownId, isLoading]);
+  }, [user?.id, rundownId, isLoading, hasInitialLoad]);
 
   // Load user's column preferences for this rundown (waits for team columns to be ready)
   const loadColumnPreferences = useCallback(async () => {
@@ -321,39 +328,32 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     loadColumnPreferences();
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change - but not during initial load
+  // Update columns when team columns change - completely prevent during initial load
   useEffect(() => {
-    // CRITICAL: Skip team column merging during initial load to prevent autosave triggers
-    if (isLoading || !hasInitialLoad || teamColumns.length === 0) {
-      console.log('📊 Skipping team column merge - initial load not complete or no team columns');
+    // CRITICAL: Don't run ANY team column logic during initial load
+    if (isLoading || !hasInitialLoad) {
+      console.log('📊 Team column effect blocked - initial load not complete');
+      return;
+    }
+
+    // Also ensure team columns are loaded before processing
+    if (teamColumns.length === 0) {
+      console.log('📊 Team column effect skipped - no team columns available');
       return;
     }
     
-    setColumns(prevColumns => {
-      const merged = mergeColumnsWithTeamColumns(prevColumns);
-      
-      // Check if there are actually new team columns
-      const prevTeamColumnKeys = new Set(
-        prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
-      );
-      const newTeamColumnKeys = new Set(
-        merged.filter(c => (c as any).isTeamColumn).map(c => c.key)
-      );
-      
-      const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
-      
-      if (hasNewTeamColumns) {
-        // Auto-save when new team columns are added - but only after initial load
-        console.log('📊 New team columns detected after initial load - auto-saving');
-        saveColumnPreferences(merged);
-        debugLogger.preferences('New team columns detected - auto-saving');
-        return merged;
-      }
-      
-      // Avoid unnecessary re-renders if nothing actually changed
-      return prevColumns;
-    });
-  }, [teamColumns, isLoading, hasInitialLoad, mergeColumnsWithTeamColumns, saveColumnPreferences]);
+    // Use a ref to track if we've already processed team columns for this load
+    const currentColumnKeys = columns.map(c => c.key).sort().join(',');
+    const newMerged = mergeColumnsWithTeamColumns(columns);
+    const newColumnKeys = newMerged.map(c => c.key).sort().join(',');
+    
+    // Only update if columns actually changed
+    if (currentColumnKeys !== newColumnKeys) {
+      console.log('📊 Team columns changed after initial load - updating (no autosave)');
+      setColumns(newMerged);
+      // Don't auto-save here - let user interactions trigger saves
+    }
+  }, [teamColumns, isLoading, hasInitialLoad, mergeColumnsWithTeamColumns, columns]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
