@@ -519,12 +519,12 @@ export const useSimplifiedRundownState = () => {
           recentlyEditedFieldsRef.current.delete(updateKey);
         }, 5000);
       
-      // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
-      // ALSO: Block autosave when receiving cell broadcast updates
-      console.log('🛑 Setting blockUntilLocalEditRef = true due to cell broadcast update');
-      blockUntilLocalEditRef.current = true;
+      // CRITICAL: Cell broadcasts are already-saved changes from other users
+      // We should update local state but NEVER trigger AutoSave for them
+      console.log('🛑 Cell broadcast: Applying remote change without triggering AutoSave');
       
-      executeWithCellUpdate(() => {
+      // Apply cell broadcast update directly without triggering any saves
+      // This is a remote change that's already been saved by another user
         // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
         // Check if we're actively editing this rundown-level field
@@ -625,13 +625,12 @@ export const useSimplifiedRundownState = () => {
         if (updatedItems.some((item, index) => item !== state.items[index])) {
           actions.setItems(updatedItems);
         }
-      });
     });
 
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId, state.items, actions, executeWithCellUpdate]);
+  }, [rundownId, currentUserId, state.items, actions]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
