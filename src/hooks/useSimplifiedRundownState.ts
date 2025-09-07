@@ -42,6 +42,7 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced conflict resolution system with validation
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
+  const recentCellUpdatesRef = useRef<Map<string, { timestamp: number; value: any; clientId?: string }>>(new Map());
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
@@ -309,13 +310,38 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
+      // CRITICAL: Check for recent cell updates to prevent overwriting them
+      const recentCellUpdates = recentCellUpdatesRef.current;
+      let hasRecentCellUpdates = false;
+      
+      if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
+        // Check if any item fields have recent cell updates
+        for (const item of updatedRundown.items) {
+          const itemFromState = state.items.find(existing => existing.id === item.id);
+          if (itemFromState) {
+            for (const [field, value] of Object.entries(item)) {
+              if (field === 'id') continue;
+              const updateKey = `${item.id}-${field}`;
+              const recentUpdate = recentCellUpdates.get(updateKey);
+              if (recentUpdate && Date.now() - recentUpdate.timestamp < 3000) {
+                console.log('🚫 Skipping realtime update for recently cell-updated field:', updateKey);
+                hasRecentCellUpdates = true;
+                // Don't override this field
+                (item as any)[field] = itemFromState[field];
+              }
+            }
+          }
+        }
+      }
+      
       // ALWAYS apply updates - never block them. Google Sheets style.
       console.log('📨 Processing realtime update immediately:', {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
         isTyping: isTypingActive(),
-        activeField: typingSessionRef.current?.fieldKey
+        activeField: typingSessionRef.current?.fieldKey,
+        hasRecentCellUpdates
       });
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
@@ -500,6 +526,20 @@ export const useSimplifiedRundownState = () => {
       }
       
       console.log('📱 Applying cell broadcast update:', update);
+      
+      // CRITICAL: Track this update to prevent realtime database overwrites
+      const updateKey = `${update.itemId || 'rundown'}-${update.field}`;
+      const recentCellUpdates = recentCellUpdatesRef.current;
+      recentCellUpdates.set(updateKey, {
+        timestamp: Date.now(),
+        value: update.value,
+        clientId: update.clientId
+      });
+      
+      // Clean up old entries after 5 seconds
+      setTimeout(() => {
+        recentCellUpdates.delete(updateKey);
+      }, 5000);
       
       // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
       // ALSO: Block autosave when receiving cell broadcast updates
