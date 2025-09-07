@@ -91,16 +91,13 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Enhanced own update detection with multiple checks (skip for shared views)
+    // Own update detection: skip only updates originated by this tab (timestamp match). Do NOT skip by user id so other tabs under the same account still process and show activity.
     if (!isSharedView) {
-      const isOwnUpdate = payload.new?.last_updated_by === user?.id ||
-                          (normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp));
+      const isOwnUpdate = normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp);
       if (isOwnUpdate) {
-        debugLogger.realtime('Skipping own update:', { 
+        debugLogger.realtime('Skipping own tab update:', { 
           normalizedTimestamp, 
-          incomingDocVersion,
-          userId: payload.new?.last_updated_by,
-          currentUserId: user?.id
+          incomingDocVersion
         });
         globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
         if (incomingDocVersion) {
