@@ -71,10 +71,30 @@ const SharedRundown = () => {
         console.log('📱 Shared rundown applying structural broadcast:', update.field);
         setLocalRundownData(prevData => {
           if (!prevData) return prevData;
-          return {
-            ...prevData,
-            items: update.value // Complete items array from broadcast
-          };
+          
+          if (update.field === 'items:reorder') {
+            // For reorder, update.value contains { order: string[] }
+            if (update.value?.order && Array.isArray(update.value.order)) {
+              const reorderedItems = update.value.order
+                .map(id => prevData.items.find(item => item.id === id))
+                .filter(Boolean);
+              
+              return {
+                ...prevData,
+                items: reorderedItems
+              };
+            }
+          } else {
+            // For add/remove, update.value is the complete items array
+            if (Array.isArray(update.value)) {
+              return {
+                ...prevData,
+                items: update.value
+              };
+            }
+          }
+          
+          return prevData;
         });
         return;
       }
@@ -118,7 +138,7 @@ const SharedRundown = () => {
           .from('rundowns')
           .select('*')
           .eq('id', rundownId)
-          .eq('is_public', true)
+          .eq('visibility', 'public')
           .single();
 
         if (error) {
