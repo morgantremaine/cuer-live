@@ -44,44 +44,83 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const loadedRundownRef = useRef<string | null>(null);
   const isFirstTimeViewRef = useRef<boolean>(false);
 
-  // Merge team custom columns with user's column layout
+  // Create comprehensive column merge that ALWAYS includes all available columns
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[], isFirstTimeLoad = false) => {
-    const userColumnKeys = new Set(userColumns.map(col => col.key));
-    const mergedColumns = [...userColumns];
-
-    // Add team custom columns that aren't already in user's layout
+    // Start with a clean foundation - all default columns
+    const allAvailableColumns = [...defaultColumns];
+    
+    // Build a map of user's existing column preferences
+    const userColumnMap = new Map<string, Column>();
+    userColumns.forEach(col => {
+      userColumnMap.set(col.key, col);
+    });
+    
+    // Add ALL team columns to the available set (always present in column manager)
     teamColumns.forEach(teamCol => {
-      if (!userColumnKeys.has(teamCol.column_key)) {
-        // For first-time loads, show all team columns as visible so users can see all options
-        // For subsequent loads, respect user's saved preferences (hidden by default)
-        mergedColumns.push({
+      const existingUserPref = userColumnMap.get(teamCol.column_key);
+      if (existingUserPref) {
+        // User has preferences for this team column - use their settings
+        allAvailableColumns.push({
+          ...existingUserPref,
+          isTeamColumn: true,
+          createdBy: teamCol.created_by,
+          name: teamCol.column_name // Always use latest team column name
+        } as Column & { isTeamColumn?: boolean; createdBy?: string });
+      } else {
+        // New team column - add with default visibility based on context
+        allAvailableColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
           key: teamCol.column_key,
           width: '150px',
           isCustom: true,
           isEditable: true,
-          isVisible: isFirstTimeLoad, // Visible on first load, hidden otherwise
+          isVisible: false, // Always start team columns as hidden to prevent layout jumping
           isTeamColumn: true,
           createdBy: teamCol.created_by
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       }
     });
-
-    // Ensure existing team columns retain their team metadata
-    const finalColumns = mergedColumns.map(col => {
-      const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
-      if (teamColumn && col.isCustom) {
-        return {
-          ...col,
-          isTeamColumn: true,
-          createdBy: teamColumn.created_by
-        };
+    
+    // Add any user's personal custom columns that aren't team columns
+    userColumns.forEach(col => {
+      if (col.isCustom && !(col as any).isTeamColumn && !teamColumns.some(tc => tc.column_key === col.key)) {
+        // Check if we already have this column (prevent duplicates)
+        const exists = allAvailableColumns.some(existingCol => existingCol.key === col.key);
+        if (!exists) {
+          allAvailableColumns.push(col);
+        }
       }
-      return col;
+    });
+    
+    // Now apply user's column order preferences while maintaining all columns
+    const orderedColumns = [];
+    const usedKeys = new Set<string>();
+    
+    // First, add columns in user's preferred order (if they have preferences)
+    userColumns.forEach(userCol => {
+      const matchingCol = allAvailableColumns.find(col => col.key === userCol.key);
+      if (matchingCol && !usedKeys.has(userCol.key)) {
+        // Apply user's preferences to the comprehensive column
+        orderedColumns.push({
+          ...matchingCol,
+          ...userCol, // User preferences override
+          isTeamColumn: (matchingCol as any).isTeamColumn, // Preserve team flag
+          createdBy: (matchingCol as any).createdBy // Preserve creator info
+        });
+        usedKeys.add(userCol.key);
+      }
+    });
+    
+    // Then add any remaining columns that user hasn't configured yet
+    allAvailableColumns.forEach(col => {
+      if (!usedKeys.has(col.key)) {
+        orderedColumns.push(col);
+        usedKeys.add(col.key);
+      }
     });
 
-    return finalColumns;
+    return orderedColumns;
   }, [teamColumns]);
 
   // Load user's column preferences for this rundown
@@ -116,8 +155,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       } else if (data?.column_layout) {
         const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
         
-        // Ensure all default columns are present and fix any potential mismatches
-        const fixedColumns = loadedColumns.map(col => {
+        // Clean and validate loaded columns
+        const cleanColumns = loadedColumns.map(col => {
+          // Fix any legacy naming issues
           if (col.key === 'images' || col.id === 'images') {
             return {
               ...col,
@@ -129,28 +169,24 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
             };
           }
           return col;
+        }).filter(col => {
+          // Remove any corrupted or invalid columns
+          return col && col.id && col.key && col.name;
         });
         
-        // Ensure all default columns are present by merging with defaults
-        const userColumnKeys = new Set(fixedColumns.map(col => col.key));
-        const missingDefaultColumns = defaultColumns.filter(defaultCol => 
-          !userColumnKeys.has(defaultCol.key)
-        );
-        
-        // Add missing default columns at the end
-        const columnsWithDefaults = [...fixedColumns, ...missingDefaultColumns];
-        
-        // Merge with team columns, preserving user's visibility preferences for team columns
-        const mergedColumns = mergeColumnsWithTeamColumns(columnsWithDefaults);
+        // Apply comprehensive merge to ensure ALL columns are available
+        const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
         
         setColumns(mergedColumns);
-        lastSavedRef.current = JSON.stringify(fixedColumns); // Only save personal columns
+        lastSavedRef.current = JSON.stringify(cleanColumns);
+        debugLogger.preferences('Loaded saved preferences with ' + mergedColumns.length + ' total columns');
       } else {
-        // This is the first time loading this rundown - show all columns as visible
+        // First time loading - create a clean slate with all defaults visible
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns, true);
         setColumns(mergedDefaults);
         lastSavedRef.current = JSON.stringify(defaultColumns);
-        isFirstTimeViewRef.current = true; // Mark as first time view
+        isFirstTimeViewRef.current = true;
+        debugLogger.preferences('No saved preferences - using defaults with ' + mergedDefaults.length + ' columns');
       }
     } catch (error) {
       console.error('Failed to load column preferences:', error);
@@ -171,17 +207,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    // Save personal columns + user's preferences for team columns (visibility, width, position)
-    // We need to save team columns with their user preferences, including team metadata for restoration
-    const personalColumns = columnsToSave.map(col => {
-      if (col.isCustom && (col as any).isTeamColumn) {
-        // For team columns, save user's preferences AND preserve team metadata
-        return col;
-      }
-      return col;
+    // Only save columns that have user-specific settings (order, visibility, width)
+    // But include ALL columns so we maintain the complete layout state
+    const columnsToSaveFiltered = columnsToSave.filter(col => {
+      // Keep all columns that are visible or have been modified by user
+      // This ensures we save the complete layout state
+      return true; // Save everything for complete state preservation
     });
 
-    const currentSignature = JSON.stringify(personalColumns);
+    const currentSignature = JSON.stringify(columnsToSaveFiltered);
     if (currentSignature === lastSavedRef.current) {
       return;
     }
@@ -203,15 +237,17 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           .upsert({
             user_id: user.id,
             rundown_id: rundownId,
-            column_layout: personalColumns
+            column_layout: columnsToSaveFiltered
           }, {
             onConflict: 'user_id,rundown_id'
           });
 
         if (error) {
           console.error('Error saving column preferences:', error);
+          debugLogger.preferences('Save error: ' + error.message);
         } else {
           lastSavedRef.current = currentSignature;
+          debugLogger.preferences('Saved ' + columnsToSaveFiltered.length + ' columns to preferences');
         }
       } catch (error) {
         console.error('Failed to save column preferences:', error);
@@ -297,18 +333,21 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change, but only if not currently loading
+  // Update columns when team columns change - ensuring all team columns are always available
   useEffect(() => {
     if (!isLoadingRef.current && teamColumns.length > 0 && loadedRundownRef.current) {
-      // If this is the first time viewing and team columns just loaded, make them visible
-      const shouldShowTeamColumns = isFirstTimeViewRef.current;
       setColumns(prevColumns => {
-        const merged = mergeColumnsWithTeamColumns(prevColumns, shouldShowTeamColumns);
+        // Always refresh the complete column set to include new team columns
+        const merged = mergeColumnsWithTeamColumns(prevColumns, false);
         
-        // Save the updated layout if team columns were made visible for first time
-        if (shouldShowTeamColumns && !isLoadingRef.current) {
+        // Only save if there are actual changes to prevent unnecessary saves
+        const prevKeys = new Set(prevColumns.map(c => c.key));
+        const newKeys = new Set(merged.map(c => c.key));
+        const hasNewColumns = merged.some(c => !prevKeys.has(c.key)) || prevColumns.some(c => !newKeys.has(c.key));
+        
+        if (hasNewColumns && !isLoadingRef.current) {
+          debugLogger.preferences('Team columns updated - refreshing available columns');
           saveColumnPreferences(merged, true);
-          isFirstTimeViewRef.current = false; // Reset after saving
         }
         
         return merged;
