@@ -259,13 +259,50 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    // Merge with team columns to ensure completeness
-    const mergedLayout = mergeColumnsWithTeamColumns(layoutColumns);
+    // When applying a saved layout, we need to:
+    // 1. Show only columns that were explicitly saved in the layout
+    // 2. Hide all other columns (including defaults) that weren't in the saved layout
+    // 3. Include team columns as options but keep them hidden unless they were in the saved layout
     
-    setColumns(mergedLayout);
-    saveColumnPreferences(mergedLayout);
-    debugLogger.preferences('Applied saved layout - now auto-saving as current layout');
-  }, [isLoading, mergeColumnsWithTeamColumns, saveColumnPreferences]);
+    const layoutColumnMap = new Map<string, Column>();
+    layoutColumns.forEach(col => {
+      layoutColumnMap.set(col.key, col);
+    });
+    
+    // Start with the saved layout columns exactly as they were
+    const appliedColumns: Column[] = [...layoutColumns];
+    
+    // Add any team columns that aren't in the saved layout (but keep them hidden)
+    teamColumns.forEach(teamCol => {
+      if (!layoutColumnMap.has(teamCol.column_key)) {
+        appliedColumns.push({
+          id: teamCol.column_key,
+          name: teamCol.column_name,
+          key: teamCol.column_key,
+          width: '150px',
+          isCustom: true,
+          isEditable: true,
+          isVisible: false, // Hidden since they weren't in the saved layout
+          isTeamColumn: true,
+          createdBy: teamCol.created_by
+        } as Column & { isTeamColumn?: boolean; createdBy?: string });
+      }
+    });
+    
+    // Add any default columns that aren't in the saved layout (but keep them hidden)
+    defaultColumns.forEach(defaultCol => {
+      if (!layoutColumnMap.has(defaultCol.key)) {
+        appliedColumns.push({
+          ...defaultCol,
+          isVisible: false // Hidden since they weren't in the saved layout
+        });
+      }
+    });
+    
+    setColumns(appliedColumns);
+    saveColumnPreferences(appliedColumns);
+    debugLogger.preferences('Applied saved layout exactly - hidden ' + (appliedColumns.length - layoutColumns.length) + ' columns not in layout');
+  }, [isLoading, teamColumns, saveColumnPreferences]);
 
   // Temporary layout preview (doesn't save to user preferences)
   const previewLayout = useCallback((layoutColumns: Column[]) => {
