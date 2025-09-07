@@ -155,7 +155,7 @@ const SharedRundown = () => {
     return unsubscribe;
   }, [rundownId]);
 
-  // Handle tab refocus - use RPC for normalized data refresh
+  // Handle tab refocus - use RPC for normalized data refresh (guarded to avoid stale overwrites)
   useEffect(() => {
     // Only trigger refresh when tab has just become active (transition from inactive to active)
     if (!hasJustBecomeActive || !rundownId) return;
@@ -164,6 +164,13 @@ const SharedRundown = () => {
       try {
         console.log('📱 Window refocused - triggering refresh');
         console.log('📱 SharedRundown performing RPC refresh on tab refocus');
+
+        // If we just applied a cell-broadcast update, skip immediate RPC apply to avoid flicker
+        const sinceCellMs = Date.now() - (lastCellUpdateTsRef.current || 0);
+        if (sinceCellMs >= 0 && sinceCellMs < 1200) {
+          console.log('⏲️ Skipping immediate RPC apply; recent cell update within', sinceCellMs, 'ms');
+          return;
+        }
         
         // Use RPC function for normalized, accurate data
         const { data: freshData, error } = await supabase
@@ -175,6 +182,18 @@ const SharedRundown = () => {
         }
 
         if (freshData && isMountedRef.current) {
+          const incomingDoc: number = freshData.doc_version ?? 0;
+          const currentDoc: number =
+            (localRundownData as any)?.docVersion ??
+            (rundownData as any)?.docVersion ??
+            0;
+
+          // Never apply an older snapshot over newer local state
+          if (incomingDoc < currentDoc) {
+            console.log('↩️ Skipping RPC apply: incoming docVersion older', { incomingDoc, currentDoc });
+            return;
+          }
+
           console.log('📱 SharedRundown data refreshed via RPC');
           const normalizedData = {
             id: freshData.id,
@@ -197,7 +216,7 @@ const SharedRundown = () => {
     };
 
     performNormalizedRefresh();
-  }, [hasJustBecomeActive, rundownId]);
+  }, [hasJustBecomeActive, rundownId, localRundownData?.docVersion, rundownData?.docVersion]);
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
