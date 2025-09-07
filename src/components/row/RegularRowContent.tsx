@@ -59,13 +59,13 @@ const RegularRowContent = ({
           borderRight: '1px solid hsl(var(--border))'
         }}
       >
-        <div className="flex items-center justify-center relative w-full">
+        <div className="flex items-center justify-center relative w-full h-6">
           {isCurrentlyPlaying && (
             <Play 
-              className="h-6 w-6 text-blue-500 fill-blue-500 absolute left-0" 
+              className="h-4 w-4 text-blue-500 fill-blue-500 absolute left-1" 
             />
           )}
-          <span style={{ color: textColor }} className={isCurrentlyPlaying ? 'ml-5' : ''}>{rowNumber}</span>
+          <span style={{ color: textColor }} className="text-center flex-1">{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
