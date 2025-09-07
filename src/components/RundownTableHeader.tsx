@@ -84,8 +84,42 @@ const RundownTableHeader = ({
       const oldIndex = visibleColumns.findIndex((column) => column.id === active.id);
       const newIndex = visibleColumns.findIndex((column) => column.id === over?.id);
 
-      const newColumns = arrayMove(visibleColumns, oldIndex, newIndex);
-      onReorderColumns(newColumns);
+      // FIXED: Reorder within ALL columns while preserving visibility state
+      console.log('🔄 Column reorder debug:', {
+        totalColumns: allColumns.length,
+        visibleColumns: visibleColumns.length,
+        hiddenColumns: allColumns.filter(c => c.isVisible === false).length,
+        draggedColumn: active.id,
+        targetColumn: over?.id
+      });
+
+      // Reorder only the visible columns
+      const reorderedVisibleColumns = arrayMove(visibleColumns, oldIndex, newIndex);
+      
+      // Now we need to reconstruct the full column list preserving hidden columns
+      // Strategy: Map each position in allColumns to either a reordered visible column or the original hidden column
+      
+      const visibleColumnMap = new Map(reorderedVisibleColumns.map((col, index) => [col.id, index]));
+      const originalVisibleColumnMap = new Map(visibleColumns.map(col => [col.id, col]));
+      
+      let visibleColumnInsertIndex = 0;
+      
+      const finalColumns = allColumns.map(originalCol => {
+        // If this was a visible column, replace it with its reordered version
+        if (originalVisibleColumnMap.has(originalCol.id)) {
+          const reorderedColumn = reorderedVisibleColumns[visibleColumnInsertIndex++];
+          return reorderedColumn;
+        }
+        // Keep hidden columns in their original positions
+        return originalCol;
+      });
+      
+      console.log('🔄 Reorder result:', {
+        before: allColumns.map(c => `${c.name}(${c.isVisible !== false ? 'V' : 'H'})`),
+        after: finalColumns.map(c => `${c.name}(${c.isVisible !== false ? 'V' : 'H'})`)
+      });
+
+      onReorderColumns(finalColumns);
     }
     
     setActiveColumn(null);
