@@ -10,6 +10,7 @@ import { useColumnsManager } from '@/hooks/useColumnsManager';
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
+import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -93,9 +94,12 @@ const RundownIndexContent = () => {
   // Track layout stabilization to prevent flashing
   const [isLayoutStabilized, setIsLayoutStabilized] = useState(false);
   
+  // Also wait for team custom columns to finish loading to avoid second-phase layout hydrate
+  const { loading: isLoadingTeamColumns } = useTeamCustomColumns();
+
   // Mark layout as stabilized after a brief delay when all loading is complete
   useEffect(() => {
-    if (!isLoadingPreferences && !isLoadingSharedLayout && userColumns.length > 0) {
+    if (!isLoadingPreferences && !isLoadingSharedLayout && !isLoadingTeamColumns && userColumns.length > 0) {
       const stabilizationTimer = setTimeout(() => {
         setIsLayoutStabilized(true);
       }, 200); // Small delay to ensure all layout refreshes are complete
@@ -104,7 +108,7 @@ const RundownIndexContent = () => {
     } else {
       setIsLayoutStabilized(false);
     }
-  }, [isLoadingPreferences, isLoadingSharedLayout, userColumns.length]);
+  }, [isLoadingPreferences, isLoadingSharedLayout, isLoadingTeamColumns, userColumns.length]);
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
   const handleAddColumnWrapper = useCallback((name: string) => {
