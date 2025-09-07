@@ -50,15 +50,6 @@ export const useConsolidatedRealtimeRundown = ({
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
-
-  // Set connected immediately when rundown is enabled (ready for editing)
-  useEffect(() => {
-    if (enabled && rundownId) {
-      setIsConnected(true);
-    } else {
-      setIsConnected(false);
-    }
-  }, [enabled, rundownId]);
   
   // Simplified callback refs (no tab coordination needed)
   const callbackRefs = useRef({

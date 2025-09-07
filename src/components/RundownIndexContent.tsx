@@ -113,16 +113,6 @@ const RundownIndexContent = () => {
     }
   }, [isLoadingPreferences, isLoadingSharedLayout, isLoadingTeamColumns, userColumns.length]);
 
-  // Suppress preference-saving indicator during initial bootstrap to avoid flashing
-  const [suppressPrefSaveIndicator, setSuppressPrefSaveIndicator] = useState(true);
-  useEffect(() => {
-    if (isInitialized && !isLoadingPreferences) {
-      const t = setTimeout(() => setSuppressPrefSaveIndicator(false), 500);
-      return () => clearTimeout(t);
-    }
-  }, [isInitialized, isLoadingPreferences]);
-
-  const combinedIsSaving = isSaving || (!suppressPrefSaveIndicator && isSavingPreferences);
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
   const handleAddColumnWrapper = useCallback((name: string) => {
@@ -588,7 +578,7 @@ const RundownIndexContent = () => {
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
         hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={combinedIsSaving}
+        isSaving={isSaving || isSavingPreferences}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}

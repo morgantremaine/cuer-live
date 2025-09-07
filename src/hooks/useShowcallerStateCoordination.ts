@@ -59,8 +59,7 @@ export const useShowcallerStateCoordination = ({
   } = useShowcallerVisualState({
     items,
     rundownId,
-    userId,
-    disableAutoSave: true // Disable auto-save since simple sync handles persistence
+    userId
   });
 
   // Enhanced external state handler with suppression window

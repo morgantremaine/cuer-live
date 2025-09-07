@@ -7,12 +7,10 @@ import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
 import { UnifiedRundownState } from '@/types/interfaces';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
 
 export const useRundownStateCoordination = () => {
-  // Stable connection state - once connected, stay connected
-  const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
   const { user } = useAuth();
   const userId = user?.id;
@@ -203,13 +201,6 @@ export const useRundownStateCoordination = () => {
     persistedState.rundownId, // Pass rundownId for broadcasts
     userId // Pass userId for broadcasts
   );
-  
-  // Update stable connection state only when rundown is truly ready
-  useEffect(() => {
-    if (persistedState.rundownId && !persistedState.isLoading && !stableIsConnected) {
-      setStableIsConnected(true);
-    }
-  }, [persistedState.rundownId, persistedState.isLoading, stableIsConnected]);
 
   // Simplified processing state - no teleprompter interference
   const isProcessingRealtimeUpdate = persistedState.isProcessingRealtimeUpdate;
@@ -231,8 +222,7 @@ export const useRundownStateCoordination = () => {
       isLoading: persistedState.isLoading,
       hasUnsavedChanges: persistedState.hasUnsavedChanges,
       isSaving: persistedState.isSaving,
-      // Use stable connection state to prevent flickering
-      isConnected: stableIsConnected,
+      isConnected: persistedState.isConnected || showcallerCoordination.isConnected,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator
       
       // Showcaller visual state from completely separate system

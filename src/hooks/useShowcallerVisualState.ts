@@ -19,14 +19,12 @@ interface UseShowcallerVisualStateProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
-  disableAutoSave?: boolean; // Add flag to disable auto-save when used with simple sync
 }
 
 export const useShowcallerVisualState = ({
   items,
   rundownId,
-  userId,
-  disableAutoSave = false
+  userId
 }: UseShowcallerVisualStateProps) => {
   const [visualState, setVisualState] = useState<ShowcallerVisualState>({
     currentItemStatuses: new Map(),
@@ -46,7 +44,6 @@ export const useShowcallerVisualState = ({
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
   const precisionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const suppressPersistence = useRef<boolean>(false);
 
   // Use precision timing utility
   const {
@@ -77,9 +74,6 @@ export const useShowcallerVisualState = ({
   const handleInitialStateLoaded = useCallback((loadedState: any) => {
     console.log('📺 Applying loaded initial state with precision timing');
     
-    // Suppress persistence during restoration
-    suppressPersistence.current = true;
-    
     // Convert plain object back to Map for statuses
     const statusMap = new Map();
     if (loadedState.currentItemStatuses) {
@@ -102,12 +96,6 @@ export const useShowcallerVisualState = ({
       console.log('📺 Restarting precision timer from saved state');
       setTimeout(() => startPrecisionTimer(), 50);
     }
-    
-    // Re-enable persistence after restoration is complete
-    setTimeout(() => {
-      suppressPersistence.current = false;
-      console.log('📺 Persistence re-enabled after initial restoration');
-    }, 200);
   }, [synchronizeWithExternalState]);
 
   // Initialize state loading
@@ -168,16 +156,6 @@ export const useShowcallerVisualState = ({
 
   // Enhanced debounced save with longer delay and critical change detection
   const debouncedSaveVisualState = useCallback((state: ShowcallerVisualState, isCritical: boolean = false) => {
-    // Skip save if persistence is suppressed or auto-save is disabled
-    if (suppressPersistence.current || disableAutoSave) {
-      if (disableAutoSave) {
-        console.log('📺 Save skipped - auto-save disabled (using simple sync)');
-      } else {
-        console.log('📺 Save suppressed during restoration/self-healing');
-      }
-      return;
-    }
-    
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -188,7 +166,7 @@ export const useShowcallerVisualState = ({
     saveTimeoutRef.current = setTimeout(() => {
       saveShowcallerVisualState(state);
     }, delay);
-  }, [saveShowcallerVisualState, disableAutoSave]);
+  }, [saveShowcallerVisualState]);
 
   // Update visual state without touching main rundown state
   const updateVisualState = useCallback((updates: Partial<ShowcallerVisualState>, shouldSync: boolean = false, isCritical: boolean = false) => {
@@ -706,9 +684,6 @@ export const useShowcallerVisualState = ({
       if (fallbackSegment) {
         console.log('🔧 Self-healing: Moving to fallback segment:', fallbackSegment.id);
         
-        // Suppress persistence during self-healing
-        suppressPersistence.current = true;
-        
         // Rebuild status map for the new current segment
         const newStatuses = new Map();
         const fallbackIndex = items.findIndex(item => item.id === fallbackSegment.id);
@@ -734,13 +709,7 @@ export const useShowcallerVisualState = ({
           currentItemStatuses: newStatuses,
           isPlaying: wasPlaying,
           controllerId: userId
-        }, false, false); // Don't save during self-healing
-        
-        // Re-enable persistence after self-healing
-        setTimeout(() => {
-          suppressPersistence.current = false;
-          console.log('📺 Persistence re-enabled after self-healing');
-        }, 100);
+        }, true, true); // Save changes if we're the controller
         
         // Restart timer if was playing
         if (wasPlaying) {
@@ -750,9 +719,6 @@ export const useShowcallerVisualState = ({
       } else {
         console.log('🔧 Self-healing: No valid segments found, clearing state');
         
-        // Suppress persistence during self-healing
-        suppressPersistence.current = true;
-        
         // No valid segments exist, clear the showcaller state
         updateVisualState({
           currentSegmentId: null,
@@ -761,13 +727,7 @@ export const useShowcallerVisualState = ({
           currentItemStatuses: new Map(),
           isPlaying: false,
           controllerId: null
-        }, false, false); // Don't save during self-healing
-        
-        // Re-enable persistence after self-healing
-        setTimeout(() => {
-          suppressPersistence.current = false;
-          console.log('📺 Persistence re-enabled after self-healing');
-        }, 100);
+        }, true, true);
         
         stopPrecisionTimer();
         resetDriftCompensation();
@@ -791,19 +751,9 @@ export const useShowcallerVisualState = ({
       // Update status map if any invalid items were removed (throttled)
       if (statusMapChanged && (now - lastSelfHealingRef.current) >= selfHealingThrottleMs) {
         lastSelfHealingRef.current = now;
-        
-        // Suppress persistence during self-healing cleanup
-        suppressPersistence.current = true;
-        
         updateVisualState({
           currentItemStatuses: newStatuses
-        }, false, false); // Don't save during self-healing
-        
-        // Re-enable persistence after cleanup
-        setTimeout(() => {
-          suppressPersistence.current = false;
-          console.log('📺 Persistence re-enabled after status cleanup');
-        }, 100);
+        }, visualState.controllerId === userId, false);
       }
     }
   }, [

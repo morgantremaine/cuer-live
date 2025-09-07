@@ -40,7 +40,6 @@ export const useSimpleShowcallerSync = ({
   const lastUpdateRef = useRef<string>('');
   const hasLoadedInitialState = useRef<boolean>(false);
   const isLoadingInitialState = useRef<boolean>(false);
-  const isRestoringInitialState = useRef<boolean>(false);
   const lastActionTimeRef = useRef<number | null>(null);
 
   // Helper functions
@@ -375,9 +374,6 @@ export const useSimpleShowcallerSync = ({
           return;
         }
 
-        // Prevent saves during restoration
-        isRestoringInitialState.current = true;
-        
         if (data?.showcaller_state) {
           console.log('📺 Simple: Found existing showcaller state:', data.showcaller_state);
           
@@ -423,11 +419,6 @@ export const useSimpleShowcallerSync = ({
           }
         }
         
-        // Allow saves after restoration is complete
-        setTimeout(() => {
-          isRestoringInitialState.current = false;
-        }, 100);
-        
         hasLoadedInitialState.current = true;
       } catch (error) {
         console.error('📺 Simple: Error loading initial state:', error);
@@ -445,7 +436,7 @@ export const useSimpleShowcallerSync = ({
 
   // Save showcaller state to database whenever it changes
   const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
-    if (!rundownId || !hasLoadedInitialState.current || isRestoringInitialState.current) return;
+    if (!rundownId || !hasLoadedInitialState.current) return;
 
     try {
       console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
@@ -476,7 +467,7 @@ export const useSimpleShowcallerSync = ({
   // Auto-save state changes (debounced)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    if (!hasLoadedInitialState.current || isRestoringInitialState.current) return;
+    if (!hasLoadedInitialState.current) return;
 
     // Debounce saves to prevent too frequent updates
     if (saveTimeoutRef.current) {
