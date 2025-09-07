@@ -46,8 +46,8 @@ export const useRowStyling = ({
 
   // Selection styling with inset shadow to avoid misalignment
   if (isSelected) {
-    // Use inset box-shadow for all selected rows to avoid adding outside borders
-    rowClass += ' ![box-shadow:inset_0_0_0_2px_rgb(59_130_246)]';
+    // Use inset box-shadow with higher z-index to appear above custom colors
+    rowClass += ' relative z-10 ![box-shadow:inset_0_0_0_2px_rgb(59_130_246)]';
     
     // Add subtle background highlight for non-header, non-colored rows only
     if (!isHeader && (!color || color === '#FFFFFF' || color === '#ffffff') && !isFloating && !isFloated) {
