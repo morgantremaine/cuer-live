@@ -4,12 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ShowcallerBroadcastState {
   rundownId: string;
   userId: string;
-  tabId?: string; // Optional for backward compatibility
   timestamp: number;
   isPlaying?: boolean;
   currentSegmentId?: string;
   timeRemaining?: number;
-  playbackStartTime?: number;
+  playbackStartTime?: number; // Add precise playback start time
   isController?: boolean;
   action?: 'play' | 'pause' | 'forward' | 'backward' | 'reset' | 'jump' | 'timing' | 'sync';
   jumpToSegmentId?: string;
@@ -18,7 +17,7 @@ export interface ShowcallerBroadcastState {
 class ShowcallerBroadcastManager {
   private channels: Map<string, any> = new Map();
   private callbacks: Map<string, Set<(state: ShowcallerBroadcastState) => void>> = new Map();
-  private lastAppliedTimestamp: Map<string, number> = new Map();
+  private ownUpdateTracking: Map<string, Set<string>> = new Map();
   private connectionStatus: Map<string, string> = new Map();
 
   // Create or get broadcast channel for rundown
@@ -82,8 +81,19 @@ class ShowcallerBroadcastManager {
   broadcastState(state: ShowcallerBroadcastState): void {
     const channel = this.ensureChannel(state.rundownId);
     
-    // Update last applied timestamp for deduplication
-    this.lastAppliedTimestamp.set(state.rundownId, state.timestamp);
+    // Track own update to prevent echo
+    const updateId = `${state.userId}-${state.timestamp}`;
+    const ownUpdates = this.ownUpdateTracking.get(state.rundownId) || new Set();
+    ownUpdates.add(updateId);
+    this.ownUpdateTracking.set(state.rundownId, ownUpdates);
+
+    // Clean up old tracking after delay
+    setTimeout(() => {
+      const updates = this.ownUpdateTracking.get(state.rundownId);
+      if (updates) {
+        updates.delete(updateId);
+      }
+    }, 8000);
 
     console.log('📺 Broadcasting showcaller state:', state.action || 'state_update', state);
     
@@ -98,24 +108,25 @@ class ShowcallerBroadcastManager {
   subscribeToShowcallerBroadcasts(
     rundownId: string, 
     callback: (state: ShowcallerBroadcastState) => void,
-    tabId: string
+    userId: string
   ): () => void {
     this.ensureChannel(rundownId);
     
     const callbacks = this.callbacks.get(rundownId) || new Set();
     
-    // Wrap callback to filter own updates using tabId
+    // Wrap callback to filter own updates
     const wrappedCallback = (state: ShowcallerBroadcastState) => {
-      // Skip own updates based on tabId
-      if (state.tabId && state.tabId === tabId) {
-        console.log('📺 Skipping own showcaller broadcast (tabId match)');
+      // Skip own updates
+      if (state.userId === userId) {
+        console.log('📺 Skipping own showcaller broadcast');
         return;
       }
-      
-      // Skip older updates
-      const lastTimestamp = this.lastAppliedTimestamp.get(rundownId) || 0;
-      if (state.timestamp <= lastTimestamp) {
-        console.log('📺 Skipping old showcaller broadcast');
+
+      // Check if this is a duplicate of our own update
+      const updateId = `${state.userId}-${state.timestamp}`;
+      const ownUpdates = this.ownUpdateTracking.get(rundownId) || new Set();
+      if (ownUpdates.has(updateId)) {
+        console.log('📺 Skipping echoed showcaller broadcast');
         return;
       }
 
@@ -150,14 +161,15 @@ class ShowcallerBroadcastManager {
     }
     
     this.callbacks.delete(rundownId);
-    this.lastAppliedTimestamp.delete(rundownId);
+    this.ownUpdateTracking.delete(rundownId);
     this.connectionStatus.delete(rundownId);
   }
 
-  // Check if timestamp is newer than last applied (for deduplication)
-  isNewerUpdate(rundownId: string, timestamp: number): boolean {
-    const lastTimestamp = this.lastAppliedTimestamp.get(rundownId) || 0;
-    return timestamp > lastTimestamp;
+  // Check if user's update should be skipped (for deduplication)
+  isOwnUpdate(rundownId: string, userId: string, timestamp: number): boolean {
+    const updateId = `${userId}-${timestamp}`;
+    const ownUpdates = this.ownUpdateTracking.get(rundownId) || new Set();
+    return ownUpdates.has(updateId);
   }
 
   // Get connection status for a rundown
