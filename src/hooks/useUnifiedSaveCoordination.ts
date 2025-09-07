@@ -304,11 +304,26 @@ export const useUnifiedSaveCoordination = () => {
       console.log('🧹 Cleared entire save queue');
     }
   }, []);
-
   return {
-    // Primary coordination functions
+    // Primary coordination functions  
     coordinateAutoSave,
     coordinateTeleprompterSave,
+    coordinateShowcallerSave,
+    coordinateManualSave,
+    
+    // Generic coordination
+    coordinatedSave,
+    
+    // State queries
+    isAnySaveActive,
+    isSaving,
+    getCoordinationState,
+    
+    // Queue management
+    forceProcessQueue,
+    clearQueue
+  };
+};
     coordinateShowcallerSave,
     coordinateManualSave,
     

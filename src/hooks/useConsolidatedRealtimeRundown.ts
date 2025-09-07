@@ -67,8 +67,8 @@ export const useConsolidatedRealtimeRundown = ({
     trackOwnUpdate
   };
 
-  // Process realtime update with enhanced conflict prevention and proper doc version tracking
-  const processRealtimeUpdate = useCallback((payload: any, globalState: any) => {
+  // Process realtime update with bulletproof conflict prevention and item-level dirty queue
+  const processRealtimeUpdate = useCallback(async (payload: any, globalState: any) => {
     const updateTimestamp = payload.new?.updated_at;
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
     const incomingDocVersion = payload.new?.doc_version || 0;
@@ -97,11 +97,45 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-        // FIXED: Skip updates from same tab (not same user)
-        if (payload.new?.tab_id === getTabId()) {
-          console.log('⏭️ Skipping realtime update - own update (same tab)');
-          return;
-        }
+    // FIXED: Skip updates from same tab (not same user)
+    if (payload.new?.tab_id === getTabId()) {
+      console.log('⏭️ Skipping realtime update - own update (same tab)');
+      return;
+    }
+
+    // BULLETPROOF: Import LocalShadow for advanced field protection
+    const { localShadowStore } = await import('@/state/localShadows');
+    const activeShadows = localShadowStore.getActiveShadows();
+    
+    // Check if this update affects any actively edited items (item-level dirty protection)
+    const hasActivelyEditedItems = payload.new?.items && Array.isArray(payload.new.items) && 
+      payload.new.items.some((item: any) => activeShadows.items.has(item.id));
+    
+    if (hasActivelyEditedItems) {
+      console.log('🛡️ Realtime: Queueing update - actively editing items', {
+        activeItems: Array.from(activeShadows.items.keys()),
+        docVersion: incomingDocVersion
+      });
+      
+      // Queue the update to be processed after active editing stops
+      if (!globalState.itemDirtyQueue) {
+        globalState.itemDirtyQueue = [];
+      }
+      
+      globalState.itemDirtyQueue.push({
+        payload,
+        timestamp: normalizedTimestamp,
+        docVersion: incomingDocVersion,
+        queuedAt: Date.now()
+      });
+      
+      // Process queued updates after a brief delay (when typing stops)
+      setTimeout(() => {
+        processQueuedUpdates(globalState);
+      }, 2000);
+      
+      return; // Don't process immediately
+    }
 
     // Enhanced gap detection with improved handling
     const expectedVersion = currentDocVersion + 1;
@@ -253,9 +287,13 @@ export const useConsolidatedRealtimeRundown = ({
       }
       
       try {
+        // Apply LocalShadow protection before dispatching to callbacks
+        const { localShadowStore } = await import('@/state/localShadows');
+        const protectedPayload = localShadowStore.applyShadowsToData(payload.new);
+        
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
           try { 
-            callback(payload.new); 
+            callback(protectedPayload); 
           } catch (error) { 
             console.error('Error in rundown callback:', error);
           }
@@ -266,6 +304,45 @@ export const useConsolidatedRealtimeRundown = ({
     }
 
   }, [rundownId, user?.id, isSharedView]);
+
+  // Process queued updates when item editing stops
+  const processQueuedUpdates = useCallback(async (globalState: any) => {
+    if (!globalState.itemDirtyQueue || globalState.itemDirtyQueue.length === 0) {
+      return;
+    }
+    
+    const { localShadowStore } = await import('@/state/localShadows');
+    const activeShadows = localShadowStore.getActiveShadows();
+    
+    // Only process if no items are actively being edited
+    if (activeShadows.items.size === 0) {
+      console.log('🛡️ Processing queued realtime updates', {
+        queueSize: globalState.itemDirtyQueue.length
+      });
+      
+      const queuedUpdates = [...globalState.itemDirtyQueue];
+      globalState.itemDirtyQueue = [];
+      
+      // Process each queued update
+      queuedUpdates.forEach((queuedUpdate: any) => {
+        try {
+          processRealtimeUpdate(queuedUpdate.payload, globalState);
+        } catch (error) {
+          console.error('❌ Error processing queued update:', error);
+        }
+      });
+    } else {
+      console.log('🛡️ Still actively editing - keeping updates queued', {
+        activeItems: Array.from(activeShadows.items.keys()),
+        queueSize: globalState.itemDirtyQueue.length
+      });
+      
+      // Re-schedule processing check
+      setTimeout(() => {
+        processQueuedUpdates(globalState);
+      }, 1000);
+    }
+  }, [processRealtimeUpdate]);
 
   useEffect(() => {
     // For shared views, allow subscription without authentication

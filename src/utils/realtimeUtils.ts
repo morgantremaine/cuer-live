@@ -36,7 +36,7 @@ export class TimeoutManager {
   }
 }
 
-// Mobile-specific realtime connection optimization
+// Enhanced mobile-specific realtime connection optimization
 export const getMobileOptimizedDelays = () => {
   // Check if we're on a mobile/tablet device
   const isMobileOrTablet = typeof window !== 'undefined' && (
@@ -51,7 +51,9 @@ export const getMobileOptimizedDelays = () => {
       activityTimeout: 6000,       // Shorter activity timeout
       contentProcessingDelay: 400,  // Shorter content processing visibility
       heartbeatInterval: 25000,    // More frequent heartbeat
-      reconnectDelay: 1000         // Faster reconnection
+      reconnectDelay: 1000,        // Faster reconnection
+      saveDebounce: 1200,          // Shorter save debounce for mobile
+      typingProtection: 2500       // Shorter typing protection window
     };
   }
   
@@ -60,6 +62,76 @@ export const getMobileOptimizedDelays = () => {
     activityTimeout: 8000,
     contentProcessingDelay: 600,
     heartbeatInterval: 30000,
-    reconnectDelay: 2000
+    reconnectDelay: 2000,
+    saveDebounce: 1500,            // Standard save debounce
+    typingProtection: 3000         // Standard typing protection
   };
 };
+
+// Exponential backoff for reconnection attempts
+export const getReconnectDelay = (attemptCount: number): number => {
+  const baseDelay = getMobileOptimizedDelays().reconnectDelay;
+  const maxDelay = 30000; // Max 30 seconds
+  const delay = Math.min(baseDelay * Math.pow(2, attemptCount), maxDelay);
+  
+  // Add jitter to prevent thundering herd
+  const jitter = delay * 0.1 * Math.random();
+  return delay + jitter;
+};
+
+// Connection stability monitoring
+export class ConnectionMonitor {
+  private reconnectAttempts = 0;
+  private lastDisconnect = 0;
+  private healthCheck?: NodeJS.Timeout;
+  private isHealthy = true;
+  
+  constructor(private onReconnectNeeded: () => void) {}
+  
+  recordDisconnect(): void {
+    this.lastDisconnect = Date.now();
+    this.reconnectAttempts++;
+    this.isHealthy = false;
+    
+    console.warn('🔌 Connection lost - attempt', this.reconnectAttempts);
+  }
+  
+  recordReconnect(): void {
+    const downtime = Date.now() - this.lastDisconnect;
+    console.log('✅ Connection restored after', downtime, 'ms');
+    
+    this.reconnectAttempts = 0;
+    this.isHealthy = true;
+    this.startHealthCheck();
+  }
+  
+  getReconnectDelay(): number {
+    return getReconnectDelay(this.reconnectAttempts);
+  }
+  
+  startHealthCheck(): void {
+    this.stopHealthCheck();
+    
+    this.healthCheck = setInterval(() => {
+      // Simple heartbeat - if no realtime activity for too long, trigger reconnect
+      const maxSilentTime = getMobileOptimizedDelays().heartbeatInterval * 2;
+      const timeSinceLastActivity = Date.now() - this.lastDisconnect;
+      
+      if (this.isHealthy && timeSinceLastActivity > maxSilentTime) {
+        console.warn('🔌 Connection appears stale - triggering reconnect');
+        this.onReconnectNeeded();
+      }
+    }, getMobileOptimizedDelays().heartbeatInterval);
+  }
+  
+  stopHealthCheck(): void {
+    if (this.healthCheck) {
+      clearInterval(this.healthCheck);
+      this.healthCheck = undefined;
+    }
+  }
+  
+  destroy(): void {
+    this.stopHealthCheck();
+  }
+}

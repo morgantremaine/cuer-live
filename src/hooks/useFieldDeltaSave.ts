@@ -143,7 +143,7 @@ export const useFieldDeltaSave = (
     return deltas;
   }, []);
 
-  // Apply deltas to database using optimized updates with OCC
+  // Apply deltas to database using optimized updates with LocalShadow protection
   const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState, retryCount: number = 0): Promise<{ updatedAt: string; docVersion: number }> => {
     if (!rundownId) {
       throw new Error('No rundown ID provided');
@@ -151,6 +151,9 @@ export const useFieldDeltaSave = (
 
     const updateTimestamp = new Date().toISOString();
     trackOwnUpdate(updateTimestamp);
+
+    // Import LocalShadow for bulletproof field protection
+    const { localShadowStore } = await import('@/state/localShadows');
 
     // Group deltas by type for efficient batching
     const globalDeltas = deltas.filter(d => !d.itemId);
@@ -210,80 +213,84 @@ export const useFieldDeltaSave = (
       console.warn('🚨 OCC Conflict detected:', { 
         serverVersion: serverDocVersion, 
         expectedVersion: expectedDocVersion,
-        delta: 'Refreshing local state and retrying with comprehensive field protection'
+        delta: 'Refreshing local state with LocalShadow protection'
       });
       
-      // CRITICAL: Get comprehensive field protection - not just focus, but recent typing too
-      let protectedFields = new Set<string>();
-      const TYPING_PROTECTION_MS = 3000; // 3 second protection window
-      let focusTracker: any = null;
+      // BULLETPROOF: Use LocalShadow store for comprehensive protection
+      const activeShadows = localShadowStore.getActiveShadows();
+      const recentFields = localShadowStore.getRecentlyTypedFields(3000);
       
-      try {
-        // Import the focus tracker to get active field and recent typing
-        const { globalFocusTracker } = await import('@/utils/focusTracker');
-        focusTracker = globalFocusTracker;
-        const activeField = globalFocusTracker.getActiveField();
-        
-        if (activeField) {
-          protectedFields.add(activeField);
-          console.log('🛡️ OCC Conflict: protecting actively focused field:', activeField);
-        }
-        
-        // Also protect recently typed fields (covers quick focus changes)
-        const recentFields = globalFocusTracker.getRecentlyTypedFields?.(TYPING_PROTECTION_MS) || [];
-        recentFields.forEach((fk: string) => protectedFields.add(fk));
-        if (recentFields.length > 0) {
-          console.log('🛡️ OCC Conflict: protecting recently typed fields:', recentFields);
-        }
-        
-      } catch (err) {
-        console.warn('⚠️ OCC Conflict: could not get field protection info', err);
-      }
+      console.log('🛡️ OCC Conflict: LocalShadow protection active', {
+        activeItems: activeShadows.items.size,
+        activeGlobals: activeShadows.globals.size,
+        recentFields: recentFields.length
+      });
       
-      // Create refreshed state, but preserve actively typed fields
-      let refreshedItems = latestRow?.items || currentState.items;
+      // Create refreshed state starting from server data
+      let refreshedItems = Array.isArray(latestRow?.items) ? [...latestRow.items] : currentState.items;
       
-      // Preserve values for all protected fields
-      if (protectedFields.size > 0 && Array.isArray(currentState.items) && Array.isArray(refreshedItems)) {
-        console.log('🛡️ OCC Conflict: protecting fields during resolution:', Array.from(protectedFields));
-        
+      // Apply active shadows to preserve typing
+      if (Array.isArray(refreshedItems) && Array.isArray(currentState.items)) {
         refreshedItems = refreshedItems.map((serverItem: any) => {
-          // Find the corresponding item in current state
-          const currentItem = currentState.items.find((ci: any) => ci.id === serverItem.id);
-          if (!currentItem) return serverItem;
+          const itemShadows = activeShadows.items.get(serverItem.id);
+          if (!itemShadows) return serverItem;
           
-          let mergedItem = { ...serverItem };
+          let protectedItem = { ...serverItem };
           
-          // Check each protected field and preserve current or typed buffer value if it matches this item
-          protectedFields.forEach(fieldKey => {
-            const [itemId, fieldName] = fieldKey.split('-');
-            if (itemId === serverItem.id && fieldName) {
-              // Prefer the most recent typed value from the typing buffer
-              const typedEntry = focusTracker?.getLatestValue?.(fieldKey);
-              const now = Date.now();
-              let valueToKeep: any = currentItem[fieldName];
-              if (typedEntry && (now - typedEntry.timestamp) <= TYPING_PROTECTION_MS) {
-                valueToKeep = typedEntry.value;
-              }
-              console.log('🛡️ OCC Conflict: preserving field', { itemId, fieldName, currentValue: valueToKeep, serverValue: serverItem[fieldName] });
-              mergedItem[fieldName] = valueToKeep;
-            }
+          // Apply all active shadows for this item
+          Object.entries(itemShadows).forEach(([fieldName, shadow]) => {
+            console.log('🛡️ OCC Conflict: LocalShadow preserving field', { 
+              itemId: serverItem.id, 
+              fieldName, 
+              shadowValue: shadow.value,
+              serverValue: serverItem[fieldName]
+            });
+            protectedItem[fieldName] = shadow.value;
           });
           
-          return mergedItem;
+          return protectedItem;
         });
       }
       
-      // Create updated state with server's version but protected fields preserved
+      // Apply global shadows
+      let refreshedTitle = latestRow?.title || currentState.title;
+      let refreshedStartTime = latestRow?.start_time || currentState.startTime;
+      let refreshedTimezone = latestRow?.timezone || currentState.timezone;
+      let refreshedShowDate = latestRow?.show_date ? new Date(latestRow.show_date) : currentState.showDate;
+      let refreshedExternalNotes = latestRow?.external_notes || currentState.externalNotes;
+      
+      // Apply global field shadows
+      if (activeShadows.globals.has('title')) {
+        refreshedTitle = activeShadows.globals.get('title')!.value;
+        console.log('🛡️ OCC Conflict: LocalShadow preserving title');
+      }
+      if (activeShadows.globals.has('startTime')) {
+        refreshedStartTime = activeShadows.globals.get('startTime')!.value;
+        console.log('🛡️ OCC Conflict: LocalShadow preserving startTime');
+      }
+      if (activeShadows.globals.has('timezone')) {
+        refreshedTimezone = activeShadows.globals.get('timezone')!.value;
+        console.log('🛡️ OCC Conflict: LocalShadow preserving timezone');
+      }
+      if (activeShadows.globals.has('showDate')) {
+        refreshedShowDate = activeShadows.globals.get('showDate')!.value;
+        console.log('🛡️ OCC Conflict: LocalShadow preserving showDate');
+      }
+      if (activeShadows.globals.has('externalNotes')) {
+        refreshedExternalNotes = activeShadows.globals.get('externalNotes')!.value;
+        console.log('🛡️ OCC Conflict: LocalShadow preserving externalNotes');
+      }
+      
+      // Create updated state with server's version but LocalShadows preserved
       const refreshedState = {
         ...currentState,
         docVersion: serverDocVersion,
         items: refreshedItems,
-        title: latestRow?.title || currentState.title,
-        startTime: latestRow?.start_time || currentState.startTime,
-        timezone: latestRow?.timezone || currentState.timezone,
-        showDate: latestRow?.show_date ? new Date(latestRow.show_date) : currentState.showDate,
-        externalNotes: latestRow?.external_notes || currentState.externalNotes
+        title: refreshedTitle,
+        startTime: refreshedStartTime,
+        timezone: refreshedTimezone,
+        showDate: refreshedShowDate,
+        externalNotes: refreshedExternalNotes
       };
       
       // Update the saved state reference to the refreshed server state
@@ -293,7 +300,7 @@ export const useFieldDeltaSave = (
       const recomputedDeltas = extractDeltas(currentState, refreshedState);
       
       if (recomputedDeltas.length === 0) {
-        console.log('✅ No conflicts after state refresh - changes already applied');
+        console.log('✅ No conflicts after LocalShadow state refresh - changes already applied');
         return { updatedAt: latestRow.updated_at, docVersion: serverDocVersion };
       }
       
@@ -303,7 +310,7 @@ export const useFieldDeltaSave = (
         return await performFullUpdate(currentState, updateTimestamp);
       }
       
-      console.log('🔄 Retrying save with refreshed state and recomputed deltas');
+      console.log('🔄 Retrying save with LocalShadow-protected state and recomputed deltas');
       // Recursively call with refreshed state - but limit recursion
       return await saveDeltasToDatabase(recomputedDeltas, refreshedState, retryCount + 1);
     }
