@@ -324,19 +324,3 @@ export const useUnifiedSaveCoordination = () => {
     clearQueue
   };
 };
-    coordinateShowcallerSave,
-    coordinateManualSave,
-    
-    // Generic coordination
-    coordinatedSave,
-    
-    // State queries
-    isAnySaveActive,
-    isSaving,
-    getCoordinationState,
-    
-    // Control functions
-    forceProcessQueue,
-    clearQueue
-  };
-};
