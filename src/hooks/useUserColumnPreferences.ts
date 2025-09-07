@@ -394,6 +394,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Apply layout while preserving all available columns (defaults + team customs + user customs)
   const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
+    console.log('🎯 applyLayout called with', layoutColumns.length, 'columns, shouldPersist:', shouldPersist);
+    console.log('📊 Current loading state - isLoadingRef.current:', isLoadingRef.current);
     debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
     // Create master list of all available columns (defaults + team + existing user columns)
@@ -475,9 +477,16 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     
     setColumns(finalColumns);
     
-    // Only save if shouldPersist is true (prevents saved layouts from overwriting user prefs)
-    if (shouldPersist && !isLoadingRef.current) {
+    // Force save when applying layout (user explicitly chose this layout)
+    if (shouldPersist) {
+      console.log('💾 applyLayout: Forcing immediate save of layout to user preferences');
+      console.log('📋 Columns being saved:', finalColumns.filter(c => c.isVisible).length, 'visible out of', finalColumns.length, 'total');
+      
+      // Bypass loading check for explicit layout application - user chose this layout
+      setIsSaving(true);
       saveColumnPreferences(finalColumns, true);
+    } else {
+      console.log('⏭️ applyLayout: Skipping save (shouldPersist = false) - this is a preview');
     }
   }, [columns, teamColumns, saveColumnPreferences]);
 
