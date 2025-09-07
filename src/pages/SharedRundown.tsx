@@ -155,41 +155,48 @@ const SharedRundown = () => {
     return unsubscribe;
   }, [rundownId]);
 
-  // Handle tab refocus - only refresh data when becoming active, don't interfere with realtime
+  // Handle tab refocus - use RPC for normalized data refresh
   useEffect(() => {
     // Only trigger refresh when tab has just become active (transition from inactive to active)
     if (!hasJustBecomeActive || !rundownId) return;
 
-    const performSilentRefresh = async () => {
+    const performNormalizedRefresh = async () => {
       try {
-        console.log('📱 SharedRundown performing silent refresh on tab refocus');
+        console.log('📱 Window refocused - triggering refresh');
+        console.log('📱 SharedRundown performing RPC refresh on tab refocus');
         
-        // Refresh the shared rundown data silently
+        // Use RPC function for normalized, accurate data
         const { data: freshData, error } = await supabase
-          .from('rundowns')
-          .select('*')
-          .eq('id', rundownId)
-          .eq('visibility', 'public')
-          .single();
+          .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
         if (error) {
-          console.warn('Silent refresh failed for shared rundown:', error);
+          console.warn('RPC refresh failed for shared rundown:', error);
           return;
         }
 
         if (freshData && isMountedRef.current) {
-          console.log('📱 SharedRundown data refreshed silently');
-          setLocalRundownData(freshData);
-          
-          // Reconnect realtime - the cellBroadcast system handles this automatically
-          // when the useEffect above re-runs due to rundownId dependency
+          console.log('📱 SharedRundown data refreshed via RPC');
+          const normalizedData = {
+            id: freshData.id,
+            title: freshData.title || 'Untitled Rundown',
+            items: freshData.items || [],
+            columns: freshData.columns || [],
+            startTime: freshData.start_time || '09:00:00',
+            timezone: freshData.timezone || 'UTC',
+            lastUpdated: freshData.updated_at,
+            showcallerState: freshData.showcaller_state,
+            visibility: freshData.visibility,
+            docVersion: freshData.doc_version,
+            lastUpdatedBy: freshData.last_updated_by
+          };
+          setLocalRundownData(normalizedData);
         }
       } catch (error) {
-        console.warn('SharedRundown silent refresh error:', error);
+        console.warn('SharedRundown RPC refresh error:', error);
       }
     };
 
-    performSilentRefresh();
+    performNormalizedRefresh();
   }, [hasJustBecomeActive, rundownId]);
 
   // Update browser tab title when rundown title changes

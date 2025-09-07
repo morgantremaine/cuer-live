@@ -62,52 +62,53 @@ export const useSharedRundownState = () => {
     };
   }, []);
 
-  // Pure realtime data loading function - only called on initial load or realtime updates
+  // Normalized data loading function using RPC - ensures consistent data format
   const loadRundownData = useCallback(async (forceReload = false) => {
     if (!rundownId || isLoadingRef.current || !mountedRef.current) {
       return;
     }
 
-    logger.debug(`Loading rundown data for ID: ${rundownId} (realtime-driven)`);
+    logger.debug(`Loading normalized rundown data for ID: ${rundownId} (RPC-driven)`);
     isLoadingRef.current = true;
 
     try {
-      // Use the RPC function that returns data for shared rundowns
+      // Use RPC function for consistent, normalized data format
       const { data, error: queryError } = await supabase
         .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
 
       if (!mountedRef.current) return;
 
       if (queryError) {
-        logger.error('Error loading rundown:', queryError);
+        logger.error('Error loading rundown via RPC:', queryError);
         setError(`Database error: ${queryError.message}`);
         setRundownData(null);
       } else if (data) {
-        const newRundownData = {
+        // Normalize data structure for consistent handling
+        const normalizedRundownData = {
           id: data.id,
           title: data.title || 'Untitled Rundown',
-          items: data.items || [],
-          columns: data.columns || [],
+          items: Array.isArray(data.items) ? data.items : [],
+          columns: Array.isArray(data.columns) ? data.columns : [],
           startTime: data.start_time || '09:00:00',
           timezone: data.timezone || 'UTC',
           lastUpdated: data.updated_at,
-          showcallerState: data.showcaller_state,
+          showcallerState: data.showcaller_state || null,
           visibility: data.visibility,
-          docVersion: data.doc_version,
+          docVersion: data.doc_version || 0,
           lastUpdatedBy: data.last_updated_by
         };
         
-        logger.debug(`Updated rundown data: ${newRundownData.title} (realtime update)`);
-        setRundownData(newRundownData);
-        lastDocVersion.current = data.doc_version || 0;
+        logger.debug(`Normalized rundown data loaded: ${normalizedRundownData.title} (v${normalizedRundownData.docVersion})`);
+        setRundownData(normalizedRundownData);
+        lastDocVersion.current = normalizedRundownData.docVersion;
         setError(null);
       } else {
-        setError('Rundown not found');
+        setError('Rundown not found or not public');
         setRundownData(null);
       }
     } catch (error) {
       if (!mountedRef.current) return;
-      logger.error('Network error loading rundown', error);
+      logger.error('Network error loading rundown via RPC', error);
       setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setRundownData(null);
     }

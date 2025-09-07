@@ -143,7 +143,7 @@ export const useFieldDeltaSave = (
     return deltas;
   }, []);
 
-  // Apply deltas to database using optimized updates
+  // Apply deltas to database using optimized updates with OCC
   const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState): Promise<{ updatedAt: string; docVersion: number }> => {
     if (!rundownId) {
       throw new Error('No rundown ID provided');
@@ -164,8 +164,8 @@ export const useFieldDeltaSave = (
       return await performFullUpdate(currentState, updateTimestamp);
     }
 
-    // Perform optimized delta update
-    console.log('⚡ Performing delta update:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
+    // Perform optimized delta update with OCC
+    console.log('⚡ Performing delta update with OCC:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
     
     const updateData: any = {};
     
@@ -190,8 +190,7 @@ export const useFieldDeltaSave = (
       }
     });
 
-    // CRITICAL: Always read latest server state before applying deltas
-    // This prevents overwriting teammates' concurrent changes
+    // CRITICAL: Read latest server state for OCC conflict detection
     const { data: latestRow, error: latestErr } = await supabase
       .from('rundowns')
       .select('*')
@@ -203,7 +202,20 @@ export const useFieldDeltaSave = (
       return await performFullUpdate(currentState, updateTimestamp);
     }
 
-    console.log('🔄 Merging deltas onto latest server state');
+    // OCC: Check for concurrent changes that would conflict with our edits
+    const serverDocVersion = latestRow?.doc_version || 0;
+    const expectedDocVersion = (currentState as any)?.docVersion || 0;
+    
+    if (serverDocVersion > expectedDocVersion) {
+      console.warn('🚨 OCC Conflict detected:', { 
+        serverVersion: serverDocVersion, 
+        expectedVersion: expectedDocVersion,
+        delta: 'Update skipped to prevent overwrite'
+      });
+      throw new Error(`Concurrent edit detected. Please refresh and try again. (Server: v${serverDocVersion}, Local: v${expectedDocVersion})`);
+    }
+
+    console.log('✅ OCC Check passed, merging deltas onto latest server state');
 
     // Start with latest server items
     const baseItems: any[] = Array.isArray(latestRow?.items) ? latestRow.items : [];
@@ -247,7 +259,7 @@ export const useFieldDeltaSave = (
       updateData.external_notes = globalDeltas.find(d => d.field === 'externalNotes')?.value ?? latestRow.external_notes;
     }
     
-    updateData.doc_version = (latestRow?.doc_version || 0) + 1;
+    updateData.doc_version = serverDocVersion + 1;
 
     // Add metadata
     updateData.updated_at = updateTimestamp;
@@ -260,15 +272,27 @@ export const useFieldDeltaSave = (
       console.warn('tab_id not yet in schema cache, skipping:', error);
     }
 
+    // OCC: Use expected doc_version in WHERE clause to ensure atomic update
     const { data, error } = await supabase
       .from('rundowns')
       .update(updateData)
       .eq('id', rundownId)
+      .eq('doc_version', serverDocVersion) // OCC: Only update if doc_version hasn't changed
       .select('updated_at, doc_version')
       .single();
 
     if (error) {
+      // Check if OCC conflict occurred (no rows updated)
+      if (error.code === 'PGRST116' || (error.message && error.message.includes('No rows found'))) {
+        console.warn('🚨 OCC Conflict: Document was modified by another user during save');
+        throw new Error('Document was modified by another user. Please refresh and try again.');
+      }
       throw error;
+    }
+
+    if (!data) {
+      console.warn('🚨 OCC Conflict: No data returned (likely version mismatch)');
+      throw new Error('Document was modified by another user. Please refresh and try again.');
     }
 
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
