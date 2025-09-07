@@ -222,7 +222,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     return total;
   }, [visibleColumns, getColumnWidth]);
 
-  // Dev-only width verification
+  // Dev-only width verification with zoom-specific debugging
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       const checkTableAlignment = () => {
@@ -237,8 +237,25 @@ const RundownContent = React.memo<RundownContentProps>(({
           const headerDelta = Math.abs(headerWidth - calculatedWidth);
           const bodyDelta = Math.abs(bodyWidth - calculatedWidth);
           
+          // Log all width info for zoom-specific debugging
+          console.log('Width Debug:', {
+            zoomLevel,
+            totalTableWidth,
+            calculatedWidth,
+            headerWidth,
+            bodyWidth,
+            headerDelta,
+            bodyDelta,
+            columnWidths: visibleColumns.map(col => ({
+              id: col.id,
+              key: col.key,
+              width: getColumnWidth(col),
+              scaledWidth: `${parseInt(getColumnWidth(col).replace('px', '')) * zoomLevel}px`
+            }))
+          });
+          
           if (headerDelta > 2 || bodyDelta > 2) {
-            console.warn('Table alignment discrepancy detected:', {
+            console.warn('🚨 Table alignment discrepancy detected:', {
               calculatedWidth,
               headerWidth,
               bodyWidth,
