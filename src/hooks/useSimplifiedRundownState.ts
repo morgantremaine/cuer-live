@@ -57,6 +57,8 @@ export const useSimplifiedRundownState = () => {
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
+  // Track when to refresh on next focus to prevent infinite loops
+  const shouldRefreshOnFocusRef = useRef(false);
   
   // Track active structural operations to block realtime updates
   const activeStructuralOperationRef = useRef(false);
@@ -476,9 +478,10 @@ export const useSimplifiedRundownState = () => {
             actions.setShowDate(update.value);
             break;
           case 'structuralChange':
-            // Handle structural changes - trigger refresh to sync new items/deletions
-            console.log('📱 Rundown structural change detected, performing refresh');
-            deferredUpdateRef.current = true;
+            // Handle structural changes - skip any immediate action to prevent infinite loops
+            console.log('📱 Rundown structural change detected - will refresh on next focus');
+            // Mark for refresh on next tab focus instead of immediate refresh
+            shouldRefreshOnFocusRef.current = true;
             break;
           default:
             console.warn('🚨 Unknown rundown-level field:', update.field);
@@ -489,9 +492,10 @@ export const useSimplifiedRundownState = () => {
       
         // Handle item-level updates (existing logic)
         if (update.field === 'structuralChange') {
-          // Handle structural changes - trigger refresh to sync new items/deletions
-          console.log('📱 Item structural change detected, performing refresh');
-          deferredUpdateRef.current = true;
+          // Handle structural changes - skip any immediate action to prevent infinite loops  
+          console.log('📱 Item structural change detected - will refresh on next focus');
+          // Mark for refresh on next tab focus instead of immediate refresh
+          shouldRefreshOnFocusRef.current = true;
           return;
         }
         
