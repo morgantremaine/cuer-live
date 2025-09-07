@@ -783,7 +783,13 @@ export const useSimplifiedRundownState = () => {
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
       
-      actions.updateItem(id, { [updateField]: value });
+      // Handle boolean fields that come as strings from cell broadcasts
+      let updateValue: any = value;
+      if (field === 'isFloating') {
+        updateValue = value === 'true';
+      }
+      
+      actions.updateItem(id, { [updateField]: updateValue });
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
@@ -1143,9 +1149,10 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Toggle float');
       const item = state.items.find(i => i.id === id);
       if (item) {
-        actions.updateItem(id, { isFloating: !item.isFloating });
+        // Use enhancedUpdateItem for proper cell broadcasting
+        enhancedUpdateItem(id, 'isFloating', !item.isFloating ? 'true' : 'false');
       }
-    }, [actions.updateItem, state.items, state.title, saveUndoState]),
+    }, [enhancedUpdateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
