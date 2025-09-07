@@ -55,7 +55,6 @@ const HeaderRowContent = ({
       <td 
         className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
         style={{ 
-          backgroundColor,
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px'
@@ -93,7 +92,6 @@ const HeaderRowContent = ({
                 className="align-middle min-h-[115px] relative"
                 style={{ 
                   width: columnWidth, 
-                  backgroundColor,
                   overflow: 'visible'
                 }}
             >
@@ -161,8 +159,7 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth, 
-                backgroundColor 
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8">
@@ -180,8 +177,7 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth, 
-                backgroundColor 
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8"></div>
@@ -194,8 +190,7 @@ const HeaderRowContent = ({
               key={column.id}
               className="align-middle min-h-[115px]"
               style={{ 
-                width: columnWidth, 
-                backgroundColor 
+                width: columnWidth 
               }}
             >
               <div className="px-2 py-8"></div>
