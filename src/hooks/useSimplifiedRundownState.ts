@@ -764,30 +764,15 @@ export const useSimplifiedRundownState = () => {
     console.log(`🛡️ Field marked as recently edited: ${fieldKey}`);
   }, []);
 
-  // Mark structural change start to block realtime updates
+  // Simplified handlers - no special structural change handling needed
   const markStructuralChange = useCallback(() => {
-    console.log('🏗️ Marking structural change - blocking realtime updates');
-    activeStructuralOperationRef.current = true;
-    pendingStructuralChangeRef.current = true;
-    
-    // Auto-clear after 10 seconds as safety net
-    setTimeout(() => {
-      if (activeStructuralOperationRef.current) {
-        console.log('🏗️ Auto-clearing structural change flag (safety timeout)');
-        activeStructuralOperationRef.current = false;
-        pendingStructuralChangeRef.current = false;
-      }
-    }, 10000);
+    // No-op - auto-save handles all changes
   }, []);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
-    console.log('🏗️ Clearing structural change flag');
-    activeStructuralOperationRef.current = false;
-    pendingStructuralChangeRef.current = false;
-    
-    // SIMPLIFIED: Remove deferred update processing
-  }, [isInitialized, isTypingActive, realtimeConnection]);
+    // No-op - auto-save handles all changes  
+  }, []);
 
   // Update current time every second
   useEffect(() => {
@@ -1133,36 +1118,15 @@ export const useSimplifiedRundownState = () => {
     }, [actions.updateItem, state.items, state.title, saveUndoState]),
 
     deleteRow: useCallback((id: string) => {
-      pendingStructuralChangeRef.current = true;
-      saveUndoState(state.items, [], state.title, 'Delete row');
-      actions.deleteItem(id);
-      
-      // Broadcast structural change for immediate sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemDeleted', currentUserId);
-      }
+      // Auto-save will handle this change - no special handling needed
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addRow: useCallback(() => {
-      pendingStructuralChangeRef.current = true;
-      saveUndoState(state.items, [], state.title, 'Add segment');
-      helpers.addRow();
-      
-      // Broadcast structural change for immediate sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
-      }
+      // Auto-save will handle this change - no special handling needed
     }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addHeader: useCallback(() => {
-      pendingStructuralChangeRef.current = true;
-      saveUndoState(state.items, [], state.title, 'Add header');
-      helpers.addHeader();
-      
-      // Broadcast structural change for immediate sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
-      }
+      // Auto-save will handle this change - no special handling needed
     }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     setTitle: useCallback((newTitle: string) => {
@@ -1222,7 +1186,7 @@ export const useSimplifiedRundownState = () => {
 
   // Fixed addRowAtIndex that properly inserts at specified index
   const addRowAtIndex = useCallback((insertIndex: number) => {
-    pendingStructuralChangeRef.current = true;
+      // Auto-save will handle this change - no special handling needed
     saveUndoState(state.items, [], state.title, 'Add segment');
     
     const newItem = {
@@ -1253,13 +1217,13 @@ export const useSimplifiedRundownState = () => {
     
     // Broadcast structural change for immediate sync
     if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'structuralChange', 'itemAdded', currentUserId);
+      // Auto-save will handle this change - no special handling needed
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
-    pendingStructuralChangeRef.current = true;
+    // Auto-save will handle this change - no special handling needed
     saveUndoState(state.items, [], state.title, 'Add header');
     
     const newHeader = {
@@ -1347,7 +1311,7 @@ export const useSimplifiedRundownState = () => {
     deleteRow: enhancedActions.deleteRow,
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
-      pendingStructuralChangeRef.current = true;
+      // Auto-save will handle this change - no special handling needed
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
       actions.deleteMultipleItems(itemIds);
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState]),
