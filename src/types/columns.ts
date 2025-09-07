@@ -5,12 +5,13 @@ export interface BaseColumn {
   key: string;
   name: string;
   isVisible: boolean;
-  width?: string;
+  width: string; // Made required for compatibility
   minWidth?: string;
   maxWidth?: string;
   resizable?: boolean;
   sortable?: boolean;
   type?: 'text' | 'textarea' | 'time' | 'custom';
+  isEditable: boolean; // Made required for compatibility with existing system
 }
 
 export interface StandardColumn extends BaseColumn {

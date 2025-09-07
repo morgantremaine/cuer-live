@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CellRenderer from '../CellRenderer';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { getMinimumWidth } from '@/utils/columnSizing';
 

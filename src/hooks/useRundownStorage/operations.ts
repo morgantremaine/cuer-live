@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { Column } from '@/hooks/useColumnsManager'
+import { Column } from '@/types/columns'
 import { SavedRundown } from './types'
 import { mapDatabaseToRundown } from './dataMapper'
 

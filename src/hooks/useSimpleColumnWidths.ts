@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
-import { Column } from './useColumnsManager';
+import { Column } from '@/types/columns';
 
 // Define minimum widths for different column types - optimized for content
 const getMinimumWidth = (column: Column): number => {

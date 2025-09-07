@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
-import { Column } from './useColumnsManager';
+import { Column } from '../types/columns';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface UserColumnPreferences {
@@ -15,7 +15,7 @@ interface UserColumnPreferences {
   updated_at: string;
 }
 
-// Default columns configuration - matches useColumnsManager exactly
+// Default columns configuration - using unified Column type
 const defaultColumns: Column[] = [
   { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
   { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },

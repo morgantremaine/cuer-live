@@ -24,7 +24,7 @@ import {
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import ResizableColumnHeader from './ResizableColumnHeader';
 import HeaderContextMenu from './HeaderContextMenu';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 
 interface RundownTableHeaderProps {
   visibleColumns: Column[];

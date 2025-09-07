@@ -10,7 +10,7 @@ import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
-import { Column } from './useColumnsManager';
+import { Column } from '@/types/columns';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';

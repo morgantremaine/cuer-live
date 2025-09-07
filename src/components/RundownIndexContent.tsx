@@ -6,7 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useColumnsManager } from '@/hooks/useColumnsManager';
+// Removed useColumnsManager - using useUserColumnPreferences as single source of truth
 import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';

@@ -1,7 +1,7 @@
 
 import { SavedRundown } from './types';
 import { RundownItem } from '@/hooks/useRundownItems';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 
 export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
   const mapped = {

@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
 
 interface UseRundownPerformanceOptimizationProps {

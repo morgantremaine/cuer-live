@@ -14,7 +14,7 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeam } from '@/hooks/useTeam';
 import { useToast } from '@/hooks/use-toast';
-import { useColumnsManager, Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDashboardRundownOptimized } from '@/hooks/useDashboardRundownOptimized';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
@@ -31,7 +31,7 @@ const Dashboard = () => {
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
-  const { handleLoadLayout } = useColumnsManager();
+  // Remove unused useColumnsManager import since useUserColumnPreferences handles columns now
   const isMobile = useIsMobile();
   
   // Real-time rundown state with local updates
@@ -210,11 +210,11 @@ const Dashboard = () => {
         return;
       }
 
-      // Set the columns from the selected layout
-      if (layoutColumns && layoutColumns.length > 0) {
-        console.log('Setting columns from layout:', layoutColumns);
-        handleLoadLayout(layoutColumns);
-      }
+      // Column layout handling moved to useUserColumnPreferences - no longer needed
+      // if (layoutColumns && layoutColumns.length > 0) {
+      //   console.log('Setting columns from layout:', layoutColumns);
+      //   // handleLoadLayout removed - handled by useUserColumnPreferences
+      // }
 
       // Create a new rundown with the imported data
       const rundownTitle = `Imported Rundown - ${new Date().toLocaleDateString()}`;

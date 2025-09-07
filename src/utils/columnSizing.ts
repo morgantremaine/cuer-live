@@ -1,4 +1,4 @@
-import type { Column } from '@/hooks/useColumnsManager';
+import type { Column } from '@/types/columns';
 
 // Shared helper for minimum column widths so header and body stay perfectly aligned
 export const getMinimumWidth = (column: Column): number => {

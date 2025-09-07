@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { SavedRundown } from './useRundownStorage/types';
-import { Column } from './useColumnsManager';
+import { Column } from '@/types/columns';
 import { RundownItem } from '@/types/rundown';
 import { migrateTimezone } from '@/utils/timezoneMigration';
 

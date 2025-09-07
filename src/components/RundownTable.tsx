@@ -2,7 +2,7 @@
 import React from 'react';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-import { Column } from '@/hooks/useColumnsManager';
+import { Column } from '@/types/columns';
 
 interface RundownTableProps {
   items: any[];

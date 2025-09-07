@@ -6,16 +6,7 @@ import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 import LayoutManager from './ColumnManager/LayoutManager';
 import ColumnEditor from './ColumnManager/ColumnEditor';
 import ColumnList from './ColumnManager/ColumnList';
-
-interface Column {
-  id: string;
-  name: string;
-  key: string;
-  width: string;
-  isCustom: boolean;
-  isEditable: boolean;
-  isVisible?: boolean;
-}
+import { Column } from '@/types/columns';
 
 interface ColumnManagerProps {
   columns: Column[];
