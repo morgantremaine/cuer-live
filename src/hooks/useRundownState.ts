@@ -294,12 +294,11 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     },
     
     updateItem: (id: string, updates: Partial<RundownItem>) => {
+      // Compute next items so the broadcast includes the latest change (fixes shared view lag for color/float)
+      const updatedItems = state.items.map(i => (i.id === id ? { ...i, ...updates } : i));
       dispatch({ type: 'UPDATE_ITEM', payload: { id, updates } });
       if (rundownId) {
-        // Broadcast the updated items immediately
-        setTimeout(() => {
-          broadcastLiveUpdate('live_typing', { items: state.items });
-        }, 0);
+        broadcastLiveUpdate('live_typing', { items: updatedItems });
       }
     },
     
