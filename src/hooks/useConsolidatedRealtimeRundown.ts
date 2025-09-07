@@ -191,11 +191,7 @@ export const useConsolidatedRealtimeRundown = ({
       globalState.lastProcessedDocVersion = incomingDocVersion;
     }
 
-    // CRITICAL: Block autosave when receiving remote updates
-    if (blockUntilLocalEditRef && payload.table !== 'blueprints') {
-      console.log('🛑 Setting blockUntilLocalEditRef = true due to remote content update');
-      blockUntilLocalEditRef.current = true;
-    }
+    // MOVED: AutoSave blocking will be handled after field protection check in callbacks
 
     // Dispatch to appropriate callbacks with enhanced error handling
     if (hasBlueprintChanges) {

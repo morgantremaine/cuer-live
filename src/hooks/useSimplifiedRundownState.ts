@@ -312,15 +312,20 @@ export const useSimplifiedRundownState = () => {
       // Apply granular merge only if actively typing in a specific field
       const protectedFields = getProtectedFields();
       
-      if (protectedFields.size > 0) {
-        console.log('🛡️ Protecting actively typed field during realtime update:', Array.from(protectedFields));
-        
-        // CRITICAL: Clear AutoSave block when protecting fields - user is actively editing
-        if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-          console.log('✅ AutoSave: local edit detected - re-enabling saves');
+      // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
+      if (blockUntilLocalEditRef) {
+        if (protectedFields.size > 0) {
+          // User is actively typing - don't block AutoSave, they should be able to save their work
+          console.log('🛡️ Protecting actively typed field during realtime update - AutoSave enabled:', Array.from(protectedFields));
           blockUntilLocalEditRef.current = false;
+        } else {
+          // User not typing - block AutoSave until they make a local edit
+          console.log('🛑 Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
+          blockUntilLocalEditRef.current = true;
         }
-        
+      }
+      
+      if (protectedFields.size > 0) {
         // Create merged items by protecting local edits
         // Enhanced conflict resolution: merge changes at field level
         const mergedItems = updatedRundown.items?.map((remoteItem: any) => {

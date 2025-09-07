@@ -186,9 +186,9 @@ export const useSimpleAutoSave = (
     recentKeystrokes.current = now;
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    // CRITICAL: Clear blockUntilLocalEditRef on any typing
+    // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      console.log('⌨️ Local typing detected - clearing blockUntilLocalEditRef');
+      console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
     
