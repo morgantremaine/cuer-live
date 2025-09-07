@@ -222,6 +222,40 @@ const RundownContent = React.memo<RundownContentProps>(({
     return total;
   }, [visibleColumns, getColumnWidth]);
 
+  // Dev-only width verification
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      const checkTableAlignment = () => {
+        const headerTable = document.querySelector('[data-rundown-table="header"]') as HTMLTableElement;
+        const bodyTable = document.querySelector('[data-rundown-table="body"]') as HTMLTableElement;
+        
+        if (headerTable && bodyTable) {
+          const headerWidth = headerTable.scrollWidth;
+          const bodyWidth = bodyTable.scrollWidth;
+          const calculatedWidth = totalTableWidth * zoomLevel;
+          
+          const headerDelta = Math.abs(headerWidth - calculatedWidth);
+          const bodyDelta = Math.abs(bodyWidth - calculatedWidth);
+          
+          if (headerDelta > 2 || bodyDelta > 2) {
+            console.warn('Table alignment discrepancy detected:', {
+              calculatedWidth,
+              headerWidth,
+              bodyWidth,
+              headerDelta,
+              bodyDelta,
+              zoomLevel,
+              visibleColumns: visibleColumns.map(col => ({ id: col.id, width: getColumnWidth(col) }))
+            });
+          }
+        }
+      };
+      
+      const timeoutId = setTimeout(checkTableAlignment, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [totalTableWidth, zoomLevel, visibleColumns, getColumnWidth]);
+
   return (
     <div className="bg-background h-full rundown-container" data-rundown-table="true">
       {/* Print-only header */}
@@ -236,7 +270,7 @@ const RundownContent = React.memo<RundownContentProps>(({
       </div>
       
       {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef}>
+      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
         <div className="relative">
           {/* Sticky Header - Outside of Transform */}
           <div 
@@ -346,7 +380,6 @@ const RundownContent = React.memo<RundownContentProps>(({
           </div>
         </div>
         <ScrollBar orientation="horizontal" />
-        <ScrollBar orientation="vertical" />
       </ScrollArea>
     </div>
   );

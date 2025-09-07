@@ -87,7 +87,7 @@ const RegularRowContent = ({
               minWidth: normalizedWidth,
               maxWidth: normalizedWidth,
               backgroundColor: isCurrentSegmentName ? '#3b82f6' : 'transparent',
-              borderRight: '1px solid hsl(var(--border))'
+              borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
             }}
           >
             <CellRenderer
