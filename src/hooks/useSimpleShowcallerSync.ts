@@ -299,11 +299,16 @@ export const useSimpleShowcallerSync = ({
   }, [state, findPrevSegment, parseDurationToSeconds, buildStatusMap, broadcastState]);
 
   const reset = useCallback(() => {
+    console.log('📺 Simple: Reset called');
+    
+    const targetSegmentId = state.currentSegmentId;
+    const duration = targetSegmentId ? parseDurationToSeconds((items.find(i => i.id === targetSegmentId)?.duration) || '00:00') : 0;
     const newState = {
+      ...state,
       isPlaying: false,
-      currentSegmentId: null,
-      timeRemaining: 0,
-      currentItemStatuses: {},
+      currentSegmentId: targetSegmentId || state.currentSegmentId || null,
+      timeRemaining: duration,
+      currentItemStatuses: targetSegmentId ? buildStatusMap(targetSegmentId) : state.currentItemStatuses,
       isController: true,
       controllerId: userId || null,
       lastUpdate: new Date().toISOString()
@@ -315,12 +320,10 @@ export const useSimpleShowcallerSync = ({
     broadcastState({
       action: 'reset',
       isPlaying: false,
-      currentSegmentId: null,
-      timeRemaining: 0
+      currentSegmentId: targetSegmentId || state.currentSegmentId || null,
+      timeRemaining: duration
     });
-    
-    console.log('📺 Simple: Reset called');
-  }, [userId, stopTimer, broadcastState]);
+  }, [userId, stopTimer, broadcastState, state, items, parseDurationToSeconds, buildStatusMap]);
 
   const jumpToSegment = useCallback((segmentId: string) => {
     const segment = items.find(item => item.id === segmentId);

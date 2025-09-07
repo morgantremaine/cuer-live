@@ -61,8 +61,11 @@ const PlaybackControls = ({
   };
 
   const handleReset = () => {
-    setHasBeenStarted(false);
-    setLastSegmentId(null);
+    // Keep indicator and timer visible for current segment; only reset timer value upstream
+    if (currentSegmentId) {
+      setHasBeenStarted(true);
+      setLastSegmentId(currentSegmentId);
+    }
     onReset();
   };
 
