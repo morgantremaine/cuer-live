@@ -380,7 +380,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         const newKeys = new Set(merged.map(c => c.key));
         const hasNewColumns = merged.some(c => !prevKeys.has(c.key)) || prevColumns.some(c => !newKeys.has(c.key));
         
-        if (hasNewColumns && !isLoadingRef.current) {
+        if (hasNewColumns && !isLoadingRef.current && prevColumns.length > 0) {
           debugLogger.preferences('Team columns updated - refreshing available columns');
           saveColumnPreferences(merged, true);
         }
