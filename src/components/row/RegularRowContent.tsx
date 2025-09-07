@@ -66,8 +66,11 @@ const RegularRowContent = ({
         </div>
         {/* Vertical divider */}
         <div 
-          className="absolute top-0 right-0 h-full w-px bg-border"
-          style={{ zIndex: 1 }}
+          className="absolute top-0 right-0 h-full w-px"
+          style={{ 
+            zIndex: 1,
+            backgroundColor: 'hsl(var(--border))'
+          }}
         />
       </td>
       {/* Dynamic columns */}
@@ -103,8 +106,11 @@ const RegularRowContent = ({
             {/* Vertical divider - only show if not the last column */}
             {!isLastColumn && (
               <div 
-                className="absolute top-0 right-0 h-full w-px bg-border"
-                style={{ zIndex: 1 }}
+                className="absolute top-0 right-0 h-full w-px"
+                style={{ 
+                  zIndex: 1,
+                  backgroundColor: 'hsl(var(--border))'
+                }}
               />
             )}
           </td>
