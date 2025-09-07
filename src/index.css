@@ -9,11 +9,43 @@
   border-bottom: none !important;
 }
 
-/* Normalize backgrounds on colored rows and headers to avoid hairline seams */
-.table-container tr[data-custom-color="true"] td,
-.table-container tr[data-type="header"] td {
+/* Normalize all table cell backgrounds to eliminate hairline seams */
+.table-container thead th {
+  background-color: hsl(var(--primary)) !important;
+  background-clip: padding-box;
+  position: relative;
+}
+
+/* Mask for header cells to cover subpixel seams */
+.table-container thead th::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--primary));
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Remove mask from last header cell */
+.table-container thead th:last-child::after {
+  display: none;
+}
+
+/* Ensure all table body cells inherit row background properly */
+.table-container tbody td {
   background-color: inherit !important;
   background-clip: padding-box;
+  position: relative;
+}
+
+/* For colored rows, ensure seamless background coverage */
+.table-container tbody tr[data-custom-color="true"] td,
+.table-container tbody tr[data-type="header"] td {
+  background-color: inherit !important;
+  background-clip: border-box;
 }
 
 @tailwind base;
