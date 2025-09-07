@@ -6,8 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-// Removed useColumnsManager - using useUserColumnPreferences as single source of truth
-import { useUserColumnPreferences } from '@/hooks/useUserColumnPreferences';
+// Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
@@ -32,6 +31,8 @@ const RundownIndexContent = () => {
     showDate,
     rundownId,
     items,
+    columns,
+    visibleColumns,
     currentSegmentId,
     getRowNumber,
     calculateHeaderDuration,
@@ -64,6 +65,10 @@ const RundownIndexContent = () => {
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
     toggleAutoScroll,
+    // Column management functions
+    addColumn,
+    updateColumnWidth,
+    setColumns,
     // Header collapse functions
     toggleHeaderCollapse,
     isHeaderCollapsed,
@@ -74,17 +79,11 @@ const RundownIndexContent = () => {
   // Get team data for column deletion
   const { team } = useTeam();
 
-  // Use user column preferences for persistent column management
-  const { 
-    columns: userColumns, 
-    setColumns: setUserColumns, 
-    updateColumnWidth: updateUserColumnWidth,
-    applyLayout: applyUserLayout,
-    isLoading: isLoadingPreferences,
-    isSaving: isSavingPreferences,
-    hasInitialLoad: hasInitialColumnLoad,
-    reloadPreferences
-  } = useUserColumnPreferences(rundownId);
+  // Get columns from the main state system (no duplicate column management)
+  const userColumns = columns;
+  const isLoadingPreferences = isLoading;
+  const isSavingPreferences = isSaving;
+  const hasInitialColumnLoad = true; // Always true since columns come from main state
 
   // Get shared layout information to prevent flashing during layout loads
   const { 
@@ -128,13 +127,13 @@ const RundownIndexContent = () => {
     // Insert the new column right after the segment name column (index 1)
     const newColumns = [...userColumns];
     newColumns.splice(1, 0, newColumn);
-    setUserColumns(newColumns); // Auto-save
-  }, [userColumns, setUserColumns]);
+    setColumns(newColumns); // Auto-save
+  }, [userColumns, setColumns]);
 
   const handleReorderColumnsWrapper = useCallback((newColumns: any[]) => {
     if (!Array.isArray(newColumns)) return;
-    setUserColumns(newColumns); // Auto-save
-  }, [setUserColumns]);
+    setColumns(newColumns); // Auto-save
+  }, [setColumns]);
 
   const handleDeleteColumnWrapper = useCallback(async (columnId: string) => {
     console.log('🗑️ Delete column wrapper called with ID:', columnId);
@@ -188,9 +187,9 @@ const RundownIndexContent = () => {
     // Remove from local state
     console.log('🗑️ Removing column from local state...');
     const filtered = userColumns.filter(col => col.id !== columnId);
-    setUserColumns(filtered); // Auto-save
+    setColumns(filtered); // Auto-save
     console.log('🗑️ Column deletion complete');
-  }, [userColumns, setUserColumns, team?.id]);
+  }, [userColumns, setColumns, team?.id]);
 
   const handleRenameColumnWrapper = useCallback((columnId: string, newName: string) => {
     const updated = userColumns.map(col => {
@@ -199,8 +198,7 @@ const RundownIndexContent = () => {
       }
       return col;
     });
-    setUserColumns(updated); // Auto-save
-  }, [userColumns, setUserColumns]);
+    setColumns(updated); // Auto-save
 
   const handleToggleColumnVisibilityWrapper = useCallback((columnId: string, insertIndex?: number) => {
     const target = userColumns.find(col => col.id === columnId);
@@ -211,7 +209,7 @@ const RundownIndexContent = () => {
       const updated = userColumns.map(col => (
         col.id === columnId ? { ...col, isVisible: false } : col
       ));
-      setUserColumns(updated); // Auto-save
+      setColumns(updated); // Auto-save
       return;
     }
 
@@ -229,8 +227,8 @@ const RundownIndexContent = () => {
       }
     }
 
-    setUserColumns(updated); // Auto-save
-  }, [userColumns, setUserColumns]);
+    setColumns(updated); // Auto-save
+  }, [userColumns, setColumns]);
 
   // Keep these from useColumnsManager for compatibility
   const debugColumns = useCallback(() => {
@@ -263,8 +261,7 @@ const RundownIndexContent = () => {
     }
   }, [isFullyLoading, hasRevealed]);
 
-  // Filter visible columns
-  const visibleColumns = Array.isArray(userColumns) ? userColumns.filter(col => col.isVisible !== false) : [];
+  // visibleColumns comes from coreState - no need to filter here
 
   const {
     selectedRows,
@@ -472,13 +469,12 @@ const RundownIndexContent = () => {
 
     console.log('✅ Applying layout as persistent user preference for this rundown');
     // Use applyLayout to permanently set this as the user's preference for this rundown  
-    applyUserLayout(validColumns);
+    setColumns(validColumns);
   };
 
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
-    // Use the specialized updateColumnWidth method from useUserColumnPreferences
-    // which handles proper debouncing during resize operations
-    updateUserColumnWidth(columnId, `${width}px`);
+    // Use the updateColumnWidth method from the core state
+    updateColumnWidth(columnId, `${width}px`);
   };
 
   // Prepare rundown data for Cuer AI
@@ -527,11 +523,8 @@ const RundownIndexContent = () => {
         showColumnManager={showColumnManager}
         setShowColumnManager={(show: boolean) => {
           if (show) {
-            // Reload preferences to ensure we have all available columns including team columns
-            console.log('🔄 Opening column manager - reloading preferences to ensure all columns are available');
-            if (reloadPreferences) {
-              reloadPreferences();
-            }
+            // Column manager will use the current columns from state
+            console.log('🔄 Opening column manager - using current columns from state');
           }
           setShowColumnManager(show);
         }}
