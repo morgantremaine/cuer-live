@@ -39,11 +39,20 @@ const SharedRundown = () => {
   const { isDark, toggleTheme } = useTheme();
   const { isTabActive } = useTabFocus();
   
+  // Track tab focus transitions to only refresh when becoming active
+  const prevTabActiveRef = useRef(isTabActive);
+  const hasJustBecomeActive = !prevTabActiveRef.current && isTabActive;
+  
   // Better refs to prevent duplicate loads and ensure cleanup
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
   const isMountedRef = useRef(true);
   const [localRundownData, setLocalRundownData] = useState(rundownData);
+
+  // Update the previous tab active state after each render
+  useEffect(() => {
+    prevTabActiveRef.current = isTabActive;
+  });
 
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
@@ -54,6 +63,7 @@ const SharedRundown = () => {
   }, [rundownData]);
 
   // Set up cell broadcast for instant collaboration in shared rundown
+  // This runs continuously regardless of tab focus - critical for multi-monitor setups
   useEffect(() => {
     if (!rundownId) return;
 
@@ -125,9 +135,10 @@ const SharedRundown = () => {
     return unsubscribe;
   }, [rundownId]);
 
-  // Handle tab refocus - refresh data and reconnect realtime
+  // Handle tab refocus - only refresh data when becoming active, don't interfere with realtime
   useEffect(() => {
-    if (!isTabActive || !rundownId) return;
+    // Only trigger refresh when tab has just become active (transition from inactive to active)
+    if (!hasJustBecomeActive || !rundownId) return;
 
     const performSilentRefresh = async () => {
       try {
@@ -159,7 +170,7 @@ const SharedRundown = () => {
     };
 
     performSilentRefresh();
-  }, [isTabActive, rundownId]);
+  }, [hasJustBecomeActive, rundownId]);
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
