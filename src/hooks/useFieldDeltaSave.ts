@@ -144,7 +144,7 @@ export const useFieldDeltaSave = (
   }, []);
 
   // Apply deltas to database using optimized updates with OCC
-  const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState): Promise<{ updatedAt: string; docVersion: number }> => {
+  const saveDeltasToDatabase = useCallback(async (deltas: FieldDelta[], currentState: RundownState, retryCount: number = 0): Promise<{ updatedAt: string; docVersion: number }> => {
     if (!rundownId) {
       throw new Error('No rundown ID provided');
     }
@@ -210,9 +210,41 @@ export const useFieldDeltaSave = (
       console.warn('🚨 OCC Conflict detected:', { 
         serverVersion: serverDocVersion, 
         expectedVersion: expectedDocVersion,
-        delta: 'Update skipped to prevent overwrite'
+        delta: 'Refreshing local state and retrying'
       });
-      throw new Error(`Concurrent edit detected. Please refresh and try again. (Server: v${serverDocVersion}, Local: v${expectedDocVersion})`);
+      
+      // Create updated state with server's version to sync the client
+      const refreshedState = {
+        ...currentState,
+        docVersion: serverDocVersion,
+        items: latestRow?.items || currentState.items,
+        title: latestRow?.title || currentState.title,
+        startTime: latestRow?.start_time || currentState.startTime,
+        timezone: latestRow?.timezone || currentState.timezone,
+        showDate: latestRow?.show_date ? new Date(latestRow.show_date) : currentState.showDate,
+        externalNotes: latestRow?.external_notes || currentState.externalNotes
+      };
+      
+      // Update the saved state reference to the refreshed server state
+      initializeSavedState(refreshedState);
+      
+      // Re-extract deltas based on refreshed state
+      const recomputedDeltas = extractDeltas(currentState, refreshedState);
+      
+      if (recomputedDeltas.length === 0) {
+        console.log('✅ No conflicts after state refresh - changes already applied');
+        return { updatedAt: latestRow.updated_at, docVersion: serverDocVersion };
+      }
+      
+      // Prevent infinite recursion 
+      if (retryCount >= 2) {
+        console.warn('⚠️ Max OCC retry attempts reached, falling back to full update');
+        return await performFullUpdate(currentState, updateTimestamp);
+      }
+      
+      console.log('🔄 Retrying save with refreshed state and recomputed deltas');
+      // Recursively call with refreshed state - but limit recursion
+      return await saveDeltasToDatabase(recomputedDeltas, refreshedState, retryCount + 1);
     }
 
     console.log('✅ OCC Check passed, merging deltas onto latest server state');

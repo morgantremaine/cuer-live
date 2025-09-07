@@ -201,6 +201,7 @@ export const useSimplifiedRundownState = () => {
       // Update our doc version and timestamp tracking
       if (meta?.docVersion) {
         setLastSeenDocVersion(meta.docVersion);
+        actions.setDocVersion(meta.docVersion); // CRITICAL: Update state docVersion
       }
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
