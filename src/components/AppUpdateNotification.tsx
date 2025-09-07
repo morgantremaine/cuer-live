@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, RefreshCw } from 'lucide-react';
@@ -14,18 +15,37 @@ interface AppNotification {
 }
 
 const AppUpdateNotification = () => {
+  const location = useLocation();
   const [notification, setNotification] = useState<AppNotification | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [sessionStartTime] = useState(new Date().toISOString());
+
+  // Only show on app pages, not landing page
+  const shouldShowNotifications = 
+    location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/rundown') ||
+    location.pathname.startsWith('/shared/rundown');
 
   useEffect(() => {
-    // Fetch current active notification
+    // Only fetch notifications on relevant pages
+    if (!shouldShowNotifications) return;
+
+    // Fetch current active notification that user hasn't dismissed and was created after session started
     const fetchActiveNotification = async () => {
       try {
+        const { data: user } = await supabase.auth.getUser();
+        if (!user.user) return;
+
         const { data, error } = await supabase
           .from('app_notifications')
-          .select('*')
+          .select(`
+            *,
+            app_notification_dismissals!left(id)
+          `)
           .eq('active', true)
           .eq('type', 'update')
+          .gt('created_at', sessionStartTime)
+          .is('app_notification_dismissals.id', null)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
@@ -35,8 +55,8 @@ const AppUpdateNotification = () => {
           setIsVisible(true);
         }
       } catch (error) {
-        // No active notification found
-        console.log('No active notifications');
+        // No active notification found or user already dismissed it
+        console.log('No active notifications for this user session');
       }
     };
 
@@ -82,7 +102,7 @@ const AppUpdateNotification = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [notification?.id]);
+  }, [notification?.id, shouldShowNotifications, sessionStartTime]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -91,13 +111,18 @@ const AppUpdateNotification = () => {
   const handleDismiss = async () => {
     setIsVisible(false);
     
-    // Optionally mark as inactive for this specific notification
+    // Record that this user has dismissed this notification
     if (notification) {
       try {
-        await supabase
-          .from('app_notifications')
-          .update({ active: false })
-          .eq('id', notification.id);
+        const { data: user } = await supabase.auth.getUser();
+        if (user.user) {
+          await supabase
+            .from('app_notification_dismissals')
+            .insert({
+              user_id: user.user.id,
+              notification_id: notification.id
+            });
+        }
       } catch (error) {
         console.error('Error dismissing notification:', error);
       }
