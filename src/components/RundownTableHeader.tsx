@@ -187,46 +187,47 @@ const RundownTableHeader = ({
   };
 
   return (
-    <>
-      {/* Shared column definitions for precise alignment */}
-      <colgroup>
-        <col style={{ width: `${64 * zoomLevel}px`, minWidth: `${64 * zoomLevel}px` }} />
-        {visibleColumns.map((column) => (
-          <col key={column.id} style={{ width: getColumnWidth(column), minWidth: getColumnWidth(column) }} />
-        ))}
-      </colgroup>
-      
-      <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
-        <tr>
-          {/* Row number column - static, not draggable */}
-          <th 
-            className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 box-border"
-            style={{ 
-              borderRight: '1px solid hsl(var(--border))'
-            }}
-          >
-            <div className="flex items-center space-x-1">
-              {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleAllHeaders();
-                  }}
-                  className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
-                  title="Toggle all header groups"
-                >
-                  {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
-                    <ChevronRight className="h-3 w-3 text-white" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3 text-white" />
-                  )}
-                </button>
-              )}
-              <span>#</span>
-            </div>
-          </th>
-          
-          {/* Draggable columns - wrapped in SortableContext only */}
+    <thead className="bg-blue-600 dark:bg-blue-700 sticky top-0 z-20">
+      <tr>
+        {/* Row number column - static, not draggable */}
+        <th 
+          className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
+          style={{ 
+            width: `${64 * zoomLevel}px`, 
+            minWidth: `${64 * zoomLevel}px`,
+            maxWidth: `${64 * zoomLevel}px`,
+            borderRight: '1px solid hsl(var(--border))'
+          }}
+        >
+          <div className="flex items-center space-x-1">
+            {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleAllHeaders();
+                }}
+                className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
+                title="Toggle all header groups"
+              >
+                {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
+                  <ChevronRight className="h-3 w-3 text-white" />
+                ) : (
+                  <ChevronDown className="h-3 w-3 text-white" />
+                )}
+              </button>
+            )}
+            <span>#</span>
+          </div>
+        </th>
+        
+        {/* Draggable columns */}
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToHorizontalAxis, restrictToParentElement]}
+        >
           <SortableContext 
             items={visibleColumns.map(col => col.id)}
             strategy={horizontalListSortingStrategy}
@@ -287,9 +288,38 @@ const RundownTableHeader = ({
               );
             })}
           </SortableContext>
-        </tr>
-      </thead>
-    </>
+          
+          {/* Only show DragOverlay when not zoomed to prevent positioning issues */}
+          {zoomLevel === 1 && (
+            <DragOverlay>
+              {activeColumn ? (
+                <th 
+                  className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600 border-r border-border"
+                  style={{ 
+                    width: getColumnWidth(activeColumn),
+                    minWidth: getColumnWidth(activeColumn),
+                    maxWidth: getColumnWidth(activeColumn),
+                    opacity: 0.9,
+                    zIndex: 1000
+                  }}
+                >
+                  <div 
+                    className="truncate pr-2 overflow-hidden text-ellipsis whitespace-nowrap"
+                    style={{
+                      width: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                      minWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`,
+                      maxWidth: `${parseInt(getColumnWidth(activeColumn)) - 16}px`
+                    }}
+                  >
+                    {activeColumn.name || activeColumn.key}
+                  </div>
+                </th>
+              ) : null}
+            </DragOverlay>
+          )}
+        </DndContext>
+      </tr>
+    </thead>
   );
 };
 
