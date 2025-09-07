@@ -287,7 +287,9 @@ export const useFieldDeltaSave = (
       show_date: currentState.showDate ? `${currentState.showDate.getFullYear()}-${String(currentState.showDate.getMonth() + 1).padStart(2, '0')}-${String(currentState.showDate.getDate()).padStart(2, '0')}` : null,
       external_notes: currentState.externalNotes,
       updated_at: updateTimestamp,
-      last_updated_by: (await supabase.auth.getUser()).data.user?.id
+      last_updated_by: (await supabase.auth.getUser()).data.user?.id,
+      // Include tab_id for proper own-update detection
+      tab_id: crypto.randomUUID()
     };
 
     const { data, error } = await supabase

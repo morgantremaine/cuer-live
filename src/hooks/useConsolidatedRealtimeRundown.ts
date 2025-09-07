@@ -46,6 +46,10 @@ export const useConsolidatedRealtimeRundown = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Generate a unique tab identifier for own-update detection
+  const tabIdRef = useRef(crypto.randomUUID());
+  
   const callbackRefs = useRef({
     onRundownUpdate,
     onShowcallerUpdate,
@@ -91,21 +95,39 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-    // Own update detection: skip only updates originated by this tab (timestamp match). Do NOT skip by user id so other tabs under the same account still process and show activity.
-    if (!isSharedView) {
-      const isOwnUpdate = normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp);
-      if (isOwnUpdate) {
-        debugLogger.realtime('Skipping own tab update:', { 
-          normalizedTimestamp, 
-          incomingDocVersion
-        });
-        globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
-        if (incomingDocVersion) {
-          globalState.lastProcessedDocVersion = incomingDocVersion;
-        }
-        return;
+  // Own update detection: skip only updates originated by this specific tab (using tab ID stored in payload)
+  if (!isSharedView) {
+    // Check if this update came from this specific tab
+    const updateTabId = payload.new?.tab_id || payload.new?.client_id;
+    const isOwnTabUpdate = updateTabId && updateTabId === tabIdRef.current;
+    
+    if (isOwnTabUpdate) {
+      debugLogger.realtime('Skipping own tab update:', { 
+        normalizedTimestamp, 
+        incomingDocVersion,
+        tabId: updateTabId
+      });
+      globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
+      if (incomingDocVersion) {
+        globalState.lastProcessedDocVersion = incomingDocVersion;
       }
+      return;
     }
+    
+    // Also check timestamp-based fallback for compatibility
+    const isOwnTimestampUpdate = normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp);
+    if (isOwnTimestampUpdate) {
+      debugLogger.realtime('Skipping own timestamp update:', { 
+        normalizedTimestamp, 
+        incomingDocVersion
+      });
+      globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
+      if (incomingDocVersion) {
+        globalState.lastProcessedDocVersion = incomingDocVersion;
+      }
+      return;
+    }
+  }
 
     // Enhanced gap detection with improved handling
     const expectedVersion = currentDocVersion + 1;
@@ -213,8 +235,17 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Show processing indicator for content changes (but not during initial subscription)
-      setIsProcessingUpdate(true);
+      // Show processing indicator for ALL content changes from remote sources (not during initial load)
+      if (!isInitialLoad) {
+        console.log('📺 Realtime: Showing blue Wi-Fi indicator for remote content change');
+        setIsProcessingUpdate(true);
+        
+        // Keep indicator visible for clear visibility
+        setTimeout(() => {
+          setIsProcessingUpdate(false);
+        }, 1200); // Extended to 1.2s for better visibility
+      }
+      
       try {
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
           try { 
@@ -223,11 +254,8 @@ export const useConsolidatedRealtimeRundown = ({
             console.error('Error in rundown callback:', error);
           }
         });
-      } finally {
-        // Keep processing indicator active for visual feedback
-        setTimeout(() => {
-          setIsProcessingUpdate(false);
-        }, 800); // 800ms for clear blue wifi visibility
+      } catch (error) {
+        console.error('Error processing rundown update:', error);
       }
     }
 
@@ -421,16 +449,24 @@ export const useConsolidatedRealtimeRundown = ({
     }
   }, [rundownId, lastSeenDocVersion]);
 
-  // Provide own update tracking function
-  const trackOwnUpdateFunc = useCallback((timestamp: string) => {
+  // Provide own update tracking function with tab ID
+  const trackOwnUpdateFunc = useCallback((timestamp: string, includeTabId = true) => {
     const state = globalSubscriptions.get(rundownId || '');
     if (state) {
       const normalizedTimestamp = normalizeTimestamp(timestamp);
       state.ownUpdates.add(normalizedTimestamp);
       
+      // Store our tab ID for future update filtering
+      if (includeTabId) {
+        state.ownUpdates.add(`tab:${tabIdRef.current}`);
+      }
+      
       // Clean up after 20 seconds
       setTimeout(() => {
         state.ownUpdates.delete(normalizedTimestamp);
+        if (includeTabId) {
+          state.ownUpdates.delete(`tab:${tabIdRef.current}`);
+        }
       }, 20000);
     }
   }, [rundownId]);
@@ -439,6 +475,7 @@ export const useConsolidatedRealtimeRundown = ({
     isConnected,
     isProcessingUpdate,
     trackOwnUpdate: trackOwnUpdateFunc,
+    tabId: tabIdRef.current, // Expose tab ID for save operations
     // Legacy compatibility methods (no-ops maintained)
     setTypingChecker: (checker: any) => {},
     setUnsavedChecker: (checker: any) => {},

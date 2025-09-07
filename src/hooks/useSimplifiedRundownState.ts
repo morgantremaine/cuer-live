@@ -360,13 +360,14 @@ export const useSimplifiedRundownState = () => {
         // Track remote update time to prevent ping-pong saves
         lastRemoteUpdateRef.current = Date.now();
         
-        // Set autosave suppression cooldown after applying teammate update
+        // Set extended autosave suppression cooldown after applying teammate update
         const hasIncomingItems = Array.isArray(updatedRundown.items);
         const isStructuralChange = hasIncomingItems && state.items && (
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange ? 1500 : 1000);
+        // Extended cooldown to prevent ping-pong saves and disappearing edits
+        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange ? 3000 : 2000);
         
         // Schedule reconciliation to merge any remaining conflicts
         if (protectedFields.size > 0) {
@@ -413,13 +414,14 @@ export const useSimplifiedRundownState = () => {
           actions.loadState(updateData);
         }
         
-        // Apply autosave suppression cooldown after teammate update
+        // Apply extended autosave suppression cooldown after teammate update
         const hasIncomingItems2 = Array.isArray(updatedRundown.items);
         const isStructuralChange2 = hasIncomingItems2 && state.items && (
           (updatedRundown.items?.length ?? 0) !== state.items.length ||
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
-        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange2 ? 1500 : 1000);
+        // Extended cooldown to prevent ping-pong saves and disappearing edits  
+        remoteSaveCooldownRef.current = Date.now() + (isStructuralChange2 ? 3000 : 2000);
 
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
@@ -1010,7 +1012,7 @@ export const useSimplifiedRundownState = () => {
 
     lastSyncTimeRef.current = now;
     let cancelled = false;
-    console.log('👁️ Tab active after extended inactivity - performing silent refresh for latest rundown');
+    console.log('👁️ Tab active after extended inactivity - performing silent refresh for latest rundown (forced sync)');
 
     (async () => {
       try {
@@ -1027,13 +1029,25 @@ export const useSimplifiedRundownState = () => {
         const newerByVersion = serverDoc > lastSeenDocVersion;
         const newerByTime = serverTs && (!lastKnownTimestamp || new Date(serverTs).getTime() > new Date(lastKnownTimestamp).getTime());
 
-        if (newerByVersion || newerByTime) {
-          // Apply latest without triggering save; reducer marks saved
-          handleDataRefresh(data);
-          if (serverTs) setLastKnownTimestamp(serverTs);
-          if (serverDoc) setLastSeenDocVersion(serverDoc);
-          // Brief cooldown to avoid ping-pong saves after refresh
-          remoteSaveCooldownRef.current = Date.now() + 800;
+        // Always apply server data after wake/reconnect to ensure consistency, even if timestamps are equal
+        if (newerByVersion || newerByTime || justActivated) {
+          console.log('🔄 Applying fresh server data after tab activation (forced sync)', {
+            newerByVersion,
+            newerByTime,
+            justActivated,
+            serverDoc,
+            localDoc: lastSeenDocVersion
+          });
+          
+          // Use executeWithCellUpdate to coordinate with autosave
+          executeWithCellUpdate(async () => {
+            handleDataRefresh(data);
+            if (serverTs) setLastKnownTimestamp(serverTs);
+            if (serverDoc) setLastSeenDocVersion(serverDoc);
+          });
+          
+          // Extended cooldown to prevent immediate autosave after forced refresh
+          remoteSaveCooldownRef.current = Date.now() + 2000;
         }
       } catch (e) {
         console.error('❌ Silent refresh failed:', e);
