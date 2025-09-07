@@ -372,6 +372,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     previewLayout,
     isLoading,
     isSaving,
+    hasInitialLoad,
     reloadPreferences: loadColumnPreferences
   };
 };

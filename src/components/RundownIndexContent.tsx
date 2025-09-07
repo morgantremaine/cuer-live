@@ -83,6 +83,7 @@ const RundownIndexContent = () => {
     applyLayout: applyUserLayout,
     isLoading: isLoadingPreferences,
     isSaving: isSavingPreferences,
+    hasInitialLoad: hasInitialColumnLoad,
     reloadPreferences
   } = useUserColumnPreferences(rundownId);
 
@@ -243,8 +244,8 @@ const RundownIndexContent = () => {
     console.log('Reset to defaults - this should be handled by useUserColumnPreferences');
   }, []);
 
-  // Show skeleton only for core rundown data, allow smooth column transitions
-  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || !rundownId || !items || items.length === 0;
+  // Show skeleton until ALL systems are ready, including columns
+  const isFullyLoading = isLoading || !isInitialized || !hasLoadedInitialState || !rundownId || !items || items.length === 0 || !hasInitialColumnLoad;
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
   // After core rundown loads, prevent skeleton from reappearing
