@@ -55,6 +55,7 @@ export const useSimpleAutoSave = (
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
   const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
+  const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
   // Keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({

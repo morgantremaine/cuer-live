@@ -195,6 +195,12 @@ export const useSimplifiedRundownState = () => {
     },
     setUndoActive
   });
+ 
+  // Stable refs to avoid resubscribing on state changes
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  const actionsRef = useRef(actions);
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
 
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
@@ -497,47 +503,47 @@ export const useSimplifiedRundownState = () => {
           // Apply rundown-level property changes using loadState to avoid hasUnsavedChanges
           switch (update.field) {
             case 'title':
-              actions.loadState({ title: update.value });
+              actionsRef.current.loadState({ title: update.value });
               break;
             case 'startTime':
-              actions.loadState({ startTime: update.value });
+              actionsRef.current.loadState({ startTime: update.value });
               break;
             case 'timezone':
-              actions.loadState({ timezone: update.value });
+              actionsRef.current.loadState({ timezone: update.value });
               break;
             case 'showDate':
-              actions.loadState({ showDate: update.value });
+              actionsRef.current.loadState({ showDate: update.value });
               break;
             case 'items:reorder': {
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
-                const reordered = [...state.items].sort((a, b) => {
+                const reordered = [...stateRef.current.items].sort((a, b) => {
                   const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
-                actions.loadState({ items: reordered });
+                actionsRef.current.loadState({ items: reordered });
               }
               break;
             }
             case 'items:add': {
               const payload = update.value || {};
               const item = payload.item;
-              const index = Math.max(0, Math.min(payload.index ?? state.items.length, state.items.length));
-              if (item && !state.items.find(i => i.id === item.id)) {
-                const newItems = [...state.items];
+              const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
+              if (item && !stateRef.current.items.find(i => i.id === item.id)) {
+                const newItems = [...stateRef.current.items];
                 newItems.splice(index, 0, item);
-                actions.loadState({ items: newItems });
+                actionsRef.current.loadState({ items: newItems });
               }
               break;
             }
             case 'items:remove': {
               const id = update.value?.id as string;
               if (id) {
-                const newItems = state.items.filter(i => i.id !== id);
-                if (newItems.length !== state.items.length) {
-                  actions.loadState({ items: newItems });
+                const newItems = stateRef.current.items.filter(i => i.id !== id);
+                if (newItems.length !== stateRef.current.items.length) {
+                  actionsRef.current.loadState({ items: newItems });
                 }
               }
               break;
@@ -556,7 +562,7 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
-          const updatedItems = state.items.map(item => {
+          const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
               // Only apply if not actively editing this exact field
               const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
@@ -580,8 +586,8 @@ export const useSimplifiedRundownState = () => {
             return item;
           });
           
-          if (updatedItems.some((item, index) => item !== state.items[index])) {
-            actions.loadState({ items: updatedItems });
+          if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
+            actionsRef.current.loadState({ items: updatedItems });
           }
       } finally {
         // CRITICAL: Reset flag and add cooldown after applying remote changes
@@ -598,7 +604,7 @@ export const useSimplifiedRundownState = () => {
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId, state.items, actions]);
+  }, [rundownId, currentUserId]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
