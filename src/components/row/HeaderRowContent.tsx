@@ -53,14 +53,16 @@ const HeaderRowContent = ({
     <>
       {/* Row number column - must match the header structure exactly */}
       <td 
-        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px]"
+        className="px-2 py-8 text-xl font-mono font-semibold align-middle min-h-[115px] relative overflow-hidden"
         style={{ 
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px'
         }}
       >
-        <div className="flex items-center space-x-1">
+        {/* Overlay to mask underlying column dividers */}
+        <div className="absolute inset-0" style={{ backgroundColor: backgroundColor || 'transparent', zIndex: 1 }} />
+        <div className="flex items-center space-x-1" style={{ position: 'relative', zIndex: 2 }}>
           <button
             onClick={handleToggleCollapse}
             className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors ml-2"
@@ -89,12 +91,14 @@ const HeaderRowContent = ({
             return (
               <td
                 key={column.id}
-                className="align-middle min-h-[115px] relative"
+                className="align-middle min-h-[115px] relative overflow-hidden"
                 style={{ 
                   width: columnWidth, 
-                  overflow: 'visible'
+                  overflow: 'hidden'
                 }}
             >
+              {/* Overlay to mask underlying column dividers */}
+              <div className="absolute inset-0" style={{ backgroundColor: backgroundColor || 'transparent', zIndex: 5 }} />
               <div 
                 className="px-2 py-8 flex items-center"
                 style={{ 
@@ -157,12 +161,14 @@ const HeaderRowContent = ({
           return (
             <td
               key={column.id}
-              className="align-middle min-h-[115px]"
+              className="align-middle min-h-[115px] relative overflow-hidden"
               style={{ 
                 width: columnWidth 
               }}
             >
-              <div className="px-2 py-8">
+              {/* Overlay to mask underlying column dividers */}
+              <div className="absolute inset-0" style={{ backgroundColor: backgroundColor || 'transparent', zIndex: 5 }} />
+              <div className="px-2 py-8" style={{ position: 'relative', zIndex: 10 }}>
                 {/* Show duration in print only */}
                 <span className="hidden print:inline-block font-medium">
                   {headerDuration}
