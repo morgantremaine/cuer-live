@@ -124,7 +124,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     // CRITICAL: Prevent autosave during initial hydration
     if (isLoading || !hasInitialLoad) {
-      console.log('📊 AutoSave blocked - initial column load not complete');
+      // Silent return - main autosave is already blocked upstream
       return;
     }
 
@@ -330,9 +330,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Update columns when team columns change - completely prevent during initial load
   useEffect(() => {
-    // CRITICAL: Don't run ANY team column logic during initial load
-    if (isLoading || !hasInitialLoad) {
-      console.log('📊 Team column effect blocked - initial load not complete');
+    // CRITICAL: Only block during the actual loading phase, not after
+    if (isLoading) {
+      console.log('📊 Team column effect blocked - still loading');
       return;
     }
 
