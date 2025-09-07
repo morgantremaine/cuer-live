@@ -244,8 +244,19 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       if (markAsChanged) {
         markAsChanged();
       }
+      
+      // IMPORTANT: Return the new columns synchronously for immediate state update
       return finalColumns;
     });
+    
+    // CRITICAL FIX: Schedule column persistence after state update
+    // This ensures the loaded layout becomes the saved state for refreshes
+    setTimeout(() => {
+      console.log('💾 Persisting loaded layout as current column state');
+      if (markAsChanged) {
+        markAsChanged();
+      }
+    }, 100);
   }, [markAsChanged, teamColumns]);
 
   // Reset to default columns function for new rundowns
