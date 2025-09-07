@@ -272,6 +272,7 @@ export const useSimplifiedRundownState = () => {
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
     lastSeenDocVersion,
+    blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
       // SIMPLIFIED: Remove initial load gating - just apply updates immediately
       if (initialLoadGateRef.current) {
@@ -490,6 +491,10 @@ export const useSimplifiedRundownState = () => {
       console.log('📱 Applying cell broadcast update:', update);
       
       // CRITICAL: Use coordinated cell update execution to prevent AutoSave conflicts
+      // ALSO: Block autosave when receiving cell broadcast updates
+      console.log('🛑 Setting blockUntilLocalEditRef = true due to cell broadcast update');
+      blockUntilLocalEditRef.current = true;
+      
       executeWithCellUpdate(() => {
         // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {

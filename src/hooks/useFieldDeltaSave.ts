@@ -268,6 +268,7 @@ export const useFieldDeltaSave = (
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
     trackOwnUpdate(normalizedTimestamp);
     registerRecentSave(rundownId, normalizedTimestamp);
+    console.log('⚡ Delta update completed successfully with tab_id:', getTabId());
 
     return {
       updatedAt: normalizedTimestamp,
@@ -307,6 +308,7 @@ export const useFieldDeltaSave = (
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
     trackOwnUpdate(normalizedTimestamp);
     registerRecentSave(rundownId, normalizedTimestamp);
+    console.log('💾 Full update completed successfully with tab_id:', getTabId());
 
     return {
       updatedAt: normalizedTimestamp,

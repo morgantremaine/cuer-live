@@ -28,9 +28,9 @@ export const CellUpdateProvider = ({ children }: CellUpdateProviderProps) => {
   const setCellUpdateInProgress = (inProgress: boolean) => {
     cellUpdateInProgressRef.current = inProgress;
     if (inProgress) {
-      console.log('🔒 Cell update started - AutoSave blocked');
+      console.log('🔒 Cell broadcast update started - AutoSave blocked');
     } else {
-      console.log('🔓 Cell update finished - AutoSave unblocked');
+      console.log('🔓 Cell broadcast update finished - AutoSave unblocked');
     }
   };
 

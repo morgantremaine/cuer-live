@@ -14,6 +14,7 @@ interface UseConsolidatedRealtimeRundownProps {
   trackOwnUpdate?: (timestamp: string) => void;
   lastSeenDocVersion?: number;
   isSharedView?: boolean;
+  blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
 }
 
 // Enhanced global subscription state with better conflict prevention
@@ -41,7 +42,8 @@ export const useConsolidatedRealtimeRundown = ({
   enabled = true,
   trackOwnUpdate,
   lastSeenDocVersion = 0,
-  isSharedView = false
+  isSharedView = false,
+  blockUntilLocalEditRef
 }: UseConsolidatedRealtimeRundownProps) => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
@@ -97,10 +99,9 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
 
-  // Own update detection: skip only updates originated by this specific tab (using tab ID stored in payload)
+  // SIMPLIFIED: Use ONLY tab_id for own-update detection
   if (!isSharedView) {
-    // Check if this update came from this specific tab
-    const updateTabId = payload.new?.tab_id || payload.new?.client_id;
+    const updateTabId = payload.new?.tab_id;
     const isOwnTabUpdate = updateTabId && updateTabId === tabIdRef.current;
     
     if (isOwnTabUpdate) {
@@ -108,20 +109,6 @@ export const useConsolidatedRealtimeRundown = ({
         normalizedTimestamp, 
         incomingDocVersion,
         tabId: updateTabId
-      });
-      globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
-      if (incomingDocVersion) {
-        globalState.lastProcessedDocVersion = incomingDocVersion;
-      }
-      return;
-    }
-    
-    // Also check timestamp-based fallback for compatibility
-    const isOwnTimestampUpdate = normalizedTimestamp && globalState.ownUpdates.has(normalizedTimestamp);
-    if (isOwnTimestampUpdate) {
-      debugLogger.realtime('Skipping own timestamp update:', { 
-        normalizedTimestamp, 
-        incomingDocVersion
       });
       globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
       if (incomingDocVersion) {
@@ -217,6 +204,12 @@ export const useConsolidatedRealtimeRundown = ({
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;
     if (incomingDocVersion) {
       globalState.lastProcessedDocVersion = incomingDocVersion;
+    }
+
+    // CRITICAL: Block autosave when receiving remote updates
+    if (blockUntilLocalEditRef && payload.table !== 'blueprints') {
+      console.log('🛑 Setting blockUntilLocalEditRef = true due to remote content update');
+      blockUntilLocalEditRef.current = true;
     }
 
     // Dispatch to appropriate callbacks with enhanced error handling
@@ -481,27 +474,11 @@ export const useConsolidatedRealtimeRundown = ({
     }
   }, [rundownId, lastSeenDocVersion]);
 
-  // Provide own update tracking function with tab ID
-  const trackOwnUpdateFunc = useCallback((timestamp: string, includeTabId = true) => {
-    const state = globalSubscriptions.get(rundownId || '');
-    if (state) {
-      const normalizedTimestamp = normalizeTimestamp(timestamp);
-      state.ownUpdates.add(normalizedTimestamp);
-      
-      // Store our tab ID for future update filtering
-      if (includeTabId) {
-        state.ownUpdates.add(`tab:${tabIdRef.current}`);
-      }
-      
-      // Clean up after 20 seconds
-      setTimeout(() => {
-        state.ownUpdates.delete(normalizedTimestamp);
-        if (includeTabId) {
-          state.ownUpdates.delete(`tab:${tabIdRef.current}`);
-        }
-      }, 20000);
-    }
-  }, [rundownId]);
+  // SIMPLIFIED: No longer track timestamps, rely only on tab_id
+  const trackOwnUpdateFunc = useCallback((timestamp: string) => {
+    // Keep for backward compatibility but don't track timestamps
+    console.log('🏷️ Own update timestamp (not tracked):', timestamp);
+  }, []);
 
   return {
     isConnected,
