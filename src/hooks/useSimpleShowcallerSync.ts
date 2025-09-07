@@ -3,6 +3,7 @@ import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SimpleShowcallerState {
   isPlaying: boolean;
@@ -37,6 +38,8 @@ export const useSimpleShowcallerSync = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const hasLoadedInitialState = useRef<boolean>(false);
+  const isLoadingInitialState = useRef<boolean>(false);
 
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
@@ -327,11 +330,149 @@ export const useSimpleShowcallerSync = ({
     console.log('📺 Simple: Jump to:', segmentId);
   }, [items, parseDurationToSeconds, buildStatusMap, state, broadcastState]);
 
+  // Load initial showcaller state from database
+  useEffect(() => {
+    if (!rundownId || hasLoadedInitialState.current || isLoadingInitialState.current) {
+      return;
+    }
+
+    const loadInitialState = async () => {
+      isLoadingInitialState.current = true;
+      
+      try {
+        console.log('📺 Simple: Loading initial showcaller state for rundown:', rundownId);
+        
+        const { data, error } = await supabase
+          .from('rundowns')
+          .select('showcaller_state')
+          .eq('id', rundownId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('📺 Simple: Error loading initial state:', error);
+          hasLoadedInitialState.current = true;
+          return;
+        }
+
+        if (data?.showcaller_state) {
+          console.log('📺 Simple: Found existing showcaller state:', data.showcaller_state);
+          
+          // Apply the loaded state
+          const loadedState = data.showcaller_state;
+          const currentSegmentId = loadedState.currentSegmentId;
+          
+          // CRITICAL: Always show the showcaller indicator where it was last positioned
+          if (currentSegmentId) {
+            console.log('📺 Simple: Restoring showcaller to last position:', currentSegmentId);
+            
+            setState({
+              isPlaying: false, // Always start paused when loading
+              currentSegmentId: currentSegmentId,
+              timeRemaining: 0, // Reset time when loading
+              currentItemStatuses: buildStatusMap(currentSegmentId),
+              isController: false,
+              controllerId: loadedState.controllerId || null,
+              lastUpdate: loadedState.lastUpdate || new Date().toISOString()
+            });
+          } else {
+            console.log('📺 Simple: No current segment in saved state, initializing to first item');
+            // If no saved position, set to first regular item
+            const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+            if (firstSegment) {
+              setState(prev => ({
+                ...prev,
+                currentSegmentId: firstSegment.id,
+                currentItemStatuses: buildStatusMap(firstSegment.id)
+              }));
+            }
+          }
+        } else {
+          console.log('📺 Simple: No saved showcaller state, initializing to first item');
+          // If no saved state exists, initialize to first regular item
+          const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+          if (firstSegment) {
+            setState(prev => ({
+              ...prev,
+              currentSegmentId: firstSegment.id,
+              currentItemStatuses: buildStatusMap(firstSegment.id)
+            }));
+          }
+        }
+        
+        hasLoadedInitialState.current = true;
+      } catch (error) {
+        console.error('📺 Simple: Error loading initial state:', error);
+        hasLoadedInitialState.current = true;
+      } finally {
+        isLoadingInitialState.current = false;
+      }
+    };
+
+    // Only load when we have items to avoid race conditions
+    if (items.length > 0) {
+      loadInitialState();
+    }
+  }, [rundownId, items, buildStatusMap]);
+
+  // Save showcaller state to database whenever it changes
+  const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
+    if (!rundownId || !hasLoadedInitialState.current) return;
+
+    try {
+      console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
+      
+      // Convert to the format expected by the database
+      const showcallerState = {
+        currentSegmentId: stateToSave.currentSegmentId,
+        isPlaying: stateToSave.isPlaying,
+        timeRemaining: stateToSave.timeRemaining,
+        controllerId: stateToSave.controllerId,
+        lastUpdate: stateToSave.lastUpdate,
+        currentItemStatuses: stateToSave.currentItemStatuses
+      };
+
+      const { error } = await supabase
+        .from('rundowns')
+        .update({ showcaller_state: showcallerState })
+        .eq('id', rundownId);
+
+      if (error) {
+        console.error('📺 Simple: Error saving showcaller state:', error);
+      }
+    } catch (error) {
+      console.error('📺 Simple: Error saving showcaller state:', error);
+    }
+  }, [rundownId]);
+
+  // Auto-save state changes (debounced)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!hasLoadedInitialState.current) return;
+
+    // Debounce saves to prevent too frequent updates
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveShowcallerState(state);
+    }, 1000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [state, saveShowcallerState]);
+
   // Cleanup
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
   }, []);
