@@ -66,10 +66,9 @@ export const useSimplifiedRundownState = () => {
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
-  // Simplified protection - only protect active typing
-  const PROTECTION_WINDOW_MS = 200; // Very short protection, just for active typing
-  const TYPING_PROTECTION_WINDOW_MS = 500; // Short typing protection
-  const CONFLICT_RESOLUTION_DELAY = 2000; // Time to wait before forcing reconciliation
+  // Simplified: No protection windows needed - last writer wins
+  const TYPING_DEBOUNCE_MS = 500; // Just for typing detection
+  const CONFLICT_RESOLUTION_DELAY = 2000; // Keep for edge cases
   
   // Track pending structural changes to prevent overwrite during save
   const pendingStructuralChangeRef = useRef(false);
@@ -104,7 +103,7 @@ export const useSimplifiedRundownState = () => {
   const markDropdownFieldChanged = useCallback((fieldKey: string) => {
     const now = Date.now();
     dropdownFieldProtectionRef.current.set(fieldKey, now);
-    recentlyEditedFieldsRef.current.set(fieldKey, now);
+    // Simplified: no field tracking needed
   }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
@@ -217,19 +216,19 @@ export const useSimplifiedRundownState = () => {
     const now = Date.now();
     
     // Add currently typing field if any
-    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_PROTECTION_WINDOW_MS) {
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
     // SIMPLIFIED: Only protect fields that are actively being typed in
     // Don't protect based on recent edits - only active typing
-    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_PROTECTION_WINDOW_MS) {
+    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
     // Clean up old recently edited fields
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp > PROTECTION_WINDOW_MS) {
+      if (now - timestamp > TYPING_DEBOUNCE_MS) {
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
@@ -321,11 +320,11 @@ export const useSimplifiedRundownState = () => {
         setLastSeenDocVersion(updatedRundown.doc_version);
       }
       
-      // Get currently protected fields for granular merging
+      // Apply granular merge only if actively typing in a specific field
       const protectedFields = getProtectedFields();
       
-      // Apply granular merge if we have protected fields
       if (protectedFields.size > 0) {
+        console.log('🛡️ Protecting actively typed field during realtime update:', Array.from(protectedFields));
         
         // Create merged items by protecting local edits
         // Enhanced conflict resolution: merge changes at field level
@@ -365,7 +364,7 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
-        // Apply merged update
+        // Apply the update with simple field-level protection
         actions.loadState({
           items: mergedItems,
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
@@ -375,33 +374,8 @@ export const useSimplifiedRundownState = () => {
           externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
         });
         
-        // Track remote update time to prevent ping-pong saves
+        // Track remote update time
         lastRemoteUpdateRef.current = Date.now();
-        
-        // Set extended autosave suppression cooldown after applying teammate update
-        const hasIncomingItems = Array.isArray(updatedRundown.items);
-        const isStructuralChange = hasIncomingItems && state.items && (
-          (updatedRundown.items?.length ?? 0) !== state.items.length ||
-          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
-        );
-         // CRITICAL: Block all autosaves until the user makes a local edit
-         console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
-         blockUntilLocalEditRef.current = true;
-        
-        // Schedule reconciliation to merge any remaining conflicts
-        if (protectedFields.size > 0) {
-          if (conflictResolutionTimeoutRef.current) {
-            clearTimeout(conflictResolutionTimeoutRef.current);
-          }
-          
-          conflictResolutionTimeoutRef.current = setTimeout(() => {
-            console.log('🔄 Running conflict resolution reconciliation');
-            // Only save if we're not currently typing
-            if (!isTypingActive() && Date.now() - lastRemoteUpdateRef.current > 1000) {
-              markActiveTyping();
-            }
-          }, CONFLICT_RESOLUTION_DELAY);
-        }
         
       } else {
         // Safety guard: Don't apply updates that would clear all items unless intentional
@@ -417,7 +391,10 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-        // No protected fields - apply update normally but only for present fields
+        console.log('📨 Applying realtime update directly - last writer wins');
+        
+        // Simple approach: apply all changes, don't try to protect anything
+        // If user is actively typing, their next keystroke will overwrite anyway
         const updateData: any = {};
         if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
         if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
@@ -448,7 +425,6 @@ export const useSimplifiedRundownState = () => {
          // CRITICAL: Block all autosaves until the user makes a local edit
          console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
          blockUntilLocalEditRef.current = true;
-
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading,
@@ -499,10 +475,10 @@ export const useSimplifiedRundownState = () => {
         return;
       }
       
-      console.log('📱 Applying cell broadcast update (simplified):', update);
+      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
-      // SIMPLIFIED: Just apply the change directly, no complex protection
-      // Latest change wins - if there are conflicts, the last person typing wins
+      // LAST WRITER WINS: Just apply the change immediately
+      // No protection, no AutoSave triggering - this is already saved by the sender
         // Handle rundown-level property updates (no itemId)
       if (!update.itemId) {
         // Check if we're actively editing this rundown-level field
@@ -783,8 +759,7 @@ export const useSimplifiedRundownState = () => {
     
     const sessionKey = `${id}-${field}`;
     
-    // ALWAYS track field edits for protection, regardless of type
-    recentlyEditedFieldsRef.current.set(sessionKey, Date.now());
+    // Simplified: No field tracking needed - last writer wins
     
     // Broadcast cell update immediately for Google Sheets-style sync
     if (rundownId && currentUserId) {
@@ -1225,8 +1200,7 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       if (state.title !== newTitle) {
-        // Track title editing for protection
-        recentlyEditedFieldsRef.current.set('title', Date.now());
+        // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
         // Broadcast rundown-level property change
@@ -1433,9 +1407,8 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Track local edit for coordination/debugging
+      // Simplified: No field tracking needed
       const now = Date.now();
-      recentlyEditedFieldsRef.current.set('startTime', now);
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1449,9 +1422,8 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Track local edit for coordination/debugging
+      // Simplified: No field tracking needed
       const now = Date.now();
-      recentlyEditedFieldsRef.current.set('timezone', now);
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1465,9 +1437,8 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Track local edit for coordination/debugging
+      // Simplified: No field tracking needed
       const now = Date.now();
-      recentlyEditedFieldsRef.current.set('showDate', now);
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1515,9 +1486,6 @@ export const useSimplifiedRundownState = () => {
     
     // Autosave typing guard
     markActiveTyping,
-    
-    // Field tracking
-    markFieldAsRecentlyEdited,
     
     // Structural change handling
     markStructuralChange,
