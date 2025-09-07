@@ -315,6 +315,12 @@ export const useSimplifiedRundownState = () => {
       if (protectedFields.size > 0) {
         console.log('🛡️ Protecting actively typed field during realtime update:', Array.from(protectedFields));
         
+        // CRITICAL: Clear AutoSave block when protecting fields - user is actively editing
+        if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
+          console.log('✅ AutoSave: local edit detected - re-enabling saves');
+          blockUntilLocalEditRef.current = false;
+        }
+        
         // Create merged items by protecting local edits
         // Enhanced conflict resolution: merge changes at field level
         const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
