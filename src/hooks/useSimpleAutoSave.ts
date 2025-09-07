@@ -154,6 +154,12 @@ export const useSimpleAutoSave = (
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
       
+      // CRITICAL: Explicitly clear hasUnsavedChanges after priming baseline
+      // This prevents initial save triggers from race conditions
+      setTimeout(() => {
+        onSavedRef.current?.();
+      }, 100);
+      
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
         length: sig.length 

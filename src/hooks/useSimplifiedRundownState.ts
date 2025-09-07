@@ -482,7 +482,7 @@ export const useSimplifiedRundownState = () => {
       
       try {
         // LAST WRITER WINS: Just apply the change immediately
-        // No protection, no AutoSave triggering - this is already saved by the sender
+        // Use loadState to avoid triggering hasUnsavedChanges for remote data
           // Handle rundown-level property updates (no itemId)
         if (!update.itemId) {
           // Check if we're actively editing this rundown-level field
@@ -494,19 +494,19 @@ export const useSimplifiedRundownState = () => {
           
           console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
           
-          // Apply rundown-level property changes
+          // Apply rundown-level property changes using loadState to avoid hasUnsavedChanges
           switch (update.field) {
             case 'title':
-              actions.setTitle(update.value);
+              actions.loadState({ title: update.value });
               break;
             case 'startTime':
-              actions.setStartTime(update.value);
+              actions.loadState({ startTime: update.value });
               break;
             case 'timezone':
-              actions.setTimezone(update.value);
+              actions.loadState({ timezone: update.value });
               break;
             case 'showDate':
-              actions.setShowDate(update.value);
+              actions.loadState({ showDate: update.value });
               break;
             case 'items:reorder': {
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
@@ -517,7 +517,7 @@ export const useSimplifiedRundownState = () => {
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
-                actions.setItems(reordered);
+                actions.loadState({ items: reordered });
               }
               break;
             }
@@ -528,7 +528,7 @@ export const useSimplifiedRundownState = () => {
               if (item && !state.items.find(i => i.id === item.id)) {
                 const newItems = [...state.items];
                 newItems.splice(index, 0, item);
-                actions.setItems(newItems);
+                actions.loadState({ items: newItems });
               }
               break;
             }
@@ -537,7 +537,7 @@ export const useSimplifiedRundownState = () => {
               if (id) {
                 const newItems = state.items.filter(i => i.id !== id);
                 if (newItems.length !== state.items.length) {
-                  actions.setItems(newItems);
+                  actions.loadState({ items: newItems });
                 }
               }
               break;
@@ -581,13 +581,17 @@ export const useSimplifiedRundownState = () => {
           });
           
           if (updatedItems.some((item, index) => item !== state.items[index])) {
-            actions.setItems(updatedItems);
+            actions.loadState({ items: updatedItems });
           }
       } finally {
-        // CRITICAL: Reset flag after applying changes
+        // CRITICAL: Reset flag and add cooldown after applying remote changes
         setTimeout(() => {
           applyingCellBroadcastRef.current = false;
-        }, 0);
+          // Add 800ms cooldown to prevent immediate autosave scheduling
+          if (cooldownUntilRef.current) {
+            cooldownUntilRef.current = Math.max(cooldownUntilRef.current, Date.now() + 800);
+          }
+        }, 50);
       }
     });
 
