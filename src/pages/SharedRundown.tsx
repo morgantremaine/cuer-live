@@ -101,26 +101,39 @@ const SharedRundown = () => {
         console.log('📱 Shared rundown applying structural broadcast:', update.field);
         setLocalRundownData(prevData => {
           if (!prevData) return prevData;
+          const prevItems = Array.isArray(prevData.items) ? prevData.items : [];
           
           if (update.field === 'items:reorder') {
             // For reorder, update.value contains { order: string[] }
             if (update.value?.order && Array.isArray(update.value.order)) {
-              const reorderedItems = update.value.order
-                .map(id => prevData.items.find(item => item.id === id))
+              const idSet = new Set(update.value.order);
+              const existingMap = new Map(prevItems.map(i => [i.id, i]));
+              const reordered = update.value.order
+                .map((id: string) => existingMap.get(id))
                 .filter(Boolean);
-              
+              // Append any items not present in order (safety)
+              const leftovers = prevItems.filter(i => !idSet.has(i.id));
               return {
                 ...prevData,
-                items: reorderedItems
+                items: [...reordered, ...leftovers]
               };
             }
-          } else {
-            // For add/remove, update.value is the complete items array
-            if (Array.isArray(update.value)) {
-              return {
-                ...prevData,
-                items: update.value
-              };
+          } else if (update.field === 'items:add') {
+            // Expect { item, index }
+            const payload = update.value || {};
+            const item = payload.item;
+            const index = Math.max(0, Math.min(payload.index ?? prevItems.length, prevItems.length));
+            if (item && !prevItems.find(i => i.id === item.id)) {
+              const newItems = [...prevItems];
+              newItems.splice(index, 0, item);
+              return { ...prevData, items: newItems };
+            }
+          } else if (update.field === 'items:remove') {
+            // Expect { id }
+            const removeId = update.value?.id;
+            if (removeId) {
+              const filtered = prevItems.filter(i => i.id !== removeId);
+              return { ...prevData, items: filtered };
             }
           }
           
@@ -188,9 +201,9 @@ const SharedRundown = () => {
             (rundownData as any)?.docVersion ??
             0;
 
-          // Never apply an older snapshot over newer local state
-          if (incomingDoc < currentDoc) {
-            console.log('↩️ Skipping RPC apply: incoming docVersion older', { incomingDoc, currentDoc });
+          // Never apply an older or equal snapshot over current local state
+          if (incomingDoc <= currentDoc) {
+            console.log('↩️ Skipping RPC apply: incoming docVersion not newer', { incomingDoc, currentDoc });
             return;
           }
 
