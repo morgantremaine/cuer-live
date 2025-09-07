@@ -47,6 +47,7 @@ const SharedRundown = () => {
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const lastCellUpdateTsRef = useRef<number>(0);
   const [localRundownData, setLocalRundownData] = useState(rundownData);
 
   // Update the previous tab active state after each render
@@ -59,7 +60,24 @@ const SharedRundown = () => {
 
   // Sync local state with shared state
   useEffect(() => {
-    setLocalRundownData(rundownData);
+    if (!rundownData) return;
+
+    const now = Date.now();
+    // Avoid overwriting very recent cell-broadcast changes to prevent flicker
+    if (lastCellUpdateTsRef.current && now - lastCellUpdateTsRef.current < 800) {
+      return;
+    }
+
+    setLocalRundownData(prev => {
+      if (!prev) return rundownData;
+      const incomingDoc = (rundownData as any)?.docVersion ?? 0;
+      const prevDoc = (prev as any)?.docVersion ?? 0;
+      // Only sync down if the server docVersion advanced
+      if (incomingDoc > prevDoc) {
+        return rundownData;
+      }
+      return prev;
+    });
   }, [rundownData]);
 
   // Set up cell broadcast for instant collaboration in shared rundown
@@ -75,6 +93,8 @@ const SharedRundown = () => {
       }
 
       console.log('📱 Shared rundown applying cell broadcast update:', update.itemId, update.field, update.value);
+      // Record time to prevent immediate overwrite from DB snapshot
+      lastCellUpdateTsRef.current = Date.now();
       
       // Handle structural events for instant collaboration
       if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
