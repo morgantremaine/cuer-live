@@ -1097,16 +1097,30 @@ export const useSimplifiedRundownState = () => {
       (justActivated && (now - lastSyncTimeRef.current > 30000) || !hasSyncedOnceRef.current)
     );
 
-    // EXTRA CHECK: Don't refresh if we have very recent cell updates (indicates active collaboration)
+    // EXTRA CHECK: Don't refresh if we have recent cell updates (indicates active collaboration)
     const recentCellUpdates = recentCellUpdatesRef.current;
     const hasVeryRecentCellUpdates = Array.from(recentCellUpdates.values()).some(
       update => Date.now() - update.timestamp < 5000 // Within last 5 seconds
+    );
+    
+    // Also check for any cell updates within a longer window to be more conservative
+    const hasAnyCellUpdates = Array.from(recentCellUpdates.values()).some(
+      update => Date.now() - update.timestamp < 15000 // Within last 15 seconds
     );
     
     if (hasVeryRecentCellUpdates) {
       console.log('🚫 Skipping tab refresh - recent cell updates detected (active collaboration)');
       prevIsActiveRef.current = isTabActive;
       lastSyncTimeRef.current = now; // Update timestamp to prevent immediate retry
+      return;
+    }
+    
+    // If there are any recent cell updates and this is just a tab activation (not first sync),
+    // be more conservative and skip the forced sync
+    if (hasAnyCellUpdates && hasSyncedOnceRef.current && justActivated) {
+      console.log('🚫 Skipping forced sync - cell updates detected within 15s, preserving collaborative state');
+      prevIsActiveRef.current = isTabActive;
+      lastSyncTimeRef.current = now;
       return;
     }
     
