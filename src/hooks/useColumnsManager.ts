@@ -204,6 +204,8 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
 
     console.log('🔄 Loading exact layout columns:', layoutColumns.length);
 
+    let wasLayoutActuallyChanged = false;
+
     setColumns(prevColumns => {
       // Filter out the deprecated "Element" column from layout columns
       const filteredLayoutColumns = layoutColumns.filter(col => 
@@ -239,24 +241,37 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return col;
       });
 
-      console.log('✅ Loaded exact layout with', finalColumns.length, 'columns');
-      
-      if (markAsChanged) {
-        markAsChanged();
+      // Check if the layout actually changed
+      const columnsChanged = prevColumns.length !== finalColumns.length ||
+        prevColumns.some((col, index) => {
+          const newCol = finalColumns[index];
+          return !newCol || col.id !== newCol.id || col.isVisible !== newCol.isVisible || col.width !== newCol.width;
+        });
+
+      if (columnsChanged) {
+        wasLayoutActuallyChanged = true;
+        console.log('✅ Loaded exact layout with', finalColumns.length, 'columns');
+        
+        if (markAsChanged) {
+          markAsChanged();
+        }
+      } else {
+        console.log('ℹ️ Layout unchanged - skipping unnecessary update');
       }
       
       // IMPORTANT: Return the new columns synchronously for immediate state update
       return finalColumns;
     });
     
-    // CRITICAL FIX: Schedule column persistence after state update
-    // This ensures the loaded layout becomes the saved state for refreshes
-    setTimeout(() => {
-      console.log('💾 Persisting loaded layout as current column state');
-      if (markAsChanged) {
-        markAsChanged();
-      }
-    }, 100);
+    // CRITICAL FIX: Only persist if layout actually changed
+    if (wasLayoutActuallyChanged) {
+      setTimeout(() => {
+        console.log('💾 Persisting loaded layout as current column state');
+        if (markAsChanged) {
+          markAsChanged();
+        }
+      }, 100);
+    }
   }, [markAsChanged, teamColumns]);
 
   // Reset to default columns function for new rundowns
