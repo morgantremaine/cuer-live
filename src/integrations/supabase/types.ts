@@ -14,54 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      app_notification_dismissals: {
-        Row: {
-          dismissed_at: string
-          id: string
-          notification_id: string
-          user_id: string
-        }
-        Insert: {
-          dismissed_at?: string
-          id?: string
-          notification_id: string
-          user_id: string
-        }
-        Update: {
-          dismissed_at?: string
-          id?: string
-          notification_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      app_notifications: {
-        Row: {
-          active: boolean
-          created_at: string
-          id: string
-          message: string | null
-          title: string
-          type: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          message?: string | null
-          title: string
-          type?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          id?: string
-          message?: string | null
-          title?: string
-          type?: string
-        }
-        Relationships: []
-      }
       blueprints: {
         Row: {
           camera_plots: Json | null
