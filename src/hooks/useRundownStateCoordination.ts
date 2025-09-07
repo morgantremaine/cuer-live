@@ -195,7 +195,9 @@ export const useRundownStateCoordination = () => {
     persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
-    persistedState.markStructuralChange
+    persistedState.markStructuralChange,
+    persistedState.rundownId, // Pass rundownId for broadcasts
+    userId // Pass userId for broadcasts
   );
 
   // Simplified processing state - no teleprompter interference

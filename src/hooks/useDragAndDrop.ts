@@ -17,6 +17,7 @@ import {
   arrayMove
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 import { RundownItem } from '@/types/rundown';
 
 interface DragInfo {
@@ -35,7 +36,9 @@ export const useDragAndDrop = (
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean,
-  markStructuralChange?: () => void
+  markStructuralChange?: () => void,
+  rundownId?: string | null,
+  currentUserId?: string | null
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -265,6 +268,18 @@ export const useDragAndDrop = (
       
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
+      
+      // Broadcast reorder for immediate realtime sync
+      if (rundownId && currentUserId) {
+        const order = newItems.map(item => item.id);
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:reorder',
+          { order },
+          currentUserId
+        );
+      }
       
     } catch (error) {
       console.warn('@dnd-kit drag and drop error:', error);

@@ -57,7 +57,9 @@ export const useRundownInteractionHandlers = (
     title,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
-    markStructuralChange
+    markStructuralChange,
+    undefined, // rundownId - not available in this context
+    undefined  // currentUserId - not available in this context
   );
 
   // Clipboard functionality
