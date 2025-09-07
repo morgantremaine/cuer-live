@@ -252,7 +252,13 @@ export const useFieldDeltaSave = (
     // Add metadata
     updateData.updated_at = updateTimestamp;
     updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
-    updateData.tab_id = getTabId();
+    
+    // Add tab_id only if schema supports it (graceful degradation)
+    try {
+      updateData.tab_id = getTabId();
+    } catch (error) {
+      console.warn('tab_id not yet in schema cache, skipping:', error);
+    }
 
     const { data, error } = await supabase
       .from('rundowns')
@@ -282,7 +288,7 @@ export const useFieldDeltaSave = (
       throw new Error('No rundown ID provided');
     }
 
-    const updateData = {
+    const updateData: any = {
       title: currentState.title,
       items: currentState.items,
       start_time: currentState.startTime,
@@ -290,9 +296,15 @@ export const useFieldDeltaSave = (
       show_date: currentState.showDate ? `${currentState.showDate.getFullYear()}-${String(currentState.showDate.getMonth() + 1).padStart(2, '0')}-${String(currentState.showDate.getDate()).padStart(2, '0')}` : null,
       external_notes: currentState.externalNotes,
       updated_at: updateTimestamp,
-      last_updated_by: (await supabase.auth.getUser()).data.user?.id,
-      tab_id: getTabId()
+      last_updated_by: (await supabase.auth.getUser()).data.user?.id
     };
+
+    // Add tab_id only if schema supports it (graceful degradation)
+    try {
+      updateData.tab_id = getTabId();
+    } catch (error) {
+      console.warn('tab_id not yet in schema cache for full update, skipping:', error);
+    }
 
     const { data, error } = await supabase
       .from('rundowns')

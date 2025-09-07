@@ -410,21 +410,29 @@ export const useSimpleAutoSave = (
         const folderId = location.state?.folderId || null;
 
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        const newRundownData = {
+          title: saveState.title,
+          items: saveState.items,
+          start_time: saveState.startTime,
+          timezone: saveState.timezone,
+          show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
+          external_notes: saveState.externalNotes,
+          team_id: teamData.team_id,
+          user_id: currentUserId,
+          folder_id: folderId,
+          last_updated_by: currentUserId
+        } as any;
+
+        // Add tab_id only if schema supports it (graceful degradation)
+        try {
+          newRundownData.tab_id = getTabId();
+        } catch (error) {
+          console.warn('tab_id not yet in schema cache for new rundown, skipping:', error);
+        }
+
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
-          .insert({
-            title: saveState.title,
-            items: saveState.items,
-            start_time: saveState.startTime,
-            timezone: saveState.timezone,
-            show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
-            external_notes: saveState.externalNotes,
-            team_id: teamData.team_id,
-            user_id: currentUserId,
-            folder_id: folderId,
-            last_updated_by: currentUserId,
-            tab_id: getTabId()
-          })
+          .insert(newRundownData)
           .select()
           .single();
 

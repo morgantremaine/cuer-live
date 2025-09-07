@@ -423,6 +423,7 @@ export type Database = {
           show_date: string | null
           showcaller_state: Json | null
           start_time: string | null
+          tab_id: string | null
           team_id: string
           timezone: string | null
           title: string
@@ -446,6 +447,7 @@ export type Database = {
           show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
+          tab_id?: string | null
           team_id: string
           timezone?: string | null
           title: string
@@ -469,6 +471,7 @@ export type Database = {
           show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
+          tab_id?: string | null
           team_id?: string
           timezone?: string | null
           title?: string
