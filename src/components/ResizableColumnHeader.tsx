@@ -12,6 +12,7 @@ interface ResizableColumnHeaderProps {
   children: React.ReactNode;
   showLeftSeparator?: boolean;
   isLastColumn?: boolean;
+  zoomLevel?: number;
 }
 
 // Define minimum widths for different column types - optimized for content
@@ -44,7 +45,8 @@ const ResizableColumnHeader = ({
   onAutoResize,
   children, 
   showLeftSeparator = false,
-  isLastColumn = false
+  isLastColumn = false,
+  zoomLevel = 1
 }: ResizableColumnHeaderProps) => {
   const {
     attributes,
@@ -59,7 +61,7 @@ const ResizableColumnHeader = ({
   const initialWidthRef = useRef<number>(0);
   const animationFrameRef = useRef<number>();
 
-  const minimumWidth = getMinimumWidth(column);
+  const minimumWidth = getMinimumWidth(column) * zoomLevel;
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
