@@ -1,5 +1,10 @@
 
-/* Force remove all table cell borders */
+/* Comprehensive table border and seam elimination */
+.table-container {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+}
+
 .table-container td,
 .table-container th {
   border: none !important;
@@ -7,13 +12,21 @@
   border-left: none !important;
   border-top: none !important;
   border-bottom: none !important;
+  background-clip: border-box !important;
 }
 
-/* Normalize backgrounds on colored rows and headers to avoid hairline seams */
+/* Force all table cells to inherit background from their row to eliminate gaps */
+.table-container tbody tr td,
+.table-container thead tr th {
+  background-color: inherit !important;
+  background-clip: border-box !important;
+}
+
+/* Ensure colored rows paint consistently */
 .table-container tr[data-custom-color="true"] td,
 .table-container tr[data-type="header"] td {
   background-color: inherit !important;
-  background-clip: padding-box;
+  background-clip: border-box !important;
 }
 
 @tailwind base;
