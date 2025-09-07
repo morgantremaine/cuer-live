@@ -208,12 +208,6 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
-    // CRITICAL: Never save during initial load phase
-    if (isLoadingRef.current || isLoading) {
-      debugLogger.preferences('🛑 BLOCKED save during loading phase');
-      return;
-    }
-
     // Only save columns that have user-specific settings (order, visibility, width)
     // But include ALL columns so we maintain the complete layout state
     const columnsToSaveFiltered = columnsToSave.filter(col => {
@@ -330,8 +324,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
     const merged = mergeColumnsWithTeamColumns(newColumns);
     setColumns(merged);
-    // NEVER save during loading - user changes only
-    if (!isLoadingRef.current && !isLoading) {
+    // Only save if we're not currently loading
+    if (!isLoadingRef.current) {
       saveColumnPreferences(merged, isImmediate);
     }
   }, [columns, saveColumnPreferences, addTeamColumn, deleteTeamColumn, team?.id, user?.id, mergeColumnsWithTeamColumns]);
@@ -343,8 +337,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         col.id === columnId ? { ...col, width } : col
       );
       
-      // NEVER save during loading - user actions only  
-      if (!isLoadingRef.current && !isLoading) {
+      // Save with debounce for resize operations
+      if (!isLoadingRef.current) {
         saveColumnPreferences(updatedColumns, false);
       }
       
@@ -374,21 +368,32 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     }
   }, [rundownId, user?.id, loadColumnPreferences]);
 
-  // Update columns when team columns change - ensuring all team columns are always available
+  // Update columns when team columns change - but ONLY after initial load is complete
   useEffect(() => {
-    if (!isLoadingRef.current && teamColumns.length > 0 && loadedRundownRef.current) {
+    // Don't trigger during initial load or if rundown hasn't loaded yet
+    if (isLoadingRef.current || !loadedRundownRef.current) {
+      return;
+    }
+    
+    // Only proceed if we have team columns and the rundown is fully loaded
+    if (teamColumns.length > 0) {
       setColumns(prevColumns => {
         // Always refresh the complete column set to include new team columns
         const merged = mergeColumnsWithTeamColumns(prevColumns, false);
         
-        // Only save if there are actual changes to prevent unnecessary saves
-        const prevKeys = new Set(prevColumns.map(c => c.key));
-        const newKeys = new Set(merged.map(c => c.key));
-        const hasNewColumns = merged.some(c => !prevKeys.has(c.key)) || prevColumns.some(c => !newKeys.has(c.key));
+        // Only save if there are ACTUAL new team columns (not just initial merge)
+        const prevTeamColumnKeys = new Set(
+          prevColumns.filter(c => (c as any).isTeamColumn).map(c => c.key)
+        );
+        const newTeamColumnKeys = new Set(
+          merged.filter(c => (c as any).isTeamColumn).map(c => c.key)
+        );
         
-        // NEVER save during loading - only save user-initiated team column changes
-        if (hasNewColumns && !isLoadingRef.current && !isLoading && prevColumns.length > 0) {
-          debugLogger.preferences('Team columns updated - refreshing available columns');
+        const hasNewTeamColumns = Array.from(newTeamColumnKeys).some(key => !prevTeamColumnKeys.has(key));
+        
+        // Only save when there are genuinely new team columns added
+        if (hasNewTeamColumns && prevColumns.length > 0) {
+          debugLogger.preferences('New team columns detected - saving updated layout');
           saveColumnPreferences(merged, true);
         }
         
@@ -410,9 +415,9 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   const applyLayout = useCallback((layoutColumns: Column[], shouldPersist = true) => {
     debugLogger.preferences('Applying layout with ' + layoutColumns.length + ' columns (persist: ' + shouldPersist + ')');
     
-    // CRITICAL: Prevent ANY saves during initial loading phase
-    if (isLoadingRef.current || isLoading) {
-      debugLogger.preferences('🛑 BLOCKED layout application during loading phase');
+    // Prevent saves during initial loading phase
+    if (isLoadingRef.current) {
+      debugLogger.preferences('Skipping layout application - still loading');
       return;
     }
     
