@@ -47,11 +47,6 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
       !showTemporarySaved // don't retrigger if already showing
     ) {
       setShowTemporarySaved(true);
-      const timer = setTimeout(() => {
-        setShowTemporarySaved(false);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
     }
     
     setPreviouslySaving(isSaving);
@@ -61,10 +56,16 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
   useEffect(() => {
     if (shouldShowSavedFlash) {
       setShowTemporarySaved(true);
+    }
+  }, [shouldShowSavedFlash]);
+
+  // Centralized timer to hide the temporary saved message after 3 seconds
+  useEffect(() => {
+    if (showTemporarySaved) {
       const timer = setTimeout(() => setShowTemporarySaved(false), 3000);
       return () => clearTimeout(timer);
     }
-  }, [shouldShowSavedFlash]);
+  }, [showTemporarySaved]);
 
   const formatLastSaved = (date: Date) => {
     const now = new Date();
