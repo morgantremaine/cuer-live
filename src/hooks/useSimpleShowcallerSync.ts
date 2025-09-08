@@ -453,12 +453,7 @@ export const useSimpleShowcallerSync = ({
   // Save showcaller state to database whenever it changes
   const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
     if (!rundownId || !hasLoadedInitialState.current) return;
-    // Only controllers persist state; viewers never write
-    if (!stateToSave.isController) {
-      console.log('📺 Simple: Skip saving showcaller (not controller)');
-      return;
-    }
-
+    
     try {
       // Signal that this is a showcaller operation to prevent false change detection
       if (setShowcallerUpdate) {
@@ -499,8 +494,6 @@ export const useSimpleShowcallerSync = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (!hasLoadedInitialState.current) return;
-    // Do not persist for non-controllers
-    if (!state.isController) return;
     // Skip the first save after initial load
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false;
