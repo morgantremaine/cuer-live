@@ -773,9 +773,10 @@ export const useSimplifiedRundownState = () => {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
-    // Check if this is a typing field
+    // Check if this is a typing field or immediate-sync field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
+    const isImmediateSyncField = field === 'isFloating' || field === 'color'; // Fields that need immediate database sync
     
     const sessionKey = `${id}-${field}`;
     
@@ -809,6 +810,11 @@ export const useSimplifiedRundownState = () => {
       }, 3000); // Reduced to 3 seconds for faster sync
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
+    } else if (isImmediateSyncField) {
+      // For immediate sync fields like isFloating, save undo state and trigger immediate save
+      saveUndoState(state.items, [], state.title, `Toggle ${field}`);
+      // Trigger immediate autosave for critical state changes like float/unfloat
+      markActiveTyping(); // This will trigger the autosave system to save immediately
     } else if (field === 'color') {
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
