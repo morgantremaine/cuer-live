@@ -6,6 +6,7 @@ interface SaveState {
   lastSaved: Date | null;
   hasUnsavedChanges: boolean;
   saveError: string | null;
+  hasContentChanges?: boolean; // Additional flag to distinguish content vs column changes
 }
 
 interface RundownSaveIndicatorProps {
@@ -13,7 +14,7 @@ interface RundownSaveIndicatorProps {
 }
 
 const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
-  const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
+  const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
@@ -33,8 +34,9 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
   }, [lastSaved, hasUnsavedChanges, isSaving]);
 
   // Track when saving transitions from true to false to show temporary "Saved" message
+  // Only show for content changes, not column-only changes
   useEffect(() => {
-    if (previouslySaving && !isSaving && !hasUnsavedChanges && !saveError && !lastSaved) {
+    if (previouslySaving && !isSaving && !hasUnsavedChanges && !saveError && !lastSaved && hasContentChanges) {
       setShowTemporarySaved(true);
       const timer = setTimeout(() => {
         setShowTemporarySaved(false);
@@ -44,7 +46,7 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     }
     
     setPreviouslySaving(isSaving);
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving]);
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges]);
 
   const formatLastSaved = (date: Date) => {
     const now = new Date();
@@ -55,6 +57,11 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  // Don't show any indicators if changes are only column-related
+  if (!hasContentChanges) {
+    return null;
+  }
 
   if (isSaving) {
     return (

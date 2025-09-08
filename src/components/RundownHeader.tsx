@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff, Search, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -81,6 +81,7 @@ const RundownHeader = ({
   const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
+  const lastContentSignatureRef = useRef<string>('');
   
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
@@ -95,12 +96,62 @@ const RundownHeader = ({
     timeRemaining
   });
 
+  // Create a content-only signature to detect non-column changes
+  const contentOnlySignature = useMemo(() => {
+    return JSON.stringify({
+      items: items.map(item => ({
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        images: item.images,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        rowNumber: item.rowNumber
+      })),
+      title: title,
+      // Explicitly exclude columns, timezone, startTime for save indicator purposes
+    });
+  }, [items, title]);
+
+  // Check if there are actual content changes (not just column layout changes)
+  const hasContentChanges = useMemo(() => {
+    if (!hasUnsavedChanges) return false;
+    
+    // If we haven't saved a baseline yet, assume content has changed
+    if (!lastContentSignatureRef.current) {
+      lastContentSignatureRef.current = contentOnlySignature;
+      return true;
+    }
+    
+    // Compare current content signature with last saved one
+    const contentChanged = contentOnlySignature !== lastContentSignatureRef.current;
+    
+    // Update baseline when content actually changes
+    if (contentChanged) {
+      lastContentSignatureRef.current = contentOnlySignature;
+    }
+    
+    return contentChanged;
+  }, [hasUnsavedChanges, contentOnlySignature]);
+
   // Create save state for the indicator
   const saveState = {
     isSaving,
     hasUnsavedChanges,
     lastSaved: null, // Auto-save doesn't track lastSaved yet
-    saveError: null  // Auto-save doesn't track saveError yet
+    saveError: null,  // Auto-save doesn't track saveError yet
+    hasContentChanges
   };
 
   // Get current universal time for display
