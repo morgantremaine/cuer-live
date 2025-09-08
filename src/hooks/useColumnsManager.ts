@@ -202,7 +202,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       return;
     }
 
-    console.log('🔄 Loading exact layout columns:', layoutColumns.length);
+    console.log('🔄 Loading exact layout with', layoutColumns.length, 'visible columns');
 
     let wasLayoutActuallyChanged = false;
 
@@ -226,31 +226,77 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
         return col;
       });
 
-      // CRITICAL FIX: Load exactly what was saved without automatic merging
-      // Only merge team columns that were actually part of the saved layout
-      const finalColumns = updatedLayoutColumns.map(col => {
-        // Preserve team column metadata if it exists
-        const teamColumn = teamColumns.find(tc => tc.column_key === col.key);
-        if (teamColumn && col.isCustom) {
+      // CRITICAL FIX: Load the saved layout exactly as it was saved
+      // Create a map of saved columns for quick lookup
+      const savedColumnMap = new Map<string, Column>();
+      updatedLayoutColumns.forEach(col => {
+        savedColumnMap.set(col.key, col);
+      });
+
+      // Start with all default columns and set their visibility based on the saved layout
+      const allColumns = getDefaultColumns().map(defaultCol => {
+        const savedCol = savedColumnMap.get(defaultCol.key);
+        if (savedCol) {
+          // Column was in the saved layout - use all saved properties
           return {
-            ...col,
-            isTeamColumn: true,
-            createdBy: teamColumn.created_by
+            ...savedCol,
+            isCustom: false, // Ensure built-in columns remain marked as built-in
+            isEditable: defaultCol.isEditable // Preserve editability from defaults
+          };
+        } else {
+          // Column was NOT in the saved layout - hide it
+          return {
+            ...defaultCol,
+            isVisible: false
           };
         }
-        return col;
+      });
+
+      // Add any custom/team columns from the saved layout
+      updatedLayoutColumns.forEach(savedCol => {
+        if (savedCol.isCustom) {
+          const existsInDefaults = allColumns.some(col => col.key === savedCol.key);
+          if (!existsInDefaults) {
+            // Preserve team column metadata if it exists
+            const teamColumn = teamColumns.find(tc => tc.column_key === savedCol.key);
+            allColumns.push({
+              ...savedCol,
+              isTeamColumn: teamColumn ? true : undefined,
+              createdBy: teamColumn?.created_by
+            } as Column & { isTeamColumn?: boolean; createdBy?: string });
+          }
+        }
+      });
+
+      // Add any team columns that weren't in the saved layout (but keep them hidden)
+      teamColumns.forEach(teamCol => {
+        const exists = allColumns.some(col => col.key === teamCol.column_key);
+        if (!exists) {
+          allColumns.push({
+            id: teamCol.column_key,
+            name: teamCol.column_name,
+            key: teamCol.column_key,
+            width: '150px',
+            isCustom: true,
+            isEditable: true,
+            isVisible: false, // Hidden since not in saved layout
+            isTeamColumn: true,
+            createdBy: teamCol.created_by
+          } as Column & { isTeamColumn?: boolean; createdBy?: string });
+        }
       });
 
       // Check if the layout actually changed
-      const columnsChanged = prevColumns.length !== finalColumns.length ||
+      const columnsChanged = prevColumns.length !== allColumns.length ||
         prevColumns.some((col, index) => {
-          const newCol = finalColumns[index];
+          const newCol = allColumns[index];
           return !newCol || col.id !== newCol.id || col.isVisible !== newCol.isVisible || col.width !== newCol.width;
         });
 
       if (columnsChanged) {
         wasLayoutActuallyChanged = true;
-        console.log('✅ Loaded exact layout with', finalColumns.length, 'columns');
+        const visibleCount = allColumns.filter(col => col.isVisible !== false).length;
+        console.log('✅ Loaded exact layout with', visibleCount, 'visible columns out of', allColumns.length, 'total');
         
         if (markAsChanged) {
           markAsChanged();
@@ -260,7 +306,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       }
       
       // IMPORTANT: Return the new columns synchronously for immediate state update
-      return finalColumns;
+      return allColumns;
     });
     
     // CRITICAL FIX: Only persist if layout actually changed
