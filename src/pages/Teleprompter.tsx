@@ -115,14 +115,39 @@ const Teleprompter = () => {
         return;
       }
 
-      // Handle structural events for instant collaboration
+      // Handle structural events for instant collaboration (add/remove/reorder)
       if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
         console.log('📱 Teleprompter applying structural broadcast:', update.field);
         if (rundownData) {
-          setRundownData({
-            ...rundownData,
-            items: update.value // Complete items array from broadcast
-          });
+          if (update.field === 'items:add') {
+            const payload = update.value || {};
+            const item = payload.item;
+            const index = Math.max(0, Math.min(payload.index ?? rundownData.items.length, rundownData.items.length));
+            if (item && !rundownData.items.find(i => i.id === item.id)) {
+              const newItems = [...rundownData.items];
+              newItems.splice(index, 0, item);
+              setRundownData({ ...rundownData, items: newItems });
+            }
+          } else if (update.field === 'items:remove') {
+            const id = update.value?.id as string;
+            if (id) {
+              const newItems = rundownData.items.filter(i => i.id !== id);
+              if (newItems.length !== rundownData.items.length) {
+                setRundownData({ ...rundownData, items: newItems });
+              }
+            }
+          } else if (update.field === 'items:reorder') {
+            const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+            if (order.length > 0) {
+              const indexMap = new Map(order.map((id, idx) => [id, idx]));
+              const reordered = [...rundownData.items].sort((a, b) => {
+                const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                return ai - bi;
+              });
+              setRundownData({ ...rundownData, items: reordered });
+            }
+          }
         }
         return;
       }

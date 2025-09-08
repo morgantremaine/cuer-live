@@ -10,6 +10,7 @@ import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeBoolean } from '@/utils/booleanNormalization';
 import { Column } from '@/types/columns';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
@@ -569,6 +570,17 @@ export const useSimplifiedRundownState = () => {
               if (isActivelyEditing) {
                 console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
                 return item;
+              }
+              
+              // Handle boolean normalization for float fields
+              const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
+              if (isBooleanFloatField) {
+                const boolVal = normalizeBoolean(update.value);
+                return {
+                  ...item,
+                  isFloating: boolVal,
+                  isFloated: boolVal
+                };
               }
               
               if (update.field === 'customFields') {

@@ -1,5 +1,6 @@
 /**
- * Bulletproof Teleprompter - Enhanced coordination with LocalShadow protection
+ * EXPERIMENTAL: Bulletproof Teleprompter - Enhanced coordination with LocalShadow protection
+ * WARNING: This hook is incomplete and not currently used in production
  * Ensures teleprompter sync never interferes with active editing
  */
 
@@ -124,7 +125,7 @@ export const useBulletproofTeleprompter = (
   }, [saveTeleprompterState, delays]);
 
   // Immediate save for critical state changes (play/pause)
-  const immediatelyave = useCallback((state: TeleprompterState) => {
+  const immediateSave = useCallback((state: TeleprompterState) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -148,7 +149,7 @@ export const useBulletproofTeleprompter = (
 
     // Save with appropriate timing
     if (immediate) {
-      immediatelyave(newState);
+      immediateSave(newState);
     } else {
       debouncedSave(newState);
     }
@@ -158,7 +159,7 @@ export const useBulletproofTeleprompter = (
       isPlaying: newState.isPlaying,
       immediate
     });
-  }, [onStateUpdate, immediatelyave, debouncedSave]);
+  }, [onStateUpdate, immediateSave, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -171,7 +172,7 @@ export const useBulletproofTeleprompter = (
 
   return {
     updateTeleprompterState,
-    saveTeleprompterState: immediatelyave,
+    saveTeleprompterState: immediateSave,
     isSaving: isSavingRef.current
   };
 };
