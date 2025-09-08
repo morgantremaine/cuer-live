@@ -156,9 +156,9 @@ const RundownHeader = ({
     const prev = prevIsSavingContentRef.current;
     if (prev && !isSavingContent && !hasUnsavedChanges) {
       setShouldShowSavedFlash(true);
-      // Reset flag on next tick so future saves can retrigger
-      const t = setTimeout(() => setShouldShowSavedFlash(false), 0);
-      return () => clearTimeout(t);
+      // Keep the flag true long enough for the indicator to see it and start its own timer
+      const timer = setTimeout(() => setShouldShowSavedFlash(false), 100);
+      return () => clearTimeout(timer);
     }
     prevIsSavingContentRef.current = isSavingContent;
   }, [isSavingContent, hasUnsavedChanges]);
