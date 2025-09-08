@@ -348,6 +348,11 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       return;
     }
 
+    // FIXED: Block during initial hydration to prevent overwriting loaded preferences
+    if (!hasInitialLoad) {
+      return;
+    }
+
     // If no team columns, nothing to merge
     if (teamColumns.length === 0) {
       return;
@@ -361,7 +366,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     if (currentColumnKeys !== newColumnKeys) {
       setColumns(newMerged);
     }
-  }, [isLoading, teamColumnsLoading, teamColumns.length, columns.length]);
+  }, [isLoading, teamColumnsLoading, teamColumns.length, hasInitialLoad]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
