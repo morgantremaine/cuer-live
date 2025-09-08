@@ -18,7 +18,6 @@ import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
-import { getTabId } from '@/utils/tabUtils';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 
@@ -475,10 +474,10 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      console.log('📱 Editor cell broadcast received:', { field: update.field, itemId: update.itemId, value: typeof update.value === 'string' ? update.value.substring(0, 50) + '...' : update.value });
+      console.log('📱 Cell broadcast received:', update);
       
-      // Skip our own updates (tab-based)
-      if (cellBroadcast.isOwnUpdate(update, getTabId(), currentUserId)) {
+      // Skip our own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
         console.log('📱 Skipping own cell broadcast update');
         return;
       }
