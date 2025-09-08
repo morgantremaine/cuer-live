@@ -1,6 +1,7 @@
 // Per-cell broadcast system using Supabase Realtime (simplified for single sessions)
 import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
+import { getTabId } from '@/utils/tabUtils';
 
 // Simplified message payload for single sessions
 interface CellUpdate {
@@ -9,6 +10,7 @@ interface CellUpdate {
   field: string;
   value: any;
   userId: string;
+  clientId?: string; // Identify originating tab
   timestamp: number;
 }
 
@@ -126,6 +128,7 @@ export class CellBroadcastManager {
       field,
       value,
       userId,
+      clientId: getTabId(),
       timestamp: Date.now()
     };
 
@@ -138,13 +141,17 @@ export class CellBroadcastManager {
     });
   }
 
-  // Simple echo prevention using userId (single session per user)
-  isOwnUpdate(update: any, currentUserId: string): boolean {
-    const isOwn = update.userId === currentUserId;
-    if (isOwn) {
-      console.log('📱 Identified own cell broadcast update via userId');
+  // Echo prevention using clientId (tab-based). Fallback to userId if clientId missing
+  isOwnUpdate(update: any, currentClientId: string, currentUserId?: string): boolean {
+    if (update.clientId && currentClientId && update.clientId === currentClientId) {
+      console.log('📱 Identified own cell broadcast update via clientId');
+      return true;
     }
-    return isOwn;
+    if (!update.clientId && currentUserId && update.userId === currentUserId) {
+      console.log('📱 Identified own cell broadcast update via userId (legacy)');
+      return true;
+    }
+    return false;
   }
 
   subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void) {

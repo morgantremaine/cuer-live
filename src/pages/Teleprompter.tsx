@@ -12,6 +12,7 @@ import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSav
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { getTabId } from '@/utils/tabUtils';
 import { toast } from 'sonner';
 import { RealtimeWatchdog } from '@/utils/realtimeWatchdog';
 
@@ -109,8 +110,8 @@ const Teleprompter = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (simplified for single sessions)
-      if (cellBroadcast.isOwnUpdate(update, user?.id || '')) {
+      // Skip own updates (tab-based)
+      if (cellBroadcast.isOwnUpdate(update, getTabId(), user?.id)) {
         console.log('📱 Teleprompter skipping own cell broadcast update');
         return;
       }

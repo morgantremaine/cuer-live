@@ -14,6 +14,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useTabFocus } from '@/hooks/useTabFocus';
+import { getTabId } from '@/utils/tabUtils';
 
 // Default columns to use when rundown has no columns defined - excludes notes for shared rundown
 const DEFAULT_COLUMNS = [
@@ -86,8 +87,8 @@ const SharedRundown = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (simplified for single sessions)
-      if (cellBroadcast.isOwnUpdate(update, 'shared-view')) {
+      // Skip own updates (tab-based)
+      if (cellBroadcast.isOwnUpdate(update, getTabId())) {
         console.log('📱 Shared rundown skipping own cell broadcast update');
         return;
       }
