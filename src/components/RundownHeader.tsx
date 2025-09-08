@@ -81,14 +81,8 @@ const RundownHeader = ({
   const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
-  // Baseline of last saved content-only signature
-  const lastContentSignatureRef = useRef<string>('');
-  // Track whether the current pending change is content-related
-  const contentChangeActiveRef = useRef<boolean>(false);
-  // Remember whether the last saved change was content-related
-  const lastChangeWasContentRef = useRef<boolean>(false);
-  // Track transitions of hasUnsavedChanges
-  const prevHasUnsavedRef = useRef<boolean>(false);
+  const lastSavedContentSignatureRef = useRef<string>('');
+  const [hasContentOnlyChanges, setHasContentOnlyChanges] = useState(false);
   
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
@@ -131,44 +125,36 @@ const RundownHeader = ({
     });
   }, [items, title]);
 
-  // Determine whether to show save indicator for content changes only
-  const hasContentChanges = useMemo(() => {
-    // When there are unsaved changes, check if they're content-related
-    if (hasUnsavedChanges) {
-      const isContentChange = contentOnlySignature !== lastContentSignatureRef.current;
-      return isContentChange;
-    }
-    // When not unsaved, we may still show the temporary "Saved" message if the last saved change was content
-    return lastChangeWasContentRef.current;
-  }, [hasUnsavedChanges, contentOnlySignature]);
-
-  // Initialize baseline on first stable load and track save completions
+  // Track content-only changes separately from the main change tracking
   React.useEffect(() => {
-    // Initialize baseline when stable
-    if (!isSaving && !hasUnsavedChanges && !lastContentSignatureRef.current) {
-      lastContentSignatureRef.current = contentOnlySignature;
+    // Initialize baseline on first load
+    if (!lastSavedContentSignatureRef.current) {
+      lastSavedContentSignatureRef.current = contentOnlySignature;
+      setHasContentOnlyChanges(false);
+      return;
     }
 
-    const prev = prevHasUnsavedRef.current;
+    // Check if content has actually changed (ignoring columns)
+    const contentChanged = contentOnlySignature !== lastSavedContentSignatureRef.current;
+    setHasContentOnlyChanges(contentChanged);
+  }, [contentOnlySignature]);
 
-    // Transition: dirty -> clean (a save completed)
-    if (prev && !hasUnsavedChanges && !isSaving) {
-      // Remember if this completed save was content-related for the "Saved" message
-      lastChangeWasContentRef.current = contentOnlySignature !== lastContentSignatureRef.current;
-      // Update baseline after save
-      lastContentSignatureRef.current = contentOnlySignature;
+  // Update baseline when main system completes a save
+  React.useEffect(() => {
+    if (!isSaving && !hasUnsavedChanges) {
+      // Save completed - update our content baseline
+      lastSavedContentSignatureRef.current = contentOnlySignature;
+      setHasContentOnlyChanges(false);
     }
+  }, [isSaving, hasUnsavedChanges, contentOnlySignature]);
 
-    prevHasUnsavedRef.current = hasUnsavedChanges;
-  }, [hasUnsavedChanges, isSaving, contentOnlySignature]);
-
-  // Create save state for the indicator
+  // Create save state using our content-only change detection
   const saveState = {
-    isSaving,
-    hasUnsavedChanges,
-    lastSaved: null, // Auto-save doesn't track lastSaved yet
-    saveError: null,  // Auto-save doesn't track saveError yet
-    hasContentChanges
+    isSaving: isSaving && hasContentOnlyChanges, // Only show saving if content changed
+    hasUnsavedChanges: hasContentOnlyChanges,    // Only show unsaved if content changed
+    lastSaved: null,
+    saveError: null,
+    hasContentChanges: hasContentOnlyChanges
   };
 
   // Get current universal time for display
