@@ -14,6 +14,7 @@ import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
 import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
+import RundownSaveIndicator from './header/RundownSaveIndicator';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -93,6 +94,14 @@ const RundownHeader = ({
     currentSegmentId,
     timeRemaining
   });
+
+  // Create save state for the indicator
+  const saveState = {
+    isSaving,
+    hasUnsavedChanges,
+    lastSaved: null, // Auto-save doesn't track lastSaved yet
+    saveError: null  // Auto-save doesn't track saveError yet
+  };
 
   // Get current universal time for display
   const universalTime = new Date(getUniversalTime());
@@ -222,6 +231,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
+            <RundownSaveIndicator saveState={saveState} />
           </div>
         </div>
         
@@ -297,9 +307,10 @@ const RundownHeader = ({
                     onClick={handleTitleEdit}
                     className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
                   >
-                    {title || "Untitled Rundown"}
-                  </span>
-                )}
+                  {title || "Untitled Rundown"}
+                </span>
+              )}
+              <RundownSaveIndicator saveState={saveState} />
               </>
               )}
             </div>
@@ -431,9 +442,10 @@ const RundownHeader = ({
                 onClick={handleTitleEdit}
                 className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 truncate inline-block"
               >
-                {title || "Untitled Rundown"}
-              </span>
-            )}
+              {title || "Untitled Rundown"}
+            </span>
+          )}
+          <RundownSaveIndicator saveState={saveState} />
           </>
           )}
           </div>
