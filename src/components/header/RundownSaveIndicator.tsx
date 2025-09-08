@@ -16,6 +16,7 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
+  const [previouslySaving, setPreviouslySaving] = useState(false);
 
   // Show saved indicator for 3 seconds after save (when lastSaved is available)
   useEffect(() => {
@@ -31,9 +32,9 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     }
   }, [lastSaved, hasUnsavedChanges, isSaving]);
 
-  // Track when saving transitions to not saving to show temporary "Saved" message
+  // Track when saving transitions from true to false to show temporary "Saved" message
   useEffect(() => {
-    if (!isSaving && !hasUnsavedChanges && !saveError && !lastSaved) {
+    if (previouslySaving && !isSaving && !hasUnsavedChanges && !saveError && !lastSaved) {
       setShowTemporarySaved(true);
       const timer = setTimeout(() => {
         setShowTemporarySaved(false);
@@ -41,7 +42,9 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
       
       return () => clearTimeout(timer);
     }
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved]);
+    
+    setPreviouslySaving(isSaving);
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving]);
 
   const formatLastSaved = (date: Date) => {
     const now = new Date();
