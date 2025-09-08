@@ -126,7 +126,10 @@ const RundownHeader = ({
 
   // Check if there are actual content changes (not just column layout changes)
   const hasContentChanges = useMemo(() => {
-    if (!hasUnsavedChanges) return false;
+    // If there are no unsaved changes, we still want to show "Saved" if we previously had content changes
+    if (!hasUnsavedChanges) {
+      return true; // Allow "Saved" to show after successful save
+    }
     
     // If we haven't saved a baseline yet, assume content has changed
     if (!lastContentSignatureRef.current) {
@@ -137,13 +140,15 @@ const RundownHeader = ({
     // Compare current content signature with last saved one
     const contentChanged = contentOnlySignature !== lastContentSignatureRef.current;
     
-    // Update baseline when content actually changes
-    if (contentChanged) {
-      lastContentSignatureRef.current = contentOnlySignature;
-    }
-    
     return contentChanged;
   }, [hasUnsavedChanges, contentOnlySignature]);
+
+  // Update baseline when save completes (hasUnsavedChanges goes from true to false)
+  React.useEffect(() => {
+    if (!hasUnsavedChanges && !isSaving) {
+      lastContentSignatureRef.current = contentOnlySignature;
+    }
+  }, [hasUnsavedChanges, isSaving, contentOnlySignature]);
 
   // Create save state for the indicator
   const saveState = {
