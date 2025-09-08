@@ -2,15 +2,18 @@
 import React, { useState } from 'react';
 import { Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import RundownSaveIndicator from './RundownSaveIndicator';
 
 interface HeaderTitleProps {
   title: string;
   onTitleChange: (title: string) => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  lastSaved?: Date | null;
+  saveError?: string | null;
 }
 
-const HeaderTitle = ({ title, onTitleChange, hasUnsavedChanges, isSaving }: HeaderTitleProps) => {
+const HeaderTitle = ({ title, onTitleChange, hasUnsavedChanges, isSaving, lastSaved, saveError }: HeaderTitleProps) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   const handleTitleSubmit = () => {
@@ -25,14 +28,11 @@ const HeaderTitle = ({ title, onTitleChange, hasUnsavedChanges, isSaving }: Head
     }
   };
 
-  const getSaveStatus = () => {
-    if (isSaving) {
-      return <span className="text-xs text-blue-600 dark:text-blue-400 ml-2">Saving...</span>;
-    }
-    if (hasUnsavedChanges) {
-      return <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">Unsaved changes</span>;
-    }
-    return <span className="text-xs text-green-600 dark:text-green-400 ml-2">Saved</span>;
+  const saveState = {
+    isSaving,
+    hasUnsavedChanges,
+    lastSaved: lastSaved || null,
+    saveError: saveError || null
   };
 
   if (isEditingTitle) {
@@ -60,7 +60,7 @@ const HeaderTitle = ({ title, onTitleChange, hasUnsavedChanges, isSaving }: Head
       >
         <Edit2 className="h-4 w-4" />
       </Button>
-      {getSaveStatus()}
+      <RundownSaveIndicator saveState={saveState} />
     </div>
   );
 };
