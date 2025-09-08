@@ -110,12 +110,19 @@ const TeleprompterItem = ({
   }, [handleScriptSave, handleScriptCancel]);
 
   const handleTextareaChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditText(e.target.value);
+    const value = e.target.value;
+    setEditText(value);
+
+    // Live-broadcast edits immediately (debounced save handled upstream)
+    if (canEdit && onUpdateScript) {
+      onUpdateScript(item.id, value);
+    }
+
     // Auto-resize as user types
     setTimeout(() => {
       autoResizeTextarea();
     }, 0);
-  }, []);
+  }, [canEdit, onUpdateScript, item.id]);
 
   if (isHeaderItem(item)) {
     const headerTitle = item.name || item.segmentName || 'HEADER';
