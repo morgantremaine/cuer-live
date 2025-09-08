@@ -76,6 +76,16 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     );
   }
 
+  // Show simple "Saved" state when not saving and no unsaved changes (for auto-save systems without lastSaved tracking)
+  if (!isSaving && !hasUnsavedChanges && !saveError) {
+    return (
+      <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs ml-2">
+        <CheckCircle className="h-4 w-4" />
+        <span>Saved</span>
+      </div>
+    );
+  }
+
   return null;
 };
 
