@@ -112,7 +112,7 @@ export const useSimplifiedRundownState = () => {
   // User-specific column preferences (separate from team sync)
   const {
     columns,
-    setColumns,
+    updateColumns: setColumns, // Use updateColumns for external API compatibility
     isLoading: isLoadingColumns,
     isSaving: isSavingColumns
   } = useUserColumnPreferences(rundownId);

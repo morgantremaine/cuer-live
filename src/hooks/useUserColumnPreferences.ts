@@ -309,7 +309,10 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       }
     });
     
+    // CRITICAL FIX: Set columns directly without triggering updateColumns merging logic
+    // Use the direct state setter to avoid re-merging and showing hidden columns
     setColumns(appliedColumns);
+    // Save directly without going through updateColumns to avoid re-merging
     saveColumnPreferences(appliedColumns);
     debugLogger.preferences('Applied saved layout exactly - hidden ' + (appliedColumns.length - layoutColumns.length) + ' columns not in layout');
   }, [isLoading, teamColumns, saveColumnPreferences]);
@@ -373,7 +376,8 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
   }, [isLoading, teamColumnsLoading, hasInitialLoad]);
   return {
     columns,
-    setColumns: updateColumns,
+    setColumns, // Direct setter for internal use (like applyLayout)
+    updateColumns, // Merging setter for external use
     updateColumnWidth,
     applyLayout,
     previewLayout,
