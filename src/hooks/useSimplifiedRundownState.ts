@@ -475,7 +475,7 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      console.log('📱 Cell broadcast received:', update);
+      console.log('📱 Editor cell broadcast received:', { field: update.field, itemId: update.itemId, value: typeof update.value === 'string' ? update.value.substring(0, 50) + '...' : update.value });
       
       // Skip our own updates (tab-based)
       if (cellBroadcast.isOwnUpdate(update, getTabId(), currentUserId)) {

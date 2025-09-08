@@ -308,6 +308,7 @@ const Teleprompter = () => {
     
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
+      console.log('📡 Teleprompter broadcasting script update:', { itemId, script: newScript.substring(0, 50) + '...' });
       cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
     }
     
