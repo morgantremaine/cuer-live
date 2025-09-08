@@ -37,7 +37,15 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
   // Track when saving transitions from true to false to show temporary "Saved" message
   // Only show for content changes, not column-only changes
   useEffect(() => {
-    if (previouslySaving && !isSaving && !hasUnsavedChanges && !saveError && !lastSaved && hasContentChanges) {
+    if (
+      previouslySaving &&
+      !isSaving &&
+      !hasUnsavedChanges &&
+      !saveError &&
+      !lastSaved &&
+      hasContentChanges &&
+      !showTemporarySaved // don't retrigger if already showing
+    ) {
       setShowTemporarySaved(true);
       const timer = setTimeout(() => {
         setShowTemporarySaved(false);
@@ -47,7 +55,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
     }
     
     setPreviouslySaving(isSaving);
-  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges]);
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges, showTemporarySaved]);
 
   // External trigger to flash "Saved" (e.g., from parent after content save completes)
   useEffect(() => {
