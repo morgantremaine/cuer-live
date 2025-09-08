@@ -153,6 +153,9 @@ const CellRenderer = ({
     );
   }
 
+  // Check if this is a time-related field that should be centered
+  const isTimeField = column.key === 'duration' || column.key === 'startTime' || column.key === 'endTime' || column.key === 'elapsedTime';
+
   // Use TextAreaCell for ALL other editable fields (built-in AND custom) to ensure consistent behavior
   return (
     <TextAreaCell
@@ -162,7 +165,7 @@ const CellRenderer = ({
       cellRefs={cellRefs}
       textColor={textColor}
       backgroundColor={backgroundColor}
-      isDuration={column.key === 'duration'}
+      isDuration={isTimeField}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
         markActiveTyping?.();
