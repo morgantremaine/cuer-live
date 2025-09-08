@@ -220,7 +220,13 @@ export const useSimpleShowcallerSync = ({
   const pause = useCallback(() => {
     console.log('📺 Simple: Pause called');
     
-    setState(prev => ({ ...prev, isPlaying: false, isController: true }));
+    setState(prev => ({ 
+      ...prev, 
+      isPlaying: false, 
+      isController: true,
+      controllerId: userId || null,
+      lastUpdate: new Date().toISOString()
+    }));
     stopTimer();
     
     broadcastState({
@@ -251,7 +257,9 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: nextSegment.id,
       timeRemaining: duration,
       currentItemStatuses: buildStatusMap(nextSegment.id),
-      isController: true
+      isController: true,
+      controllerId: userId || null,
+      lastUpdate: new Date().toISOString()
     };
     
     setState(newState);
@@ -286,7 +294,9 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: prevSegment.id,
       timeRemaining: duration,
       currentItemStatuses: buildStatusMap(prevSegment.id),
-      isController: true
+      isController: true,
+      controllerId: userId || null,
+      lastUpdate: new Date().toISOString()
     };
     
     setState(newState);
@@ -338,7 +348,9 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: segmentId,
       timeRemaining: duration,
       currentItemStatuses: buildStatusMap(segmentId),
-      isController: true
+      isController: true,
+      controllerId: userId || null,
+      lastUpdate: new Date().toISOString()
     };
     
     setState(newState);
