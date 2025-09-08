@@ -148,9 +148,24 @@ const RundownHeader = ({
     }
   }, [isSaving, hasUnsavedChanges, contentOnlySignature]);
 
+  // Track content-saving transitions to trigger a saved flash
+  const isSavingContent = isSaving && hasContentOnlyChanges;
+  const [shouldShowSavedFlash, setShouldShowSavedFlash] = useState(false);
+  const prevIsSavingContentRef = useRef(false);
+  React.useEffect(() => {
+    const prev = prevIsSavingContentRef.current;
+    if (prev && !isSavingContent && !hasUnsavedChanges) {
+      setShouldShowSavedFlash(true);
+      // Reset flag on next tick so future saves can retrigger
+      const t = setTimeout(() => setShouldShowSavedFlash(false), 0);
+      return () => clearTimeout(t);
+    }
+    prevIsSavingContentRef.current = isSavingContent;
+  }, [isSavingContent, hasUnsavedChanges]);
+
   // Create save state using our content-only change detection
   const saveState = {
-    isSaving: isSaving && hasContentOnlyChanges, // Only show saving if content changed
+    isSaving: isSavingContent, // Only show saving if content changed
     hasUnsavedChanges: hasContentOnlyChanges,    // Only show unsaved if content changed
     lastSaved: null,
     saveError: null,
@@ -285,7 +300,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} />
           </div>
         </div>
         
@@ -364,7 +379,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} />
               </>
               )}
             </div>
@@ -499,7 +514,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} />
           </>
           )}
           </div>

@@ -11,9 +11,10 @@ interface SaveState {
 
 interface RundownSaveIndicatorProps {
   saveState: SaveState;
+  shouldShowSavedFlash?: boolean;
 }
 
-const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -48,6 +49,15 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     setPreviouslySaving(isSaving);
   }, [isSaving, hasUnsavedChanges, saveError, lastSaved, previouslySaving, hasContentChanges]);
 
+  // External trigger to flash "Saved" (e.g., from parent after content save completes)
+  useEffect(() => {
+    if (shouldShowSavedFlash) {
+      setShowTemporarySaved(true);
+      const timer = setTimeout(() => setShowTemporarySaved(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowSavedFlash]);
+
   const formatLastSaved = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -58,8 +68,8 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Don't show any indicators if changes are only column-related
-  if (!hasContentChanges) {
+  // Don't show indicators if changes are only column-related, unless we're flashing "Saved"
+  if (!hasContentChanges && !showTemporarySaved && !showSaved) {
     return null;
   }
 
