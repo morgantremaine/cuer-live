@@ -59,10 +59,10 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
     }
   }, [shouldShowSavedFlash]);
 
-  // Centralized timer to hide the temporary saved message after 3 seconds
+  // Centralized timer to hide the temporary saved message after 2 seconds
   useEffect(() => {
     if (showTemporarySaved) {
-      const timer = setTimeout(() => setShowTemporarySaved(false), 3000);
+      const timer = setTimeout(() => setShowTemporarySaved(false), 2000);
       return () => clearTimeout(timer);
     }
   }, [showTemporarySaved]);
