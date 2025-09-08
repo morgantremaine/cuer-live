@@ -133,14 +133,16 @@ const RundownHeader = ({
 
   // Determine whether to show save indicator for content changes only
   const hasContentChanges = useMemo(() => {
+    // When there are unsaved changes, check if they're content-related
     if (hasUnsavedChanges) {
-      return contentChangeActiveRef.current;
+      const isContentChange = contentOnlySignature !== lastContentSignatureRef.current;
+      return isContentChange;
     }
     // When not unsaved, we may still show the temporary "Saved" message if the last saved change was content
     return lastChangeWasContentRef.current;
-  }, [hasUnsavedChanges]);
+  }, [hasUnsavedChanges, contentOnlySignature]);
 
-  // Initialize baseline on first stable load and track transitions
+  // Initialize baseline on first stable load and track save completions
   React.useEffect(() => {
     // Initialize baseline when stable
     if (!isSaving && !hasUnsavedChanges && !lastContentSignatureRef.current) {
@@ -149,17 +151,12 @@ const RundownHeader = ({
 
     const prev = prevHasUnsavedRef.current;
 
-    // Transition: clean -> dirty (a change started)
-    if (!prev && hasUnsavedChanges) {
-      const isContentChange = contentOnlySignature !== lastContentSignatureRef.current;
-      contentChangeActiveRef.current = isContentChange;
-      lastChangeWasContentRef.current = isContentChange;
-    }
-
     // Transition: dirty -> clean (a save completed)
     if (prev && !hasUnsavedChanges && !isSaving) {
+      // Remember if this completed save was content-related for the "Saved" message
+      lastChangeWasContentRef.current = contentOnlySignature !== lastContentSignatureRef.current;
+      // Update baseline after save
       lastContentSignatureRef.current = contentOnlySignature;
-      contentChangeActiveRef.current = false;
     }
 
     prevHasUnsavedRef.current = hasUnsavedChanges;
