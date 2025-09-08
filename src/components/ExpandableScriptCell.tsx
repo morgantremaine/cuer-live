@@ -202,7 +202,8 @@ const ExpandableScriptCell = ({
       const updateRowHeight = () => {
         const row = containerRef.current?.closest('tr');
         if (row) {
-          const height = row.getBoundingClientRect().height;
+          // Use offsetHeight for zoom-safe measurement instead of getBoundingClientRect
+          const height = row.offsetHeight;
           setRowHeight(height);
         }
       };

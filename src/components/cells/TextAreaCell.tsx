@@ -41,8 +41,8 @@ const TextAreaCell = ({
     const textarea = textareaRef.current;
     const measurementDiv = measurementRef.current;
     
-    // Get the current width of the textarea
-    const textareaWidth = textarea.getBoundingClientRect().width;
+    // Get the current width using zoom-safe clientWidth instead of getBoundingClientRect
+    const textareaWidth = textarea.clientWidth;
     
     // Update current width
     setCurrentWidth(textareaWidth);
@@ -67,8 +67,11 @@ const TextAreaCell = ({
     // Get the natural height
     const naturalHeight = measurementDiv.offsetHeight;
     
-    // Calculate minimum height (single line)
-    const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+    // Calculate minimum height (single line) with better line-height fallback
+    const lineHeightValue = computedStyle.lineHeight;
+    const lineHeight = lineHeightValue === 'normal' 
+      ? parseFloat(computedStyle.fontSize) * 1.3 
+      : parseFloat(lineHeightValue) || parseFloat(computedStyle.fontSize) * 1.3 || 20;
     const paddingTop = parseFloat(computedStyle.paddingTop) || 8;
     const paddingBottom = parseFloat(computedStyle.paddingBottom) || 8;
     const borderTop = parseFloat(computedStyle.borderTopWidth) || 0;
