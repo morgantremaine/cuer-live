@@ -15,8 +15,9 @@ interface RundownSaveIndicatorProps {
 const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError } = saveState;
   const [showSaved, setShowSaved] = useState(false);
+  const [showTemporarySaved, setShowTemporarySaved] = useState(false);
 
-  // Show saved indicator for 3 seconds after save
+  // Show saved indicator for 3 seconds after save (when lastSaved is available)
   useEffect(() => {
     if (lastSaved && !hasUnsavedChanges && !isSaving) {
       setShowSaved(true);
@@ -29,6 +30,18 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
       setShowSaved(false);
     }
   }, [lastSaved, hasUnsavedChanges, isSaving]);
+
+  // Track when saving transitions to not saving to show temporary "Saved" message
+  useEffect(() => {
+    if (!isSaving && !hasUnsavedChanges && !saveError && !lastSaved) {
+      setShowTemporarySaved(true);
+      const timer = setTimeout(() => {
+        setShowTemporarySaved(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isSaving, hasUnsavedChanges, saveError, lastSaved]);
 
   const formatLastSaved = (date: Date) => {
     const now = new Date();
@@ -76,8 +89,8 @@ const RundownSaveIndicator = ({ saveState }: RundownSaveIndicatorProps) => {
     );
   }
 
-  // Show simple "Saved" state when not saving and no unsaved changes (for auto-save systems without lastSaved tracking)
-  if (!isSaving && !hasUnsavedChanges && !saveError) {
+  // Show temporary "Saved" state for auto-save systems without lastSaved tracking
+  if (showTemporarySaved) {
     return (
       <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs ml-2">
         <CheckCircle className="h-4 w-4" />
