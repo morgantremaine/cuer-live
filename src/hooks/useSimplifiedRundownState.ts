@@ -469,7 +469,7 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Cell-level broadcast system for immediate sync
+  // Cell-level broadcast system with proper conflict protection
   useEffect(() => {
     if (!rundownId || !currentUserId) return;
 
@@ -478,42 +478,46 @@ export const useSimplifiedRundownState = () => {
       
       // Skip our own updates (simplified for single sessions)
       if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
+        console.log('📱 Identified own cell broadcast update via userId');
         console.log('📱 Skipping own cell broadcast update');
         return;
       }
       
-      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
+      console.log('📱 Applying cell broadcast update with protection:', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
       
       try {
-        // LAST WRITER WINS: Just apply the change immediately
-        // Use loadState to avoid triggering hasUnsavedChanges for remote data
-          // Handle rundown-level property updates (no itemId)
+        // Handle rundown-level property updates (no itemId)
         if (!update.itemId) {
-          // Check if we're actively editing this rundown-level field
-          const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
-          if (isActivelyEditing) {
-            console.log('🛡️ Skipping rundown-level broadcast - actively editing:', update.field);
+          // Enhanced protection for rundown-level fields
+          const fieldKey = update.field;
+          const isActivelyEditing = typingSessionRef.current?.fieldKey === fieldKey;
+          const hasRecentTypingActivity = typingSessionRef.current && 
+            Date.now() - typingSessionRef.current.startTime < 3000; // 3 second protection window
+          
+          if (isActivelyEditing || (hasRecentTypingActivity && typingSessionRef.current?.fieldKey === fieldKey)) {
+            console.log('🛡️ Protected: Skipping rundown-level broadcast - recent local activity:', update.field);
             return;
           }
           
           console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
           
-          // Apply rundown-level property changes using loadState to avoid hasUnsavedChanges
+          // Apply rundown-level property changes using the correct action methods
           switch (update.field) {
             case 'title':
-              actionsRef.current.loadState({ title: update.value });
+              // Use the correct action method for title updates
+              actions.setTitle(update.value);
               break;
             case 'startTime':
-              actionsRef.current.loadState({ startTime: update.value });
+              actions.setStartTime(update.value);
               break;
             case 'timezone':
-              actionsRef.current.loadState({ timezone: update.value });
+              actions.setTimezone(update.value);
               break;
             case 'showDate':
-              actionsRef.current.loadState({ showDate: update.value });
+              actions.setShowDate(update.value);
               break;
             case 'items:reorder': {
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
@@ -524,6 +528,7 @@ export const useSimplifiedRundownState = () => {
                   const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
                   return ai - bi;
                 });
+                // Only use loadState for structural changes that don't affect individual edits
                 actionsRef.current.loadState({ items: reordered });
               }
               break;
@@ -556,67 +561,81 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-          // Handle item-level updates (existing logic)
-          if (update.field === 'structuralChange') {
-            // Structural changes are handled by the normal realtime update flow
-            console.log('📱 Item structural change detected - handled by realtime');
-            return;
-          }
-          
-          const updatedItems = stateRef.current.items.map(item => {
-            if (item.id === update.itemId) {
-              // Only apply if not actively editing this exact field
-              const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
-              if (isActivelyEditing) {
-                console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
-                return item;
-              }
-              
-              // Handle boolean normalization for float fields
-              const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
-              if (isBooleanFloatField) {
-                const boolVal = normalizeBoolean(update.value);
-                return {
-                  ...item,
-                  isFloating: boolVal,
-                  isFloated: boolVal
-                };
-              }
-              
-              if (update.field === 'customFields') {
-                return {
-                  ...item,
-                  customFields: { ...item.customFields, ...update.value }
-                };
-              } else {
-                return {
-                  ...item,
-                  [update.field]: update.value
-                };
-              }
-            }
-            return item;
-          });
-          
-          if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
-            actionsRef.current.loadState({ items: updatedItems });
-          }
+        // Handle item-level updates with enhanced protection
+        if (update.field === 'structuralChange') {
+          console.log('📱 Item structural change detected - handled by realtime');
+          return;
+        }
+        
+        // Enhanced protection for item fields
+        const fieldKey = `${update.itemId}-${update.field}`;
+        const isActivelyEditing = typingSessionRef.current?.fieldKey === fieldKey;
+        const hasRecentTypingActivity = typingSessionRef.current && 
+          Date.now() - typingSessionRef.current.startTime < 3000; // 3 second protection window
+        
+        if (isActivelyEditing || (hasRecentTypingActivity && typingSessionRef.current?.fieldKey?.includes(update.itemId))) {
+          console.log('🛡️ Protected: Skipping cell broadcast - recent local edit activity:', update.itemId, update.field);
+          return;
+        }
+        
+        // Use enhancedUpdateItem for item field updates to preserve change tracking
+        const targetItem = stateRef.current.items.find(item => item.id === update.itemId);
+        if (!targetItem) {
+          console.warn('📱 Cell broadcast: Item not found:', update.itemId);
+          return;
+        }
+        
+        console.log('📱 Applying protected cell broadcast update:', update.itemId, update.field, update.value);
+        
+        // Handle boolean normalization for float fields
+        const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
+        if (isBooleanFloatField) {
+          const boolVal = normalizeBoolean(update.value);
+          // Apply both isFloating and isFloated since they should be synchronized
+          const updatedItems = stateRef.current.items.map(item => 
+            item.id === update.itemId 
+              ? { ...item, isFloating: boolVal, isFloated: boolVal }
+              : item
+          );
+          actionsRef.current.setItems(updatedItems);
+          return;
+        }
+        
+        // Apply the field update using setItems to preserve change tracking
+        if (update.field === 'customFields') {
+          const currentCustomFields = targetItem.customFields || {};
+          const mergedCustomFields = { ...currentCustomFields, ...update.value };
+          const updatedItems = stateRef.current.items.map(item => 
+            item.id === update.itemId 
+              ? { ...item, customFields: mergedCustomFields }
+              : item
+          );
+          actionsRef.current.setItems(updatedItems);
+        } else {
+          const updatedItems = stateRef.current.items.map(item => 
+            item.id === update.itemId 
+              ? { ...item, [update.field]: update.value }
+              : item
+          );
+          actionsRef.current.setItems(updatedItems);
+        }
+        
       } finally {
-        // CRITICAL: Reset flag and add cooldown after applying remote changes
+        // CRITICAL: Reset flag with extended cooldown for change protection
         setTimeout(() => {
           applyingCellBroadcastRef.current = false;
-          // Add 800ms cooldown to prevent immediate autosave scheduling
+          // Extended cooldown to prevent interference with local saves
           if (cooldownUntilRef.current) {
-            cooldownUntilRef.current = Math.max(cooldownUntilRef.current, Date.now() + 800);
+            cooldownUntilRef.current = Math.max(cooldownUntilRef.current, Date.now() + 1200);
           }
-        }, 50);
+        }, 100);
       }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId]);
+  }, [rundownId, currentUserId, actions.setTitle, actions.setStartTime, actions.setTimezone, actions.setShowDate]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
