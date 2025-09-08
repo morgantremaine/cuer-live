@@ -43,12 +43,18 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
 
   // Merge columns with team columns to ensure completeness
   const mergeColumnsWithTeamColumns = useCallback((userColumns: Column[]) => {
-    const allAvailableColumns = [...defaultColumns];
-    
     // Build a map of user's existing column preferences
     const userColumnMap = new Map<string, Column>();
     userColumns.forEach(col => {
       userColumnMap.set(col.key, col);
+    });
+
+    // Start from defaults, but hide any defaults NOT present in the user's layout
+    const allAvailableColumns: Column[] = defaultColumns.map(dc => {
+      const userPref = userColumnMap.get(dc.key);
+      // If user has a preference for this default column, we'll overlay later via order
+      // If not present in user layout, keep it hidden
+      return userPref ? dc : { ...dc, isVisible: false };
     });
     
     // Add ALL team columns to the available set
@@ -63,7 +69,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
           name: teamCol.column_name // Always use latest team column name
         } as Column & { isTeamColumn?: boolean; createdBy?: string });
       } else {
-        // New team column - add with default visibility
+        // New team column - add hidden by default
         allAvailableColumns.push({
           id: teamCol.column_key,
           name: teamCol.column_name,
@@ -89,7 +95,7 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     });
     
     // Apply user's column order preferences while maintaining all columns
-    const orderedColumns = [];
+    const orderedColumns: Column[] = [];
     const usedKeys = new Set<string>();
     
     // First, add columns in user's preferred order
@@ -97,16 +103,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
       const matchingCol = allAvailableColumns.find(col => col.key === userCol.key);
       if (matchingCol && !usedKeys.has(userCol.key)) {
         orderedColumns.push({
-          ...matchingCol,
-          ...userCol, // User preferences override
-          isTeamColumn: (matchingCol as any).isTeamColumn, // Preserve team flag
-          createdBy: (matchingCol as any).createdBy // Preserve creator info
-        });
+          ...(matchingCol as Column),
+          ...(userCol as Column)
+        } as Column);
         usedKeys.add(userCol.key);
       }
     });
     
-    // Then add any remaining columns that user hasn't configured yet
+    // Then add any remaining columns that user hasn't configured yet (kept hidden by default)
     allAvailableColumns.forEach(col => {
       if (!usedKeys.has(col.key)) {
         orderedColumns.push(col);
