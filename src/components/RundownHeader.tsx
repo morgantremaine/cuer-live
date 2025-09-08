@@ -81,7 +81,14 @@ const RundownHeader = ({
   const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
+  // Baseline of last saved content-only signature
   const lastContentSignatureRef = useRef<string>('');
+  // Track whether the current pending change is content-related
+  const contentChangeActiveRef = useRef<boolean>(false);
+  // Remember whether the last saved change was content-related
+  const lastChangeWasContentRef = useRef<boolean>(false);
+  // Track transitions of hasUnsavedChanges
+  const prevHasUnsavedRef = useRef<boolean>(false);
   
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
@@ -124,30 +131,38 @@ const RundownHeader = ({
     });
   }, [items, title]);
 
-  // Check if there are actual content changes (not just column layout changes)
+  // Determine whether to show save indicator for content changes only
   const hasContentChanges = useMemo(() => {
-    // If there are no unsaved changes, we still want to show "Saved" if we previously had content changes
-    if (!hasUnsavedChanges) {
-      return true; // Allow "Saved" to show after successful save
+    if (hasUnsavedChanges) {
+      return contentChangeActiveRef.current;
     }
-    
-    // If we haven't saved a baseline yet, assume content has changed
-    if (!lastContentSignatureRef.current) {
-      lastContentSignatureRef.current = contentOnlySignature;
-      return true;
-    }
-    
-    // Compare current content signature with last saved one
-    const contentChanged = contentOnlySignature !== lastContentSignatureRef.current;
-    
-    return contentChanged;
-  }, [hasUnsavedChanges, contentOnlySignature]);
+    // When not unsaved, we may still show the temporary "Saved" message if the last saved change was content
+    return lastChangeWasContentRef.current;
+  }, [hasUnsavedChanges]);
 
-  // Update baseline when save completes (hasUnsavedChanges goes from true to false)
+  // Initialize baseline on first stable load and track transitions
   React.useEffect(() => {
-    if (!hasUnsavedChanges && !isSaving) {
+    // Initialize baseline when stable
+    if (!isSaving && !hasUnsavedChanges && !lastContentSignatureRef.current) {
       lastContentSignatureRef.current = contentOnlySignature;
     }
+
+    const prev = prevHasUnsavedRef.current;
+
+    // Transition: clean -> dirty (a change started)
+    if (!prev && hasUnsavedChanges) {
+      const isContentChange = contentOnlySignature !== lastContentSignatureRef.current;
+      contentChangeActiveRef.current = isContentChange;
+      lastChangeWasContentRef.current = isContentChange;
+    }
+
+    // Transition: dirty -> clean (a save completed)
+    if (prev && !hasUnsavedChanges && !isSaving) {
+      lastContentSignatureRef.current = contentOnlySignature;
+      contentChangeActiveRef.current = false;
+    }
+
+    prevHasUnsavedRef.current = hasUnsavedChanges;
   }, [hasUnsavedChanges, isSaving, contentOnlySignature]);
 
   // Create save state for the indicator
