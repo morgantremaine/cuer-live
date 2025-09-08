@@ -146,10 +146,30 @@ const SharedRundown = () => {
       setLocalRundownData(prevData => {
         if (!prevData) return prevData;
         
+        // Normalize certain fields (booleans) coming from broadcasts as strings
+        let field = update.field as string;
+        let value = update.value as any;
+        const isBooleanFloatField = field === 'isFloating' || field === 'isFloated';
+        if (isBooleanFloatField) {
+          const boolVal = value === true || value === 'true';
+          // Keep both keys in sync to satisfy different consumers
+          field = 'isFloating';
+          value = boolVal;
+          // Apply to both props when updating the item below
+          return {
+            ...prevData,
+            items: prevData.items.map(item =>
+              item.id === update.itemId
+                ? { ...item, isFloating: boolVal, isFloated: boolVal }
+                : item
+            )
+          };
+        }
+        
         if (update.itemId) {
           // Item-level updates
           const updatedItems = prevData.items.map(item =>
-            item.id === update.itemId ? { ...item, [update.field]: update.value } : item
+            item.id === update.itemId ? { ...item, [field]: value } : item
           );
           return {
             ...prevData,
@@ -159,7 +179,7 @@ const SharedRundown = () => {
           // Rundown-level updates (title, start_time, etc.)
           return {
             ...prevData,
-            [update.field]: update.value
+            [field]: value
           };
         }
       });
