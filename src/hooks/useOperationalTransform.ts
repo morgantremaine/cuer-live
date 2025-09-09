@@ -50,6 +50,8 @@ export const useOperationalTransform = ({
   const channelRef = useRef<any>(null);
   const lastOperationRef = useRef<string | null>(null);
   const editingSessionsRef = useRef<Map<string, any>>(new Map());
+  const lastPollAtRef = useRef<string | null>(null);
+  const pollIntervalRef = useRef<any>(null);
 
   // Generate unique operation ID
   const generateOperationId = useCallback(() => {
@@ -253,22 +255,23 @@ export const useOperationalTransform = ({
     console.log('🔄 OT: Setting up real-time subscription for rundown:', rundownId);
     const channel = supabase.channel(`rundown_ot_${rundownId}`)
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'rundown_operations',
         filter: `rundown_id=eq.${rundownId}`
       }, (payload) => {
+        const row: any = (payload as any).new || {};
         console.log('🔄 OT: Raw operation received from Supabase:', {
-          eventType: payload.eventType,
-          table: payload.table,
-          schema: payload.schema,
-          rundownId: payload.new?.rundown_id,
-          operationId: payload.new?.operation_data?.id,
-          clientId: payload.new?.client_id,
+          eventType: (payload as any).eventType,
+          table: (payload as any).table,
+          schema: (payload as any).schema,
+          rundownId: row?.rundown_id,
+          operationId: row?.operation_data?.id,
+          clientId: row?.client_id,
           ownClientId: clientIdRef.current
         });
         
-        const operation = payload.new.operation_data as Operation;
+        const operation = row.operation_data as Operation;
         
         if (!operation || !operation.id) {
           console.error('❌ OT: Invalid operation received:', payload);
@@ -344,6 +347,65 @@ export const useOperationalTransform = ({
       }
     };
   }, [enabled, user, rundownId, updatePresence]);
+
+  // Fallback polling for operations in case realtime misses events
+  useEffect(() => {
+    if (!enabled || !user || !rundownId) return;
+
+    // Reset and start polling
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+
+    const doPoll = async () => {
+      try {
+        const since = lastPollAtRef.current || new Date(Date.now() - 5000).toISOString();
+        const { data, error } = await supabase
+          .from('rundown_operations')
+          .select('id, created_at, operation_data, client_id, rundown_id')
+          .eq('rundown_id', rundownId)
+          .gt('created_at', since)
+          .order('created_at', { ascending: true })
+          .limit(200);
+
+        if (error) {
+          console.error('❌ OT: Poll error:', error);
+          return;
+        }
+
+        if (data && data.length) {
+          console.log('🔄 OT: Polled operations:', { count: data.length });
+          for (const row of data) {
+            const op = row.operation_data as Operation;
+            if (!op || !op.id) continue;
+            if (op.clientId === clientIdRef.current) continue; // ignore own
+            setPendingOperations(prev => [...prev, op]);
+            lastOperationRef.current = op.id;
+            lastPollAtRef.current = row.created_at;
+          }
+          // Ensure we advance the watermark
+          const latest = data[data.length - 1].created_at;
+          if (!lastPollAtRef.current || latest > lastPollAtRef.current) {
+            lastPollAtRef.current = latest;
+          }
+        }
+      } catch (e) {
+        console.error('❌ OT: Poll exception:', e);
+      }
+    };
+
+    if (!lastPollAtRef.current) {
+      lastPollAtRef.current = new Date().toISOString();
+    }
+    pollIntervalRef.current = setInterval(doPoll, 2000);
+    const timeout = setTimeout(doPoll, 800);
+
+    return () => {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+      clearTimeout(timeout);
+    };
+  }, [enabled, user, rundownId]);
 
   // Clean up presence on unmount/beforeunload
   useEffect(() => {
