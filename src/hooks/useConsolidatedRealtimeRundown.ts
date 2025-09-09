@@ -321,92 +321,27 @@ export const useConsolidatedRealtimeRundown = ({
 
   }, [rundownId, user?.id, isSharedView]);
 
-  // Process queued updates when item editing stops
+  // SIMPLIFIED: No more complex queuing - just apply updates immediately
   const processQueuedUpdates = useCallback(async (globalState: any) => {
     if (!globalState.itemDirtyQueue || globalState.itemDirtyQueue.length === 0) {
       return;
     }
     
-    const { localShadowStore } = await import('@/stores/localShadowStore');
-    const recentlyTypedFields = localShadowStore.getRecentlyTypedFields(2000); // Only 2 seconds for precise protection
-    const activelyEditedItems = new Set<string>();
-    
-    // Only consider items as "actively edited" if they have recent local typing activity
-    recentlyTypedFields.forEach(fieldKey => {
-      const [itemId] = fieldKey.split('-');
-      activelyEditedItems.add(itemId);
+    console.log('🛡️ SIMPLIFIED: Processing all queued updates immediately', {
+      queueSize: globalState.itemDirtyQueue.length
     });
     
-    // Separate deletions from other updates - deletions should apply immediately unless very recently edited
+    // Process all updates immediately - no complex protection
     const queuedUpdates = [...globalState.itemDirtyQueue];
-    const safeDeletions: any[] = [];
-    const protectedUpdates: any[] = [];
+    globalState.itemDirtyQueue = [];
     
-    queuedUpdates.forEach(queuedUpdate => {
-      const payload = queuedUpdate.payload;
-      const isLikelyDeletion = payload.new?.items && Array.isArray(payload.new.items) &&
-        payload.old?.items && Array.isArray(payload.old.items) &&
-        payload.new.items.length < payload.old.items.length;
-      
-      if (isLikelyDeletion) {
-        // For deletions, only protect if the deleted item was edited in the last 500ms
-        const veryRecentFields = localShadowStore.getRecentlyTypedFields(500);
-        const hasVeryRecentEdit = veryRecentFields.some(fieldKey => {
-          const [itemId] = fieldKey.split('-');
-          return payload.old.items.some((item: any) => item.id === itemId && 
-            !payload.new.items.some((newItem: any) => newItem.id === item.id));
-        });
-        
-        if (hasVeryRecentEdit) {
-          protectedUpdates.push(queuedUpdate);
-        } else {
-          safeDeletions.push(queuedUpdate);
-        }
-      } else {
-        // For regular updates, use standard protection
-        const affectsActiveItems = payload.new?.items && Array.isArray(payload.new.items) &&
-          payload.new.items.some((item: any) => activelyEditedItems.has(item.id));
-        
-        if (affectsActiveItems) {
-          protectedUpdates.push(queuedUpdate);
-        } else {
-          safeDeletions.push(queuedUpdate);
-        }
+    queuedUpdates.forEach((queuedUpdate: any) => {
+      try {
+        processRealtimeUpdate(queuedUpdate.payload, globalState);
+      } catch (error) {
+        console.error('❌ Error processing queued update:', error);
       }
     });
-    
-    // Always process safe deletions and non-conflicting updates immediately
-    if (safeDeletions.length > 0) {
-      console.log('🛡️ Processing safe remote updates (deletions and non-conflicting)', {
-        safeUpdates: safeDeletions.length,
-        protectedUpdates: protectedUpdates.length
-      });
-      
-      // Remove processed updates from queue
-      globalState.itemDirtyQueue = protectedUpdates;
-      
-      // Process safe updates
-      safeDeletions.forEach((queuedUpdate: any) => {
-        try {
-          processRealtimeUpdate(queuedUpdate.payload, globalState);
-        } catch (error) {
-          console.error('❌ Error processing safe update:', error);
-        }
-      });
-    }
-    
-    // Keep protected updates queued if there are any
-    if (protectedUpdates.length > 0) {
-      console.log('🛡️ Still actively editing - keeping protected updates queued', {
-        activeItems: Array.from(activelyEditedItems),
-        queueSize: protectedUpdates.length
-      });
-      
-      // Re-schedule processing check with shorter delay
-      setTimeout(() => {
-        processQueuedUpdates(globalState);
-      }, 500); // Shorter delay for faster resolution
-    }
   }, [processRealtimeUpdate]);
 
   useEffect(() => {
