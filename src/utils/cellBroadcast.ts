@@ -24,7 +24,7 @@ export class CellBroadcastManager {
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   
   constructor() {
-    console.log('📱 CellBroadcast initialized (simplified for single sessions)');
+    // Cell broadcast manager initialized
   }
 
   private ensureChannel(rundownId: string): RealtimeChannel {
@@ -45,8 +45,7 @@ export class CellBroadcastManager {
       .on('broadcast', { event: 'cell_update' }, (payload: { payload: CellUpdate }) => {
         const update = payload?.payload;
         if (!update || update.rundownId !== rundownId) return;
-        // Debug log for diagnostics
-        console.log('📱 Cell broadcast received (simplified):', update);
+        // Process cell broadcast update
         const cbs = this.callbacks.get(rundownId);
         if (cbs && cbs.size > 0) {
           cbs.forEach(cb => {
@@ -136,7 +135,7 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     };
 
-    console.log('📡 Broadcasting cell update (simplified):', updatePayload);
+    // Broadcasting cell update
 
     channel.send({
       type: 'broadcast',
@@ -147,11 +146,7 @@ export class CellBroadcastManager {
 
   // Simple echo prevention using userId (single session per user)
   isOwnUpdate(update: any, currentUserId: string): boolean {
-    const isOwn = update.userId === currentUserId;
-    if (isOwn) {
-      console.log('📱 Identified own cell broadcast update via userId');
-    }
-    return isOwn;
+    return update.userId === currentUserId;
   }
 
   subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void) {

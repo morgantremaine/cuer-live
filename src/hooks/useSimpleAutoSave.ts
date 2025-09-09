@@ -213,11 +213,8 @@ export const useSimpleAutoSave = (
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
-    
-    console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
     // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
     keystrokeJournal.recordTyping('user typing activity');
@@ -358,8 +355,6 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Block if explicitly flagged to wait for local edit
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      debugLogger.autosave('Save blocked: waiting for local edit after remote update');
-      console.log('🛑 AutoSave: blocked - waiting for local edit after remote update');
       return;
     }
     

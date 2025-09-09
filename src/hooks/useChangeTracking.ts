@@ -31,7 +31,6 @@ export const useChangeTracking = (
   const createContentSignature = useCallback(() => {
     // If showcaller is active, don't create new signatures
     if (showcallerActiveRef.current) {
-      console.log('🚫 Showcaller active - using cached signature to prevent change detection');
       return lastSavedDataRef.current;
     }
 
@@ -65,13 +64,11 @@ export const useChangeTracking = (
       startTime: startTime || ''
     });
     
-    console.log('🔍 Created content signature (showcaller-free), items count:', items?.length || 0);
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
   // Track user typing activity
   const setUserTyping = useCallback((typing: boolean) => {
-    console.log('⌨️ User typing state changed:', typing);
     userActivelyTypingRef.current = typing;
   }, []);
 

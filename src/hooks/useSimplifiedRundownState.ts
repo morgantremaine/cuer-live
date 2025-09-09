@@ -326,12 +326,8 @@ export const useSimplifiedRundownState = () => {
       // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
       if (blockUntilLocalEditRef) {
         if (protectedFields.size > 0) {
-          // User is actively typing - don't block AutoSave, they should be able to save their work
-          console.log('🛡️ Protecting actively typed field during realtime update - AutoSave enabled:', Array.from(protectedFields));
           blockUntilLocalEditRef.current = false;
         } else {
-          // User not typing - block AutoSave until they make a local edit
-          console.log('🛑 Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
           blockUntilLocalEditRef.current = true;
         }
       }
@@ -402,8 +398,6 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-        console.log('📨 Processing realtime update with LocalShadow protection');
-        
         // Apply updates field by field with LocalShadow protection
         let hasProtectedUpdates = false;
         
@@ -424,7 +418,6 @@ export const useSimplifiedRundownState = () => {
             Object.keys(incomingItem).forEach(field => {
               const shadowValue = localShadowStore.getShadow(incomingItem.id, field);
               if (shadowValue !== null) {
-                console.log(`🛡️ LocalShadow: protecting ${incomingItem.id}-${field} from realtime overwrite`);
                 protectedItem[field] = shadowValue;
                 itemHasProtection = true;
                 hasProtectedUpdates = true;
@@ -442,7 +435,6 @@ export const useSimplifiedRundownState = () => {
         if (updatedRundown.hasOwnProperty('title')) {
           const shadowValue = localShadowStore.getGlobalShadow('title');
           if (shadowValue !== null) {
-            console.log('🛡️ LocalShadow: protecting title from realtime overwrite');
             hasProtectedUpdates = true;
           } else {
             actionsRef.current.setTitle(updatedRundown.title);
@@ -498,16 +490,11 @@ export const useSimplifiedRundownState = () => {
         }
         
         // CRITICAL: Mark as saved after applying remote updates to clear "unsaved changes"
-        // This prevents false "unsaved changes" state when teammate updates are applied
         actionsRef.current.markSaved();
-        console.log('✅ Marked as saved after remote update - clearing false unsaved changes state');
         
         // Only block autosave if we actually applied unprotected updates
         if (!hasProtectedUpdates) {
-          console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
           blockUntilLocalEditRef.current = true;
-        } else {
-          console.log('🛡️ LocalShadow: Protected fields from realtime overwrite - autosave remains enabled');
         }
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
@@ -551,16 +538,10 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      console.log('📱 Cell broadcast received:', update);
-      
       // Skip our own updates (simplified for single sessions)
       if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
-        console.log('📱 Identified own cell broadcast update via userId');
-        console.log('📱 Skipping own cell broadcast update');
         return;
       }
-      
-      console.log('📱 Applying cell broadcast update with protection:', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
@@ -658,11 +639,8 @@ export const useSimplifiedRundownState = () => {
         // Use enhancedUpdateItem for item field updates to preserve change tracking
         const targetItem = stateRef.current.items.find(item => item.id === update.itemId);
         if (!targetItem) {
-          console.warn('📱 Cell broadcast: Item not found:', update.itemId);
           return;
         }
-        
-        console.log('📱 Applying protected cell broadcast update:', update.itemId, update.field, update.value);
         
         // Handle boolean normalization for float fields
         const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
@@ -883,7 +861,6 @@ export const useSimplifiedRundownState = () => {
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Re-enable autosave after local edit if it was blocked due to teammate update
     if (blockUntilLocalEditRef.current) {
-      console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
     

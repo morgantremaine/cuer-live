@@ -28,7 +28,6 @@ class LocalShadowStore {
    */
   setProtectionWindow(ms: number) {
     this.protectionWindowMs = ms;
-    console.log(`🛡️ LocalShadow: protection window set to ${ms}ms`);
   }
 
   /**
@@ -50,8 +49,6 @@ class LocalShadowStore {
     
     // Schedule cleanup
     this.scheduleCleanup(key, itemId, field);
-    
-    console.log(`🛡️ LocalShadow: protected field ${field} for item ${itemId}`, { value, isActive });
   }
 
   /**
@@ -66,8 +63,6 @@ class LocalShadowStore {
     
     // Schedule cleanup
     this.scheduleCleanup(`global-${field}`, null, field);
-    
-    console.log(`🛡️ LocalShadow: protected global field ${field}`, { value, isActive });
   }
 
   /**
@@ -132,7 +127,6 @@ class LocalShadowStore {
     if (itemMap && itemMap.has(field)) {
       const shadow = itemMap.get(field)!;
       shadow.isActive = false;
-      console.log(`🛡️ LocalShadow: marked field ${field} for item ${itemId} as inactive`);
     }
   }
 
@@ -143,7 +137,6 @@ class LocalShadowStore {
     const shadow = this.globalShadows.get(field);
     if (shadow) {
       shadow.isActive = false;
-      console.log(`🛡️ LocalShadow: marked global field ${field} as inactive`);
     }
   }
 
@@ -165,8 +158,6 @@ class LocalShadowStore {
       clearTimeout(timeout);
       this.cleanupTimeouts.delete(key);
     }
-    
-    console.log(`🛡️ LocalShadow: cleared shadow for ${field} in item ${itemId}`);
   }
 
   /**
@@ -181,8 +172,6 @@ class LocalShadowStore {
       clearTimeout(timeout);
       this.cleanupTimeouts.delete(key);
     }
-    
-    console.log(`🛡️ LocalShadow: cleared global shadow for ${field}`);
   }
 
   /**
@@ -236,7 +225,6 @@ class LocalShadowStore {
       }
       
       this.cleanupTimeouts.delete(key);
-      console.log(`🛡️ LocalShadow: auto-cleaned expired shadow ${key}`);
     }, this.protectionWindowMs + 500); // Small buffer
     
     this.cleanupTimeouts.set(key, timeout);
@@ -254,8 +242,6 @@ class LocalShadowStore {
       clearTimeout(timeout);
     }
     this.cleanupTimeouts.clear();
-    
-    console.log('🛡️ LocalShadow: cleared all shadows');
   }
 }
 
