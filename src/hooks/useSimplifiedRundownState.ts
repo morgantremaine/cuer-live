@@ -151,7 +151,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
 
-  // Initialize OT integration
+  // Initialize OT integration - enable when rundown is loaded and initialized
   const otState = useOTIntegratedState({
     rundownId: rundownId || '',
     items: state.items,
@@ -162,7 +162,7 @@ export const useSimplifiedRundownState = () => {
       // OT system will let autosave handle the actual database save
       console.log('🔄 OT: Changes ready for autosave');
     },
-    enabled: !!rundownId && isInitialized
+    enabled: !!rundownId && isInitialized && !isLoading
   });
 
   // Auto-save functionality with unified save pipeline
