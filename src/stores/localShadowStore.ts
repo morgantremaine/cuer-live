@@ -273,6 +273,32 @@ class LocalShadowStore {
   }
 
   /**
+   * Get recently typed fields for precise conflict detection
+   */
+  getRecentlyTypedFields(withinMs: number): string[] {
+    const now = Date.now();
+    const recentFields: string[] = [];
+    
+    // Check item fields
+    for (const [itemId, itemMap] of this.itemShadows.entries()) {
+      for (const [field, shadow] of itemMap.entries()) {
+        if (shadow.isActive && (now - shadow.timestamp) < withinMs) {
+          recentFields.push(`${itemId}-${field}`);
+        }
+      }
+    }
+    
+    // Check global fields
+    for (const [field, shadow] of this.globalShadows.entries()) {
+      if (shadow.isActive && (now - shadow.timestamp) < withinMs) {
+        recentFields.push(`global-${field}`);
+      }
+    }
+    
+    return recentFields;
+  }
+
+  /**
    * Schedule automatic cleanup of expired shadows
    */
   private scheduleCleanup(key: string, itemId: string | null, field: string) {

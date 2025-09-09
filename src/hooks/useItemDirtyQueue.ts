@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { localShadowStore } from '@/state/localShadows';
+import { localShadowStore } from '@/stores/localShadowStore';
 
 interface QueuedUpdate {
   payload: any;
@@ -19,11 +19,55 @@ export const useItemDirtyQueue = () => {
 
   // Add update to queue if items are actively being edited
   const queueIfDirty = useCallback((payload: any, timestamp: string, docVersion: number): boolean => {
-    const activeShadows = localShadowStore.getActiveShadows();
+    // Use precise recent typing detection instead of general "active" shadows
+    const recentlyTypedFields = localShadowStore.getRecentlyTypedFields(2000); // Only 2 seconds
+    const activelyEditedItems = new Set<string>();
     
-    // Check if any items in the update are actively being edited
+    recentlyTypedFields.forEach(fieldKey => {
+      const [itemId] = fieldKey.split('-');
+      if (itemId !== 'global') {
+        activelyEditedItems.add(itemId);
+      }
+    });
+    
+    // Check if this is a deletion - be more permissive with deletions
+    const isLikelyDeletion = payload.new?.items && Array.isArray(payload.new.items) &&
+      payload.old?.items && Array.isArray(payload.old.items) &&
+      payload.new.items.length < payload.old.items.length;
+    
+    if (isLikelyDeletion) {
+      // For deletions, only protect if the deleted item was edited very recently (500ms)
+      const veryRecentFields = localShadowStore.getRecentlyTypedFields(500);
+      const hasVeryRecentEdit = veryRecentFields.some(fieldKey => {
+        const [itemId] = fieldKey.split('-');
+        return payload.old.items.some((item: any) => item.id === itemId && 
+          !payload.new.items.some((newItem: any) => newItem.id === item.id));
+      });
+      
+      if (hasVeryRecentEdit) {
+        const queuedUpdate: QueuedUpdate = {
+          payload,
+          timestamp,
+          docVersion,
+          queuedAt: Date.now()
+        };
+        
+        queueRef.current.push(queuedUpdate);
+        console.log('🛡️ ItemDirtyQueue: Queued deletion for very recently edited item', {
+          activeItems: Array.from(activelyEditedItems),
+          docVersion,
+          queueSize: queueRef.current.length
+        });
+        
+        return true; // Deletion was queued due to very recent edit
+      }
+      
+      return false; // Deletion not queued, safe to process immediately
+    }
+    
+    // For regular updates, check if any items are actively being edited
     const isDirty = payload.new?.items && Array.isArray(payload.new.items) &&
-      payload.new.items.some((item: any) => activeShadows.items.has(item.id));
+      payload.new.items.some((item: any) => activelyEditedItems.has(item.id));
     
     if (isDirty) {
       const queuedUpdate: QueuedUpdate = {
@@ -35,7 +79,7 @@ export const useItemDirtyQueue = () => {
       
       queueRef.current.push(queuedUpdate);
       console.log('🛡️ ItemDirtyQueue: Queued update for actively edited items', {
-        activeItems: Array.from(activeShadows.items.keys()),
+        activeItems: Array.from(activelyEditedItems),
         docVersion,
         queueSize: queueRef.current.length
       });
@@ -53,29 +97,57 @@ export const useItemDirtyQueue = () => {
     }
     
     processingRef.current = true;
-    const activeShadows = localShadowStore.getActiveShadows();
     
-    // Only process updates if no items are actively being edited
-    if (activeShadows.items.size === 0) {
-      console.log('🛡️ ItemDirtyQueue: Processing queued updates', {
-        queueSize: queueRef.current.length
+    // Use precise recent typing detection
+    const recentlyTypedFields = localShadowStore.getRecentlyTypedFields(1000); // 1 second for processing
+    const activelyEditedItems = new Set<string>();
+    
+    recentlyTypedFields.forEach(fieldKey => {
+      const [itemId] = fieldKey.split('-');
+      if (itemId !== 'global') {
+        activelyEditedItems.add(itemId);
+      }
+    });
+    
+    // Separate safe updates from protected ones
+    const safeUpdates: QueuedUpdate[] = [];
+    const protectedUpdates: QueuedUpdate[] = [];
+    
+    queueRef.current.forEach(update => {
+      const payload = update.payload;
+      const affectsActiveItems = payload.new?.items && Array.isArray(payload.new.items) &&
+        payload.new.items.some((item: any) => activelyEditedItems.has(item.id));
+      
+      if (affectsActiveItems) {
+        protectedUpdates.push(update);
+      } else {
+        safeUpdates.push(update);
+      }
+    });
+    
+    // Always process safe updates
+    if (safeUpdates.length > 0) {
+      console.log('🛡️ ItemDirtyQueue: Processing safe queued updates', {
+        safeUpdates: safeUpdates.length,
+        protectedUpdates: protectedUpdates.length
       });
       
-      // Process all queued updates
-      const updates = [...queueRef.current];
-      queueRef.current = [];
-      
-      updates.forEach(update => {
+      safeUpdates.forEach(update => {
         try {
           onApplyUpdate(update);
         } catch (error) {
-          console.error('❌ ItemDirtyQueue: Error processing queued update', error);
+          console.error('❌ ItemDirtyQueue: Error processing safe update', error);
         }
       });
-    } else {
-      console.log('🛡️ ItemDirtyQueue: Still actively editing - keeping updates queued', {
-        activeItems: Array.from(activeShadows.items.keys()),
-        queueSize: queueRef.current.length
+    }
+    
+    // Keep only protected updates in queue
+    queueRef.current = protectedUpdates;
+    
+    if (protectedUpdates.length > 0) {
+      console.log('🛡️ ItemDirtyQueue: Still actively editing - keeping protected updates queued', {
+        activeItems: Array.from(activelyEditedItems),
+        queueSize: protectedUpdates.length
       });
     }
     
