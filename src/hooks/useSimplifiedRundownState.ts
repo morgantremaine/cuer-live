@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useOTIntegratedState } from './useOTIntegratedState';
+// import { useOTIntegratedState } from './useOTIntegratedState';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 
@@ -151,19 +151,23 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
 
-  // Initialize OT integration - enable when rundown is loaded and initialized
-  const otState = useOTIntegratedState({
-    rundownId: rundownId || '',
-    items: state.items,
-    onItemsChange: (newItems) => {
+  // Temporarily disabled OT system - reverting to original autosave
+  const otState = {
+    isOTEnabled: false,
+    isOTActive: false,
+    isConnected: false,
+    activeSessions: [],
+    conflictCount: 0,
+    clientId: 'disabled',
+    onItemsChange: (newItems: any[]) => {
       actions.setItems(newItems);
     },
     onSave: () => {
-      // OT system will let autosave handle the actual database save
       console.log('🔄 OT: Changes ready for autosave');
     },
-    enabled: !!rundownId && isInitialized && !isLoading
-  });
+    setActiveCell: (cellId?: string) => {},
+    shouldBypassAutosave: false
+  };
 
   // Auto-save functionality with unified save pipeline
   const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
