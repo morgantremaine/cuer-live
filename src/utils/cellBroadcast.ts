@@ -58,11 +58,16 @@ export class CellBroadcastManager {
     channel.subscribe((status: string) => {
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
+        this.reconnectAttempts.delete(rundownId); // Reset on successful connection
         console.log('✅ Cell realtime channel subscribed:', key);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        // Avoid manual reconnect loops; rely on Supabase auto-reconnect
         this.subscribed.set(rundownId, false);
-        console.warn('🔌 Cell realtime channel status (no manual reconnect):', key, status);
+        console.warn('🔌 Cell realtime channel disconnected:', key, status);
+        
+        // Only attempt reconnect if we still have active callbacks
+        if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+          this.handleChannelReconnect(rundownId);
+        }
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
@@ -80,39 +85,39 @@ export class CellBroadcastManager {
     }
 
     const attempts = this.reconnectAttempts.get(rundownId) || 0;
+    
+    // Exponential backoff: 1s, 2s, 4s, 8s, then 10s max
+    const delay = Math.min(1000 * Math.pow(2, attempts), 10000);
     this.reconnectAttempts.set(rundownId, attempts + 1);
 
-    // Use exponential backoff from realtimeUtils
-    const delay = getReconnectDelay(attempts);
-
-    console.log(`🔌 Cell channel disconnected, reconnecting in ${delay}ms (attempt ${attempts + 1})`);
+    console.log(`🔌 Cell channel will reconnect in ${delay}ms (attempt ${attempts + 1})`);
 
     const timeout = setTimeout(() => {
       this.reconnectTimeouts.delete(rundownId);
       
-      // Remove and recreate the channel
-      const oldChannel = this.channels.get(rundownId);
-      if (oldChannel) {
-        try {
-          supabase.removeChannel(oldChannel);
-        } catch (error) {
-          console.warn('Error removing old channel during reconnect:', error);
-        }
-      }
-      
-      this.channels.delete(rundownId);
-      this.subscribed.delete(rundownId);
-      
-      // Recreate channel if callbacks still exist
+      // Only reconnect if we still have callbacks
       if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+        // Remove and recreate the channel
+        const oldChannel = this.channels.get(rundownId);
+        if (oldChannel) {
+          try {
+            supabase.removeChannel(oldChannel);
+          } catch (error) {
+            console.warn('Error removing old channel during reconnect:', error);
+          }
+        }
+        
+        this.channels.delete(rundownId);
+        this.subscribed.delete(rundownId);
+        
+        // Recreate channel
         this.ensureChannel(rundownId);
+        console.log('🔄 Cell channel reconnected for rundown:', rundownId);
       }
     }, delay);
 
     this.reconnectTimeouts.set(rundownId, timeout);
   }
-
-  private broadcastTimeouts = new Map<string, NodeJS.Timeout>();
 
   broadcastCellUpdate(
     rundownId: string, 
@@ -131,24 +136,13 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     };
 
-    // Micro-debounce broadcasts (50ms) to reduce flooding
-    const broadcastKey = `${rundownId}-${itemId}-${field}`;
-    const existingTimeout = this.broadcastTimeouts.get(broadcastKey);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-    }
+    console.log('📡 Broadcasting cell update (simplified):', updatePayload);
 
-    this.broadcastTimeouts.set(broadcastKey, setTimeout(() => {
-      console.log('📡 Broadcasting cell update (simplified):', updatePayload);
-
-      channel.send({
-        type: 'broadcast',
-        event: 'cell_update',
-        payload: updatePayload
-      });
-      
-      this.broadcastTimeouts.delete(broadcastKey);
-    }, 50));
+    channel.send({
+      type: 'broadcast',
+      event: 'cell_update',
+      payload: updatePayload
+    });
   }
 
   // Simple echo prevention using userId (single session per user)
