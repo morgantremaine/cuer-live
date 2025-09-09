@@ -33,6 +33,12 @@ export const useSimpleCollaboration = ({
   const { user } = useAuth();
   const { shouldBlockAutoSave } = useCellUpdateCoordination();
   
+  // Keep latest state/actions in refs to avoid resubscribing on every change
+  const stateRef = useRef<any>(state);
+  const actionsRef = useRef<any>(actions);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
+  
   // Auto-save state
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedStateRef = useRef<string>('');
@@ -177,7 +183,9 @@ export const useSimpleCollaboration = ({
     
     try {
       const activeCells = Array.from(activeCellsRef.current);
-      const remoteData = payload.new;
+      const remoteData = { ...payload.new };
+      const stateCurrent = stateRef.current;
+      const actionsCurrent = actionsRef.current;
       
       // Apply update with simple cell protection
       if (activeCells.length > 0) {
@@ -192,7 +200,7 @@ export const useSimpleCollaboration = ({
             
             if (hasActiveField) {
               // Keep current local item for protected cells
-              const localItem = state.items?.find((item: any) => item.id === remoteItem.id);
+              const localItem = stateCurrent.items?.find((item: any) => item.id === remoteItem.id);
               return localItem || remoteItem;
             }
             
@@ -201,22 +209,22 @@ export const useSimpleCollaboration = ({
         }
         
         // Protect global fields
-        if (activeCells.includes('title') && state.title) {
-          remoteData.title = state.title;
+        if (activeCells.includes('title') && stateCurrent.title) {
+          remoteData.title = stateCurrent.title;
         }
-        if (activeCells.includes('startTime') && state.startTime) {
-          remoteData.start_time = state.startTime;
+        if (activeCells.includes('startTime') && stateCurrent.startTime) {
+          remoteData.start_time = stateCurrent.startTime;
         }
-        if (activeCells.includes('timezone') && state.timezone) {
-          remoteData.timezone = state.timezone;
+        if (activeCells.includes('timezone') && stateCurrent.timezone) {
+          remoteData.timezone = stateCurrent.timezone;
         }
-        if (activeCells.includes('externalNotes') && state.externalNotes) {
-          remoteData.external_notes = state.externalNotes;
+        if (activeCells.includes('externalNotes') && stateCurrent.externalNotes) {
+          remoteData.external_notes = stateCurrent.externalNotes;
         }
       }
       
       // Apply the update to state
-      actions.loadState({
+      actionsCurrent.loadState({
         items: remoteData.items || [],
         title: remoteData.title || '',
         startTime: remoteData.start_time || '09:00:00',
@@ -231,7 +239,7 @@ export const useSimpleCollaboration = ({
     } catch (error) {
       console.error('Error applying remote update:', error);
     }
-  }, [rundownId, state, actions, onRemoteUpdate]);
+  }, [rundownId, onRemoteUpdate]);
 
   // Setup realtime subscription
   useEffect(() => {
