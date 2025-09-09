@@ -159,8 +159,8 @@ export const useSimplifiedRundownState = () => {
       actions.setItems(newItems);
     },
     onSave: () => {
-      // Handle OT-enhanced save if needed
-      console.log('🔄 OT: Enhanced save called');
+      // OT system will let autosave handle the actual database save
+      console.log('🔄 OT: Changes ready for autosave');
     },
     enabled: !!rundownId && isInitialized
   });
@@ -200,7 +200,7 @@ export const useSimplifiedRundownState = () => {
     blockUntilLocalEditRef,
     cooldownUntilRef,
     applyingCellBroadcastRef, // Pass the cell broadcast flag
-    otState.shouldBypassAutosave // Bypass autosave when OT is active
+    false // Never bypass autosave - OT will handle saves properly
   );
 
   // Standalone undo system - unchanged
