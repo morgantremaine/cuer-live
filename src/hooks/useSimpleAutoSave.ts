@@ -57,6 +57,12 @@ export const useSimpleAutoSave = (
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
   const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
+  // Save watchdog to detect stuck saves and unsaved changes
+  const saveStartTimeRef = useRef<number>(0);
+  const lastChangedTimeRef = useRef<number>(0);
+  const lastServerUpdateRef = useRef<number>(0);
+  const watchdogTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
     rundownId,
@@ -69,6 +75,13 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     onSavedRef.current = onSaved;
   }, [onSaved]);
+
+  // Track content changes for watchdog
+  useEffect(() => {
+    if (state.hasUnsavedChanges) {
+      lastChangedTimeRef.current = Date.now();
+    }
+  }, [state.hasUnsavedChanges]);
 
   // Create content signature from current state (backwards compatibility)
   const createContentSignature = useCallback(() => {
@@ -421,6 +434,43 @@ export const useSimpleAutoSave = (
     setIsSaving(true);
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
+    
+    // Start save watchdog
+    saveStartTimeRef.current = Date.now();
+    if (watchdogTimeoutRef.current) {
+      clearTimeout(watchdogTimeoutRef.current);
+    }
+    
+    // Monitor for stuck saves (>8s) or persistent unsaved changes (>12s)
+    watchdogTimeoutRef.current = setTimeout(() => {
+      const now = Date.now();
+      const saveStuckTime = now - saveStartTimeRef.current;
+      const changesAge = now - lastChangedTimeRef.current;
+      const timeSinceServerUpdate = now - lastServerUpdateRef.current;
+      
+      if (isSaving && saveStuckTime > 8000) {
+        console.warn('🚨 Save watchdog: stuck save detected, forcing recovery');
+        setIsSaving(false);
+        saveInProgressRef.current = false;
+        
+        toast({
+          title: "Save Recovery",
+          description: "Recovered from stuck save operation",
+          duration: 3000,
+        });
+        
+      } else if (state.hasUnsavedChanges && changesAge > 12000 && timeSinceServerUpdate > 12000) {
+        console.warn('🚨 Save watchdog: persistent unsaved changes detected, forcing save');
+        
+        toast({
+          title: "Save Recovery", 
+          description: "Recovered in-flight edits",
+          duration: 3000,
+        });
+      }
+      
+      watchdogTimeoutRef.current = null;
+    }, 8000);
     
       try {
         if (!rundownId) {

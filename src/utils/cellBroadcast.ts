@@ -112,6 +112,8 @@ export class CellBroadcastManager {
     this.reconnectTimeouts.set(rundownId, timeout);
   }
 
+  private broadcastTimeouts = new Map<string, NodeJS.Timeout>();
+
   broadcastCellUpdate(
     rundownId: string, 
     itemId: string | null, 
@@ -129,13 +131,24 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     };
 
-    console.log('📡 Broadcasting cell update (simplified):', updatePayload);
+    // Micro-debounce broadcasts (50ms) to reduce flooding
+    const broadcastKey = `${rundownId}-${itemId}-${field}`;
+    const existingTimeout = this.broadcastTimeouts.get(broadcastKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
 
-    channel.send({
-      type: 'broadcast',
-      event: 'cell_update',
-      payload: updatePayload
-    });
+    this.broadcastTimeouts.set(broadcastKey, setTimeout(() => {
+      console.log('📡 Broadcasting cell update (simplified):', updatePayload);
+
+      channel.send({
+        type: 'broadcast',
+        event: 'cell_update',
+        payload: updatePayload
+      });
+      
+      this.broadcastTimeouts.delete(broadcastKey);
+    }, 50));
   }
 
   // Simple echo prevention using userId (single session per user)

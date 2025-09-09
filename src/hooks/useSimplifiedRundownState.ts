@@ -20,6 +20,7 @@ import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
+import { localShadowStore } from '@/stores/localShadowStore';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -49,6 +50,9 @@ export const useSimplifiedRundownState = () => {
   const activeFocusFieldRef = useRef<string | null>(null);
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // LocalShadow cleanup timeouts
+  const shadowCleanupTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   
   // Track when cell broadcasts are being applied to prevent AutoSave triggers
   const applyingCellBroadcastRef = useRef(false);
@@ -804,6 +808,24 @@ export const useSimplifiedRundownState = () => {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
+    
+    // CRITICAL: Set LocalShadow protection for this field
+    localShadowStore.setShadow(id, field, value, true);
+    
+    // Schedule cleanup of the shadow after typing inactivity
+    const shadowKey = `${id}-${field}`;
+    const existingTimeout = shadowCleanupTimeouts.current.get(shadowKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    const cleanupTimeout = setTimeout(() => {
+      localShadowStore.markInactive(id, field);
+      shadowCleanupTimeouts.current.delete(shadowKey);
+    }, 3000);
+    
+    shadowCleanupTimeouts.current.set(shadowKey, cleanupTimeout);
+    
     // Check if this is a typing field or immediate-sync field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
@@ -1464,6 +1486,11 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
+      
+      // CRITICAL: Set LocalShadow protection for global startTime field
+      localShadowStore.setGlobalShadow('startTime', newStartTime, true);
+      setTimeout(() => localShadowStore.markGlobalInactive('startTime'), 3000);
+      
       // Simplified: No field tracking needed
       const now = Date.now();
       
@@ -1479,6 +1506,11 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
+      
+      // CRITICAL: Set LocalShadow protection for global timezone field
+      localShadowStore.setGlobalShadow('timezone', newTimezone, true);
+      setTimeout(() => localShadowStore.markGlobalInactive('timezone'), 3000);
+      
       // Simplified: No field tracking needed
       const now = Date.now();
       
@@ -1494,6 +1526,11 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
+      
+      // CRITICAL: Set LocalShadow protection for global showDate field
+      localShadowStore.setGlobalShadow('showDate', newShowDate, true);
+      setTimeout(() => localShadowStore.markGlobalInactive('showDate'), 3000);
+      
       // Simplified: No field tracking needed
       const now = Date.now();
       
