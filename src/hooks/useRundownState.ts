@@ -58,6 +58,10 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
+    console.log('📝 Content change flagged (hasUnsavedChanges=true) via action:', actionType);
+    try {
+      console.trace('🧭 Save cause trace');
+    } catch {}
     return {
       ...state,
       ...newState,
@@ -154,6 +158,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, docVersion: action.payload };
 
     case 'LOAD_STATE': {
+      console.log('🧩 LOAD_STATE applied; resetting hasUnsavedChanges=false');
       return {
         ...state,
         ...action.payload,

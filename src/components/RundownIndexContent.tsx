@@ -513,8 +513,7 @@ const RundownIndexContent = () => {
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
     >
-      <div className="flex flex-col h-full">
-        <RundownContainer
+      <RundownContainer
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
@@ -610,8 +609,7 @@ const RundownIndexContent = () => {
         isHeaderCollapsed={isHeaderCollapsed}
         getHeaderGroupItemIds={getHeaderGroupItemIds}
         visibleItems={visibleItems}
-        />
-      </div>
+      />
       
       {/* Floating Notes Window */}
       {showNotesWindow && rundownId && (

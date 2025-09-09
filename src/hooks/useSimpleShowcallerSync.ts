@@ -314,15 +314,14 @@ export const useSimpleShowcallerSync = ({
   const reset = useCallback(() => {
     console.log('📺 Simple: Reset called');
     
-    // FIXED: Ensure we always preserve a valid currentSegmentId during reset
-    const targetSegmentId = state.currentSegmentId || items.find(item => item.type === 'regular' && !isFloated(item))?.id || null;
+    const targetSegmentId = state.currentSegmentId;
     const duration = targetSegmentId ? parseDurationToSeconds((items.find(i => i.id === targetSegmentId)?.duration) || '00:00') : 0;
     const newState = {
       ...state,
       isPlaying: false,
-      currentSegmentId: targetSegmentId, // Never allow null if we have items
+      currentSegmentId: targetSegmentId || state.currentSegmentId || null,
       timeRemaining: duration,
-      currentItemStatuses: targetSegmentId ? buildStatusMap(targetSegmentId) : {},
+      currentItemStatuses: targetSegmentId ? buildStatusMap(targetSegmentId) : state.currentItemStatuses,
       isController: true,
       controllerId: userId || null,
       lastUpdate: new Date().toISOString()
@@ -464,9 +463,8 @@ export const useSimpleShowcallerSync = ({
       console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
       
       // Convert to the format expected by the database
-      // FIXED: Never save null currentSegmentId - preserve existing or use first item
       const showcallerState = {
-        currentSegmentId: stateToSave.currentSegmentId || items.find(item => item.type === 'regular' && !isFloated(item))?.id || null,
+        currentSegmentId: stateToSave.currentSegmentId,
         isPlaying: stateToSave.isPlaying,
         timeRemaining: stateToSave.timeRemaining,
         controllerId: stateToSave.controllerId,

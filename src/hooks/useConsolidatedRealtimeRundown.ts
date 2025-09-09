@@ -113,7 +113,7 @@ export const useConsolidatedRealtimeRundown = ({
     }
 
     // BULLETPROOF: Import LocalShadow for advanced field protection
-    const { localShadowStore } = await import('@/stores/localShadowStore');
+    const { localShadowStore } = await import('@/state/localShadows');
     const activeShadows = localShadowStore.getActiveShadows();
     
     // Check if this update affects any actively edited items (item-level dirty protection)
@@ -141,7 +141,7 @@ export const useConsolidatedRealtimeRundown = ({
       // Process queued updates after a brief delay (when typing stops)
       setTimeout(() => {
         processQueuedUpdates(globalState);
-      }, 1500); // Reduced delay for better responsiveness
+      }, 2000);
       
       return; // Don't process immediately
     }
@@ -304,7 +304,7 @@ export const useConsolidatedRealtimeRundown = ({
       
       try {
         // Apply LocalShadow protection before dispatching to callbacks
-        const { localShadowStore } = await import('@/stores/localShadowStore');
+        const { localShadowStore } = await import('@/state/localShadows');
         const protectedPayload = localShadowStore.applyShadowsToData(payload.new);
         
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
@@ -321,27 +321,43 @@ export const useConsolidatedRealtimeRundown = ({
 
   }, [rundownId, user?.id, isSharedView]);
 
-  // SIMPLIFIED: No more complex queuing - just apply updates immediately
+  // Process queued updates when item editing stops
   const processQueuedUpdates = useCallback(async (globalState: any) => {
     if (!globalState.itemDirtyQueue || globalState.itemDirtyQueue.length === 0) {
       return;
     }
     
-    console.log('🛡️ SIMPLIFIED: Processing all queued updates immediately', {
-      queueSize: globalState.itemDirtyQueue.length
-    });
+    const { localShadowStore } = await import('@/state/localShadows');
+    const activeShadows = localShadowStore.getActiveShadows();
     
-    // Process all updates immediately - no complex protection
-    const queuedUpdates = [...globalState.itemDirtyQueue];
-    globalState.itemDirtyQueue = [];
-    
-    queuedUpdates.forEach((queuedUpdate: any) => {
-      try {
-        processRealtimeUpdate(queuedUpdate.payload, globalState);
-      } catch (error) {
-        console.error('❌ Error processing queued update:', error);
-      }
-    });
+    // Only process if no items are actively being edited
+    if (activeShadows.items.size === 0) {
+      console.log('🛡️ Processing queued realtime updates', {
+        queueSize: globalState.itemDirtyQueue.length
+      });
+      
+      const queuedUpdates = [...globalState.itemDirtyQueue];
+      globalState.itemDirtyQueue = [];
+      
+      // Process each queued update
+      queuedUpdates.forEach((queuedUpdate: any) => {
+        try {
+          processRealtimeUpdate(queuedUpdate.payload, globalState);
+        } catch (error) {
+          console.error('❌ Error processing queued update:', error);
+        }
+      });
+    } else {
+      console.log('🛡️ Still actively editing - keeping updates queued', {
+        activeItems: Array.from(activeShadows.items.keys()),
+        queueSize: globalState.itemDirtyQueue.length
+      });
+      
+      // Re-schedule processing check
+      setTimeout(() => {
+        processQueuedUpdates(globalState);
+      }, 1000);
+    }
   }, [processRealtimeUpdate]);
 
   useEffect(() => {

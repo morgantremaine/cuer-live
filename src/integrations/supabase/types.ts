@@ -272,66 +272,27 @@ export type Database = {
         }
         Relationships: []
       }
-      rundown_operations: {
-        Row: {
-          client_id: string | null
-          created_at: string
-          id: string
-          operation_data: Json
-          operation_type: string
-          rundown_id: string
-          user_id: string
-        }
-        Insert: {
-          client_id?: string | null
-          created_at?: string
-          id?: string
-          operation_data: Json
-          operation_type: string
-          rundown_id: string
-          user_id: string
-        }
-        Update: {
-          client_id?: string | null
-          created_at?: string
-          id?: string
-          operation_data?: Json
-          operation_type?: string
-          rundown_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       rundown_presence: {
         Row: {
-          active_cell: string | null
-          client_id: string | null
           created_at: string
           id: string
           last_seen: string
           rundown_id: string
           user_id: string
-          user_name: string | null
         }
         Insert: {
-          active_cell?: string | null
-          client_id?: string | null
           created_at?: string
           id?: string
           last_seen?: string
           rundown_id: string
           user_id: string
-          user_name?: string | null
         }
         Update: {
-          active_cell?: string | null
-          client_id?: string | null
           created_at?: string
           id?: string
           last_seen?: string
           rundown_id?: string
           user_id?: string
-          user_name?: string | null
         }
         Relationships: []
       }
@@ -1025,10 +986,6 @@ export type Database = {
         Returns: undefined
       }
       cleanup_inactive_showcaller_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_operations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

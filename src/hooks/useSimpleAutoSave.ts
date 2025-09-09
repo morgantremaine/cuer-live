@@ -23,7 +23,6 @@ export const useSimpleAutoSave = (
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
   cooldownUntilRef?: React.MutableRefObject<number>,
   applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
-  otBypass?: boolean, // When true, bypass autosave for OT
   isSharedView = false
 ) => {
   const navigate = useNavigate();
@@ -58,12 +57,6 @@ export const useSimpleAutoSave = (
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
   const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
-  // Save watchdog to detect stuck saves and unsaved changes
-  const saveStartTimeRef = useRef<number>(0);
-  const lastChangedTimeRef = useRef<number>(0);
-  const lastServerUpdateRef = useRef<number>(0);
-  const watchdogTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
   // Keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
     rundownId,
@@ -76,13 +69,6 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     onSavedRef.current = onSaved;
   }, [onSaved]);
-
-  // Track content changes for watchdog
-  useEffect(() => {
-    if (state.hasUnsavedChanges) {
-      lastChangedTimeRef.current = Date.now();
-    }
-  }, [state.hasUnsavedChanges]);
 
   // Create content signature from current state (backwards compatibility)
   const createContentSignature = useCallback(() => {
@@ -214,8 +200,11 @@ export const useSimpleAutoSave = (
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
+      console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
+    
+    console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
     
     // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
     keystrokeJournal.recordTyping('user typing activity');
@@ -293,14 +282,6 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
-    // CRITICAL: Skip autosave when OT bypass is enabled
-    if (otBypass) {
-      console.log('🤖 AutoSave: bypassed - OT system is handling saves');
-      onSavedRef.current?.();
-      return;
-    }
-    
-    // TRACE: Entry flags
     // TRACE: Entry flags
     console.log('🧪 TRACE performSave(entry)', {
       isFlushSave,
@@ -324,22 +305,14 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
-      console.log('📱 AutoSave: deferred - showcaller operation active');
       // Schedule retry if blocked by showcaller operation (short-term block)
       if (!saveTimeoutRef.current) {
         saveTimeoutRef.current = setTimeout(() => {
           saveTimeoutRef.current = undefined;
           performSave(isFlushSave, isSharedView);
-        }, 300); // Shorter retry for better responsiveness
+        }, 500);
       }
       return;
-    }
-    
-    // CRITICAL: Never block autosave for cell broadcast - this causes data loss
-    // Cell broadcasts should coordinate with saves, not block them
-    if (applyingCellBroadcastRef?.current) {
-      console.log('📱 AutoSave: proceeding despite cell broadcast - zero data loss priority');
-      // Don't return - allow save to proceed
     }
 
     // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
@@ -372,6 +345,8 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Block if explicitly flagged to wait for local edit
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
+      debugLogger.autosave('Save blocked: waiting for local edit after remote update');
+      console.log('🛑 AutoSave: blocked - waiting for local edit after remote update');
       return;
     }
     
@@ -416,11 +391,11 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // CRITICAL: Always use current state for real-time collaboration
-    // Snapshots can be stale during rapid cell broadcasts
-    const saveState = state;
+    // Build save payload from latest snapshot for consistency
+    const latestSnapshot = keystrokeJournal.getLatestSnapshot();
+    const saveState = latestSnapshot || state;
     
-    // Create signature from current state for immediate consistency
+    // Create signature from the snapshot we'll actually save
     const finalSignature = createContentSignatureFromState(saveState);
 
     // ANTI-WIPE CIRCUIT BREAKER: Prevent saves that would drastically reduce items
@@ -446,46 +421,6 @@ export const useSimpleAutoSave = (
     setIsSaving(true);
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
-    
-    // CRITICAL: Clear hasUnsavedChanges immediately to prevent false positives
-    onSavedRef.current?.();
-    
-    // Start save watchdog
-    saveStartTimeRef.current = Date.now();
-    if (watchdogTimeoutRef.current) {
-      clearTimeout(watchdogTimeoutRef.current);
-    }
-    
-    // Monitor for stuck saves (>8s) or persistent unsaved changes (>12s)
-    watchdogTimeoutRef.current = setTimeout(() => {
-      const now = Date.now();
-      const saveStuckTime = now - saveStartTimeRef.current;
-      const changesAge = now - lastChangedTimeRef.current;
-      const timeSinceServerUpdate = now - lastServerUpdateRef.current;
-      
-      if (isSaving && saveStuckTime > 8000) {
-        console.warn('🚨 Save watchdog: stuck save detected, forcing recovery');
-        setIsSaving(false);
-        saveInProgressRef.current = false;
-        
-        toast({
-          title: "Save Recovery",
-          description: "Recovered from stuck save operation",
-          duration: 3000,
-        });
-        
-      } else if (state.hasUnsavedChanges && changesAge > 12000 && timeSinceServerUpdate > 12000) {
-        console.warn('🚨 Save watchdog: persistent unsaved changes detected, forcing save');
-        
-        toast({
-          title: "Save Recovery", 
-          description: "Recovered in-flight edits",
-          duration: 3000,
-        });
-      }
-      
-      watchdogTimeoutRef.current = null;
-    }, 8000);
     
       try {
         if (!rundownId) {
@@ -593,20 +528,21 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
 
-          // CRITICAL: Only schedule micro-resave if content actually changed AND it's different from saved
+          // Delay signature comparison longer to avoid React state race conditions and double saves
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature && currentSignatureAfterSave !== lastSavedRef.current) {
+            if (currentSignatureAfterSave !== finalSignature) {
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
               if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
+                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
                 scheduleMicroResave();
               } else {
                 console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
                 lastSavedRef.current = currentSignatureAfterSave;
               }
             }
-          }, 300); // Reduced delay for faster coordination
+          }, 500);
 
           // Invoke callback with metadata
           onSavedRef.current?.({ 
@@ -789,8 +725,11 @@ export const useSimpleAutoSave = (
     }
 
     if (state.hasUnsavedChanges) {
-      // CRITICAL: Never skip autosave due to cell broadcasts - causes data loss
-      // Let performSave handle coordination instead
+      // CRITICAL: Skip AutoSave if cell broadcast is being applied
+      if (applyingCellBroadcastRef?.current) {
+        console.log('📱 AutoSave: skipped - cell broadcast being applied');
+        return;
+      }
       
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();

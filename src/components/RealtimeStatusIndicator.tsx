@@ -1,7 +1,6 @@
 
 import React from 'react';
 import ConnectionStatusBadge from './ConnectionStatusBadge';
-import { LiveShowProtectionMode } from './LiveShowProtectionMode';
 
 interface RealtimeStatusIndicatorProps {
   isConnected: boolean;
@@ -15,15 +14,12 @@ const RealtimeStatusIndicator = ({
   className 
 }: RealtimeStatusIndicatorProps) => {
   return (
-    <div className="flex items-center gap-2">
-      <ConnectionStatusBadge
-        isConnected={isConnected}
-        isProcessing={isProcessingUpdate}
-        className={className}
-        showLabel={true}
-      />
-      <LiveShowProtectionMode />
-    </div>
+    <ConnectionStatusBadge
+      isConnected={isConnected}
+      isProcessing={isProcessingUpdate}
+      className={className}
+      showLabel={true}
+    />
   );
 };
 
