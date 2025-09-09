@@ -497,6 +497,11 @@ export const useSimplifiedRundownState = () => {
           setLastSeenDocVersion(updatedRundown.doc_version);
         }
         
+        // CRITICAL: Mark as saved after applying remote updates to clear "unsaved changes"
+        // This prevents false "unsaved changes" state when teammate updates are applied
+        actionsRef.current.markSaved();
+        console.log('✅ Marked as saved after remote update - clearing false unsaved changes state');
+        
         // Only block autosave if we actually applied unprotected updates
         if (!hasProtectedUpdates) {
           console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
