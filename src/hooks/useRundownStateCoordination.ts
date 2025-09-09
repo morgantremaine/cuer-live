@@ -1,4 +1,5 @@
 import { usePersistedRundownState } from './usePersistedRundownState';
+import { useCleanRundownState } from './useCleanRundownState';
 import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
@@ -9,8 +10,70 @@ import { useDragAndDrop } from './useDragAndDrop';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
+import { FEATURE_FLAGS } from '@/config/features';
 
 export const useRundownStateCoordination = () => {
+  // USE SIMPLIFIED SYSTEM IF FEATURE FLAG IS ENABLED
+  if (FEATURE_FLAGS.ENABLE_SIMPLE_COLLABORATION) {
+    const cleanState = useCleanRundownState();
+    
+    // Mock UI interactions for compatibility
+    const mockInteractions = {
+      ...cleanState.actions,
+      selectedRows: new Set<string>(),
+      toggleRowSelection: () => {},
+      clearSelection: () => {},
+      draggedItemIndex: null,
+      isDraggingMultiple: false,
+      dropTargetIndex: null,
+      handleDragStart: () => {},
+      handleDragOver: () => {},
+      handleDragLeave: () => {},
+      handleDrop: () => {},
+      hasClipboardData: () => false,
+      handleCopySelectedRows: () => {},
+      handlePasteRows: () => {},
+      handleDeleteSelectedRows: () => {},
+      handleRowSelection: () => {},
+      handleAddRow: () => {},
+      handleAddHeader: () => {}
+    };
+
+    const mockUIState = {
+      ...cleanState,
+      showColorPicker: '',
+      handleCellClick: () => {},
+      handleKeyDown: () => {},
+      handleToggleColorPicker: () => {},
+      selectColor: () => {},
+      getRowStatus: () => 'upcoming' as const,
+      getColumnWidth: () => 'auto',
+      toggleAutoScroll: () => {},
+      autoScrollEnabled: false,
+      cellRefs: { current: {} },
+      isSidebarCollapsed: false,
+      setSidebarCollapsed: () => {},
+      navigateToCell: () => {}
+    };
+    
+    // Return in the same format as the complex system for compatibility
+    return {
+      coreState: {
+        ...cleanState.state,
+        totalRuntime: cleanState.totalRuntime,
+        runtimeInfo: cleanState.runtimeInfo,
+        isConnected: cleanState.isConnected,
+        isSaving: cleanState.isSaving,
+        selectedRowId: cleanState.selectedRowId,
+        setSelectedRowId: cleanState.setSelectedRowId,
+        currentTime: cleanState.currentTime
+      },
+      interactions: mockInteractions,
+      uiState: mockUIState
+    };
+  }
+
+  // ORIGINAL COMPLEX SYSTEM (when feature flag is disabled)
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
