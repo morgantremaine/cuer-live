@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
-import { useOTIntegration } from './useOTIntegration';
+
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
@@ -149,21 +149,8 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  
-  // Initialize OT integration alongside existing autosave
-  const otIntegration = useOTIntegration({
-    rundownId: rundownId || '',
-    rundownData: {
-      id: rundownId,
-      title: state.title,
-      items: state.items,
-      startTime: state.startTime,
-      timezone: state.timezone
-    },
-    enabled: !!rundownId && isInitialized
-  });
 
-  // Auto-save functionality with unified save pipeline (enhanced with OT support)
+  // Auto-save functionality with unified save pipeline
   const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
     {
       ...state,
@@ -197,8 +184,7 @@ export const useSimplifiedRundownState = () => {
     (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
     blockUntilLocalEditRef,
     cooldownUntilRef,
-    applyingCellBroadcastRef, // Pass the cell broadcast flag
-    otIntegration.isOTEnabled // Pass OT status to disable autosave when OT is active
+    applyingCellBroadcastRef // Pass the cell broadcast flag
   );
 
   // Standalone undo system - unchanged
@@ -1662,12 +1648,6 @@ export const useSimplifiedRundownState = () => {
     
     // Structural change handling
     markStructuralChange,
-    clearStructuralChange,
-    
-    // OT Integration state
-    isOTEnabled: otIntegration.isOTEnabled,
-    isCollaborative: otIntegration.isReady,
-    activeSessions: otIntegration.activeSessions,
-    activeConflicts: otIntegration.activeConflicts
+    clearStructuralChange
   };
 };
