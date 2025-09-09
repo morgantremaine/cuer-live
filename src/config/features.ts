@@ -7,7 +7,7 @@
 
 export const FEATURE_FLAGS = {
   // Enable simplified collaboration system (removes OCC, LocalShadow, queues)
-  ENABLE_SIMPLE_COLLABORATION: false, // Set to true to enable
+  ENABLE_SIMPLE_COLLABORATION: true, // Set to true to enable
   
   // Enable periodic checksum/resync as safety net
   ENABLE_PERIODIC_RESYNC: false,
