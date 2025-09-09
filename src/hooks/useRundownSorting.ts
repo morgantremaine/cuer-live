@@ -69,11 +69,6 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           const todayInA = nowInATimezone.toISOString().split('T')[0];
           const todayInB = nowInBTimezone.toISOString().split('T')[0];
           
-          console.log('🗓️ Timezone comparison:', {
-            a: { title: a.title, show_date: a.show_date, timezone: aTimezone, todayInTimezone: todayInA },
-            b: { title: b.title, show_date: b.show_date, timezone: bTimezone, todayInTimezone: todayInB }
-          });
-          
           // Compare show dates to today in their respective timezones
           const aIsToday = a.show_date === todayInA;
           const bIsToday = b.show_date === todayInB;
@@ -81,11 +76,6 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           const bIsFuture = b.show_date > todayInB;
           const aIsPast = a.show_date < todayInA;
           const bIsPast = b.show_date < todayInB;
-          
-          console.log('🗓️ Date classifications:', {
-            a: { isToday: aIsToday, isFuture: aIsFuture, isPast: aIsPast },
-            b: { isToday: bIsToday, isFuture: bIsFuture, isPast: bIsPast }
-          });
           
           // Sorting priority: Today first, then future (nearest first), then past (most recent first)
           
