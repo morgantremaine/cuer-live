@@ -57,40 +57,54 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           if (!aDate) return 1;
           if (!bDate) return -1;
           
-          // Get current time in each rundown's timezone for proper comparison
+          // Get timezones or default to user's timezone
           const aTimezone = a.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
           const bTimezone = b.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
           
-          // Convert the show dates to their respective timezones for comparison
-          const aZonedTime = toZonedTime(aDate, aTimezone);
-          const bZonedTime = toZonedTime(bDate, bTimezone);
-          
-          // Get current time in each timezone for comparison
+          // Get current time in each timezone
           const nowInATimezone = toZonedTime(now, aTimezone);
           const nowInBTimezone = toZonedTime(now, bTimezone);
           
-          const aTime = aZonedTime.getTime();
-          const bTime = bZonedTime.getTime();
-          const nowATime = nowInATimezone.getTime();
-          const nowBTime = nowInBTimezone.getTime();
+          // Get today's date string in each timezone (YYYY-MM-DD format)
+          const todayInA = nowInATimezone.toISOString().split('T')[0];
+          const todayInB = nowInBTimezone.toISOString().split('T')[0];
           
-          // Determine if dates are future or past in their respective timezones
-          const aIsFuture = aTime >= nowATime;
-          const bIsFuture = bTime >= nowBTime;
+          console.log('🗓️ Timezone comparison:', {
+            a: { title: a.title, show_date: a.show_date, timezone: aTimezone, todayInTimezone: todayInA },
+            b: { title: b.title, show_date: b.show_date, timezone: bTimezone, todayInTimezone: todayInB }
+          });
           
-          // Both dates are in the future - sort by closest to now (earliest future date first)
-          if (aIsFuture && bIsFuture) {
-            return aTime - bTime;
-          }
+          // Compare show dates to today in their respective timezones
+          const aIsToday = a.show_date === todayInA;
+          const bIsToday = b.show_date === todayInB;
+          const aIsFuture = a.show_date > todayInA;
+          const bIsFuture = b.show_date > todayInB;
+          const aIsPast = a.show_date < todayInA;
+          const bIsPast = b.show_date < todayInB;
           
-          // Both dates are in the past - sort by most recent past date first
-          if (!aIsFuture && !bIsFuture) {
-            return bTime - aTime;
-          }
+          console.log('🗓️ Date classifications:', {
+            a: { isToday: aIsToday, isFuture: aIsFuture, isPast: aIsPast },
+            b: { isToday: bIsToday, isFuture: bIsFuture, isPast: bIsPast }
+          });
           
-          // One future, one past - future dates always come first
-          if (aIsFuture && !bIsFuture) return -1;
-          if (bIsFuture && !aIsFuture) return 1;
+          // Sorting priority: Today first, then future (nearest first), then past (most recent first)
+          
+          // Both are today - sort by date string
+          if (aIsToday && bIsToday) return a.show_date.localeCompare(b.show_date);
+          
+          // One is today, other is not - today comes first
+          if (aIsToday && !bIsToday) return -1;
+          if (bIsToday && !aIsToday) return 1;
+          
+          // Both are future - sort by nearest first
+          if (aIsFuture && bIsFuture) return a.show_date.localeCompare(b.show_date);
+          
+          // Both are past - sort by most recent first
+          if (aIsPast && bIsPast) return b.show_date.localeCompare(a.show_date);
+          
+          // One future, one past - future comes first
+          if (aIsFuture && bIsPast) return -1;
+          if (bIsFuture && aIsPast) return 1;
           
           return 0;
         });
