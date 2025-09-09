@@ -192,15 +192,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         .eq('user_id', user.id)
         .eq('rundown_id', rundownId)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading column preferences:', error);
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
-      } else if (data?.column_layout) {
-        const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
+      } else if (data && data.length > 0 && data[0]?.column_layout) {
+        const result = data[0]; // Get first result from array
+        const loadedColumns = Array.isArray(result.column_layout) ? result.column_layout : defaultColumns;
         
         // Clean and validate loaded columns
         const cleanColumns = loadedColumns.filter(col => col && col.id && col.key && col.name);

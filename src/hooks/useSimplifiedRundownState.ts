@@ -823,24 +823,29 @@ export const useSimplifiedRundownState = () => {
           return merged;
         }) || [];
         
-        // Apply merged update
-        actions.loadState({
-          items: mergedItems,
-          title: protectedFields.has('title') ? state.title : deferredUpdate.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
-          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null)
-        });
+        // Apply merged update with field-level protection
+        actionsRef.current.setItems(mergedItems);
+        
+        if (!protectedFields.has('title')) {
+          actionsRef.current.setTitle(deferredUpdate.title);
+        }
+        if (!protectedFields.has('startTime')) {
+          actionsRef.current.setStartTime(deferredUpdate.start_time);
+        }
+        if (!protectedFields.has('timezone')) {
+          actionsRef.current.setTimezone(deferredUpdate.timezone);
+        }
+        if (!protectedFields.has('showDate')) {
+          actionsRef.current.setShowDate(deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null);
+        }
         
       } else {
-        // No protected fields - apply update normally
-        actions.loadState({
-          items: deferredUpdate.items || [],
-          title: deferredUpdate.title,
-          startTime: deferredUpdate.start_time,
-          timezone: deferredUpdate.timezone,
-          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
-        });
+        // No protected fields - apply update field by field
+        actionsRef.current.setItems(deferredUpdate.items || []);
+        actionsRef.current.setTitle(deferredUpdate.title);
+        actionsRef.current.setStartTime(deferredUpdate.start_time);
+        actionsRef.current.setTimezone(deferredUpdate.timezone);
+        actionsRef.current.setShowDate(deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null);
       }
     }
   }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
@@ -1134,28 +1139,36 @@ export const useSimplifiedRundownState = () => {
         return merged;
       });
       
-      actions.loadState({
-        items: mergedItems,
-        title: protectedFields.has('title') ? state.title : latestData.title,
-        startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
-        timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
-        showDate: protectedFields.has('showDate') ? state.showDate : (latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null),
-        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes,
-        docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
-      });
+      // Apply merged update with field-level protection  
+      actionsRef.current.setItems(mergedItems);
+      
+      if (!protectedFields.has('title')) {
+        actionsRef.current.setTitle(latestData.title);
+      }
+      if (!protectedFields.has('startTime')) {
+        actionsRef.current.setStartTime(latestData.start_time);
+      }
+      if (!protectedFields.has('timezone')) {
+        actionsRef.current.setTimezone(latestData.timezone);
+      }
+      if (!protectedFields.has('showDate')) {
+        actionsRef.current.setShowDate(latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null);
+      }
+      if (!protectedFields.has('externalNotes')) {
+        actionsRef.current.setExternalNotes(latestData.external_notes);
+      }
+      actionsRef.current.setDocVersion(latestData.doc_version || 0);
       return;
     }
     
-    // No protected fields - safe to apply latest data
-    actions.loadState({
-      items: latestData.items || [],
-      title: latestData.title,
-      startTime: latestData.start_time,
-      timezone: latestData.timezone,
-      showDate: latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null,
-      externalNotes: latestData.external_notes,
-      docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
-    });
+    // No protected fields - apply field by field
+    actionsRef.current.setItems(latestData.items || []);
+    actionsRef.current.setTitle(latestData.title);
+    actionsRef.current.setStartTime(latestData.start_time);
+    actionsRef.current.setTimezone(latestData.timezone);
+    actionsRef.current.setShowDate(latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null);
+    actionsRef.current.setExternalNotes(latestData.external_notes);
+    actionsRef.current.setDocVersion(latestData.doc_version || 0);
   }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
   // Simplified: No tab-based refresh needed with single sessions
