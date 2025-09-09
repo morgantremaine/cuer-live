@@ -85,9 +85,12 @@ export const useOTIntegratedState = ({
   }, [items, onItemsChange, otState]);
 
   // Override autosave behavior when OT is enabled
-  const otEnhancedSave = useCallback(() => {
+  const otEnhancedSave = useCallback(async () => {
     if (otState.isOTEnabled) {
-      console.log('🔄 OT: Save bypassed - using real-time operations');
+      console.log('🔄 OT: Triggering database save for current state');
+      // OT is enabled, but we still need to save the current state to database
+      // Call the original save function to persist current items
+      onSave?.();
       return;
     }
     
