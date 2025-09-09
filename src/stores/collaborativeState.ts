@@ -282,5 +282,6 @@ export const useCollaborativeActions = () => useCollaborativeStore(state => ({
   submitOperation: state.submitOperation,
   resolveConflict: state.resolveConflict,
   isFieldBeingEdited: state.isFieldBeingEdited,
-  getActiveSessionsForTarget: state.getActiveSessionsForTarget
+  getActiveSessionsForTarget: state.getActiveSessionsForTarget,
+  setShowConflictDialog: state.setShowConflictDialog
 }));
