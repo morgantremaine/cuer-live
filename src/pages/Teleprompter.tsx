@@ -5,7 +5,7 @@ import { RundownItem } from '@/types/rundown';
 import { useTeleprompterControls } from '@/hooks/useTeleprompterControls';
 import { useTeleprompterScroll } from '@/hooks/useTeleprompterScroll';
 import { useTeleprompterSave } from '@/hooks/useTeleprompterSave';
-import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeRundown';
+import { useSimplifiedCollaboration } from '@/hooks/useSimplifiedCollaboration';
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
@@ -76,29 +76,44 @@ const Teleprompter = () => {
 
   // Simplified: No tab tracking needed with single sessions
 
-  // Enhanced real-time updates with doc version tracking
-  const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
+  // Simplified real-time updates
+  const { isCollaborationActive: isRealtimeConnected } = useSimplifiedCollaboration({
     rundownId: rundownId!,
-    enabled: !!rundownId && !!user && !!rundownData,
-    lastSeenDocVersion,
-    onRundownUpdate: (updatedRundown) => {
-      // Always accept remote updates to ensure real-time sync
-      if (updatedRundown) {
-        console.log('📥 Teleprompter receiving real-time update from team');
-        setRundownData({
-          title: updatedRundown.title || 'Untitled Rundown',
-          items: updatedRundown.items || [],
-          doc_version: updatedRundown.doc_version, // Include doc_version for optimistic concurrency
-          updated_at: updatedRundown.updated_at
-        });
-        
-        // Update doc version tracking
-        if (updatedRundown.doc_version) {
-          setLastSeenDocVersion(updatedRundown.doc_version);
-          watchdogRef.current?.updateLastSeen(updatedRundown.doc_version, updatedRundown.updated_at);
-        }
-      }
-    }
+    currentState: rundownData ? {
+      items: rundownData.items,
+      title: rundownData.title,
+      startTime: '09:00:00',
+      timezone: 'UTC',
+      columns: [],
+      currentSegmentId: null,
+      isPlaying: false,
+      hasUnsavedChanges: false,
+      lastChanged: null,
+      showDate: null,
+      externalNotes: {}
+    } : {
+      items: [],
+      title: '',
+      startTime: '09:00:00',
+      timezone: 'UTC',
+      columns: [],
+      currentSegmentId: null,
+      isPlaying: false,
+      hasUnsavedChanges: false,
+      lastChanged: null,
+      showDate: null,
+      externalNotes: {}
+    },
+    onStateUpdate: (updatedState) => {
+      console.log('📥 Teleprompter receiving simplified real-time update');
+      setRundownData(prev => ({
+        title: updatedState.title || 'Untitled Rundown',
+        items: updatedState.items || [],
+        doc_version: prev?.doc_version, // Keep existing doc version
+        updated_at: prev?.updated_at
+      }));
+    },
+    userId: user?.id
   });
 
   // Simplified: No tab-based refresh needed with single sessions
@@ -204,8 +219,8 @@ const Teleprompter = () => {
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
     onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd,
-    // CRITICAL: Pass trackOwnUpdate to integrate with real-time system
-    trackOwnUpdate: trackOwnUpdate
+    // Simplified: No own update tracking needed
+    trackOwnUpdate: () => {}
   });
 
   // Enhanced rundown data loading with doc version tracking

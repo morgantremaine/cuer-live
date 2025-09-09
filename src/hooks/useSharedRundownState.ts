@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
-import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
+import { useSimplifiedCollaboration } from './useSimplifiedCollaboration';
 import { useRundownBroadcast } from './useRundownBroadcast';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 
@@ -119,28 +119,44 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Disable realtime DB updates for shared views - rely only on cell broadcasts for instant sync
-  // Only use showcaller broadcasts for showcaller state updates  
-  const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
+  // Simplified collaboration for shared views - just listen to updates
+  const { isCollaborationActive: realtimeConnected } = useSimplifiedCollaboration({
     rundownId,
-    onRundownUpdate: useCallback((updatedRundown) => {
-      // Skip all content updates in shared views - cell broadcasts handle them instantly
-      return;
-    }, []),
-    onShowcallerUpdate: useCallback((updatedData) => {
+    currentState: rundownData ? {
+      items: rundownData.items,
+      title: rundownData.title,
+      startTime: rundownData.startTime,
+      timezone: rundownData.timezone || 'UTC',
+      columns: rundownData.columns || [],
+      currentSegmentId: null,
+      isPlaying: false,
+      hasUnsavedChanges: false,
+      lastChanged: null,
+      showDate: null,
+      externalNotes: {}
+    } : {
+      items: [],
+      title: '',
+      startTime: '',
+      timezone: 'UTC',
+      columns: [],
+      currentSegmentId: null,
+      isPlaying: false,
+      hasUnsavedChanges: false,
+      lastChanged: null,
+      showDate: null,
+      externalNotes: {}
+    },
+    onStateUpdate: useCallback((newState) => {
       if (!mountedRef.current) return;
       
-      logger.debug('Shared view received showcaller-only update');
-      
-      // Update showcaller state only
+      // Update only showcaller state for shared views
       setRundownData(prev => prev ? {
         ...prev,
-        showcallerState: updatedData.showcaller_state,
-        lastUpdated: updatedData.updated_at
+        lastUpdated: new Date().toISOString()
       } : null);
     }, []),
-    enabled: !!rundownId,
-    isSharedView: true
+    userId: 'shared_view' // Anonymous user for shared views
   });
 
   // Live broadcast subscription for real-time typing updates

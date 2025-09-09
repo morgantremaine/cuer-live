@@ -5,7 +5,7 @@ import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 
 import { useStandaloneUndo } from './useStandaloneUndo';
-import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
+import { useSimplifiedCollaboration } from './useSimplifiedCollaboration';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
@@ -264,287 +264,19 @@ export const useSimplifiedRundownState = () => {
   const reconciliationTimeoutRef = useRef<NodeJS.Timeout>();
   const syncBeforeWriteRef = useRef(false);
   
-  const realtimeConnection = useConsolidatedRealtimeRundown({
+  // Simplified collaboration hook
+  const { updateField, flushPendingSaves, isCollaborationActive } = useSimplifiedCollaboration({
     rundownId,
-    lastSeenDocVersion,
-    blockUntilLocalEditRef,
-    onRundownUpdate: useCallback((updatedRundown) => {
-      // SIMPLIFIED: Remove initial load gating - just apply updates immediately
-      if (initialLoadGateRef.current) {
-        console.log('⏳ Initial load in progress but applying update anyway');
-        // Don't defer - just set the gate to false and continue
-        initialLoadGateRef.current = false;
-      }
-      
-      // Monotonic doc version guard: ignore stale updates
-      if (updatedRundown.doc_version && updatedRundown.doc_version <= lastSeenDocVersion) {
-        console.log('⏭️ Stale doc_version ignored:', {
-          incoming: updatedRundown.doc_version,
-          lastSeen: lastSeenDocVersion
-        });
-        return;
-      }
-      
-      // Monotonic timestamp guard as fallback
-      if (updatedRundown.updated_at && lastKnownTimestamp) {
-        const incomingTime = new Date(updatedRundown.updated_at).getTime();
-        const knownTime = new Date(lastKnownTimestamp).getTime();
-        
-        if (incomingTime <= knownTime) {
-          console.log('⏭️ Stale timestamp ignored:', {
-            incoming: updatedRundown.updated_at,
-            known: lastKnownTimestamp
-          });
-          return;
-        }
-      }
-      
-      // PURE OT CUTOVER: When OT is enabled, ignore document-level item updates
-      if (otState.isOTEnabled && updatedRundown.items) {
-        console.log('🔄 OT: Ignoring document-level items update - OT is authoritative for items');
-        // Still process non-item fields like title, startTime, etc.
-        const itemsUpdate = { ...updatedRundown };
-        delete itemsUpdate.items;
-        updatedRundown = itemsUpdate;
-      }
-      
-      // For non-OT mode, keep the original cell update protection
-      const recentCellUpdates = recentCellUpdatesRef.current;
-      let hasRecentCellUpdates = false;
-      
-      if (!otState.isOTEnabled && updatedRundown.items && Array.isArray(updatedRundown.items)) {
-        // Check if any item fields have recent cell updates
-        for (const item of updatedRundown.items) {
-          const itemFromState = state.items.find(existing => existing.id === item.id);
-          if (itemFromState) {
-            for (const [field, value] of Object.entries(item)) {
-              if (field === 'id') continue;
-              const updateKey = `${item.id}-${field}`;
-              const recentUpdate = recentCellUpdates.get(updateKey);
-              if (recentUpdate && Date.now() - recentUpdate.timestamp < 3000) {
-                console.log('🚫 Skipping realtime update for recently cell-updated field:', updateKey);
-                hasRecentCellUpdates = true;
-                // Don't override this field
-                (item as any)[field] = itemFromState[field];
-              }
-            }
-          }
-        }
-      }
-      
-      // ALWAYS apply updates - never block them. Google Sheets style.
-      console.log('📨 Processing realtime update immediately:', {
-        docVersion: updatedRundown.doc_version,
-        hasItems: !!updatedRundown.items,
-        itemCount: updatedRundown.items?.length || 0,
-        isTyping: isTypingActive(),
-        activeField: typingSessionRef.current?.fieldKey,
-        hasRecentCellUpdates
-      });
-      
-      // SIMPLIFIED: Remove complex structural change detection and cooldowns
-      // Just update timestamps and versions
-      if (updatedRundown.updated_at) {
-        setLastKnownTimestamp(updatedRundown.updated_at);
-      }
-      if (updatedRundown.doc_version) {
-        setLastSeenDocVersion(updatedRundown.doc_version);
-      }
-      
-      // Apply granular merge only if actively typing in a specific field
-      const protectedFields = getProtectedFields();
-      
-      // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
-      if (blockUntilLocalEditRef) {
-        if (protectedFields.size > 0) {
-          blockUntilLocalEditRef.current = false;
-        } else {
-          blockUntilLocalEditRef.current = true;
-        }
-      }
-      
-      if (protectedFields.size > 0) {
-        // PURE OT CUTOVER: Only merge items when OT is disabled
-        const mergedItems = otState.isOTEnabled ? state.items : (updatedRundown.items?.map((remoteItem: any) => {
-          const localItem = state.items.find(item => item.id === remoteItem.id);
-          if (!localItem) return remoteItem; // New item from remote
-          
-          const merged = { ...remoteItem };
-          
-          // Apply operational transformation: merge non-conflicting changes
-          Object.keys(localItem).forEach(key => {
-            if (key === 'id') return; // Never change IDs
-            
-            const isProtected = protectedFields.has(`${remoteItem.id}-${key}`);
-            const localValue = (localItem as any)[key];
-            const remoteValue = (remoteItem as any)[key];
-            
-            if (isProtected) {
-              // Keep local changes for actively edited fields
-              merged[key] = localValue;
-              console.log(`🛡️ Protected field ${key} for item ${remoteItem.id}: keeping local value`);
-            } else if (key === 'customFields') {
-              // Merge custom fields at field level
-              merged.customFields = { ...remoteValue };
-              if (localValue && typeof localValue === 'object') {
-                Object.keys(localValue).forEach(customKey => {
-                  const fieldKey = `${remoteItem.id}-customFields.${customKey}`;
-                  if (protectedFields.has(fieldKey)) {
-                    merged.customFields[customKey] = localValue[customKey];
-                    console.log(`🛡️ Protected custom field ${customKey} for item ${remoteItem.id}`);
-                  }
-                });
-              }
-            }
-          });
-          
-          return merged;
-        }) || []);
-        
-        // Apply the update with OT-aware field protection
-        const updatePayload: any = {
-          title: protectedFields.has('title') ? state.title : updatedRundown.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
-          showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
-          externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
-        };
-        
-        // Only update items if OT is not handling them
-        if (!otState.isOTEnabled) {
-          updatePayload.items = mergedItems;
-        }
-        
-        actions.loadState(updatePayload);
-        
-        // Track remote update time
-        lastRemoteUpdateRef.current = Date.now();
-        
-      } else {
-        // Safety guard: Don't apply updates that would clear all items unless intentional
-        // Also ensure we only update fields that are actually present in the payload
-        const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
-        
-        if (wouldClearItems) {
-          console.warn('🛡️ Prevented applying malformed update that would clear all items:', {
-            incomingItems: updatedRundown.items?.length || 0,
-            currentItems: state.items.length,
-            timestamp: updatedRundown.updated_at
-          });
-          return;
-        }
-        
-        // Apply updates field by field with LocalShadow protection
-        let hasProtectedUpdates = false;
-        
-        // Handle items array with field-level protection  
-        if (updatedRundown.hasOwnProperty('items') && Array.isArray(updatedRundown.items)) {
-          const incomingItems = updatedRundown.items;
-          const currentItems = stateRef.current.items;
-          
-          // Create protected items by merging with LocalShadow values
-          const protectedItems = incomingItems.map((incomingItem: any) => {
-            const currentItem = currentItems.find(item => item.id === incomingItem.id);
-            if (!currentItem) return incomingItem; // New item, no protection needed
-            
-            const protectedItem = { ...incomingItem };
-            let itemHasProtection = false;
-            
-            // Check each field for LocalShadow protection
-            Object.keys(incomingItem).forEach(field => {
-              const shadowValue = localShadowStore.getShadow(incomingItem.id, field);
-              if (shadowValue !== null) {
-                protectedItem[field] = shadowValue;
-                itemHasProtection = true;
-                hasProtectedUpdates = true;
-              }
-            });
-            
-            return protectedItem;
-          });
-          
-          // Apply items with protection
-          actionsRef.current.setItems(protectedItems);
-        }
-        
-        // Handle title with protection
-        if (updatedRundown.hasOwnProperty('title')) {
-          const shadowValue = localShadowStore.getGlobalShadow('title');
-          if (shadowValue !== null) {
-            hasProtectedUpdates = true;
-          } else {
-            actionsRef.current.setTitle(updatedRundown.title);
-          }
-        }
-        
-        // Handle other fields with protection
-        if (updatedRundown.hasOwnProperty('start_time')) {
-          const shadowValue = localShadowStore.getGlobalShadow('startTime');
-          if (shadowValue !== null) {
-            console.log('🛡️ LocalShadow: protecting startTime from realtime overwrite');
-            hasProtectedUpdates = true;
-          } else {
-            actionsRef.current.setStartTime(updatedRundown.start_time);
-          }
-        }
-        
-        if (updatedRundown.hasOwnProperty('timezone')) {
-          const shadowValue = localShadowStore.getGlobalShadow('timezone');
-          if (shadowValue !== null) {
-            console.log('🛡️ LocalShadow: protecting timezone from realtime overwrite');
-            hasProtectedUpdates = true;
-          } else {
-            actionsRef.current.setTimezone(updatedRundown.timezone);
-          }
-        }
-        
-        if (updatedRundown.hasOwnProperty('show_date')) {
-          const shadowValue = localShadowStore.getGlobalShadow('showDate');
-          if (shadowValue !== null) {
-            console.log('🛡️ LocalShadow: protecting showDate from realtime overwrite');
-            hasProtectedUpdates = true;
-          } else {
-            const showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
-            actionsRef.current.setShowDate(showDate);
-          }
-        }
-        
-        if (updatedRundown.hasOwnProperty('external_notes')) {
-          const shadowValue = localShadowStore.getGlobalShadow('externalNotes');
-          if (shadowValue !== null) {
-            console.log('🛡️ LocalShadow: protecting externalNotes from realtime overwrite');
-            hasProtectedUpdates = true;
-          } else {
-            actionsRef.current.setExternalNotes(updatedRundown.external_notes);
-          }
-        }
-        
-        // CRITICAL: Update docVersion for OCC if present
-        if (updatedRundown.hasOwnProperty('doc_version')) {
-          actionsRef.current.setDocVersion(updatedRundown.doc_version);
-          setLastSeenDocVersion(updatedRundown.doc_version);
-        }
-        
-        // CRITICAL: Mark as saved after applying remote updates to clear "unsaved changes"
-        actionsRef.current.markSaved();
-        
-        // Only block autosave if we actually applied unprotected updates
-        if (!hasProtectedUpdates) {
-          blockUntilLocalEditRef.current = true;
-        }
-      }
-    }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
-    enabled: !isLoading,
-    trackOwnUpdate: (timestamp: string) => {
-      ownUpdateTimestampRef.current = timestamp;
-    }
+    currentState: state,
+    onStateUpdate: actions.loadState,
+    userId: undefined // Will be filled from auth context in the hook
   });
   
-  // Update connection state from realtime hook
+  // Update connection state from simplified collaboration hook
   useEffect(() => {
-    setIsConnected(realtimeConnection.isConnected);
-    console.log('🔌 Realtime connection status changed:', realtimeConnection.isConnected);
-  }, [realtimeConnection.isConnected]);
+    setIsConnected(isCollaborationActive);
+    console.log('🔌 Realtime connection status changed:', isCollaborationActive);
+  }, [isCollaborationActive]);
   
   // Clear initial load gate after initialization and implement sync-before-write
   useEffect(() => {
@@ -556,9 +288,6 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isInitialized]);
 
-  // Connect realtime to auto-save typing/unsaved state
-  realtimeConnection.setTypingChecker(() => isTypingActive());
-  realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
 
   // Get current user ID for cell broadcasts
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -728,8 +457,6 @@ export const useSimplifiedRundownState = () => {
     };
   }, [rundownId, currentUserId]);
   
-  // Get catch-up sync function from realtime connection
-  const performCatchupSync = realtimeConnection.performCatchupSync;
   
   // Run sync on initial mount and only when tab transitions to active
   const hasSyncedOnceRef = useRef(false);
@@ -869,28 +596,6 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
-  // Connect autosave tracking to realtime tracking
-  useEffect(() => {
-    if (realtimeConnection.trackOwnUpdate) {
-      setTrackOwnUpdate((timestamp: string) => {
-        realtimeConnection.trackOwnUpdate(timestamp);
-      });
-    }
-  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
-
-  // Connect typing state checker to realtime to prevent overwrites during typing
-  useEffect(() => {
-    if (realtimeConnection.setTypingChecker) {
-      realtimeConnection.setTypingChecker(isTypingActive);
-    }
-  }, [realtimeConnection.setTypingChecker, isTypingActive]);
-
-  // Connect unsaved changes checker to defer teammate updates until local save completes
-  useEffect(() => {
-    if (realtimeConnection.setUnsavedChecker) {
-      realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
-    }
-  }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
   // Helper function to apply local item updates
   const applyLocalItemUpdate = useCallback((id: string, field: string, value: string) => {
@@ -1581,11 +1286,11 @@ export const useSimplifiedRundownState = () => {
     };
   }, []);
 
-  // Enhanced realtime activity indicator with debouncing and minimum duration
+  // Simplified realtime activity indicator
   const realtimeActivity = useRealtimeActivityIndicator({
-    isProcessingUpdate: realtimeConnection.isProcessingUpdate,
-    minimumDuration: 1500, // 1.5 seconds minimum to avoid flickering
-    cooldownDuration: 1000  // 1 second cooldown after updates stop
+    isProcessingUpdate: false, // Simplified - no processing state needed
+    minimumDuration: 1500,
+    cooldownDuration: 1000
   });
 
   return {
@@ -1729,7 +1434,7 @@ export const useSimplifiedRundownState = () => {
         teleprompterSync.handleTeleprompterSaveEnd();
         console.log('📝 Teleprompter save ended');
       },
-      trackOwnUpdate: realtimeConnection.trackOwnUpdate // Pass through to realtime system
+      trackOwnUpdate: () => {} // Simplified - no own update tracking needed
     },
     
     // Autosave typing guard
