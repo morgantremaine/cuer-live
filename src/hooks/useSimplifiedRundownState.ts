@@ -512,16 +512,16 @@ export const useSimplifiedRundownState = () => {
           switch (update.field) {
             case 'title':
               // Use the correct action method for title updates
-              actions.setTitle(update.value);
+              actionsRef.current.setTitle(update.value);
               break;
             case 'startTime':
-              actions.setStartTime(update.value);
+              actionsRef.current.setStartTime(update.value);
               break;
             case 'timezone':
-              actions.setTimezone(update.value);
+              actionsRef.current.setTimezone(update.value);
               break;
             case 'showDate':
-              actions.setShowDate(update.value);
+              actionsRef.current.setShowDate(update.value);
               break;
             case 'items:reorder': {
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
@@ -639,7 +639,7 @@ export const useSimplifiedRundownState = () => {
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId, actions.setTitle, actions.setStartTime, actions.setTimezone, actions.setShowDate]);
+  }, [rundownId, currentUserId]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
