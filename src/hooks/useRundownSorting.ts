@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SavedRundown } from './useRundownStorage/types';
+import { toZonedTime } from 'date-fns-tz';
 
 export type SortOption = 'dateModified' | 'dateCreated' | 'showDate';
 
@@ -56,23 +57,40 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           if (!aDate) return 1;
           if (!bDate) return -1;
           
-          const aTime = aDate.getTime();
-          const bTime = bDate.getTime();
-          const nowTime = now.getTime();
+          // Get current time in each rundown's timezone for proper comparison
+          const aTimezone = a.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const bTimezone = b.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+          
+          // Convert the show dates to their respective timezones for comparison
+          const aZonedTime = toZonedTime(aDate, aTimezone);
+          const bZonedTime = toZonedTime(bDate, bTimezone);
+          
+          // Get current time in each timezone for comparison
+          const nowInATimezone = toZonedTime(now, aTimezone);
+          const nowInBTimezone = toZonedTime(now, bTimezone);
+          
+          const aTime = aZonedTime.getTime();
+          const bTime = bZonedTime.getTime();
+          const nowATime = nowInATimezone.getTime();
+          const nowBTime = nowInBTimezone.getTime();
+          
+          // Determine if dates are future or past in their respective timezones
+          const aIsFuture = aTime >= nowATime;
+          const bIsFuture = bTime >= nowBTime;
           
           // Both dates are in the future - sort by closest to now (earliest future date first)
-          if (aTime >= nowTime && bTime >= nowTime) {
+          if (aIsFuture && bIsFuture) {
             return aTime - bTime;
           }
           
           // Both dates are in the past - sort by most recent past date first
-          if (aTime < nowTime && bTime < nowTime) {
+          if (!aIsFuture && !bIsFuture) {
             return bTime - aTime;
           }
           
           // One future, one past - future dates always come first
-          if (aTime >= nowTime && bTime < nowTime) return -1;
-          if (bTime >= nowTime && aTime < nowTime) return 1;
+          if (aIsFuture && !bIsFuture) return -1;
+          if (bIsFuture && !aIsFuture) return 1;
           
           return 0;
         });
