@@ -402,40 +402,108 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-        console.log('📨 Applying realtime update directly - last writer wins');
+        console.log('📨 Processing realtime update with LocalShadow protection');
         
-        // Simple approach: apply all changes, don't try to protect anything
-        // If user is actively typing, their next keystroke will overwrite anyway
-        const updateData: any = {};
-        if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
-        if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
-        if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
-        if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
-        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
+        // Apply updates field by field with LocalShadow protection
+        let hasProtectedUpdates = false;
         
-        // Add external notes to update data
-        if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
+        // Handle items array with field-level protection  
+        if (updatedRundown.hasOwnProperty('items') && Array.isArray(updatedRundown.items)) {
+          const incomingItems = updatedRundown.items;
+          const currentItems = stateRef.current.items;
+          
+          // Create protected items by merging with LocalShadow values
+          const protectedItems = incomingItems.map((incomingItem: any) => {
+            const currentItem = currentItems.find(item => item.id === incomingItem.id);
+            if (!currentItem) return incomingItem; // New item, no protection needed
+            
+            const protectedItem = { ...incomingItem };
+            let itemHasProtection = false;
+            
+            // Check each field for LocalShadow protection
+            Object.keys(incomingItem).forEach(field => {
+              const shadowValue = localShadowStore.getShadow(incomingItem.id, field);
+              if (shadowValue !== null) {
+                console.log(`🛡️ LocalShadow: protecting ${incomingItem.id}-${field} from realtime overwrite`);
+                protectedItem[field] = shadowValue;
+                itemHasProtection = true;
+                hasProtectedUpdates = true;
+              }
+            });
+            
+            return protectedItem;
+          });
+          
+          // Apply items with protection
+          actionsRef.current.setItems(protectedItems);
+        }
+        
+        // Handle title with protection
+        if (updatedRundown.hasOwnProperty('title')) {
+          const shadowValue = localShadowStore.getGlobalShadow('title');
+          if (shadowValue !== null) {
+            console.log('🛡️ LocalShadow: protecting title from realtime overwrite');
+            hasProtectedUpdates = true;
+          } else {
+            actionsRef.current.setTitle(updatedRundown.title);
+          }
+        }
+        
+        // Handle other fields with protection
+        if (updatedRundown.hasOwnProperty('start_time')) {
+          const shadowValue = localShadowStore.getGlobalShadow('startTime');
+          if (shadowValue !== null) {
+            console.log('🛡️ LocalShadow: protecting startTime from realtime overwrite');
+            hasProtectedUpdates = true;
+          } else {
+            actionsRef.current.setStartTime(updatedRundown.start_time);
+          }
+        }
+        
+        if (updatedRundown.hasOwnProperty('timezone')) {
+          const shadowValue = localShadowStore.getGlobalShadow('timezone');
+          if (shadowValue !== null) {
+            console.log('🛡️ LocalShadow: protecting timezone from realtime overwrite');
+            hasProtectedUpdates = true;
+          } else {
+            actionsRef.current.setTimezone(updatedRundown.timezone);
+          }
+        }
+        
+        if (updatedRundown.hasOwnProperty('show_date')) {
+          const shadowValue = localShadowStore.getGlobalShadow('showDate');
+          if (shadowValue !== null) {
+            console.log('🛡️ LocalShadow: protecting showDate from realtime overwrite');
+            hasProtectedUpdates = true;
+          } else {
+            const showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
+            actionsRef.current.setShowDate(showDate);
+          }
+        }
+        
+        if (updatedRundown.hasOwnProperty('external_notes')) {
+          const shadowValue = localShadowStore.getGlobalShadow('externalNotes');
+          if (shadowValue !== null) {
+            console.log('🛡️ LocalShadow: protecting externalNotes from realtime overwrite');
+            hasProtectedUpdates = true;
+          } else {
+            actionsRef.current.setExternalNotes(updatedRundown.external_notes);
+          }
+        }
         
         // CRITICAL: Update docVersion for OCC if present
         if (updatedRundown.hasOwnProperty('doc_version')) {
-          updateData.docVersion = updatedRundown.doc_version;
-          setLastSeenDocVersion(updatedRundown.doc_version); // Also update tracking
+          actionsRef.current.setDocVersion(updatedRundown.doc_version);
+          setLastSeenDocVersion(updatedRundown.doc_version);
         }
         
-        // Only apply if we have fields to update
-        if (Object.keys(updateData).length > 0) {
-          actions.loadState(updateData);
+        // Only block autosave if we actually applied unprotected updates
+        if (!hasProtectedUpdates) {
+          console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
+          blockUntilLocalEditRef.current = true;
+        } else {
+          console.log('🛡️ LocalShadow: Protected fields from realtime overwrite - autosave remains enabled');
         }
-        
-        // Apply extended autosave suppression cooldown after teammate update
-        const hasIncomingItems2 = Array.isArray(updatedRundown.items);
-        const isStructuralChange2 = hasIncomingItems2 && state.items && (
-          (updatedRundown.items?.length ?? 0) !== state.items.length ||
-          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
-        );
-         // CRITICAL: Block all autosaves until the user makes a local edit
-         console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
-         blockUntilLocalEditRef.current = true;
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading,
