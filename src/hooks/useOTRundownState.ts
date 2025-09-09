@@ -67,8 +67,8 @@ export const useOTRundownState = ({
     setTimeout(() => setIsOTActive(false), 500);
   }, [ot.pendingOperations, ot.applyOperation, onItemsChange]);
 
-  // Create operation for item update
-  const updateItem = useCallback((itemId: string, field: string, oldValue: any, newValue: any) => {
+  // Create operation for field update (per-field granularity)
+  const updateField = useCallback((itemId: string, field: string, oldValue: any, newValue: any) => {
     if (!ot.isEnabled) return;
 
     const itemIndex = itemsRef.current.findIndex(item => item.id === itemId);
@@ -77,7 +77,7 @@ export const useOTRundownState = ({
     const path = `items.${itemIndex}.${field}`;
     ot.createOperation('update', path, oldValue, newValue);
     
-    console.log('🔄 OT: Created update operation', { itemId, field, path });
+    console.log('🔄 OT: Created field update operation', { itemId, field, path });
   }, [ot]);
 
   // Create operation for item insertion
@@ -126,8 +126,8 @@ export const useOTRundownState = ({
     activeSessions: ot.activeSessions,
     conflictCount,
     
-    // OT Actions
-    updateItem,
+    // OT Actions  
+    updateField,
     insertItem,
     deleteItem,
     reorderItems,

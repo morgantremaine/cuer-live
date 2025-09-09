@@ -66,11 +66,11 @@ export const useOTIntegratedState = ({
         const newItem = newItemsArray[i];
         
         if (oldItem && newItem && oldItem.id === newItem.id) {
-          // Check each field for changes
+          // Check each field for changes - per-field granularity
           Object.keys(newItem).forEach(key => {
             const typedKey = key as keyof RundownItem;
             if (oldItem[typedKey] !== newItem[typedKey]) {
-              otState.updateItem(newItem.id, key, oldItem[typedKey], newItem[typedKey]);
+              otState.updateField(newItem.id, key, oldItem[typedKey], newItem[typedKey]);
             }
           });
         }

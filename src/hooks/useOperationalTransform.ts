@@ -292,16 +292,29 @@ export const useOperationalTransform = ({
     };
   }, [enabled, user, rundownId, updatePresence]);
 
-  // Clean up presence on unmount
+  // Clean up presence on unmount/beforeunload
   useEffect(() => {
-    return () => {
+    const cleanup = () => {
       if (enabled && user && rundownId) {
+        // Use immediate cleanup for better reliability
         supabase
           .from('rundown_presence')
           .delete()
           .eq('rundown_id', rundownId)
           .eq('user_id', user.id);
       }
+    };
+
+    // Handle page unload
+    const handleBeforeUnload = () => {
+      cleanup();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      cleanup();
     };
   }, [enabled, user, rundownId]);
 

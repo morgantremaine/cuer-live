@@ -295,11 +295,20 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // CRITICAL: Check for recent cell updates to prevent overwriting them
+      // PURE OT CUTOVER: When OT is enabled, ignore document-level item updates
+      if (otState.isOTEnabled && updatedRundown.items) {
+        console.log('🔄 OT: Ignoring document-level items update - OT is authoritative for items');
+        // Still process non-item fields like title, startTime, etc.
+        const itemsUpdate = { ...updatedRundown };
+        delete itemsUpdate.items;
+        updatedRundown = itemsUpdate;
+      }
+      
+      // For non-OT mode, keep the original cell update protection
       const recentCellUpdates = recentCellUpdatesRef.current;
       let hasRecentCellUpdates = false;
       
-      if (updatedRundown.items && Array.isArray(updatedRundown.items)) {
+      if (!otState.isOTEnabled && updatedRundown.items && Array.isArray(updatedRundown.items)) {
         // Check if any item fields have recent cell updates
         for (const item of updatedRundown.items) {
           const itemFromState = state.items.find(existing => existing.id === item.id);
@@ -351,9 +360,8 @@ export const useSimplifiedRundownState = () => {
       }
       
       if (protectedFields.size > 0) {
-        // Create merged items by protecting local edits
-        // Enhanced conflict resolution: merge changes at field level
-        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
+        // PURE OT CUTOVER: Only merge items when OT is disabled
+        const mergedItems = otState.isOTEnabled ? state.items : (updatedRundown.items?.map((remoteItem: any) => {
           const localItem = state.items.find(item => item.id === remoteItem.id);
           if (!localItem) return remoteItem; // New item from remote
           
@@ -387,17 +395,23 @@ export const useSimplifiedRundownState = () => {
           });
           
           return merged;
-        }) || [];
+        }) || []);
         
-        // Apply the update with simple field-level protection
-        actions.loadState({
-          items: mergedItems,
+        // Apply the update with OT-aware field protection
+        const updatePayload: any = {
           title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
           showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
           externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
-        });
+        };
+        
+        // Only update items if OT is not handling them
+        if (!otState.isOTEnabled) {
+          updatePayload.items = mergedItems;
+        }
+        
+        actions.loadState(updatePayload);
         
         // Track remote update time
         lastRemoteUpdateRef.current = Date.now();
