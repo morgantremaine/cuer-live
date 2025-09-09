@@ -201,6 +201,78 @@ class LocalShadowStore {
   }
 
   /**
+   * Get active shadows for realtime coordination
+   */
+  getActiveShadows() {
+    const items = new Map<string, Set<string>>();
+    const globals = new Set<string>();
+    const now = Date.now();
+    
+    // Check item fields
+    for (const [itemId, itemMap] of this.itemShadows.entries()) {
+      for (const [field, shadow] of itemMap.entries()) {
+        if (shadow.isActive && (now - shadow.timestamp) < this.protectionWindowMs) {
+          if (!items.has(itemId)) {
+            items.set(itemId, new Set());
+          }
+          items.get(itemId)!.add(field);
+        }
+      }
+    }
+    
+    // Check global fields
+    for (const [field, shadow] of this.globalShadows.entries()) {
+      if (shadow.isActive && (now - shadow.timestamp) < this.protectionWindowMs) {
+        globals.add(field);
+      }
+    }
+    
+    return { items, globals };
+  }
+
+  /**
+   * Apply shadow protection to incoming data
+   */
+  applyShadowsToData(data: any): any {
+    if (!data) return data;
+    
+    const protectedData = { ...data };
+    const activeShadows = this.getActiveShadows();
+    
+    // Protect global fields
+    for (const field of activeShadows.globals) {
+      if (this.getGlobalShadow(field) !== null) {
+        const protectedValue = this.getGlobalShadow(field);
+        protectedData[field] = protectedValue;
+        console.log(`🛡️ Protected global field ${field}: keeping local value`);
+      }
+    }
+    
+    // Protect item fields
+    if (protectedData.items && Array.isArray(protectedData.items)) {
+      protectedData.items = protectedData.items.map((item: any) => {
+        if (activeShadows.items.has(item.id)) {
+          const protectedItem = { ...item };
+          const protectedFields = activeShadows.items.get(item.id)!;
+          
+          for (const field of protectedFields) {
+            const protectedValue = this.getShadow(item.id, field);
+            if (protectedValue !== null) {
+              protectedItem[field] = protectedValue;
+              console.log(`🛡️ Protected field ${field} for item ${item.id}: keeping local value`);
+            }
+          }
+          
+          return protectedItem;
+        }
+        return item;
+      });
+    }
+    
+    return protectedData;
+  }
+
+  /**
    * Schedule automatic cleanup of expired shadows
    */
   private scheduleCleanup(key: string, itemId: string | null, field: string) {

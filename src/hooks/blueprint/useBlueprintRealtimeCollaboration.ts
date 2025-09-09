@@ -57,11 +57,12 @@ export const useBlueprintRealtimeCollaboration = ({
     console.log('✅ Processing remote blueprint update from teammate');
     
     try {
-      // Apply the blueprint update with granular support
+      // Apply the blueprint update with granular support and ensure it doesn't create false unsaved changes
       const updateWithMetadata = {
         ...payload.new,
         isGranularUpdate: true,
-        timestamp: updateTimestamp
+        timestamp: updateTimestamp,
+        isRemoteUpdate: true // Flag to prevent false unsaved changes
       };
       onBlueprintUpdatedRef.current(updateWithMetadata);
     } catch (error) {

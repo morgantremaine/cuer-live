@@ -113,7 +113,7 @@ export const useConsolidatedRealtimeRundown = ({
     }
 
     // BULLETPROOF: Import LocalShadow for advanced field protection
-    const { localShadowStore } = await import('@/state/localShadows');
+    const { localShadowStore } = await import('@/stores/localShadowStore');
     const activeShadows = localShadowStore.getActiveShadows();
     
     // Check if this update affects any actively edited items (item-level dirty protection)
@@ -141,7 +141,7 @@ export const useConsolidatedRealtimeRundown = ({
       // Process queued updates after a brief delay (when typing stops)
       setTimeout(() => {
         processQueuedUpdates(globalState);
-      }, 2000);
+      }, 1500); // Reduced delay for better responsiveness
       
       return; // Don't process immediately
     }
@@ -304,7 +304,7 @@ export const useConsolidatedRealtimeRundown = ({
       
       try {
         // Apply LocalShadow protection before dispatching to callbacks
-        const { localShadowStore } = await import('@/state/localShadows');
+        const { localShadowStore } = await import('@/stores/localShadowStore');
         const protectedPayload = localShadowStore.applyShadowsToData(payload.new);
         
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
@@ -327,7 +327,7 @@ export const useConsolidatedRealtimeRundown = ({
       return;
     }
     
-    const { localShadowStore } = await import('@/state/localShadows');
+    const { localShadowStore } = await import('@/stores/localShadowStore');
     const activeShadows = localShadowStore.getActiveShadows();
     
     // Only process if no items are actively being edited
@@ -353,10 +353,10 @@ export const useConsolidatedRealtimeRundown = ({
         queueSize: globalState.itemDirtyQueue.length
       });
       
-      // Re-schedule processing check
+      // Re-schedule processing check with shorter delay
       setTimeout(() => {
         processQueuedUpdates(globalState);
-      }, 1000);
+      }, 800); // Faster processing for better responsiveness
     }
   }, [processRealtimeUpdate]);
 

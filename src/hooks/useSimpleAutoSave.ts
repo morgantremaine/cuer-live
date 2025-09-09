@@ -315,14 +315,22 @@ export const useSimpleAutoSave = (
 
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
+      console.log('📱 AutoSave: deferred - showcaller operation active');
       // Schedule retry if blocked by showcaller operation (short-term block)
       if (!saveTimeoutRef.current) {
         saveTimeoutRef.current = setTimeout(() => {
           saveTimeoutRef.current = undefined;
           performSave(isFlushSave, isSharedView);
-        }, 500);
+        }, 300); // Shorter retry for better responsiveness
       }
       return;
+    }
+    
+    // CRITICAL: Never block autosave for cell broadcast - this causes data loss
+    // Cell broadcasts should coordinate with saves, not block them
+    if (applyingCellBroadcastRef?.current) {
+      console.log('📱 AutoSave: proceeding despite cell broadcast - zero data loss priority');
+      // Don't return - allow save to proceed
     }
 
     // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
@@ -399,11 +407,11 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Build save payload from latest snapshot for consistency
-    const latestSnapshot = keystrokeJournal.getLatestSnapshot();
-    const saveState = latestSnapshot || state;
+    // CRITICAL: Always use current state for real-time collaboration
+    // Snapshots can be stale during rapid cell broadcasts
+    const saveState = state;
     
-    // Create signature from the snapshot we'll actually save
+    // Create signature from current state for immediate consistency
     const finalSignature = createContentSignatureFromState(saveState);
 
     // ANTI-WIPE CIRCUIT BREAKER: Prevent saves that would drastically reduce items
@@ -429,6 +437,9 @@ export const useSimpleAutoSave = (
     setIsSaving(true);
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
+    
+    // CRITICAL: Clear hasUnsavedChanges immediately to prevent false positives
+    onSavedRef.current?.();
     
     // Start save watchdog
     saveStartTimeRef.current = Date.now();
@@ -573,21 +584,20 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
 
-          // Delay signature comparison longer to avoid React state race conditions and double saves
+          // CRITICAL: Only schedule micro-resave if content actually changed AND it's different from saved
           setTimeout(() => {
             const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
+            if (currentSignatureAfterSave !== finalSignature && currentSignatureAfterSave !== lastSavedRef.current) {
               const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
               if (timeSinceLastEdit > (typingIdleMs * 2)) {
                 console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
                 scheduleMicroResave();
               } else {
                 console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
                 lastSavedRef.current = currentSignatureAfterSave;
               }
             }
-          }, 500);
+          }, 300); // Reduced delay for faster coordination
 
           // Invoke callback with metadata
           onSavedRef.current?.({ 
@@ -770,11 +780,8 @@ export const useSimpleAutoSave = (
     }
 
     if (state.hasUnsavedChanges) {
-      // CRITICAL: Skip AutoSave if cell broadcast is being applied
-      if (applyingCellBroadcastRef?.current) {
-        console.log('📱 AutoSave: skipped - cell broadcast being applied');
-        return;
-      }
+      // CRITICAL: Never skip autosave due to cell broadcasts - causes data loss
+      // Let performSave handle coordination instead
       
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
