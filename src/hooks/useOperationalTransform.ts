@@ -172,7 +172,7 @@ export const useOperationalTransform = ({
           user_name: user.user_metadata?.full_name || user.email || 'Anonymous',
           active_cell: activeCell || null,
           last_seen: new Date().toISOString()
-        });
+        }, { onConflict: 'rundown_id,user_id' });
 
       if (error) {
         console.error('Error updating presence:', error);

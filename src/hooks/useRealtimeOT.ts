@@ -98,7 +98,7 @@ export const useRealtimeOT = ({ rundownId, enabled }: UseRealtimeOTProps) => {
           rundown_id: rundownId,
           user_id: user.id,
           last_seen: new Date().toISOString()
-        });
+        }, { onConflict: 'rundown_id,user_id' });
 
       if (error) {
         console.error('Failed to broadcast presence:', error);
