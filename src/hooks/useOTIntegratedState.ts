@@ -48,6 +48,7 @@ export const useOTIntegratedState = ({
   const interceptedOnItemsChange = useCallback((newItems: RundownItem[]) => {
     // Skip if this is a remote change being applied
     if (isApplyingRemoteChangeRef.current) {
+      onItemsChange(newItems);
       return;
     }
 
@@ -57,21 +58,8 @@ export const useOTIntegratedState = ({
     const oldItems = items;
     const newItemsArray = Array.isArray(newItems) ? newItems : [];
     
-    // Simple change detection - in a real implementation this would be more sophisticated
-    if (oldItems.length !== newItemsArray.length) {
-      // Items added or removed
-      if (newItemsArray.length > oldItems.length) {
-        // Items added
-        const addedItems = newItemsArray.slice(oldItems.length);
-        addedItems.forEach((item, index) => {
-          otState.insertItem(item, oldItems.length + index);
-        });
-      } else {
-        // Items removed - this would need more sophisticated detection
-        console.log('🔄 OT: Items removed, using reorder operation');
-        otState.reorderItems(newItemsArray);
-      }
-    } else {
+    // For now, we'll do a simple approach - create update operations for changed items
+    if (oldItems.length === newItemsArray.length) {
       // Check for updates in existing items
       for (let i = 0; i < oldItems.length; i++) {
         const oldItem = oldItems[i];
@@ -87,9 +75,12 @@ export const useOTIntegratedState = ({
           });
         }
       }
+    } else {
+      // Length changed - use reorder operation for simplicity
+      otState.reorderItems(newItemsArray);
     }
 
-    // Still call the original handler for immediate UI update
+    // Apply change locally immediately for responsive UI
     onItemsChange(newItemsArray);
   }, [items, onItemsChange, otState]);
 
@@ -97,7 +88,6 @@ export const useOTIntegratedState = ({
   const otEnhancedSave = useCallback(() => {
     if (otState.isOTEnabled) {
       console.log('🔄 OT: Save bypassed - using real-time operations');
-      onSave?.();
       return;
     }
     
@@ -111,10 +101,10 @@ export const useOTIntegratedState = ({
   }, [otState]);
 
   return {
-    // Enhanced change handler
+    // Enhanced handlers
     onItemsChange: interceptedOnItemsChange,
     onSave: otEnhancedSave,
-    setActiveCell,
+    setActiveCell: otState.setActiveCell,
     
     // OT State
     isOTEnabled: otState.isOTEnabled,

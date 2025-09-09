@@ -151,17 +151,21 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
 
-  // Auto-save functionality with unified save pipeline - enhanced with OT bypass
+  // Initialize OT integration
   const otState = useOTIntegratedState({
     rundownId: rundownId || '',
     items: state.items,
     onItemsChange: (newItems) => {
       actions.setItems(newItems);
     },
+    onSave: () => {
+      // Handle OT-enhanced save if needed
+      console.log('🔄 OT: Enhanced save called');
+    },
     enabled: !!rundownId && isInitialized
   });
 
-  // Use OT-enhanced save handler
+  // Auto-save functionality with unified save pipeline
   const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
     {
       ...state,
@@ -203,12 +207,12 @@ export const useSimplifiedRundownState = () => {
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
-      otState.onItemsChange(items); // Use OT-enhanced change handler
+      actions.setItems(items); // Use regular action for undo
       actions.setTitle(title);
       
       setTimeout(() => {
         actions.markSaved();
-        otState.onItemsChange([...items]); // Use OT-enhanced change handler
+        actions.setItems([...items]); // Use regular action for undo
         setUndoActive(false);
       }, 100);
     },
@@ -1662,14 +1666,15 @@ export const useSimplifiedRundownState = () => {
     markStructuralChange,
     clearStructuralChange,
     
-    // OT Integration
+    // OT Integration State
     otState: {
       isOTEnabled: otState.isOTEnabled,
       isOTActive: otState.isOTActive,
       isConnected: otState.isConnected,
       activeSessions: otState.activeSessions,
       conflictCount: otState.conflictCount,
-      setActiveCell: otState.setActiveCell
+      setActiveCell: otState.setActiveCell,
+      clientId: otState.clientId
     }
   };
 };
