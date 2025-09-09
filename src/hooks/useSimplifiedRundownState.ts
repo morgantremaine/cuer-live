@@ -888,9 +888,64 @@ export const useSimplifiedRundownState = () => {
     }
   }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
+  // Helper function to apply local item updates
+  const applyLocalItemUpdate = useCallback((id: string, field: string, value: string) => {
+    if (field.startsWith('customFields.')) {
+      const customFieldKey = field.replace('customFields.', '');
+      const item = state.items.find(i => i.id === id);
+      if (item) {
+        const currentCustomFields = item.customFields || {};
+        actions.updateItem(id, {
+          customFields: {
+            ...currentCustomFields,
+            [customFieldKey]: value
+          }
+        });
+      }
+    } else {
+      actions.updateItem(id, { [field]: value });
+    }
+  }, [state.items, actions.updateItem]);
 
-  // Enhanced updateItem function with aggressive field-level protection tracking
+  // Enhanced updateItem function with OT integration and field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    // PURE OT CUTOVER: Route user edits through OT when enabled
+    if (otState.isOTEnabled) {
+      console.log('🔄 OT: Routing user edit through OT system', { id, field, value });
+      
+      // Find the old value for the OT operation
+      const targetItem = state.items.find(item => item.id === id);
+      if (!targetItem) {
+        console.warn('🔄 OT: Target item not found for edit', id);
+        return;
+      }
+      
+      let oldValue;
+      if (field.startsWith('customFields.')) {
+        const customFieldKey = field.replace('customFields.', '');
+        oldValue = targetItem.customFields?.[customFieldKey];
+      } else {
+        oldValue = (targetItem as any)[field];
+      }
+      
+      // Create actual OT operation
+      const wasSuccessful = otState.onItemsChange([...state.items.map(item => 
+        item.id === id 
+          ? (field.startsWith('customFields.') 
+              ? { ...item, customFields: { ...item.customFields, [field.replace('customFields.', '')]: value } }
+              : { ...item, [field]: value }
+            )
+          : item
+      )]);
+      
+      // Set active cell for presence  
+      otState.setActiveCell(`${id}.${field}`);
+      
+      // No need for local update since OT system will handle it
+      return;
+    }
+    
+    // LEGACY MODE: Original behavior when OT is disabled
     // Re-enable autosave after local edit if it was blocked due to teammate update
     if (blockUntilLocalEditRef.current) {
       blockUntilLocalEditRef.current = false;
