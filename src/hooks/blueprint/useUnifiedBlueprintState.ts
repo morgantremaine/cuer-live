@@ -1,43 +1,56 @@
 
 import { useBlueprintContext } from '@/contexts/BlueprintContext';
+import { useOTIntegration } from '@/hooks/useOTIntegration';
 
-// Simplified version that just exposes the context
-// This maintains backward compatibility while using the unified context
-export const useUnifiedBlueprintState = () => {
-  const {
-    state,
-    updateLists,
-    addList,
-    deleteList,
-    renameList,
-    updateCheckedItems,
-    updateShowDate,
-    updateComponentOrder,
-    saveBlueprint,
-    refreshBlueprint
-  } = useBlueprintContext();
+// Enhanced version that integrates OT capabilities
+export const useUnifiedBlueprintState = (rundownData?: any, otEnabled: boolean = true) => {
+  const blueprintContext = useBlueprintContext();
+  
+  const otIntegration = useOTIntegration({
+    rundownId: rundownData?.id || '',
+    rundownData: rundownData || {},
+    enabled: otEnabled && !!rundownData?.id
+  });
+
+  // Return OT-enhanced operations when available, fallback to regular operations
+  const enhancedOperations = otIntegration.isOTEnabled ? {
+    updateLists: otIntegration.blueprintOps.updateLists,
+    updateShowDate: otIntegration.blueprintOps.updateShowDate,
+    updateNotes: otIntegration.blueprintOps.updateNotes,
+    updateCheckedItems: otIntegration.blueprintOps.updateCheckedItems,
+  } : {
+    updateLists: blueprintContext.updateLists,
+    updateShowDate: blueprintContext.updateShowDate,
+    updateNotes: blueprintContext.updateNotes,
+    updateCheckedItems: blueprintContext.updateCheckedItems,
+  };
 
   return {
     // State
-    lists: state.lists,
+    lists: blueprintContext.state.lists,
     availableColumns: [], // This will be calculated in the component using rundown items
-    showDate: state.showDate,
-    initialized: state.isInitialized,
-    loading: state.isLoading,
-    isSaving: state.isSaving,
-    error: state.error,
-    componentOrder: state.componentOrder,
+    showDate: blueprintContext.state.showDate,
+    initialized: blueprintContext.state.isInitialized,
+    loading: blueprintContext.state.isLoading,
+    isSaving: blueprintContext.state.isSaving,
+    error: blueprintContext.state.error,
+    componentOrder: blueprintContext.state.componentOrder,
     
-    // Actions
-    updateShowDate,
-    addNewList: addList, // Alias for compatibility
-    deleteList,
-    renameList,
-    updateCheckedItems,
-    refreshAllLists: refreshBlueprint, // Alias for compatibility
-    saveBlueprint,
-    refreshBlueprint,
-    updateComponentOrder,
-    updateLists
+    // Enhanced Actions with OT support
+    ...enhancedOperations,
+    addNewList: blueprintContext.addList, // Alias for compatibility
+    deleteList: blueprintContext.deleteList,
+    renameList: blueprintContext.renameList,
+    refreshAllLists: blueprintContext.refreshBlueprint, // Alias for compatibility
+    saveBlueprint: blueprintContext.saveBlueprint,
+    refreshBlueprint: blueprintContext.refreshBlueprint,
+    updateComponentOrder: blueprintContext.updateComponentOrder,
+    autoRefreshLists: blueprintContext.autoRefreshLists,
+    
+    // OT-specific state
+    isOTEnabled: otIntegration.isOTEnabled,
+    isCollaborative: otIntegration.isReady,
+    activeSessions: otIntegration.activeSessions,
+    activeConflicts: otIntegration.activeConflicts
   };
 };

@@ -94,12 +94,10 @@ export const useRealtimeOT = ({ rundownId, enabled }: UseRealtimeOTProps) => {
     try {
       const { error } = await supabase
         .from('rundown_presence')
-        .insert({
+        .upsert({
           rundown_id: rundownId,
           user_id: user.id,
-          event_type: eventType,
-          metadata,
-          created_at: new Date().toISOString()
+          last_seen: new Date().toISOString()
         });
 
       if (error) {

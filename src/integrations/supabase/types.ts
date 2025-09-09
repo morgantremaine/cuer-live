@@ -272,6 +272,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rundown_operations: {
+        Row: {
+          created_at: string
+          id: string
+          operation_data: Json
+          operation_type: string
+          rundown_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          operation_data: Json
+          operation_type: string
+          rundown_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          operation_data?: Json
+          operation_type?: string
+          rundown_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rundown_presence: {
         Row: {
           created_at: string
@@ -986,6 +1013,10 @@ export type Database = {
         Returns: undefined
       }
       cleanup_inactive_showcaller_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_operations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
