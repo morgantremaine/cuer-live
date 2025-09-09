@@ -47,9 +47,15 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
         return sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       
       case 'showDate':
+        console.log('🗓️ Sorting by showDate, rundowns:', rundowns.map(r => ({ title: r.title, show_date: r.show_date })));
         return sorted.sort((a, b) => {
           const aDate = a.show_date ? new Date(a.show_date) : null;
           const bDate = b.show_date ? new Date(b.show_date) : null;
+          
+          console.log('🗓️ Comparing:', { 
+            a: { title: a.title, show_date: a.show_date, parsed: aDate }, 
+            b: { title: b.title, show_date: b.show_date, parsed: bDate } 
+          });
           
           // Items without show_date go to the end
           if (!aDate && !bDate) return 0;
@@ -59,6 +65,8 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           const aTime = aDate.getTime();
           const bTime = bDate.getTime();
           const nowTime = now.getTime();
+          
+          console.log('🗓️ Times:', { aTime, bTime, nowTime, aFuture: aTime >= nowTime, bFuture: bTime >= nowTime });
           
           // Both dates are in the future - sort by closest to now (earliest future date first)
           if (aTime >= nowTime && bTime >= nowTime) {
