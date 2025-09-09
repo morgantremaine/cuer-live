@@ -119,7 +119,10 @@ export const useOperationalTransform = ({
     oldValue: any,
     newValue: any
   ) => {
-    if (!user || !enabled) return null;
+    if (!user || !enabled) {
+      console.log('🔄 OT: Cannot create operation:', { hasUser: !!user, enabled, rundownId });
+      return null;
+    }
 
     const operation: Operation = {
       id: generateOperationId(),
@@ -132,9 +135,18 @@ export const useOperationalTransform = ({
       clientId: clientIdRef.current
     };
 
+    console.log('🔄 OT: Creating operation:', { 
+      id: operation.id, 
+      type: operation.type, 
+      path: operation.path, 
+      rundownId,
+      userId: user.id,
+      clientId: clientIdRef.current
+    });
+
     try {
       // Store in database
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('rundown_operations')
         .insert({
           rundown_id: rundownId,
@@ -142,19 +154,26 @@ export const useOperationalTransform = ({
           operation_data: operation,
           user_id: user.id,
           client_id: clientIdRef.current
-        });
+        })
+        .select();
 
       if (error) {
-        console.error('Error storing operation:', error);
+        console.error('❌ OT: Error storing operation:', error);
         return null;
       }
+
+      console.log('✅ OT: Operation stored in database:', { 
+        operationId: operation.id, 
+        dbRecord: data?.[0]?.id,
+        rundownId 
+      });
 
       lastOperationRef.current = operation.id;
       console.log('🔄 OT: Operation sent', operation);
       return operation;
       
     } catch (error) {
-      console.error('Error sending operation:', error);
+      console.error('❌ OT: Error sending operation:', error);
       return null;
     }
   }, [enabled, user, rundownId, generateOperationId]);
@@ -239,8 +258,22 @@ export const useOperationalTransform = ({
         table: 'rundown_operations',
         filter: `rundown_id=eq.${rundownId}`
       }, (payload) => {
-        console.log('🔄 OT: Raw operation received from Supabase:', payload);
+        console.log('🔄 OT: Raw operation received from Supabase:', {
+          eventType: payload.eventType,
+          table: payload.table,
+          schema: payload.schema,
+          rundownId: payload.new?.rundown_id,
+          operationId: payload.new?.operation_data?.id,
+          clientId: payload.new?.client_id,
+          ownClientId: clientIdRef.current
+        });
+        
         const operation = payload.new.operation_data as Operation;
+        
+        if (!operation || !operation.id) {
+          console.error('❌ OT: Invalid operation received:', payload);
+          return;
+        }
         
         // Ignore our own operations
         if (operation.clientId === clientIdRef.current) {
@@ -248,8 +281,17 @@ export const useOperationalTransform = ({
           return;
         }
         
-        console.log('🔄 OT: Processing remote operation', operation);
-        setPendingOperations(prev => [...prev, operation]);
+        console.log('🔄 OT: Processing remote operation', { 
+          id: operation.id, 
+          type: operation.type, 
+          path: operation.path,
+          userId: operation.userId,
+          clientId: operation.clientId 
+        });
+        setPendingOperations(prev => {
+          console.log('🔄 OT: Adding to pending operations queue, new length:', prev.length + 1);
+          return [...prev, operation];
+        });
       })
       .on('postgres_changes', {
         event: '*',

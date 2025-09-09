@@ -79,15 +79,30 @@ export const useOTRundownState = ({
 
   // Create operation for field update (per-field granularity)
   const updateField = useCallback((itemId: string, field: string, oldValue: any, newValue: any) => {
-    if (!ot.isEnabled) return;
+    if (!ot.isEnabled) {
+      console.log('🔄 OT: Cannot update field - OT disabled', { itemId, field, isEnabled: ot.isEnabled });
+      return;
+    }
 
     const itemIndex = itemsRef.current.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) return;
+    if (itemIndex === -1) {
+      console.warn('🔄 OT: Item not found for field update:', { itemId, field, itemCount: itemsRef.current.length });
+      return;
+    }
 
     const path = `items.${itemIndex}.${field}`;
-    ot.createOperation('update', path, oldValue, newValue);
     
-    console.log('🔄 OT: Created field update operation', { itemId, field, path });
+    console.log('🔄 OT: Creating field update operation', { 
+      itemId, 
+      field, 
+      path, 
+      oldValue, 
+      newValue,
+      isEnabled: ot.isEnabled,
+      isConnected: ot.isConnected
+    });
+    
+    ot.createOperation('update', path, oldValue, newValue);
   }, [ot]);
 
   // Create operation for item insertion
