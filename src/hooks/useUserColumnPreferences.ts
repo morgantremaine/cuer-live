@@ -28,7 +28,27 @@ const defaultColumns: Column[] = [
   { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'elapsedTime', name: 'Elapsed', key: 'elapsedTime', width: '120px', isCustom: false, isEditable: false, isVisible: true },
   { id: 'notes', name: 'Notes', key: 'notes', width: '300px', isCustom: false, isEditable: true, isVisible: true }
-];
+]; 
+
+// Derived helpers for normalization
+const defaultKeys: Set<string> = new Set(defaultColumns.map((c) => c.key));
+const normalizeColumns = (cols: any[]): Column[] => {
+  return (cols || [])
+    .filter((col: any) => col && col.key)
+    .map((col: any): Column => ({
+      id: col.id || String(col.key),
+      name: col.name || String(col.key),
+      key: String(col.key),
+      width: col.width || '150px',
+      isCustom:
+        typeof col.isCustom === 'boolean'
+          ? col.isCustom
+          : !defaultKeys.has(String(col.key)),
+      isEditable:
+        typeof col.isEditable === 'boolean' ? col.isEditable : true,
+      isVisible: typeof col.isVisible === 'boolean' ? col.isVisible : true,
+    }));
+};
 
 export const useUserColumnPreferences = (rundownId: string | null) => {
   const { user } = useAuth();
@@ -199,15 +219,15 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
         console.error('Error loading column preferences:', error);
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
-      } else if (data?.column_layout) {
-        const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
-        
-        // Clean and validate loaded columns
-        const cleanColumns = loadedColumns.filter(col => col && col.id && col.key && col.name);
-        const mergedColumns = mergeColumnsWithTeamColumns(cleanColumns);
-        setColumns(mergedColumns);
-        console.log('✅ Column preferences hydrated:', mergedColumns.length);
-        debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
+        } else if (data?.column_layout) {
+          const loadedColumns = Array.isArray(data.column_layout) ? data.column_layout : defaultColumns;
+          
+          // Normalize any missing fields to prevent dropped columns
+          const normalized = normalizeColumns(loadedColumns);
+          const mergedColumns = mergeColumnsWithTeamColumns(normalized);
+          setColumns(mergedColumns);
+          console.log('✅ Column preferences hydrated:', mergedColumns.length);
+          debugLogger.preferences('Loaded saved preferences - total columns: ' + mergedColumns.length);
       } else {
         const mergedDefaults = mergeColumnsWithTeamColumns(defaultColumns);
         setColumns(mergedDefaults);
@@ -278,13 +298,14 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // 2. Hide all other columns (including defaults) that weren't in the saved layout
     // 3. Include team columns as options but keep them hidden unless they were in the saved layout
     
+    const normalizedLayout = normalizeColumns(layoutColumns);
     const layoutColumnMap = new Map<string, Column>();
-    layoutColumns.forEach(col => {
+    normalizedLayout.forEach(col => {
       layoutColumnMap.set(col.key, col);
     });
     
-    // Start with the saved layout columns exactly as they were
-    const appliedColumns: Column[] = [...layoutColumns];
+    // Start with the saved layout columns exactly as they were (normalized)
+    const appliedColumns: Column[] = [...normalizedLayout];
     
     // Add any team columns that aren't in the saved layout (but keep them hidden)
     teamColumns.forEach(teamCol => {
