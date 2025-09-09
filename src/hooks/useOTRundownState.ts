@@ -40,7 +40,10 @@ export const useOTRundownState = ({
   useEffect(() => {
     if (ot.pendingOperations.length === 0) return;
 
-    console.log('🔄 OT: Processing pending operations', ot.pendingOperations.length);
+    console.log('🔄 OT: Processing pending operations', {
+      count: ot.pendingOperations.length,
+      operations: ot.pendingOperations.map(op => ({ id: op.id, type: op.type, path: op.path, userId: op.userId }))
+    });
     setIsOTActive(true);
 
     let currentData = { items: itemsRef.current };
@@ -48,9 +51,11 @@ export const useOTRundownState = ({
     // Apply all pending operations
     for (const operation of ot.pendingOperations) {
       try {
+        console.log('🔄 OT: Applying operation:', { id: operation.id, type: operation.type, path: operation.path });
         currentData = ot.applyOperation(operation, currentData);
+        console.log('🔄 OT: Operation applied successfully:', operation.id);
       } catch (error) {
-        console.error('Error applying operation:', error, operation);
+        console.error('❌ OT: Error applying operation:', error, operation);
       }
     }
 
@@ -58,9 +63,14 @@ export const useOTRundownState = ({
     if (JSON.stringify(currentData.items) !== JSON.stringify(itemsRef.current)) {
       console.log('🔄 OT: Applying remote changes', {
         before: itemsRef.current.length,
-        after: currentData.items.length
+        after: currentData.items.length,
+        changedItems: currentData.items.filter((item, index) => 
+          JSON.stringify(item) !== JSON.stringify(itemsRef.current[index])
+        ).length
       });
       onItemsChange(currentData.items);
+    } else {
+      console.log('🔄 OT: No changes detected after applying operations');
     }
 
     // Reset OT active state after a short delay

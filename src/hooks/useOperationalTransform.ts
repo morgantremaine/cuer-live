@@ -226,8 +226,12 @@ export const useOperationalTransform = ({
 
   // Initialize real-time subscriptions
   useEffect(() => {
-    if (!enabled || !user || !rundownId) return;
+    if (!enabled || !user || !rundownId) {
+      console.log('🔄 OT: Skipping subscription setup:', { enabled, hasUser: !!user, rundownId });
+      return;
+    }
 
+    console.log('🔄 OT: Setting up real-time subscription for rundown:', rundownId);
     const channel = supabase.channel(`rundown_ot_${rundownId}`)
       .on('postgres_changes', {
         event: 'INSERT',
@@ -235,12 +239,16 @@ export const useOperationalTransform = ({
         table: 'rundown_operations',
         filter: `rundown_id=eq.${rundownId}`
       }, (payload) => {
+        console.log('🔄 OT: Raw operation received from Supabase:', payload);
         const operation = payload.new.operation_data as Operation;
         
         // Ignore our own operations
-        if (operation.clientId === clientIdRef.current) return;
+        if (operation.clientId === clientIdRef.current) {
+          console.log('🔄 OT: Ignoring own operation', operation.id);
+          return;
+        }
         
-        console.log('🔄 OT: Received operation', operation);
+        console.log('🔄 OT: Processing remote operation', operation);
         setPendingOperations(prev => [...prev, operation]);
       })
       .on('postgres_changes', {
@@ -253,12 +261,15 @@ export const useOperationalTransform = ({
         fetchPresence();
       })
       .subscribe((status) => {
+        console.log('🔄 OT: Subscription status changed:', status);
         setIsConnected(status === 'SUBSCRIBED');
         if (status === 'SUBSCRIBED') {
-          console.log('🔄 OT: Connected to real-time channel');
+          console.log('🔄 OT: Connected to real-time channel for rundown:', rundownId);
           setIsReady(true);
           setIsInitialized(true);
           updatePresence();
+        } else {
+          console.log('🔄 OT: Disconnected from real-time channel, status:', status);
         }
       });
 
