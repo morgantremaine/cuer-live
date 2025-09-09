@@ -23,6 +23,7 @@ export const useSimpleAutoSave = (
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
   cooldownUntilRef?: React.MutableRefObject<number>,
   applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
+  otBypass?: boolean, // When true, bypass autosave for OT
   isSharedView = false
 ) => {
   const navigate = useNavigate();
@@ -292,6 +293,14 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
+    // CRITICAL: Skip autosave when OT bypass is enabled
+    if (otBypass) {
+      console.log('🤖 AutoSave: bypassed - OT system is handling saves');
+      onSavedRef.current?.();
+      return;
+    }
+    
+    // TRACE: Entry flags
     // TRACE: Entry flags
     console.log('🧪 TRACE performSave(entry)', {
       isFlushSave,

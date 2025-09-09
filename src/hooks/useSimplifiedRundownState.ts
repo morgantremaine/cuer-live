@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useOTIntegratedState } from './useOTIntegratedState';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
 
@@ -150,7 +151,17 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
 
-  // Auto-save functionality with unified save pipeline
+  // Auto-save functionality with unified save pipeline - enhanced with OT bypass
+  const otState = useOTIntegratedState({
+    rundownId: rundownId || '',
+    items: state.items,
+    onItemsChange: (newItems) => {
+      actions.setItems(newItems);
+    },
+    enabled: !!rundownId && isInitialized
+  });
+
+  // Use OT-enhanced save handler
   const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
     {
       ...state,
@@ -184,19 +195,20 @@ export const useSimplifiedRundownState = () => {
     (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
     blockUntilLocalEditRef,
     cooldownUntilRef,
-    applyingCellBroadcastRef // Pass the cell broadcast flag
+    applyingCellBroadcastRef, // Pass the cell broadcast flag
+    otState.shouldBypassAutosave // Bypass autosave when OT is active
   );
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
-      actions.setItems(items);
+      otState.onItemsChange(items); // Use OT-enhanced change handler
       actions.setTitle(title);
       
       setTimeout(() => {
         actions.markSaved();
-        actions.setItems([...items]);
+        otState.onItemsChange([...items]); // Use OT-enhanced change handler
         setUndoActive(false);
       }, 100);
     },
@@ -1648,6 +1660,16 @@ export const useSimplifiedRundownState = () => {
     
     // Structural change handling
     markStructuralChange,
-    clearStructuralChange
+    clearStructuralChange,
+    
+    // OT Integration
+    otState: {
+      isOTEnabled: otState.isOTEnabled,
+      isOTActive: otState.isOTActive,
+      isConnected: otState.isConnected,
+      activeSessions: otState.activeSessions,
+      conflictCount: otState.conflictCount,
+      setActiveCell: otState.setActiveCell
+    }
   };
 };
