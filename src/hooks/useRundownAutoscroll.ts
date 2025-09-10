@@ -143,115 +143,41 @@ export const useRundownAutoscroll = ({
           }
         });
 
-        // EXTREMELY DETAILED LOGGING FOR DEBUGGING
-        console.log('🔍 DETAILED DEBUG - Starting autoscroll calculation for:', currentSegmentId);
-        
-        // Log initial state
-        console.log('🔍 Initial state:', {
-          containerScrollTop: container.scrollTop,
-          containerClientHeight: container.clientHeight,
-          containerScrollHeight: container.scrollHeight,
-          headerHeight,
-          scaleY,
-          elementId: element.id,
-          elementClassName: element.className
-        });
-
-        // Method 1: offsetTop approach (what we just tried)
-        const computeOffsetTop = (el: HTMLElement, containerEl: HTMLElement) => {
-          let offset = 0;
-          let node: HTMLElement | null = el;
-          while (node && node !== containerEl) {
-            offset += node.offsetTop;
-            node = (node.offsetParent as HTMLElement) || null;
-          }
-          return offset;
-        };
-        const elementOffsetTop = computeOffsetTop(element, container);
-        
-        // Method 2: getBoundingClientRect approach (what worked before)
+        // Simple, reliable approach: position element 1/3 down from header
         const elementRect = element.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
-        const elementVisualTop = elementRect.top;
-        const containerVisualTop = containerRect.top;
-        const elementRelativeToContainer = elementVisualTop - containerVisualTop;
-        const elementScrollPosition = container.scrollTop + elementRelativeToContainer / scaleY;
         
-        console.log('🔍 Element positioning methods comparison:', {
-          method1_offsetTop: elementOffsetTop,
-          method2_scrollPosition: elementScrollPosition,
-          elementRect: { top: elementRect.top, bottom: elementRect.bottom, height: elementRect.height },
-          containerRect: { top: containerRect.top, bottom: containerRect.bottom, height: containerRect.height },
-          elementRelativeToContainer,
-          currentVisualDistance: elementVisualTop - containerVisualTop
-        });
-
-        // Calculate target positions for both methods
-        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3; // 1/3 below header
-        const targetScrollUnits = targetVisualY / scaleY;
+        // Current element position relative to container (in visual pixels)
+        const elementVisualTop = elementRect.top - containerRect.top;
         
-        const method1_scrollTop = elementOffsetTop - targetScrollUnits;
-        const method2_scrollTop = elementScrollPosition - targetVisualY / scaleY;
+        // Where we want the element: 1/3 down from header (in visual pixels)
+        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3;
         
-        console.log('🔍 Target positioning calculations:', {
-          targetVisualY,
-          targetScrollUnits,
-          visibleAreaHeight: container.clientHeight - headerHeight,
-          targetOffsetFromHeader: (container.clientHeight - headerHeight) / 3,
-          method1_desiredScrollTop: method1_scrollTop,
-          method2_desiredScrollTop: method2_scrollTop,
-          difference: Math.abs(method1_scrollTop - method2_scrollTop)
-        });
-
-        // Choose method 2 (more stable with transforms) with hard snap + corrective pass
+        // Convert visual pixel difference to scroll units
+        const visualDelta = elementVisualTop - targetVisualY;
+        const scrollDelta = visualDelta / scaleY;
+        
+        // Apply scroll adjustment
+        const desiredScrollTop = container.scrollTop + scrollDelta;
         const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-        const initialScrollTop = Math.max(0, Math.min(method2_scrollTop, maxScroll));
-        container.scrollTop = initialScrollTop; // immediate snap for deterministic measurement
+        const finalScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
 
-        console.log('🔍 Phase 1 (snap) applied:', {
-          initialScrollTop,
-          maxScroll
+        console.log('🔄 Simple positioning calculation:', {
+          elementVisualTop,
+          targetVisualY,
+          visualDelta,
+          scrollDelta,
+          scaleY,
+          desiredScrollTop,
+          finalScrollTop,
+          headerHeight,
+          targetDescription: '1/3 down from header'
         });
 
-        // Phase 2: corrective alignment loop (handles dynamic row height/virtualization changes)
-        let attempts = 0;
-        const maxAttempts = 3;
-        const align = () => {
-          try {
-            const r = element.getBoundingClientRect();
-            const c = container.getBoundingClientRect();
-            const currentVisualTop = r.top - c.top; // px
-            const deltaVisual = currentVisualTop - targetVisualY; // px; positive => element too low
-
-            console.log('🔍 Phase 2 attempt', attempts + 1, {
-              currentVisualTop,
-              targetVisualY,
-              deltaVisual,
-              currentScrollTop: container.scrollTop
-            });
-
-            if (Math.abs(deltaVisual) <= 1 || attempts >= maxAttempts) {
-              console.log('✅ Alignment complete', {
-                finalScrollTop: container.scrollTop,
-                attempts
-              });
-              lastScrolledSegmentRef.current = currentSegmentId;
-              return;
-            }
-
-            // Apply corrective scroll in scroll units
-            const correction = deltaVisual / scaleY;
-            let corrected = container.scrollTop + correction;
-            corrected = Math.max(0, Math.min(corrected, maxScroll));
-            container.scrollTop = corrected;
-            attempts += 1;
-            requestAnimationFrame(align);
-          } catch (err) {
-            console.warn('🔄 Corrective alignment failed:', err);
-            lastScrolledSegmentRef.current = currentSegmentId;
-          }
-        };
-        requestAnimationFrame(align);
+        container.scrollTo({
+          top: finalScrollTop,
+          behavior: 'smooth'
+        });
         lastScrolledSegmentRef.current = currentSegmentId;
       } else {
         console.warn('🔄 Target element not found for:', currentSegmentId);
