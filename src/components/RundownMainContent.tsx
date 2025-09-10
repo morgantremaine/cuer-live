@@ -3,12 +3,12 @@ import React from 'react';
 import RundownContent from './RundownContent';
 import ColumnManager from './ColumnManager';
 import { RundownContainerProps } from '@/types/rundownContainer';
-import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 interface RundownMainContentProps extends RundownContainerProps {
   currentSegmentName: string;
   totalDuration: string;
   savedLayouts: any[]; // Add savedLayouts as a prop
+  layoutOperations?: any; // Shared operations from a single hook instance
 }
 
 const RundownMainContent = ({
@@ -29,10 +29,9 @@ const RundownMainContent = ({
   autoScrollEnabled,
   onToggleAutoScroll,
   savedLayouts, // Accept savedLayouts as prop
+  layoutOperations,
   ...contentProps
 }: RundownMainContentProps) => {
-  // Get layout operations for ColumnManager 
-  const layoutOperations = useColumnLayoutStorage();
 
   return (
     <>
