@@ -9,6 +9,8 @@ import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeR
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
+import { TeleprompterSidebar } from '@/components/teleprompter/TeleprompterSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
@@ -574,6 +576,20 @@ const Teleprompter = () => {
     return regularItemCount.toString();
   };
 
+  // Navigation function for sidebar
+  const handleNavigateToItem = (itemId: string) => {
+    if (!containerRef.current) return;
+    
+    const targetElement = containerRef.current.querySelector(`[data-item-id="${itemId}"]`);
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  };
+
   // Handle beforeunload to warn about unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -619,24 +635,60 @@ const Teleprompter = () => {
     );
   }
 
-  // Filter items using the updated helper function and add originalIndex
   const itemsWithScript = rundownData?.items.map((item, originalIndex) => ({
     ...item,
     originalIndex
   })).filter(shouldIncludeInTeleprompter) || [];
 
+  if (isFullscreen) {
+    // Fullscreen mode - no sidebar, original layout
+    return (
+      <div className="min-h-screen bg-black text-white overflow-hidden">
+        {/* Read-only banner for non-authenticated users */}
+        {!user && (
+          <div className="bg-blue-600 text-white text-center py-2 text-sm">
+            Read-only mode - <a href="/login" className="underline hover:text-blue-200">Sign in</a> to edit teleprompter content
+          </div>
+        )}
+        
+        {/* Content */}
+        <TeleprompterContent
+          containerRef={containerRef}
+          isFullscreen={isFullscreen}
+          itemsWithScript={itemsWithScript}
+          fontSize={fontSize}
+          isUppercase={isUppercase}
+          isBold={isBold}
+          getRowNumber={getRowNumber}
+          onUpdateScript={updateScriptContent}
+          canEdit={!isFullscreen && !!user}
+          hasSidebar={false}
+        />
+      </div>
+    );
+  }
+
+  // Non-fullscreen mode - with sidebar
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden">
-      {/* Read-only banner for non-authenticated users */}
-      {!user && (
-        <div className="bg-blue-600 text-white text-center py-2 text-sm">
-          Read-only mode - <a href="/login" className="underline hover:text-blue-200">Sign in</a> to edit teleprompter content
-        </div>
-      )}
-      
-      {/* Top Menu Controls - Hidden in fullscreen */}
-      {!isFullscreen && (
-        <>
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen bg-black text-white overflow-hidden w-full flex">
+        {/* Read-only banner for non-authenticated users */}
+        {!user && (
+          <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 text-sm z-50">
+            Read-only mode - <a href="/login" className="underline hover:text-blue-200">Sign in</a> to edit teleprompter content
+          </div>
+        )}
+        
+        {/* Sidebar */}
+        <TeleprompterSidebar 
+          items={itemsWithScript}
+          getRowNumber={getRowNumber}
+          onNavigateToItem={handleNavigateToItem}
+        />
+
+        {/* Main Content */}
+        <div className="flex-1 relative">
+          {/* Top Menu Controls */}
           <TeleprompterControls
             isScrolling={isScrolling}
             fontSize={fontSize}
@@ -663,23 +715,23 @@ const Teleprompter = () => {
               />
             </div>
           )}
-        </>
-      )}
 
-      {/* Content */}
-      <TeleprompterContent
-        containerRef={containerRef}
-        isFullscreen={isFullscreen}
-        itemsWithScript={itemsWithScript}
-        fontSize={fontSize}
-        isUppercase={isUppercase}
-        isBold={isBold}
-        getRowNumber={getRowNumber}
-        onUpdateScript={updateScriptContent}
-        canEdit={!isFullscreen && !!user}
-      />
-
-    </div>
+          {/* Content */}
+          <TeleprompterContent
+            containerRef={containerRef}
+            isFullscreen={isFullscreen}
+            itemsWithScript={itemsWithScript}
+            fontSize={fontSize}
+            isUppercase={isUppercase}
+            isBold={isBold}
+            getRowNumber={getRowNumber}
+            onUpdateScript={updateScriptContent}
+            canEdit={!isFullscreen && !!user}
+            hasSidebar={true}
+          />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

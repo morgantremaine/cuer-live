@@ -22,6 +22,7 @@ const TeleprompterItem = ({
   onUpdateScript,
   canEdit = false
 }: TeleprompterItemProps) => {
+  // Add data-item-id for navigation targeting
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.script || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -128,7 +129,7 @@ const TeleprompterItem = ({
     const headerTitle = item.name || item.segmentName || 'HEADER';
     
     return (
-      <div className="mb-8">
+      <div className="mb-8" data-item-id={item.id}>
         <h2 
           className={`${getFontWeight()} text-left mb-6 font-sans`}
           style={{ 
@@ -172,7 +173,7 @@ const TeleprompterItem = ({
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8" data-item-id={item.id}>
       <div 
         className="text-left mb-6 font-sans"
         style={{ 
