@@ -1,6 +1,6 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TeleprompterSidebarProps {
@@ -27,17 +27,23 @@ const TeleprompterSidebar = ({
       "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Collapse/Expand Arrow on edge */}
-      <button
-        onClick={onToggleCollapse}
-        className="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10 bg-background border border-border rounded-full p-1 hover:bg-muted transition-colors shadow-sm"
+      {/* Collapse/Expand Button - Sleek Design */}
+      <div 
+        className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10"
       >
-        {isCollapsed ? (
-          <ChevronRight className="h-3 w-3 text-muted-foreground" />
-        ) : (
-          <ChevronLeft className="h-3 w-3 text-muted-foreground" />
-        )}
-      </button>
+        <button
+          onClick={onToggleCollapse}
+          className="group bg-background/95 backdrop-blur-sm border border-border/50 rounded-full p-2 hover:bg-muted/80 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+        >
+          <div className="relative w-4 h-4 flex items-center justify-center">
+            <ChevronLeft 
+              className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-300 ${
+                isCollapsed ? 'rotate-180' : 'rotate-0'
+              }`} 
+            />
+          </div>
+        </button>
+      </div>
 
       {/* Content */}
       {!isCollapsed && (
