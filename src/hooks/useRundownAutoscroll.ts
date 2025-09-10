@@ -64,8 +64,39 @@ export const useRundownAutoscroll = ({
 
         // Custom scroll calculation to position element at top third of viewport
         // accounting for zoom scale and sticky header
-        const container = scrollContainerRef.current;
+        let container = scrollContainerRef.current as unknown as HTMLElement;
         const element = targetElement as HTMLElement;
+
+        // Resolve the actual scrollable container by walking up from the element
+        let resolvedContainer: HTMLElement | null = null;
+        let parent: HTMLElement | null = element.parentElement;
+        while (parent && parent !== document.body) {
+          const style = window.getComputedStyle(parent);
+          const overflowY = style.overflowY;
+          const canScroll = (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && (parent.scrollHeight > parent.clientHeight + 1);
+          if (canScroll) {
+            resolvedContainer = parent;
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        if (resolvedContainer && resolvedContainer !== container) {
+          console.log('🔄 Using resolved scroll container', {
+            refContainer: {
+              className: container.className,
+              id: (container as HTMLElement).id,
+              scrollHeight: container.scrollHeight,
+              clientHeight: container.clientHeight
+            },
+            resolved: {
+              className: resolvedContainer.className,
+              id: resolvedContainer.id,
+              scrollHeight: resolvedContainer.scrollHeight,
+              clientHeight: resolvedContainer.clientHeight
+            }
+          });
+          container = resolvedContainer;
+        }
 
         // Get sticky header height - try multiple selectors
         let headerWrapper = container.querySelector('[data-rundown-table="header"]') as HTMLElement | null;
