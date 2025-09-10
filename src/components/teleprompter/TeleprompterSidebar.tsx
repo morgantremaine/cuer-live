@@ -75,7 +75,8 @@ const TeleprompterSidebar = ({
 
   return (
     <div className={cn(
-      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative overflow-hidden",
+      "bg-background border-r border-border transition-all duration-300 flex flex-col overflow-hidden",
+      "h-[calc(100vh-73px)]", // Account for the 73px top offset from controls
       isCollapsed ? "w-12" : "w-80"
     )}>
       {!isCollapsed ? (
