@@ -707,7 +707,7 @@ const Teleprompter = () => {
             isBold={isBold}
             getRowNumber={getRowNumber}
             onUpdateScript={user ? updateScriptContent : undefined}
-            canEdit={!!user}
+            canEdit={!!user && !isFullscreen}
           />
         </div>
       </div>
