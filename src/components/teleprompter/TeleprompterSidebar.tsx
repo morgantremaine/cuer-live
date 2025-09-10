@@ -28,7 +28,7 @@ const TeleprompterSidebar = ({
   const handleJumpToItem = (itemNumber: string) => {
     if (!itemNumber.trim()) return;
     
-    // Find the item with the matching row number
+    // Find the item with the exact matching row number
     const targetItem = items.find(item => {
       const rowNumber = getRowNumber(item.originalIndex);
       return rowNumber === itemNumber.trim();
@@ -53,9 +53,9 @@ const TeleprompterSidebar = ({
     )}>
       {/* Content */}
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto min-h-0 pt-4">
-          {/* Search bar */}
-          <div className="px-2 pb-3">
+        <>
+          {/* Fixed search bar */}
+          <div className="px-2 py-3 border-b border-border bg-background">
             <Input
               type="text"
               placeholder="Jump to item #"
@@ -66,47 +66,50 @@ const TeleprompterSidebar = ({
             />
           </div>
           
-          <div className="p-2 space-y-1">
-            {items.map((item) => {
-              const rowNumber = getRowNumber(item.originalIndex);
-              const isHeader = item.type === 'header';
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={cn(
-                    "w-full text-left p-3 rounded-md transition-colors hover:bg-muted group",
-                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                    isHeader && "bg-muted/50"
-                  )}
-                >
-                  <div className="flex items-start space-x-3">
-                    <span className={cn(
-                      "text-xs font-mono shrink-0 mt-0.5",
-                      isHeader ? "text-primary font-semibold" : "text-muted-foreground"
-                    )}>
-                      {rowNumber}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className={cn(
-                        "text-sm truncate",
-                        isHeader ? "font-semibold text-foreground" : "text-foreground"
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="p-2 space-y-1">
+              {items.map((item) => {
+                const rowNumber = getRowNumber(item.originalIndex);
+                const isHeader = item.type === 'header';
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleItemClick(item.id)}
+                    className={cn(
+                      "w-full text-left p-3 rounded-md transition-colors hover:bg-muted group",
+                      "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                      isHeader && "bg-muted/50"
+                    )}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <span className={cn(
+                        "text-xs font-mono shrink-0 mt-0.5",
+                        isHeader ? "text-primary font-semibold" : "text-muted-foreground"
                       )}>
-                        {item.name || 'Untitled'}
-                      </p>
-                      {item.segmentName && (
-                        <p className="text-xs text-muted-foreground truncate mt-1">
-                          {item.segmentName}
+                        {rowNumber}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn(
+                          "text-sm truncate",
+                          isHeader ? "font-semibold text-foreground" : "text-foreground"
+                        )}>
+                          {item.name || 'Untitled'}
                         </p>
-                      )}
+                        {item.segmentName && (
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {item.segmentName}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
