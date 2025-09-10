@@ -66,8 +66,8 @@ export const useRundownAutoscroll = ({
             const viewportRect = viewport.getBoundingClientRect();
             const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
 
-            // Desired position: 2/3 down from the top of the viewport
-            const desiredTop = viewportRect.top + (viewportRect.height * 2 / 3);
+            // Desired position: 1/3 down from the top of the viewport
+            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 3);
             const offsetNeeded = elementRect.top - desiredTop;
 
             if (Math.abs(offsetNeeded) > 4) {
