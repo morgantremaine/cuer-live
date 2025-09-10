@@ -1,5 +1,6 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TeleprompterSidebarProps {
@@ -26,27 +27,18 @@ const TeleprompterSidebar = ({
       "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Vertical Handle - Drawer Style */}
-      <div 
-        className="absolute -right-1 top-1/2 transform -translate-y-1/2 z-10"
-      >
+      {/* Top Panel Toggle Button */}
+      <div className="flex justify-between items-center p-2 border-b border-border">
         <button
           onClick={onToggleCollapse}
-          className="group bg-background/90 backdrop-blur-sm border-l border-t border-b border-border/50 rounded-r-lg transition-all duration-300 hover:bg-muted/80 shadow-lg hover:shadow-xl"
-          style={{ 
-            height: '60px',
-            width: '12px',
-            transformOrigin: 'left center'
-          }}
+          className="p-2 rounded-md hover:bg-muted transition-colors duration-200"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <div className="h-full w-full flex flex-col items-center justify-center space-y-0.5 relative">
-            {/* Grip dots */}
-            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
-            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
-            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
-            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
-            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
-          </div>
+          {isCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
+          )}
         </button>
       </div>
 
