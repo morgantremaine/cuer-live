@@ -137,8 +137,17 @@ export const useColumnLayoutStorage = () => {
 
       const teamId = teamMemberships?.[0]?.team_id || null
 
-      // CRITICAL: Save only visible columns to preserve exact layout state
-      const visibleColumns = columns.filter(col => col.isVisible !== false)
+      // Normalize and persist only visible columns (supports legacy `visible` flag)
+      const normalizeForPersist = (cols: Column[]) =>
+        cols
+          .filter((col: any) => !(col?.isVisible === false || col?.visible === false))
+          .map((col: any) => ({
+            ...col,
+            isVisible: true,
+            width: col?.width || '120px',
+          }))
+
+      const visibleColumns = normalizeForPersist(columns)
       console.log('💾 Saving layout with', visibleColumns.length, 'visible columns out of', columns.length, 'total')
 
       const { data, error } = await supabase
@@ -147,7 +156,7 @@ export const useColumnLayoutStorage = () => {
           user_id: user.id,
           team_id: teamId,
           name,
-          columns: visibleColumns, // Save only visible columns
+          columns: visibleColumns, // Save only visible, normalized columns
           is_default: isDefault,
         })
         .select()
@@ -177,8 +186,17 @@ export const useColumnLayoutStorage = () => {
   const updateLayout = async (id: string, name: string, columns: Column[]) => {
     if (!user) return
 
-    // CRITICAL: Update with only visible columns to preserve exact layout state  
-    const visibleColumns = columns.filter(col => col.isVisible !== false)
+    // Normalize and persist only visible columns (supports legacy `visible` flag)
+    const normalizeForPersist = (cols: Column[]) =>
+      cols
+        .filter((col: any) => !(col?.isVisible === false || col?.visible === false))
+        .map((col: any) => ({
+          ...col,
+          isVisible: true,
+          width: col?.width || '120px',
+        }))
+
+    const visibleColumns = normalizeForPersist(columns)
     console.log('🔄 useColumnLayoutStorage: Updating layout', id)
     console.log('📊 Input columns:', columns.length, 'total, filtering to', visibleColumns.length, 'visible')
     console.log('📋 Visible columns being saved:', visibleColumns.map(c => ({ id: c.id, name: c.name, width: c.width })))
@@ -198,14 +216,14 @@ export const useColumnLayoutStorage = () => {
       .from('column_layouts')
       .update({
         name,
-        columns: visibleColumns, // Update with only visible columns
+        columns: visibleColumns, // Update with only visible, normalized columns
         updated_at: new Date().toISOString() // Force timestamp update for cache invalidation
       })
       .eq('id', id)
       .eq('user_id', user.id)
       .select()
       .single()
-
+  
     if (error) {
       console.error('❌ Database error updating layout:', error)
       toast({
