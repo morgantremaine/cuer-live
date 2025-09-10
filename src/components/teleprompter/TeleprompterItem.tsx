@@ -11,6 +11,7 @@ interface TeleprompterItemProps {
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
+  isFullscreen?: boolean;
 }
 
 const TeleprompterItem = ({ 
@@ -20,7 +21,8 @@ const TeleprompterItem = ({
   isBold,
   getRowNumber, 
   onUpdateScript,
-  canEdit = false
+  canEdit = false,
+  isFullscreen = false
 }: TeleprompterItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.script || '');
@@ -201,13 +203,15 @@ const TeleprompterItem = ({
             style={scriptStyles}
           >
             {isNullItem ? (
-              canEdit ? (
+              // Never show placeholder in fullscreen mode
+              (canEdit && !isFullscreen) ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             ) : item.script ? (
               renderedScript
             ) : (
-              canEdit ? (
+              // Never show placeholder in fullscreen mode
+              (canEdit && !isFullscreen) ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             )}

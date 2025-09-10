@@ -66,6 +66,7 @@ const TeleprompterContent = ({
               getRowNumber={getRowNumber}
               onUpdateScript={onUpdateScript}
               canEdit={canEdit}
+              isFullscreen={isFullscreen}
             />
           ))}
         </div>
