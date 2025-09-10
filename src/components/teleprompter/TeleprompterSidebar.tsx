@@ -35,13 +35,9 @@ export function TeleprompterSidebar({
     <Sidebar
       className={`${collapsed ? 'w-14' : 'w-80'} bg-gray-900 border-r border-gray-700`}
       collapsible="icon"
+      style={{ top: '64px', height: 'calc(100vh - 64px)' }}
     >
-      {/* Sidebar Toggle */}
-      <div className="p-2 border-b border-gray-700">
-        <SidebarTrigger className="text-white hover:bg-gray-800" />
-      </div>
-
-      <SidebarContent>
+      <SidebarContent className="mt-0">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>

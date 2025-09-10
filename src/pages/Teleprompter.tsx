@@ -671,7 +671,7 @@ const Teleprompter = () => {
   // Non-fullscreen mode - with sidebar
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen bg-black text-white overflow-hidden w-full flex">
+      <div className="min-h-screen bg-black text-white overflow-hidden w-full">
         {/* Read-only banner for non-authenticated users */}
         {!user && (
           <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 text-sm z-50">
@@ -679,56 +679,59 @@ const Teleprompter = () => {
           </div>
         )}
         
-        {/* Sidebar */}
-        <TeleprompterSidebar 
-          items={itemsWithScript}
-          getRowNumber={getRowNumber}
-          onNavigateToItem={handleNavigateToItem}
+        {/* Top Menu Controls */}
+        <TeleprompterControls
+          isScrolling={isScrolling}
+          fontSize={fontSize}
+          scrollSpeed={getCurrentSpeed()}
+          isUppercase={isUppercase}
+          isBold={isBold}
+          showAllSegments={showAllSegments}
+          onToggleScrolling={toggleScrolling}
+          onResetScroll={resetScroll}
+          onToggleFullscreen={toggleFullscreen}
+          onToggleUppercase={toggleUppercase}
+          onToggleBold={toggleBold}
+          onToggleShowAllSegments={toggleShowAllSegments}
+          onAdjustFontSize={adjustFontSize}
+          onAdjustScrollSpeed={adjustScrollSpeed}
+          onPrint={handlePrint}
         />
 
-        {/* Main Content */}
-        <div className="flex-1 relative">
-          {/* Top Menu Controls */}
-          <TeleprompterControls
-            isScrolling={isScrolling}
-            fontSize={fontSize}
-            scrollSpeed={getCurrentSpeed()}
-            isUppercase={isUppercase}
-            isBold={isBold}
-            showAllSegments={showAllSegments}
-            onToggleScrolling={toggleScrolling}
-            onResetScroll={resetScroll}
-            onToggleFullscreen={toggleFullscreen}
-            onToggleUppercase={toggleUppercase}
-            onToggleBold={toggleBold}
-            onToggleShowAllSegments={toggleShowAllSegments}
-            onAdjustFontSize={adjustFontSize}
-            onAdjustScrollSpeed={adjustScrollSpeed}
-            onPrint={handlePrint}
-          />
-          
-          {/* Save Status Indicator - only show for authenticated users */}
-          {user && (
-            <div className="fixed top-16 right-4 z-30">
-              <TeleprompterSaveIndicator 
-                saveState={saveState}
-              />
-            </div>
-          )}
-
-          {/* Content */}
-          <TeleprompterContent
-            containerRef={containerRef}
-            isFullscreen={isFullscreen}
-            itemsWithScript={itemsWithScript}
-            fontSize={fontSize}
-            isUppercase={isUppercase}
-            isBold={isBold}
+        {/* Main layout with sidebar */}
+        <div className="flex pt-16"> {/* pt-16 accounts for the fixed toolbar */}
+          {/* Sidebar */}
+          <TeleprompterSidebar 
+            items={itemsWithScript}
             getRowNumber={getRowNumber}
-            onUpdateScript={updateScriptContent}
-            canEdit={!isFullscreen && !!user}
-            hasSidebar={true}
+            onNavigateToItem={handleNavigateToItem}
           />
+
+          {/* Main Content */}
+          <div className="flex-1 relative">
+            {/* Save Status Indicator - only show for authenticated users */}
+            {user && (
+              <div className="fixed top-20 right-4 z-30">
+                <TeleprompterSaveIndicator 
+                  saveState={saveState}
+                />
+              </div>
+            )}
+
+            {/* Content */}
+            <TeleprompterContent
+              containerRef={containerRef}
+              isFullscreen={isFullscreen}
+              itemsWithScript={itemsWithScript}
+              fontSize={fontSize}
+              isUppercase={isUppercase}
+              isBold={isBold}
+              getRowNumber={getRowNumber}
+              onUpdateScript={updateScriptContent}
+              canEdit={!isFullscreen && !!user}
+              hasSidebar={true}
+            />
+          </div>
         </div>
       </div>
     </SidebarProvider>
