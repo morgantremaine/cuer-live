@@ -33,13 +33,6 @@ export const useRundownAutoscroll = ({
         `[data-item-id="${currentSegmentId}"]`
       );
 
-      console.log('🔄 Autoscroll debug:', {
-        currentSegmentId,
-        targetElement: !!targetElement,
-        autoScrollEnabled,
-        scrollContainer: !!scrollContainerRef.current
-      });
-
       if (targetElement) {
         // Check if user is currently scrolling manually by detecting recent scroll events
         const scrollContainer = scrollContainerRef.current;
@@ -49,138 +42,18 @@ export const useRundownAutoscroll = ({
         const timeSinceLastScroll = now - lastUserScroll;
         const timeSinceScrollingStopped = now - userScrollingStopped;
         
-        console.log('🔄 Scroll timing check:', {
-          timeSinceLastScroll,
-          timeSinceScrollingStopped,
-          willSkip: timeSinceLastScroll < 3000 || timeSinceScrollingStopped < 1000
-        });
-        
         // If user scrolled recently (within 3 seconds) OR if they're still actively scrolling, skip autoscroll
         // This prevents autoscroll during manual scrolling and for a period after scrolling stops
         if (timeSinceLastScroll < 3000 || timeSinceScrollingStopped < 1000) {
-          console.log('🔄 Skipping autoscroll - user scrolled recently');
           return;
         }
 
-        // Custom scroll calculation to position element at top third of viewport
-        // accounting for zoom scale and sticky header
-        let container = scrollContainerRef.current as unknown as HTMLElement;
-        const element = targetElement as HTMLElement;
-
-        // Resolve the actual scrollable container by walking up from the element
-        let resolvedContainer: HTMLElement | null = null;
-        let parent: HTMLElement | null = element.parentElement;
-        while (parent && parent !== document.body) {
-          const style = window.getComputedStyle(parent);
-          const overflowY = style.overflowY;
-          const canScroll = (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && (parent.scrollHeight > parent.clientHeight + 1);
-          if (canScroll) {
-            resolvedContainer = parent;
-            break;
-          }
-          parent = parent.parentElement;
-        }
-        if (resolvedContainer && resolvedContainer !== container) {
-          console.log('🔄 Using resolved scroll container', {
-            refContainer: {
-              className: container.className,
-              id: (container as HTMLElement).id,
-              scrollHeight: container.scrollHeight,
-              clientHeight: container.clientHeight
-            },
-            resolved: {
-              className: resolvedContainer.className,
-              id: resolvedContainer.id,
-              scrollHeight: resolvedContainer.scrollHeight,
-              clientHeight: resolvedContainer.clientHeight
-            }
-          });
-          container = resolvedContainer;
-        }
-
-        // Get sticky header height - try multiple selectors
-        let headerWrapper = container.querySelector('[data-rundown-table="header"]') as HTMLElement | null;
-        if (!headerWrapper) {
-          headerWrapper = container.querySelector('.rundown-header') as HTMLElement | null;
-        }
-        if (!headerWrapper) {
-          headerWrapper = container.querySelector('thead') as HTMLElement | null;
-        }
-        const headerHeight = headerWrapper ? headerWrapper.getBoundingClientRect().height : 0;
-
-        // Detect zoom scale from transform - try multiple selectors
-        let zoomContainer = container.querySelector('.zoom-container') as HTMLElement | null;
-        if (!zoomContainer) {
-          zoomContainer = container.querySelector('[data-zoom-container]') as HTMLElement | null;
-        }
-        if (!zoomContainer) {
-          zoomContainer = container.querySelector('.rundown-body') as HTMLElement | null;
-        }
-        
-        let scaleY = 1;
-        if (zoomContainer) {
-          const transform = window.getComputedStyle(zoomContainer).transform;
-          if (transform && transform !== 'none') {
-            const matrix = transform.match(/matrix.*\((.+)\)/);
-            if (matrix) {
-              const values = matrix[1].split(', ');
-              if (values.length >= 4) {
-                scaleY = parseFloat(values[3]) || 1; // scaleY is the 4th value in matrix
-              }
-            }
-          }
-        }
-
-        console.log('🔄 Autoscroll calculation:', {
-          headerHeight,
-          scaleY,
-          zoomContainer: !!zoomContainer,
-          headerWrapper: !!headerWrapper,
-          containerInfo: {
-            scrollTop: container.scrollTop,
-            clientHeight: container.clientHeight,
-            scrollHeight: container.scrollHeight
-          }
-        });
-
-        // Simple, reliable approach: position element 1/3 down from header
-        const elementRect = element.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        
-        // Current element position relative to container (in visual pixels)
-        const elementVisualTop = elementRect.top - containerRect.top;
-        
-        // Where we want the element: 1/3 down from header (in visual pixels)
-        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3;
-        
-        // Convert visual pixel difference to scroll units
-        const visualDelta = elementVisualTop - targetVisualY;
-        const scrollDelta = visualDelta / scaleY;
-        
-        // Apply scroll adjustment
-        const desiredScrollTop = container.scrollTop + scrollDelta;
-        const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-        const finalScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
-
-        console.log('🔄 Simple positioning calculation:', {
-          elementVisualTop,
-          targetVisualY,
-          visualDelta,
-          scrollDelta,
-          scaleY,
-          desiredScrollTop,
-          finalScrollTop,
-          headerHeight,
-          targetDescription: '1/3 down from header'
-        });
-
-        container.scrollTo({
-          top: finalScrollTop,
-          behavior: 'smooth'
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
         });
         lastScrolledSegmentRef.current = currentSegmentId;
-      } else {
-        console.warn('🔄 Target element not found for:', currentSegmentId);
       }
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
