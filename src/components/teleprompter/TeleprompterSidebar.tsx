@@ -39,12 +39,9 @@ const TeleprompterSidebar = ({
         )}
       </button>
 
-      {/* Spacer for top toolbar height */}
-      <div className="h-[73px] flex-shrink-0"></div>
-
       {/* Content */}
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0 pt-4">
           <div className="p-2 space-y-1">
             {items.map((item) => {
               const rowNumber = getRowNumber(item.originalIndex);
