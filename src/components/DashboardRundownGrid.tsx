@@ -208,7 +208,7 @@ const DashboardRundownGrid = ({
     e.dataTransfer.effectAllowed = 'move';
   }
 
-  if (loading) {
+  if (loading && rundowns.length === 0) {
     return (
       <div className="space-y-6">
         {title && (

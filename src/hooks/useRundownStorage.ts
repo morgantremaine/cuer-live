@@ -114,7 +114,7 @@ export const useRundownStorage = () => {
     }
   }, [user, teamId, debouncedLoadRundowns]);
 
-  // Handle focus/visibility changes to refresh rundown data
+  // Handle focus/visibility changes to refresh rundown data silently
   useEffect(() => {
     let lastFocusCheck = 0;
     
@@ -127,10 +127,8 @@ export const useRundownStorage = () => {
         
         // Only refresh if we have user and team data
         if (user?.id && teamId && savedRundowns.length > 0) {
-          console.log('Dashboard: Refreshing rundown data after focus/visibility change');
-          // Force reload by clearing cache
-          lastLoadedUserRef.current = null;
-          lastLoadedTeamRef.current = null;
+          console.log('Dashboard: Silently refreshing rundown data after focus/visibility change');
+          // Silent refresh without clearing loading state or existing data
           debouncedLoadRundowns();
         }
       }
