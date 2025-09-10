@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 interface TeleprompterSidebarProps {
   items: (RundownItem & { originalIndex: number })[];
@@ -18,8 +19,31 @@ const TeleprompterSidebar = ({
   isCollapsed,
   onToggleCollapse
 }: TeleprompterSidebarProps) => {
+  const [searchValue, setSearchValue] = useState('');
+
   const handleItemClick = (itemId: string) => {
     onItemClick(itemId);
+  };
+
+  const handleJumpToItem = (itemNumber: string) => {
+    if (!itemNumber.trim()) return;
+    
+    // Find the item with the matching row number
+    const targetItem = items.find(item => {
+      const rowNumber = getRowNumber(item.originalIndex);
+      return rowNumber === itemNumber.trim();
+    });
+    
+    if (targetItem) {
+      handleItemClick(targetItem.id);
+      setSearchValue(''); // Clear search after jumping
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleJumpToItem(searchValue);
+    }
   };
 
   return (
@@ -30,6 +54,18 @@ const TeleprompterSidebar = ({
       {/* Content */}
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto min-h-0 pt-4">
+          {/* Search bar */}
+          <div className="px-2 pb-3">
+            <Input
+              type="text"
+              placeholder="Jump to item #"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              className="h-8 text-sm"
+            />
+          </div>
+          
           <div className="p-2 space-y-1">
             {items.map((item) => {
               const rowNumber = getRowNumber(item.originalIndex);
