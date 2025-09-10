@@ -35,7 +35,6 @@ export function TeleprompterSidebar({
     <Sidebar
       className={`${collapsed ? 'w-14' : 'w-80'} bg-gray-900 border-r border-gray-700`}
       collapsible="icon"
-      style={{ top: '64px', height: 'calc(100vh - 64px)' }}
     >
       <SidebarContent className="mt-0">
         <SidebarGroup>

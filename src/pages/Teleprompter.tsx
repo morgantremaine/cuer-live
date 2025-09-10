@@ -671,7 +671,7 @@ const Teleprompter = () => {
   // Non-fullscreen mode - with sidebar
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen bg-black text-white overflow-hidden w-full">
+      <div className="min-h-screen bg-black text-white flex w-full">
         {/* Read-only banner for non-authenticated users */}
         {!user && (
           <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 text-sm z-50">
@@ -679,35 +679,35 @@ const Teleprompter = () => {
           </div>
         )}
         
-        {/* Top Menu Controls */}
-        <TeleprompterControls
-          isScrolling={isScrolling}
-          fontSize={fontSize}
-          scrollSpeed={getCurrentSpeed()}
-          isUppercase={isUppercase}
-          isBold={isBold}
-          showAllSegments={showAllSegments}
-          onToggleScrolling={toggleScrolling}
-          onResetScroll={resetScroll}
-          onToggleFullscreen={toggleFullscreen}
-          onToggleUppercase={toggleUppercase}
-          onToggleBold={toggleBold}
-          onToggleShowAllSegments={toggleShowAllSegments}
-          onAdjustFontSize={adjustFontSize}
-          onAdjustScrollSpeed={adjustScrollSpeed}
-          onPrint={handlePrint}
+        {/* Sidebar */}
+        <TeleprompterSidebar 
+          items={itemsWithScript}
+          getRowNumber={getRowNumber}
+          onNavigateToItem={handleNavigateToItem}
         />
 
-        {/* Main layout with sidebar */}
-        <div className="flex pt-16"> {/* pt-16 accounts for the fixed toolbar */}
-          {/* Sidebar */}
-          <TeleprompterSidebar 
-            items={itemsWithScript}
-            getRowNumber={getRowNumber}
-            onNavigateToItem={handleNavigateToItem}
+        {/* Main content area */}
+        <div className="flex flex-col flex-1">
+          {/* Top Menu Controls */}
+          <TeleprompterControls
+            isScrolling={isScrolling}
+            fontSize={fontSize}
+            scrollSpeed={getCurrentSpeed()}
+            isUppercase={isUppercase}
+            isBold={isBold}
+            showAllSegments={showAllSegments}
+            onToggleScrolling={toggleScrolling}
+            onResetScroll={resetScroll}
+            onToggleFullscreen={toggleFullscreen}
+            onToggleUppercase={toggleUppercase}
+            onToggleBold={toggleBold}
+            onToggleShowAllSegments={toggleShowAllSegments}
+            onAdjustFontSize={adjustFontSize}
+            onAdjustScrollSpeed={adjustScrollSpeed}
+            onPrint={handlePrint}
           />
 
-          {/* Main Content */}
+          {/* Teleprompter Content */}
           <div className="flex-1 relative">
             {/* Save Status Indicator - only show for authenticated users */}
             {user && (
@@ -718,7 +718,6 @@ const Teleprompter = () => {
               </div>
             )}
 
-            {/* Content */}
             <TeleprompterContent
               containerRef={containerRef}
               isFullscreen={isFullscreen}

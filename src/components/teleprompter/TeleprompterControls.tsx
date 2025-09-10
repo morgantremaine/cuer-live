@@ -49,7 +49,7 @@ const TeleprompterControls = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 border-b border-gray-700 px-4 py-2">
+    <div className="bg-gray-900 border-b border-gray-700 px-4 py-2 z-40">
       <div className="flex justify-between items-center">
         {/* Left controls */}
         <div className="flex items-center space-x-4">
