@@ -48,10 +48,48 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
+        // Custom scroll calculation to position element at top third of viewport
+        // accounting for zoom scale and sticky header
+        const container = scrollContainerRef.current;
+        const element = targetElement as HTMLElement;
+
+        // Get sticky header height
+        const headerWrapper = container.querySelector('[data-rundown-table="header"]') as HTMLElement | null;
+        const headerHeight = headerWrapper ? headerWrapper.getBoundingClientRect().height : 0;
+
+        // Detect zoom scale from transform
+        const zoomContainer = container.querySelector('.zoom-container') as HTMLElement | null;
+        let scaleY = 1;
+        if (zoomContainer) {
+          const rect = zoomContainer.getBoundingClientRect();
+          const baseHeight = zoomContainer.offsetHeight || rect.height;
+          if (baseHeight > 0) {
+            const scale = rect.height / baseHeight;
+            if (Number.isFinite(scale) && scale > 0) {
+              scaleY = scale;
+            }
+          }
+        }
+
+        // Calculate element position accounting for zoom
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        const visualDeltaTop = elementRect.top - containerRect.top;
+        const unscaledDeltaTop = visualDeltaTop / scaleY;
+        const elementCenterUnscaled = container.scrollTop + unscaledDeltaTop + element.offsetHeight / 2;
+
+        // Position at top third of visible content area (below header)
+        const anchorPosition = 1 / 3;
+        const targetViewportY = headerHeight + (container.clientHeight - headerHeight) * anchorPosition;
+
+        // Calculate desired scroll position
+        let desiredScrollTop = elementCenterUnscaled - targetViewportY;
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        desiredScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
+
+        container.scrollTo({
+          top: desiredScrollTop,
+          behavior: 'smooth'
         });
         lastScrolledSegmentRef.current = currentSegmentId;
       }
