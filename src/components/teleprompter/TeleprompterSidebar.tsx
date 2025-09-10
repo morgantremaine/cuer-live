@@ -1,6 +1,6 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
-import { Menu, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TeleprompterSidebarProps {
@@ -24,25 +24,23 @@ const TeleprompterSidebar = ({
 
   return (
     <div className={cn(
-      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen",
+      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Header */}
-      <div className="h-[73px] border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-        {!isCollapsed && (
-          <h2 className="text-sm font-medium text-foreground">Script Navigation</h2>
+      {/* Collapse/Expand Arrow on edge */}
+      <button
+        onClick={onToggleCollapse}
+        className="absolute -right-3 top-1/2 transform -translate-y-1/2 z-10 bg-background border border-border rounded-full p-1 hover:bg-muted transition-colors shadow-sm"
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+        ) : (
+          <ChevronLeft className="h-3 w-3 text-muted-foreground" />
         )}
-        <button
-          onClick={onToggleCollapse}
-          className="p-2 hover:bg-muted rounded-md transition-colors"
-        >
-          {isCollapsed ? (
-            <Menu className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <X className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-      </div>
+      </button>
+
+      {/* Spacer for top toolbar height */}
+      <div className="h-[73px] flex-shrink-0"></div>
 
       {/* Content */}
       {!isCollapsed && (

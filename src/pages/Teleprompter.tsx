@@ -668,8 +668,6 @@ const Teleprompter = () => {
             onAdjustFontSize={adjustFontSize}
             onAdjustScrollSpeed={adjustScrollSpeed}
             onPrint={handlePrint}
-            isSidebarCollapsed={isSidebarCollapsed}
-            onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
           
           {/* Save Status Indicator - only show for authenticated users */}
