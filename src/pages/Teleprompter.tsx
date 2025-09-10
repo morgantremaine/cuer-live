@@ -9,6 +9,7 @@ import { useConsolidatedRealtimeRundown } from '@/hooks/useConsolidatedRealtimeR
 import TeleprompterControls from '@/components/teleprompter/TeleprompterControls';
 import TeleprompterContent from '@/components/teleprompter/TeleprompterContent';
 import TeleprompterSaveIndicator from '@/components/teleprompter/TeleprompterSaveIndicator';
+import TeleprompterSidebar from '@/components/teleprompter/TeleprompterSidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { useGlobalTeleprompterSync } from '@/hooks/useGlobalTeleprompterSync';
 import { cellBroadcast } from '@/utils/cellBroadcast';
@@ -32,6 +33,7 @@ const Teleprompter = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSeenDocVersion, setLastSeenDocVersion] = useState(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const watchdogRef = useRef<RealtimeWatchdog | null>(null);
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
@@ -59,6 +61,19 @@ const Teleprompter = () => {
 
   // Use the scroll hook with reverse support
   useTeleprompterScroll(isScrolling, scrollSpeed, containerRef, isReverse());
+
+  // Auto-scroll to item functionality
+  const scrollToItem = (itemId: string) => {
+    if (!containerRef.current) return;
+    
+    const element = containerRef.current.querySelector(`[data-item-id="${itemId}"]`);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+  };
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
@@ -653,6 +668,8 @@ const Teleprompter = () => {
             onAdjustFontSize={adjustFontSize}
             onAdjustScrollSpeed={adjustScrollSpeed}
             onPrint={handlePrint}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
           
           {/* Save Status Indicator - only show for authenticated users */}
@@ -666,19 +683,34 @@ const Teleprompter = () => {
         </>
       )}
 
-      {/* Content */}
-      <TeleprompterContent
-        containerRef={containerRef}
-        isFullscreen={isFullscreen}
-        itemsWithScript={itemsWithScript}
-        fontSize={fontSize}
-        isUppercase={isUppercase}
-        isBold={isBold}
-        getRowNumber={getRowNumber}
-        onUpdateScript={updateScriptContent}
-        canEdit={!isFullscreen && !!user}
-      />
+      {/* Layout Container for Sidebar and Content */}
+      <div className={`flex ${isFullscreen ? '' : 'pt-[73px]'}`}>
+        {/* Sidebar - only show in non-fullscreen mode */}
+        {!isFullscreen && (
+          <TeleprompterSidebar
+            items={itemsWithScript}
+            getRowNumber={getRowNumber}
+            onItemClick={scrollToItem}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          />
+        )}
 
+        {/* Content */}
+        <div className="flex-1">
+          <TeleprompterContent
+            containerRef={containerRef}
+            isFullscreen={isFullscreen}
+            itemsWithScript={itemsWithScript}
+            fontSize={fontSize}
+            isUppercase={isUppercase}
+            isBold={isBold}
+            getRowNumber={getRowNumber}
+            onUpdateScript={user ? updateScriptContent : undefined}
+            canEdit={!!user}
+          />
+        </div>
+      </div>
     </div>
   );
 };

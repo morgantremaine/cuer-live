@@ -172,7 +172,7 @@ const TeleprompterItem = ({
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-8" data-item-id={item.id}>
       <div 
         className="text-left mb-6 font-sans"
         style={{ 

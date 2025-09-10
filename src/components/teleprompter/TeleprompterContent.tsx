@@ -29,25 +29,27 @@ const TeleprompterContent = ({
 }: TeleprompterContentProps) => {
   return (
     <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
-      {/* Speaking Indicator Arrow - Fixed Position */}
-      <div 
-        className="fixed left-4 z-20 pointer-events-none"
-        style={{ 
-          top: '25%',
-          transform: 'translateY(-50%)'
-        }}
-      >
-        <ChevronRight 
-          className="text-white drop-shadow-lg" 
-          size={56}
-          strokeWidth={3}
-        />
-      </div>
+      {/* Speaking Indicator Arrow - Only show in fullscreen */}
+      {isFullscreen && (
+        <div 
+          className="fixed left-4 z-20 pointer-events-none"
+          style={{ 
+            top: '25%',
+            transform: 'translateY(-50%)'
+          }}
+        >
+          <ChevronRight 
+            className="text-white drop-shadow-lg" 
+            size={56}
+            strokeWidth={3}
+          />
+        </div>
+      )}
 
       <div
         ref={containerRef}
         data-teleprompter-container
-        className="h-screen overflow-y-auto scrollbar-hide mx-20"
+        className={`h-screen overflow-y-auto scrollbar-hide ${isFullscreen ? 'mx-20' : 'mx-8'}`}
         style={{ 
           paddingTop: isFullscreen ? '20vh' : '120px', 
           paddingBottom: '80vh' 

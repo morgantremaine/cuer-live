@@ -18,6 +18,8 @@ interface TeleprompterControlsProps {
   onAdjustFontSize: (delta: number) => void;
   onAdjustScrollSpeed: (delta: number) => void;
   onPrint?: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 const TeleprompterControls = ({
@@ -35,7 +37,9 @@ const TeleprompterControls = ({
   onToggleShowAllSegments,
   onAdjustFontSize,
   onAdjustScrollSpeed,
-  onPrint
+  onPrint,
+  isSidebarCollapsed,
+  onToggleSidebar
 }: TeleprompterControlsProps) => {
   const formatSpeed = (speed: number) => {
     if (speed === 0) return '0x';
@@ -48,13 +52,26 @@ const TeleprompterControls = ({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-10 bg-black bg-opacity-90 border-b border-gray-700 p-4">
+    <div className="fixed top-0 left-0 right-0 z-10 bg-background border-b border-border p-4">
       <div className="flex justify-between items-center">
         {/* Left controls */}
         <div className="flex items-center space-x-4">
+          {/* Sidebar toggle button - only show if sidebar controls are provided */}
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className={`flex items-center space-x-2 px-4 py-2 rounded text-sm ${
+                isSidebarCollapsed ? 'bg-muted hover:bg-muted/80' : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+              }`}
+            >
+              <List className="h-4 w-4" />
+              <span>{isSidebarCollapsed ? 'Show Navigation' : 'Hide Navigation'}</span>
+            </button>
+          )}
+
           <button
             onClick={onToggleScrolling}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm w-28"
+            className="flex items-center space-x-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded text-sm w-28"
           >
             {isScrolling ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             <span>{getPlayButtonText()}</span>
