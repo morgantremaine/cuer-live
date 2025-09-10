@@ -78,24 +78,24 @@ const TeleprompterSidebar = ({
       "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Content */}
+      {/* Fixed search bar - always at top */}
       {!isCollapsed && (
-        <>
-          {/* Fixed search bar */}
-          <div className="px-2 py-3 border-b border-border bg-background">
-            <Input
-              type="text"
-              placeholder="Jump to item #"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              className="h-8 text-sm"
-            />
-          </div>
-          
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-2 space-y-1">
+        <div className="px-2 py-3 border-b border-border bg-background shrink-0">
+          <Input
+            type="text"
+            placeholder="Jump to item #"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            className="h-8 text-sm"
+          />
+        </div>
+      )}
+      
+      {/* Scrollable content */}
+      {!isCollapsed && (
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="p-2 space-y-1">
               {items.map((item) => {
                 const rowNumber = getRowNumber(item.originalIndex);
                 const isHeader = item.type === 'header';
@@ -136,8 +136,7 @@ const TeleprompterSidebar = ({
               })}
             </div>
           </div>
-        </>
-      )}
+        )}
     </div>
   );
 };
