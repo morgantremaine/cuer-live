@@ -1,6 +1,5 @@
 import React from 'react';
 import { RundownItem } from '@/types/rundown';
-import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TeleprompterSidebarProps {
@@ -27,20 +26,26 @@ const TeleprompterSidebar = ({
       "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Collapse/Expand Button - Sleek Design */}
+      {/* Vertical Handle - Drawer Style */}
       <div 
-        className="absolute -right-4 top-1/2 transform -translate-y-1/2 z-10"
+        className="absolute -right-1 top-1/2 transform -translate-y-1/2 z-10"
       >
         <button
           onClick={onToggleCollapse}
-          className="group bg-background/95 backdrop-blur-sm border border-border/50 rounded-full p-2 hover:bg-muted/80 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+          className="group bg-background/90 backdrop-blur-sm border-l border-t border-b border-border/50 rounded-r-lg transition-all duration-300 hover:bg-muted/80 shadow-lg hover:shadow-xl"
+          style={{ 
+            height: '60px',
+            width: '12px',
+            transformOrigin: 'left center'
+          }}
         >
-          <div className="relative w-4 h-4 flex items-center justify-center">
-            <ChevronLeft 
-              className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-300 ${
-                isCollapsed ? 'rotate-180' : 'rotate-0'
-              }`} 
-            />
+          <div className="h-full w-full flex flex-col items-center justify-center space-y-0.5 relative">
+            {/* Grip dots */}
+            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
+            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
+            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
+            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
+            <div className="w-1 h-1 bg-muted-foreground/40 rounded-full group-hover:bg-muted-foreground/70 transition-colors"></div>
           </div>
         </button>
       </div>
