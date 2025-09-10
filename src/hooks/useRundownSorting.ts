@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { SavedRundown } from './useRundownStorage/types';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 
 export type SortOption = 'dateModified' | 'dateCreated' | 'showDate';
 
@@ -61,13 +61,9 @@ export const useRundownSorting = (rundowns: SavedRundown[]): SortingState => {
           const aTimezone = a.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
           const bTimezone = b.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
           
-          // Get current time in each timezone
-          const nowInATimezone = toZonedTime(now, aTimezone);
-          const nowInBTimezone = toZonedTime(now, bTimezone);
-          
           // Get today's date string in each timezone (YYYY-MM-DD format)
-          const todayInA = nowInATimezone.toISOString().split('T')[0];
-          const todayInB = nowInBTimezone.toISOString().split('T')[0];
+          const todayInA = formatInTimeZone(now, aTimezone, 'yyyy-MM-dd');
+          const todayInB = formatInTimeZone(now, bTimezone, 'yyyy-MM-dd');
           
           // Compare show dates to today in their respective timezones
           const aIsToday = a.show_date === todayInA;
