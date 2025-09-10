@@ -48,11 +48,33 @@ export const useRundownAutoscroll = ({
           return;
         }
 
+        // Simple approach: center first, then offset
         targetElement.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
           inline: 'nearest'
         });
+
+        // After scroll completes, add offset to position at 2/3 down from header
+        setTimeout(() => {
+          const containerRect = scrollContainer.getBoundingClientRect();
+          const elementRect = targetElement.getBoundingClientRect();
+          
+          // Calculate desired position: 2/3 down from the top of the container
+          const desiredPosition = containerRect.top + (containerRect.height * 2/3);
+          const currentElementPosition = elementRect.top;
+          
+          // Calculate offset needed
+          const offsetNeeded = currentElementPosition - desiredPosition;
+          
+          if (Math.abs(offsetNeeded) > 5) { // Only adjust if meaningful difference
+            scrollContainer.scrollBy({
+              top: offsetNeeded,
+              behavior: 'smooth'
+            });
+          }
+        }, 100); // Small delay for smooth scroll to mostly complete
+
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
