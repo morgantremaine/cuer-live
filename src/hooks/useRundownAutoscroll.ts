@@ -55,25 +55,26 @@ export const useRundownAutoscroll = ({
           inline: 'nearest'
         });
 
-        // After scroll completes, add offset to position at 2/3 down from header
-        setTimeout(() => {
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const elementRect = targetElement.getBoundingClientRect();
-          
-          // Calculate desired position: 2/3 down from the top of the container
-          const desiredPosition = containerRect.top + (containerRect.height * 2/3);
-          const currentElementPosition = elementRect.top;
-          
-          // Calculate offset needed
-          const offsetNeeded = currentElementPosition - desiredPosition;
-          
-          if (Math.abs(offsetNeeded) > 5) { // Only adjust if meaningful difference
-            scrollContainer.scrollBy({
-              top: offsetNeeded,
-              behavior: 'smooth'
-            });
-          }
-        }, 100); // Small delay for smooth scroll to mostly complete
+        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
+              || scrollContainer;
+
+            const viewportRect = viewport.getBoundingClientRect();
+            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+
+            // Desired position: 2/3 down from the top of the viewport
+            const desiredTop = viewportRect.top + (viewportRect.height * 2 / 3);
+            const offsetNeeded = elementRect.top - desiredTop;
+
+            if (Math.abs(offsetNeeded) > 4) {
+              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+            }
+          });
+        });
 
         lastScrolledSegmentRef.current = currentSegmentId;
       }
