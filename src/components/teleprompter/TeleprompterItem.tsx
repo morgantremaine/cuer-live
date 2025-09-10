@@ -203,15 +203,13 @@ const TeleprompterItem = ({
             style={scriptStyles}
           >
             {isNullItem ? (
-              // Never show placeholder in fullscreen mode
-              (canEdit && !isFullscreen) ? (
+              canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             ) : item.script ? (
               renderedScript
             ) : (
-              // Never show placeholder in fullscreen mode
-              (canEdit && !isFullscreen) ? (
+              canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
               ) : null
             )}
