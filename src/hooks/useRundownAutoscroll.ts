@@ -146,23 +146,24 @@ export const useRundownAutoscroll = ({
         // Calculate element position accounting for zoom
         const containerRect = container.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
-        const visualDeltaTop = elementRect.top - containerRect.top;
-        const unscaledDeltaTop = visualDeltaTop / scaleY;
+        const visualDeltaTop = elementRect.top - containerRect.top; // in visual px
+        const unscaledDeltaTop = visualDeltaTop / scaleY; // convert to unscaled scroll units
         const elementTopUnscaled = container.scrollTop + unscaledDeltaTop;
         const elementCenterUnscaled = elementTopUnscaled + element.offsetHeight / 2;
 
         // Position at top third of visible content area (below header)
         const anchorPosition = 1 / 3;
-        const visibleContentHeight = container.clientHeight - headerHeight;
-        const targetViewportY = headerHeight + visibleContentHeight * anchorPosition;
+        const visibleContentHeightVisual = container.clientHeight - headerHeight; // visual px
+        const targetViewportYVisual = headerHeight + visibleContentHeightVisual * anchorPosition; // visual px
+        const targetViewportYUnscaled = targetViewportYVisual / scaleY; // convert to unscaled units
 
-        // Calculate desired scroll position for center positioning
-        let desiredScrollTop = elementCenterUnscaled - targetViewportY;
+        // Calculate desired scroll position for center positioning (all in unscaled units)
+        let desiredScrollTop = elementCenterUnscaled - targetViewportYUnscaled;
         
-        // For tall rows, ensure the top is never below the header
-        // The element top should be positioned just below the header
-        const elementTopPosition = elementTopUnscaled - headerHeight;
-        const isTallRow = element.offsetHeight > visibleContentHeight * 0.5; // If row takes up more than 50% of viewport
+        // For tall rows, ensure the top is never below the header (convert header height to unscaled units)
+        const headerHeightUnscaled = headerHeight / scaleY;
+        const elementTopPosition = elementTopUnscaled - headerHeightUnscaled;
+        const isTallRow = element.offsetHeight > visibleContentHeightVisual * 0.5; // heuristic in visual px
         
         if (isTallRow || desiredScrollTop > elementTopPosition) {
           desiredScrollTop = elementTopPosition;
@@ -171,18 +172,20 @@ export const useRundownAutoscroll = ({
         const maxScroll = container.scrollHeight - container.clientHeight;
         desiredScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
 
-        console.log('🔄 Detailed scroll calculation:', {
+        console.log('🔄 Detailed scroll calculation (scale-aware):', {
           elementHeight: element.offsetHeight,
           elementTopUnscaled,
           elementCenterUnscaled,
-          visibleContentHeight,
-          targetViewportY,
+          visibleContentHeightVisual,
+          targetViewportYVisual,
+          targetViewportYUnscaled,
+          headerHeightUnscaled,
           isTallRow,
           elementTopPosition,
           desiredScrollTop,
           currentScrollTop: container.scrollTop,
           maxScroll,
-          willUseFallback: isTallRow || (elementCenterUnscaled - targetViewportY) > elementTopPosition
+          willUseTopAlign: isTallRow || (elementCenterUnscaled - targetViewportYUnscaled) > elementTopPosition
         });
 
         container.scrollTo({
