@@ -27,21 +27,6 @@ const TeleprompterSidebar = ({
       "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {/* Top Panel Toggle Button */}
-      <div className="flex justify-between items-center p-2 border-b border-border">
-        <button
-          onClick={onToggleCollapse}
-          className="p-2 rounded-md hover:bg-muted transition-colors duration-200"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? (
-            <PanelLeftOpen className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-      </div>
-
       {/* Content */}
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto min-h-0 pt-4">
