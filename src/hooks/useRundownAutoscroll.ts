@@ -143,7 +143,21 @@ export const useRundownAutoscroll = ({
           }
         });
 
-        // Compute element absolute offset within scroll container (in scroll units - layout px)
+        // EXTREMELY DETAILED LOGGING FOR DEBUGGING
+        console.log('🔍 DETAILED DEBUG - Starting autoscroll calculation for:', currentSegmentId);
+        
+        // Log initial state
+        console.log('🔍 Initial state:', {
+          containerScrollTop: container.scrollTop,
+          containerClientHeight: container.clientHeight,
+          containerScrollHeight: container.scrollHeight,
+          headerHeight,
+          scaleY,
+          elementId: element.id,
+          elementClassName: element.className
+        });
+
+        // Method 1: offsetTop approach (what we just tried)
         const computeOffsetTop = (el: HTMLElement, containerEl: HTMLElement) => {
           let offset = 0;
           let node: HTMLElement | null = el;
@@ -155,27 +169,51 @@ export const useRundownAutoscroll = ({
         };
         const elementOffsetTop = computeOffsetTop(element, container);
         
-        // Anchor target: header + 1/3 of remaining viewport (visual px) converted to scroll units
-        const anchorVisualY = headerHeight + (container.clientHeight - headerHeight) / 3;
-        const anchorScrollUnits = anchorVisualY / (scaleY || 1);
+        // Method 2: getBoundingClientRect approach (what worked before)
+        const elementRect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const elementVisualTop = elementRect.top;
+        const containerVisualTop = containerRect.top;
+        const elementRelativeToContainer = elementVisualTop - containerVisualTop;
+        const elementScrollPosition = container.scrollTop + elementRelativeToContainer / scaleY;
         
-        // Desired scrollTop so element's top sits at the anchor line
-        const desiredScrollTop = elementOffsetTop - anchorScrollUnits;
-        
-        // Ensure we don't scroll beyond bounds (all in scroll units)
-        const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-        const finalScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
+        console.log('🔍 Element positioning methods comparison:', {
+          method1_offsetTop: elementOffsetTop,
+          method2_scrollPosition: elementScrollPosition,
+          elementRect: { top: elementRect.top, bottom: elementRect.bottom, height: elementRect.height },
+          containerRect: { top: containerRect.top, bottom: containerRect.bottom, height: containerRect.height },
+          elementRelativeToContainer,
+          currentVisualDistance: elementVisualTop - containerVisualTop
+        });
 
-        console.log('🔄 Anchor-based scroll calculation:', {
-          scaleY,
-          headerHeight,
-          containerClientHeight: container.clientHeight,
-          elementOffsetTop,
-          anchorVisualY,
-          anchorScrollUnits,
-          desiredScrollTop,
+        // Calculate target positions for both methods
+        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3;
+        const targetScrollUnits = targetVisualY / scaleY;
+        
+        const method1_scrollTop = elementOffsetTop - targetScrollUnits;
+        const method2_scrollTop = elementScrollPosition - targetVisualY / scaleY;
+        
+        console.log('🔍 Target positioning calculations:', {
+          targetVisualY,
+          targetScrollUnits,
+          visibleAreaHeight: container.clientHeight - headerHeight,
+          targetOffsetFromHeader: (container.clientHeight - headerHeight) / 3,
+          method1_desiredScrollTop: method1_scrollTop,
+          method2_desiredScrollTop: method2_scrollTop,
+          difference: Math.abs(method1_scrollTop - method2_scrollTop)
+        });
+
+        // Use the method that worked before (method 2) but with better bounds checking
+        const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+        const finalScrollTop = Math.max(0, Math.min(method2_scrollTop, maxScroll));
+        
+        console.log('🔍 Final scroll decision:', {
+          chosenMethod: 'method2_boundingClientRect',
           finalScrollTop,
-          currentScrollTop: container.scrollTop
+          maxScroll,
+          willScrollTo: finalScrollTop,
+          scrollChange: finalScrollTop - container.scrollTop,
+          elementWillBeAt: targetVisualY + ' px from container top (visual)'
         });
 
         container.scrollTo({
