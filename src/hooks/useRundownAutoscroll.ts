@@ -135,7 +135,12 @@ export const useRundownAutoscroll = ({
           headerHeight,
           scaleY,
           zoomContainer: !!zoomContainer,
-          headerWrapper: !!headerWrapper
+          headerWrapper: !!headerWrapper,
+          containerInfo: {
+            scrollTop: container.scrollTop,
+            clientHeight: container.clientHeight,
+            scrollHeight: container.scrollHeight
+          }
         });
 
         // Calculate element position accounting for zoom
@@ -148,24 +153,36 @@ export const useRundownAutoscroll = ({
 
         // Position at top third of visible content area (below header)
         const anchorPosition = 1 / 3;
-        const targetViewportY = headerHeight + (container.clientHeight - headerHeight) * anchorPosition;
+        const visibleContentHeight = container.clientHeight - headerHeight;
+        const targetViewportY = headerHeight + visibleContentHeight * anchorPosition;
 
         // Calculate desired scroll position for center positioning
         let desiredScrollTop = elementCenterUnscaled - targetViewportY;
         
         // For tall rows, ensure the top is never below the header
+        // The element top should be positioned just below the header
         const elementTopPosition = elementTopUnscaled - headerHeight;
-        if (desiredScrollTop > elementTopPosition) {
+        const isTallRow = element.offsetHeight > visibleContentHeight * 0.5; // If row takes up more than 50% of viewport
+        
+        if (isTallRow || desiredScrollTop > elementTopPosition) {
           desiredScrollTop = elementTopPosition;
         }
+        
         const maxScroll = container.scrollHeight - container.clientHeight;
         desiredScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
 
-        console.log('🔄 Scrolling to position:', {
+        console.log('🔄 Detailed scroll calculation:', {
+          elementHeight: element.offsetHeight,
+          elementTopUnscaled,
           elementCenterUnscaled,
+          visibleContentHeight,
           targetViewportY,
+          isTallRow,
+          elementTopPosition,
           desiredScrollTop,
-          currentScrollTop: container.scrollTop
+          currentScrollTop: container.scrollTop,
+          maxScroll,
+          willUseFallback: isTallRow || (elementCenterUnscaled - targetViewportY) > elementTopPosition
         });
 
         container.scrollTo({
