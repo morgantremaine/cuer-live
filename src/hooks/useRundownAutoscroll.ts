@@ -187,7 +187,7 @@ export const useRundownAutoscroll = ({
         });
 
         // Calculate target positions for both methods
-        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3;
+        const targetVisualY = headerHeight + (container.clientHeight - headerHeight) / 3; // 1/3 below header
         const targetScrollUnits = targetVisualY / scaleY;
         
         const method1_scrollTop = elementOffsetTop - targetScrollUnits;
@@ -203,23 +203,55 @@ export const useRundownAutoscroll = ({
           difference: Math.abs(method1_scrollTop - method2_scrollTop)
         });
 
-        // Use the method that worked before (method 2) but with better bounds checking
+        // Choose method 2 (more stable with transforms) with hard snap + corrective pass
         const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-        const finalScrollTop = Math.max(0, Math.min(method2_scrollTop, maxScroll));
-        
-        console.log('🔍 Final scroll decision:', {
-          chosenMethod: 'method2_boundingClientRect',
-          finalScrollTop,
-          maxScroll,
-          willScrollTo: finalScrollTop,
-          scrollChange: finalScrollTop - container.scrollTop,
-          elementWillBeAt: targetVisualY + ' px from container top (visual)'
+        const initialScrollTop = Math.max(0, Math.min(method2_scrollTop, maxScroll));
+        container.scrollTop = initialScrollTop; // immediate snap for deterministic measurement
+
+        console.log('🔍 Phase 1 (snap) applied:', {
+          initialScrollTop,
+          maxScroll
         });
 
-        container.scrollTo({
-          top: finalScrollTop,
-          behavior: 'smooth'
-        });
+        // Phase 2: corrective alignment loop (handles dynamic row height/virtualization changes)
+        let attempts = 0;
+        const maxAttempts = 3;
+        const align = () => {
+          try {
+            const r = element.getBoundingClientRect();
+            const c = container.getBoundingClientRect();
+            const currentVisualTop = r.top - c.top; // px
+            const deltaVisual = currentVisualTop - targetVisualY; // px; positive => element too low
+
+            console.log('🔍 Phase 2 attempt', attempts + 1, {
+              currentVisualTop,
+              targetVisualY,
+              deltaVisual,
+              currentScrollTop: container.scrollTop
+            });
+
+            if (Math.abs(deltaVisual) <= 1 || attempts >= maxAttempts) {
+              console.log('✅ Alignment complete', {
+                finalScrollTop: container.scrollTop,
+                attempts
+              });
+              lastScrolledSegmentRef.current = currentSegmentId;
+              return;
+            }
+
+            // Apply corrective scroll in scroll units
+            const correction = deltaVisual / scaleY;
+            let corrected = container.scrollTop + correction;
+            corrected = Math.max(0, Math.min(corrected, maxScroll));
+            container.scrollTop = corrected;
+            attempts += 1;
+            requestAnimationFrame(align);
+          } catch (err) {
+            console.warn('🔄 Corrective alignment failed:', err);
+            lastScrolledSegmentRef.current = currentSegmentId;
+          }
+        };
+        requestAnimationFrame(align);
         lastScrolledSegmentRef.current = currentSegmentId;
       } else {
         console.warn('🔄 Target element not found for:', currentSegmentId);
