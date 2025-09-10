@@ -179,7 +179,7 @@ const ColumnList = ({
         onDragLeave={handleDragLeave}
       >
         {columns.map((column, index) => (
-          <React.Fragment key={column.id}>
+          <div key={column.id}>
             {dropTargetIndex === index && (
               <div className="h-0.5 bg-blue-500 mx-2 rounded-full" />
             )}
@@ -259,7 +259,7 @@ const ColumnList = ({
             {dropTargetIndex === columns.length && index === columns.length - 1 && (
               <div className="h-0.5 bg-blue-500 mx-2 rounded-full" />
             )}
-          </React.Fragment>
+          </div>
         ))}
       </div>
 
