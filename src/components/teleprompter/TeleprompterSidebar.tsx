@@ -75,13 +75,13 @@ const TeleprompterSidebar = ({
 
   return (
     <div className={cn(
-      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
+      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative overflow-hidden",
       isCollapsed ? "w-12" : "w-80"
     )}>
       {!isCollapsed ? (
         <>
           {/* Fixed search bar */}
-          <div className="px-2 py-3 border-b border-border bg-background shrink-0">
+          <div className="px-2 py-3 border-b border-border bg-background flex-shrink-0">
             <Input
               type="text"
               placeholder="Jump to item #"
@@ -92,8 +92,8 @@ const TeleprompterSidebar = ({
             />
           </div>
           
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Scrollable content - this is the ONLY scrollable area */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="p-2 space-y-1">
               {items.map((item) => {
                 const rowNumber = getRowNumber(item.originalIndex);
