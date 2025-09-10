@@ -75,14 +75,14 @@ const TeleprompterSidebar = ({
 
   return (
     <div className={cn(
-      "bg-background border-r border-border transition-all duration-300 flex flex-col overflow-hidden",
-      "h-[calc(100vh-73px)]", // Account for the 73px top offset from controls
+      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen relative",
       isCollapsed ? "w-12" : "w-80"
     )}>
-      {!isCollapsed ? (
+      {/* Content */}
+      {!isCollapsed && (
         <>
           {/* Fixed search bar */}
-          <div className="px-2 py-3 border-b border-border bg-background flex-shrink-0">
+          <div className="px-2 py-3 border-b border-border bg-background">
             <Input
               type="text"
               placeholder="Jump to item #"
@@ -93,8 +93,8 @@ const TeleprompterSidebar = ({
             />
           </div>
           
-          {/* Scrollable content - this is the ONLY scrollable area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-2 space-y-1">
               {items.map((item) => {
                 const rowNumber = getRowNumber(item.originalIndex);
@@ -137,7 +137,7 @@ const TeleprompterSidebar = ({
             </div>
           </div>
         </>
-      ) : null}
+      )}
     </div>
   );
 };
