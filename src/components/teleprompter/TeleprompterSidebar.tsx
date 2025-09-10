@@ -24,11 +24,11 @@ const TeleprompterSidebar = ({
 
   return (
     <div className={cn(
-      "bg-background border-r border-border transition-all duration-300 flex flex-col",
+      "bg-background border-r border-border transition-all duration-300 flex flex-col h-screen",
       isCollapsed ? "w-12" : "w-80"
     )}>
       {/* Header */}
-      <div className="h-[73px] border-b border-border flex items-center justify-between px-4">
+      <div className="h-[73px] border-b border-border flex items-center justify-between px-4 flex-shrink-0">
         {!isCollapsed && (
           <h2 className="text-sm font-medium text-foreground">Script Navigation</h2>
         )}
@@ -46,7 +46,7 @@ const TeleprompterSidebar = ({
 
       {/* Content */}
       {!isCollapsed && (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-2 space-y-1">
             {items.map((item) => {
               const rowNumber = getRowNumber(item.originalIndex);
