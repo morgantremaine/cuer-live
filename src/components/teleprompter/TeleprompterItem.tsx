@@ -203,13 +203,17 @@ const TeleprompterItem = ({
             {isNullItem ? (
               canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-              ) : null
+              ) : (
+                <span className={`opacity-50 italic ${getFontWeight()} font-sans`}>[No script content]</span>
+              )
             ) : item.script ? (
               renderedScript
             ) : (
               canEdit ? (
                 <span className={`text-gray-500 italic ${getFontWeight()} font-sans`}>Click to add script content...</span>
-              ) : null
+              ) : (
+                <span className={`opacity-50 italic ${getFontWeight()} font-sans`}>[No script content]</span>
+              )
             )}
           </div>
           
