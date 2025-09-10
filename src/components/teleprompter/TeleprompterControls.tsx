@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Plus, Minus, Play, Pause, RotateCcw, Maximize, Type, Printer, List, Bold } from 'lucide-react';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface TeleprompterControlsProps {
   isScrolling: boolean;
@@ -49,12 +48,10 @@ const TeleprompterControls = ({
   };
 
   return (
-    <div className="bg-gray-900 border-b border-gray-700 px-4 py-2 z-40">
+    <div className="fixed top-0 left-0 right-0 z-10 bg-black bg-opacity-90 border-b border-gray-700 p-4">
       <div className="flex justify-between items-center">
         {/* Left controls */}
         <div className="flex items-center space-x-4">
-          <SidebarTrigger className="text-white hover:bg-gray-800 p-2 rounded" />
-          
           <button
             onClick={onToggleScrolling}
             className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm w-28"

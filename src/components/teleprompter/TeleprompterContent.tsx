@@ -14,7 +14,6 @@ interface TeleprompterContentProps {
   getRowNumber: (index: number) => string;
   onUpdateScript?: (itemId: string, newScript: string) => void;
   canEdit?: boolean;
-  hasSidebar?: boolean;
 }
 
 const TeleprompterContent = ({
@@ -26,8 +25,7 @@ const TeleprompterContent = ({
   isBold,
   getRowNumber,
   onUpdateScript,
-  canEdit = false,
-  hasSidebar = false
+  canEdit = false
 }: TeleprompterContentProps) => {
   return (
     <div className={`relative ${isFullscreen ? 'cursor-none' : ''}`}>
@@ -49,7 +47,7 @@ const TeleprompterContent = ({
       <div
         ref={containerRef}
         data-teleprompter-container
-        className={`h-screen overflow-y-auto scrollbar-hide ${hasSidebar ? 'mx-12' : 'mx-20'}`}
+        className="h-screen overflow-y-auto scrollbar-hide mx-20"
         style={{ 
           paddingTop: isFullscreen ? '20vh' : '120px', 
           paddingBottom: '80vh' 
@@ -66,7 +64,6 @@ const TeleprompterContent = ({
               getRowNumber={getRowNumber}
               onUpdateScript={onUpdateScript}
               canEdit={canEdit}
-              data-item-id={item.id}
             />
           ))}
         </div>
