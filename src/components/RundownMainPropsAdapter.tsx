@@ -6,6 +6,7 @@ import RealtimeStatusIndicator from './RealtimeStatusIndicator';
 import FindReplaceDialog from './FindReplaceDialog';
 import { RundownContainerProps } from '@/types/rundownContainer';
 import { CSVExportData } from '@/utils/csvExport';
+import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 
 interface RundownMainPropsAdapterProps {
   props: RundownContainerProps;
@@ -13,6 +14,7 @@ interface RundownMainPropsAdapterProps {
 
 const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   const [showFindReplace, setShowFindReplace] = useState(false);
+  const { savedLayouts } = useColumnLayoutStorage(); // Add this hook here
   
   const {
     currentTime,
@@ -171,6 +173,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
           {...props}
           currentSegmentName={currentSegmentName}
           totalDuration={totalRuntime}
+          savedLayouts={savedLayouts}
         />
       </div>
       

@@ -8,6 +8,7 @@ import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
 interface RundownMainContentProps extends RundownContainerProps {
   currentSegmentName: string;
   totalDuration: string;
+  savedLayouts: any[]; // Add savedLayouts as a prop
 }
 
 const RundownMainContent = ({
@@ -27,9 +28,11 @@ const RundownMainContent = ({
   totalDuration,
   autoScrollEnabled,
   onToggleAutoScroll,
+  savedLayouts, // Accept savedLayouts as prop
   ...contentProps
 }: RundownMainContentProps) => {
-  const { savedLayouts } = useColumnLayoutStorage();
+  // Get layout operations for ColumnManager 
+  const layoutOperations = useColumnLayoutStorage();
 
   return (
     <>
@@ -62,6 +65,8 @@ const RundownMainContent = ({
         onLoadLayout={handleLoadLayout}
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
+        savedLayouts={savedLayouts}
+        layoutOperations={layoutOperations}
       />
     </>
   );

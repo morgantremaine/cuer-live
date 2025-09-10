@@ -20,6 +20,15 @@ interface ColumnManagerProps {
   debugColumns?: () => void;
   resetToDefaults?: () => void;
   isOpen: boolean;
+  savedLayouts?: any[]; // Add savedLayouts prop
+  layoutOperations?: {  // Add layout operations prop
+    saveLayout: (name: string, columns: Column[]) => Promise<void>;
+    updateLayout: (id: string, name: string, columns: Column[]) => Promise<void>;
+    renameLayout: (id: string, newName: string) => Promise<void>;
+    deleteLayout: (id: string) => Promise<void>;
+    canEditLayout: (layout: any) => boolean;
+    loading: boolean;
+  };
 }
 
 const ColumnManager = ({ 
@@ -33,17 +42,22 @@ const ColumnManager = ({
   onClose,
   debugColumns,
   resetToDefaults,
-  isOpen
+  isOpen,
+  savedLayouts = [],
+  layoutOperations
 }: ColumnManagerProps) => {
+  // Use provided layout operations or fallback to hook
+  const hookOperations = useColumnLayoutStorage();
+  const operations = layoutOperations || hookOperations;
+  
   const { 
-    savedLayouts, 
-    loading, 
     saveLayout, 
     updateLayout, 
     renameLayout, 
     deleteLayout,
-    canEditLayout
-  } = useColumnLayoutStorage();
+    canEditLayout,
+    loading
+  } = operations;
 
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [size, setSize] = useState({ width: 800, height: 600 }); // Wider initial size for two-column layout
