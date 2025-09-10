@@ -143,14 +143,21 @@ export const useRundownAutoscroll = ({
         const elementRect = element.getBoundingClientRect();
         const visualDeltaTop = elementRect.top - containerRect.top;
         const unscaledDeltaTop = visualDeltaTop / scaleY;
-        const elementCenterUnscaled = container.scrollTop + unscaledDeltaTop + element.offsetHeight / 2;
+        const elementTopUnscaled = container.scrollTop + unscaledDeltaTop;
+        const elementCenterUnscaled = elementTopUnscaled + element.offsetHeight / 2;
 
         // Position at top third of visible content area (below header)
         const anchorPosition = 1 / 3;
         const targetViewportY = headerHeight + (container.clientHeight - headerHeight) * anchorPosition;
 
-        // Calculate desired scroll position
+        // Calculate desired scroll position for center positioning
         let desiredScrollTop = elementCenterUnscaled - targetViewportY;
+        
+        // For tall rows, ensure the top is never below the header
+        const elementTopPosition = elementTopUnscaled - headerHeight;
+        if (desiredScrollTop > elementTopPosition) {
+          desiredScrollTop = elementTopPosition;
+        }
         const maxScroll = container.scrollHeight - container.clientHeight;
         desiredScrollTop = Math.max(0, Math.min(desiredScrollTop, maxScroll));
 
