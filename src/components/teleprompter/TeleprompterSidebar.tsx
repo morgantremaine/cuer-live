@@ -28,11 +28,38 @@ const TeleprompterSidebar = ({
   const handleJumpToItem = (itemNumber: string) => {
     if (!itemNumber.trim()) return;
     
-    // Find the item with the exact matching row number
-    const targetItem = items.find(item => {
+    const searchNumber = parseInt(itemNumber.trim());
+    if (isNaN(searchNumber)) return;
+    
+    // First try to find exact match
+    let targetItem = items.find(item => {
       const rowNumber = getRowNumber(item.originalIndex);
-      return rowNumber === itemNumber.trim();
+      return parseInt(rowNumber) === searchNumber;
     });
+    
+    // If no exact match, find the nearest item (preferably the highest number below the search)
+    if (!targetItem) {
+      let bestMatch: typeof items[0] | null = null;
+      let closestDistance = Infinity;
+      
+      items.forEach(item => {
+        const rowNumber = getRowNumber(item.originalIndex);
+        const itemNum = parseInt(rowNumber);
+        if (!isNaN(itemNum)) {
+          const distance = Math.abs(itemNum - searchNumber);
+          // Prefer items with numbers below the search target
+          const isBetter = distance < closestDistance || 
+                          (distance === closestDistance && itemNum < searchNumber);
+          
+          if (isBetter) {
+            closestDistance = distance;
+            bestMatch = item;
+          }
+        }
+      });
+      
+      targetItem = bestMatch;
+    }
     
     if (targetItem) {
       handleItemClick(targetItem.id);
