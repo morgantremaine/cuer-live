@@ -25,6 +25,8 @@ import {
   Trash2,
   ChevronRight,
   ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
   Search,
   X
 } from 'lucide-react';
@@ -250,7 +252,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           onClick={onToggleCollapse}
           className="text-gray-400 hover:text-white hover:bg-gray-800"
         >
-          <ChevronRight className="h-4 w-4" />
+          <PanelLeftOpen className="h-4 w-4" />
         </Button>
         <div className="mt-4 space-y-2">
           {systemFolders.map((folder) => {
@@ -305,7 +307,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           onClick={onToggleCollapse}
           className="text-gray-400 hover:text-white hover:bg-gray-800"
         >
-          <ChevronDown className="h-4 w-4" />
+          <PanelLeftClose className="h-4 w-4" />
         </Button>
       </div>
 
