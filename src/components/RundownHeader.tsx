@@ -309,7 +309,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
           </div>
         </div>
         
@@ -388,7 +388,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
               </>
               )}
             </div>
@@ -523,7 +523,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
           </>
           )}
           </div>
