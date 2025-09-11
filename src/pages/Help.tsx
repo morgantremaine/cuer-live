@@ -189,7 +189,7 @@ const Help = () => {
                   <AnimatedWifiIcon className="text-blue-500 flex-shrink-0" isAnimating={true} />
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">Receiving Team Updates (Blue Animated Wifi)</h3>
-                    <p className="text-sm">Changes from a teammate are being applied to your rundown. This ensures everyone stays in sync.</p>
+                    <p className="text-sm">A teammate made a change that resulted in an autosave. This ensures everyone stays in sync.</p>
                   </div>
                 </div>
 
