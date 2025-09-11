@@ -79,7 +79,8 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   };
 
   // Don't show indicators if changes are only column-related, unless we're flashing "Saved"
-  if (!hasContentChanges && !showTemporarySaved && !showSaved) {
+  // Allow teammate editing indicator to show regardless
+  if (!hasContentChanges && !showTemporarySaved && !showSaved && !isTeammateEditing) {
     return null;
   }
 
