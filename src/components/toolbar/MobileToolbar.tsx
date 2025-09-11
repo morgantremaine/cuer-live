@@ -33,6 +33,7 @@ interface MobileToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
 }
@@ -59,6 +60,7 @@ const MobileToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
+  onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes
 }: MobileToolbarProps) => {
@@ -96,6 +98,7 @@ const MobileToolbar = ({
                 rundownData={rundownData}
                 autoScrollEnabled={autoScrollEnabled}
                 onToggleAutoScroll={onToggleAutoScroll}
+                onJumpToCurrentSegment={onJumpToCurrentSegment}
                 // Pass playback controls for mobile
                 isPlaying={isPlaying}
                 currentSegmentId={currentSegmentId}

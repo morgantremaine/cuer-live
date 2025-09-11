@@ -28,6 +28,7 @@ interface DesktopToolbarProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
   // Zoom controls
@@ -62,6 +63,7 @@ const DesktopToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
+  onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes,
   // Zoom props
@@ -110,6 +112,7 @@ const DesktopToolbar = ({
             size="sm"
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={onToggleAutoScroll}
+            onJumpToCurrentSegment={onJumpToCurrentSegment}
           />
         </div>
 

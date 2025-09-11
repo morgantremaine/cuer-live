@@ -47,6 +47,7 @@ interface RundownHeaderSectionProps {
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onJumpToCurrentSegment?: () => void;
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
@@ -103,6 +104,7 @@ const RundownHeaderSection = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
+  onJumpToCurrentSegment,
   onUpdateItem,
   onShowFindReplace,
   onShowNotes,
@@ -167,6 +169,7 @@ const RundownHeaderSection = ({
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
+        onJumpToCurrentSegment={onJumpToCurrentSegment}
         onShowFindReplace={onShowFindReplace}
         onShowNotes={onShowNotes}
         // Zoom controls

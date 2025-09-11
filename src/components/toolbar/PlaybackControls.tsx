@@ -17,6 +17,7 @@ interface PlaybackControlsProps {
   size?: 'sm' | 'default';
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onJumpToCurrentSegment?: () => void;
 }
 
 const PlaybackControls = ({
@@ -31,7 +32,8 @@ const PlaybackControls = ({
   onReset,
   size = 'default',
   autoScrollEnabled = false,
-  onToggleAutoScroll
+  onToggleAutoScroll,
+  onJumpToCurrentSegment
 }: PlaybackControlsProps) => {
   const [hasBeenStarted, setHasBeenStarted] = useState(false);
   const [lastSegmentId, setLastSegmentId] = useState<string | null>(null);
@@ -130,7 +132,13 @@ const PlaybackControls = ({
         <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ml-2 ${
           size === 'sm' ? 'h-9' : 'h-10'
         }`}>
-          <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+          <div 
+            className="cursor-pointer" 
+            onClick={onJumpToCurrentSegment}
+            title="Jump to current segment"
+          >
+            <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-gray-400 hover:text-gray-500'}`} />
+          </div>
           <Switch
             checked={autoScrollEnabled}
             onCheckedChange={handleToggleAutoScroll}

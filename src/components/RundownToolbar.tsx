@@ -35,6 +35,7 @@ interface RundownToolbarProps {
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
+  onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
   // Zoom controls
@@ -69,6 +70,7 @@ const RundownToolbar = ({
   rundownData,
   autoScrollEnabled,
   onToggleAutoScroll,
+  onJumpToCurrentSegment,
   onShowFindReplace,
   onShowNotes,
   // Zoom props
@@ -104,6 +106,7 @@ const RundownToolbar = ({
       rundownData,
       autoScrollEnabled,
       onToggleAutoScroll,
+      onJumpToCurrentSegment,
       onShowFindReplace,
       onShowNotes,
       zoomLevel,

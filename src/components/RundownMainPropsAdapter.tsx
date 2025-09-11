@@ -109,6 +109,21 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   // Calculate current segment name for RundownMainContent
   const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
 
+  // Function to manually scroll to current segment
+  const handleJumpToCurrentSegment = () => {
+    if (!currentSegmentId) return;
+    
+    // Find the element with the current segment ID
+    const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar Section */}
@@ -155,6 +170,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={onToggleAutoScroll}
+        onJumpToCurrentSegment={handleJumpToCurrentSegment}
         onUpdateItem={onUpdateItem}
         onShowFindReplace={() => setShowFindReplace(true)}
         onShowNotes={onShowNotes}
