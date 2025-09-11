@@ -34,7 +34,7 @@ const CuerChatPanel = ({ isOpen, onClose, rundownData, modDeps }: CuerChatPanelP
   const { applyModifications } = useCuerModifications(modDeps);
   
   const { position, isDragging, dragRef, startDrag } = useDraggable({
-    initialPosition: { x: window.innerWidth - 420, y: window.innerHeight - 640 },
+    initialPosition: { x: window.innerWidth - 400, y: window.innerHeight - 620 },
     storageKey: 'cuerChatPanelPosition'
   });
 
