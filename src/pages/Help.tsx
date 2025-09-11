@@ -188,7 +188,7 @@ const Help = () => {
                 <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded">
                   <AnimatedWifiIcon className="text-blue-500 flex-shrink-0" isAnimating={true} />
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">Receiving Team Updates (Blue Animated Wifi)</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Teammate Autosave (Blue Animated Wifi)</h3>
                     <p className="text-sm">A teammate made a change that resulted in an autosave. This ensures everyone stays in sync.</p>
                   </div>
                 </div>
