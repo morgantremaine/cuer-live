@@ -81,11 +81,12 @@ const RundownHeader = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   
-  // Debug logging for presence tracking
+  // Debug logging for presence tracking and computed display flag
+  const showTeammateEditing = !!(hasActiveTeammates && !isProcessingRealtimeUpdate);
   console.log('🚨 RUNDOWN HEADER DEBUG:', {
     hasActiveTeammates,
     isProcessingRealtimeUpdate,
-    shouldShowTeammateEditing: hasActiveTeammates || isProcessingRealtimeUpdate
+    showTeammateEditing
   });
   const { getUniversalTime } = useUniversalTiming();
   
@@ -309,7 +310,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
           </div>
         </div>
         
@@ -388,7 +389,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
               </>
               )}
             </div>
@@ -523,7 +524,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
           </>
           )}
           </div>
