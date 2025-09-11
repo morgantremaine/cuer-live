@@ -100,22 +100,30 @@ export const SharedRundownHeader = ({
             <div className="flex items-center space-x-2 print:hidden">
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
-                <button
-                  onClick={onToggleAutoScroll}
-                  className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors ${
-                    isDark ? 'border-gray-600' : 'border-gray-300'
-                  } h-9 cursor-pointer`}
-                >
-                  <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                <div className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${
+                  isDark ? 'border-gray-600' : 'border-gray-300'
+                } h-9`}>
+                  <button
+                    onClick={() => {
+                      // Scroll to current showcaller position regardless of toggle state
+                      const currentSegmentElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
+                      if (currentSegmentElement) {
+                        currentSegmentElement.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'center' 
+                        });
+                      }
+                    }}
+                    className="flex items-center hover:bg-accent hover:text-accent-foreground rounded p-1 transition-colors"
+                  >
+                    <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                  </button>
                   <Switch
                     checked={autoScrollEnabled}
-                    onCheckedChange={(checked) => {
-                      // Prevent event bubbling since parent button handles the click
-                      onToggleAutoScroll();
-                    }}
-                    className="scale-75 pointer-events-none"
+                    onCheckedChange={onToggleAutoScroll}
+                    className="scale-75"
                   />
-                </button>
+                </div>
               )}
               
               <Button
