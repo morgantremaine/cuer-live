@@ -483,15 +483,9 @@ export const useSimplifiedRundownState = () => {
         return;
       }
       
-      // Prevent processing if already applying a cell broadcast to avoid loops
-      if (applyingCellBroadcastRef.current) {
-        console.log('📱 Skipping cell broadcast - already processing one');
-        return;
-      }
-      
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
-      // CRITICAL: Set flag to prevent AutoSave triggering and recursive broadcasts
+      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
       
       try {
@@ -609,9 +603,9 @@ export const useSimplifiedRundownState = () => {
             actionsRef.current.loadState({ items: updatedItems });
           }
       } finally {
-        // CRITICAL: Reset flag immediately and add cooldown after applying remote changes
-        applyingCellBroadcastRef.current = false;
+        // CRITICAL: Reset flag and add cooldown after applying remote changes
         setTimeout(() => {
+          applyingCellBroadcastRef.current = false;
           // Add 800ms cooldown to prevent immediate autosave scheduling
           if (cooldownUntilRef.current) {
             cooldownUntilRef.current = Math.max(cooldownUntilRef.current, Date.now() + 800);
@@ -801,8 +795,8 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // Broadcast cell update immediately for Google Sheets-style sync (unless already applying one)
-    if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+    // Broadcast cell update immediately for Google Sheets-style sync
+    if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
     }
     
@@ -1189,8 +1183,8 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
       
-      // Broadcast row removal for immediate realtime sync (unless already applying broadcast)
-      if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+      // Broadcast row removal for immediate realtime sync
+      if (rundownId && currentUserId) {
         cellBroadcast.broadcastCellUpdate(
           rundownId,
           undefined,
@@ -1224,7 +1218,7 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
       
-      if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+      if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
         setTimeout(() => {
           cellBroadcast.broadcastCellUpdate(
@@ -1248,8 +1242,8 @@ export const useSimplifiedRundownState = () => {
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
-        // Broadcast rundown-level property change (unless already applying broadcast)
-        if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+        // Broadcast rundown-level property change
+        if (rundownId && currentUserId) {
           cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
         }
         
@@ -1328,8 +1322,8 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast add at index for immediate realtime sync (unless already applying broadcast)
-    if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+    // Broadcast add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
@@ -1371,8 +1365,8 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast header add at index for immediate realtime sync (unless already applying broadcast)
-    if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+    // Broadcast header add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
@@ -1455,8 +1449,8 @@ export const useSimplifiedRundownState = () => {
       // Simplified: No field tracking needed
       const now = Date.now();
       
-      // Broadcast rundown-level property change (unless already applying broadcast)
-      if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
       }
       
@@ -1470,8 +1464,8 @@ export const useSimplifiedRundownState = () => {
       // Simplified: No field tracking needed
       const now = Date.now();
       
-      // Broadcast rundown-level property change (unless already applying broadcast)
-      if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
       }
       
@@ -1485,8 +1479,8 @@ export const useSimplifiedRundownState = () => {
       // Simplified: No field tracking needed
       const now = Date.now();
       
-      // Broadcast rundown-level property change (unless already applying broadcast)
-      if (rundownId && currentUserId && !applyingCellBroadcastRef.current) {
+      // Broadcast rundown-level property change
+      if (rundownId && currentUserId) {
         cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
       }
       
