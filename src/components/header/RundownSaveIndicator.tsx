@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
 
 interface SaveState {
   isSaving: boolean;
@@ -12,9 +12,10 @@ interface SaveState {
 interface RundownSaveIndicatorProps {
   saveState: SaveState;
   shouldShowSavedFlash?: boolean;
+  isTeammateEditing?: boolean;
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -80,6 +81,16 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash }: RundownSaveIn
   // Don't show indicators if changes are only column-related, unless we're flashing "Saved"
   if (!hasContentChanges && !showTemporarySaved && !showSaved) {
     return null;
+  }
+
+  // Show teammate editing state if teammates are making changes
+  if (isTeammateEditing) {
+    return (
+      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
+        <Users className="h-4 w-4" />
+        <span>Teammate editing...</span>
+      </div>
+    );
   }
 
   if (isSaving) {
