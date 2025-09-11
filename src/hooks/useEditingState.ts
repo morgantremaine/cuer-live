@@ -9,7 +9,6 @@ export const useEditingState = () => {
   const markAsEditing = useCallback(() => {
     if (!isEditing) {
       setIsEditing(true);
-      console.log('🖊️ User started editing');
     }
 
     // Clear existing timeout
@@ -20,7 +19,6 @@ export const useEditingState = () => {
     // Set timeout to stop editing after 3 seconds of inactivity
     timeoutRef.current = setTimeout(() => {
       setIsEditing(false);
-      console.log('✋ User stopped editing');
     }, 3000);
   }, [isEditing]);
 

@@ -44,12 +44,6 @@ export const useUserPresence = ({
   useEffect(() => {
     if (!enabled || !user) return;
 
-    console.log('🟢 Setting up user presence for:', { 
-      userId: user.id, 
-      sessionId: sessionIdRef.current,
-      channelName 
-    });
-
     // Clean up existing channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -71,28 +65,12 @@ export const useUserPresence = ({
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        console.log('🚨 PRESENCE SYNC with all data:', presenceState);
-        
-        // Log each user's detailed presence data
-        Object.entries(presenceState).forEach(([key, presences]) => {
-          presences.forEach((presence: any) => {
-            console.log('🚨 PRESENCE USER DETAIL:', {
-              key,
-              userId: presence.userId,
-              sessionId: presence.sessionId,
-              lastSeen: presence.lastSeen,
-              hasUnsavedChanges: presence.hasUnsavedChanges,
-              fullPresence: presence
-            });
-          });
-        });
         
         // Check for session conflicts (same user, different session)
-    const allPresences = Object.values(presenceState).flat() as any[];
+        const allPresences = Object.values(presenceState).flat() as any[];
         const myPresences = allPresences.filter((p: any) => p.userId === user.id);
         const otherPresences = allPresences.filter((p: any) => p.userId !== user.id);
         
-        console.log('🚨 SETTING otherUsers to:', otherPresences);
         setOtherUsers(otherPresences as UserPresenceState[]);
         
         // If there's more than one session for this user, handle conflict
@@ -119,32 +97,28 @@ export const useUserPresence = ({
         }
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        console.log('👥 User joined:', newPresences);
         const joinedUsers = newPresences as any[];
         
         // Check if someone with same userId joined with different session
         joinedUsers.forEach((presence: any) => {
           if (presence.userId === user.id && presence.sessionId !== sessionIdRef.current) {
             // Another session for this user joined - this session should disconnect
-            console.log('🚫 Another session detected for current user');
             setHasSessionConflict(true);
             onSessionConflict?.();
           }
         });
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        console.log('👋 User left:', leftPresences);
+        // User left
       });
 
     // Subscribe and track presence
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') {
-        console.log('✅ Connected to presence channel');
         setIsConnected(true);
         
         // Track this user's presence
         const trackStatus = await channel.track(userPresence);
-        console.log('📍 Presence track status:', trackStatus);
         
         // Set up heartbeat to update lastSeen
         heartbeatIntervalRef.current = setInterval(async () => {
@@ -159,7 +133,6 @@ export const useUserPresence = ({
         }, 30000); // Update every 30 seconds
         
       } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-        console.log('❌ Presence channel error/closed:', status);
         setIsConnected(false);
       }
     });
@@ -167,7 +140,6 @@ export const useUserPresence = ({
     channelRef.current = channel;
 
     return () => {
-      console.log('🧹 Cleaning up user presence');
       
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
@@ -190,7 +162,6 @@ export const useUserPresence = ({
   useEffect(() => {
     if (!enabled || !user || !channelRef.current || hasSessionConflict) return;
     
-    console.log('🚨 UPDATING PRESENCE with hasUnsavedChanges:', hasUnsavedChanges);
     hasUnsavedRef.current = !!hasUnsavedChanges;
     
     const presenceData = {
@@ -203,7 +174,6 @@ export const useUserPresence = ({
       userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
     };
     
-    console.log('🚨 TRACKING PRESENCE DATA:', presenceData);
     channelRef.current.track(presenceData);
   }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict]);
 
