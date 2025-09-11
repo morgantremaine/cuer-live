@@ -111,17 +111,39 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   // Calculate current segment name for RundownMainContent
   const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
 
-  // Function to manually scroll to current segment
+  // Function to manually scroll to current segment (matches autoscroll behavior)
   const handleJumpToCurrentSegment = () => {
     if (!currentSegmentId) return;
     
     // Find the element with the current segment ID
     const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
     if (targetElement) {
+      // First scroll to center, then apply offset like autoscroll does
       targetElement.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
         inline: 'nearest'
+      });
+
+      // Apply the same offset logic as autoscroll to position at 1/4 down
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement
+            || document.querySelector('[data-scroll-viewport]') as HTMLElement
+            || document.querySelector('.scroll-viewport') as HTMLElement
+            || document.documentElement;
+
+          const viewportRect = scrollContainer.getBoundingClientRect();
+          const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+
+          // Desired position: 1/4 down from the top of the viewport (same as autoscroll)
+          const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+          const offsetNeeded = elementRect.top - desiredTop;
+
+          if (Math.abs(offsetNeeded) > 4) {
+            scrollContainer.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+          }
+        });
       });
     }
   };
