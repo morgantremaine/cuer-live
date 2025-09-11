@@ -472,7 +472,7 @@ export const useSimplifiedRundownState = () => {
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
-    if (!rundownId || !currentUserId) return;
+    if (!rundownId || !currentUserId || !isInitialized) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
       console.log('📱 Cell broadcast received:', update);
@@ -611,7 +611,7 @@ export const useSimplifiedRundownState = () => {
     return () => {
       unsubscribe();
     };
-  }, [rundownId, currentUserId]);
+  }, [rundownId, currentUserId, isInitialized]);
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
