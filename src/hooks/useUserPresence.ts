@@ -71,6 +71,20 @@ export const useUserPresence = ({
         const presenceState = channel.presenceState();
         console.log('🚨 PRESENCE SYNC with all data:', presenceState);
         
+        // Log each user's detailed presence data
+        Object.entries(presenceState).forEach(([key, presences]) => {
+          presences.forEach((presence: any) => {
+            console.log('🚨 PRESENCE USER DETAIL:', {
+              key,
+              userId: presence.userId,
+              sessionId: presence.sessionId,
+              lastSeen: presence.lastSeen,
+              hasUnsavedChanges: presence.hasUnsavedChanges,
+              fullPresence: presence
+            });
+          });
+        });
+        
         // Check for session conflicts (same user, different session)
     const allPresences = Object.values(presenceState).flat() as any[];
         const myPresences = allPresences.filter((p: any) => p.userId === user.id);
