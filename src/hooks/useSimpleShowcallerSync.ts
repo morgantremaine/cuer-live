@@ -44,7 +44,7 @@ export const useSimpleShowcallerSync = ({
   const isLoadingInitialState = useRef<boolean>(false);
   const lastActionTimeRef = useRef<number | null>(null);
   const skipNextSaveRef = useRef<boolean>(false);
-
+  const immediateSave = useRef<(s: SimpleShowcallerState) => void>(() => {});
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
     if (!str) return 0;
@@ -215,27 +215,35 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: targetSegmentId,
       timeRemaining: duration
     });
+    
+    // Persist immediately to avoid losing state on quick refresh
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
   }, [state.currentSegmentId, items, parseDurationToSeconds, buildStatusMap, userId, startControllerTimer, broadcastState]);
 
   const pause = useCallback(() => {
     console.log('📺 Simple: Pause called');
     
-    setState(prev => ({ 
-      ...prev, 
+    const newState = { 
+      ...state, 
       isPlaying: false, 
       isController: true,
       controllerId: userId || null,
       lastUpdate: new Date().toISOString()
-    }));
+    };
+    setState(newState);
     stopTimer();
     
     broadcastState({
       action: 'pause',
       isPlaying: false,
-      currentSegmentId: state.currentSegmentId,
-      timeRemaining: state.timeRemaining
+      currentSegmentId: newState.currentSegmentId,
+      timeRemaining: newState.timeRemaining
     });
-  }, [stopTimer, broadcastState, state.currentSegmentId, state.timeRemaining]);
+    
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
+  }, [state, userId, stopTimer, broadcastState]);
 
   const forward = useCallback(() => {
     if (!state.currentSegmentId) return;
@@ -270,6 +278,10 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: nextSegment.id,
       timeRemaining: duration
     });
+    
+    // Persist immediately
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
     
     console.log('📺 Simple: Forward to:', nextSegment.id);
   }, [state, findNextSegment, parseDurationToSeconds, buildStatusMap, broadcastState]);
@@ -308,6 +320,10 @@ export const useSimpleShowcallerSync = ({
       timeRemaining: duration
     });
     
+    // Persist immediately
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
+    
     console.log('📺 Simple: Backward to:', prevSegment.id);
   }, [state, findPrevSegment, parseDurationToSeconds, buildStatusMap, broadcastState]);
 
@@ -337,6 +353,10 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: targetSegmentId || state.currentSegmentId || null,
       timeRemaining: duration
     });
+    
+    // Persist immediately
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
   }, [userId, stopTimer, broadcastState, state, items, parseDurationToSeconds, buildStatusMap]);
 
   const jumpToSegment = useCallback((segmentId: string) => {
@@ -362,6 +382,10 @@ export const useSimpleShowcallerSync = ({
       currentSegmentId: segmentId,
       timeRemaining: duration
     });
+    
+    // Persist immediately
+    skipNextSaveRef.current = true;
+    immediateSave.current(newState);
     
     console.log('📺 Simple: Jump to:', segmentId);
   }, [items, parseDurationToSeconds, buildStatusMap, state, broadcastState]);
@@ -434,8 +458,8 @@ export const useSimpleShowcallerSync = ({
             }));
           }
         }
-        
-        skipNextSaveRef.current = true;
+        // Only skip if there was a saved currentSegmentId
+        skipNextSaveRef.current = !!(data?.showcaller_state && data.showcaller_state.currentSegmentId);
         hasLoadedInitialState.current = true;
       } catch (error) {
         console.error('📺 Simple: Error loading initial state:', error);
@@ -492,6 +516,11 @@ export const useSimpleShowcallerSync = ({
     }
   }, [rundownId, setShowcallerUpdate]);
 
+  // Keep immediate save ref in sync
+  useEffect(() => {
+    immediateSave.current = saveShowcallerState;
+  }, [saveShowcallerState]);
+
   // Auto-save state changes (debounced)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
@@ -516,6 +545,15 @@ export const useSimpleShowcallerSync = ({
         clearTimeout(saveTimeoutRef.current);
       }
     };
+  }, [state, saveShowcallerState]);
+
+  // Flush pending save on unload to prevent losing state on quick refresh
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try { saveShowcallerState(state); } catch {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [state, saveShowcallerState]);
 
   // Cleanup
