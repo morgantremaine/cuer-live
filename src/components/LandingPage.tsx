@@ -164,12 +164,6 @@ const LandingPage = () => {
               </Button>
             </div>
 
-            {/* Promo Code */}
-            <div className="text-center fade-up">
-              <p className="text-base text-slate-300">
-                Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free on any monthly plan
-              </p>
-            </div>
           </div>
         </div>
 
@@ -538,12 +532,6 @@ const LandingPage = () => {
           onIntervalChange={setPricingInterval}
         />
         
-        {/* Promo Code */}
-        <div className="text-center mt-8 fade-up">
-          <p className="text-base text-slate-300">
-            Use code <code className="bg-slate-800/50 text-blue-300 px-2 py-1 rounded font-mono text-lg border border-slate-700">FREEMONTH</code> to get 1 month free on any monthly plan
-          </p>
-        </div>
       </div>
 
       {/* CTA Section */}
