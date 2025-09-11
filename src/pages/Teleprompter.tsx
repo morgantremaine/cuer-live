@@ -124,6 +124,12 @@ const Teleprompter = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      // Skip own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, user?.id || '')) {
+        console.log('📱 Teleprompter skipping own cell broadcast update');
+        return;
+      }
+
       // Handle structural events for instant collaboration (add/remove/reorder)
       if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
         console.log('📱 Teleprompter applying structural broadcast:', update.field);

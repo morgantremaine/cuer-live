@@ -477,6 +477,12 @@ export const useSimplifiedRundownState = () => {
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
       console.log('📱 Cell broadcast received:', update);
       
+      // Skip our own updates (simplified for single sessions)
+      if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
+        console.log('📱 Skipping own cell broadcast update');
+        return;
+      }
+      
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
