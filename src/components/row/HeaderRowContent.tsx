@@ -61,10 +61,10 @@ const HeaderRowContent = ({
           maxWidth: '64px'
         }}
       >
-        <div className="flex items-center justify-center w-full">
+        <div className="flex items-center justify-center w-full h-full">
           <button
             onClick={handleToggleCollapse}
-            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+            className="flex items-center justify-center p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
             title={isCollapsed ? 'Expand header' : 'Collapse header'}
           >
             {isCollapsed ? (
