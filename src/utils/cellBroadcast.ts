@@ -39,7 +39,7 @@ export class CellBroadcastManager {
 
     const channel = supabase.channel(key, {
       config: {
-        broadcast: { self: true } // receive self messages too (caller can filter)
+        broadcast: { self: false } // Don't receive own messages to prevent loops
       }
     });
 
@@ -154,14 +154,7 @@ export class CellBroadcastManager {
     });
   }
 
-  // Simple echo prevention using userId (single session per user)
-  isOwnUpdate(update: any, currentUserId: string): boolean {
-    const isOwn = update.userId === currentUserId;
-    if (isOwn) {
-      console.log('📱 Identified own cell broadcast update via userId');
-    }
-    return isOwn;
-  }
+  // Simple echo prevention no longer needed since self: false prevents own messages
 
   subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void) {
     if (!this.callbacks.has(rundownId)) {
