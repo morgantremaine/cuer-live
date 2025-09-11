@@ -22,6 +22,7 @@ export class CellBroadcastManager {
   private subscribed = new Map<string, boolean>();
   private reconnectAttempts = new Map<string, number>();
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
+  private lastProcessedUpdate = new Map<string, string>();
   
   constructor() {
     console.log('📱 CellBroadcast initialized (simplified for single sessions)');
@@ -45,8 +46,22 @@ export class CellBroadcastManager {
       .on('broadcast', { event: 'cell_update' }, (payload: { payload: CellUpdate }) => {
         const update = payload?.payload;
         if (!update || update.rundownId !== rundownId) return;
-        // Debug log for diagnostics
-        console.log('📱 Cell broadcast received (simplified):', update);
+        
+        // Deduplication based on content hash
+        const updateKey = `${update.itemId || 'rundown'}-${update.field}-${JSON.stringify(update.value)}-${update.timestamp}`;
+        const lastKey = this.lastProcessedUpdate.get(rundownId);
+        
+        if (lastKey === updateKey) {
+          return; // Skip duplicate update
+        }
+        
+        this.lastProcessedUpdate.set(rundownId, updateKey);
+        
+        // Reduced logging for cell broadcasts - only show unique updates
+        if (lastKey !== updateKey) {
+          console.log('📱 Cell broadcast received (simplified):', update);
+        }
+        
         const cbs = this.callbacks.get(rundownId);
         if (cbs && cbs.size > 0) {
           cbs.forEach(cb => {

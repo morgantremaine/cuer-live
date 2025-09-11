@@ -19,6 +19,8 @@ class ShowcallerBroadcastManager {
   private callbacks: Map<string, Set<(state: ShowcallerBroadcastState) => void>> = new Map();
   private ownUpdateTracking: Map<string, Set<string>> = new Map();
   private connectionStatus: Map<string, string> = new Map();
+  private isReconnecting: Map<string, boolean> = new Map();
+  private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -59,22 +61,45 @@ class ShowcallerBroadcastManager {
 
   // Reconnect channel after error or close
   private reconnectChannel(rundownId: string): void {
+    // Prevent recursive reconnections
+    if (this.isReconnecting.get(rundownId)) {
+      console.log('📺 🔄 Reconnection already in progress for:', rundownId);
+      return;
+    }
+
+    this.isReconnecting.set(rundownId, true);
     console.log('📺 🔄 Attempting to reconnect showcaller broadcast channel:', rundownId);
+    
+    // Clear any existing timeout
+    const existingTimeout = this.reconnectTimeouts.get(rundownId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      this.reconnectTimeouts.delete(rundownId);
+    }
     
     // Clean up existing channel
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
-      supabase.removeChannel(existingChannel);
+      try {
+        supabase.removeChannel(existingChannel);
+      } catch (error) {
+        console.warn('📺 Error removing channel during reconnect:', error);
+      }
       this.channels.delete(rundownId);
     }
     
-    // Recreate channel after delay
-    setTimeout(() => {
+    // Recreate channel after delay with debouncing
+    const timeout = setTimeout(() => {
+      this.reconnectTimeouts.delete(rundownId);
+      this.isReconnecting.set(rundownId, false);
+      
       if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
         console.log('📺 🔄 Recreating showcaller broadcast channel:', rundownId);
         this.ensureChannel(rundownId);
       }
     }, 2000);
+
+    this.reconnectTimeouts.set(rundownId, timeout);
   }
 
   // Broadcast showcaller state change
@@ -148,6 +173,15 @@ class ShowcallerBroadcastManager {
     const channel = this.channels.get(rundownId);
     if (channel) {
       console.log('📺 Cleaning up showcaller broadcast channel:', rundownId);
+      
+      // Clear reconnection state
+      this.isReconnecting.delete(rundownId);
+      const timeout = this.reconnectTimeouts.get(rundownId);
+      if (timeout) {
+        clearTimeout(timeout);
+        this.reconnectTimeouts.delete(rundownId);
+      }
+      
       // Prevent recursive cleanup
       this.channels.delete(rundownId);
       this.callbacks.delete(rundownId);
