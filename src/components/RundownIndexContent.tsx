@@ -88,14 +88,34 @@ const RundownIndexContent = () => {
   });
 
   // Show teammate editing when any teammate is active and has unsaved changes
+  console.log('👥 DEBUG: otherUsers data:', otherUsers.map(user => ({
+    userId: user.userId,
+    lastSeen: user.lastSeen,
+    hasUnsavedChanges: user.hasUnsavedChanges,
+    sessionId: user.sessionId
+  })));
+
   const hasActiveTeammates = otherUsers.some(user => {
     const lastSeen = new Date(user.lastSeen);
     const now = new Date();
     const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
     const isActive = timeDiff < 120; // Active if seen within 2 minutes
     const isEditing = !!user.hasUnsavedChanges;
+    
+    console.log('👥 DEBUG: Teammate check:', {
+      userId: user.userId,
+      lastSeen: user.lastSeen,
+      timeDiff,
+      isActive,
+      hasUnsavedChanges: user.hasUnsavedChanges,
+      isEditing,
+      shouldShow: isActive && isEditing
+    });
+    
     return isActive && isEditing;
   });
+  
+  console.log('👥 DEBUG: Final hasActiveTeammates:', hasActiveTeammates, 'from', otherUsers.length, 'users');
 
   // Get columns from the main state system (no duplicate column management)
   const userColumns = columns;

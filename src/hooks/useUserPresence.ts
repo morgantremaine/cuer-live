@@ -69,13 +69,14 @@ export const useUserPresence = ({
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        console.log('🔄 Presence sync:', presenceState);
+        console.log('🔄 Presence sync with hasUnsavedChanges data:', presenceState);
         
         // Check for session conflicts (same user, different session)
     const allPresences = Object.values(presenceState).flat() as any[];
         const myPresences = allPresences.filter((p: any) => p.userId === user.id);
         const otherPresences = allPresences.filter((p: any) => p.userId !== user.id);
         
+        console.log('👥 DEBUG: Setting otherUsers to:', otherPresences);
         setOtherUsers(otherPresences as UserPresenceState[]);
         
         // If there's more than one session for this user, handle conflict
@@ -171,7 +172,10 @@ export const useUserPresence = ({
   // Update presence immediately when hasUnsavedChanges changes
   useEffect(() => {
     if (!enabled || !user || !channelRef.current || hasSessionConflict) return;
+    
+    console.log('👥 DEBUG: Updating presence with hasUnsavedChanges:', hasUnsavedChanges);
     hasUnsavedRef.current = !!hasUnsavedChanges;
+    
     channelRef.current.track({
       userId: user.id,
       sessionId: sessionIdRef.current,
