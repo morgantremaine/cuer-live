@@ -86,7 +86,7 @@ const SharedRundown = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (simplified for single sessions)
+      // Skip own updates (simplified for single sessions) - now handled early in cellBroadcast
       if (cellBroadcast.isOwnUpdate(update, 'shared-view')) {
         console.log('📱 Shared rundown skipping own cell broadcast update');
         return;

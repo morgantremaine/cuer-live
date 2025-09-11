@@ -24,6 +24,7 @@ export class CellBroadcastManager {
   private reconnectAttempts = new Map<string, number>();
   private reconnectTimeouts = new Map<string, NodeJS.Timeout>();
   private lastProcessedUpdate = new Map<string, string>();
+  private userIds = new Map<string, string>(); // Store userId for early filtering
   
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
@@ -48,7 +49,14 @@ export class CellBroadcastManager {
         const update = payload?.payload;
         if (!update || update.rundownId !== rundownId) return;
         
-        // Deduplication based on content hash
+        // EARLY FILTERING: Skip own messages immediately to prevent memory bloat
+        const currentUserId = this.userIds.get(rundownId);
+        if (currentUserId && update.userId === currentUserId) {
+          // Skip all expensive operations for own messages
+          return;
+        }
+        
+        // Deduplication based on content hash (only for other users' messages)
         const updateKey = `${update.itemId || 'rundown'}-${update.field}-${JSON.stringify(update.value)}-${update.timestamp}`;
         const lastKey = this.lastProcessedUpdate.get(rundownId);
         
@@ -58,9 +66,9 @@ export class CellBroadcastManager {
         
         this.lastProcessedUpdate.set(rundownId, updateKey);
         
-        // Reduced logging for cell broadcasts - only show unique updates
+        // Reduced logging for cell broadcasts - only show unique updates from other users
         if (lastKey !== updateKey) {
-          debugLogger.realtime('Cell broadcast received (simplified):', update);
+          debugLogger.realtime('Cell broadcast received (from other user):', update);
         }
         
         const cbs = this.callbacks.get(rundownId);
@@ -163,11 +171,16 @@ export class CellBroadcastManager {
     return isOwn;
   }
 
-  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void) {
+  subscribeToCellUpdates(rundownId: string, callback: (update: CellUpdate) => void, currentUserId?: string) {
     if (!this.callbacks.has(rundownId)) {
       this.callbacks.set(rundownId, new Set());
     }
     this.callbacks.get(rundownId)!.add(callback);
+
+    // Store userId for early filtering (if provided)
+    if (currentUserId) {
+      this.userIds.set(rundownId, currentUserId);
+    }
 
     // Ensure channel is created and subscribed
     this.ensureChannel(rundownId);
@@ -193,6 +206,9 @@ export class CellBroadcastManager {
       this.reconnectTimeouts.delete(rundownId);
     }
 
+    // Clear userId for early filtering
+    this.userIds.delete(rundownId);
+
     const ch = this.channels.get(rundownId);
     if (ch) {
       this.channels.delete(rundownId);
@@ -212,6 +228,7 @@ export class CellBroadcastManager {
 
   cleanup(rundownId: string) {
     this.callbacks.delete(rundownId);
+    this.userIds.delete(rundownId); // Clean up userId mapping
     this.cleanupChannel(rundownId);
   }
 }

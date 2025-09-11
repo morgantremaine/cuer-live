@@ -124,7 +124,7 @@ const Teleprompter = () => {
     if (!rundownId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (simplified for single sessions)
+      // Skip own updates (simplified for single sessions) - now handled early in cellBroadcast  
       if (cellBroadcast.isOwnUpdate(update, user?.id || '')) {
         console.log('📱 Teleprompter skipping own cell broadcast update');
         return;
