@@ -1,6 +1,7 @@
 // Per-cell broadcast system using Supabase Realtime (simplified for single sessions)
 import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
+import { debugLogger } from '@/utils/debugLogger';
 
 // Simplified message payload for single sessions
 interface CellUpdate {
@@ -59,7 +60,7 @@ export class CellBroadcastManager {
         
         // Reduced logging for cell broadcasts - only show unique updates
         if (lastKey !== updateKey) {
-          console.log('📱 Cell broadcast received (simplified):', update);
+          debugLogger.realtime('Cell broadcast received (simplified):', update);
         }
         
         const cbs = this.callbacks.get(rundownId);
@@ -144,7 +145,7 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     };
 
-    console.log('📡 Broadcasting cell update (simplified):', updatePayload);
+    debugLogger.realtime('Broadcasting cell update (simplified):', updatePayload);
 
     channel.send({
       type: 'broadcast',

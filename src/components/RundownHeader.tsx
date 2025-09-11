@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz/formatInTimeZone';
 import { cn } from '@/lib/utils';
+import { debugLogger } from '@/utils/debugLogger';
 import TimezoneSelector from './TimezoneSelector';
 import HeaderLogo from './header/HeaderLogo';
 import ShowcallerTimingIndicator from './showcaller/ShowcallerTimingIndicator';
@@ -85,7 +86,7 @@ const RundownHeader = ({
   
   // Debug logging for presence tracking and computed display flag
   const showTeammateEditing = !!(hasActiveTeammates && !isProcessingRealtimeUpdate);
-  console.log('🚨 RUNDOWN HEADER DEBUG:', {
+  debugLogger.team('RundownHeader state:', {
     hasActiveTeammates,
     isProcessingRealtimeUpdate,
     showTeammateEditing

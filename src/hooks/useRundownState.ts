@@ -5,6 +5,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { debugLogger } from '@/utils/debugLogger';
 
 export interface RundownState {
   items: RundownItem[];
@@ -58,7 +59,7 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
-    console.log('📝 Content change flagged (hasUnsavedChanges=true) via action:', actionType);
+    debugLogger.autosave(`Content change flagged (hasUnsavedChanges=true) via action: ${actionType}`);
     try {
       console.trace('🧭 Save cause trace');
     } catch {}

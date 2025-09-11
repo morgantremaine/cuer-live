@@ -115,7 +115,7 @@ export const useSimpleAutoSave = (
       externalNotes: targetState.externalNotes || ''
     });
     
-    console.log('🔍 Creating signature with', cleanItems.length, 'items');
+    debugLogger.autosave(`Creating signature with ${cleanItems.length} items`);
     return signature;
   }, []);
 
@@ -204,7 +204,7 @@ export const useSimpleAutoSave = (
       blockUntilLocalEditRef.current = false;
     }
     
-    console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
+    debugLogger.autosave('AutoSave: typing activity recorded - rescheduling save');
     
     // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
     keystrokeJournal.recordTyping('user typing activity');
@@ -370,7 +370,7 @@ export const useSimpleAutoSave = (
     
     if (isRecentlyTyping && !hasExceededMaxDelay) {
       debugLogger.autosave('Save deferred: user actively typing');
-      console.log('⌨️ AutoSave: user still typing, waiting for idle period');
+      debugLogger.autosave('AutoSave: user still typing, waiting for idle period');
       return; // Don't reschedule here - markActiveTyping handles it
     }
     
@@ -681,7 +681,7 @@ export const useSimpleAutoSave = (
 
   // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
-    console.log('🧪 TRACE AutoSave(effect) enter', {
+    debugLogger.autosave('TRACE AutoSave(effect) enter', {
       isInitiallyLoaded,
       rundownId,
       hasUnsavedChanges: state.hasUnsavedChanges,
