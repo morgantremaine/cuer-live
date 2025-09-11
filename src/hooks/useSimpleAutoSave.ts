@@ -115,7 +115,7 @@ export const useSimpleAutoSave = (
       externalNotes: targetState.externalNotes || ''
     });
     
-    console.log('🔍 Creating signature with', cleanItems.length, 'items');
+    debugLogger.autosave(`Creating signature with ${cleanItems.length} items`);
     return signature;
   }, []);
 
@@ -200,11 +200,11 @@ export const useSimpleAutoSave = (
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      console.log('✅ AutoSave: local edit detected - re-enabling saves');
+      debugLogger.autosave('AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
     
-    console.log('⌨️ AutoSave: typing activity recorded - rescheduling save');
+    debugLogger.autosave('AutoSave: typing activity recorded - rescheduling save');
     
     // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
     keystrokeJournal.recordTyping('user typing activity');
@@ -226,7 +226,7 @@ export const useSimpleAutoSave = (
     
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
-      console.log('⏰ AutoSave: idle timeout reached - triggering save');
+      debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
       performSave(false, isSharedView);
     }, typingIdleMs);
     
@@ -283,23 +283,23 @@ export const useSimpleAutoSave = (
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
     // TRACE: Entry flags
-    console.log('🧪 TRACE performSave(entry)', {
-      isFlushSave,
-      isSharedView,
-      isInitiallyLoaded,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      rundownId,
-      typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
-      suppressUntil: suppressUntilRef?.current,
-      blockUntilLocalEdit: blockUntilLocalEditRef?.current,
-      cooldownUntil: cooldownUntilRef?.current,
-      applyingCellBroadcast: applyingCellBroadcastRef?.current,
-      pendingStructuralChange: pendingStructuralChangeRef?.current
-    });
+      debugLogger.autosave('TRACE performSave(entry)', {
+        isFlushSave,
+        isSharedView,
+        isInitiallyLoaded,
+        hasUnsavedChanges: state.hasUnsavedChanges,
+        rundownId,
+        typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
+        suppressUntil: suppressUntilRef?.current,
+        blockUntilLocalEdit: blockUntilLocalEditRef?.current,
+        cooldownUntil: cooldownUntilRef?.current,
+        applyingCellBroadcast: applyingCellBroadcastRef?.current,
+        pendingStructuralChange: pendingStructuralChangeRef?.current
+      });
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
-      console.log('🛑 AutoSave: blocked - initial load not complete');
+      debugLogger.autosave('AutoSave: blocked - initial load not complete');
       return;
     }
 

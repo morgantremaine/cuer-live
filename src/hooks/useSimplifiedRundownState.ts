@@ -20,6 +20,7 @@ import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
+import { debugLogger } from '@/utils/debugLogger';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -170,7 +171,7 @@ export const useSimplifiedRundownState = () => {
       
       // Coordinate with teleprompter saves to prevent conflicts
       if (teleprompterSync.isTeleprompterSaving) {
-        console.log('📝 Main rundown saved while teleprompter active - coordinating...');
+        debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
       }
     },
     pendingStructuralChangeRef,
@@ -298,7 +299,7 @@ export const useSimplifiedRundownState = () => {
       }
       
       // ALWAYS apply updates - never block them. Google Sheets style.
-      console.log('📨 Processing realtime update immediately:', {
+      debugLogger.realtime('Processing realtime update immediately:', {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
@@ -327,7 +328,7 @@ export const useSimplifiedRundownState = () => {
           blockUntilLocalEditRef.current = false;
         } else {
           // User not typing - block AutoSave until they make a local edit
-          console.log('🛑 Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
+          debugLogger.realtime('Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
           blockUntilLocalEditRef.current = true;
         }
       }
@@ -398,7 +399,7 @@ export const useSimplifiedRundownState = () => {
           return;
         }
         
-        console.log('📨 Applying realtime update directly - last writer wins');
+        debugLogger.realtime('Applying realtime update directly - last writer wins');
         
         // Simple approach: apply all changes, don't try to protect anything
         // If user is actively typing, their next keystroke will overwrite anyway
@@ -430,7 +431,7 @@ export const useSimplifiedRundownState = () => {
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
          // CRITICAL: Block all autosaves until the user makes a local edit
-         console.log('🛑 AutoSave: BLOCKING all saves after teammate update - until local edit');
+         debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
          blockUntilLocalEditRef.current = true;
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),

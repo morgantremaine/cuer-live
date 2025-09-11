@@ -5,6 +5,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 import { v4 as uuidv4 } from 'uuid';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
+import { debugLogger } from '@/utils/debugLogger';
 
 export interface RundownState {
   items: RundownItem[];
@@ -58,9 +59,9 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
-    console.log('📝 Content change flagged (hasUnsavedChanges=true) via action:', actionType);
+    debugLogger.autosave('Content change flagged (hasUnsavedChanges=true) via action:', actionType);
     try {
-      console.trace('🧭 Save cause trace');
+      debugLogger.autosave('Save cause trace');
     } catch {}
     return {
       ...state,
@@ -115,7 +116,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
 
     case 'SET_COLUMNS': {
       // Columns are user-specific presentation; do not mark content as dirty
-      console.log('📊 SET_COLUMNS applied (no content change) - count:', action.payload?.length ?? 0);
+      debugLogger.grid('SET_COLUMNS applied (no content change) - count:', action.payload?.length ?? 0);
       return { ...state, columns: action.payload };
     }
 
@@ -126,7 +127,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
           : col
       );
       // Column tweak shouldn't flip hasUnsavedChanges
-      console.log('📊 UPDATE_COLUMN applied (no content change) - id:', action.payload.id);
+      debugLogger.grid('UPDATE_COLUMN applied (no content change) - id:', action.payload.id);
       return { ...state, columns };
     }
 
@@ -158,7 +159,7 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, docVersion: action.payload };
 
     case 'LOAD_STATE': {
-      console.log('🧩 LOAD_STATE applied; resetting hasUnsavedChanges=false');
+      debugLogger.autosave('LOAD_STATE applied; resetting hasUnsavedChanges=false');
       return {
         ...state,
         ...action.payload,

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useResponsiveLayout } from '@/hooks/use-mobile';
 import { Clock, Wifi, WifiOff, LoaderCircle, Eye, EyeOff, Search, Calendar } from 'lucide-react';
+import { debugLogger } from '@/utils/debugLogger';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -85,7 +86,7 @@ const RundownHeader = ({
   
   // Debug logging for presence tracking and computed display flag
   const showTeammateEditing = !!(hasActiveTeammates && !isProcessingRealtimeUpdate);
-  console.log('🚨 RUNDOWN HEADER DEBUG:', {
+  debugLogger.realtime('RUNDOWN HEADER DEBUG:', {
     hasActiveTeammates,
     isProcessingRealtimeUpdate,
     showTeammateEditing

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
+import { debugLogger } from '@/utils/debugLogger';
 
 interface SaveState {
   isSaving: boolean;
@@ -22,7 +23,7 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
   
-  console.log('💾 RundownSaveIndicator render:', {
+  debugLogger.autosave('RundownSaveIndicator render:', {
     isTeammateEditing,
     isSaving,
     hasUnsavedChanges,
