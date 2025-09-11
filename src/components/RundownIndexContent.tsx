@@ -10,6 +10,7 @@ import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
+import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
 
 
@@ -78,6 +79,20 @@ const RundownIndexContent = () => {
 
   // Get team data for column deletion
   const { team } = useTeam();
+
+  // Set up user presence tracking for this rundown
+  const { otherUsers, isConnected: presenceConnected } = useUserPresence({
+    rundownId,
+    enabled: true
+  });
+
+  // Check if any teammates are currently active (within last 2 minutes)
+  const hasActiveTeammates = otherUsers.some(user => {
+    const lastSeen = new Date(user.lastSeen);
+    const now = new Date();
+    const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
+    return timeDiff < 120; // Active if seen within 2 minutes
+  });
 
   // Get columns from the main state system (no duplicate column management)
   const userColumns = columns;
@@ -592,6 +607,7 @@ const RundownIndexContent = () => {
         lastAction={lastAction || ''}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        hasActiveTeammates={hasActiveTeammates}
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}

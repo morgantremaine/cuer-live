@@ -78,6 +78,7 @@ export interface RundownContainerProps {
   // Realtime collaboration props
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
+  hasActiveTeammates?: boolean;
   
   // Jump to here functionality
   onJumpToHere?: (segmentId: string) => void;

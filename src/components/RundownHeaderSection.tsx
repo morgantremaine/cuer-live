@@ -51,6 +51,7 @@ interface RundownHeaderSectionProps {
   onUpdateItem?: (id: string, field: string, value: string) => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  hasActiveTeammates?: boolean;
   // Zoom controls
   zoomLevel?: number;
   onZoomIn?: () => void;
@@ -108,6 +109,7 @@ const RundownHeaderSection = ({
   onUpdateItem,
   onShowFindReplace,
   onShowNotes,
+  hasActiveTeammates,
   // Zoom controls
   zoomLevel,
   onZoomIn,
@@ -146,6 +148,7 @@ const RundownHeaderSection = ({
         onToggleAutoScroll={onToggleAutoScroll}
         rundownId={rundownId}
         onUpdateItem={onUpdateItem}
+        hasActiveTeammates={hasActiveTeammates}
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}

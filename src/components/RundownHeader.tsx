@@ -46,6 +46,7 @@ interface RundownHeaderProps {
   onToggleAutoScroll?: () => void;
   rundownId?: string | null;
   onUpdateItem?: (id: string, field: string, value: string) => void;
+  hasActiveTeammates?: boolean;
 }
 
 const RundownHeader = ({
@@ -73,7 +74,8 @@ const RundownHeader = ({
   onToggleAutoScroll,
   items = [],
   rundownId,
-  onUpdateItem
+  onUpdateItem,
+  hasActiveTeammates
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -300,7 +302,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
           </div>
         </div>
         
@@ -379,7 +381,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
               </>
               )}
             </div>
@@ -514,7 +516,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={hasActiveTeammates || isProcessingRealtimeUpdate} />
           </>
           )}
           </div>
