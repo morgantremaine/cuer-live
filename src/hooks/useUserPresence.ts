@@ -69,14 +69,14 @@ export const useUserPresence = ({
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        console.log('🔄 Presence sync with hasUnsavedChanges data:', presenceState);
+        console.log('🚨 PRESENCE SYNC with all data:', presenceState);
         
         // Check for session conflicts (same user, different session)
     const allPresences = Object.values(presenceState).flat() as any[];
         const myPresences = allPresences.filter((p: any) => p.userId === user.id);
         const otherPresences = allPresences.filter((p: any) => p.userId !== user.id);
         
-        console.log('👥 DEBUG: Setting otherUsers to:', otherPresences);
+        console.log('🚨 SETTING otherUsers to:', otherPresences);
         setOtherUsers(otherPresences as UserPresenceState[]);
         
         // If there's more than one session for this user, handle conflict
@@ -173,17 +173,20 @@ export const useUserPresence = ({
   useEffect(() => {
     if (!enabled || !user || !channelRef.current || hasSessionConflict) return;
     
-    console.log('👥 DEBUG: Updating presence with hasUnsavedChanges:', hasUnsavedChanges);
+    console.log('🚨 UPDATING PRESENCE with hasUnsavedChanges:', hasUnsavedChanges);
     hasUnsavedRef.current = !!hasUnsavedChanges;
     
-    channelRef.current.track({
+    const presenceData = {
       userId: user.id,
       sessionId: sessionIdRef.current,
       joinedAt: joinedAtRef.current,
       lastSeen: new Date().toISOString(),
       rundownId,
       hasUnsavedChanges: hasUnsavedRef.current,
-    });
+    };
+    
+    console.log('🚨 TRACKING PRESENCE DATA:', presenceData);
+    channelRef.current.track(presenceData);
   }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict]);
 
   // Method to manually disconnect (for logout)
