@@ -18,7 +18,6 @@ import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
 import { cellBroadcast } from '@/utils/cellBroadcast';
-import { debugLogger } from '@/utils/debugLogger';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 
@@ -475,15 +474,15 @@ export const useSimplifiedRundownState = () => {
     if (!rundownId || !currentUserId) return;
 
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      debugLogger.realtime('Cell broadcast received:', update);
+      console.log('📱 Cell broadcast received:', update);
       
       // Skip our own updates (simplified for single sessions)
       if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
-        debugLogger.realtime('Skipping own cell broadcast update');
+        console.log('📱 Skipping own cell broadcast update');
         return;
       }
       
-      debugLogger.realtime('Applying cell broadcast update (simplified - no protection):', update);
+      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
