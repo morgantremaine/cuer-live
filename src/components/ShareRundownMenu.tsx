@@ -81,8 +81,8 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return;
     }
 
-    // Find the actual rundown table to extract its structure
-    const existingTable = document.querySelector('table[data-rundown-table="main"], .table-container table, .rundown-container table');
+    // Find the actual rundown table to extract its structure - prioritize body table for content
+    const existingTable = document.querySelector('table[data-rundown-table="body"]') || document.querySelector('table[data-rundown-table="header"], table[data-rundown-table="main"], .table-container table, .rundown-container table');
     if (!existingTable) {
       toast({
         title: 'Print failed',
@@ -126,9 +126,12 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
       return '00:00:00';
     }
 
-    // Extract actual table structure and start time
-    const headerRow = existingTable.querySelector('thead tr');
-    const bodyRows = existingTable.querySelectorAll('tbody tr');
+    // Extract actual table structure and start time - handle split header/body tables
+    const headerTable = document.querySelector('table[data-rundown-table="header"]');
+    const bodyTable = document.querySelector('table[data-rundown-table="body"]') || existingTable;
+    
+    const headerRow = headerTable?.querySelector('thead tr') || existingTable.querySelector('thead tr');
+    const bodyRows = bodyTable?.querySelectorAll('tbody tr') || existingTable.querySelectorAll('tbody tr');
     
     // Get start time from the actual rundown header
     function getStartTime() {
