@@ -100,31 +100,29 @@ export const SharedRundownHeader = ({
             <div className="flex items-center space-x-2 print:hidden">
               {/* Autoscroll Toggle */}
               {onToggleAutoScroll && (
-                <div className={`flex items-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${
-                  isDark ? 'border-gray-600' : 'border-gray-300'
-                } h-9 overflow-hidden`}>
-                  <button
-                    onClick={() => {
-                      // Scroll to current showcaller position regardless of toggle state
-                      const currentSegmentElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
-                      if (currentSegmentElement) {
-                        currentSegmentElement.scrollIntoView({ 
-                          behavior: 'smooth', 
-                          block: 'center' 
-                        });
-                      }
-                    }}
-                    className="flex items-center justify-center px-2 h-full hover:bg-accent hover:text-accent-foreground transition-colors flex-1"
-                  >
-                    <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-                  </button>
-                  <div className="border-l border-input">
-                    <Switch
-                      checked={autoScrollEnabled}
-                      onCheckedChange={onToggleAutoScroll}
-                      className="scale-75 mx-1"
-                    />
-                  </div>
+                <div 
+                  className={`flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer h-9 ${
+                    isDark ? 'border-gray-600' : 'border-gray-300'
+                  }`}
+                  onClick={() => {
+                    // Jump to current segment
+                    const currentSegmentElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
+                    if (currentSegmentElement) {
+                      currentSegmentElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                      });
+                    }
+                  }}
+                  title="Jump to current segment"
+                >
+                  <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+                  <Switch
+                    checked={autoScrollEnabled}
+                    onCheckedChange={onToggleAutoScroll}
+                    className="scale-75"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </div>
               )}
               
