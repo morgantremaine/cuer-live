@@ -15,8 +15,6 @@ import { useShowcallerTiming } from '@/hooks/useShowcallerTiming';
 import { useUniversalTiming } from '@/hooks/useUniversalTiming';
 import AnimatedWifiIcon from './AnimatedWifiIcon';
 import RundownSaveIndicator from './header/RundownSaveIndicator';
-import { cellBroadcast } from '@/utils/cellBroadcast';
-import { supabase } from '@/integrations/supabase/client';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -85,34 +83,6 @@ const RundownHeader = ({
   const timeInputRef = useRef<HTMLInputElement>(null);
   const lastSavedContentSignatureRef = useRef<string>('');
   const [hasContentOnlyChanges, setHasContentOnlyChanges] = useState(false);
-  
-  // Teammate editing indicator via cell broadcasts
-  const [teammateEditing, setTeammateEditing] = useState(false);
-  const teammateTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const currentUserIdRef = useRef<string | null>(null);
-
-  // Resolve current user id once
-  React.useEffect(() => {
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => { currentUserIdRef.current = user?.id || null; })
-      .catch(() => { currentUserIdRef.current = null; });
-  }, []);
-
-  // Subscribe to cell broadcasts to detect teammate activity
-  React.useEffect(() => {
-    if (!rundownId) return;
-    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      const uid = currentUserIdRef.current;
-      if (uid && cellBroadcast.isOwnUpdate(update, uid)) return;
-      setTeammateEditing(true);
-      if (teammateTimerRef.current) clearTimeout(teammateTimerRef.current);
-      teammateTimerRef.current = setTimeout(() => setTeammateEditing(false), 2000);
-    });
-    return () => {
-      unsubscribe?.();
-      if (teammateTimerRef.current) clearTimeout(teammateTimerRef.current);
-    };
-  }, [rundownId]);
   
   // Check if this is a demo rundown
   const isDemoRundown = rundownId === DEMO_RUNDOWN_ID;
@@ -330,7 +300,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={teammateEditing || !!isProcessingRealtimeUpdate} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
           </div>
         </div>
         
@@ -409,7 +379,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={teammateEditing || !!isProcessingRealtimeUpdate} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
               </>
               )}
             </div>
@@ -544,7 +514,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={teammateEditing || !!isProcessingRealtimeUpdate} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={isProcessingRealtimeUpdate} />
           </>
           )}
           </div>
