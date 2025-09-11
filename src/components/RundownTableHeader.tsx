@@ -225,7 +225,7 @@ const RundownTableHeader = ({
       <tr>
         {/* Row number column - static, not draggable */}
         <th 
-          className="px-2 py-1 text-left text-sm font-semibold text-white bg-blue-600"
+          className="p-0 text-center text-sm font-semibold text-white bg-blue-600"
           style={{ 
             width: `${64 * zoomLevel}px`, 
             minWidth: `${64 * zoomLevel}px`,
@@ -233,14 +233,14 @@ const RundownTableHeader = ({
             borderRight: '1px solid hsl(var(--border))'
           }}
         >
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center justify-center w-full h-full">
             {onToggleAllHeaders && isHeaderCollapsed && items.some(item => item.type === 'header') && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleAllHeaders();
                 }}
-                className="flex-shrink-0 p-0.5 hover:bg-blue-500 rounded transition-colors"
+                className="p-0.5 hover:bg-blue-500 rounded transition-colors"
                 title="Toggle all header groups"
               >
                 {items.filter(item => item.type === 'header').some(header => isHeaderCollapsed(header.id)) ? (
@@ -250,7 +250,6 @@ const RundownTableHeader = ({
                 )}
               </button>
             )}
-            <span></span>
           </div>
         </th>
         
