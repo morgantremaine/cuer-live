@@ -10,6 +10,7 @@ interface UserPresenceState {
   lastSeen: string;
   rundownId?: string;
   hasUnsavedChanges?: boolean;
+  userFullName?: string;
 }
 
 interface UseUserPresenceOptions {
@@ -63,6 +64,7 @@ export const useUserPresence = ({
       lastSeen: new Date().toISOString(),
       rundownId,
       hasUnsavedChanges: !!hasUnsavedChanges,
+      userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
     };
 
     // Set up presence event handlers
@@ -151,6 +153,7 @@ export const useUserPresence = ({
               ...userPresence,
               lastSeen: new Date().toISOString(),
               hasUnsavedChanges: hasUnsavedRef.current,
+              userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
             });
           }
         }, 30000); // Update every 30 seconds
@@ -197,6 +200,7 @@ export const useUserPresence = ({
       lastSeen: new Date().toISOString(),
       rundownId,
       hasUnsavedChanges: hasUnsavedRef.current,
+      userFullName: user.user_metadata?.full_name || user.email || 'Unknown User',
     };
     
     console.log('🚨 TRACKING PRESENCE DATA:', presenceData);

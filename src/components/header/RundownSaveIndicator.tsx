@@ -13,9 +13,10 @@ interface RundownSaveIndicatorProps {
   saveState: SaveState;
   shouldShowSavedFlash?: boolean;
   isTeammateEditing?: boolean;
+  activeTeammateNames?: string[];
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [] }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -96,10 +97,14 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
 
   // Show teammate editing state if teammates are making changes
   if (isTeammateEditing) {
+    const displayText = activeTeammateNames.length > 0 
+      ? `${activeTeammateNames.join(', ')} ${activeTeammateNames.length === 1 ? 'is' : 'are'} editing...`
+      : 'Teammate editing...';
+      
     return (
       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs ml-2">
         <Users className="h-4 w-4" />
-        <span>Teammate editing...</span>
+        <span>{displayText}</span>
       </div>
     );
   }

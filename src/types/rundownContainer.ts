@@ -79,6 +79,7 @@ export interface RundownContainerProps {
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   hasActiveTeammates?: boolean;
+  activeTeammateNames?: string[];
   
   // Jump to here functionality
   onJumpToHere?: (segmentId: string) => void;

@@ -100,7 +100,7 @@ const RundownIndexContent = () => {
     })));
   }
 
-  const hasActiveTeammates = otherUsers.some(user => {
+  const activeTeammates = otherUsers.filter(user => {
     const lastSeen = new Date(user.lastSeen);
     const now = new Date();
     const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
@@ -119,6 +119,9 @@ const RundownIndexContent = () => {
     
     return isActive && isEditing;
   });
+
+  const hasActiveTeammates = activeTeammates.length > 0;
+  const activeTeammateNames = activeTeammates.map(user => user.userFullName || 'Unknown User');
   
   console.log('🚨 FINAL RESULT: hasActiveTeammates:', hasActiveTeammates, 'from', otherUsers.length, 'users');
 
@@ -636,6 +639,7 @@ const RundownIndexContent = () => {
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}
+        activeTeammateNames={activeTeammateNames}
         onJumpToHere={handleJumpToHere}
         autoScrollEnabled={autoScrollEnabled}
         onToggleAutoScroll={toggleAutoScroll}

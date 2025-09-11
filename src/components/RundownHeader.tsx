@@ -47,6 +47,7 @@ interface RundownHeaderProps {
   rundownId?: string | null;
   onUpdateItem?: (id: string, field: string, value: string) => void;
   hasActiveTeammates?: boolean;
+  activeTeammateNames?: string[];
 }
 
 const RundownHeader = ({
@@ -75,7 +76,8 @@ const RundownHeader = ({
   items = [],
   rundownId,
   onUpdateItem,
-  hasActiveTeammates
+  hasActiveTeammates,
+  activeTeammateNames = []
 }: RundownHeaderProps) => {
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -310,7 +312,7 @@ const RundownHeader = ({
                 {title || "Untitled Rundown"}
               </span>
             )}
-            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
+            <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} />
           </div>
         </div>
         
@@ -389,7 +391,7 @@ const RundownHeader = ({
                   {title || "Untitled Rundown"}
                 </span>
               )}
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
+              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} />
               </>
               )}
             </div>
@@ -524,7 +526,7 @@ const RundownHeader = ({
               {title || "Untitled Rundown"}
             </span>
           )}
-          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} />
+          <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} />
           </>
           )}
           </div>
