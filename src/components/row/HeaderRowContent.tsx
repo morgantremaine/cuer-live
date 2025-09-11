@@ -61,10 +61,10 @@ const HeaderRowContent = ({
           maxWidth: '64px'
         }}
       >
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center justify-center w-full">
           <button
             onClick={handleToggleCollapse}
-            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors ml-2"
+            className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
             title={isCollapsed ? 'Expand header' : 'Collapse header'}
           >
             {isCollapsed ? (
@@ -73,7 +73,6 @@ const HeaderRowContent = ({
               <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             )}
           </button>
-          <span style={{ color: textColor }}>{rowNumber}</span>
         </div>
       </td>
       {/* Dynamic columns */}
