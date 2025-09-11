@@ -183,7 +183,7 @@ const SharedRundown = () => {
           };
         }
       });
-    });
+    }, 'shared-view');
 
     return unsubscribe;
   }, [rundownId]);

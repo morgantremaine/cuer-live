@@ -197,7 +197,7 @@ const Teleprompter = () => {
         console.log('📱 Teleprompter applying rundown-level broadcast update:', update.field, update.value);
         setRundownData(prev => (prev ? { ...prev, [update.field]: update.value } : prev));
       }
-    });
+    }, user?.id || '');
 
     return unsubscribe;
   }, [rundownId, user?.id]);

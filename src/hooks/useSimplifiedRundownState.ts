@@ -612,7 +612,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 50);
       }
-    });
+    }, currentUserId);
 
     return () => {
       unsubscribe();
