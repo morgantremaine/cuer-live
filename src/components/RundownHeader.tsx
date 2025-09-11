@@ -80,6 +80,13 @@ const RundownHeader = ({
   const { isMobile, isTablet } = useResponsiveLayout();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  
+  // Debug logging for presence tracking
+  console.log('🚨 RUNDOWN HEADER DEBUG:', {
+    hasActiveTeammates,
+    isProcessingRealtimeUpdate,
+    shouldShowTeammateEditing: hasActiveTeammates || isProcessingRealtimeUpdate
+  });
   const { getUniversalTime } = useUniversalTiming();
   
   const timeInputRef = useRef<HTMLInputElement>(null);
