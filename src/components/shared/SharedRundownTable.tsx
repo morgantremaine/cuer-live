@@ -986,7 +986,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                         )}
                       </button>
                     )}
-                    <span>#</span>
+                    <span></span>
                   </div>
                 </th>
                 

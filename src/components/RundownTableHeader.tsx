@@ -250,7 +250,7 @@ const RundownTableHeader = ({
                 )}
               </button>
             )}
-            <span>#</span>
+            <span></span>
           </div>
         </th>
         
