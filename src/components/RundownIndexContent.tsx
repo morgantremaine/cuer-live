@@ -83,26 +83,19 @@ const RundownIndexContent = () => {
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
     rundownId,
-    enabled: true
+    enabled: true,
+    hasUnsavedChanges,
   });
 
-  // Check if any teammates are currently active (within last 2 minutes)
+  // Show teammate editing when any teammate is active and has unsaved changes
   const hasActiveTeammates = otherUsers.some(user => {
     const lastSeen = new Date(user.lastSeen);
     const now = new Date();
     const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
     const isActive = timeDiff < 120; // Active if seen within 2 minutes
-    console.log('👥 Teammate presence check:', {
-      userId: user.userId,
-      lastSeen: user.lastSeen,
-      timeDiff,
-      isActive,
-      allUsers: otherUsers.length
-    });
-    return isActive;
+    const isEditing = !!user.hasUnsavedChanges;
+    return isActive && isEditing;
   });
-  
-  console.log('👥 hasActiveTeammates:', hasActiveTeammates, 'otherUsers:', otherUsers.length);
 
   // Get columns from the main state system (no duplicate column management)
   const userColumns = columns;

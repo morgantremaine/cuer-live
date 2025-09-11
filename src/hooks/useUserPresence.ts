@@ -9,18 +9,21 @@ interface UserPresenceState {
   joinedAt: string;
   lastSeen: string;
   rundownId?: string;
+  hasUnsavedChanges?: boolean;
 }
 
 interface UseUserPresenceOptions {
   rundownId?: string;
   onSessionConflict?: () => void;
   enabled?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 export const useUserPresence = ({ 
   rundownId, 
   onSessionConflict,
-  enabled = true 
+  enabled = true, 
+  hasUnsavedChanges = false,
 }: UseUserPresenceOptions = {}) => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
@@ -29,8 +32,10 @@ export const useUserPresence = ({
   
   const channelRef = useRef<any>(null);
   const sessionIdRef = useRef<string>(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const joinedAtRef = useRef<string>(new Date().toISOString());
   const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
   const lastSeenUpdateRef = useRef<NodeJS.Timeout>();
+  const hasUnsavedRef = useRef<boolean>(!!hasUnsavedChanges);
 
   // Channel name - global presence or rundown-specific
   const channelName = rundownId ? `presence_rundown_${rundownId}` : 'presence_global';
@@ -54,9 +59,10 @@ export const useUserPresence = ({
     const userPresence: UserPresenceState = {
       userId: user.id,
       sessionId: sessionIdRef.current,
-      joinedAt: new Date().toISOString(),
+      joinedAt: joinedAtRef.current,
       lastSeen: new Date().toISOString(),
-      rundownId
+      rundownId,
+      hasUnsavedChanges: !!hasUnsavedChanges,
     };
 
     // Set up presence event handlers
@@ -128,7 +134,8 @@ export const useUserPresence = ({
           if (!hasSessionConflict) {
             await channel.track({
               ...userPresence,
-              lastSeen: new Date().toISOString()
+              lastSeen: new Date().toISOString(),
+              hasUnsavedChanges: hasUnsavedRef.current,
             });
           }
         }, 30000); // Update every 30 seconds
@@ -160,6 +167,20 @@ export const useUserPresence = ({
       setIsConnected(false);
     };
   }, [enabled, user, channelName, rundownId, hasSessionConflict, onSessionConflict]);
+
+  // Update presence immediately when hasUnsavedChanges changes
+  useEffect(() => {
+    if (!enabled || !user || !channelRef.current || hasSessionConflict) return;
+    hasUnsavedRef.current = !!hasUnsavedChanges;
+    channelRef.current.track({
+      userId: user.id,
+      sessionId: sessionIdRef.current,
+      joinedAt: joinedAtRef.current,
+      lastSeen: new Date().toISOString(),
+      rundownId,
+      hasUnsavedChanges: hasUnsavedRef.current,
+    });
+  }, [hasUnsavedChanges, enabled, user, rundownId, hasSessionConflict]);
 
   // Method to manually disconnect (for logout)
   const disconnect = async () => {
