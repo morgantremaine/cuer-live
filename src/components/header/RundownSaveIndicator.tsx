@@ -20,6 +20,16 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
   const [previouslySaving, setPreviouslySaving] = useState(false);
+  
+  console.log('💾 RundownSaveIndicator render:', {
+    isTeammateEditing,
+    isSaving,
+    hasUnsavedChanges,
+    hasContentChanges,
+    showSaved,
+    showTemporarySaved,
+    shouldShow: !(!hasContentChanges && !shouldShowSavedFlash && !showSaved && !isTeammateEditing)
+  });
 
   // Show saved indicator for 3 seconds after save (when lastSaved is available)
   useEffect(() => {

@@ -91,8 +91,18 @@ const RundownIndexContent = () => {
     const lastSeen = new Date(user.lastSeen);
     const now = new Date();
     const timeDiff = (now.getTime() - lastSeen.getTime()) / 1000;
-    return timeDiff < 120; // Active if seen within 2 minutes
+    const isActive = timeDiff < 120; // Active if seen within 2 minutes
+    console.log('👥 Teammate presence check:', {
+      userId: user.userId,
+      lastSeen: user.lastSeen,
+      timeDiff,
+      isActive,
+      allUsers: otherUsers.length
+    });
+    return isActive;
   });
+  
+  console.log('👥 hasActiveTeammates:', hasActiveTeammates, 'otherUsers:', otherUsers.length);
 
   // Get columns from the main state system (no duplicate column management)
   const userColumns = columns;
