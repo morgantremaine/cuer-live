@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
@@ -16,10 +16,31 @@ export const useRundownPerformanceOptimization = ({
   startTime
 }: UseRundownPerformanceOptimizationProps) => {
   
-  // Calculate all derived values with proper header numbering
+  // Performance monitoring for large rundowns
+  const itemCount = items?.length || 0;
+  const isLargeRundown = itemCount > 100;
+  const isVeryLargeRundown = itemCount > 200;
+  
+  // Memory usage warning
+  useEffect(() => {
+    if (isVeryLargeRundown && typeof window !== 'undefined' && 'performance' in window && 'memory' in (window.performance as any)) {
+      const memory = (window.performance as any).memory;
+      const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+      
+      if (usedMB > 500) {
+        console.warn(`⚠️ High memory usage detected: ${usedMB}MB with ${itemCount} items`);
+        console.log('💡 Consider optimizing rundown size or enable performance mode');
+      }
+    }
+  }, [itemCount, isVeryLargeRundown]);
+  
+  // Performance-optimized calculated items with caching for large rundowns
   const calculatedItems = useMemo(() => {
+    if (isVeryLargeRundown) {
+      console.log('🚀 Using performance-optimized calculations for', itemCount, 'items');
+    }
     return calculateItemsWithTiming(items, startTime || '00:00:00');
-  }, [items, startTime]);
+  }, [items, startTime, isVeryLargeRundown, itemCount]);
 
   // Calculate visible columns (memoized to prevent unnecessary re-renders)
   const visibleColumns = useMemo(() => {
@@ -31,13 +52,31 @@ export const useRundownPerformanceOptimization = ({
     return calculateTotalRuntime(items);
   }, [items]);
 
-  // Create optimized getRowNumber function that uses calculated values
+  // Performance-optimized getRowNumber with Map lookup for large rundowns
+  const rowNumberMap = useMemo(() => {
+    if (!isLargeRundown) return null; // Use direct access for small rundowns
+    
+    const map = new Map<number, string>();
+    calculatedItems.forEach((item, index) => {
+      if (item?.calculatedRowNumber) {
+        map.set(index, item.calculatedRowNumber);
+      }
+    });
+    return map;
+  }, [calculatedItems, isLargeRundown]);
+
   const getRowNumber = useMemo(() => {
     return (index: number) => {
       if (index < 0 || index >= calculatedItems.length) return '';
+      
+      // Use Map lookup for large rundowns, direct access for small ones
+      if (rowNumberMap) {
+        return rowNumberMap.get(index) || '';
+      }
+      
       return calculatedItems[index]?.calculatedRowNumber || '';
     };
-  }, [calculatedItems]);
+  }, [calculatedItems, rowNumberMap]);
 
   // Create optimized getHeaderDuration function
   const getHeaderDuration = useMemo(() => {

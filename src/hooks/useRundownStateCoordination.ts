@@ -3,6 +3,7 @@ import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
+import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
@@ -25,6 +26,13 @@ export const useRundownStateCoordination = () => {
     items: persistedState.items,
     columns: persistedState.columns,
     startTime: persistedState.rundownStartTime
+  });
+
+  // Add performance monitoring for large rundowns
+  const performanceMonitoring = usePerformanceMonitoring({
+    rundownId: persistedState.rundownId,
+    itemCount: persistedState.items?.length || 0,
+    enabled: true
   });
 
   // Autoscroll state with localStorage persistence

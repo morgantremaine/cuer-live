@@ -76,7 +76,7 @@ export const useConsolidatedRealtimeRundown = ({
     trackOwnUpdate
   };
 
-  // Process realtime update with bulletproof conflict prevention and item-level dirty queue
+  // Performance-optimized realtime update processing with early size checks
   const processRealtimeUpdate = useCallback(async (payload: any, globalState: any) => {
     const updateTimestamp = payload.new?.updated_at;
     const normalizedTimestamp = normalizeTimestamp(updateTimestamp);
@@ -85,6 +85,14 @@ export const useConsolidatedRealtimeRundown = ({
     // Skip if not for current rundown 
     if (payload.new?.id !== rundownId && payload.new?.rundown_id !== rundownId) {
       return;
+    }
+
+    // Performance optimization: Early size check for very large updates
+    const itemCount = payload.new?.items?.length || 0;
+    if (itemCount > 300) {
+      console.log('🐌 Large update detected, using performance mode:', itemCount, 'items');
+      // Add small delay to prevent UI blocking
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
 
     // Enhanced doc version checking - prevent race conditions

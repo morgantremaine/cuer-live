@@ -40,11 +40,23 @@ export const useSimpleAutoSave = (
   const editBaseDocVersionRef = useRef<number>(0);
   
   // Enhanced cooldown management with explicit flags (passed as parameters)
-  // Simplified autosave system - reduce complexity
+  // Simplified autosave system - reduce complexity with performance optimization
   const lastEditAtRef = useRef<number>(0);
-  const typingIdleMs = 1500; // Shorter, more responsive timing
-  const maxSaveDelay = 5000; // Reduced max delay for faster saves
-  const microResaveMs = 200; // Faster micro-resave
+  
+  // Performance-aware timing - scale based on rundown size
+  const getOptimizedTimings = useCallback(() => {
+    const itemCount = state.items?.length || 0;
+    const isLargeRundown = itemCount > 100;
+    const isVeryLargeRundown = itemCount > 200;
+    
+    return {
+      typingIdleMs: isVeryLargeRundown ? 3000 : isLargeRundown ? 2000 : 1500,
+      maxSaveDelay: isVeryLargeRundown ? 8000 : isLargeRundown ? 6500 : 5000,
+      microResaveMs: isLargeRundown ? 400 : 200
+    };
+  }, [state.items?.length]);
+  
+  const { typingIdleMs, maxSaveDelay, microResaveMs } = getOptimizedTimings();
   const saveInProgressRef = useRef(false);
   const saveInitiatedWhileActiveRef = useRef(false);
   const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -57,11 +69,12 @@ export const useSimpleAutoSave = (
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
   const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
-  // Keystroke journal for reliable content tracking
+  // Performance-optimized keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
     rundownId,
     state,
-    enabled: true
+    enabled: true,
+    performanceMode: (state.items?.length || 0) > 150 // Enable performance mode for large rundowns
   });
 
   // Stable onSaved ref to avoid effect churn from changing callbacks
@@ -75,11 +88,55 @@ export const useSimpleAutoSave = (
     return createContentSignatureFromState(state);
   }, [state]);
 
-  // Create content signature from any state (for use with snapshots)
+  // Performance-optimized signature cache to avoid repeated JSON.stringify calls
+  const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
+  const SIGNATURE_CACHE_TTL = 5000; // 5 seconds cache TTL
+
+  // Create content signature from any state (for use with snapshots) with caching
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
-    // Create signature with ONLY content fields - completely exclude ALL showcaller data
+    const itemCount = targetState.items?.length || 0;
+    
+    // Create a quick hash key for caching based on item IDs and basic metadata
+    const cacheKey = JSON.stringify({
+      itemIds: targetState.items?.map(item => item.id) || [],
+      itemCount,
+      title: targetState.title || '',
+      startTime: targetState.startTime || '',
+      lastModified: targetState.items?.map(item => (item as any).updatedAt || item.id).join('') || ''
+    });
+    
+    // Check cache first for performance
+    const cached = signatureCache.current.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < SIGNATURE_CACHE_TTL) {
+      debugLogger.autosave(`Using cached signature for ${itemCount} items`);
+      return cached.signature;
+    }
+    
+    // Performance optimization for very large rundowns - use lightweight signature
+    if (itemCount > 200) {
+      const lightweightSignature = JSON.stringify({
+        itemCount,
+        itemIds: targetState.items?.map(item => item.id) || [],
+        title: targetState.title || '',
+        startTime: targetState.startTime || '',
+        timezone: targetState.timezone || '',
+        showDate: targetState.showDate?.toISOString() || null,
+        externalNotes: targetState.externalNotes || '',
+        checksum: targetState.items?.reduce((acc, item) => acc + (item.name?.length || 0) + (item.script?.length || 0), 0) || 0
+      });
+      
+      // Cache the result
+      signatureCache.current.set(cacheKey, {
+        signature: lightweightSignature,
+        timestamp: Date.now()
+      });
+      
+      debugLogger.autosave(`Created lightweight signature for ${itemCount} items`);
+      return lightweightSignature;
+    }
+    
+    // Standard signature for smaller rundowns
     const cleanItems = targetState.items?.map((item: any) => {
-      // Create a clean copy with only the editable content fields
       const cleanItem: any = {
         id: item.id,
         type: item.type,
@@ -115,7 +172,13 @@ export const useSimpleAutoSave = (
       externalNotes: targetState.externalNotes || ''
     });
     
-    debugLogger.autosave(`Creating signature with ${cleanItems.length} items`);
+    // Cache the result
+    signatureCache.current.set(cacheKey, {
+      signature,
+      timestamp: Date.now()
+    });
+    
+    debugLogger.autosave(`Created full signature with ${cleanItems.length} items`);
     return signature;
   }, []);
 
@@ -243,8 +306,16 @@ export const useSimpleAutoSave = (
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
 
-  // Circuit-breaker protected micro-resave to prevent loops
+  // Circuit-breaker protected micro-resave with performance optimization
   const scheduleMicroResave = useCallback(() => {
+    const itemCount = state.items?.length || 0;
+    
+    // Skip micro-resaves for very large rundowns to prevent performance issues
+    if (itemCount > 200) {
+      console.log('🛑 Micro-resave: skipped for very large rundown (performance)', itemCount);
+      return;
+    }
+    
     const currentSignature = createContentSignature();
     
     // Prevent micro-resave if signature hasn't actually changed
@@ -259,9 +330,10 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Circuit breaker: prevent infinite loops (reduced threshold)
-    if (microResaveAttemptsRef.current >= 1) {
-      console.warn('🧯 Micro-resave: circuit breaker activated - max attempts reached');
+    // Enhanced circuit breaker for large rundowns
+    const maxAttempts = itemCount > 100 ? 1 : 2;
+    if (microResaveAttemptsRef.current >= maxAttempts) {
+      console.warn('🧯 Micro-resave: circuit breaker activated - max attempts reached', maxAttempts);
       microResaveAttemptsRef.current = 0; // Reset for next time
       return;
     }
@@ -273,12 +345,12 @@ export const useSimpleAutoSave = (
       clearTimeout(microResaveTimeoutRef.current);
     }
     
-    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current);
+    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current, 'for', itemCount, 'items');
     microResaveTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Micro-resave: capturing changes made during previous save');
       performSaveRef.current?.();
     }, microResaveMs);
-  }, [microResaveMs, createContentSignature]);
+  }, [microResaveMs, createContentSignature, state.items?.length]);
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {

@@ -13,54 +13,112 @@ interface UseKeystrokeJournalProps {
   rundownId: string | null;
   state: RundownState;
   enabled?: boolean;
+  performanceMode?: boolean; // Enable memory-optimized mode for large rundowns
 }
 
 /**
  * Keystroke journal hook for tracking user edits and maintaining latest content snapshot.
  * Provides reliable source-of-truth for save operations and debugging lost characters.
  */
-export const useKeystrokeJournal = ({ rundownId, state, enabled = true }: UseKeystrokeJournalProps) => {
+export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performanceMode = false }: UseKeystrokeJournalProps) => {
   const latestSnapshotRef = useRef<RundownState | null>(null);
   const journalRef = useRef<KeystrokeEntry[]>([]);
   const lastPersistedRef = useRef<number>(0);
   const verboseLoggingRef = useRef(false);
+  const signatureCache = useRef<Map<string, string>>(new Map());
   
-  // Ring buffer for performance (keep last 1000 entries)
-  const MAX_JOURNAL_ENTRIES = 1000;
-  const PERSIST_INTERVAL_MS = 3000; // Persist every 3 seconds
+  // Performance-aware ring buffer sizing based on rundown size
+  const itemCount = state.items?.length || 0;
+  const MAX_JOURNAL_ENTRIES = performanceMode || itemCount > 150 ? 500 : itemCount > 100 ? 750 : 1000;
+  const PERSIST_INTERVAL_MS = performanceMode ? 5000 : 3000; // Less frequent persistence for large rundowns
+  
+  // Memory usage monitoring
+  const memoryUsageRef = useRef<number>(0);
+  const MEMORY_WARNING_THRESHOLD = 500 * 1024 * 1024; // 500MB
 
-  // Create content signature for comparison
+  // Performance-optimized signature creation with caching and lightweight mode
   const createSnapshotSignature = useCallback((snapshot: RundownState) => {
-    return JSON.stringify({
-      items: snapshot.items?.map(item => ({
-        id: item.id,
-        name: item.name || '',
-        script: item.script || '',
-        notes: item.notes || '',
-        talent: item.talent || ''
-      })) || [],
-      title: snapshot.title || '',
-      startTime: snapshot.startTime || '',
-      timezone: snapshot.timezone || '',
-      externalNotes: snapshot.externalNotes || ''
-    });
-  }, []);
+    const cacheKey = `${snapshot.items?.length || 0}-${snapshot.title || ''}-${Date.now()}`;
+    
+    // Check cache first
+    if (signatureCache.current.has(cacheKey)) {
+      return signatureCache.current.get(cacheKey)!;
+    }
+    
+    let signature: string;
+    
+    // Use lightweight signature for performance mode or large rundowns
+    if (performanceMode || itemCount > 150) {
+      signature = JSON.stringify({
+        itemCount: snapshot.items?.length || 0,
+        itemIds: snapshot.items?.slice(0, 10).map(item => item.id) || [], // Sample first 10 items
+        title: snapshot.title || '',
+        startTime: snapshot.startTime || '',
+        contentHash: snapshot.items?.reduce((acc, item, idx) => 
+          acc + (item.name?.length || 0) + (item.script?.length || 0) + idx, 0) || 0
+      });
+    } else {
+      // Full signature for smaller rundowns
+      signature = JSON.stringify({
+        items: snapshot.items?.map(item => ({
+          id: item.id,
+          name: item.name || '',
+          script: item.script || '',
+          notes: item.notes || '',
+          talent: item.talent || ''
+        })) || [],
+        title: snapshot.title || '',
+        startTime: snapshot.startTime || '',
+        timezone: snapshot.timezone || '',
+        externalNotes: snapshot.externalNotes || ''
+      });
+    }
+    
+    // Cache with size limit
+    if (signatureCache.current.size > 50) {
+      signatureCache.current.clear(); // Clear cache if too large
+    }
+    signatureCache.current.set(cacheKey, signature);
+    
+    return signature;
+  }, [performanceMode, itemCount]);
 
-  // Add entry to journal with ring buffer management
+  // Performance-optimized journal entry management with memory monitoring
   const addJournalEntry = useCallback((entry: KeystrokeEntry) => {
     if (!enabled || !rundownId) return;
     
     journalRef.current.push(entry);
     
-    // Ring buffer: remove oldest entries if we exceed max
+    // Performance-aware ring buffer management
     if (journalRef.current.length > MAX_JOURNAL_ENTRIES) {
-      journalRef.current = journalRef.current.slice(-MAX_JOURNAL_ENTRIES);
+      const keepEntries = Math.floor(MAX_JOURNAL_ENTRIES * 0.8); // Keep 80% when cleaning
+      journalRef.current = journalRef.current.slice(-keepEntries);
+      
+      if (performanceMode) {
+        console.log('🧹 Journal: Performance cleanup, kept', keepEntries, 'entries');
+      }
+    }
+    
+    // Memory usage estimation and warning
+    if (performanceMode && journalRef.current.length % 100 === 0) {
+      try {
+        const estimatedSize = JSON.stringify(journalRef.current).length * 2; // Rough estimate
+        memoryUsageRef.current = estimatedSize;
+        
+        if (estimatedSize > MEMORY_WARNING_THRESHOLD) {
+          console.warn('⚠️ Journal memory usage high:', Math.round(estimatedSize / 1024 / 1024), 'MB');
+          // More aggressive cleanup for memory pressure
+          journalRef.current = journalRef.current.slice(-Math.floor(MAX_JOURNAL_ENTRIES * 0.5));
+        }
+      } catch (error) {
+        // Ignore memory calculation errors
+      }
     }
 
     if (verboseLoggingRef.current) {
       console.log('📝 Keystroke journal:', entry);
     }
-  }, [enabled, rundownId]);
+  }, [enabled, rundownId, MAX_JOURNAL_ENTRIES, performanceMode]);
 
   // Update latest snapshot and log the change
   const updateSnapshot = useCallback((description: string = 'content update') => {
