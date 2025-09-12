@@ -186,7 +186,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isInitialized]);
   
-  const { isSaving, markAsChanged, trackCellChange, markActiveTyping } = autoSave;
+  const { isSaving, markAsChanged } = autoSave;
   
   // Legacy compatibility
   const setUndoActive = (active: boolean) => autoSave.markAsChanged();
@@ -815,7 +815,8 @@ export const useSimplifiedRundownState = () => {
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
-      markActiveTyping();
+      markAsChanged();
+      
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -840,7 +841,7 @@ export const useSimplifiedRundownState = () => {
       // For immediate sync fields like isFloating, save undo state and trigger immediate save
       saveUndoState(state.items, [], state.title, `Toggle ${field}`);
       // Trigger immediate autosave for critical state changes like float/unfloat
-      markActiveTyping(); // This will trigger the autosave system to save immediately
+      markAsChanged(); // This will trigger the autosave system to save immediately
     } else if (field === 'color') {
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
@@ -1542,9 +1543,6 @@ export const useSimplifiedRundownState = () => {
       },
       trackOwnUpdate: realtimeConnection.trackOwnUpdate // Pass through to realtime system
     },
-    
-    // Autosave typing guard
-    markActiveTyping,
     
     // Structural change handling
     markStructuralChange,
