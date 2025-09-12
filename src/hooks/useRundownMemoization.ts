@@ -23,7 +23,7 @@ export const useRundownMemoization = (
   const memoizedCalculations = useMemo(() => {
     const itemCount = items.length;
     
-    // For large rundowns, return minimal data to prevent memory leaks
+    // For large rundowns, use memory-optimized calculations while preserving functionality
     if (itemCount > 100) {
       // Return items with minimal augmentation using simple index-based numbering
       let regularItemIndex = 0;
@@ -41,11 +41,47 @@ export const useRundownMemoization = (
         };
       });
       
+      // FIXED: Lightweight but functional header durations and total runtime
+      const headerDurations = new Map<string, string>();
+      let totalRuntimeSeconds = 0;
+      
+      items.forEach((item, index) => {
+        // Calculate total runtime (memory efficient)
+        if (!item.isFloating && !item.isFloated && item.duration) {
+          const parts = item.duration.split(':').map(Number);
+          if (parts.length === 2) totalRuntimeSeconds += parts[0] * 60 + parts[1];
+          if (parts.length === 3) totalRuntimeSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
+        
+        // Calculate header durations (limit scope for memory efficiency)
+        if (item.type === 'header') {
+          let segmentSeconds = 0;
+          for (let i = index + 1; i < Math.min(items.length, index + 20); i++) { // Limit to next 20 items for memory
+            const nextItem = items[i];
+            if (nextItem.type === 'header') break;
+            if (!nextItem.isFloating && !nextItem.isFloated && nextItem.duration) {
+              const parts = nextItem.duration.split(':').map(Number);
+              if (parts.length === 2) segmentSeconds += parts[0] * 60 + parts[1];
+              if (parts.length === 3) segmentSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+          }
+          const hours = Math.floor(segmentSeconds / 3600);
+          const minutes = Math.floor((segmentSeconds % 3600) / 60);
+          const secs = segmentSeconds % 60;
+          headerDurations.set(item.id, `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+        }
+      });
+      
+      const hours = Math.floor(totalRuntimeSeconds / 3600);
+      const minutes = Math.floor((totalRuntimeSeconds % 3600) / 60);
+      const secs = totalRuntimeSeconds % 60;
+      const totalCalculatedRuntime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      
       return {
         itemsWithStatus,
         visibleItemsOnly: items,
-        headerDurations: new Map<string, string>(), // Empty map to save memory
-        totalCalculatedRuntime: '00:00:00' // Skip expensive calculation
+        headerDurations,
+        totalCalculatedRuntime
       };
     }
     
@@ -119,7 +155,7 @@ export const useRundownMemoization = (
       headerDurations,
       totalCalculatedRuntime
     };
-  }, [items.length, currentSegmentId]); // Minimal dependencies to reduce recalculation
+  }, [items.length, currentSegmentId, startTime]); // FIXED: Include startTime for timing updates
 
   return memoizedCalculations;
 };
