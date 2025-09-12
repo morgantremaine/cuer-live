@@ -87,7 +87,7 @@ export const useSimpleAutoSave = (
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
-  const SIGNATURE_CACHE_TTL = 5000; // 5 seconds cache TTL
+  const SIGNATURE_CACHE_TTL = 1000; // FIXED: Reduced from 5000ms to 1000ms for better edit responsiveness
   
   // Memory cleanup for large rundowns to prevent memory leaks
   useEffect(() => {
@@ -117,13 +117,23 @@ export const useSimpleAutoSave = (
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
     const itemCount = targetState.items?.length || 0;
     
-    // Create a quick hash key for caching based on item IDs and basic metadata
+    // FIXED: Create a more comprehensive cache key that includes actual content changes
+    const contentHash = targetState.items?.map(item => 
+      // Include all text fields that users can edit
+      `${item.id}:${item.name || ''}:${item.talent || ''}:${item.script || ''}:${item.gfx || ''}:${item.video || ''}:${item.images || ''}:${item.notes || ''}:${item.duration || ''}:${item.color || ''}`
+    ).join('|') || '';
+    
     const cacheKey = JSON.stringify({
       itemIds: targetState.items?.map(item => item.id) || [],
       itemCount,
       title: targetState.title || '',
       startTime: targetState.startTime || '',
-      lastModified: targetState.items?.map(item => (item as any).updatedAt || item.id).join('') || ''
+      contentHash: contentHash.length > 1000 ? 
+        // For very long content, use a simple hash to avoid huge cache keys
+        contentHash.split('').reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0) 
+        : contentHash,
+      externalNotes: targetState.externalNotes || '',
+      timezone: targetState.timezone || ''
     });
     
     // Check cache first for performance
@@ -498,7 +508,8 @@ export const useSimpleAutoSave = (
     if (finalSignature === lastSavedRef.current) {
       // Mark as saved since there are no actual content changes
       debugLogger.autosave('No changes to save - marking as saved');
-      console.log('ℹ️ AutoSave: no content changes detected');
+      console.log('ℹ️ AutoSave: no content changes detected - signatures match');
+      console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
       onSavedRef.current?.();
       return;
     }
