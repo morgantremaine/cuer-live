@@ -77,9 +77,6 @@ export const useSimplifiedRundownState = () => {
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
-  // Create suppressUntilRef for auto-save compatibility
-  const suppressUntilRef = useRef<number>(0);
-  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
@@ -151,14 +148,13 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const autoSave = useSimpleAutoSave({
-    state: {
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
+    {
       ...state,
       columns: [] // Remove columns from team sync
-    },
-    rundownId,
-    isInitiallyLoaded: isInitialized,
-    onSavedRef: useRef((meta?: { updatedAt?: string; docVersion?: number }) => {
+    }, 
+    rundownId, 
+    (meta?: { updatedAt?: string; docVersion?: number }) => {
       actions.markSaved();
       
       // Update our doc version and timestamp tracking
@@ -169,29 +165,24 @@ export const useSimplifiedRundownState = () => {
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
       }
-    }),
-    saveTimeoutRef: useRef<NodeJS.Timeout>(),
-    suppressUntilRef: suppressUntilRef,
-    lastEditAtRef: useRef<number>(0),
-    undoActiveRef: useRef<boolean>(false),
+      
+      // Prime lastSavedRef after initial load to prevent false autosave triggers
+      if (isInitialized && !lastSavedPrimedRef.current) {
+        lastSavedPrimedRef.current = true;
+      }
+      
+      // Coordinate with teleprompter saves to prevent conflicts
+      if (teleprompterSync.isTeleprompterSaving) {
+        debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
+      }
+    },
+    pendingStructuralChangeRef,
+    undefined, // Legacy ref no longer needed
+    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
+    blockUntilLocalEditRef,
     cooldownUntilRef,
-    blockUntilLocalEditRef
-  });
-
-  
-  // Prime lastSavedRef after initial load to prevent false autosave triggers
-  useEffect(() => {
-    if (isInitialized && !lastSavedPrimedRef.current) {
-      lastSavedPrimedRef.current = true;
-    }
-  }, [isInitialized]);
-  
-  const { isSaving, markAsChanged } = autoSave;
-  
-  // Legacy compatibility
-  const setUndoActive = (active: boolean) => autoSave.markAsChanged();
-  const isTypingActive = false; // Simplified for now
-  const setTrackOwnUpdate = (fn: any) => {}; // Legacy compatibility
+    applyingCellBroadcastRef // Pass the cell broadcast flag
+  );
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
@@ -314,7 +305,7 @@ export const useSimplifiedRundownState = () => {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
-        isTyping: isTypingActive,
+        isTyping: isTypingActive(),
         activeField: typingSessionRef.current?.fieldKey,
         hasRecentCellUpdates
       });
@@ -469,7 +460,7 @@ export const useSimplifiedRundownState = () => {
   }, [isInitialized]);
 
   // Connect realtime to auto-save typing/unsaved state
-  realtimeConnection.setTypingChecker(() => isTypingActive);
+  realtimeConnection.setTypingChecker(() => isTypingActive());
   realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
 
   // Get current user ID for cell broadcasts
@@ -790,10 +781,8 @@ export const useSimplifiedRundownState = () => {
   }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
 
-  // CORE FIX: Enhanced updateItem function with cell-level change tracking
+  // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Track this specific cell change for incremental processing
-    autoSave.trackCellChange(id, field, value);
     // Re-enable autosave after local edit if it was blocked due to teammate update
     if (blockUntilLocalEditRef.current) {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
@@ -815,8 +804,7 @@ export const useSimplifiedRundownState = () => {
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
-      markAsChanged();
-      
+      markActiveTyping();
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -841,7 +829,7 @@ export const useSimplifiedRundownState = () => {
       // For immediate sync fields like isFloating, save undo state and trigger immediate save
       saveUndoState(state.items, [], state.title, `Toggle ${field}`);
       // Trigger immediate autosave for critical state changes like float/unfloat
-      markAsChanged(); // This will trigger the autosave system to save immediately
+      markActiveTyping(); // This will trigger the autosave system to save immediately
     } else if (field === 'color') {
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
@@ -1543,6 +1531,9 @@ export const useSimplifiedRundownState = () => {
       },
       trackOwnUpdate: realtimeConnection.trackOwnUpdate // Pass through to realtime system
     },
+    
+    // Autosave typing guard
+    markActiveTyping,
     
     // Structural change handling
     markStructuralChange,

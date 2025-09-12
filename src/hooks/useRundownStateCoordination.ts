@@ -317,8 +317,8 @@ export const useRundownStateCoordination = () => {
       getHeaderGroupItemIds,
       visibleItems,
       
-      // Structural change handling
-      markStructuralChange: persistedState.markStructuralChange
+      // Autosave typing guard
+      markActiveTyping: persistedState.markActiveTyping
     },
     interactions,
     uiState,
