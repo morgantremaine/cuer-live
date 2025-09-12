@@ -121,9 +121,14 @@ const RundownTable = ({
     onDragEnd?.(e);
   };
 
-  // REMOVE DOM LIMITING - users need to see everything!
-  // The real issue is render loops, not DOM size
-  console.log(`🎭 Table rendering: ${items.length} items (FULL)`);
+// REMOVE DOM LIMITING - users need to see everything!
+// The real issue is render loops, not DOM size
+// Reduced logging frequency to prevent console spam
+const renderCount = React.useRef(0);
+renderCount.current++;
+if (renderCount.current % 50 === 0) { // Only log every 50th render
+  console.log(`🎭 Table rendering: ${items.length} items (FULL) - Render #${renderCount.current}`);
+}
 
   return (
     <tbody className="bg-background">
