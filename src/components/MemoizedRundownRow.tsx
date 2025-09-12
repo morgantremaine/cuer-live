@@ -131,11 +131,37 @@ const MemoizedRundownRow = memo<MemoizedRundownRowProps>(({
   // Custom comparison function for aggressive memoization
   // Only re-render if specific props that affect this row have changed
   
-  // Core item changes
+  // CRITICAL: Check ALL editable fields that users can type in
   if (prevProps.item.id !== nextProps.item.id) return false;
   if (prevProps.item.name !== nextProps.item.name) return false;
   if (prevProps.item.color !== nextProps.item.color) return false;
   if (prevProps.item.type !== nextProps.item.type) return false;
+  
+  // CHECK ALL EDITABLE FIELDS - this was missing and causing typing issues!
+  if (prevProps.item.duration !== nextProps.item.duration) return false;
+  if (prevProps.item.script !== nextProps.item.script) return false;
+  if (prevProps.item.notes !== nextProps.item.notes) return false;
+  if (prevProps.item.talent !== nextProps.item.talent) return false;
+  if (prevProps.item.gfx !== nextProps.item.gfx) return false;
+  if (prevProps.item.video !== nextProps.item.video) return false;
+  if (prevProps.item.images !== nextProps.item.images) return false;
+  if (prevProps.item.startTime !== nextProps.item.startTime) return false;
+  if (prevProps.item.endTime !== nextProps.item.endTime) return false;
+  if (prevProps.item.isFloating !== nextProps.item.isFloating) return false;
+  if (prevProps.item.isFloated !== nextProps.item.isFloated) return false;
+  
+  // Check any custom fields that might exist
+  const prevCustomFields = Object.keys(prevProps.item).filter(key => 
+    !['id', 'name', 'color', 'type', 'duration', 'script', 'notes', 'talent', 'gfx', 'video', 'images', 'startTime', 'endTime', 'isFloating', 'isFloated', 'rowNumber', 'elapsedTime', 'customFields', 'segmentName', 'status', 'isHeader'].includes(key)
+  );
+  const nextCustomFields = Object.keys(nextProps.item).filter(key => 
+    !['id', 'name', 'color', 'type', 'duration', 'script', 'notes', 'talent', 'gfx', 'video', 'images', 'startTime', 'endTime', 'isFloating', 'isFloated', 'rowNumber', 'elapsedTime', 'customFields', 'segmentName', 'status', 'isHeader'].includes(key)
+  );
+  
+  if (prevCustomFields.length !== nextCustomFields.length) return false;
+  for (const field of prevCustomFields) {
+    if (prevProps.item[field] !== nextProps.item[field]) return false;
+  }
   
   // Selection and interaction state
   if (prevProps.isSelected !== nextProps.isSelected) return false;
