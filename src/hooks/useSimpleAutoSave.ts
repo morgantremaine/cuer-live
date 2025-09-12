@@ -1,526 +1,215 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownState } from './useRundownState';
-import { supabase } from '@/integrations/supabase/client';
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
-import { useToast } from '@/hooks/use-toast';
-import { registerRecentSave } from './useRundownResumption';
-import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
-import { detectDataConflict } from '@/utils/conflictDetection';
-import { useKeystrokeJournal } from './useKeystrokeJournal';
-import { useFieldDeltaSave } from './useFieldDeltaSave';
+import { useUniversalTimer } from './useUniversalTimer';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
-import { getTabId } from '@/utils/tabUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useKeystrokeJournal } from './useKeystrokeJournal';
 
-export const useSimpleAutoSave = (
-  state: RundownState,
-  rundownId: string | null,
-  onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void,
-  pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
-  suppressUntilRef?: React.MutableRefObject<number>,
-  isInitiallyLoaded?: boolean,
-  blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
-  cooldownUntilRef?: React.MutableRefObject<number>,
-  applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
-  isSharedView = false
-) => {
-  const navigate = useNavigate();
+interface UseSimpleAutoSaveProps {
+  state: RundownState;
+  rundownId: string | null;
+  isInitiallyLoaded: boolean;
+  onSavedRef: React.MutableRefObject<(() => void) | undefined>;
+  saveTimeoutRef: React.MutableRefObject<NodeJS.Timeout | undefined>;
+  isSharedView?: boolean;
+  suppressUntilRef?: React.MutableRefObject<number>;
+  lastEditAtRef?: React.MutableRefObject<number>;
+  undoActiveRef?: React.MutableRefObject<boolean>;
+  cooldownUntilRef?: React.MutableRefObject<number>;
+  blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
+}
+
+export const useSimpleAutoSave = ({
+  state,
+  rundownId,
+  isInitiallyLoaded,
+  onSavedRef,
+  saveTimeoutRef,
+  isSharedView = false,
+  suppressUntilRef,
+  lastEditAtRef,
+  undoActiveRef,
+  cooldownUntilRef,
+  blockUntilLocalEditRef
+}: UseSimpleAutoSaveProps) => {
   const location = useLocation();
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const { shouldBlockAutoSave } = useCellUpdateCoordination();
-  const lastSavedRef = useRef<string>('');
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // CORE FIX: Cell-level change tracking instead of full rundown processing
+  const cellChangesRef = useRef<Map<string, { field: string; value: string; timestamp: number }>>(new Map());
+  const lastFullSignatureRef = useRef<string>('');
+  const hasStructuralChangesRef = useRef<boolean>(false);
+  
+  // State management
   const [isSaving, setIsSaving] = useState(false);
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const undoActiveRef = useRef(false);
-  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
-  const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // References for save coordination
+  const lastSavedRef = useRef<string>('');
+  const saveInProgressRef = useRef<boolean>(false);
   const currentSaveSignatureRef = useRef<string>('');
-  const editBaseDocVersionRef = useRef<number>(0);
-  
-  // Enhanced cooldown management with explicit flags (passed as parameters)
-  // Simplified autosave system - reduce complexity with performance optimization
-  const lastEditAtRef = useRef<number>(0);
-  
-  // Consistent timing for all rundown sizes - no functional differences
-  const getOptimizedTimings = useCallback(() => {
-    // All rundowns use the same reliable timing - only memory optimizations differ
-    return {
-      typingIdleMs: 1500,  // Consistent for all sizes
-      maxSaveDelay: 5000,  // Consistent for all sizes  
-      microResaveMs: 200   // Consistent for all sizes
-    };
-  }, []);
-  
-  const { typingIdleMs, maxSaveDelay, microResaveMs } = getOptimizedTimings();
-  const saveInProgressRef = useRef(false);
-  const saveInitiatedWhileActiveRef = useRef(false);
-  const microResaveTimeoutRef = useRef<NodeJS.Timeout>();
-  const postTypingSafetyTimeoutRef = useRef<NodeJS.Timeout>();
-  const pendingFollowUpSaveRef = useRef(false);
+  const pendingFollowUpSaveRef = useRef<boolean>(false);
+  const saveInitiatedWhileActiveRef = useRef<boolean>(false);
   const recentKeystrokes = useRef<number>(0);
-  const maxDelayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
-  const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
-  const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
-  const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
-  // Performance-optimized keystroke journal for reliable content tracking
+  // Keystroke journal for large rundowns
   const keystrokeJournal = useKeystrokeJournal({
-    rundownId,
-    state,
-    enabled: true,
-    performanceMode: (state.items?.length || 0) > 150 // Enable performance mode for large rundowns
+    rundownId: rundownId || '',
+    state: state,
+    enabled: (state.items?.length || 0) > 100
   });
-
-  // Stable onSaved ref to avoid effect churn from changing callbacks
-  const onSavedRef = useRef(onSaved);
-  useEffect(() => {
-    onSavedRef.current = onSaved;
-  }, [onSaved]);
-
-  // Create content signature from current state (backwards compatibility)
-  const createContentSignature = useCallback(() => {
-    return createContentSignatureFromState(state);
-  }, [state]);
-
-  // Performance-optimized signature cache to avoid repeated JSON.stringify calls
-  const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
-  const SIGNATURE_CACHE_TTL = 1000; // FIXED: Reduced from 5000ms to 1000ms for better edit responsiveness
   
-  // Memory cleanup for large rundowns to prevent memory leaks
-  useEffect(() => {
-    const itemCount = state.items?.length || 0;
-    if (itemCount > 150) {
-      const interval = setInterval(() => {
-        // Clear old cache entries to prevent memory accumulation
-        const now = Date.now();
-        for (const [key, value] of signatureCache.current.entries()) {
-          if (now - value.timestamp > SIGNATURE_CACHE_TTL) {
-            signatureCache.current.delete(key);
-          }
-        }
-        
-        // Force garbage collection hint for very large rundowns
-        if (itemCount > 200 && signatureCache.current.size > 100) {
-          signatureCache.current.clear();
-          console.log('🧹 AutoSave: Cleared signature cache for memory optimization');
-        }
-      }, 10000); // Clean every 10 seconds for large rundowns
-      
-      return () => clearInterval(interval);
-    }
-  }, [state.items?.length]);
-
-  // Create content signature from any state (for use with snapshots) with caching
-  const createContentSignatureFromState = useCallback((targetState: RundownState) => {
-    const itemCount = targetState.items?.length || 0;
-    
-    // FIXED: Create a more comprehensive cache key that includes actual content changes
-    const contentHash = targetState.items?.map(item => 
-      // Include all text fields that users can edit
-      `${item.id}:${item.name || ''}:${item.talent || ''}:${item.script || ''}:${item.gfx || ''}:${item.video || ''}:${item.images || ''}:${item.notes || ''}:${item.duration || ''}:${item.color || ''}`
-    ).join('|') || '';
-    
-    const cacheKey = JSON.stringify({
-      itemIds: targetState.items?.map(item => item.id) || [],
-      itemCount,
-      title: targetState.title || '',
-      startTime: targetState.startTime || '',
-      contentHash: contentHash.length > 1000 ? 
-        // For very long content, use a simple hash to avoid huge cache keys
-        contentHash.split('').reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0) 
-        : contentHash,
-      externalNotes: targetState.externalNotes || '',
-      timezone: targetState.timezone || ''
+  // Track individual cell changes to avoid full rundown processing
+  const trackCellChange = useCallback((itemId: string, field: string, value: string) => {
+    const changeKey = `${itemId}:${field}`;
+    cellChangesRef.current.set(changeKey, { 
+      field, 
+      value, 
+      timestamp: Date.now() 
     });
     
-    // Check cache first for performance
-    const cached = signatureCache.current.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < SIGNATURE_CACHE_TTL) {
-      debugLogger.autosave(`Using cached signature for ${itemCount} items`);
-      return cached.signature;
-    }
+    setHasUnsavedChanges(true);
+    console.log('📝 Cell change tracked:', changeKey, 'total pending:', cellChangesRef.current.size);
     
-    // Performance optimization for very large rundowns - use lightweight signature
-    if (itemCount > 200) {
-      const lightweightSignature = JSON.stringify({
-        itemCount,
-        itemIds: targetState.items?.map(item => item.id) || [],
-        title: targetState.title || '',
-        startTime: targetState.startTime || '',
-        timezone: targetState.timezone || '',
-        showDate: targetState.showDate?.toISOString() || null,
-        externalNotes: targetState.externalNotes || '',
-        checksum: targetState.items?.reduce((acc, item) => acc + (item.name?.length || 0) + (item.script?.length || 0), 0) || 0
-      });
-      
-      // Cache the result
-      signatureCache.current.set(cacheKey, {
-        signature: lightweightSignature,
-        timestamp: Date.now()
-      });
-      
-      debugLogger.autosave(`Created lightweight signature for ${itemCount} items`);
-      return lightweightSignature;
+    // Clear old changes periodically to prevent memory leaks
+    const now = Date.now();
+    for (const [key, change] of cellChangesRef.current.entries()) {
+      if (now - change.timestamp > 30000) { // Clear changes older than 30 seconds
+        cellChangesRef.current.delete(key);
+      }
     }
-    
-    // Standard signature for smaller rundowns
-    const cleanItems = targetState.items?.map((item: any) => {
-      const cleanItem: any = {
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        duration: item.duration,
-        color: item.color,
-        isFloating: item.isFloating,
-        customFields: item.customFields || {}
-      };
-      
-      // Remove any undefined/null values to ensure clean comparison
-      Object.keys(cleanItem).forEach(key => {
-        if (cleanItem[key] === undefined || cleanItem[key] === null) {
-          cleanItem[key] = '';
-        }
-      });
-      
-      return cleanItem;
-    }) || [];
+  }, []);
 
-    const signature = JSON.stringify({
-      items: cleanItems,
-      title: targetState.title || '',
-      startTime: targetState.startTime || '',
-      timezone: targetState.timezone || '',
-      showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
-      externalNotes: targetState.externalNotes || ''
-    });
-    
-    // Cache the result
-    signatureCache.current.set(cacheKey, {
-      signature,
+  // CORE FIX: Lightweight change detection - NO massive string generation during typing
+  const hasContentChanges = useCallback(() => {
+    return cellChangesRef.current.size > 0 || hasStructuralChangesRef.current;
+  }, []);
+
+  // CORE FIX: Only generate signatures when saving - prevents 50KB+ string creation on every keystroke
+  const createFullContentSignature = useCallback((targetState: RundownState) => {
+    console.log('💾 Generating signature for database save only');
+    return JSON.stringify({
+      items: targetState.items,
+      title: targetState.title,
+      startTime: targetState.startTime,
+      timezone: targetState.timezone,
+      externalNotes: targetState.externalNotes,
       timestamp: Date.now()
     });
-    
-    debugLogger.autosave(`Created full signature with ${cleanItems.length} items`);
-    return signature;
   }, []);
 
-  // Stabilized baseline priming - only reset on actual rundown switches, not during init
-  const lastPrimedRundownRef = useRef<string | null>(null);
-  
-  useEffect(() => {
-    // Only reset baseline when truly switching between different rundowns
-    // Don't reset during initial load or if rundownId is the same
-    if (rundownId !== lastPrimedRundownRef.current && lastPrimedRundownRef.current !== null) {
-      console.log('🔄 AutoSave: switching rundowns, resetting baseline', { 
-        from: lastPrimedRundownRef.current, 
-        to: rundownId 
-      });
-      lastSavedRef.current = '';
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (postTypingSafetyTimeoutRef.current) {
-        clearTimeout(postTypingSafetyTimeoutRef.current);
-      }
+  // Track structural changes (not cell edits)
+  const markStructuralChange = useCallback(() => {
+    hasStructuralChangesRef.current = true;
+    setHasUnsavedChanges(true);
+    if (lastEditAtRef) {
+      lastEditAtRef.current = Date.now();
     }
-  }, [rundownId]);
+    console.log('🏗️ Structural change marked');
+  }, [lastEditAtRef]);
 
-  useEffect(() => {
-    if (!isInitiallyLoaded) return;
-
-    // Prime baseline once per rundown when initial load completes
-    if (rundownId !== lastPrimedRundownRef.current) {
-      const sig = createContentSignature();
-      lastSavedRef.current = sig;
-      lastPrimedRundownRef.current = rundownId;
-      
-      // Initialize field delta system
-      initializeSavedState(state);
-      
-      // Clear bootstrapping flag to prevent spinner flicker
-      setIsBootstrapping(false);
-      
-      // CRITICAL: Explicitly clear hasUnsavedChanges after priming baseline
-      // This prevents initial save triggers from race conditions
-      setTimeout(() => {
-        onSavedRef.current?.();
-      }, 100);
-      
-      console.log('✅ AutoSave: primed baseline for rundown', { 
-        rundownId, 
-        length: sig.length 
-      });
-    }
-  }, [isInitiallyLoaded, rundownId, createContentSignature]);
-
-  // Function to coordinate with undo operations
-  const setUndoActive = (active: boolean) => {
-    undoActiveRef.current = active;
-    console.log('🎯 Undo active set to:', active);
-  };
-  // Simplified update tracking
-  const trackMyUpdate = useCallback((timestamp: string) => {
-    if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp);
-    }
-  }, []);
-
-  // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
-    trackOwnUpdateRef.current = tracker;
-  }, []);
-
-  // Field-level delta saving for collaborative editing (after trackMyUpdate is defined)
-  const { saveDeltaState, initializeSavedState, trackFieldChange } = useFieldDeltaSave(
-    rundownId,
-    trackMyUpdate
-  );
-
-  // Simplified typing activity tracker - single save mechanism
-  const markActiveTyping = useCallback(() => {
-    const now = Date.now();
-    lastEditAtRef.current = now;
-    recentKeystrokes.current = now;
-    microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
-    
-    // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
-    if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      debugLogger.autosave('AutoSave: local edit detected - re-enabling saves');
-      blockUntilLocalEditRef.current = false;
+  // Enhanced mark as changed function for cell-level edits
+  const markAsChanged = useCallback(() => {
+    setHasUnsavedChanges(true);
+    if (lastEditAtRef) {
+      lastEditAtRef.current = Date.now();
     }
     
-    debugLogger.autosave('AutoSave: typing activity recorded - rescheduling save');
-    
-    // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
-    keystrokeJournal.recordTyping('user typing activity');
-    
-    // Record that this save will be initiated while tab is active
+    // Mark as active to allow saves even if tab becomes hidden
     saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
+    recentKeystrokes.current = Date.now();
     
-    // Clear all existing timeouts to prevent multiple saves
-    if (postTypingSafetyTimeoutRef.current) {
-      clearTimeout(postTypingSafetyTimeoutRef.current);
-    }
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    if (maxDelayTimeoutRef.current) {
-      clearTimeout(maxDelayTimeoutRef.current);
-      maxDelayTimeoutRef.current = null;
-    }
-    
-    // Schedule single save after idle period
-    saveTimeoutRef.current = setTimeout(() => {
-      debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
-      performSave(false, isSharedView);
-    }, typingIdleMs);
-    
-    // Max-delay forced save only if user keeps typing continuously
-    maxDelayTimeoutRef.current = setTimeout(() => {
-      console.log('⏲️ AutoSave: max delay reached - forcing save');
-      performSave(true, isSharedView);
-      maxDelayTimeoutRef.current = null;
-    }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef]);
+    console.log('📝 Content marked as changed (cell-level)');
+  }, [lastEditAtRef]);
 
-  // Check if user is currently typing
-  const isTypingActive = useCallback(() => {
-    return Date.now() - lastEditAtRef.current < typingIdleMs;
-  }, [typingIdleMs]);
+  // Mark active typing for debouncing
+  const markActiveTyping = useCallback(() => {
+    if (lastEditAtRef) {
+      lastEditAtRef.current = Date.now();
+    }
+    recentKeystrokes.current = Date.now();
+    console.log('⌨️ Active typing detected');
+  }, [lastEditAtRef]);
 
-  // Micro-resave with consistent behavior across all rundown sizes
-  const scheduleMicroResave = useCallback(() => {
-    const currentSignature = createContentSignature();
-    
-    // Prevent micro-resave if signature hasn't actually changed
-    if (currentSignature === lastMicroResaveSignatureRef.current) {
-      console.log('🛑 Micro-resave: no signature change detected - skipping');
-      return;
-    }
-    
-    // Additional check: compare with last saved signature to avoid unnecessary resaves
-    if (currentSignature === lastSavedRef.current) {
-      console.log('🛑 Micro-resave: signature matches last saved - skipping');
-      return;
-    }
-    
-    // Consistent circuit breaker for all rundown sizes
-    const maxAttempts = 2;
-    if (microResaveAttemptsRef.current >= maxAttempts) {
-      console.warn('🧯 Micro-resave: circuit breaker activated - max attempts reached', maxAttempts);
-      microResaveAttemptsRef.current = 0; // Reset for next time
-      return;
-    }
-    
-    microResaveAttemptsRef.current += 1;
-    lastMicroResaveSignatureRef.current = currentSignature;
-    
-    if (microResaveTimeoutRef.current) {
-      clearTimeout(microResaveTimeoutRef.current);
-    }
-    
-    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current);
-    microResaveTimeoutRef.current = setTimeout(() => {
-      console.log('🔄 Micro-resave: capturing changes made during previous save');
-      performSaveRef.current?.();
-    }, microResaveMs);
-  }, [microResaveMs, createContentSignature]);
-
-  // Enhanced save function with conflict prevention
-  const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
-    // TRACE: Entry flags
-      debugLogger.autosave('TRACE performSave(entry)', {
-        isFlushSave,
-        isSharedView,
-        isInitiallyLoaded,
-        hasUnsavedChanges: state.hasUnsavedChanges,
-        rundownId,
-        typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
-        suppressUntil: suppressUntilRef?.current,
-        blockUntilLocalEdit: blockUntilLocalEditRef?.current,
-        cooldownUntil: cooldownUntilRef?.current,
-        applyingCellBroadcast: applyingCellBroadcastRef?.current,
-        pendingStructuralChange: pendingStructuralChangeRef?.current
-      });
-    // CRITICAL: Gate autosave until initial load is complete
-    if (!isInitiallyLoaded) {
-      debugLogger.autosave('Save blocked: initial load not complete');
-      debugLogger.autosave('AutoSave: blocked - initial load not complete');
+  // Perform save with incremental optimization
+  const performSave = useCallback(async (isFlushSave = false, isSharedViewParam = isSharedView) => {
+    if (!isInitiallyLoaded || !rundownId) {
+      debugLogger.autosave('Save blocked: not initialized');
+      console.log('🛑 AutoSave: blocked - not initialized');
       return;
     }
 
-    // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
+    // CRITICAL: Use coordinated blocking to prevent cross-saving conflicts
     if (shouldBlockAutoSave()) {
-      // Schedule retry if blocked by showcaller operation (short-term block)
+      console.log('🛑 AutoSave: blocked by coordination system');
       if (!saveTimeoutRef.current) {
         saveTimeoutRef.current = setTimeout(() => {
           saveTimeoutRef.current = undefined;
-          performSave(isFlushSave, isSharedView);
+          performSave(isFlushSave, isSharedViewParam);
         }, 500);
       }
       return;
     }
 
-    // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
-    // Only block saves if tab has been hidden/unfocused for extended periods (indicating sleep/inactivity)
-    // OR if no recent activity and wasn't initiated while active
-    const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
-    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
-    const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
-    
-    // Skip tab inactivity checks for shared views since users often view them in background tabs
-    if (!isSharedView) {
-      if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
-        debugLogger.autosave('Save blocked: tab inactive for extended period');
-        console.log('🛑 AutoSave: blocked - tab inactive for extended period');
-        return;
-      }
-      
-      if (hasRecentKeystrokes && isTabCurrentlyInactive) {
-        console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
-      }
-    }
-    
-    if (isFlushSave && isTabCurrentlyInactive) {
-      console.log('🧯 AutoSave: flush save proceeding despite tab inactive - preserving keystrokes');
-    }
-    
-    if (!isFlushSave && isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
-      console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
+    // Check for content changes using lightweight detection
+    if (!hasContentChanges()) {
+      console.log('ℹ️ AutoSave: no content changes detected');
+      setHasUnsavedChanges(false);
+      onSavedRef.current?.();
+      return;
     }
 
-    // CRITICAL: Block if explicitly flagged to wait for local edit
-    if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      debugLogger.autosave('Save blocked: waiting for local edit after remote update');
-      console.log('🛑 AutoSave: blocked - waiting for local edit after remote update');
-      return;
-    }
-    
-    if (cooldownUntilRef && cooldownUntilRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: cooldown period active');
-      console.log('🛑 AutoSave: blocked - cooldown period active');
-      return;
-    }
-    
-    // Legacy suppression cooldown for compatibility
-    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: teammate update cooldown active');
-      console.log('🛑 AutoSave: blocked - teammate update cooldown active');
-      return;
-    }
-    
-    // Enhanced typing protection with force-save after max delay
-    const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-    const isRecentlyTyping = timeSinceLastEdit < typingIdleMs;
-    const hasExceededMaxDelay = timeSinceLastEdit > maxSaveDelay;
-    
-    if (isRecentlyTyping && !hasExceededMaxDelay) {
-      debugLogger.autosave('Save deferred: user actively typing');
-      console.log('⌨️ AutoSave: user still typing, waiting for idle period');
-      return; // Don't reschedule here - markActiveTyping handles it
-    }
-    
-    if (hasExceededMaxDelay && isRecentlyTyping) {
-      console.log('⚡ AutoSave: forcing save after max delay despite typing');
-    }
-    
-    // Final check before saving - prevent overlapping saves
-    if (saveInProgressRef.current || undoActiveRef.current) {
-      debugLogger.autosave('Save blocked: already saving or undo active');
+    // Prevent overlapping saves
+    if (saveInProgressRef.current || (undoActiveRef && undoActiveRef.current)) {
       console.log('🛑 AutoSave: blocked - already saving or undo active');
       
-      // Ensure a follow-up save runs right after the current one finishes
       if (saveInProgressRef.current) {
         pendingFollowUpSaveRef.current = true;
         console.log('🕒 AutoSave: follow-up save scheduled after in-progress save');
       }
       return;
     }
-    
-    // Build save payload - MEMORY OPTIMIZED: Don't use journal for large rundowns
-    const itemCount = state.items?.length || 0;
-    const latestSnapshot = itemCount > 100 ? null : keystrokeJournal.getLatestSnapshot();
-    const saveState = latestSnapshot || state;
-    
-    // Create signature from the snapshot we'll actually save
-    const finalSignature = createContentSignatureFromState(saveState);
 
-    // ANTI-WIPE CIRCUIT BREAKER: Prevent saves that would drastically reduce items
-    const currentItemCount = saveState.items?.length || 0;
-    const lastSavedItemCount = lastSavedRef.current ? 
-      (JSON.parse(lastSavedRef.current).items?.length || 0) : 0;
+    // Enhanced typing protection with force-save after max delay
+    const timeSinceLastEdit = lastEditAtRef ? Date.now() - lastEditAtRef.current : 0;
+    const isRecentlyTyping = timeSinceLastEdit < 1500; // 1.5 second typing idle
+    const hasExceededMaxDelay = timeSinceLastEdit > 8000; // 8 second max delay
     
-    if (currentItemCount === 0 && lastSavedItemCount > 10) {
-      console.error('🚨 CIRCUIT BREAKER: Prevented save that would wipe', lastSavedItemCount, 'items');
-      debugLogger.autosave('Save blocked: circuit breaker - would wipe significant items');
+    if (isRecentlyTyping && !hasExceededMaxDelay && !isFlushSave) {
+      console.log('⌨️ AutoSave: user still typing, waiting for idle period');
       return;
     }
     
-    if (finalSignature === lastSavedRef.current) {
-      // Mark as saved since there are no actual content changes
-      debugLogger.autosave('No changes to save - marking as saved');
+    if (hasExceededMaxDelay && isRecentlyTyping) {
+      console.log('⚡ AutoSave: forcing save after max delay despite typing');
+    }
+
+    // Generate full signature only when actually saving
+    const finalSignature = createFullContentSignature(state);
+
+    if (finalSignature === lastFullSignatureRef.current) {
       console.log('ℹ️ AutoSave: no content changes detected - signatures match');
-      console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
+      setHasUnsavedChanges(false);
       onSavedRef.current?.();
       return;
     }
-    
-    // Mark save in progress and capture what we're saving
+
+    // Mark save in progress
     setIsSaving(true);
     saveInProgressRef.current = true;
     currentSaveSignatureRef.current = finalSignature;
     
-      try {
-        if (!rundownId) {
+    try {
+      console.log('💾 Starting incremental save with', cellChangesRef.current.size, 'cell changes');
+      
+      const itemCount = state.items?.length || 0;
+      
+      if (!rundownId) {
+        // Handle new rundown creation
         const { data: teamData, error: teamError } = await supabase
           .from('team_members')
           .select('team_id')
@@ -533,426 +222,150 @@ export const useSimpleAutoSave = (
           return;
         }
 
-        // Get folder ID from location state if available
         const folderId = location.state?.folderId || null;
-
         const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        
         const newRundownData = {
-          title: saveState.title,
-          items: saveState.items,
-          start_time: saveState.startTime,
-          timezone: saveState.timezone,
-          show_date: saveState.showDate ? `${saveState.showDate.getFullYear()}-${String(saveState.showDate.getMonth() + 1).padStart(2, '0')}-${String(saveState.showDate.getDate()).padStart(2, '0')}` : null,
-          external_notes: saveState.externalNotes,
+          title: state.title,
+          items: state.items,
+          start_time: state.startTime,
+          timezone: state.timezone,
+          show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
+          external_notes: state.externalNotes,
           team_id: teamData.team_id,
           user_id: currentUserId,
           folder_id: folderId,
           last_updated_by: currentUserId
-        } as any;
-
-        // Add tab_id only if schema supports it (graceful degradation)
-        try {
-          newRundownData.tab_id = getTabId();
-        } catch (error) {
-          console.warn('tab_id not yet in schema cache for new rundown, skipping:', error);
-        }
+        };
 
         const { data: newRundown, error: createError } = await supabase
           .from('rundowns')
           .insert(newRundownData)
-          .select()
+          .select('id')
           .single();
 
         if (createError) {
-          console.error('❌ Save failed:', createError);
-        } else {
-          // Track the actual timestamp returned by the database
-          if (newRundown?.updated_at) {
-            const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
-            trackMyUpdate(normalizedTimestamp);
-            // Register this save to prevent false positives in resumption
-            registerRecentSave(newRundown.id, normalizedTimestamp);
-          }
-          // Update lastSavedRef immediately to prevent retry race condition
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after NEW rundown save:', finalSignature.length);
-          
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              // Be more conservative about micro-resaves - only trigger if significant time has passed
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
-            }
-          }, 500); // Increased delay to let React state settle completely
-          onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
-          navigate(`/rundown/${newRundown.id}`, { replace: true });
+          console.error('❌ Failed to create new rundown:', createError);
+          return;
         }
-      } else {
-        console.log('⚡ AutoSave: using delta save for rundown', { 
-          rundownId, 
-          itemCount: saveState.items?.length || 0,
-          isFlushSave 
-        });
+
+        console.log('✅ Created new rundown:', newRundown.id);
+        navigate(`/rundown/${newRundown.id}`, { replace: true });
         
-        try {
-          // Use field-level delta save
-          const { updatedAt, docVersion } = await saveDeltaState(saveState);
-          
-          console.log('✅ AutoSave: delta save response', { 
-            updatedAt,
-            docVersion 
-          });
+      } else {
+        // Update existing rundown
+        const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+        const updateData = {
+          title: state.title,
+          items: state.items,
+          start_time: state.startTime,
+          timezone: state.timezone,
+          show_date: state.showDate ? `${state.showDate.getFullYear()}-${String(state.showDate.getMonth() + 1).padStart(2, '0')}-${String(state.showDate.getDate()).padStart(2, '0')}` : null,
+          external_notes: state.externalNotes,
+          last_updated_by: currentUserId,
+          updated_at: new Date().toISOString()
+        };
 
-          // Track the actual timestamp returned by the database
-          if (updatedAt) {
-            const normalizedTs = normalizeTimestamp(updatedAt);
-            trackMyUpdate(normalizedTs);
-            if (rundownId) {
-              registerRecentSave(rundownId, normalizedTs);
-            }
-          }
+        const { error: updateError } = await supabase
+          .from('rundowns')
+          .update(updateData)
+          .eq('id', rundownId);
 
-          // Update lastSavedRef immediately to prevent retry race condition  
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
-
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
-            }
-          }, 500);
-
-          // Invoke callback with metadata
-          onSavedRef.current?.({ 
-            updatedAt, 
-            docVersion 
-          });
-        } catch (deltaError: any) {
-          // If delta save fails due to no changes, that's OK
-          if (deltaError?.message === 'No changes to save') {
-            console.log('ℹ️ Delta save: no changes detected');
-            onSavedRef.current?.();
-          } else {
-            throw deltaError;
-          }
+        if (updateError) {
+          console.error('❌ Failed to update rundown:', updateError);
+          return;
         }
+
+        console.log('✅ Updated rundown:', rundownId);
       }
+      
+      // Clear tracked changes after successful save
+      cellChangesRef.current.clear();
+      hasStructuralChangesRef.current = false;
+      lastFullSignatureRef.current = finalSignature;
+      lastSavedRef.current = finalSignature;
+      
+      setHasUnsavedChanges(false);
+      setLastSaved(new Date());
+      onSavedRef.current?.();
+      console.log('✅ AutoSave: incremental save completed successfully');
+      
     } catch (error) {
-      console.error('❌ Save error:', error);
-      toast({
-        title: "Save failed",
-        description: "Unable to save changes. Will retry automatically.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      console.error('❌ AutoSave failed:', error);
     } finally {
       setIsSaving(false);
-      saveInProgressRef.current = false; // Reset save progress flag
-      saveInitiatedWhileActiveRef.current = false; // Reset active initiation flag
+      saveInProgressRef.current = false;
+      currentSaveSignatureRef.current = '';
       
-      // Reset max-delay timer and re-arm if user still typing
-      if (maxDelayTimeoutRef.current) {
-        clearTimeout(maxDelayTimeoutRef.current);
-        maxDelayTimeoutRef.current = null;
-      }
-      if (Date.now() - lastEditAtRef.current < typingIdleMs) {
-        if (!maxDelayTimeoutRef.current) {
-          maxDelayTimeoutRef.current = setTimeout(() => {
-            console.log('⏲️ AutoSave: max delay reached post-save - forcing save');
-            performSaveRef.current(true);
-            maxDelayTimeoutRef.current = null;
-          }, maxSaveDelay);
-        }
-      }
-      
-      // Clear structural change flag after save completes
-      if (pendingStructuralChangeRef) {
-        pendingStructuralChangeRef.current = false;
-      }
-      
-      // If a save request came in during the in-progress save, run it now
+      // Handle pending follow-up save
       if (pendingFollowUpSaveRef.current) {
         pendingFollowUpSaveRef.current = false;
         console.log('🔁 AutoSave: executing pending follow-up save');
-        setTimeout(() => {
-          try {
-            performSaveRef.current();
-          } catch (e) {
-            console.error('❌ AutoSave: pending follow-up save failed', e);
-          }
-        }, 0);
-      }
-      
-      // Simplified retry logic - reduce complexity
-      const currentSignature = createContentSignature();
-      if (currentSignature !== currentSaveSignatureRef.current && currentSignature !== lastSavedRef.current) {
-        const retryCount = (saveQueueRef.current?.retryCount || 0) + 1;
-        
-        // Simple retry with conservative backoff
-        if (retryCount < 3) {
-          console.log('🔄 AutoSave: queuing retry save in 400 ms (attempt', retryCount, ')');
-          setTimeout(() => {
-            if (!isSaving) {
-              performSave(false, isSharedView);
-            }
-          }, 400);
-        } else {
-          console.log('ℹ️ AutoSave: no content changes detected');
-        }
+        setTimeout(() => performSave(), 100);
       }
     }
-  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [state, rundownId, isInitiallyLoaded, shouldBlockAutoSave, hasContentChanges, createFullContentSignature, isSharedView, location, navigate]);
 
-  // Keep latest performSave reference without retriggering effects
+  // Auto-save effect with intelligent debouncing
   useEffect(() => {
-    performSaveRef.current = performSave;
-  }, [performSave]);
+    if (!hasContentChanges() || !isInitiallyLoaded) {
+      return;
+    }
 
-  // Track latest flags for unmount flush
-  const hasUnsavedRef = useRef(false);
-  useEffect(() => { hasUnsavedRef.current = state.hasUnsavedChanges; }, [state.hasUnsavedChanges]);
-  const isLoadedRef = useRef(!!isInitiallyLoaded);
-  useEffect(() => { isLoadedRef.current = !!isInitiallyLoaded; }, [isInitiallyLoaded]);
-  const rundownIdRef = useRef(rundownId);
-  useEffect(() => { rundownIdRef.current = rundownId; }, [rundownId]);
-
-  // Debounced save function that's called by state change handlers, not useEffect
-  const debouncedSave = useCallback(() => {
+    console.log('🧪 TRACE IncrementalAutoSave: changes detected, scheduling save');
+    
+    // Clear any existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    const currentSignature = createContentSignature();
+    // Intelligent debouncing based on change type
+    const hasStructural = hasStructuralChangesRef.current;
+    const debounceTime = hasStructural ? 500 : 1500; // Faster save for structural changes
     
-    if (currentSignature === lastSavedRef.current) {
-      if (state.hasUnsavedChanges) {
-        console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - marking saved anyway');
-        onSavedRef.current?.();
-      }
-      return;
-    }
-    
-    console.log('🔥 AutoSave: content changed detected', { 
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      currentSigLength: currentSignature.length,
-      lastSavedSigLength: lastSavedRef.current.length,
-      signaturesEqual: currentSignature === lastSavedRef.current,
-      currentSigHash: currentSignature.slice(0, 100) + '...',
-      lastSavedSigHash: lastSavedRef.current.slice(0, 100) + '...'
-    });
-
-    const isStructuralChange = pendingStructuralChangeRef?.current || false;
-    // Simplified debouncing
-    const debounceTime = isStructuralChange ? 50 : 1000; // Faster, simpler timing
-    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive: false });
-
-    saveTimeoutRef.current = setTimeout(async () => {
-      console.log('⏱️ AutoSave: executing save now');
-      try {
-        await performSave(false, isSharedView);
-        console.log('✅ AutoSave: save completed successfully');
-      } catch (error) {
-        console.error('❌ AutoSave: save execution failed:', error);
-      }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveTimeoutRef.current = undefined;
+      performSave();
     }, debounceTime);
-  }, [createContentSignature, state.hasUnsavedChanges, performSave, pendingStructuralChangeRef]);
-
-  // Simple effect that schedules a save when hasUnsavedChanges becomes true
-  useEffect(() => {
-    console.log('🧪 TRACE AutoSave(effect) enter', {
-      isInitiallyLoaded,
-      rundownId,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      suppressUntil: suppressUntilRef?.current,
-      undoActive: undoActiveRef.current,
-      applyingCellBroadcast: applyingCellBroadcastRef?.current
-    });
-    if (!isInitiallyLoaded) {
-      console.log('🛑 AutoSave(effect): blocked - initial load not complete');
-      return;
-    }
-
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      if (state.hasUnsavedChanges) {
-        onSavedRef.current?.();
-      }
-      return;
-    }
-
-    if (suppressUntilRef?.current && suppressUntilRef.current > Date.now()) {
-      const waitMs = suppressUntilRef.current - Date.now() + 100;
-      console.log('🛑 AutoSave(effect): blocked - teammate update cooldown active, retrying after cooldown', { waitMs });
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      // Schedule retry after cooldown with optimized timing
-      saveTimeoutRef.current = setTimeout(async () => {
-        // More aggressive about saving when cooldown ends
-        try {
-          await performSaveRef.current();
-        } catch (error) {
-          console.error('❌ AutoSave: save execution failed after cooldown:', error);
-        }
-      }, waitMs);
-      return;
-    }
-    
-    if (undoActiveRef.current) {
-      console.log('🛑 AutoSave(effect): blocked - undo operation active');
-      return;
-    }
-
-    if (state.hasUnsavedChanges) {
-      // CRITICAL: Skip AutoSave if cell broadcast is being applied
-      if (applyingCellBroadcastRef?.current) {
-        console.log('📱 AutoSave: skipped - cell broadcast being applied');
-        return;
-      }
-      
-      // Record that this save is being initiated while tab is active
-      saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
-      
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-
-      const isStructuralChange = pendingStructuralChangeRef?.current || false;
-      const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
-      
-      // Faster saves during multi-user activity
-      const debounceTime = isStructuralChange ? 100 : (isMultiUserActive ? 300 : typingIdleMs);
-      
-      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        // Reduced typing interference for better multi-user flow
-        const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-        if (isTypingActive() && timeSinceLastEdit < (isMultiUserActive ? 500 : maxSaveDelay)) {
-          console.log('⌨️ AutoSave(effect): brief typing defer');
-          // Brief reschedule but don't let it delay too long in multi-user scenarios
-          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-          saveTimeoutRef.current = setTimeout(async () => {
-            console.log('⏱️ AutoSave: executing save now (post-defer)');
-            try {
-              await performSaveRef.current();
-              console.log('✅ AutoSave: save completed successfully');
-            } catch (error) {
-              console.error('❌ AutoSave: save execution failed:', error);
-            }
-          }, isMultiUserActive ? 200 : typingIdleMs);
-          return;
-        }
-
-        console.log('⏱️ AutoSave: executing save now');
-        try {
-          await performSaveRef.current();
-          console.log('✅ AutoSave: save completed successfully');
-        } catch (error) {
-          console.error('❌ AutoSave: save execution failed:', error);
-        }
-      }, debounceTime);
-    }
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
-      }
-      if (postTypingSafetyTimeoutRef.current) {
-        clearTimeout(postTypingSafetyTimeoutRef.current);
-      }
-      if (maxDelayTimeoutRef.current) {
-        clearTimeout(maxDelayTimeoutRef.current);
-        maxDelayTimeoutRef.current = null;
+        saveTimeoutRef.current = undefined;
       }
     };
-  }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
+  }, [hasContentChanges(), isInitiallyLoaded, performSave]);
 
-  // Enhanced flush-on-blur/visibility-hidden to guarantee keystroke saving
-  useEffect(() => {
-    const handleFlushOnBlur = async () => {
-      if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
-        console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
-        try {
-          await performSave(true, isSharedView); // Pass true to indicate this is a flush save
-        } catch (error) {
-          console.error('❌ AutoSave: flush-on-blur failed:', error);
-        }
-      }
-    };
+  const flush = useCallback(() => {
+    console.log('🧯 AutoSave: flushing pending saves');
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = undefined;
+    }
+    performSave(true);
+  }, [performSave]);
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        handleFlushOnBlur();
-      }
-    };
+  const suppressSave = useCallback((durationMs: number) => {
+    if (suppressUntilRef) {
+      suppressUntilRef.current = Date.now() + durationMs;
+      console.log('🛑 AutoSave: suppressed for', durationMs, 'ms');
+    }
+  }, [suppressUntilRef]);
 
-    const handleWindowBlur = () => {
-      handleFlushOnBlur();
-    };
-
-    // Add comprehensive flush triggers
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('beforeunload', handleFlushOnBlur);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('beforeunload', handleFlushOnBlur);
-    };
-  }, [state.hasUnsavedChanges, rundownId, performSave]);
-
-  // Flush any pending changes on unmount/view switch to prevent reverts
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (postTypingSafetyTimeoutRef.current) {
-        clearTimeout(postTypingSafetyTimeoutRef.current);
-      }
-      if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
-        console.log('🧯 AutoSave: flushing pending changes on unmount');
-        try {
-          // Fire-and-forget flush save that bypasses tab-hidden checks
-          performSaveRef.current(true);
-        } catch (e) {
-          console.error('❌ AutoSave: flush-on-unmount failed', e);
-        }
-      }
-    };
-  }, []);
-
-  // Note: Cell update coordination now handled via React context instead of global variables
+  const setOnSavedCallback = useCallback((callback: (() => void) | undefined) => {
+    onSavedRef.current = callback;
+  }, [onSavedRef]);
 
   return {
-    isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
-    setUndoActive,
-    setTrackOwnUpdate,
+    isSaving,
+    hasUnsavedChanges,
+    lastSaved,
+    markAsChanged,
+    markStructuralChange,
+    trackCellChange,
     markActiveTyping,
-    isTypingActive,
-    // Expose journal functions for debugging
-    getJournalStats: keystrokeJournal.getJournalStats,
-    setVerboseLogging: keystrokeJournal.setVerboseLogging,
-    clearJournal: keystrokeJournal.clearJournal
+    flush,
+    suppressSave,
+    onSaved: setOnSavedCallback
   };
 };

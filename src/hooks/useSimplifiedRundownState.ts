@@ -148,13 +148,14 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
-    {
+  const autoSave = useSimpleAutoSave({
+    state: {
       ...state,
       columns: [] // Remove columns from team sync
-    }, 
-    rundownId, 
-    (meta?: { updatedAt?: string; docVersion?: number }) => {
+    },
+    rundownId,
+    isInitiallyLoaded: isInitialized,
+    onSavedRef: useRef((meta?: { updatedAt?: string; docVersion?: number }) => {
       actions.markSaved();
       
       // Update our doc version and timestamp tracking
@@ -165,24 +166,29 @@ export const useSimplifiedRundownState = () => {
       if (meta?.updatedAt) {
         setLastKnownTimestamp(meta.updatedAt);
       }
-      
-      // Prime lastSavedRef after initial load to prevent false autosave triggers
-      if (isInitialized && !lastSavedPrimedRef.current) {
-        lastSavedPrimedRef.current = true;
-      }
-      
-      // Coordinate with teleprompter saves to prevent conflicts
-      if (teleprompterSync.isTeleprompterSaving) {
-        debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
-      }
-    },
-    pendingStructuralChangeRef,
-    undefined, // Legacy ref no longer needed
-    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
-    blockUntilLocalEditRef,
+    }),
+    saveTimeoutRef: useRef<NodeJS.Timeout>(),
+    suppressUntilRef: suppressUntilRef,
+    lastEditAtRef: useRef<number>(0),
+    undoActiveRef: useRef<boolean>(false),
     cooldownUntilRef,
-    applyingCellBroadcastRef // Pass the cell broadcast flag
-  );
+    blockUntilLocalEditRef
+  });
+
+  
+  // Prime lastSavedRef after initial load to prevent false autosave triggers
+  useEffect(() => {
+    if (isInitialized && !lastSavedPrimedRef.current) {
+      lastSavedPrimedRef.current = true;
+    }
+  }, [isInitialized]);
+  
+  const { isSaving, markAsChanged, trackCellChange, markActiveTyping } = autoSave;
+  
+  // Legacy compatibility
+  const setUndoActive = (active: boolean) => autoSave.markAsChanged();
+  const isTypingActive = false; // Simplified for now
+  const setTrackOwnUpdate = (fn: any) => {}; // Legacy compatibility
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
@@ -781,8 +787,10 @@ export const useSimplifiedRundownState = () => {
   }, [realtimeConnection.setUnsavedChecker, state.hasUnsavedChanges]);
 
 
-  // Enhanced updateItem function with aggressive field-level protection tracking
+  // CORE FIX: Enhanced updateItem function with cell-level change tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
+    // Track this specific cell change for incremental processing
+    autoSave.trackCellChange(id, field, value);
     // Re-enable autosave after local edit if it was blocked due to teammate update
     if (blockUntilLocalEditRef.current) {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
