@@ -17,33 +17,44 @@ export const useTypingOptimization = ({
   const pendingUpdatesRef = useRef<Map<string, { field: string; value: string; timestamp: number }>>(new Map());
   const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastFlushRef = useRef<number>(0);
+  const activeTypingRef = useRef<boolean>(false);
   
-  // Aggressive debouncing for large rundowns
-  const DEBOUNCE_MS = isLargeRundown ? 150 : 100;
-  const BATCH_SIZE = isLargeRundown ? 5 : 10;
+  // More aggressive debouncing for large rundowns
+  const DEBOUNCE_MS = isLargeRundown ? 200 : 150;
+  const BATCH_SIZE = isLargeRundown ? 3 : 5;
+  const TYPING_TIMEOUT = 1000; // Consider typing stopped after 1 second
 
   const flushPendingUpdates = useCallback(() => {
     const now = Date.now();
     const updates = Array.from(pendingUpdatesRef.current.entries());
     
-    if (updates.length === 0) return;
+    if (updates.length === 0) {
+      activeTypingRef.current = false;
+      return;
+    }
     
-    console.log(`⚡ Flushing ${updates.length} typing updates for performance`);
+    console.log(`⚡ Flushing ${updates.length} typing updates (memory optimization)`);
     
-    // Process updates in batches to prevent UI blocking
+    // Process updates in small batches to prevent UI blocking
     const processBatch = (startIndex: number) => {
       const endIndex = Math.min(startIndex + BATCH_SIZE, updates.length);
       
-      for (let i = startIndex; i < endIndex; i++) {
-        const [key, { field, value }] = updates[i];
-        const itemId = key.split('-')[0];
-        onUpdateItem(itemId, field, value);
-      }
-      
-      if (endIndex < updates.length) {
-        // Schedule next batch
-        setTimeout(() => processBatch(endIndex), 0);
-      }
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        for (let i = startIndex; i < endIndex; i++) {
+          const [key, { field, value }] = updates[i];
+          const itemId = key.split('-')[0];
+          onUpdateItem(itemId, field, value);
+        }
+        
+        if (endIndex < updates.length) {
+          // Schedule next batch with minimal delay
+          setTimeout(() => processBatch(endIndex), 0);
+        } else {
+          // All batches processed
+          activeTypingRef.current = false;
+        }
+      });
     };
     
     processBatch(0);
@@ -60,6 +71,9 @@ export const useTypingOptimization = ({
     const key = `${itemId}-${field}`;
     const now = Date.now();
     
+    // Mark as actively typing
+    activeTypingRef.current = true;
+    
     // Store the update
     pendingUpdatesRef.current.set(key, {
       field,
@@ -72,10 +86,24 @@ export const useTypingOptimization = ({
       clearTimeout(flushTimeoutRef.current);
     }
     
-    // Schedule flush
+    // Schedule flush with debouncing
     flushTimeoutRef.current = setTimeout(flushPendingUpdates, DEBOUNCE_MS);
     
   }, [flushPendingUpdates, DEBOUNCE_MS]);
+
+  // Auto-detect when typing has stopped
+  useEffect(() => {
+    if (!activeTypingRef.current) return;
+    
+    const typingStopTimeout = setTimeout(() => {
+      if (activeTypingRef.current && pendingUpdatesRef.current.size > 0) {
+        console.log('🛑 Typing timeout reached, force flushing updates');
+        flushPendingUpdates();
+      }
+    }, TYPING_TIMEOUT);
+    
+    return () => clearTimeout(typingStopTimeout);
+  }, [flushPendingUpdates, TYPING_TIMEOUT]);
 
   // Force flush on unmount
   useEffect(() => {
@@ -89,6 +117,7 @@ export const useTypingOptimization = ({
   return {
     optimizedUpdateItem,
     flushPendingUpdates,
-    hasPendingUpdates: () => pendingUpdatesRef.current.size > 0
+    hasPendingUpdates: () => pendingUpdatesRef.current.size > 0,
+    isActivelyTyping: () => activeTypingRef.current
   };
 };

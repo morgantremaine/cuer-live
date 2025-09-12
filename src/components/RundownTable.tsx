@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import MemoizedRundownRow from './MemoizedRundownRow';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -50,7 +50,7 @@ interface RundownTableProps {
   markActiveTyping?: () => void;
 }
 
-const RundownTable = ({
+const RundownTable = memo(({
   items,
   visibleColumns,
   currentTime,
@@ -95,6 +95,30 @@ const RundownTable = ({
   onJumpToHere,
   markActiveTyping
 }: RundownTableProps) => {
+  
+  // Memoize frequently used calculations to prevent re-computation
+  const memoizedRows = useMemo(() => {
+    return items.map((item, index) => ({
+      item,
+      index,
+      rowNumber: getRowNumber(index),
+      status: getRowStatus(item),
+      headerDuration: isHeaderItem(item) ? getHeaderDuration(index) : '',
+      isMultiSelected: selectedRows.has(item.id),
+      isSingleSelected: selectedRowId === item.id,
+      isDragging: draggedItemIndex === index,
+      isCurrentlyPlaying: item.id === currentSegmentId
+    }));
+  }, [
+    items, 
+    getRowNumber, 
+    getRowStatus, 
+    getHeaderDuration, 
+    selectedRows, 
+    selectedRowId, 
+    draggedItemIndex, 
+    currentSegmentId
+  ]);
 
   // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
@@ -121,21 +145,26 @@ const RundownTable = ({
     onDragEnd?.(e);
   };
 
-  // REMOVE DOM LIMITING - users need to see everything!
-  // The real issue is render loops, not DOM size
-  console.log(`🎭 Table rendering: ${items.length} items (FULL)`);
+  // Throttled logging to prevent console spam during typing
+  const shouldLog = useMemo(() => Math.random() < 0.01, []); // Only log 1% of renders
+  if (shouldLog) {
+    console.log(`🎭 Table rendering: ${items.length} items (optimized)`);
+  }
 
   return (
     <tbody className="bg-background">
-      {items.map((item, index) => {
-        const rowNumber = getRowNumber(index);
-        const status = getRowStatus(item);
-        const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
-        const isMultiSelected = selectedRows.has(item.id);
-        const isSingleSelected = selectedRowId === item.id;
+      {memoizedRows.map(({ 
+        item, 
+        index, 
+        rowNumber, 
+        status, 
+        headerDuration, 
+        isMultiSelected, 
+        isSingleSelected, 
+        isDragging, 
+        isCurrentlyPlaying 
+      }) => {
         const isActuallySelected = isMultiSelected || isSingleSelected;
-        const isDragging = draggedItemIndex === index;
-        const isCurrentlyPlaying = item.id === currentSegmentId;
 
         return (
           <React.Fragment key={item.id}>
@@ -202,6 +231,30 @@ const RundownTable = ({
       })}
     </tbody>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for maximum performance during typing
+  // Only re-render if essential props actually changed
+  if (
+    prevProps.items !== nextProps.items ||
+    prevProps.visibleColumns !== nextProps.visibleColumns ||
+    prevProps.selectedRowId !== nextProps.selectedRowId ||
+    prevProps.currentSegmentId !== nextProps.currentSegmentId ||
+    prevProps.draggedItemIndex !== nextProps.draggedItemIndex ||
+    prevProps.dropTargetIndex !== nextProps.dropTargetIndex ||
+    prevProps.showColorPicker !== nextProps.showColorPicker
+  ) {
+    return false; // Re-render
+  }
+  
+  // Check if selected rows changed
+  if (prevProps.selectedRows.size !== nextProps.selectedRows.size) {
+    return false;
+  }
+  
+  // Skip deep comparison of selectedRows for performance if sizes match
+  // The items reference change will trigger re-render when needed
+  
+  return true; // Skip re-render
+});
 
-export default memo(RundownTable);
+export default RundownTable;
