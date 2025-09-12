@@ -73,9 +73,14 @@ export const useIncrementalAutoSave = ({
     if (hasStructuralChangesRef.current) {
       return true;
     }
+
+    // Check if unsaved changes flag is set
+    if (hasUnsavedChanges) {
+      return true;
+    }
     
     return false;
-  }, []);
+  }, [hasUnsavedChanges]);
 
   // Only generate full signature when actually saving to database
   const createFullContentSignature = useCallback((targetState: RundownState) => {
@@ -176,6 +181,9 @@ export const useIncrementalAutoSave = ({
       onSavedRef.current?.();
       console.log('✅ AutoSave: incremental save completed successfully');
       
+      // Show success toast
+      console.log('💾 Save completed - changes saved successfully');
+      
     } catch (error) {
       console.error('❌ AutoSave failed:', error);
     } finally {
@@ -194,7 +202,13 @@ export const useIncrementalAutoSave = ({
 
   // Auto-save effect with intelligent debouncing
   useEffect(() => {
-    if (!hasContentChanges() || !isInitiallyLoaded) {
+    if (!isInitiallyLoaded) {
+      return;
+    }
+
+    // Check for changes only once per effect execution
+    const hasChanges = hasContentChanges();
+    if (!hasChanges) {
       return;
     }
 
@@ -220,7 +234,7 @@ export const useIncrementalAutoSave = ({
         saveTimeoutRef.current = undefined;
       }
     };
-  }, [hasContentChanges(), isInitiallyLoaded, performSave]);
+  }, [state, isInitiallyLoaded]);
 
   const flush = useCallback(() => {
     if (saveTimeoutRef.current) {
