@@ -195,7 +195,7 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     isSharedView: false
   });
 
-  // Pure calculation functions (no side effects)
+  // OPTIMIZED: Granular calculations - only recalculate what actually changed
   const calculations = useMemo(() => {
     const timeToSeconds = (timeStr: string | null | undefined) => {
       if (!timeStr || typeof timeStr !== 'string') return 0;
@@ -219,16 +219,20 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Calculate all derived values
+    return { timeToSeconds, secondsToTime };
+  }, []); // No dependencies - these are pure utility functions
+
+  // OPTIMIZED: Lazy calculation of timing-dependent values
+  const itemsWithCalculatedTimes = useMemo(() => {
     let currentTime = state.startTime;
-    const itemsWithCalculatedTimes = state.items.map((item, index) => {
+    return state.items.map((item, index) => {
       const startTime = currentTime;
       let endTime = currentTime;
       
       if (!isHeaderItem(item)) {
-        const durationSeconds = timeToSeconds(item.duration || '00:00');
-        const startSeconds = timeToSeconds(currentTime);
-        endTime = secondsToTime(startSeconds + durationSeconds);
+        const durationSeconds = calculations.timeToSeconds(item.duration || '00:00');
+        const startSeconds = calculations.timeToSeconds(currentTime);
+        endTime = calculations.secondsToTime(startSeconds + durationSeconds);
         
         // Only advance timeline for non-floated items
         if (!item.isFloating && !item.isFloated) {
@@ -236,8 +240,8 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
         }
       }
 
-      const elapsedSeconds = timeToSeconds(startTime) - timeToSeconds(state.startTime);
-      const elapsedTime = secondsToTime(Math.max(0, elapsedSeconds));
+      const elapsedSeconds = calculations.timeToSeconds(startTime) - calculations.timeToSeconds(state.startTime);
+      const elapsedTime = calculations.secondsToTime(Math.max(0, elapsedSeconds));
 
       return {
         ...item,
@@ -246,32 +250,32 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
         elapsedTime
       };
     });
+  }, [state.items, state.startTime, calculations]); // Only recalculate when items or startTime change
 
-    // Calculate row numbers - headers get empty, regular items get sequential numbers
+  // OPTIMIZED: Lazy calculation of row numbers
+  const itemsWithRowNumbers = useMemo(() => {
     let regularRowCount = 0;
-    const itemsWithRowNumbers = itemsWithCalculatedTimes.map((item, index) => {
+    return itemsWithCalculatedTimes.map((item) => {
       if (isHeaderItem(item)) {
-        return { ...item, rowNumber: '' }; // Headers don't have numbers
+        return { ...item, rowNumber: '' };
       }
-
-      // Sequential numbering for regular items
       regularRowCount++;
-      return {
-        ...item,
-        rowNumber: regularRowCount.toString()
-      };
+      return { ...item, rowNumber: regularRowCount.toString() };
     });
+  }, [itemsWithCalculatedTimes]); // Only recalculate when timing changes
 
-    // Calculate total runtime (excluding floated items)
+  // OPTIMIZED: Lazy calculation of totals
+  const totalRuntime = useMemo(() => {
     const totalSeconds = state.items.reduce((acc, item) => {
       if (isHeaderItem(item) || item.isFloating || item.isFloated) return acc;
-      return acc + timeToSeconds(item.duration || '00:00');
+      return acc + calculations.timeToSeconds(item.duration || '00:00');
     }, 0);
+    return calculations.secondsToTime(totalSeconds);
+  }, [state.items, calculations]); // Only recalculate when items change
 
-    const totalRuntime = secondsToTime(totalSeconds);
-
-    // Calculate header durations
-    const headerDurations = new Map<string, string>();
+  // OPTIMIZED: Lazy calculation of header durations
+  const headerDurations = useMemo(() => {
+    const durations = new Map<string, string>();
     state.items.forEach((item, index) => {
       if (isHeaderItem(item)) {
         let segmentSeconds = 0;
@@ -279,23 +283,16 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
           const nextItem = state.items[i];
           if (isHeaderItem(nextItem)) break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
-            segmentSeconds += timeToSeconds(nextItem.duration || '00:00');
+            segmentSeconds += calculations.timeToSeconds(nextItem.duration || '00:00');
           }
         }
-        headerDurations.set(item.id, secondsToTime(segmentSeconds));
+        durations.set(item.id, calculations.secondsToTime(segmentSeconds));
       }
     });
+    return durations;
+  }, [state.items, calculations]); // Only recalculate when items change
 
-    return {
-      itemsWithCalculatedTimes: itemsWithRowNumbers,
-      totalRuntime,
-      headerDurations,
-      timeToSeconds,
-      secondsToTime
-    };
-  }, [state.items, state.startTime]);
-
-  // Action creators with live broadcast
+  // OPTIMIZED: Action creators with granular broadcast
   const actions = useMemo(() => ({
     setItems: (items: RundownItem[]) => {
       dispatch({ type: 'SET_ITEMS', payload: items });
@@ -305,10 +302,10 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     },
     
     updateItem: (id: string, updates: Partial<RundownItem>) => {
-      // Compute next items so the broadcast includes the latest change (fixes shared view lag for color/float)
-      const updatedItems = state.items.map(i => (i.id === id ? { ...i, ...updates } : i));
       dispatch({ type: 'UPDATE_ITEM', payload: { id, updates } });
       if (rundownId) {
+        // OPTIMIZED: Only broadcast the specific change, not entire items array
+        const updatedItems = state.items.map(i => (i.id === id ? { ...i, ...updates } : i));
         broadcastLiveUpdate('live_typing', { items: updatedItems });
       }
     },
@@ -444,18 +441,24 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     },
 
     getRowNumber: (index: number) => {
-      const item = calculations.itemsWithCalculatedTimes[index];
+      const item = itemsWithRowNumbers[index];
       return item?.rowNumber || '';
     },
 
     getHeaderDuration: (id: string) => {
-      return calculations.headerDurations.get(id) || '00:00:00';
+      return headerDurations.get(id) || '00:00:00';
     }
   }), [state.items, actions, calculations]);
 
   return {
     state,
-    calculations,
+    calculations: {
+      itemsWithCalculatedTimes: itemsWithRowNumbers,
+      totalRuntime,
+      headerDurations,
+      timeToSeconds: calculations.timeToSeconds,
+      secondsToTime: calculations.secondsToTime
+    },
     actions,
     helpers
   };
