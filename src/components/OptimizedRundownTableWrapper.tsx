@@ -218,7 +218,37 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   );
 };
 
-// Custom comparison function to ensure re-renders when items change
+// Custom comparison function for aggressive memoization
+const arePropsEqual = (prevProps: OptimizedRundownTableWrapperProps, nextProps: OptimizedRundownTableWrapperProps) => {
+  // Only re-render if essential props change
+  if (prevProps.visibleItems.length !== nextProps.visibleItems.length) return false;
+  if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
+  if (prevProps.selectedRowId !== nextProps.selectedRowId) return false;
+  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
+  if (prevProps.draggedItemIndex !== nextProps.draggedItemIndex) return false;
+  if (prevProps.dropTargetIndex !== nextProps.dropTargetIndex) return false;
+  if (prevProps.isDraggingMultiple !== nextProps.isDraggingMultiple) return false;
+  
+  // Check if visible items actually changed (content comparison)
+  for (let i = 0; i < prevProps.visibleItems.length; i++) {
+    const prev = prevProps.visibleItems[i];
+    const next = nextProps.visibleItems[i];
+    if (prev.id !== next.id || prev.name !== next.name || prev.script !== next.script || prev.duration !== next.duration) {
+      return false;
+    }
+  }
+  
+  // Check selected rows only if sizes differ or contents changed
+  if (prevProps.selectedRows.size !== nextProps.selectedRows.size) return false;
+  if (prevProps.selectedRows.size > 0) {
+    for (const id of prevProps.selectedRows) {
+      if (!nextProps.selectedRows.has(id)) return false;
+    }
+  }
+  
+  return true; // Skip re-render
+};
+
 OptimizedRundownTableWrapper.displayName = 'OptimizedRundownTableWrapper';
 
-export default OptimizedRundownTableWrapper;
+export default memo(OptimizedRundownTableWrapper, arePropsEqual);
