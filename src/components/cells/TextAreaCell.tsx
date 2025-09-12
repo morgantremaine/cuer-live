@@ -154,6 +154,13 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log(`🔧 Cell change detected:`, {
+      itemId,
+      cellRefKey,
+      resolvedFieldKey,
+      newValue: e.target.value,
+      oldValue: value
+    });
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
@@ -172,6 +179,12 @@ const TextAreaCell = ({
 
   // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
+    console.log(`🎯 Cell focused:`, {
+      itemId,
+      cellRefKey,
+      resolvedFieldKey,
+      currentValue: value
+    });
     setIsFocused(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
