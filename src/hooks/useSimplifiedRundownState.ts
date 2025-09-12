@@ -1441,7 +1441,14 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
       actions.deleteMultipleItems(itemIds);
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState]),
-    addItem: actions.addItem,
+    addItem: useCallback((item: any, targetIndex?: number) => {
+      // Re-enable autosave after local edit if it was blocked due to teammate update
+      if (blockUntilLocalEditRef.current) {
+        console.log('✅ AutoSave: local edit detected - re-enabling saves');
+        blockUntilLocalEditRef.current = false;
+      }
+      actions.addItem(item, targetIndex);
+    }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
       if (blockUntilLocalEditRef.current) {
