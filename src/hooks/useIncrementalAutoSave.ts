@@ -200,13 +200,13 @@ export const useIncrementalAutoSave = ({
     }
   }, [state, rundownId, isInitiallyLoaded, shouldBlockAutoSave, hasContentChanges, createFullContentSignature, saveService]);
 
-  // Auto-save effect with intelligent debouncing
+  // Auto-save effect with smart debouncing
   useEffect(() => {
     if (!isInitiallyLoaded) {
       return;
     }
 
-    // Check for changes only once per effect execution
+    // Check for changes 
     const hasChanges = hasContentChanges();
     if (!hasChanges) {
       return;
@@ -214,27 +214,17 @@ export const useIncrementalAutoSave = ({
 
     console.log('🧪 TRACE IncrementalAutoSave: changes detected, scheduling save');
     
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Intelligent debouncing based on change type
-    const hasStructural = hasStructuralChangesRef.current;
-    const debounceTime = hasStructural ? 500 : 1500; // Faster save for structural changes
-    
-    saveTimeoutRef.current = setTimeout(() => {
-      saveTimeoutRef.current = undefined;
-      performSave();
-    }, debounceTime);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+    // Only schedule if no timeout is currently active
+    if (!saveTimeoutRef.current) {
+      const hasStructural = hasStructuralChangesRef.current;
+      const debounceTime = hasStructural ? 500 : 1500;
+      
+      saveTimeoutRef.current = setTimeout(() => {
         saveTimeoutRef.current = undefined;
-      }
-    };
-  }, [state, isInitiallyLoaded]);
+        performSave();
+      }, debounceTime);
+    }
+  }, [hasUnsavedChanges, isInitiallyLoaded, performSave]);
 
   const flush = useCallback(() => {
     if (saveTimeoutRef.current) {
