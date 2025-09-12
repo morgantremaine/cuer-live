@@ -419,23 +419,48 @@ export const useSimpleShowcallerSync = ({
           
           // Apply the loaded state
           const loadedState = data.showcaller_state;
-          const currentSegmentId = loadedState.currentSegmentId;
+          
+          // Try multiple possible field names for currentSegmentId (backward compatibility)
+          const currentSegmentId = loadedState.currentSegmentId || 
+                                  loadedState.current_segment_id || 
+                                  loadedState.currentSegment;
+          
+          // DEBUG: Log the actual loaded state structure
+          console.log('📺 DEBUG: Loaded state structure:', {
+            hasCurrentSegmentId: !!currentSegmentId,
+            currentSegmentId: currentSegmentId,
+            loadedStateKeys: Object.keys(loadedState),
+            fullLoadedState: loadedState
+          });
           
           // CRITICAL: Always show the showcaller indicator where it was last positioned
+          // Even if currentSegmentId is missing, try to preserve any existing position
           if (currentSegmentId) {
             console.log('📺 Simple: Restoring showcaller to last position:', currentSegmentId);
             
-            setState({
-              isPlaying: false, // Always start paused when loading
-              currentSegmentId: currentSegmentId,
-              timeRemaining: 0, // Reset time when loading
-              currentItemStatuses: buildStatusMap(currentSegmentId),
-              isController: false,
-              controllerId: loadedState.controllerId || null,
-              lastUpdate: loadedState.lastUpdate || new Date().toISOString()
-            });
+            // Verify this item still exists in the rundown
+            const itemExists = items.find(item => item.id === currentSegmentId);
+            const finalSegmentId = itemExists ? currentSegmentId : items.find(item => item.type === 'regular' && !isFloated(item))?.id;
+            
+            if (finalSegmentId) {
+              setState({
+                isPlaying: false, // Always start paused when loading
+                currentSegmentId: finalSegmentId,
+                timeRemaining: 0, // Reset time when loading
+                currentItemStatuses: buildStatusMap(finalSegmentId),
+                isController: false,
+                controllerId: loadedState.controllerId || null,
+                lastUpdate: loadedState.lastUpdate || new Date().toISOString()
+              });
+              
+              console.log('📺 Simple: Successfully restored showcaller position to:', finalSegmentId);
+            } else {
+              console.warn('📺 Simple: No valid items found, cannot restore showcaller');
+            }
           } else {
             console.log('📺 Simple: No current segment in saved state, initializing to first item');
+            console.log('📺 DEBUG: LoadedState.currentSegmentId was:', currentSegmentId, 'type:', typeof currentSegmentId);
+            
             // If no saved position, set to first regular item
             const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
             if (firstSegment) {
@@ -488,9 +513,14 @@ export const useSimpleShowcallerSync = ({
       console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
       
       // Convert to the format expected by the database
-      // FIXED: Never save null currentSegmentId - preserve existing or use first item
+      // CRITICAL: Only save if we have a valid currentSegmentId - never fallback to first item here
+      if (!stateToSave.currentSegmentId) {
+        console.warn('📺 Simple: Attempted to save showcaller state with no currentSegmentId - skipping save');
+        return;
+      }
+      
       const showcallerState = {
-        currentSegmentId: stateToSave.currentSegmentId || items.find(item => item.type === 'regular' && !isFloated(item))?.id || null,
+        currentSegmentId: stateToSave.currentSegmentId,
         isPlaying: stateToSave.isPlaying,
         timeRemaining: stateToSave.timeRemaining,
         controllerId: stateToSave.controllerId,
