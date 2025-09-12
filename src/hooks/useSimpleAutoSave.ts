@@ -43,19 +43,15 @@ export const useSimpleAutoSave = (
   // Simplified autosave system - reduce complexity with performance optimization
   const lastEditAtRef = useRef<number>(0);
   
-  // Performance-aware timing - only scale for genuinely large rundowns
+  // Consistent timing for all rundown sizes - no functional differences
   const getOptimizedTimings = useCallback(() => {
-    const itemCount = state.items?.length || 0;
-    const isVeryLargeRundown = itemCount > 200; // Only very large rundowns get slower timings
-    const isLargeRundown = itemCount > 150; // Large rundowns get modest increases
-    
+    // All rundowns use the same reliable timing - only memory optimizations differ
     return {
-      // Keep small/medium rundowns fast - only slow down for very large ones
-      typingIdleMs: isVeryLargeRundown ? 2500 : isLargeRundown ? 2000 : 1500, // Reduced from 3000ms max
-      maxSaveDelay: isVeryLargeRundown ? 7000 : isLargeRundown ? 6000 : 5000, // Reduced from 8000ms max
-      microResaveMs: isLargeRundown ? 300 : 200 // Reduced from 400ms
+      typingIdleMs: 1500,  // Consistent for all sizes
+      maxSaveDelay: 5000,  // Consistent for all sizes  
+      microResaveMs: 200   // Consistent for all sizes
     };
-  }, [state.items?.length]);
+  }, []);
   
   const { typingIdleMs, maxSaveDelay, microResaveMs } = getOptimizedTimings();
   const saveInProgressRef = useRef(false);
@@ -331,16 +327,8 @@ export const useSimpleAutoSave = (
     return Date.now() - lastEditAtRef.current < typingIdleMs;
   }, [typingIdleMs]);
 
-  // Circuit-breaker protected micro-resave with performance optimization
+  // Micro-resave with consistent behavior across all rundown sizes
   const scheduleMicroResave = useCallback(() => {
-    const itemCount = state.items?.length || 0;
-    
-    // Skip micro-resaves for very large rundowns to prevent performance issues
-    if (itemCount > 200) {
-      console.log('🛑 Micro-resave: skipped for very large rundown (performance)', itemCount);
-      return;
-    }
-    
     const currentSignature = createContentSignature();
     
     // Prevent micro-resave if signature hasn't actually changed
@@ -355,8 +343,8 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Enhanced circuit breaker for large rundowns
-    const maxAttempts = itemCount > 100 ? 1 : 2;
+    // Consistent circuit breaker for all rundown sizes
+    const maxAttempts = 2;
     if (microResaveAttemptsRef.current >= maxAttempts) {
       console.warn('🧯 Micro-resave: circuit breaker activated - max attempts reached', maxAttempts);
       microResaveAttemptsRef.current = 0; // Reset for next time
@@ -370,12 +358,12 @@ export const useSimpleAutoSave = (
       clearTimeout(microResaveTimeoutRef.current);
     }
     
-    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current, 'for', itemCount, 'items');
+    console.log('🔄 Micro-resave: scheduling attempt', microResaveAttemptsRef.current);
     microResaveTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Micro-resave: capturing changes made during previous save');
       performSaveRef.current?.();
     }, microResaveMs);
-  }, [microResaveMs, createContentSignature, state.items?.length]);
+  }, [microResaveMs, createContentSignature]);
 
   // Enhanced save function with conflict prevention
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {

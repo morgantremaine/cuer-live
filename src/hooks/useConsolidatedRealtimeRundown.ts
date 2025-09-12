@@ -241,14 +241,14 @@ export const useConsolidatedRealtimeRundown = ({
     const isLargeRealtimeRundown = realtimeItemCount > 100;
     const isVeryLargeRealtimeRundown = realtimeItemCount > 200;
     
-    // Enhanced memory cleanup for large rundowns
+    // Memory cleanup warning for large rundowns (informational only - no functional changes)
     if (isLargeRealtimeRundown && globalSubscriptions.size > 50) {
       console.warn('⚠️ Large number of active subscriptions:', globalSubscriptions.size, 'with', realtimeItemCount, 'items');
       
-      // Aggressive cleanup for very large rundowns
+      // Memory cleanup for very large rundowns (cleanup only, never skip functionality)
       if (isVeryLargeRealtimeRundown && globalSubscriptions.size > 100) {
-        console.log('🧹 Consolidating subscriptions for memory optimization');
-        // Clean up old subscriptions that might be stale
+        console.log('🧹 Performing background subscription cleanup for memory optimization');
+        // Clean up old subscriptions that might be stale (but never skip current processing)
         const now = Date.now();
         for (const [key, sub] of globalSubscriptions.entries()) {
           // Skip current subscription
@@ -264,15 +264,14 @@ export const useConsolidatedRealtimeRundown = ({
       }
     }
     
-    // Skip processing for very large rundowns if system is under memory pressure
+    // Memory monitoring only - never skip realtime functionality
     if (isVeryLargeRealtimeRundown && typeof window !== 'undefined' && 'performance' in window && 'memory' in (window.performance as any)) {
       const memory = (window.performance as any).memory;
       const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
       
-      // Only skip if memory usage is critically high (750MB instead of 600MB)
       if (usedMB > 750) {
-        console.warn('🛑 Skipping realtime processing due to critical memory usage:', usedMB, 'MB');
-        return;
+        console.warn('⚠️ High memory usage detected:', usedMB, 'MB - consider refreshing page if performance degrades');
+        // Note: We still process the update - just warn the user
       }
     }
 

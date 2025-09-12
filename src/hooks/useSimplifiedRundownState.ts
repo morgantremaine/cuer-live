@@ -49,8 +49,7 @@ export const useSimplifiedRundownState = () => {
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   
-  // Performance optimization: debounced broadcast timeouts to prevent cell broadcast storms
-  const broadcastTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -798,41 +797,9 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // PERFORMANCE FIX: Smart debouncing based on rundown size - preserve real-time for small rundowns
-    const itemCount = state.items?.length || 0;
+    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
     if (rundownId && currentUserId) {
-      // Clear existing broadcast timeout for this field
-      const broadcastKey = `${id}-${field}`;
-      if (broadcastTimeoutsRef.current.has(broadcastKey)) {
-        clearTimeout(broadcastTimeoutsRef.current.get(broadcastKey)!);
-      }
-      
-      // Smart debouncing: No delay for small rundowns to preserve real-time feel
-      let debounceDelay = 0; // No debouncing for small rundowns (≤50 items)
-      
-      if (itemCount > 200) {
-        debounceDelay = 600; // Very large rundowns: 600ms (reduced from 800ms)
-      } else if (itemCount > 150) {
-        debounceDelay = 400; // Large rundowns: 400ms (reduced from 500ms)  
-      } else if (itemCount > 100) {
-        debounceDelay = 200; // Medium rundowns: 200ms (reduced from 500ms)
-      } else if (itemCount > 50) {
-        debounceDelay = 50;  // Small-medium rundowns: minimal delay
-      }
-      // itemCount ≤ 50: No debouncing for real-time feel
-      
-      if (debounceDelay === 0) {
-        // Immediate broadcast for small rundowns
-        cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-      } else {
-        // Debounced broadcast for larger rundowns
-        const timeoutId = setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-          broadcastTimeoutsRef.current.delete(broadcastKey);
-        }, debounceDelay);
-        
-        broadcastTimeoutsRef.current.set(broadcastKey, timeoutId);
-      }
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
     }
     
     if (isTypingField) {
