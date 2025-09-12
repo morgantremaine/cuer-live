@@ -93,7 +93,7 @@ class LocalShadowStore {
     const entry = itemShadow[fieldName];
     const age = Date.now() - entry.timestamp;
     
-    return entry.isActive && age <= 3000; // 3 second active window
+    return entry.isActive && age <= 1500; // 1.5 second active window - memory optimized
   }
 
   // Check if global field has active shadow
@@ -102,7 +102,7 @@ class LocalShadowStore {
     if (!entry) return false;
     
     const age = Date.now() - entry.timestamp;
-    return entry.isActive && age <= 3000;
+    return entry.isActive && age <= 1500; // Memory optimized
   }
 
   // Mark field as inactive (user stopped typing)
@@ -133,7 +133,7 @@ class LocalShadowStore {
     this.shadows.forEach((itemShadow, itemId) => {
       const activeFields: ItemShadow = {};
       Object.entries(itemShadow).forEach(([fieldName, entry]) => {
-        if (entry.isActive && (now - entry.timestamp) <= 3000) {
+        if (entry.isActive && (now - entry.timestamp) <= 1500) { // Memory optimized
           activeFields[fieldName] = entry;
         }
       });
@@ -145,7 +145,7 @@ class LocalShadowStore {
     
     // Filter active global shadows
     this.globalFields.forEach((entry, fieldName) => {
-      if (entry.isActive && (now - entry.timestamp) <= 3000) {
+      if (entry.isActive && (now - entry.timestamp) <= 1500) { // Memory optimized
         activeGlobals.set(fieldName, entry);
       }
     });
@@ -170,7 +170,7 @@ class LocalShadowStore {
   // Clean up old shadows
   cleanup(): void {
     const now = Date.now();
-    const maxAge = 30000; // 30 seconds
+    const maxAge = 10000; // 10 seconds - aggressive memory cleanup
     
     // Clean item shadows
     this.shadows.forEach((itemShadow, itemId) => {
@@ -250,9 +250,9 @@ class LocalShadowStore {
 // Global singleton instance
 export const localShadowStore = new LocalShadowStore();
 
-// Auto-cleanup every 30 seconds
+// Auto-cleanup every 5 seconds for memory efficiency
 setInterval(() => {
   localShadowStore.cleanup();
-}, 30000);
+}, 5000);
 
 export default localShadowStore;

@@ -1,5 +1,6 @@
 
 import { useMemo, useEffect } from 'react';
+import { useMemoryMonitor } from './useMemoryMonitor';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
@@ -20,6 +21,13 @@ export const useRundownPerformanceOptimization = ({
   const itemCount = items?.length || 0;
   const isLargeRundown = itemCount > 100;
   const isVeryLargeRundown = itemCount > 200;
+  
+  // Memory monitoring with toast notifications
+  useMemoryMonitor({
+    rundownId: 'current', // Could be made more specific
+    itemCount,
+    enabled: isLargeRundown
+  });
   
   // Memory usage warning
   useEffect(() => {

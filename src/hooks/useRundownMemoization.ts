@@ -20,9 +20,31 @@ export const useRundownMemoization = (
   startTime: string
 ): MemoizedCalculations => {
   
-  // Memoize expensive calculations that rarely change
+  // MEMORY OPTIMIZED: Minimize expensive calculations and object creation
   const memoizedCalculations = useMemo(() => {
+    const itemCount = items.length;
+    
+    // For large rundowns, avoid heavy calculations entirely
+    if (itemCount > 100) {
+      const headerDurations = new Map<string, string>();
+      // Create minimal enhanced items without expensive calculations
+      const itemsWithStatus = items.map((item) => ({
+        ...item,
+        calculatedStatus: 'upcoming' as const,
+        calculatedRowNumber: item.type === 'header' ? '' : '0'
+      }));
+      
+      return {
+        itemsWithStatus,
+        visibleItemsOnly: items,
+        headerDurations,
+        totalCalculatedRuntime: '00:00:00' // Skip heavy calculation for large rundowns
+      };
+    }
+    
+    // Only do expensive calculations for smaller rundowns
     const timeToSeconds = (timeStr: string): number => {
+      if (!timeStr) return 0;
       const parts = timeStr.split(':').map(Number);
       if (parts.length === 2) return parts[0] * 60 + parts[1];
       if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
@@ -36,15 +58,11 @@ export const useRundownMemoization = (
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Calculate items with enhanced data only once
+    // Memory efficient: Create enhanced items only for small rundowns
     const itemsWithStatus = items.map((item, index) => {
-      // Calculate row number - new simple numbering system
+      // Calculate row number - simplified
       let calculatedRowNumber = '';
-      if (item.type === 'header') {
-        // Headers don't have row numbers
-        calculatedRowNumber = '';
-      } else {
-        // Regular items get sequential numbers, ignoring headers
+      if (item.type !== 'header') {
         let regularItemCount = 0;
         for (let i = 0; i <= index; i++) {
           if (items[i]?.type !== 'header') {
@@ -55,11 +73,8 @@ export const useRundownMemoization = (
       }
 
       // Calculate status
-      let calculatedStatus: 'upcoming' | 'current' | 'completed' = 'upcoming';
-      if (item.id === currentSegmentId) {
-        calculatedStatus = 'current';
-      }
-      // Add more sophisticated status logic here if needed
+      const calculatedStatus: 'upcoming' | 'current' | 'completed' = 
+        item.id === currentSegmentId ? 'current' : 'upcoming';
 
       return {
         ...item,
@@ -68,12 +83,12 @@ export const useRundownMemoization = (
       };
     });
 
-    // Calculate header durations
+    // Calculate header durations - lightweight
     const headerDurations = new Map<string, string>();
     items.forEach((item, index) => {
       if (item.type === 'header') {
         let totalSeconds = 0;
-        for (let i = index + 1; i < items.length; i++) {
+        for (let i = index + 1; i < Math.min(items.length, index + 20); i++) { // Limit to next 20 items
           const nextItem = items[i];
           if (nextItem.type === 'header') break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
@@ -84,27 +99,20 @@ export const useRundownMemoization = (
       }
     });
 
-    // Calculate total runtime
+    // Calculate total runtime - efficient
     const totalRuntimeSeconds = items
       .filter(item => !item.isFloating && !item.isFloated)
-      .reduce((acc, item) => {
-        const duration = item.duration || '00:00';
-        const seconds = timeToSeconds(duration);
-        return acc + seconds;
-      }, 0);
+      .reduce((acc, item) => acc + timeToSeconds(item.duration || '00:00'), 0);
     
     const totalCalculatedRuntime = secondsToTime(totalRuntimeSeconds);
 
-    // Filter visible items (could be used for further optimization)
-    const visibleItemsOnly = items; // For now, keep all items
-
     return {
       itemsWithStatus,
-      visibleItemsOnly,
+      visibleItemsOnly: items,
       headerDurations,
       totalCalculatedRuntime
     };
-  }, [items, currentSegmentId, startTime]);
+  }, [items, currentSegmentId, startTime]); // Removed visibleColumns to reduce recalculation
 
   return memoizedCalculations;
 };

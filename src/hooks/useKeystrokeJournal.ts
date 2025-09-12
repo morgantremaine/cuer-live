@@ -27,14 +27,14 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
   const verboseLoggingRef = useRef(false);
   const signatureCache = useRef<Map<string, string>>(new Map());
   
-  // Performance-aware ring buffer sizing based on rundown size
+  // MEMORY OPTIMIZED: Drastically reduced journal size for memory efficiency
   const itemCount = state.items?.length || 0;
-  const MAX_JOURNAL_ENTRIES = performanceMode || itemCount > 150 ? 500 : itemCount > 100 ? 750 : 1000;
-  const PERSIST_INTERVAL_MS = performanceMode ? 5000 : 3000; // Less frequent persistence for large rundowns
+  const MAX_JOURNAL_ENTRIES = itemCount > 100 ? 50 : itemCount > 50 ? 100 : 200; // Much smaller buffers
+  const PERSIST_INTERVAL_MS = performanceMode ? 10000 : 5000; // Less frequent persistence
   
-  // Memory usage monitoring
+  // Memory usage monitoring - much more aggressive
   const memoryUsageRef = useRef<number>(0);
-  const MEMORY_WARNING_THRESHOLD = 500 * 1024 * 1024; // 500MB
+  const MEMORY_WARNING_THRESHOLD = 50 * 1024 * 1024; // 50MB - aggressive threshold
 
   // Performance-optimized signature creation with caching and lightweight mode
   const createSnapshotSignature = useCallback((snapshot: RundownState) => {
@@ -47,35 +47,17 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
     
     let signature: string;
     
-    // Use lightweight signature for performance mode or large rundowns
-    if (performanceMode || itemCount > 150) {
-      signature = JSON.stringify({
-        itemCount: snapshot.items?.length || 0,
-        itemIds: snapshot.items?.slice(0, 10).map(item => item.id) || [], // Sample first 10 items
-        title: snapshot.title || '',
-        startTime: snapshot.startTime || '',
-        contentHash: snapshot.items?.reduce((acc, item, idx) => 
-          acc + (item.name?.length || 0) + (item.script?.length || 0) + idx, 0) || 0
-      });
-    } else {
-      // Full signature for smaller rundowns
-      signature = JSON.stringify({
-        items: snapshot.items?.map(item => ({
-          id: item.id,
-          name: item.name || '',
-          script: item.script || '',
-          notes: item.notes || '',
-          talent: item.talent || ''
-        })) || [],
-        title: snapshot.title || '',
-        startTime: snapshot.startTime || '',
-        timezone: snapshot.timezone || '',
-        externalNotes: snapshot.externalNotes || ''
-      });
-    }
+    // MEMORY OPTIMIZED: Always use ultra-lightweight signatures
+    signature = JSON.stringify({
+      itemCount: snapshot.items?.length || 0,
+      itemIds: snapshot.items?.slice(0, 3).map(item => item.id) || [], // Only first 3 items
+      title: (snapshot.title || '').substring(0, 50), // Truncate long titles
+      startTime: snapshot.startTime || '',
+      contentHash: (snapshot.items?.length || 0) + (snapshot.title?.length || 0) // Simple hash
+    });
     
-    // Cache with size limit
-    if (signatureCache.current.size > 50) {
+    // Aggressive cache limit for memory efficiency
+    if (signatureCache.current.size > 10) {
       signatureCache.current.clear(); // Clear cache if too large
     }
     signatureCache.current.set(cacheKey, signature);
@@ -190,7 +172,7 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
     try {
       const journalData = {
         rundownId,
-        entries: journalRef.current.slice(-100), // Keep last 100 entries
+        entries: journalRef.current.slice(-20), // Keep only last 20 entries for memory
         lastSnapshot: latestSnapshotRef.current ? createSnapshotSignature(latestSnapshotRef.current) : null,
         persistedAt: Date.now()
       };
