@@ -78,6 +78,73 @@ export const useRundownStateCoordination = () => {
     };
   }, []);
 
+  // Add multiple rows with calculated timing
+  const addMultipleRows = (count: number, insertAfterIndex: number = -1) => {
+    const newItems = [];
+    const lastItem = insertAfterIndex >= 0 ? persistedState.items[insertAfterIndex] : null;
+    let currentStartTime = lastItem?.endTime || persistedState.rundownStartTime;
+    
+    for (let i = 0; i < count; i++) {
+      const newItem = {
+        id: `${Date.now()}-${i}`,
+        name: `New Item ${i + 1}`,
+        script: '',
+        duration: '00:00:30',
+        startTime: currentStartTime,
+        endTime: calculateEndTime(currentStartTime, '00:00:30'),
+        type: 'segment' as const,
+        notes: '',
+        color: '#ffffff',
+        float: false,
+        external_notes: {}
+      };
+      
+      newItems.push(newItem);
+      currentStartTime = newItem.endTime;
+    }
+    
+    const updatedItems = [...persistedState.items];
+    const insertIndex = insertAfterIndex >= 0 ? insertAfterIndex + 1 : updatedItems.length;
+    updatedItems.splice(insertIndex, 0, ...newItems);
+    
+    persistedState.setItems(updatedItems);
+    persistedState.markStructuralChange();
+  };
+
+  const addRowAtIndex = (index: number) => {
+    addMultipleRows(1, index - 1);
+  };
+
+  const addHeaderAtIndex = (index: number) => {
+    const lastItem = index > 0 ? persistedState.items[index - 1] : null;
+    const currentStartTime = lastItem?.endTime || persistedState.rundownStartTime;
+    
+    const newHeader = {
+      id: `${Date.now()}-header`,
+      name: 'New Header',
+      script: '',
+      duration: '00:00:00',
+      startTime: currentStartTime,
+      endTime: currentStartTime,
+      type: 'header' as const,
+      notes: '',
+      color: '#E3F2FD',
+      float: false,
+      external_notes: {},
+      // Additional required fields
+      elapsedTime: '00:00:00',
+      talent: '',
+      gfx: '',
+      video: '',
+      status: 'upcoming' as const
+    };
+    
+    const updatedItems = [...persistedState.items];
+    updatedItems.splice(index, 0, newHeader as any);
+    persistedState.setItems(updatedItems);
+    persistedState.markStructuralChange();
+  };
+
   // Update stable connection state only when rundown is truly ready
   useEffect(() => {
     if (persistedState.rundownId && !persistedState.isLoading && !stableIsConnected) {
@@ -196,9 +263,60 @@ export const useRundownStateCoordination = () => {
       // Helper functions needed by components
       calculateEndTime,
       markAsChanged: () => {},
+      addRowAtIndex,
+      addHeaderAtIndex,
       
       // Visible items
       visibleItems
+    },
+    // Add back missing properties for compatibility
+    interactions: {
+      // Simplified interactions for compatibility
+      selectedRows: new Set<string>(),
+      toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[], headerGroupItemIds?: string[]) => {},
+      clearSelection: () => {},
+      draggedItemIndex: null,
+      isDraggingMultiple: false,
+      dropTargetIndex: null,
+      handleDragStart: (e: React.DragEvent, index: number, itemId?: string) => {},
+      handleDragOver: (e: React.DragEvent, targetIndex?: number) => {},
+      handleDragLeave: (e: React.DragEvent) => {},
+      handleDrop: (e: React.DragEvent, dropIndex: number) => {},
+      handleDragEnd: (e: React.DragEvent) => {},
+      resetDragState: () => {},
+      clipboardItems: [],
+      copyItems: (items: any[]) => {},
+      hasClipboardData: () => false,
+      handleUpdateItem: persistedState.updateItem,
+      handleAddRow: persistedState.addRow,
+      handleAddHeader: persistedState.addHeader,
+      handleDeleteRow: persistedState.deleteRow,
+      handleToggleFloat: (itemId: string) => {},
+      handleColorSelect: (itemId: string, color: string) => {},
+      handleDeleteSelectedRows: () => {},
+      handlePasteRows: () => {},
+      handleDeleteColumnWithCleanup: (columnId: string) => {},
+      handleCopySelectedRows: () => {},
+      handleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {},
+      handleTitleChange: persistedState.setTitle
+    },
+    uiState: {
+      // Simplified UI state for compatibility
+      showColorPicker: null,
+      cellRefs: { current: {} },
+      editingCell: null,
+      setEditingCell: (cellId: string | null) => {},
+      handleToggleColorPicker: (itemId: string | null) => {},
+      selectColor: (itemId: string, color: string) => {},
+      getRowStatus: (item: any) => {
+        if (item?.type === 'header') return 'header' as const;
+        return 'upcoming' as const;
+      },
+      getColumnWidth: (column: any) => '150px',
+      updateColumnWidth: (columnId: string, width: number) => {},
+      handleCellClick: (itemId: string, field: string, event: React.MouseEvent) => {},
+      handleKeyDown: (event: React.KeyboardEvent, itemId: string, field: string, itemIndex: number) => {},
+      navigateToCell: (targetItemId: string, targetField: string) => {}
     },
     dragAndDrop: dragAndDropSystem
   }), [
