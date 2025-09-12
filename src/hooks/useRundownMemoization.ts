@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
@@ -20,25 +19,19 @@ export const useRundownMemoization = (
   startTime: string
 ): MemoizedCalculations => {
   
-  // MEMORY OPTIMIZED: Minimize expensive calculations and object creation
+  // EXTREME MEMORY OPTIMIZATION: Minimal processing for large rundowns
   const memoizedCalculations = useMemo(() => {
     const itemCount = items.length;
     
-    // For large rundowns, avoid heavy calculations but preserve essential functionality
+    // For large rundowns, return minimal data to prevent memory leaks
     if (itemCount > 100) {
-      const headerDurations = new Map<string, string>();
-      
-      // CRITICAL: Row numbering is essential - calculate properly for all sizes
-      const itemsWithStatus = items.map((item, index) => {
+      // Return items with minimal augmentation using simple index-based numbering
+      let regularItemIndex = 0;
+      const itemsWithStatus = items.map((item) => {
         let calculatedRowNumber = '';
         if (item.type !== 'header') {
-          let regularItemCount = 0;
-          for (let i = 0; i <= index; i++) {
-            if (items[i]?.type !== 'header') {
-              regularItemCount++;
-            }
-          }
-          calculatedRowNumber = regularItemCount.toString();
+          regularItemIndex++;
+          calculatedRowNumber = regularItemIndex.toString();
         }
         
         return {
@@ -51,8 +44,8 @@ export const useRundownMemoization = (
       return {
         itemsWithStatus,
         visibleItemsOnly: items,
-        headerDurations,
-        totalCalculatedRuntime: '00:00:00' // Skip heavy calculation for large rundowns
+        headerDurations: new Map<string, string>(), // Empty map to save memory
+        totalCalculatedRuntime: '00:00:00' // Skip expensive calculation
       };
     }
     
@@ -74,7 +67,7 @@ export const useRundownMemoization = (
 
     // Memory efficient: Create enhanced items only for small rundowns
     const itemsWithStatus = items.map((item, index) => {
-      // Calculate row number - simplified
+      // Calculate row number - proper sequential numbering
       let calculatedRowNumber = '';
       if (item.type !== 'header') {
         let regularItemCount = 0;
@@ -97,12 +90,12 @@ export const useRundownMemoization = (
       };
     });
 
-    // Calculate header durations - lightweight
+    // Calculate header durations - lightweight for small rundowns
     const headerDurations = new Map<string, string>();
     items.forEach((item, index) => {
       if (item.type === 'header') {
         let totalSeconds = 0;
-        for (let i = index + 1; i < Math.min(items.length, index + 20); i++) { // Limit to next 20 items
+        for (let i = index + 1; i < Math.min(items.length, index + 10); i++) { // Limit to next 10 items
           const nextItem = items[i];
           if (nextItem.type === 'header') break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
@@ -126,7 +119,7 @@ export const useRundownMemoization = (
       headerDurations,
       totalCalculatedRuntime
     };
-  }, [items, currentSegmentId, startTime]); // Removed visibleColumns to reduce recalculation
+  }, [items.length, currentSegmentId]); // Minimal dependencies to reduce recalculation
 
   return memoizedCalculations;
 };

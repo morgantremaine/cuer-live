@@ -476,8 +476,9 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Build save payload from latest snapshot for consistency
-    const latestSnapshot = keystrokeJournal.getLatestSnapshot();
+    // Build save payload - MEMORY OPTIMIZED: Don't use journal for large rundowns
+    const itemCount = state.items?.length || 0;
+    const latestSnapshot = itemCount > 100 ? null : keystrokeJournal.getLatestSnapshot();
     const saveState = latestSnapshot || state;
     
     // Create signature from the snapshot we'll actually save

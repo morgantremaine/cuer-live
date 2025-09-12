@@ -27,10 +27,10 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
   const verboseLoggingRef = useRef(false);
   const signatureCache = useRef<Map<string, string>>(new Map());
   
-  // MEMORY OPTIMIZED: Drastically reduced journal size for memory efficiency
+  // MEMORY CRISIS: Disable journal entirely for large rundowns to prevent memory leaks
   const itemCount = state.items?.length || 0;
-  const MAX_JOURNAL_ENTRIES = itemCount > 100 ? 50 : itemCount > 50 ? 100 : 200; // Much smaller buffers
-  const PERSIST_INTERVAL_MS = performanceMode ? 10000 : 5000; // Less frequent persistence
+  const MAX_JOURNAL_ENTRIES = itemCount > 100 ? 0 : itemCount > 50 ? 10 : 50; // Disable for large rundowns
+  const PERSIST_INTERVAL_MS = performanceMode ? 30000 : 10000; // Much less frequent
   
   // Memory usage monitoring - much more aggressive
   const memoryUsageRef = useRef<number>(0);
@@ -69,31 +69,18 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
   const addJournalEntry = useCallback((entry: KeystrokeEntry) => {
     if (!enabled || !rundownId) return;
     
+    // MEMORY CRISIS: Skip journal entirely for large rundowns
+    if (MAX_JOURNAL_ENTRIES === 0) return;
+    
     journalRef.current.push(entry);
     
     // Performance-aware ring buffer management
     if (journalRef.current.length > MAX_JOURNAL_ENTRIES) {
-      const keepEntries = Math.floor(MAX_JOURNAL_ENTRIES * 0.8); // Keep 80% when cleaning
+      const keepEntries = Math.floor(MAX_JOURNAL_ENTRIES * 0.5); // Keep only 50%
       journalRef.current = journalRef.current.slice(-keepEntries);
       
       if (performanceMode) {
         console.log('🧹 Journal: Performance cleanup, kept', keepEntries, 'entries');
-      }
-    }
-    
-    // Memory usage estimation and warning
-    if (performanceMode && journalRef.current.length % 100 === 0) {
-      try {
-        const estimatedSize = JSON.stringify(journalRef.current).length * 2; // Rough estimate
-        memoryUsageRef.current = estimatedSize;
-        
-        if (estimatedSize > MEMORY_WARNING_THRESHOLD) {
-          console.warn('⚠️ Journal memory usage high:', Math.round(estimatedSize / 1024 / 1024), 'MB');
-          // More aggressive cleanup for memory pressure
-          journalRef.current = journalRef.current.slice(-Math.floor(MAX_JOURNAL_ENTRIES * 0.5));
-        }
-      } catch (error) {
-        // Ignore memory calculation errors
       }
     }
 
@@ -102,15 +89,28 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
     }
   }, [enabled, rundownId, MAX_JOURNAL_ENTRIES, performanceMode]);
 
-  // Update latest snapshot and log the change
+  // Update latest snapshot and log the change - MEMORY OPTIMIZED
   const updateSnapshot = useCallback((description: string = 'content update') => {
     if (!enabled || !rundownId || !state) return;
 
+    // MEMORY CRISIS: Don't create full snapshots for large rundowns
+    if (itemCount > 100) {
+      // Only track minimal metadata for large rundowns
+      addJournalEntry({
+        timestamp: Date.now(),
+        type: 'snapshot',
+        contentLength: itemCount * 50, // Estimated size
+        itemCount,
+        description: description + ' (minimal)'
+      });
+      return;
+    }
+
     const previousSnapshot = latestSnapshotRef.current;
-    latestSnapshotRef.current = { ...state };
+    // CRITICAL: Don't deep copy large states - just reference for small rundowns
+    latestSnapshotRef.current = itemCount < 50 ? { ...state } : state;
     
-    const itemCount = state.items?.length || 0;
-    const contentLength = createSnapshotSignature(state).length;
+    const contentLength = itemCount * 100; // Estimate instead of expensive signature
     
     addJournalEntry({
       timestamp: Date.now(),
@@ -130,13 +130,13 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
       }
     }
 
-    // Auto-persist every few seconds
+    // Auto-persist less frequently
     const now = Date.now();
     if (now - lastPersistedRef.current > PERSIST_INTERVAL_MS) {
       persistJournal();
       lastPersistedRef.current = now;
     }
-  }, [enabled, rundownId, state, createSnapshotSignature, addJournalEntry]);
+  }, [enabled, rundownId, state, itemCount, addJournalEntry]);
 
   // Track typing activity - don't auto-update snapshot to prevent cascade
   const recordTyping = useCallback((description: string = 'typing activity') => {
@@ -265,23 +265,23 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
     };
   }, [enabled, rundownId, persistJournal]);
 
-  return {
-    // Content access
-    latestSnapshot: latestSnapshotRef.current,
-    getLatestSnapshot: () => latestSnapshotRef.current,
-    
-    // Recording functions
-    recordTyping,
-    recordEdit,
-    updateSnapshot,
-    
-    // Management
-    persistJournal,
-    clearJournal,
-    getJournalStats,
-    setVerboseLogging,
-    
-    // State
-    hasUnsavedContent: !!latestSnapshotRef.current
-  };
+    return {
+      // Content access - return null for large rundowns to prevent memory leaks
+      latestSnapshot: itemCount > 100 ? null : latestSnapshotRef.current,
+      getLatestSnapshot: () => itemCount > 100 ? null : latestSnapshotRef.current,
+      
+      // Recording functions
+      recordTyping,
+      recordEdit,
+      updateSnapshot,
+      
+      // Management
+      persistJournal,
+      clearJournal,
+      getJournalStats,
+      setVerboseLogging,
+      
+      // State
+      hasUnsavedContent: itemCount > 100 ? false : !!latestSnapshotRef.current
+    };
 };
