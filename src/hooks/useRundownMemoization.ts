@@ -19,15 +19,13 @@ export const useRundownMemoization = (
   startTime: string
 ): MemoizedCalculations => {
   
-  // FIX RENDER LOOP: Ultra-stable memoization with minimal dependencies
+  // EXTREME MEMORY OPTIMIZATION: Minimal processing for large rundowns
   const memoizedCalculations = useMemo(() => {
     const itemCount = items.length;
     
-    // PERFORMANCE: Skip heavy calculations for large rundowns but keep all functionality
-    const shouldOptimize = itemCount > 100;
-    
-    if (shouldOptimize) {
-      // Fast path for large rundowns - minimal processing
+    // For large rundowns, return minimal data to prevent memory leaks
+    if (itemCount > 100) {
+      // Return items with minimal augmentation using simple index-based numbering
       let regularItemIndex = 0;
       const itemsWithStatus = items.map((item) => {
         let calculatedRowNumber = '';
@@ -46,12 +44,12 @@ export const useRundownMemoization = (
       return {
         itemsWithStatus,
         visibleItemsOnly: items,
-        headerDurations: new Map<string, string>(), // Empty for performance
+        headerDurations: new Map<string, string>(), // Empty map to save memory
         totalCalculatedRuntime: '00:00:00' // Skip expensive calculation
       };
     }
     
-    // Full calculations for smaller rundowns only
+    // Only do expensive calculations for smaller rundowns
     const timeToSeconds = (timeStr: string): number => {
       if (!timeStr) return 0;
       const parts = timeStr.split(':').map(Number);
@@ -67,8 +65,9 @@ export const useRundownMemoization = (
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Enhanced items with proper calculations
+    // Memory efficient: Create enhanced items only for small rundowns
     const itemsWithStatus = items.map((item, index) => {
+      // Calculate row number - proper sequential numbering
       let calculatedRowNumber = '';
       if (item.type !== 'header') {
         let regularItemCount = 0;
@@ -80,19 +79,23 @@ export const useRundownMemoization = (
         calculatedRowNumber = regularItemCount.toString();
       }
 
+      // Calculate status
+      const calculatedStatus: 'upcoming' | 'current' | 'completed' = 
+        item.id === currentSegmentId ? 'current' : 'upcoming';
+
       return {
         ...item,
-        calculatedStatus: item.id === currentSegmentId ? 'current' as const : 'upcoming' as const,
+        calculatedStatus,
         calculatedRowNumber
       };
     });
 
-    // Header durations
+    // Calculate header durations - lightweight for small rundowns
     const headerDurations = new Map<string, string>();
     items.forEach((item, index) => {
       if (item.type === 'header') {
         let totalSeconds = 0;
-        for (let i = index + 1; i < Math.min(items.length, index + 10); i++) {
+        for (let i = index + 1; i < Math.min(items.length, index + 10); i++) { // Limit to next 10 items
           const nextItem = items[i];
           if (nextItem.type === 'header') break;
           if (!nextItem.isFloating && !nextItem.isFloated) {
@@ -103,22 +106,20 @@ export const useRundownMemoization = (
       }
     });
 
-    // Total runtime
+    // Calculate total runtime - efficient
     const totalRuntimeSeconds = items
       .filter(item => !item.isFloating && !item.isFloated)
       .reduce((acc, item) => acc + timeToSeconds(item.duration || '00:00'), 0);
     
+    const totalCalculatedRuntime = secondsToTime(totalRuntimeSeconds);
+
     return {
       itemsWithStatus,
       visibleItemsOnly: items,
       headerDurations,
-      totalCalculatedRuntime: secondsToTime(totalRuntimeSeconds)
+      totalCalculatedRuntime
     };
-  }, [
-    items.length, // Only depend on length to prevent constant recalculation
-    currentSegmentId  // Only currentSegmentId for status updates
-    // REMOVED: items, startTime, visibleColumns to prevent render loops
-  ]);
+  }, [items.length, currentSegmentId]); // Minimal dependencies to reduce recalculation
 
   return memoizedCalculations;
 };
