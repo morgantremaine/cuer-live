@@ -50,7 +50,7 @@ interface RundownTableProps {
   markActiveTyping?: () => void;
 }
 
-const RundownTable = ({
+const RundownTable = memo(({
   items,
   visibleColumns,
   currentTime,
@@ -202,6 +202,33 @@ const RundownTable = ({
       })}
     </tbody>
   );
-};
+}, (prevProps, nextProps) => {
+  // STOP THE RENDER LOOP - only re-render when absolutely necessary
+  
+  // Core data changes
+  if (prevProps.items.length !== nextProps.items.length) return false;
+  if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
+  
+  // Selection state changes
+  if (prevProps.selectedRows.size !== nextProps.selectedRows.size) return false;  
+  if (prevProps.selectedRowId !== nextProps.selectedRowId) return false;
+  
+  // Drag state changes
+  if (prevProps.draggedItemIndex !== nextProps.draggedItemIndex) return false;
+  if (prevProps.dropTargetIndex !== nextProps.dropTargetIndex) return false;
+  if (prevProps.isDraggingMultiple !== nextProps.isDraggingMultiple) return false;
+  
+  // UI state changes
+  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
+  if (prevProps.hasClipboardData !== nextProps.hasClipboardData) return false;
+  
+  // Column state changes
+  if (prevProps.visibleColumns.length !== nextProps.visibleColumns.length) return false;
+  if (prevProps.columnExpandState !== nextProps.columnExpandState) return false;
+  
+  // REMOVE currentTime dependency - it changes constantly!
+  // Skip re-render if none of the essential props changed
+  return true;
+});
 
-export default memo(RundownTable);
+export default RundownTable;

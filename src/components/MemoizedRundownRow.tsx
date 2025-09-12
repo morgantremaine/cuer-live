@@ -44,8 +44,8 @@ interface MemoizedRundownRowProps {
   getHeaderGroupItemIds?: (headerId: string) => string[];
 }
 
-// Aggressive memoization to prevent unnecessary re-renders
-const MemoizedRundownRow = memo<MemoizedRundownRowProps>(({
+// TEMPORARILY DISABLE MEMOIZATION TO TEST TYPING
+const MemoizedRundownRow = ({
   item,
   index,
   rowNumber,
@@ -84,7 +84,9 @@ const MemoizedRundownRow = memo<MemoizedRundownRowProps>(({
   onToggleCollapse,
   isHeaderCollapsed,
   getHeaderGroupItemIds
-}) => {
+}: MemoizedRundownRowProps) => {
+  console.log('🔄 MemoizedRundownRow render:', { itemId: item.id, itemName: item.name, itemScript: item.script?.substring(0, 20) });
+  
   return (
     <RundownRow
       item={item}
@@ -127,39 +129,7 @@ const MemoizedRundownRow = memo<MemoizedRundownRowProps>(({
       getHeaderGroupItemIds={getHeaderGroupItemIds}
     />
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function for aggressive memoization
-  // Only re-render if specific props that affect this row have changed
-  
-  // Core item changes
-  if (prevProps.item.id !== nextProps.item.id) return false;
-  if (prevProps.item.name !== nextProps.item.name) return false;
-  if (prevProps.item.color !== nextProps.item.color) return false;
-  if (prevProps.item.type !== nextProps.item.type) return false;
-  
-  // Selection and interaction state
-  if (prevProps.isSelected !== nextProps.isSelected) return false;
-  if (prevProps.isDragging !== nextProps.isDragging) return false;
-  if (prevProps.isCurrentlyPlaying !== nextProps.isCurrentlyPlaying) return false;
-  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
-  
-  // Row metadata
-  if (prevProps.rowNumber !== nextProps.rowNumber) return false;
-  if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.headerDuration !== nextProps.headerDuration) return false;
-  
-  // Global state that affects rendering
-  if (prevProps.isDraggingMultiple !== nextProps.isDraggingMultiple) return false;
-  if (prevProps.hasClipboardData !== nextProps.hasClipboardData) return false;
-  
-  // Column expansion state - only check if this item is a header
-  if (nextProps.item.type === 'header' && prevProps.columnExpandState !== nextProps.columnExpandState) {
-    return false;
-  }
-  
-  // If none of the important props changed, skip re-render
-  return true;
-});
+}; // NO MEMOIZATION FOR TESTING
 
 MemoizedRundownRow.displayName = 'MemoizedRundownRow';
 

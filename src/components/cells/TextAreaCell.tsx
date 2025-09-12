@@ -154,6 +154,12 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log('🔤 TextAreaCell handleChange:', { 
+      itemId, 
+      cellRefKey, 
+      oldValue: value, 
+      newValue: e.target.value 
+    });
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
@@ -170,8 +176,8 @@ const TextAreaCell = ({
     }
   };
 
-  // Enhanced focus handler to disable row dragging when editing
   const handleFocus = (e: React.FocusEvent) => {
+    console.log('🎯 TextAreaCell FOCUS:', { itemId, cellRefKey });
     setIsFocused(true);
     // Find the parent row and disable dragging while editing
     const row = e.target.closest('tr');
@@ -182,6 +188,7 @@ const TextAreaCell = ({
 
   // Enhanced blur handler to re-enable row dragging
   const handleBlur = (e: React.FocusEvent) => {
+    console.log('🎯 TextAreaCell BLUR:', { itemId, cellRefKey });
     setIsFocused(false);
     // Re-enable dragging when not editing
     const row = e.target.closest('tr');
@@ -244,7 +251,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onClick={onCellClick}
+        onClick={(e) => {
+          console.log('🖱️ TextAreaCell CLICK:', { itemId, cellRefKey, value });
+          onCellClick(e);
+        }}
         onMouseDown={handleMouseDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
