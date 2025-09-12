@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import MemoizedRundownRow from './MemoizedRundownRow';
 import RundownRow from './RundownRow';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
@@ -50,7 +50,7 @@ interface RundownTableProps {
   markActiveTyping?: () => void;
 }
 
-const RundownTable = memo(({
+const RundownTable = ({
   items,
   visibleColumns,
   currentTime,
@@ -95,30 +95,6 @@ const RundownTable = memo(({
   onJumpToHere,
   markActiveTyping
 }: RundownTableProps) => {
-  
-  // Memoize frequently used calculations to prevent re-computation
-  const memoizedRows = useMemo(() => {
-    return items.map((item, index) => ({
-      item,
-      index,
-      rowNumber: getRowNumber(index),
-      status: getRowStatus(item),
-      headerDuration: isHeaderItem(item) ? getHeaderDuration(index) : '',
-      isMultiSelected: selectedRows.has(item.id),
-      isSingleSelected: selectedRowId === item.id,
-      isDragging: draggedItemIndex === index,
-      isCurrentlyPlaying: item.id === currentSegmentId
-    }));
-  }, [
-    items, 
-    getRowNumber, 
-    getRowStatus, 
-    getHeaderDuration, 
-    selectedRows, 
-    selectedRowId, 
-    draggedItemIndex, 
-    currentSegmentId
-  ]);
 
   // Enhanced drag over handler that calculates drop target index
   const handleRowDragOver = (e: React.DragEvent, targetIndex: number) => {
@@ -145,26 +121,21 @@ const RundownTable = memo(({
     onDragEnd?.(e);
   };
 
-  // Throttled logging to prevent console spam during typing
-  const shouldLog = useMemo(() => Math.random() < 0.01, []); // Only log 1% of renders
-  if (shouldLog) {
-    console.log(`🎭 Table rendering: ${items.length} items (optimized)`);
-  }
+  // REMOVE DOM LIMITING - users need to see everything!
+  // The real issue is render loops, not DOM size
+  console.log(`🎭 Table rendering: ${items.length} items (FULL)`);
 
   return (
     <tbody className="bg-background">
-      {memoizedRows.map(({ 
-        item, 
-        index, 
-        rowNumber, 
-        status, 
-        headerDuration, 
-        isMultiSelected, 
-        isSingleSelected, 
-        isDragging, 
-        isCurrentlyPlaying 
-      }) => {
+      {items.map((item, index) => {
+        const rowNumber = getRowNumber(index);
+        const status = getRowStatus(item);
+        const headerDuration = isHeaderItem(item) ? getHeaderDuration(index) : '';
+        const isMultiSelected = selectedRows.has(item.id);
+        const isSingleSelected = selectedRowId === item.id;
         const isActuallySelected = isMultiSelected || isSingleSelected;
+        const isDragging = draggedItemIndex === index;
+        const isCurrentlyPlaying = item.id === currentSegmentId;
 
         return (
           <React.Fragment key={item.id}>
@@ -231,6 +202,6 @@ const RundownTable = memo(({
       })}
     </tbody>
   );
-});
+};
 
-export default RundownTable;
+export default memo(RundownTable);

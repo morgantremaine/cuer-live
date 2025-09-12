@@ -23,14 +23,11 @@ export const useRundownPerformanceOptimization = ({
   const isVeryLargeRundown = itemCount > 200;
   
   // Memory monitoring with toast notifications
-  const { forceCheck } = useMemoryMonitor({
+  useMemoryMonitor({
     rundownId: 'current', // Could be made more specific
     itemCount,
     enabled: isLargeRundown
   });
-  
-  // Aggressive optimization for very large rundowns during typing
-  const shouldUseAggressiveOptimization = isVeryLargeRundown;
   
   // Memory usage warning
   useEffect(() => {
@@ -109,8 +106,6 @@ export const useRundownPerformanceOptimization = ({
     totalRuntime,
     getRowNumber,
     getHeaderDuration,
-    calculateHeaderDuration: calculateHeaderDurationMemo,
-    shouldUseAggressiveOptimization,
-    forceMemoryCheck: forceCheck
+    calculateHeaderDuration: calculateHeaderDurationMemo
   };
 };
