@@ -77,6 +77,9 @@ export const useSimplifiedRundownState = () => {
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
+  // Create suppressUntilRef for auto-save compatibility
+  const suppressUntilRef = useRef<number>(0);
+  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
@@ -311,7 +314,7 @@ export const useSimplifiedRundownState = () => {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
-        isTyping: isTypingActive(),
+        isTyping: isTypingActive,
         activeField: typingSessionRef.current?.fieldKey,
         hasRecentCellUpdates
       });
@@ -466,7 +469,7 @@ export const useSimplifiedRundownState = () => {
   }, [isInitialized]);
 
   // Connect realtime to auto-save typing/unsaved state
-  realtimeConnection.setTypingChecker(() => isTypingActive());
+  realtimeConnection.setTypingChecker(() => isTypingActive);
   realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
 
   // Get current user ID for cell broadcasts
