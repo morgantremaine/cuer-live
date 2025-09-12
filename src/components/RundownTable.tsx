@@ -213,7 +213,6 @@ const RundownTable = ({
               onRowSelect={onRowSelect}
               onDragStart={(e) => onDragStart(e, index)}
               onDragOver={(e) => handleRowDragOver(e, index)}
-              onDragLeave={onDragLeave}
               onDrop={(e) => handleRowDrop(e, index)}
               onDragEnd={handleDragEnd}
               onCopySelectedRows={onCopySelectedRows}
@@ -224,7 +223,7 @@ const RundownTable = ({
               onAddHeader={onAddHeader}
               onJumpToHere={onJumpToHere}
               markActiveTyping={markActiveTyping}
-              toggleHeaderCollapse={onToggleHeaderCollapse}
+              onToggleCollapse={onToggleHeaderCollapse}
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
             />

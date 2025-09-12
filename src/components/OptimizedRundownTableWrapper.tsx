@@ -179,7 +179,6 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       visibleColumns={visibleColumns}
       currentSegmentId={currentSegmentId}
       startTime={startTime}
-      currentTime={currentTime}
       getRowNumber={getRowNumber}
       getRowStatus={getRowStatus}
       getHeaderDuration={getHeaderDuration}
