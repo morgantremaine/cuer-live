@@ -212,21 +212,14 @@ export const useBulletproofRundownState = () => {
     setSelectedRowId(rowId);
   }, []);
 
-  // Current time updater - OPTIMIZED: Only update when actually needed
+  // Current time updater
   useEffect(() => {
-    // Only update currentTime if we're actively using it for status calculations
-    // For large rundowns, we'll use a less frequent update to reduce render churn
-    const updateInterval = state.items.length > 100 ? 30000 : 5000; // 30s for large, 5s for small
-    
     const timer = setInterval(() => {
-      // Only update if the component is visible and we have current segments
-      if (document.visibilityState === 'visible' && state.currentSegmentId) {
-        setCurrentTime(new Date());
-      }
-    }, updateInterval);
+      setCurrentTime(new Date());
+    }, 1000);
 
     return () => clearInterval(timer);
-  }, [state.items.length, state.currentSegmentId]); // Only restart timer when these change
+  }, []);
 
   // Enhanced focus check with conflict resolution
   const handleTabFocus = useCallback(() => {

@@ -49,7 +49,7 @@ interface OptimizedRundownTableWrapperProps {
   visibleItems: RundownItem[];
 }
 
-const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> = memo(({
+const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> = ({
   items,
   visibleColumns,
   startTime,
@@ -75,21 +75,21 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     totalCalculatedRuntime
   } = useRundownMemoization(items, visibleColumns, currentSegmentId, startTime);
 
-  // Map visible item indexes to original item indexes - ULTRA STABLE
+  // Map visible item indexes to original item indexes
   const getOriginalIndex = React.useCallback((visibleIndex: number): number => {
     if (visibleIndex < 0 || visibleIndex >= visibleItems.length) return -1;
     const visibleItem = visibleItems[visibleIndex];
     return items.findIndex(item => item.id === visibleItem.id);
-  }, [items.length, visibleItems.length]); // Only depend on lengths, not full arrays
+  }, [items, visibleItems]);
 
-  // Map original item indexes to visible item indexes (for drop indicator) - ULTRA STABLE
+  // Map original item indexes to visible item indexes (for drop indicator)
   const getVisibleIndex = React.useCallback((originalIndex: number): number => {
     if (originalIndex < 0 || originalIndex >= items.length) return -1;
     const originalItem = items[originalIndex];
     return visibleItems.findIndex(item => item.id === originalItem.id);
-  }, [items.length, visibleItems.length]); // Only depend on lengths, not full arrays
+  }, [items, visibleItems]);
 
-  // Enhanced drag start that maps visible to original indexes AND handles header groups - STABLE
+  // Enhanced drag start that maps visible to original indexes AND handles header groups
   const handleEnhancedDragStart = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
     
@@ -108,9 +108,9 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     if (onDragStart) {
       onDragStart(e, originalIndex);
     }
-  }, [getOriginalIndex, items.length, isHeaderCollapsed, onDragStart]); // Remove selectedRows dependency
+  }, [getOriginalIndex, items, isHeaderCollapsed, onDragStart, restProps.selectedRows]);
 
-  // Enhanced drop that maps visible to original indexes - STABLE
+  // Enhanced drop that maps visible to original indexes  
   const handleEnhancedDrop = React.useCallback((e: React.DragEvent, visibleIndex: number) => {
     const originalIndex = getOriginalIndex(visibleIndex);
     
@@ -123,7 +123,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     }
   }, [getOriginalIndex, onDrop]);
 
-  // Enhanced row select that maps visible to original indexes - STABLE  
+  // Enhanced row select that maps visible to original indexes
   const handleEnhancedRowSelect = React.useCallback((itemId: string, visibleIndex: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => {
     const originalIndex = getOriginalIndex(visibleIndex);
     
@@ -136,7 +136,7 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     }
   }, [getOriginalIndex, restProps.onRowSelect]);
 
-  // Enhanced drag over that maps visible to original indexes - STABLE
+  // Enhanced drag over that maps visible to original indexes
   const handleEnhancedDragOver = React.useCallback((e: React.DragEvent, visibleIndex?: number) => {
     if (visibleIndex !== undefined) {
       const originalIndex = getOriginalIndex(visibleIndex);
@@ -150,27 +150,27 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
     }
   }, [getOriginalIndex, onDragOver]);
 
-  // Create optimized getRowNumber function - ULTRA STABLE
+  // Create optimized getRowNumber function
   const getRowNumber = React.useCallback((index: number) => {
     if (index < 0 || index >= visibleItems.length) return '';
     const visibleItem = visibleItems[index];
     // Find the corresponding item in itemsWithStatus
     const enhancedItem = itemsWithStatus.find(item => item.id === visibleItem.id);
     return enhancedItem?.calculatedRowNumber || '';
-  }, [visibleItems.length, itemsWithStatus.length]); // Only lengths matter
+  }, [visibleItems, itemsWithStatus]);
 
-  // Create optimized getRowStatus function - ULTRA STABLE
+  // Create optimized getRowStatus function
   const getRowStatus = React.useCallback((item: any) => {
     const enhancedItem = itemsWithStatus.find(enhancedItem => enhancedItem.id === item.id);
     return enhancedItem?.calculatedStatus || 'upcoming';
-  }, [itemsWithStatus.length, currentSegmentId]); // Only depend on length and current segment
+  }, [itemsWithStatus]);
 
-  // Create optimized getHeaderDuration function - ULTRA STABLE
+  // Create optimized getHeaderDuration function - use ORIGINAL items for calculation
   const getHeaderDuration = React.useCallback((index: number) => {
     if (index < 0 || index >= visibleItems.length) return '00:00:00';
     const visibleItem = visibleItems[index];
     return headerDurations.get(visibleItem.id) || '00:00:00';
-  }, [visibleItems.length, headerDurations.size]); // Only depend on length and map size
+  }, [visibleItems, headerDurations]);
 
   return (
     <RundownTable
@@ -216,36 +216,9 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
       draggedItemIndex={restProps.draggedItemIndex !== null ? getVisibleIndex(restProps.draggedItemIndex) : null}
     />
   );
-}, (prevProps, nextProps) => {
-  // AGGRESSIVE memoization - only re-render when absolutely necessary
-  
-  // Core data changes
-  if (prevProps.items.length !== nextProps.items.length) return false;
-  if (prevProps.visibleItems.length !== nextProps.visibleItems.length) return false;
-  if (prevProps.currentSegmentId !== nextProps.currentSegmentId) return false;
-  if (prevProps.startTime !== nextProps.startTime) return false;
-  
-  // Selection state changes
-  if (prevProps.selectedRows.size !== nextProps.selectedRows.size) return false;
-  if (prevProps.selectedRowId !== nextProps.selectedRowId) return false;
-  
-  // Drag state changes
-  if (prevProps.draggedItemIndex !== nextProps.draggedItemIndex) return false;
-  if (prevProps.dropTargetIndex !== nextProps.dropTargetIndex) return false;
-  if (prevProps.isDraggingMultiple !== nextProps.isDraggingMultiple) return false;
-  
-  // UI state changes
-  if (prevProps.showColorPicker !== nextProps.showColorPicker) return false;
-  if (prevProps.hasClipboardData !== nextProps.hasClipboardData) return false;
-  
-  // Column state changes
-  if (prevProps.visibleColumns.length !== nextProps.visibleColumns.length) return false;
-  if (prevProps.columnExpandState !== nextProps.columnExpandState) return false;
-  
-  // Skip re-render - none of the important props changed
-  return true;
-});
+};
 
+// Custom comparison function to ensure re-renders when items change
 OptimizedRundownTableWrapper.displayName = 'OptimizedRundownTableWrapper';
 
 export default OptimizedRundownTableWrapper;
