@@ -168,15 +168,23 @@ const CellRenderer = ({
       isDuration={isTimeField}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
+        console.log('🔄 CellRenderer onUpdateValue:', { 
+          itemId: item.id, 
+          columnKey: column.key, 
+          oldValue: value, 
+          newValue 
+        });
         markActiveTyping?.();
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
           const field = `customFields.${column.key}`;
+          console.log('🔄 CellRenderer calling onUpdateItem (custom):', { itemId: item.id, field, newValue });
           onUpdateItem(item.id, field, newValue);
         } else {
           // For segmentName column, always update the 'name' field
           // For name column, also update the 'name' field
           const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
+          console.log('🔄 CellRenderer calling onUpdateItem (builtin):', { itemId: item.id, field, newValue });
           onUpdateItem(item.id, field, newValue);
         }
       }}
