@@ -40,7 +40,8 @@ type RundownAction =
   | { type: 'SET_PLAYING'; payload: boolean }
   | { type: 'MARK_SAVED' }
   | { type: 'SET_DOC_VERSION'; payload: number } // Add action to set docVersion
-  | { type: 'LOAD_STATE'; payload: Partial<RundownState> };
+  | { type: 'LOAD_STATE'; payload: Partial<RundownState> }
+  | { type: 'LOAD_REMOTE_STATE'; payload: Partial<RundownState> }; // Silent load for remote updates
 
 const initialState: RundownState = {
   items: [],
@@ -165,6 +166,16 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
         ...action.payload,
         hasUnsavedChanges: false,
         lastChanged: 0
+      };
+    }
+
+    case 'LOAD_REMOTE_STATE': {
+      debugLogger.autosave('LOAD_REMOTE_STATE applied; keeping hasUnsavedChanges=false, no lastChanged update');
+      return {
+        ...state,
+        ...action.payload,
+        hasUnsavedChanges: false, // Remote updates should never trigger saves
+        // Don't update lastChanged for remote updates
       };
     }
     default:
@@ -384,7 +395,9 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     
     setDocVersion: (version: number) => dispatch({ type: 'SET_DOC_VERSION', payload: version }),
     
-    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState })
+    loadState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_STATE', payload: newState }),
+    
+    loadRemoteState: (newState: Partial<RundownState>) => dispatch({ type: 'LOAD_REMOTE_STATE', payload: newState })
   }), [state.items, rundownId, broadcastLiveUpdate]);
 
   // Helper functions for common operations

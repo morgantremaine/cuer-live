@@ -504,19 +504,19 @@ export const useSimplifiedRundownState = () => {
           
           console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
           
-          // Apply rundown-level property changes using loadState to avoid hasUnsavedChanges
+          // Apply rundown-level property changes using loadRemoteState to prevent AutoSave
           switch (update.field) {
             case 'title':
-              actionsRef.current.loadState({ title: update.value });
+              actionsRef.current.loadRemoteState({ title: update.value });
               break;
             case 'startTime':
-              actionsRef.current.loadState({ startTime: update.value });
+              actionsRef.current.loadRemoteState({ startTime: update.value });
               break;
             case 'timezone':
-              actionsRef.current.loadState({ timezone: update.value });
+              actionsRef.current.loadRemoteState({ timezone: update.value });
               break;
             case 'showDate':
-              actionsRef.current.loadState({ showDate: update.value });
+              actionsRef.current.loadRemoteState({ showDate: update.value });
               break;
             case 'items:reorder': {
               const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
@@ -602,17 +602,11 @@ export const useSimplifiedRundownState = () => {
           });
           
           if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
-            actionsRef.current.loadState({ items: updatedItems });
+            actionsRef.current.loadRemoteState({ items: updatedItems });
           }
       } finally {
-        // CRITICAL: Reset flag and add cooldown after applying remote changes
-        setTimeout(() => {
-          applyingCellBroadcastRef.current = false;
-          // Add 800ms cooldown to prevent immediate autosave scheduling
-          if (cooldownUntilRef.current) {
-            cooldownUntilRef.current = Math.max(cooldownUntilRef.current, Date.now() + 800);
-          }
-        }, 50);
+        // Reset flag immediately since loadRemoteState won't trigger AutoSave
+        applyingCellBroadcastRef.current = false;
       }
     }, currentUserId);
 

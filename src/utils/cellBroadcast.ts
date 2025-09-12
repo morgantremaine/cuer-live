@@ -26,10 +26,6 @@ export class CellBroadcastManager {
   private lastProcessedUpdate = new Map<string, string>();
   private userIds = new Map<string, string>(); // Store userId for early filtering
   
-  // Debouncing for cell broadcasts to prevent keystroke floods
-  private pendingBroadcasts = new Map<string, { update: CellUpdate; timeoutId: NodeJS.Timeout }>();
-  private readonly DEBOUNCE_DELAY = 300; // 300ms debounce
-  
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
   }
@@ -147,6 +143,7 @@ export class CellBroadcastManager {
     value: any, 
     userId: string
   ) {
+    const channel = this.ensureChannel(rundownId);
     const updatePayload = {
       rundownId,
       itemId,
@@ -156,37 +153,7 @@ export class CellBroadcastManager {
       timestamp: Date.now()
     };
 
-    // Create unique key for this cell (item + field combination)
-    const cellKey = `${rundownId}-${itemId || 'rundown'}-${field}`;
-    
-    // Clear any existing timeout for this cell
-    const existing = this.pendingBroadcasts.get(cellKey);
-    if (existing) {
-      clearTimeout(existing.timeoutId);
-    }
-
-    // Schedule debounced broadcast
-    const timeoutId = setTimeout(() => {
-      this.pendingBroadcasts.delete(cellKey);
-      this.performBroadcast(updatePayload);
-    }, this.DEBOUNCE_DELAY);
-
-    // Store the pending broadcast
-    this.pendingBroadcasts.set(cellKey, {
-      update: updatePayload,
-      timeoutId
-    });
-
-    debugLogger.realtime('Scheduled debounced cell broadcast:', { cellKey, delay: this.DEBOUNCE_DELAY });
-  }
-
-  private performBroadcast(updatePayload: CellUpdate) {
-    const channel = this.ensureChannel(updatePayload.rundownId);
-    
-    // Update timestamp to current time for actual broadcast
-    updatePayload.timestamp = Date.now();
-    
-    debugLogger.realtime('Broadcasting cell update (debounced):', updatePayload);
+    debugLogger.realtime('Broadcasting cell update (instant):', updatePayload);
 
     channel.send({
       type: 'broadcast',
@@ -239,14 +206,6 @@ export class CellBroadcastManager {
       this.reconnectTimeouts.delete(rundownId);
     }
 
-    // Clear pending broadcasts for this rundown
-    for (const [key, pending] of this.pendingBroadcasts.entries()) {
-      if (key.startsWith(`${rundownId}-`)) {
-        clearTimeout(pending.timeoutId);
-        this.pendingBroadcasts.delete(key);
-      }
-    }
-
     // Clear userId for early filtering
     this.userIds.delete(rundownId);
 
@@ -264,27 +223,6 @@ export class CellBroadcastManager {
           console.warn('🧹 Error during cell channel cleanup:', error);
         }
       }, 0);
-    }
-  }
-
-  // Flush pending broadcasts immediately (useful when user stops typing)
-  flushPendingBroadcasts(rundownId?: string) {
-    const toFlush: string[] = [];
-    
-    for (const [key, pending] of this.pendingBroadcasts.entries()) {
-      if (!rundownId || key.startsWith(`${rundownId}-`)) {
-        clearTimeout(pending.timeoutId);
-        toFlush.push(key);
-        // Immediately perform the broadcast
-        this.performBroadcast(pending.update);
-      }
-    }
-    
-    // Clean up flushed broadcasts
-    toFlush.forEach(key => this.pendingBroadcasts.delete(key));
-    
-    if (toFlush.length > 0) {
-      debugLogger.realtime(`Flushed ${toFlush.length} pending broadcasts${rundownId ? ` for rundown ${rundownId}` : ''}`);
     }
   }
 
