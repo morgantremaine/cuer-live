@@ -1,5 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
-import { useMemoryMonitor } from './useMemoryMonitor';
+import { useRef, useCallback, useEffect } from 'react';
 
 interface UseTypingOptimizationProps {
   itemCount: number;
@@ -19,16 +18,9 @@ export const useTypingOptimization = ({
   const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastFlushRef = useRef<number>(0);
   
-  // Monitor memory during typing
-  const { forceCheck } = useMemoryMonitor({
-    rundownId: 'typing-session',
-    itemCount,
-    enabled: isLargeRundown
-  });
-  
   // Aggressive debouncing for large rundowns
-  const DEBOUNCE_MS = isLargeRundown ? 200 : 150; // Increased debounce
-  const BATCH_SIZE = isLargeRundown ? 3 : 5; // Smaller batches
+  const DEBOUNCE_MS = isLargeRundown ? 150 : 100;
+  const BATCH_SIZE = isLargeRundown ? 5 : 10;
 
   const flushPendingUpdates = useCallback(() => {
     const now = Date.now();
@@ -49,13 +41,8 @@ export const useTypingOptimization = ({
       }
       
       if (endIndex < updates.length) {
-        // Schedule next batch with minimal delay
-        setTimeout(() => processBatch(endIndex), 16); // ~60fps
-      } else {
-        // Force memory check after typing session
-        if (isLargeRundown) {
-          setTimeout(forceCheck, 100);
-        }
+        // Schedule next batch
+        setTimeout(() => processBatch(endIndex), 0);
       }
     };
     
@@ -67,13 +54,13 @@ export const useTypingOptimization = ({
       clearTimeout(flushTimeoutRef.current);
       flushTimeoutRef.current = null;
     }
-  }, [onUpdateItem, BATCH_SIZE, isLargeRundown, forceCheck]);
+  }, [onUpdateItem, BATCH_SIZE]);
 
   const optimizedUpdateItem = useCallback((itemId: string, field: string, value: string) => {
     const key = `${itemId}-${field}`;
     const now = Date.now();
     
-    // Store the update (overwrites previous value for same field)
+    // Store the update
     pendingUpdatesRef.current.set(key, {
       field,
       value,
@@ -85,23 +72,14 @@ export const useTypingOptimization = ({
       clearTimeout(flushTimeoutRef.current);
     }
     
-    // Schedule flush with longer delay for large rundowns
+    // Schedule flush
     flushTimeoutRef.current = setTimeout(flushPendingUpdates, DEBOUNCE_MS);
     
   }, [flushPendingUpdates, DEBOUNCE_MS]);
 
-  // Force flush on unmount or tab switch
+  // Force flush on unmount
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && pendingUpdatesRef.current.size > 0) {
-        flushPendingUpdates();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (pendingUpdatesRef.current.size > 0) {
         flushPendingUpdates();
       }
