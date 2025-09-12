@@ -48,6 +48,9 @@ export const useSimplifiedRundownState = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
+  
+  // Performance optimization: debounced broadcast timeouts to prevent cell broadcast storms
+  const broadcastTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -795,9 +798,24 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // Broadcast cell update immediately for Google Sheets-style sync
+    // PERFORMANCE FIX: Debounce cell broadcasts for large rundowns to prevent storms
+    const itemCount = state.items?.length || 0;
     if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+      // Clear existing broadcast timeout for this field
+      const broadcastKey = `${id}-${field}`;
+      if (broadcastTimeoutsRef.current.has(broadcastKey)) {
+        clearTimeout(broadcastTimeoutsRef.current.get(broadcastKey)!);
+      }
+      
+      // Use aggressive debouncing for large rundowns to prevent broadcast storms
+      const debounceDelay = itemCount > 150 ? 800 : itemCount > 100 ? 500 : 150;
+      
+      const timeoutId = setTimeout(() => {
+        cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+        broadcastTimeoutsRef.current.delete(broadcastKey);
+      }, debounceDelay);
+      
+      broadcastTimeoutsRef.current.set(broadcastKey, timeoutId);
     }
     
     if (isTypingField) {

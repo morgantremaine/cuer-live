@@ -110,14 +110,28 @@ export const useFieldDeltaSave = (
           timestamp: Date.now()
         });
       } else {
-        // Check individual fields of existing item
+        // PERFORMANCE FIX: More precise field comparison to prevent false positives
         const itemFields = ['name', 'talent', 'script', 'gfx', 'video', 'images', 'notes', 'duration', 'color', 'isFloating', 'customFields'];
         
         itemFields.forEach(field => {
           const currentValue = (currentItem as any)[field];
           const previousValue = (previousItem as any)[field];
           
-          if (JSON.stringify(currentValue) !== JSON.stringify(previousValue)) {
+          // Use more efficient comparison - avoid JSON.stringify for strings and primitives
+          let hasChanged = false;
+          
+          if (typeof currentValue === 'string' && typeof previousValue === 'string') {
+            hasChanged = currentValue !== previousValue;
+          } else if (typeof currentValue === typeof previousValue && (typeof currentValue === 'number' || typeof currentValue === 'boolean')) {
+            hasChanged = currentValue !== previousValue;
+          } else if (currentValue === null || currentValue === undefined || previousValue === null || previousValue === undefined) {
+            hasChanged = currentValue !== previousValue;
+          } else {
+            // Only use JSON.stringify for complex objects when necessary
+            hasChanged = JSON.stringify(currentValue) !== JSON.stringify(previousValue);
+          }
+          
+          if (hasChanged) {
             deltas.push({
               itemId: currentItem.id,
               field,

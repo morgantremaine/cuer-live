@@ -235,6 +235,45 @@ export const useConsolidatedRealtimeRundown = ({
       hasGap: hasSignificantGap,
       userId: payload.new?.last_updated_by
     });
+    
+    // Performance monitoring and memory management
+    const realtimeItemCount = (payload.new?.items as any[])?.length || 0;
+    const isLargeRealtimeRundown = realtimeItemCount > 100;
+    const isVeryLargeRealtimeRundown = realtimeItemCount > 200;
+    
+    // Enhanced memory cleanup for large rundowns
+    if (isLargeRealtimeRundown && globalSubscriptions.size > 50) {
+      console.warn('⚠️ Large number of active subscriptions:', globalSubscriptions.size, 'with', realtimeItemCount, 'items');
+      
+      // Aggressive cleanup for very large rundowns
+      if (isVeryLargeRealtimeRundown && globalSubscriptions.size > 100) {
+        console.log('🧹 Consolidating subscriptions for memory optimization');
+        // Clean up old subscriptions that might be stale
+        const now = Date.now();
+        for (const [key, sub] of globalSubscriptions.entries()) {
+          // Skip current subscription
+          if (key === rundownId) continue;
+          
+          // Check if subscription hasn't been used recently
+          const timeSinceLastUpdate = now - (globalState.lastProcessedTimestamp ? new Date(globalState.lastProcessedTimestamp).getTime() : 0);
+          if (timeSinceLastUpdate > 300000) { // 5 minutes old
+            console.log('🧹 Removing stale subscription:', key);
+            globalSubscriptions.delete(key);
+          }
+        }
+      }
+    }
+    
+    // Skip processing for very large rundowns if system is under memory pressure
+    if (isVeryLargeRealtimeRundown && typeof window !== 'undefined' && 'performance' in window && 'memory' in (window.performance as any)) {
+      const memory = (window.performance as any).memory;
+      const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+      
+      if (usedMB > 600) {
+        console.warn('🛑 Skipping realtime processing due to high memory usage:', usedMB, 'MB');
+        return;
+      }
+    }
 
     // Update tracking state
     globalState.lastProcessedTimestamp = normalizedTimestamp || globalState.lastProcessedTimestamp;

@@ -91,6 +91,30 @@ export const useSimpleAutoSave = (
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
   const SIGNATURE_CACHE_TTL = 5000; // 5 seconds cache TTL
+  
+  // Memory cleanup for large rundowns to prevent memory leaks
+  useEffect(() => {
+    const itemCount = state.items?.length || 0;
+    if (itemCount > 150) {
+      const interval = setInterval(() => {
+        // Clear old cache entries to prevent memory accumulation
+        const now = Date.now();
+        for (const [key, value] of signatureCache.current.entries()) {
+          if (now - value.timestamp > SIGNATURE_CACHE_TTL) {
+            signatureCache.current.delete(key);
+          }
+        }
+        
+        // Force garbage collection hint for very large rundowns
+        if (itemCount > 200 && signatureCache.current.size > 100) {
+          signatureCache.current.clear();
+          console.log('🧹 AutoSave: Cleared signature cache for memory optimization');
+        }
+      }, 10000); // Clean every 10 seconds for large rundowns
+      
+      return () => clearInterval(interval);
+    }
+  }, [state.items?.length]);
 
   // Create content signature from any state (for use with snapshots) with caching
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
