@@ -231,30 +231,6 @@ const RundownTable = memo(({
       })}
     </tbody>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function for maximum performance during typing
-  // Only re-render if essential props actually changed
-  if (
-    prevProps.items !== nextProps.items ||
-    prevProps.visibleColumns !== nextProps.visibleColumns ||
-    prevProps.selectedRowId !== nextProps.selectedRowId ||
-    prevProps.currentSegmentId !== nextProps.currentSegmentId ||
-    prevProps.draggedItemIndex !== nextProps.draggedItemIndex ||
-    prevProps.dropTargetIndex !== nextProps.dropTargetIndex ||
-    prevProps.showColorPicker !== nextProps.showColorPicker
-  ) {
-    return false; // Re-render
-  }
-  
-  // Check if selected rows changed
-  if (prevProps.selectedRows.size !== nextProps.selectedRows.size) {
-    return false;
-  }
-  
-  // Skip deep comparison of selectedRows for performance if sizes match
-  // The items reference change will trigger re-render when needed
-  
-  return true; // Skip re-render
 });
 
 export default RundownTable;

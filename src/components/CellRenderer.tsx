@@ -168,13 +168,6 @@ const CellRenderer = ({
       isDuration={isTimeField}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
-        console.log(`🔄 CellRenderer onUpdateValue called:`, {
-          itemId: item.id,
-          columnKey: column.key,
-          isCustom: column.isCustom,
-          newValue,
-          willUpdateField: column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)
-        });
         markActiveTyping?.();
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
