@@ -24,15 +24,29 @@ export const useRundownMemoization = (
   const memoizedCalculations = useMemo(() => {
     const itemCount = items.length;
     
-    // For large rundowns, avoid heavy calculations entirely
+    // For large rundowns, avoid heavy calculations but preserve essential functionality
     if (itemCount > 100) {
       const headerDurations = new Map<string, string>();
-      // Create minimal enhanced items without expensive calculations
-      const itemsWithStatus = items.map((item) => ({
-        ...item,
-        calculatedStatus: 'upcoming' as const,
-        calculatedRowNumber: item.type === 'header' ? '' : '0'
-      }));
+      
+      // CRITICAL: Row numbering is essential - calculate properly for all sizes
+      const itemsWithStatus = items.map((item, index) => {
+        let calculatedRowNumber = '';
+        if (item.type !== 'header') {
+          let regularItemCount = 0;
+          for (let i = 0; i <= index; i++) {
+            if (items[i]?.type !== 'header') {
+              regularItemCount++;
+            }
+          }
+          calculatedRowNumber = regularItemCount.toString();
+        }
+        
+        return {
+          ...item,
+          calculatedStatus: item.id === currentSegmentId ? 'current' as const : 'upcoming' as const,
+          calculatedRowNumber
+        };
+      });
       
       return {
         itemsWithStatus,
