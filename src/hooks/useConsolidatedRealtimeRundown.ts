@@ -269,8 +269,9 @@ export const useConsolidatedRealtimeRundown = ({
       const memory = (window.performance as any).memory;
       const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
       
-      if (usedMB > 600) {
-        console.warn('🛑 Skipping realtime processing due to high memory usage:', usedMB, 'MB');
+      // Only skip if memory usage is critically high (750MB instead of 600MB)
+      if (usedMB > 750) {
+        console.warn('🛑 Skipping realtime processing due to critical memory usage:', usedMB, 'MB');
         return;
       }
     }

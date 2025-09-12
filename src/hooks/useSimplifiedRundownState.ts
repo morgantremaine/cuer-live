@@ -798,7 +798,7 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-    // PERFORMANCE FIX: Debounce cell broadcasts for large rundowns to prevent storms
+    // PERFORMANCE FIX: Smart debouncing based on rundown size - preserve real-time for small rundowns
     const itemCount = state.items?.length || 0;
     if (rundownId && currentUserId) {
       // Clear existing broadcast timeout for this field
@@ -807,15 +807,32 @@ export const useSimplifiedRundownState = () => {
         clearTimeout(broadcastTimeoutsRef.current.get(broadcastKey)!);
       }
       
-      // Use aggressive debouncing for large rundowns to prevent broadcast storms
-      const debounceDelay = itemCount > 150 ? 800 : itemCount > 100 ? 500 : 150;
+      // Smart debouncing: No delay for small rundowns to preserve real-time feel
+      let debounceDelay = 0; // No debouncing for small rundowns (≤50 items)
       
-      const timeoutId = setTimeout(() => {
+      if (itemCount > 200) {
+        debounceDelay = 600; // Very large rundowns: 600ms (reduced from 800ms)
+      } else if (itemCount > 150) {
+        debounceDelay = 400; // Large rundowns: 400ms (reduced from 500ms)  
+      } else if (itemCount > 100) {
+        debounceDelay = 200; // Medium rundowns: 200ms (reduced from 500ms)
+      } else if (itemCount > 50) {
+        debounceDelay = 50;  // Small-medium rundowns: minimal delay
+      }
+      // itemCount ≤ 50: No debouncing for real-time feel
+      
+      if (debounceDelay === 0) {
+        // Immediate broadcast for small rundowns
         cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-        broadcastTimeoutsRef.current.delete(broadcastKey);
-      }, debounceDelay);
-      
-      broadcastTimeoutsRef.current.set(broadcastKey, timeoutId);
+      } else {
+        // Debounced broadcast for larger rundowns
+        const timeoutId = setTimeout(() => {
+          cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+          broadcastTimeoutsRef.current.delete(broadcastKey);
+        }, debounceDelay);
+        
+        broadcastTimeoutsRef.current.set(broadcastKey, timeoutId);
+      }
     }
     
     if (isTypingField) {

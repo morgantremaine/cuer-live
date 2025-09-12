@@ -43,16 +43,17 @@ export const useSimpleAutoSave = (
   // Simplified autosave system - reduce complexity with performance optimization
   const lastEditAtRef = useRef<number>(0);
   
-  // Performance-aware timing - scale based on rundown size
+  // Performance-aware timing - only scale for genuinely large rundowns
   const getOptimizedTimings = useCallback(() => {
     const itemCount = state.items?.length || 0;
-    const isLargeRundown = itemCount > 100;
-    const isVeryLargeRundown = itemCount > 200;
+    const isVeryLargeRundown = itemCount > 200; // Only very large rundowns get slower timings
+    const isLargeRundown = itemCount > 150; // Large rundowns get modest increases
     
     return {
-      typingIdleMs: isVeryLargeRundown ? 3000 : isLargeRundown ? 2000 : 1500,
-      maxSaveDelay: isVeryLargeRundown ? 8000 : isLargeRundown ? 6500 : 5000,
-      microResaveMs: isLargeRundown ? 400 : 200
+      // Keep small/medium rundowns fast - only slow down for very large ones
+      typingIdleMs: isVeryLargeRundown ? 2500 : isLargeRundown ? 2000 : 1500, // Reduced from 3000ms max
+      maxSaveDelay: isVeryLargeRundown ? 7000 : isLargeRundown ? 6000 : 5000, // Reduced from 8000ms max
+      microResaveMs: isLargeRundown ? 300 : 200 // Reduced from 400ms
     };
   }, [state.items?.length]);
   
