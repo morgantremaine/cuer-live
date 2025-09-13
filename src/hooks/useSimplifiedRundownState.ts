@@ -492,6 +492,12 @@ export const useSimplifiedRundownState = () => {
     const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
       console.log('📱 Cell broadcast received:', update);
       
+      // Wait for initial load to complete before processing cell broadcasts
+      if (!initialLoadGateRef.current) {
+        console.log('📱 Skipping cell broadcast - initial load not complete');
+        return;
+      }
+      
       // Skip our own updates (simplified for single sessions) - now handled early in cellBroadcast
       if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
         console.log('📱 Skipping own cell broadcast update');
