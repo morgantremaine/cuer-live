@@ -10,6 +10,7 @@ interface ReliableAutoSaveOptions {
   onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => void;
   isInitiallyLoaded: boolean;
   isSharedView?: boolean;
+  lastCellBroadcastTimeRef?: React.MutableRefObject<number>;
 }
 
 /**
@@ -24,7 +25,8 @@ export const useReliableAutoSave = ({
   state,
   onSaved,
   isInitiallyLoaded,
-  isSharedView = false
+  isSharedView = false,
+  lastCellBroadcastTimeRef
 }: ReliableAutoSaveOptions) => {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -90,6 +92,17 @@ export const useReliableAutoSave = ({
         clearTimeout(saveTimeoutRef.current);
       }
       saveTimeoutRef.current = setTimeout(performSave, 1500);
+      return;
+    }
+
+    // Skip if recent cell broadcast to prevent conflicts
+    if (lastCellBroadcastTimeRef?.current && Date.now() - lastCellBroadcastTimeRef.current < 1000) {
+      console.log('🛑 ReliableAutoSave: Recent cell broadcast activity, deferring save');
+      // Reschedule save
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = setTimeout(performSave, 1000);
       return;
     }
 

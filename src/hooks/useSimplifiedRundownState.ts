@@ -46,6 +46,7 @@ export const useSimplifiedRundownState = () => {
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const recentCellUpdatesRef = useRef<Map<string, { timestamp: number; value: any; clientId?: string }>>(new Map());
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastTypingTimeRef = useRef<number>(0);
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   
@@ -55,6 +56,7 @@ export const useSimplifiedRundownState = () => {
   
   // Track when cell broadcasts are being applied to prevent AutoSave triggers
   const applyingCellBroadcastRef = useRef(false);
+  const lastCellBroadcastTimeRef = useRef<number>(0);
   // Use proper React context for cell update coordination
   const { executeWithCellUpdate } = useCellUpdateCoordination();
   
@@ -168,7 +170,8 @@ export const useSimplifiedRundownState = () => {
       
       console.log('✅ ReliableAutoSave: Save completed, docVersion:', meta?.docVersion);
     },
-    isInitiallyLoaded: (isInitialized && !isLoadingColumns)
+    isInitiallyLoaded: (isInitialized && !isLoadingColumns),
+    lastCellBroadcastTimeRef
   });
   
   // Legacy compatibility functions for existing code
@@ -466,7 +469,7 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Cell-level broadcast system for immediate sync
+  // Cell-level broadcast system for immediate sync with enhanced protection
   useEffect(() => {
     if (!rundownId || !currentUserId) return;
 
@@ -478,11 +481,29 @@ export const useSimplifiedRundownState = () => {
         console.log('📱 Skipping own cell broadcast update');
         return;
       }
+
+      // ENHANCED PROTECTION: Block all cell broadcasts if actively saving or typing
+      if (isSaving) {
+        console.log('🛑 Cell broadcast blocked - save in progress');
+        return;
+      }
+
+      if (typingTimeoutRef.current) {
+        console.log('🛑 Cell broadcast blocked - user actively typing');
+        return;
+      }
+
+      // Additional protection: check if we have recent typing activity
+      if (lastTypingTimeRef.current && Date.now() - lastTypingTimeRef.current < 2000) {
+        console.log('🛑 Cell broadcast blocked - recent typing activity');
+        return;
+      }
       
-      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
+      console.log('📱 Applying cell broadcast update (protected):', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
+      lastCellBroadcastTimeRef.current = Date.now();
       
       try {
         // LAST WRITER WINS: Just apply the change immediately
@@ -799,6 +820,9 @@ export const useSimplifiedRundownState = () => {
           startTime: Date.now()
         };
       }
+      
+      // Track when user typed for broadcast protection
+      lastTypingTimeRef.current = Date.now();
       
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
