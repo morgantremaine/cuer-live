@@ -56,15 +56,16 @@ export class CellBroadcastManager {
           return;
         }
         
-        // Deduplication based on content hash (only for other users' messages)
-        const updateKey = `${update.itemId || 'rundown'}-${update.field}-${JSON.stringify(update.value)}-${update.timestamp}`;
-        const lastKey = this.lastProcessedUpdate.get(rundownId);
+        // Improved deduplication: store per field to prevent cross-field blocking
+        const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
+        const updateKey = `${fieldKey}-${JSON.stringify(update.value)}-${update.timestamp}`;
+        const lastKey = this.lastProcessedUpdate.get(fieldKey);
         
         if (lastKey === updateKey) {
           return; // Skip duplicate update
         }
         
-        this.lastProcessedUpdate.set(rundownId, updateKey);
+        this.lastProcessedUpdate.set(fieldKey, updateKey);
         
         // Reduced logging for cell broadcasts - only show unique updates from other users
         if (lastKey !== updateKey) {
