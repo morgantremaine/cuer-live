@@ -11,8 +11,8 @@ const PLANS = [
     description: 'Perfect for small productions',
     maxMembers: 3,
     teamRange: 'Up to 3 team members',
-    monthlyPrice: 15,
-    yearlyPrice: 162, // 10% off: 15 * 12 * 0.9
+    monthlyPrice: 25,
+    yearlyPrice: 270, // 10% off: 25 * 12 * 0.9
     popular: true,
     features: [
       'Up to 3 team members',
@@ -28,8 +28,8 @@ const PLANS = [
     description: 'Ideal for growing teams',
     maxMembers: 25,
     teamRange: 'Up to 15 team members',
-    monthlyPrice: 45,
-    yearlyPrice: 486, // 10% off: 45 * 12 * 0.9
+    monthlyPrice: 99,
+    yearlyPrice: 1069, // 10% off: 99 * 12 * 0.9
     features: [
       'Up to 15 team members',
       'Unlimited rundowns',
