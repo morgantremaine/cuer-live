@@ -7,10 +7,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 
 const PLANS = [
   {
-    name: 'Producer',
+    name: 'Pro',
     description: 'Perfect for small productions',
     maxMembers: 3,
-    teamRange: '1-3 team members',
+    teamRange: 'Up to 3 team members',
     monthlyPrice: 15,
     yearlyPrice: 162, // 10% off: 15 * 12 * 0.9
     features: [
@@ -25,13 +25,13 @@ const PLANS = [
   {
     name: 'Premium',
     description: 'Ideal for growing teams',
-    maxMembers: 15,
-    teamRange: '4-15 team members',
+    maxMembers: 25,
+    teamRange: 'Up to 25 team members',
     monthlyPrice: 45,
     yearlyPrice: 486, // 10% off: 45 * 12 * 0.9
     popular: true,
     features: [
-      'Up to 15 team members',
+      'Up to 25 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
@@ -41,21 +41,23 @@ const PLANS = [
     ]
   },
   {
-    name: 'Show',
-    description: 'For large productions',
-    maxMembers: 25,
-    teamRange: '16-25 team members',
-    monthlyPrice: 75,
-    yearlyPrice: 810, // 10% off: 75 * 12 * 0.9
+    name: 'Enterprise',
+    description: 'Scales to your company',
+    maxMembers: null,
+    teamRange: 'Unlimited team members',
+    monthlyPrice: null,
+    yearlyPrice: null,
+    isEnterprise: true,
     features: [
-      'Up to 25 team members',
+      'Unlimited team members',
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
       'AI helper',
       'Priority support',
       'Team management',
-      'Dedicated account manager'
+      'Dedicated account manager',
+      'Custom integrations'
     ]
   }
 ];
@@ -242,14 +244,14 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
                 <span>{plan.teamRange}</span>
               </div>
               
-              <div className="py-6">
+               <div className="py-6">
                 <div className={`text-5xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
-                  ${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
+                  {plan.isEnterprise ? 'Contact us' : `$${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {interval === 'monthly' ? 'per month' : 'per year'}
+                  {plan.isEnterprise ? 'Custom pricing' : (interval === 'monthly' ? 'per month' : 'per year')}
                 </div>
-                {interval === 'yearly' && (
+                {interval === 'yearly' && !plan.isEnterprise && (
                   <div className="text-sm text-green-600 dark:text-green-400 font-semibold mt-2 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full inline-block">
                     Save ${(plan.monthlyPrice * 12) - plan.yearlyPrice} yearly
                   </div>
@@ -259,16 +261,18 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             
             <CardContent className="pt-0 pb-6">
               <Button
-                onClick={() => createCheckout(plan.name, interval)}
+                onClick={() => plan.isEnterprise ? window.location.href = 'mailto:sales@cuer.live?subject=Enterprise Plan Inquiry' : createCheckout(plan.name, interval)}
                 disabled={loading || isCurrentPlan(plan.name)}
                 className={`w-full mb-6 py-3 text-base font-semibold transition-all duration-300 ${
                   isCurrentPlan(plan.name)
                     ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
+                    : plan.isEnterprise
+                    ? 'bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg hover:shadow-xl'
                     : plan.popular
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
                     : 'border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20'
                 }`}
-                variant={isCurrentPlan(plan.name) || plan.popular ? 'default' : 'outline'}
+                variant={isCurrentPlan(plan.name) || plan.popular || plan.isEnterprise ? 'default' : 'outline'}
               >
                 {isCurrentPlan(plan.name) ? (
                   <>
@@ -277,7 +281,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
                   </>
                 ) : (
                   <>
-                    Get Started
+                    {plan.isEnterprise ? 'Contact Sales' : 'Get Started'}
                     {plan.popular && <Crown className="w-4 h-4 ml-2" />}
                   </>
                 )}
