@@ -502,19 +502,57 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Cell-level broadcast system for immediate sync
-  // Set up bulletproof cell updates (replaces old cellBroadcast system)
+  // Set up bulletproof cell updates (replaces old cellBroadcast system) with stable callback
+  const stableCellUpdateCallback = useCallback((itemId: string, fieldName: string, value: any) => {
+    if (applyingCellBroadcastRef.current) return; // Prevent recursive updates
+    
+    applyingCellBroadcastRef.current = true;
+    try {
+      console.log('📨 Bulletproof cell update received with protection:', { itemId, fieldName, value });
+      
+      if (itemId && fieldName !== 'reorder' && fieldName !== 'add' && fieldName !== 'remove') {
+        // Apply field-level update with conflict protection
+        executeWithCellUpdate(() => {
+          actions.updateItem(itemId, { [fieldName]: value });
+        });
+      } else if (fieldName === 'reorder' && Array.isArray(value)) {
+        // Handle reordering
+        executeWithCellUpdate(() => {
+          const reorderedItems = value.map(id => state.items.find(item => item.id === id)).filter(Boolean);
+          actions.setItems(reorderedItems as any[]);
+        });
+      } else if (fieldName === 'title') {
+        // Handle title updates
+        executeWithCellUpdate(() => {
+          actions.setTitle(value);
+        });
+      } else if (fieldName === 'startTime') {
+        // Handle start time updates
+        executeWithCellUpdate(() => {
+          actions.setStartTime(value);
+        });
+      } else if (fieldName === 'timezone') {
+        // Handle timezone updates  
+        executeWithCellUpdate(() => {
+          actions.setTimezone(value);
+        });
+      } else if (fieldName === 'showDate') {
+        // Handle show date updates
+        executeWithCellUpdate(() => {
+          actions.setShowDate(value);
+        });
+      }
+      
+    } finally {
+      applyingCellBroadcastRef.current = false;
+    }
+  }, [actions, executeWithCellUpdate, state.items]); // Stable dependencies
+  
   const { updateCell: bulletproofUpdateCell } = useBulletproofCellUpdates(
     rundownId || '',
-    (itemId: string, fieldName: string, value: any) => {
-      // Legacy cell broadcast cleanup (old system) - remove old subscription  
-      console.log('📡 Using bulletproof cell updates instead of legacy system');
-      return () => {
-        console.log('🧹 Bulletproof cell updates cleanup handled automatically');
-      };
-      
-    }
+    stableCellUpdateCallback
   );
-
+  
   // Legacy cell broadcast cleanup (old system) - remove old subscription
   useEffect(() => {
     // The bulletproof system handles all cell updates now

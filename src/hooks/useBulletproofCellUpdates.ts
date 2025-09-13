@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useUnifiedAutoSave } from '@/components/UnifiedAutoSaveProvider';
 import { bulletproofCellBroadcast, BulletproofCellUpdate } from '@/utils/bulletproofCellBroadcast';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,11 +14,19 @@ export const useBulletproofCellUpdates = (
   const { user } = useAuth();
   const autoSave = useUnifiedAutoSave();
   const currentUserId = user?.id;
-
-  // Set up bulletproof cell broadcast subscription
+  const setupRef = useRef(false);
+  const onCellUpdateRef = useRef(onCellUpdate);
+  
+  // Keep the callback reference stable
   useEffect(() => {
-    if (!rundownId || !currentUserId) return;
+    onCellUpdateRef.current = onCellUpdate;
+  }, [onCellUpdate]);
 
+  // Set up bulletproof cell broadcast subscription with stable dependencies
+  useEffect(() => {
+    if (!rundownId || !currentUserId || setupRef.current) return;
+    
+    setupRef.current = true;
     console.log('🔌 Setting up bulletproof cell updates for rundown:', rundownId);
 
     // Inject the conflict resolver into the bulletproof broadcast system
@@ -38,7 +46,7 @@ export const useBulletproofCellUpdates = (
 
     bulletproofCellBroadcast.setConflictResolver(conflictResolver);
 
-    // Subscribe to protected cell updates
+    // Subscribe to protected cell updates with stable callback
     const unsubscribe = bulletproofCellBroadcast.subscribeToCellUpdates(
       rundownId,
       (update: BulletproofCellUpdate, resolvedValue?: any) => {
@@ -49,19 +57,20 @@ export const useBulletproofCellUpdates = (
           resolvedValue: resolvedValue || update.value
         });
 
-        // Apply the conflict-resolved value to the UI
-        onCellUpdate(update.itemId, update.fieldName, resolvedValue || update.value);
+        // Apply the conflict-resolved value to the UI using stable ref
+        onCellUpdateRef.current(update.itemId, update.fieldName, resolvedValue || update.value);
       },
       currentUserId
     );
 
     return () => {
+      setupRef.current = false;
       console.log('🧹 Cleaning up bulletproof cell updates');
       unsubscribe?.();
     };
-  }, [rundownId, currentUserId, onCellUpdate]);
+  }, [rundownId, currentUserId]); // Removed autoSave from deps to prevent loops
 
-  // Bulletproof cell update function for components to use
+  // Bulletproof cell update function for components to use (stable with useCallback)
   const updateCell = useCallback(
     (itemId: string, fieldName: string, value: any) => {
       if (!rundownId || !currentUserId) {
