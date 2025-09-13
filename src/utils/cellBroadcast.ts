@@ -56,16 +56,23 @@ export class CellBroadcastManager {
           return;
         }
         
-        // Improved deduplication: store per field to prevent cross-field blocking
+        // Improved deduplication: only prevent exact duplicates within a short time window
         const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
-        const updateKey = `${fieldKey}-${JSON.stringify(update.value)}-${update.timestamp}`;
+        const updateKey = `${fieldKey}-${JSON.stringify(update.value)}`;
         const lastKey = this.lastProcessedUpdate.get(fieldKey);
         
-        if (lastKey === updateKey) {
-          return; // Skip duplicate update
+        // Only deduplicate if the exact same value was sent very recently (within 100ms)
+        // This prevents legitimate rapid changes from being filtered out
+        if (lastKey) {
+          const [lastUpdateKey, lastTimestamp] = lastKey.split('|');
+          const timeDiff = update.timestamp - parseInt(lastTimestamp);
+          
+          if (lastUpdateKey === updateKey && timeDiff < 100) {
+            return; // Skip only very recent duplicates
+          }
         }
         
-        this.lastProcessedUpdate.set(fieldKey, updateKey);
+        this.lastProcessedUpdate.set(fieldKey, `${updateKey}|${update.timestamp}`);
         
         // Reduced logging for cell broadcasts - only show unique updates from other users
         if (lastKey !== updateKey) {
