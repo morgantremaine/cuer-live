@@ -93,25 +93,39 @@ export const useSimplifiedRundownState = () => {
   // Track recent typing activity for extended protection
   const recentTypingActivityRef = useRef<Map<string, { timestamp: number; expiresAt: number }>>(new Map());
   
-  // User-aware field protection
+  // Track protection timeouts to clear them when extending protection
+  const protectionTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  
+  // User-aware field protection with timeout management
   const protectFieldFromRemoteUpdates = useCallback((fieldKey: string, durationMs: number = 8000) => {
     const now = Date.now();
     const expiresAt = now + durationMs;
+    
+    // Clear any existing timeout for this field
+    const existingTimeout = protectionTimeoutsRef.current.get(fieldKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      protectionTimeoutsRef.current.delete(fieldKey);
+    }
     
     activeEditingFieldsRef.current.add(fieldKey);
     recentTypingActivityRef.current.set(fieldKey, { timestamp: now, expiresAt });
     
     console.log('🛡️ PROTECTING field from remote updates:', fieldKey, 'for', durationMs, 'ms');
     
-    // Auto-cleanup after expiration
-    setTimeout(() => {
+    // Set new timeout that can be cleared if protection is extended
+    const timeout = setTimeout(() => {
       activeEditingFieldsRef.current.delete(fieldKey);
       const activity = recentTypingActivityRef.current.get(fieldKey);
+      // Only remove if this timeout hasn't been superseded by newer activity
       if (activity && activity.expiresAt <= Date.now()) {
         recentTypingActivityRef.current.delete(fieldKey);
         console.log('🔓 AUTO-UNPROTECTING field:', fieldKey);
       }
+      protectionTimeoutsRef.current.delete(fieldKey);
     }, durationMs);
+    
+    protectionTimeoutsRef.current.set(fieldKey, timeout);
   }, []);
   
   // Check if a field should be protected from incoming updates
@@ -153,6 +167,7 @@ export const useSimplifiedRundownState = () => {
       
       if (fieldKey) {
         // Protect this field from remote updates while user is typing
+        // Each keystroke extends the protection, clearing previous timeouts
         protectFieldFromRemoteUpdates(fieldKey, 8000); // 8 second protection
       }
     });
@@ -160,10 +175,11 @@ export const useSimplifiedRundownState = () => {
     return unsubscribe;
   }, [protectFieldFromRemoteUpdates]);
 
-  // Cleanup expired protection entries periodically
+  // Cleanup protection timeouts and expired entries
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
+      // Clean up expired activities
       for (const [fieldKey, activity] of recentTypingActivityRef.current.entries()) {
         if (now >= activity.expiresAt) {
           recentTypingActivityRef.current.delete(fieldKey);
@@ -172,7 +188,15 @@ export const useSimplifiedRundownState = () => {
       }
     }, 2000); // Clean up every 2 seconds
 
-    return () => clearInterval(interval);
+    // Cleanup function to clear all timeouts
+    return () => {
+      clearInterval(interval);
+      // Clear all protection timeouts on unmount
+      for (const timeout of protectionTimeoutsRef.current.values()) {
+        clearTimeout(timeout);
+      }
+      protectionTimeoutsRef.current.clear();
+    };
   }, []);
 
 
