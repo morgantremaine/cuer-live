@@ -577,22 +577,21 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = finalSignature;
           console.log('📝 Setting lastSavedRef immediately after NEW rundown save:', finalSignature.length);
           
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              // Be more conservative about micro-resaves - only trigger if significant time has passed
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
+          // Update lastSavedRef to current state signature after successful save
+          const currentSignatureAfterSave = createContentSignature();
+          lastSavedRef.current = currentSignatureAfterSave;
+          console.log('📝 Setting lastSavedRef to current state after full save:', currentSignatureAfterSave.length);
+
+          // Check if content changed during save and handle appropriately
+          if (currentSignatureAfterSave !== finalSignature) {
+            const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+            if (timeSinceLastEdit > (typingIdleMs * 2)) {
+              console.log('⚠️ Content changed during save - scheduling micro-resave');
+              scheduleMicroResave();
+            } else {
+              console.log('ℹ️ Content changed during save but recent activity - state already captured');
             }
-          }, 500); // Increased delay to let React state settle completely
+          }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
@@ -621,25 +620,21 @@ export const useSimpleAutoSave = (
             }
           }
 
-          // Update lastSavedRef immediately to prevent retry race condition  
-          lastSavedRef.current = finalSignature;
-          console.log('📝 Setting lastSavedRef immediately after delta save:', finalSignature.length);
+          // Update lastSavedRef to current state signature after successful save
+          const currentSignatureAfterSave = createContentSignature();
+          lastSavedRef.current = currentSignatureAfterSave;
+          console.log('📝 Setting lastSavedRef to current state after delta save:', currentSignatureAfterSave.length);
 
-          // Delay signature comparison longer to avoid React state race conditions and double saves
-          setTimeout(() => {
-            const currentSignatureAfterSave = createContentSignature();
-            if (currentSignatureAfterSave !== finalSignature) {
-              const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-              if (timeSinceLastEdit > (typingIdleMs * 2)) {
-                console.log('⚠️ Content changed during save - scheduling micro-resave');
-                lastSavedRef.current = currentSignatureAfterSave; // Update to latest
-                scheduleMicroResave();
-              } else {
-                console.log('ℹ️ Content changed during save but recent activity - updating lastSaved to latest');
-                lastSavedRef.current = currentSignatureAfterSave;
-              }
+          // Check if content changed during save and handle appropriately
+          if (currentSignatureAfterSave !== finalSignature) {
+            const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
+            if (timeSinceLastEdit > (typingIdleMs * 2)) {
+              console.log('⚠️ Content changed during save - scheduling micro-resave');
+              scheduleMicroResave();
+            } else {
+              console.log('ℹ️ Content changed during save but recent activity - state already captured');
             }
-          }, 500);
+          }
 
           // Invoke callback with metadata
           onSavedRef.current?.({ 
