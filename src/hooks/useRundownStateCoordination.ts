@@ -318,7 +318,7 @@ export const useRundownStateCoordination = () => {
       visibleItems,
       
       // Autosave typing guard
-      markActiveTyping: persistedState.markActiveTyping
+      markTyping: persistedState.markTyping
     },
     interactions,
     uiState,
