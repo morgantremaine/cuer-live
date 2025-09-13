@@ -21,6 +21,8 @@ class ShowcallerBroadcastManager {
   private connectionStatus: Map<string, string> = new Map();
   private isReconnecting: Map<string, boolean> = new Map();
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private reconnectAttempts: Map<string, number> = new Map();
+  private lastReconnectTime: Map<string, number> = new Map();
 
   // Create or get broadcast channel for rundown
   private ensureChannel(rundownId: string) {
@@ -44,14 +46,16 @@ class ShowcallerBroadcastManager {
         
         if (status === 'SUBSCRIBED') {
           console.log('📺 ✅ Showcaller broadcast channel connected:', rundownId);
+          // Reset reconnection attempts on successful connection
+          this.reconnectAttempts.delete(rundownId);
         } else if (status === 'CHANNEL_ERROR') {
           console.error('📺 ❌ Showcaller broadcast channel error:', rundownId);
-          // Attempt reconnection after error
-          this.reconnectChannel(rundownId);
+          // Attempt reconnection after error with delay
+          this.scheduleReconnection(rundownId);
         } else if (status === 'CLOSED') {
           console.warn('📺 ⚠️ Showcaller broadcast channel closed:', rundownId);
-          // Attempt reconnection after close
-          this.reconnectChannel(rundownId);
+          // Attempt reconnection after close with delay
+          this.scheduleReconnection(rundownId);
         }
       });
 
@@ -59,25 +63,46 @@ class ShowcallerBroadcastManager {
     return channel;
   }
 
-  // Reconnect channel after error or close
-  private reconnectChannel(rundownId: string): void {
+  // Schedule reconnection with exponential backoff and debouncing
+  private scheduleReconnection(rundownId: string): void {
+    const now = Date.now();
+    const lastReconnect = this.lastReconnectTime.get(rundownId) || 0;
+    
+    // Debounce rapid reconnection attempts (within 1 second)
+    if (now - lastReconnect < 1000) {
+      console.log('📺 🔄 Debouncing reconnection attempt for:', rundownId);
+      return;
+    }
+
     // Prevent recursive reconnections
     if (this.isReconnecting.get(rundownId)) {
       console.log('📺 🔄 Reconnection already in progress for:', rundownId);
       return;
     }
 
+    this.lastReconnectTime.set(rundownId, now);
+    this.reconnectChannel(rundownId);
+  }
+
+  // Reconnect channel after error or close
+  private reconnectChannel(rundownId: string): void {
     this.isReconnecting.set(rundownId, true);
-    console.log('📺 🔄 Attempting to reconnect showcaller broadcast channel:', rundownId);
+    
+    // Calculate exponential backoff delay
+    const attempts = this.reconnectAttempts.get(rundownId) || 0;
+    const baseDelay = 1000; // 1 second
+    const maxDelay = 30000; // 30 seconds max
+    const delay = Math.min(baseDelay * Math.pow(2, attempts), maxDelay);
+    
+    console.log(`📺 🔄 Scheduling reconnection attempt ${attempts + 1} for ${rundownId} in ${delay}ms`);
     
     // Clear any existing timeout
     const existingTimeout = this.reconnectTimeouts.get(rundownId);
     if (existingTimeout) {
       clearTimeout(existingTimeout);
-      this.reconnectTimeouts.delete(rundownId);
     }
     
-    // Clean up existing channel
+    // Clean up existing channel immediately
     const existingChannel = this.channels.get(rundownId);
     if (existingChannel) {
       try {
@@ -88,16 +113,21 @@ class ShowcallerBroadcastManager {
       this.channels.delete(rundownId);
     }
     
-    // Recreate channel after delay with debouncing
+    // Schedule reconnection with exponential backoff
     const timeout = setTimeout(() => {
       this.reconnectTimeouts.delete(rundownId);
       this.isReconnecting.set(rundownId, false);
       
+      // Only reconnect if still needed
       if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
-        console.log('📺 🔄 Recreating showcaller broadcast channel:', rundownId);
+        // Increment attempts before trying
+        this.reconnectAttempts.set(rundownId, attempts + 1);
+        console.log('📺 🔄 Executing reconnection for:', rundownId);
         this.ensureChannel(rundownId);
+      } else {
+        console.log('📺 🔄 Skipping reconnection - no active callbacks for:', rundownId);
       }
-    }, 2000);
+    }, delay);
 
     this.reconnectTimeouts.set(rundownId, timeout);
   }
@@ -174,8 +204,10 @@ class ShowcallerBroadcastManager {
     if (channel) {
       console.log('📺 Cleaning up showcaller broadcast channel:', rundownId);
       
-      // Clear reconnection state
+      // Clear all reconnection state
       this.isReconnecting.delete(rundownId);
+      this.reconnectAttempts.delete(rundownId);
+      this.lastReconnectTime.delete(rundownId);
       const timeout = this.reconnectTimeouts.get(rundownId);
       if (timeout) {
         clearTimeout(timeout);
