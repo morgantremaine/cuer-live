@@ -45,7 +45,7 @@ export const usePerformanceMonitoring = ({
     return Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
   }, []);
 
-  // Check performance and show warnings if needed
+  // Check performance (silent monitoring only)
   const checkPerformance = useCallback(() => {
     if (!enabled || !rundownId) return;
     
@@ -59,30 +59,23 @@ export const usePerformanceMonitoring = ({
       lastUpdate: now
     };
 
-    // Only show warnings if enough time has passed since last warning
+    // Silent monitoring only - no user-facing notifications
     if (now - lastWarningRef.current < WARNING_COOLDOWN) return;
 
-    // Memory usage warnings
+    // Internal monitoring (no toast notifications)
     if (memoryUsage > MEMORY_CRITICAL_THRESHOLD) {
-      toast({
-        title: "High Memory Usage Detected",
-        description: `Using ${memoryUsage}MB with ${itemCount} items. Consider reducing rundown size or refreshing the page.`,
-        variant: "destructive",
-      });
       lastWarningRef.current = now;
+      // Internal metrics only - no user notification
     } else if (memoryUsage > MEMORY_WARNING_THRESHOLD && itemCount > LARGE_RUNDOWN_THRESHOLD) {
-      toast({
-        title: "Performance Notice",
-        description: `Large rundown (${itemCount} items) using ${memoryUsage}MB. Performance may be slower.`,
-      });
       lastWarningRef.current = now;
+      // Internal metrics only - no user notification
     }
 
-    // Large rundown warnings
+    // Silent monitoring for very large rundowns
     if (itemCount > VERY_LARGE_RUNDOWN_THRESHOLD) {
-      console.log(`📊 Performance Monitor: Very large rundown (${itemCount} items, ${memoryUsage}MB)`);
+      // Internal metrics only - removed console logging
     }
-  }, [enabled, rundownId, itemCount, getMemoryUsage, toast]);
+  }, [enabled, rundownId, itemCount, getMemoryUsage]);
 
   // Set up performance observer for render timing
   useEffect(() => {
