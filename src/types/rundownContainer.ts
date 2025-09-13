@@ -84,6 +84,9 @@ export interface RundownContainerProps {
   // Jump to here functionality
   onJumpToHere?: (segmentId: string) => void;
   
+  // Autosave typing guard
+  markActiveTyping?: () => void;
+  
   // Autoscroll functionality
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
