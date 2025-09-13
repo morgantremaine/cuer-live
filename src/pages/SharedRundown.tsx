@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
-import { cellBroadcast } from '@/utils/cellBroadcast';
+
 import { useTabFocus } from '@/hooks/useTabFocus';
 
 // Default columns to use when rundown has no columns defined - excludes notes for shared rundown
@@ -47,8 +47,6 @@ const SharedRundown = () => {
   const layoutLoadedRef = useRef<string | null>(null);
   const isLayoutLoadingRef = useRef(false);
   const isMountedRef = useRef(true);
-  const lastCellUpdateTsRef = useRef<number>(0);
-  const [localRundownData, setLocalRundownData] = useState(rundownData);
 
   // Update the previous tab active state after each render
   useEffect(() => {
@@ -58,202 +56,13 @@ const SharedRundown = () => {
   // Get rundownId from the rundownData
   const rundownId = rundownData?.id;
 
-  // Sync local state with shared state
-  useEffect(() => {
-    if (!rundownData) return;
+  // No more cell broadcast or real-time content updates - using polling instead
 
-    const now = Date.now();
-    // Avoid overwriting very recent cell-broadcast changes to prevent flicker
-    if (lastCellUpdateTsRef.current && now - lastCellUpdateTsRef.current < 800) {
-      return;
-    }
-
-    setLocalRundownData(prev => {
-      if (!prev) return rundownData;
-      const incomingDoc = (rundownData as any)?.docVersion ?? 0;
-      const prevDoc = (prev as any)?.docVersion ?? 0;
-      // Only sync down if the server docVersion advanced
-      if (incomingDoc > prevDoc) {
-        return rundownData;
-      }
-      return prev;
-    });
-  }, [rundownData]);
-
-  // Set up cell broadcast for instant collaboration in shared rundown
-  // This runs continuously regardless of tab focus - critical for multi-monitor setups
-  useEffect(() => {
-    if (!rundownId) return;
-
-    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
-      // Skip own updates (simplified for single sessions) - now handled early in cellBroadcast
-      if (cellBroadcast.isOwnUpdate(update, 'shared-view')) {
-        console.log('📱 Shared rundown skipping own cell broadcast update');
-        return;
-      }
-
-      console.log('📱 Shared rundown applying cell broadcast update:', update.itemId, update.field, update.value);
-      // Record time to prevent immediate overwrite from DB snapshot
-      lastCellUpdateTsRef.current = Date.now();
-      
-      // Handle structural events for instant collaboration
-      if (update.field === 'items:add' || update.field === 'items:remove' || update.field === 'items:reorder') {
-        console.log('📱 Shared rundown applying structural broadcast:', update.field);
-        setLocalRundownData(prevData => {
-          if (!prevData) return prevData;
-          const prevItems = Array.isArray(prevData.items) ? prevData.items : [];
-          
-          if (update.field === 'items:reorder') {
-            // For reorder, update.value contains { order: string[] }
-            if (update.value?.order && Array.isArray(update.value.order)) {
-              const idSet = new Set(update.value.order);
-              const existingMap = new Map(prevItems.map(i => [i.id, i]));
-              const reordered = update.value.order
-                .map((id: string) => existingMap.get(id))
-                .filter(Boolean);
-              // Append any items not present in order (safety)
-              const leftovers = prevItems.filter(i => !idSet.has(i.id));
-              return {
-                ...prevData,
-                items: [...reordered, ...leftovers]
-              };
-            }
-          } else if (update.field === 'items:add') {
-            // Expect { item, index }
-            const payload = update.value || {};
-            const item = payload.item;
-            const index = Math.max(0, Math.min(payload.index ?? prevItems.length, prevItems.length));
-            if (item && !prevItems.find(i => i.id === item.id)) {
-              const newItems = [...prevItems];
-              newItems.splice(index, 0, item);
-              return { ...prevData, items: newItems };
-            }
-          } else if (update.field === 'items:remove') {
-            // Expect { id }
-            const removeId = update.value?.id;
-            if (removeId) {
-              const filtered = prevItems.filter(i => i.id !== removeId);
-              return { ...prevData, items: filtered };
-            }
-          }
-          
-          return prevData;
-        });
-        return;
-      }
-      
-      // Apply all cell updates immediately for shared rundown
-      setLocalRundownData(prevData => {
-        if (!prevData) return prevData;
-        
-        // Normalize certain fields (booleans) coming from broadcasts as strings
-        let field = update.field as string;
-        let value = update.value as any;
-        const isBooleanFloatField = field === 'isFloating' || field === 'isFloated';
-        if (isBooleanFloatField) {
-          const boolVal = value === true || value === 'true';
-          // Keep both keys in sync to satisfy different consumers
-          field = 'isFloating';
-          value = boolVal;
-          // Apply to both props when updating the item below
-          return {
-            ...prevData,
-            items: prevData.items.map(item =>
-              item.id === update.itemId
-                ? { ...item, isFloating: boolVal, isFloated: boolVal }
-                : item
-            )
-          };
-        }
-        
-        if (update.itemId) {
-          // Item-level updates
-          const updatedItems = prevData.items.map(item =>
-            item.id === update.itemId ? { ...item, [field]: value } : item
-          );
-          return {
-            ...prevData,
-            items: updatedItems
-          };
-        } else {
-          // Rundown-level updates (title, start_time, etc.)
-          return {
-            ...prevData,
-            [field]: value
-          };
-        }
-      });
-    }, 'shared-view');
-
-    return unsubscribe;
-  }, [rundownId]);
-
-  // Handle tab refocus - use RPC for normalized data refresh (guarded to avoid stale overwrites)
-  useEffect(() => {
-    // Only trigger refresh when tab has just become active (transition from inactive to active)
-    if (!hasJustBecomeActive || !rundownId) return;
-
-    const performNormalizedRefresh = async () => {
-      try {
-        console.log('📱 Window refocused - triggering refresh');
-        console.log('📱 SharedRundown performing RPC refresh on tab refocus');
-
-        // If we just applied a cell-broadcast update, skip immediate RPC apply to avoid flicker
-        const sinceCellMs = Date.now() - (lastCellUpdateTsRef.current || 0);
-        if (sinceCellMs >= 0 && sinceCellMs < 1200) {
-          console.log('⏲️ Skipping immediate RPC apply; recent cell update within', sinceCellMs, 'ms');
-          return;
-        }
-        
-        // Use RPC function for normalized, accurate data
-        const { data: freshData, error } = await supabase
-          .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
-
-        if (error) {
-          console.warn('RPC refresh failed for shared rundown:', error);
-          return;
-        }
-
-        if (freshData && isMountedRef.current) {
-          const incomingDoc: number = freshData.doc_version ?? 0;
-          const currentDoc: number =
-            (localRundownData as any)?.docVersion ??
-            (rundownData as any)?.docVersion ??
-            0;
-
-          // Never apply an older or equal snapshot over current local state
-          if (incomingDoc <= currentDoc) {
-            console.log('↩️ Skipping RPC apply: incoming docVersion not newer', { incomingDoc, currentDoc });
-            return;
-          }
-
-          console.log('📱 SharedRundown data refreshed via RPC');
-          const normalizedData = {
-            id: freshData.id,
-            title: freshData.title || 'Untitled Rundown',
-            items: freshData.items || [],
-            columns: freshData.columns || [],
-            startTime: freshData.start_time || '09:00:00',
-            timezone: freshData.timezone || 'UTC',
-            lastUpdated: freshData.updated_at,
-            showcallerState: freshData.showcaller_state,
-            visibility: freshData.visibility,
-            docVersion: freshData.doc_version,
-            lastUpdatedBy: freshData.last_updated_by
-          };
-          setLocalRundownData(normalizedData);
-        }
-      } catch (error) {
-        console.warn('SharedRundown RPC refresh error:', error);
-      }
-    };
-
-    performNormalizedRefresh();
-  }, [hasJustBecomeActive, rundownId, localRundownData?.docVersion, rundownData?.docVersion]);
+  // No manual refresh needed - polling handles all updates
 
   // Update browser tab title when rundown title changes
   useEffect(() => {
-    const titleToUse = localRundownData?.title || rundownData?.title;
+    const titleToUse = rundownData?.title;
     if (titleToUse && titleToUse !== 'Untitled Rundown') {
       document.title = titleToUse;
     } else {
@@ -264,10 +73,10 @@ const SharedRundown = () => {
     return () => {
       document.title = 'Cuer Live';
     };
-  }, [localRundownData?.title, rundownData?.title]);
+  }, [rundownData?.title]);
 
   // Use real-time showcaller state if available, otherwise fall back to stored state
-  const showcallerState = realtimeShowcallerState || localRundownData?.showcallerState || rundownData?.showcallerState;
+  const showcallerState = realtimeShowcallerState || rundownData?.showcallerState;
   const isPlaying = showcallerState?.isPlaying || false;
   
   // Local countdown state for real-time display
@@ -320,16 +129,16 @@ const SharedRundown = () => {
   // IMPORTANT: Use local countdown when playing, otherwise use stored state
   const currentTimeRemaining = isPlaying && realtimeShowcallerState ? 
     localTimeRemaining : 
-    (localRundownData?.showcallerState?.timeRemaining || rundownData?.showcallerState?.timeRemaining || 0);
+    (rundownData?.showcallerState?.timeRemaining || 0);
   
   // Use current segment from real-time state when available
   const realtimeCurrentSegmentId = realtimeShowcallerState?.currentSegmentId || currentSegmentId;
 
   // Use the unified timing calculation from useShowcallerTiming hook (same as main showcaller)
   const timingStatus = useShowcallerTiming({
-    items: localRundownData?.items || rundownData?.items || [],
-    rundownStartTime: localRundownData?.startTime || rundownData?.startTime || '09:00:00',
-    timezone: localRundownData?.timezone || rundownData?.timezone || 'UTC',
+    items: rundownData?.items || [],
+    rundownStartTime: rundownData?.startTime || '09:00:00',
+    timezone: rundownData?.timezone || 'UTC',
     isPlaying,
     currentSegmentId: realtimeCurrentSegmentId,
     timeRemaining: currentTimeRemaining
@@ -340,7 +149,7 @@ const SharedRundown = () => {
     currentSegmentId: realtimeCurrentSegmentId,
     isPlaying,
     autoScrollEnabled,
-    items: localRundownData?.items || rundownData?.items || []
+    items: rundownData?.items || []
   });
 
   // Helper function to format time remaining from seconds to string (using same logic as main showcaller)
@@ -365,7 +174,7 @@ const SharedRundown = () => {
   // Simplified layout loading using the updated RPC function
   useEffect(() => {
     const loadSharedLayout = async () => {
-      if (!rundownId || !(localRundownData || rundownData) || isLayoutLoadingRef.current || !isMountedRef.current) {
+      if (!rundownId || !rundownData || isLayoutLoadingRef.current || !isMountedRef.current) {
         return;
       }
       
@@ -416,10 +225,10 @@ const SharedRundown = () => {
       }
     };
 
-    if ((localRundownData || rundownData) && rundownId && layoutLoadedRef.current !== rundownId) {
+    if (rundownData && rundownId && layoutLoadedRef.current !== rundownId) {
       loadSharedLayout();
     }
-  }, [rundownId, localRundownData, rundownData]);
+  }, [rundownId, rundownData]);
 
   // Enhanced cleanup on unmount
   useEffect(() => {
@@ -431,7 +240,7 @@ const SharedRundown = () => {
   }, []);
 
   // Determine columns early so hooks are always called in the same order
-  const columnsToUse = layoutColumns || localRundownData?.columns || rundownData?.columns || DEFAULT_COLUMNS;
+  const columnsToUse = layoutColumns || rundownData?.columns || DEFAULT_COLUMNS;
 
   // Use local column ordering for anonymous users to persist their preferred column order
   const { orderedColumns, reorderColumns } = useLocalSharedColumnOrder(columnsToUse);
@@ -459,7 +268,7 @@ const SharedRundown = () => {
     );
   }
 
-  if (!rundownData && !localRundownData) {
+  if (!rundownData) {
     return (
       <div className={`h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-white'}`}>
         <div className="text-center">
@@ -480,7 +289,7 @@ const SharedRundown = () => {
     );
   }
 
-  const displayData = localRundownData || rundownData;
+  const displayData = rundownData;
 
   return (
     <ErrorBoundary fallbackTitle="Shared Rundown Error">

@@ -4,8 +4,6 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
-import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
-import { useRundownBroadcast } from './useRundownBroadcast';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
 
 export const useSharedRundownState = () => {
@@ -28,18 +26,13 @@ export const useSharedRundownState = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [liveState, setLiveState] = useState<{
-    items?: RundownItem[];
-    title?: string;
-    startTime?: string;
-    timezone?: string;
-  } | null>(null);
-
-  // Pure realtime tracking refs (no polling)
+  // Polling refs and state
   const lastDocVersion = useRef<number>(0);
   const timeUpdateInterval = useRef<NodeJS.Timeout | null>(null);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(true);
+  const isTabVisible = useRef(true);
 
   // Enhanced time update with proper cleanup
   useEffect(() => {
@@ -119,47 +112,90 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Disable realtime DB updates for shared views - rely only on cell broadcasts for instant sync
-  // Only use showcaller broadcasts for showcaller state updates  
-  const { isConnected: realtimeConnected } = useConsolidatedRealtimeRundown({
-    rundownId,
-    onRundownUpdate: useCallback((updatedRundown) => {
-      // Skip all content updates in shared views - cell broadcasts handle them instantly
-      return;
-    }, []),
-    onShowcallerUpdate: useCallback((updatedData) => {
-      if (!mountedRef.current) return;
-      
-      logger.debug('Shared view received showcaller-only update');
-      
-      // Update showcaller state only
-      setRundownData(prev => prev ? {
-        ...prev,
-        showcallerState: updatedData.showcaller_state,
-        lastUpdated: updatedData.updated_at
-      } : null);
-    }, []),
-    enabled: !!rundownId,
-    isSharedView: true
-  });
+  // Tab visibility detection
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isTabVisible.current = !document.hidden;
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
-  // Live broadcast subscription for real-time typing updates
-  useRundownBroadcast({
-    rundownId,
-    onLiveUpdate: useCallback((payload) => {
-      if (!mountedRef.current) return;
-      
-      logger.debug('Shared view received live broadcast:', payload);
-      
-      // Update live state with broadcast data
-      setLiveState(prev => ({
-        ...prev,
-        ...payload
-      }));
-    }, []),
-    enabled: !!rundownId,
-    isSharedView: true
-  });
+  // Polling mechanism for content updates
+  const startPolling = useCallback(() => {
+    if (!rundownId || !mountedRef.current) return;
+
+    // Clear existing polling
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+    }
+
+    const pollData = async () => {
+      if (!mountedRef.current || !isTabVisible.current || isLoadingRef.current) return;
+
+      try {
+        const { data, error: queryError } = await supabase
+          .rpc('get_public_rundown_data', { rundown_uuid: rundownId });
+
+        if (!mountedRef.current) return;
+
+        if (queryError) {
+          logger.error('Polling error:', queryError);
+          return;
+        }
+
+        if (data) {
+          const normalizedRundownData = {
+            id: data.id,
+            title: data.title || 'Untitled Rundown',
+            items: Array.isArray(data.items) ? data.items : [],
+            columns: Array.isArray(data.columns) ? data.columns : [],
+            startTime: data.start_time || '09:00:00',
+            timezone: data.timezone || 'UTC',
+            lastUpdated: data.updated_at,
+            showcallerState: data.showcaller_state || null,
+            visibility: data.visibility,
+            docVersion: data.doc_version || 0,
+            lastUpdatedBy: data.last_updated_by
+          };
+
+          // Only update if doc version has changed
+          if (normalizedRundownData.docVersion > lastDocVersion.current) {
+            logger.debug(`Polling update: v${normalizedRundownData.docVersion}`);
+            setRundownData(normalizedRundownData);
+            lastDocVersion.current = normalizedRundownData.docVersion;
+          }
+        }
+      } catch (error) {
+        if (!mountedRef.current) return;
+        logger.error('Polling network error:', error);
+      }
+    };
+
+    // Smart polling intervals based on showcaller state
+    const getPollingInterval = () => {
+      const showcallerActive = rundownData?.showcallerState?.isPlaying;
+      return showcallerActive ? 1000 : 3000; // 1s when active, 3s when idle
+    };
+
+    // Initial poll
+    pollData();
+
+    // Set up recurring polling
+    pollingInterval.current = setInterval(pollData, getPollingInterval());
+
+    logger.debug(`Started polling with ${getPollingInterval()}ms interval`);
+  }, [rundownId, rundownData?.showcallerState?.isPlaying]);
+
+  // Stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+      logger.debug('Stopped polling');
+    }
+  }, []);
 
   // Showcaller broadcast subscription for real-time showcaller updates
   useEffect(() => {
@@ -193,28 +229,41 @@ export const useSharedRundownState = () => {
     return unsubscribe;
   }, [rundownId]);
 
-  // Initial load only - no polling needed with pure realtime
+  // Initial load and start polling
   useEffect(() => {
     if (rundownId && mountedRef.current) {
-      logger.debug('Initial load for shared rundown');
-      loadRundownData();
+      logger.debug('Initial load and start polling for shared rundown');
+      loadRundownData().then(() => {
+        startPolling();
+      });
     }
-  }, [rundownId, loadRundownData]);
 
-  // Clean, simple cleanup on unmount - no polling to clean up
+    return () => {
+      stopPolling();
+    };
+  }, [rundownId, loadRundownData, startPolling, stopPolling]);
+
+  // Restart polling when showcaller state changes (for smart intervals)
+  useEffect(() => {
+    if (rundownId && mountedRef.current) {
+      startPolling();
+    }
+  }, [rundownData?.showcallerState?.isPlaying, startPolling]);
+
+  // Cleanup on unmount
   useEffect(() => {
     mountedRef.current = true;
     
     return () => {
       mountedRef.current = false;
+      stopPolling();
       
-      // Clear time update interval only
       if (timeUpdateInterval.current) {
         clearInterval(timeUpdateInterval.current);
         timeUpdateInterval.current = null;
       }
     };
-  }, [rundownId]);
+  }, [stopPolling]);
 
   // Find the showcaller segment from showcaller_state or fallback to item status
   const currentSegmentId = rundownData?.showcallerState?.currentSegmentId || 
@@ -255,20 +304,10 @@ export const useSharedRundownState = () => {
     return remaining;
   })();
 
-  // Merge database state with live broadcast state
-  const mergedRundownData = rundownData ? {
-    ...rundownData,
-    // Override with live state if available, but preserve showcaller state
-    items: liveState?.items || rundownData.items,
-    title: liveState?.title || rundownData.title,
-    startTime: liveState?.startTime || rundownData.startTime,
-    timezone: liveState?.timezone || rundownData.timezone,
-    // Always preserve showcaller state from database/realtime
-    showcallerState: rundownData.showcallerState
-  } : null;
+  // Use rundown data directly (no live state merging needed with polling)
 
   return {
-    rundownData: mergedRundownData,
+    rundownData,
     currentTime,
     currentSegmentId,
     loading,
