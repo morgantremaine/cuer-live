@@ -59,7 +59,7 @@ const HeaderRowContent = ({
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px',
-          borderRight: '1px solid hsl(var(--border))'
+          borderRight: backgroundColor ? 'none' : '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center justify-center w-full h-full">
@@ -96,7 +96,7 @@ const HeaderRowContent = ({
                   minWidth: normalizedWidth,
                   maxWidth: normalizedWidth,
                   overflow: 'visible',
-                  borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
+                  borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))'
                 }}
             >
               <div 
@@ -166,7 +166,7 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
+                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8">
@@ -187,7 +187,7 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
+                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8"></div>
@@ -203,7 +203,7 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
+                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8"></div>
