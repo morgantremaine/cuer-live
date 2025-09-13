@@ -489,7 +489,7 @@ export const useSimplifiedRundownState = () => {
   useEffect(() => {
     if (!rundownId || !currentUserId) return;
 
-    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, async (update) => {
       console.log('📱 Cell broadcast received:', update);
       
       // Skip our own updates (simplified for single sessions) - now handled early in cellBroadcast
@@ -504,6 +504,13 @@ export const useSimplifiedRundownState = () => {
       applyingCellBroadcastRef.current = true;
       
       try {
+        // PROTECTION: Register cell broadcast changes in shadow store to prevent full realtime overwrites
+        if (update.itemId && update.field) {
+          const { localShadowStore } = await import('@/state/localShadows');
+          localShadowStore.setShadow(update.itemId, update.field, update.value, false); // inactive shadow to mark recent change
+          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`);
+        }
+        
         // LAST WRITER WINS: Just apply the change immediately
         // Use loadState to avoid triggering hasUnsavedChanges for remote data
           // Handle rundown-level property updates (no itemId)
