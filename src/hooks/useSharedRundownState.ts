@@ -176,7 +176,7 @@ export const useSharedRundownState = () => {
     // Smart polling intervals based on showcaller state
     const getPollingInterval = () => {
       const showcallerActive = rundownData?.showcallerState?.isPlaying;
-      return showcallerActive ? 1000 : 3000; // 1s when active, 3s when idle
+      return showcallerActive ? 500 : 1000; // 500ms when active, 1s when idle (much faster for responsiveness)
     };
 
     // Initial poll

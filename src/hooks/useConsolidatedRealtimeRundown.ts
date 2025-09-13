@@ -337,13 +337,16 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Skip content updates entirely - cell broadcasts handle real-time sync much better
-      // Full realtime updates cause overwrites and conflicts with instant cell broadcasts
+      // Skip content updates for regular views (cell broadcasts handle real-time sync)
+      // but still allow shared views to get polling updates by checking doc_version changes
       console.log('📱 Skipping consolidated realtime content update (using cell broadcasts instead)', {
         docVersion: incomingDocVersion,
         timestamp: normalizedTimestamp,
-        reason: 'Cell broadcasts provide superior real-time sync'
+        reason: 'Cell broadcasts provide superior real-time sync for editing views'
       });
+      
+      // Still track doc_version changes for shared rundown polling to work
+      globalState.lastProcessedDocVersion = incomingDocVersion;
       return;
 
       // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
