@@ -315,10 +315,17 @@ export const useFieldDeltaSave = (
       // Re-extract deltas based on refreshed state
       const recomputedDeltas = extractDeltas(currentState, refreshedState);
       
-      if (recomputedDeltas.length === 0) {
+      // CRITICAL FIX: Don't assume no changes when recomputedDeltas is empty
+      // Some rapid changes (like deletions) might have been lost during state refresh
+      // Always attempt to save the original deltas to prevent data loss
+      const finalDeltas = recomputedDeltas.length > 0 ? recomputedDeltas : deltas;
+      
+      if (finalDeltas.length === 0) {
         console.log('✅ No conflicts after LocalShadow state refresh - changes already applied');
         return { updatedAt: latestRow.updated_at, docVersion: serverDocVersion };
       }
+      
+      console.log('🔄 Using', finalDeltas === deltas ? 'original deltas' : 'recomputed deltas', 'to prevent data loss');
       
       // Prevent infinite recursion 
       if (retryCount >= 2) {
@@ -328,7 +335,7 @@ export const useFieldDeltaSave = (
       
       console.log('🔄 Retrying save with LocalShadow-protected state and recomputed deltas');
       // Recursively call with refreshed state - but limit recursion
-      return await saveDeltasToDatabase(recomputedDeltas, refreshedState, retryCount + 1);
+      return await saveDeltasToDatabase(finalDeltas, refreshedState, retryCount + 1);
     }
 
     console.log('✅ OCC Check passed, merging deltas onto latest server state');
