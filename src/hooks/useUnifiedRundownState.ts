@@ -95,7 +95,17 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
   
   // Core state
   const [items, setItems] = useState<RundownItem[]>([]);
-  const [columns, setColumns] = useState<Column[]>([]);
+  // Initialize columns with default structure
+  const [columns, setColumns] = useState<Column[]>([
+    { id: 'name', name: 'Segment Name', key: 'name', width: '200px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'talent', name: 'Talent', key: 'talent', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'script', name: 'Script', key: 'script', width: '300px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'gfx', name: 'GFX', key: 'gfx', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'video', name: 'Video', key: 'video', width: '150px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'duration', name: 'Duration', key: 'duration', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'startTime', name: 'Start', key: 'startTime', width: '120px', isCustom: false, isEditable: true, isVisible: true },
+    { id: 'endTime', name: 'End', key: 'endTime', width: '120px', isCustom: false, isEditable: false, isVisible: true }
+  ]);
   const [title, setTitle] = useState('Untitled Rundown');
   const [startTime, setStartTime] = useState('09:00:00');
   const [timezone, setTimezone] = useState('America/New_York');
