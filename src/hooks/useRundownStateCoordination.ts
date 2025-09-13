@@ -1,6 +1,6 @@
 import { useUnifiedRundownState } from './useUnifiedRundownState';
 import { useUnifiedShowcallerSync } from './useUnifiedShowcallerSync';
-import { useRundownGridInteractions } from './useRundownGridInteractions';
+import { useRundownInteractions } from './useRundownInteractions';
 import { useRundownUIState } from './useRundownUIState';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
 import { useHeaderCollapse } from './useHeaderCollapse';
@@ -84,6 +84,25 @@ export const useRundownStateCoordination = () => {
 
   // Get header collapse functions
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
+
+  // Interactions layer for row selection, drag & drop, copy/paste
+  const interactions = useRundownInteractions({
+    items: unifiedState.items,
+    updateItem: unifiedState.updateItem,
+    deleteRow: unifiedState.deleteRow,
+    addRow: unifiedState.addRow,
+    addHeader: unifiedState.addHeader,
+    deleteMultipleItems: unifiedState.deleteMultipleItems
+  });
+
+  // UI state layer for color picker, cell interactions, etc.
+  const uiState = useRundownUIState(
+    performanceOptimization.calculatedItems,
+    unifiedState.columns,
+    unifiedState.updateItem,
+    unifiedState.setColumns,
+    unifiedState.columns
+  );
 
   return {
     coreState: {
@@ -178,8 +197,8 @@ export const useRundownStateCoordination = () => {
       // Autosave coordination
       markActiveTyping: unifiedState.markActiveTyping
     },
-    interactions: {}, // Simplified for now
-    uiState: {}, // Simplified for now  
-    dragAndDrop: {} // Simplified for now
+    interactions,
+    uiState,
+    dragAndDrop: {} // Will be implemented in Phase 2
   };
 };
