@@ -659,6 +659,7 @@ export const useSimplifiedRundownState = () => {
           }
           
           // COMPREHENSIVE FIELD PROTECTION: Multi-layer protection system
+          // Construct the field key exactly as the protection system uses it
           const fieldKey = `item_${update.itemId}-${update.field}`;
           
           // Check comprehensive protection system
@@ -672,18 +673,32 @@ export const useSimplifiedRundownState = () => {
           
           // ADDITIONAL PROTECTION: Check if this item has multiple actively protected fields
           const itemFieldPrefix = `item_${update.itemId}-`;
-          const activeFieldsCount = Array.from(activeEditingFieldsRef.current).filter(field => 
+          const activeFields = Array.from(activeEditingFieldsRef.current).filter(field => 
             field.startsWith(itemFieldPrefix)
-          ).length;
+          );
           
-          // If multiple fields on this item are being edited, be more conservative
-          if (activeFieldsCount >= 2) {
+          if (activeFields.length >= 2) {
             console.log('🛡️ BLOCKING cell broadcast - item has multiple active fields:', update.itemId, update.field, 
-              'active fields count:', activeFieldsCount);
+              'active fields:', activeFields, 'count:', activeFields.length);
             return; // Block the entire update
           }
           
-          console.log('✅ ALLOWING cell broadcast - safe to apply:', update.itemId, update.field, 'protection check passed');
+          // ENHANCED PROTECTION: Check for recently typed activity
+          const recentActivity = recentTypingActivityRef.current.get(fieldKey);
+          if (recentActivity && Date.now() < recentActivity.expiresAt) {
+            const age = Date.now() - recentActivity.timestamp;
+            console.log('🛡️ BLOCKING cell broadcast - recent typing activity:', update.itemId, update.field, 
+              'age:', age, 'ms, expires in:', recentActivity.expiresAt - Date.now(), 'ms');
+            return;
+          }
+          
+          // FINAL PROTECTION: Check if the global focus tracker shows this field is active
+          if (activeFocusFieldRef.current === fieldKey) {
+            console.log('🛡️ BLOCKING cell broadcast - field has focus:', update.itemId, update.field);
+            return;
+          }
+          
+          console.log('✅ ALLOWING cell broadcast - all protection checks passed:', update.itemId, update.field);
 
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
