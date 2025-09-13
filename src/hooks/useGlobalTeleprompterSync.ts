@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logger } from '@/utils/logger';
 
 interface GlobalTeleprompterSyncState {
   isTeleprompterSaving: boolean;
@@ -12,13 +13,13 @@ let globalTeleprompterSyncState = {
   subscribers: new Set<(state: boolean) => void>(),
   
   handleTeleprompterSaveStart() {
-    console.log('📝 Global teleprompter save started');
+    logger.teleprompter('Global teleprompter save started');
     this.isTeleprompterSaving = true;
     this.subscribers.forEach(callback => callback(true));
   },
   
   handleTeleprompterSaveEnd() {
-    console.log('📝 Global teleprompter save ended');
+    logger.teleprompter('Global teleprompter save ended');
     // Add a small delay to ensure the indicator is visible
     setTimeout(() => {
       this.isTeleprompterSaving = false;

@@ -8,15 +8,22 @@ interface LoggerConfig {
   logLevel: LogLevel;
   enableBlueprintDebug: boolean;
   enableRundownDebug: boolean;
+  debugEmails: string[];
 }
 
 const config: LoggerConfig = {
   isDevelopment: import.meta.env.DEV,
-  enableConsoleLogging: false, // Disable all console logging in production
+  enableConsoleLogging: false, // Will be overridden by user email check
   enableErrorReporting: import.meta.env.PROD,
-  logLevel: 'error', // Only errors if logging is enabled
+  logLevel: 'debug', // Allow all levels when enabled
   enableBlueprintDebug: false,
-  enableRundownDebug: false
+  enableRundownDebug: false,
+  debugEmails: [
+    'morgantremaine@gmail.com',
+    'morgan@cuer.live', 
+    'morgantremaine@me.com',
+    'mtremaine@wildcatterla.com'
+  ]
 };
 
 const LOG_LEVELS: Record<LogLevel, number> = {
@@ -26,8 +33,23 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 3
 };
 
+// Global user email for logging access control
+let currentUserEmail: string | null = null;
+
+export const setLoggerUserEmail = (email: string | null) => {
+  currentUserEmail = email;
+};
+
 const shouldLog = (level: LogLevel): boolean => {
-  return LOG_LEVELS[level] <= LOG_LEVELS[config.logLevel];
+  // Check if current user is in debug emails list
+  const isDebugUser = currentUserEmail && config.debugEmails.includes(currentUserEmail);
+  
+  // Always allow logging for debug users, check localStorage fallback, or check config
+  const loggingEnabled = isDebugUser || 
+    (config.isDevelopment && localStorage.getItem('debugLogs') === 'true') ||
+    config.enableConsoleLogging;
+    
+  return loggingEnabled && LOG_LEVELS[level] <= LOG_LEVELS[config.logLevel];
 };
 
 const formatMessage = (level: LogLevel, message: string, data?: any): string => {
@@ -98,14 +120,103 @@ export const logger = {
     }
   },
 
-  // Specialized loggers for specific domains - completely disabled now
+  // Specialized loggers for specific domains
   blueprint: (message: string, data?: any) => {
-    // Completely disabled - no logging at all
-    return;
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `🔷 BLUEPRINT: ${message}`, data);
+    console.debug(formattedMessage);
   },
 
   rundown: (message: string, data?: any) => {
-    // Completely disabled - no logging at all  
-    return;
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📋 RUNDOWN: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  // Enhanced domain-specific loggers with emoji prefixes
+  realtime: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📡 REALTIME: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  autosave: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `💾 AUTOSAVE: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  team: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `👥 TEAM: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  grid: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📊 GRID: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  focus: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `🎯 FOCUS: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  sync: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `🔄 SYNC: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  teleprompter: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📝 TELEPROMPTER: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  auth: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `🔐 AUTH: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  broadcast: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📢 BROADCAST: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  showcaller: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📱 SHOWCALLER: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  monitor: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `📺 MONITOR: ${message}`, data);
+    console.debug(formattedMessage);
+  },
+
+  security: (message: string, data?: any) => {
+    if (!shouldLog('debug')) return;
+    
+    const formattedMessage = formatMessage('debug', `🔒 SECURITY: ${message}`, data);
+    console.debug(formattedMessage);
   }
 };
