@@ -99,8 +99,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onResetZoom,
     canZoomIn,
     canZoomOut,
-    isDefaultZoom,
-    markActiveTyping
+    isDefaultZoom
   } = props;
 
   // Create rundown data for CSV export

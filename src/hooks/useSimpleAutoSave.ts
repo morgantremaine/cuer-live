@@ -318,17 +318,16 @@ export const useSimpleAutoSave = (
       maxDelayTimeoutRef.current = null;
     }
     
-    // CRITICAL FIX: Always ensure a save is scheduled after typing
-    // Even if a save is currently in progress, we need to capture the new changes
+    // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
-      performSaveRef.current?.(false, isSharedView);
+      performSave(false, isSharedView);
     }, typingIdleMs);
     
     // Max-delay forced save only if user keeps typing continuously
     maxDelayTimeoutRef.current = setTimeout(() => {
       console.log('⏲️ AutoSave: max delay reached - forcing save');
-      performSaveRef.current?.(true, isSharedView);
+      performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef]);
@@ -467,16 +466,7 @@ export const useSimpleAutoSave = (
     if (isRecentlyTyping && !hasExceededMaxDelay) {
       debugLogger.autosave('Save deferred: user actively typing');
       console.log('⌨️ AutoSave: user still typing, waiting for idle period');
-      
-      // CRITICAL FIX: Always reschedule when deferring to prevent lost saves
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      saveTimeoutRef.current = setTimeout(() => {
-        performSave(isFlushSave, isSharedView);
-      }, typingIdleMs);
-      
-      return;
+      return; // Don't reschedule here - markActiveTyping handles it
     }
     
     if (hasExceededMaxDelay && isRecentlyTyping) {
@@ -853,7 +843,7 @@ export const useSimpleAutoSave = (
         const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
         if (isTypingActive() && timeSinceLastEdit < (isMultiUserActive ? 500 : maxSaveDelay)) {
           console.log('⌨️ AutoSave(effect): brief typing defer');
-          // CRITICAL FIX: Always reschedule when deferring to prevent lost saves
+          // Brief reschedule but don't let it delay too long in multi-user scenarios
           if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
           saveTimeoutRef.current = setTimeout(async () => {
             console.log('⏱️ AutoSave: executing save now (post-defer)');
