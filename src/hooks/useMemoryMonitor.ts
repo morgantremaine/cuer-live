@@ -57,27 +57,19 @@ export const useMemoryMonitor = ({
     if (now - lastWarningRef.current < WARNING_COOLDOWN) return;
     
     if (usedMB > MEMORY_CRITICAL_MB) {
-      toast({
-        title: "Critical Memory Usage",
-        description: `Using ${usedMB}MB with ${itemCount} items. Please refresh the page to free memory.`,
-        variant: "destructive",
-      });
+      // Silently handle critical memory usage without user notifications
       lastWarningRef.current = now;
       
       // Force garbage collection if available (Chrome DevTools)
       if (typeof window !== 'undefined' && (window as any).gc) {
         try {
           (window as any).gc();
-          console.log('🗑️ Forced garbage collection');
         } catch (e) {
           // Ignore errors
         }
       }
     } else if (usedMB > MEMORY_WARNING_MB) {
-      toast({
-        title: "High Memory Usage",
-        description: `Using ${usedMB}MB with ${itemCount} items. Consider reducing rundown size for better performance.`,
-      });
+      // Silently handle high memory usage without user notifications
       lastWarningRef.current = now;
     }
   }, [enabled, rundownId, itemCount, getMemoryStats, toast]);
