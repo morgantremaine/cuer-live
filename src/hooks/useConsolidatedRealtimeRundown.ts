@@ -32,6 +32,12 @@ const globalSubscriptions = new Map<string, {
   isConnected: boolean;
   refCount: number;
   gapDetectionInProgress: boolean; // New: prevent concurrent gap detection
+  itemDirtyQueue?: Array<{
+    payload: any;
+    timestamp: string;
+    docVersion: number;
+    queuedAt: number;
+  }>;
 }>();
 
 export const useConsolidatedRealtimeRundown = ({
@@ -180,12 +186,42 @@ export const useConsolidatedRealtimeRundown = ({
             .eq('id', rundownId as string)
             .single();
             
-          if (!error && data) {
-            const serverVersion = data.doc_version || 0;
-            const serverTimestamp = normalizeTimestamp(data.updated_at);
-            
-            // Only apply if server data is newer than what we're processing
-            if (serverVersion >= incomingDocVersion) {
+           if (!error && data) {
+             const serverVersion = data.doc_version || 0;
+             const serverTimestamp = normalizeTimestamp(data.updated_at);
+             
+             // CRITICAL FIX: Check LocalShadow protection before applying gap resolution
+             const { localShadowStore } = await import('@/state/localShadows');
+             const activeShadows = localShadowStore.getActiveShadows();
+             
+             // If user is actively editing, queue this update instead of applying immediately
+             if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
+               console.log('🛡️ Gap resolution deferred - user actively editing', {
+                 activeItems: activeShadows.items.size,
+                 activeGlobals: activeShadows.globals.size
+               });
+               
+               if (!globalState.itemDirtyQueue) {
+                 globalState.itemDirtyQueue = [];
+               }
+               
+               globalState.itemDirtyQueue.push({
+                 payload: { new: data, table: 'rundowns' },
+                 timestamp: serverTimestamp,
+                 docVersion: serverVersion,
+                 queuedAt: Date.now()
+               });
+               
+               // Schedule processing when typing stops
+               setTimeout(() => {
+                 processQueuedUpdates(globalState);
+               }, 2000);
+               
+               return;
+             }
+             
+             // Only apply if server data is newer than what we're processing
+             if (serverVersion >= incomingDocVersion) {
               globalState.lastProcessedTimestamp = serverTimestamp;
               globalState.lastProcessedDocVersion = serverVersion;
               
@@ -473,8 +509,39 @@ export const useConsolidatedRealtimeRundown = ({
               .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state')
               .eq('id', rundownId as string)
               .single();
-            if (!error && data) {
-              const serverDoc = data.doc_version || 0;
+             if (!error && data) {
+               // CRITICAL FIX: Check LocalShadow protection before applying initial catch-up
+               const { localShadowStore } = await import('@/state/localShadows');
+               const activeShadows = localShadowStore.getActiveShadows();
+               
+               // If user is actively editing, defer this initial sync
+               if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
+                 console.log('🛡️ Initial catch-up deferred - user actively editing', {
+                   activeItems: activeShadows.items.size,
+                   activeGlobals: activeShadows.globals.size
+                 });
+                 
+                 if (!state.itemDirtyQueue) {
+                   state.itemDirtyQueue = [];
+                 }
+                 
+                 const serverDoc = data.doc_version || 0;
+                 state.itemDirtyQueue.push({
+                   payload: { new: data, table: 'rundowns' },
+                   timestamp: normalizeTimestamp(data.updated_at),
+                   docVersion: serverDoc,
+                   queuedAt: Date.now()
+                 });
+                 
+                 // Schedule processing when typing stops
+                 setTimeout(() => {
+                   processQueuedUpdates(state);
+                 }, 2000);
+                 
+                 return;
+               }
+               
+               const serverDoc = data.doc_version || 0;
               if (serverDoc > state.lastProcessedDocVersion) {
                 state.lastProcessedDocVersion = serverDoc;
                 state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
