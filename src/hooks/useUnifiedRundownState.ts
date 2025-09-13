@@ -297,19 +297,29 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
     }, 2000); // 2 second delay
   }, [performSave]);
   
-  // Mark active typing (for external coordination)
+  // Mark active typing (for external coordination) - simplified to not trigger immediate state changes
   const markActiveTyping = useCallback(() => {
     lastEditTimeRef.current = Date.now();
-    scheduleAutoSave();
-  }, [scheduleAutoSave]);
+    // Don't call scheduleAutoSave here to prevent state updates during typing
+  }, []);
   
-  // Core actions
+  // Core actions with debounced updates to prevent typing interference
   const updateItem = useCallback((id: string, field: string, value: string) => {
+    // Update immediately for responsive UI
     setItems(prev => prev.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
-    scheduleAutoSave();
-  }, [scheduleAutoSave]);
+    
+    // Schedule auto-save with debouncing - don't set unsaved changes immediately
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      setHasUnsavedChanges(true);
+      performSave();
+    }, 2000); // 2 second delay
+  }, [performSave]);
   
   const deleteRow = useCallback((id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
