@@ -215,3 +215,48 @@ export const logger = {
     console.debug(formattedMessage);
   }
 };
+
+// Override global console methods to filter ALL console output
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  error: console.error,
+  info: console.info,
+  debug: console.debug
+};
+
+const isLoggingAllowed = (): boolean => {
+  const isDebugUser = currentUserEmail && config.debugEmails.includes(currentUserEmail);
+  return isDebugUser;
+};
+
+// Override console methods
+console.log = (...args: any[]) => {
+  if (isLoggingAllowed()) {
+    originalConsole.log(...args);
+  }
+};
+
+console.warn = (...args: any[]) => {
+  if (isLoggingAllowed()) {
+    originalConsole.warn(...args);
+  }
+};
+
+console.error = (...args: any[]) => {
+  if (isLoggingAllowed()) {
+    originalConsole.error(...args);
+  }
+};
+
+console.info = (...args: any[]) => {
+  if (isLoggingAllowed()) {
+    originalConsole.info(...args);
+  }
+};
+
+console.debug = (...args: any[]) => {
+  if (isLoggingAllowed()) {
+    originalConsole.debug(...args);
+  }
+};
