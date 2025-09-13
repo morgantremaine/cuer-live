@@ -121,7 +121,7 @@ const RundownIndexContent = () => {
 
   // Mark layout as stabilized after a brief delay when all loading is complete  
   useEffect(() => {
-    if (!isLoadingPreferences && !isLoadingSharedLayout) {
+    if (!isLoadingPreferences && !isLoadingSharedLayout && userColumns.length > 0) {
       const stabilizationTimer = setTimeout(() => {
         setIsLayoutStabilized(true);
       }, 100); // Shorter delay for faster reveal
@@ -130,7 +130,7 @@ const RundownIndexContent = () => {
     } else {
       setIsLayoutStabilized(false);
     }
-  }, [isLoadingPreferences, isLoadingSharedLayout]); // Remove userColumns.length dependency
+  }, [isLoadingPreferences, isLoadingSharedLayout, userColumns.length]);
 
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
@@ -268,10 +268,10 @@ const RundownIndexContent = () => {
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
+    !items || items.length === 0 ||
     isLoadingSharedLayout ||
     !isLayoutStabilized
   );
-  
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
   // After core rundown loads, prevent skeleton from reappearing

@@ -1,34 +1,38 @@
-import { useUnifiedRundownState } from './useUnifiedRundownState';
-import { useUnifiedShowcallerSync } from './useUnifiedShowcallerSync';
-import { useRundownInteractions } from './useRundownInteractions';
+import { usePersistedRundownState } from './usePersistedRundownState';
+import { useRundownGridInteractions } from './useRundownGridInteractions';
 import { useRundownUIState } from './useRundownUIState';
+import { useShowcallerStateCoordination } from './useShowcallerStateCoordination';
 import { useRundownPerformanceOptimization } from './useRundownPerformanceOptimization';
+import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
+import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
 export const useRundownStateCoordination = () => {
+  // Stable connection state - once connected, stay connected
+  const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
   const { user } = useAuth();
   const userId = user?.id;
 
-  // UNIFIED: Single source of truth for all rundown state
-  const unifiedState = useUnifiedRundownState();
+  // Single source of truth for all rundown state (with persistence)
+  const persistedState = usePersistedRundownState();
 
-  // UNIFIED: Single showcaller sync system
-  const showcallerSync = useUnifiedShowcallerSync({
-    items: unifiedState.items,
-    rundownId: unifiedState.rundownId,
-    userId
+  // Add performance optimization layer
+  const performanceOptimization = useRundownPerformanceOptimization({
+    items: persistedState.items,
+    columns: persistedState.columns,
+    startTime: persistedState.rundownStartTime
   });
 
-  // Performance optimization layer for large rundowns
-  const performanceOptimization = useRundownPerformanceOptimization({
-    items: unifiedState.items,
-    columns: unifiedState.columns,
-    startTime: unifiedState.startTime
+  // Add performance monitoring for large rundowns
+  const performanceMonitoring = usePerformanceMonitoring({
+    rundownId: persistedState.rundownId,
+    itemCount: persistedState.items?.length || 0,
+    enabled: true
   });
 
   // Autoscroll state with localStorage persistence
@@ -51,7 +55,18 @@ export const useRundownStateCoordination = () => {
     setAutoScrollEnabled(prev => !prev);
   };
 
-  // Calculate end time helper
+  // Showcaller coordination for playback controls and visual state
+  const showcallerCoordination = useShowcallerStateCoordination({
+    items: performanceOptimization.calculatedItems,
+    rundownId: persistedState.rundownId,
+    userId,
+    teamId: null,
+    rundownTitle: persistedState.rundownTitle,
+    rundownStartTime: persistedState.rundownStartTime,
+    setShowcallerUpdate: undefined // Add this when change tracking is available
+  });
+
+  // Helper function to calculate end time - memoized for performance
   const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
     const startParts = startTime.split(':').map(Number);
     const durationParts = duration.split(':').map(Number);
@@ -71,120 +86,228 @@ export const useRundownStateCoordination = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, []);
 
-  // Add multiple rows function
-  const addMultipleRows = (newItems: any[]) => {
+  // Add the missing addMultipleRows function
+  const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
     const itemsToAdd = newItems.map(item => ({
       ...item,
       id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      endTime: item.endTime || calculateEndTime(item.startTime || '00:00:00', item.duration || '00:00')
+      endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
     }));
     
-    unifiedState.setItems([...unifiedState.items, ...itemsToAdd]);
+    persistedState.setItems(itemsToAdd);
   };
 
-  // Get header collapse functions
+  // Add the missing functions that simplifiedState should provide
+  const addRowAtIndex = (insertIndex: number) => {
+    if (persistedState.addRowAtIndex) {
+      persistedState.addRowAtIndex(insertIndex);
+    } else {
+      persistedState.addRow();
+    }
+  };
+
+  const addHeaderAtIndex = (insertIndex: number) => {
+    if (persistedState.addHeaderAtIndex) {
+      persistedState.addHeaderAtIndex(insertIndex);
+    } else {
+      persistedState.addHeader();
+    }
+  };
+
+  // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
-  // Interactions layer for row selection, drag & drop, copy/paste
-  const interactions = useRundownInteractions({
-    items: unifiedState.items,
-    updateItem: unifiedState.updateItem,
-    deleteRow: unifiedState.deleteRow,
-    addRow: unifiedState.addRow,
-    addHeader: unifiedState.addHeader,
-    deleteMultipleItems: unifiedState.deleteMultipleItems
-  });
+  // UI interactions that depend on the core state (NO showcaller interference)
+  // Now passing undo-related parameters
+  const interactions = useRundownGridInteractions(
+    // Use performance-optimized calculated items, but still pass the original updateItem function
+    performanceOptimization.calculatedItems,
+    (updater) => {
+      if (typeof updater === 'function') {
+        // Extract just the core RundownItem properties for the updater
+        const coreItems = performanceOptimization.calculatedItems.map(item => ({
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          duration: item.duration,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          elapsedTime: item.elapsedTime,
+          isFloating: item.isFloating,
+          isFloated: item.isFloated,
+          talent: item.talent,
+          script: item.script,
+          notes: item.notes,
+          gfx: item.gfx,
+          video: item.video,
+          images: item.images,
+          color: item.color,
+          customFields: item.customFields,
+          rowNumber: item.rowNumber,
+          segmentName: item.segmentName
+        }));
+        persistedState.setItems(updater(coreItems));
+      } else {
+        persistedState.setItems(updater);
+      }
+    },
+    persistedState.updateItem,
+    persistedState.addRow,
+    persistedState.addHeader,
+    persistedState.deleteRow,
+    persistedState.toggleFloat,
+    persistedState.deleteMultipleItems,
+    addMultipleRows,
+    (columnId: string) => {
+      const newColumns = persistedState.columns.filter(col => col.id !== columnId);
+      persistedState.setColumns(newColumns);
+    },
+    calculateEndTime,
+    (id: string, color: string) => {
+      persistedState.updateItem(id, 'color', color);
+    },
+    () => {
+      // markAsChanged - handled internally by persisted state
+    },
+    persistedState.setTitle,
+    addRowAtIndex,
+    addHeaderAtIndex,
+    // Pass undo-related parameters - use the correct property name now available
+    persistedState.saveUndoState,
+    persistedState.markStructuralChange, // Wire structural change signaling
+    persistedState.columns,
+    persistedState.rundownTitle,
+    getHeaderGroupItemIds,
+    isHeaderCollapsed,
+    persistedState.rundownId,
+    userId
+  );
 
-  // UI state layer for color picker, cell interactions, etc.
+  // Get UI state with enhanced navigation - use performance-optimized data
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
-    unifiedState.columns,
-    unifiedState.updateItem,
-    unifiedState.setColumns,
-    unifiedState.columns
+    performanceOptimization.visibleColumns,
+    persistedState.updateItem,
+    persistedState.setColumns,
+    persistedState.columns
   );
+
+  // Setup drag and drop with structural change integration
+  const dragAndDrop = useDragAndDrop(
+    performanceOptimization.calculatedItems,
+    (items) => {
+      // Update items through persisted state
+      persistedState.setItems(items);
+      // Clear structural change flag after items are set
+      setTimeout(() => persistedState.clearStructuralChange(), 50);
+    },
+    new Set<string>(), // selectedRows - placeholder for now
+    undefined, // scrollContainerRef - placeholder for now
+    persistedState.saveUndoState,
+    persistedState.columns,
+    persistedState.rundownTitle,
+    getHeaderGroupItemIds,
+    isHeaderCollapsed,
+    persistedState.markStructuralChange,
+    persistedState.rundownId, // Pass rundownId for broadcasts
+    userId // Pass userId for broadcasts
+  );
+  
+  // Update stable connection state only when rundown is truly ready
+  useEffect(() => {
+    if (persistedState.rundownId && !persistedState.isLoading && !stableIsConnected) {
+      setStableIsConnected(true);
+    }
+  }, [persistedState.rundownId, persistedState.isLoading, stableIsConnected]);
+
+  // Simplified processing state - no teleprompter interference
+  const isProcessingRealtimeUpdate = persistedState.isProcessingRealtimeUpdate;
 
   return {
     coreState: {
-      // Core data (from unified state)
+      // Core data (performance optimized but same interface)
       items: performanceOptimization.calculatedItems,
-      columns: unifiedState.columns,
+      columns: persistedState.columns,
       visibleColumns: performanceOptimization.visibleColumns,
-      rundownTitle: unifiedState.title,
-      rundownStartTime: unifiedState.startTime,
-      timezone: unifiedState.timezone,
-      showDate: unifiedState.showDate,
-      currentTime: unifiedState.currentTime,
-      rundownId: unifiedState.rundownId,
+      rundownTitle: persistedState.rundownTitle,
+      rundownStartTime: persistedState.rundownStartTime,
+      timezone: persistedState.timezone,
+      showDate: persistedState.showDate,
+      currentTime: persistedState.currentTime,
+      rundownId: persistedState.rundownId,
       
-      // State flags
-      isLoading: unifiedState.isLoading,
-      hasUnsavedChanges: unifiedState.hasUnsavedChanges,
-      isSaving: unifiedState.isSaving,
-      isConnected: unifiedState.isConnected,
-      isProcessingRealtimeUpdate: false,
+      // State flags (NOW with separated processing states)
+      isLoading: persistedState.isLoading,
+      hasUnsavedChanges: persistedState.hasUnsavedChanges,
+      isSaving: persistedState.isSaving,
+      // Use stable connection state to prevent flickering
+      isConnected: stableIsConnected,
+      isProcessingRealtimeUpdate, // Clean, simple content processing indicator
       
-      // Showcaller state (from unified showcaller)
-      currentSegmentId: showcallerSync.currentSegmentId,
-      isPlaying: showcallerSync.isPlaying,
-      timeRemaining: showcallerSync.timeRemaining,
-      isController: showcallerSync.isController,
-      isInitialized: showcallerSync.isInitialized,
-      hasLoadedInitialState: showcallerSync.hasLoadedInitialState,
+      // Showcaller visual state from completely separate system
+      currentSegmentId: showcallerCoordination.currentSegmentId,
+      isPlaying: showcallerCoordination.isPlaying,
+      timeRemaining: showcallerCoordination.timeRemaining,
+      isController: showcallerCoordination.isController,
+      isInitialized: showcallerCoordination.isInitialized,
+      hasLoadedInitialState: showcallerCoordination.hasLoadedInitialState, // Add this for visual indicator loading
+      showcallerActivity: false, // No longer interferes with main state
       
-      // Visual status function
-      getItemVisualStatus: showcallerSync.getItemVisualStatus,
+      // Visual status overlay function (doesn't touch main state)
+      getItemVisualStatus: showcallerCoordination.getItemVisualStatus,
       
       // Selection state
-      selectedRowId: unifiedState.selectedRowId,
-      handleRowSelection: unifiedState.handleRowSelection,
-      clearRowSelection: unifiedState.clearRowSelection,
+      selectedRowId: persistedState.selectedRowId,
+      handleRowSelection: persistedState.handleRowSelection,
+      clearRowSelection: persistedState.clearRowSelection,
       
-      // Performance optimized calculations
+      // Calculations (performance optimized)
       totalRuntime: performanceOptimization.totalRuntime,
       getRowNumber: performanceOptimization.getRowNumber,
       getHeaderDuration: performanceOptimization.getHeaderDuration,
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
-      // Core actions (from unified state)
-      updateItem: unifiedState.updateItem,
-      deleteRow: unifiedState.deleteRow,
-      toggleFloatRow: unifiedState.toggleFloat,
-      deleteMultipleItems: unifiedState.deleteMultipleItems,
-      addItem: unifiedState.addRow,
-      setTitle: unifiedState.setTitle,
-      setStartTime: unifiedState.setStartTime,
-      setTimezone: unifiedState.setTimezone,
-      setShowDate: unifiedState.setShowDate,
-      addRow: unifiedState.addRow,
-      addHeader: unifiedState.addHeader,
-      addRowAtIndex: unifiedState.addRow, // Simplified for now
-      addHeaderAtIndex: unifiedState.addHeader, // Simplified for now
+      // Core actions (NO showcaller interference)
+      updateItem: persistedState.updateItem,
+      deleteRow: persistedState.deleteRow,
+      toggleFloatRow: persistedState.toggleFloat,
+      deleteMultipleItems: persistedState.deleteMultipleItems,
+      addItem: persistedState.addItem,
+      setTitle: persistedState.setTitle,
+      setStartTime: persistedState.setStartTime,
+      setTimezone: persistedState.setTimezone,
+      setShowDate: persistedState.setShowDate,
+      addRow: persistedState.addRow,
+      addHeader: persistedState.addHeader,
+      addRowAtIndex,
+      addHeaderAtIndex,
       
       // Column management
-      addColumn: unifiedState.addColumn,
-      updateColumnWidth: unifiedState.updateColumnWidth,
-      setColumns: unifiedState.setColumns,
+      addColumn: persistedState.addColumn,
+      updateColumnWidth: persistedState.updateColumnWidth,
+      setColumns: persistedState.setColumns,
       
-      // Showcaller controls (from unified showcaller)
-      play: showcallerSync.play,
-      pause: showcallerSync.pause,
-      forward: showcallerSync.forward,
-      backward: showcallerSync.backward,
-      reset: showcallerSync.reset,
-      jumpToSegment: showcallerSync.jumpToSegment,
+      // Showcaller visual controls (completely separate from main state)
+      play: showcallerCoordination.play,
+      pause: showcallerCoordination.pause,
+      forward: showcallerCoordination.forward,
+      backward: showcallerCoordination.backward,
+      reset: showcallerCoordination.reset,
+      jumpToSegment: showcallerCoordination.jumpToSegment,
       
       // Undo functionality
-      undo: unifiedState.undo,
-      canUndo: unifiedState.canUndo,
-      lastAction: unifiedState.lastAction,
+      undo: persistedState.undo,
+      canUndo: persistedState.canUndo,
+      lastAction: persistedState.lastAction,
       
-      // Helper functions
+      // Additional functionality
       calculateEndTime,
+      markAsChanged: () => {
+        // Handled internally by simplified state
+      },
       addMultipleRows,
-      markAsChanged: () => {}, // Handled internally
       
-      // Autoscroll state
+      // Autoscroll state with enhanced debugging
       autoScrollEnabled,
       toggleAutoScroll,
       
@@ -194,11 +317,11 @@ export const useRundownStateCoordination = () => {
       getHeaderGroupItemIds,
       visibleItems,
       
-      // Autosave coordination
-      markActiveTyping: unifiedState.markActiveTyping
+      // Autosave typing guard
+      markActiveTyping: persistedState.markActiveTyping
     },
     interactions,
     uiState,
-    dragAndDrop: {} // Will be implemented in Phase 2
+    dragAndDrop
   };
 };
