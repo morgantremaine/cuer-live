@@ -195,6 +195,10 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
         throw error;
       }
       
+      if (!data) {
+        throw new Error('Rundown not found');
+      }
+      
       setItems(data.items || []);
       setTitle(data.title || 'Untitled Rundown');
       setStartTime(data.start_time || '09:00:00');
@@ -208,9 +212,8 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
         const signature = createStateSignature();
         lastSavedStateRef.current = signature;
         setHasUnsavedChanges(false);
+        setIsInitialized(true); // Move this inside the timeout to ensure all state is set
       }, 100);
-      
-      setIsInitialized(true);
       
     } catch (error) {
       console.error('Failed to initialize rundown:', error);
@@ -219,6 +222,7 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
         description: "Failed to load rundown",
         variant: "destructive"
       });
+      setIsInitialized(true); // Set initialized even on error to prevent infinite loading
     } finally {
       setIsLoading(false);
       isInitializingRef.current = false;
