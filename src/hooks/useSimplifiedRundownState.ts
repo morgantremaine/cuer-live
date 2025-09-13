@@ -80,13 +80,99 @@ export const useSimplifiedRundownState = () => {
   // Track last save time for race condition detection
   const lastSaveTimeRef = useRef<number>(0);
   
-  // Listen to global focus tracker
+  // =================================================================================
+  // COMPREHENSIVE FIELD PROTECTION SYSTEM
+  //
+  // Tracks which fields are actively being edited and protects them from remote updates
+  // Uses multiple protection layers to prevent text disappearing during concurrent editing.
+  // =================================================================================
+  
+  // Track which fields are actively being edited by this user
+  const activeEditingFieldsRef = useRef<Set<string>>(new Set());
+  
+  // Track recent typing activity for extended protection
+  const recentTypingActivityRef = useRef<Map<string, { timestamp: number; expiresAt: number }>>(new Map());
+  
+  // User-aware field protection
+  const protectFieldFromRemoteUpdates = useCallback((fieldKey: string, durationMs: number = 8000) => {
+    const now = Date.now();
+    const expiresAt = now + durationMs;
+    
+    activeEditingFieldsRef.current.add(fieldKey);
+    recentTypingActivityRef.current.set(fieldKey, { timestamp: now, expiresAt });
+    
+    console.log('🛡️ PROTECTING field from remote updates:', fieldKey, 'for', durationMs, 'ms');
+    
+    // Auto-cleanup after expiration
+    setTimeout(() => {
+      activeEditingFieldsRef.current.delete(fieldKey);
+      const activity = recentTypingActivityRef.current.get(fieldKey);
+      if (activity && activity.expiresAt <= Date.now()) {
+        recentTypingActivityRef.current.delete(fieldKey);
+        console.log('🔓 AUTO-UNPROTECTING field:', fieldKey);
+      }
+    }, durationMs);
+  }, []);
+  
+  // Check if a field should be protected from incoming updates
+  const shouldProtectFieldFromUpdate = useCallback((fieldKey: string) => {
+    const now = Date.now();
+    
+    // PROTECTION 1: Currently actively editing this field
+    if (activeEditingFieldsRef.current.has(fieldKey)) {
+      return { protected: true, reason: 'actively editing' };
+    }
+    
+    // PROTECTION 2: Recently typed in this field (within protection window)
+    const activity = recentTypingActivityRef.current.get(fieldKey);
+    if (activity && now < activity.expiresAt) {
+      const age = now - activity.timestamp;
+      return { protected: true, reason: 'recently typed', age };
+    }
+    
+    // PROTECTION 3: Global focus tracker indicates active typing
+    if (activeFocusFieldRef.current === fieldKey) {
+      return { protected: true, reason: 'has focus' };
+    }
+    
+    // PROTECTION 4: Typing session tracker indicates active typing
+    if (typingSessionRef.current?.fieldKey === fieldKey) {
+      const sessionAge = now - typingSessionRef.current.startTime;
+      if (sessionAge < 5000) { // 5 second protection window
+        return { protected: true, reason: 'typing session active', age: sessionAge };
+      }
+    }
+    
+    return { protected: false, reason: 'safe to update' };
+  }, []);
+  
+  // Listen to global focus tracker for comprehensive field protection
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
       activeFocusFieldRef.current = fieldKey;
+      
+      if (fieldKey) {
+        // Protect this field from remote updates while user is typing
+        protectFieldFromRemoteUpdates(fieldKey, 8000); // 8 second protection
+      }
     });
     
     return unsubscribe;
+  }, [protectFieldFromRemoteUpdates]);
+
+  // Cleanup expired protection entries periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      for (const [fieldKey, activity] of recentTypingActivityRef.current.entries()) {
+        if (now >= activity.expiresAt) {
+          recentTypingActivityRef.current.delete(fieldKey);
+          activeEditingFieldsRef.current.delete(fieldKey);
+        }
+      }
+    }, 2000); // Clean up every 2 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
 
@@ -572,32 +658,35 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
-          // CRITICAL FIX: Use broadcast timing + LocalShadow protection to prevent overwriting active typing
+          // COMPREHENSIVE FIELD PROTECTION: Multi-layer protection system
+          const fieldKey = `item_${update.itemId}-${update.field}`;
+          
+          // Check comprehensive protection system
+          const protection = shouldProtectFieldFromUpdate(fieldKey);
+          
+          if (protection.protected) {
+            console.log('🛡️ BLOCKING cell broadcast -', protection.reason + ':', update.itemId, update.field, 
+              protection.age ? `(${protection.age}ms ago)` : '');
+            return; // Block the entire update, don't process any items
+          }
+          
+          // ADDITIONAL PROTECTION: Check if this item has multiple actively protected fields
+          const itemFieldPrefix = `item_${update.itemId}-`;
+          const activeFieldsCount = Array.from(activeEditingFieldsRef.current).filter(field => 
+            field.startsWith(itemFieldPrefix)
+          ).length;
+          
+          // If multiple fields on this item are being edited, be more conservative
+          if (activeFieldsCount >= 2) {
+            console.log('🛡️ BLOCKING cell broadcast - item has multiple active fields:', update.itemId, update.field, 
+              'active fields count:', activeFieldsCount);
+            return; // Block the entire update
+          }
+          
+          console.log('✅ ALLOWING cell broadcast - safe to apply:', update.itemId, update.field, 'protection check passed');
+
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
-              const fieldKey = `${update.itemId}-${update.field}`;
-              
-              // PROTECTION 1: Check if actively typing this exact field
-              const isActivelyTyping = typingSessionRef.current?.fieldKey === fieldKey;
-              if (isActivelyTyping) {
-                console.log('🛡️ BLOCKING cell broadcast - actively typing:', update.itemId, update.field);
-                return item;
-              }
-              
-              // PROTECTION 2: Check timing - if this update is too close to our last save, it's likely a race condition
-              const timeSinceUpdate = Date.now() - update.timestamp;
-              const timeSinceLastSave = lastSaveTimeRef.current ? Date.now() - lastSaveTimeRef.current : Infinity;
-              
-              // If update was sent very recently (within 1 second) and we saved very recently (within 2 seconds),
-              // this is likely a race condition where their update crossed with our save
-              if (timeSinceUpdate < 1000 && timeSinceLastSave < 2000) {
-                console.log('🛡️ BLOCKING cell broadcast - potential race condition (recent mutual edits):', 
-                  update.itemId, update.field, 'update age:', timeSinceUpdate, 'ms, last save:', timeSinceLastSave, 'ms');
-                return item;
-              }
-              
-              console.log('✅ ALLOWING cell broadcast - safe to apply:', update.itemId, update.field, 
-                'update age:', timeSinceUpdate, 'ms');
               
               // Handle boolean normalization for float fields
               const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
