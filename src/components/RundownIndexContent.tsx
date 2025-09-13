@@ -121,7 +121,7 @@ const RundownIndexContent = () => {
 
   // Mark layout as stabilized after a brief delay when all loading is complete  
   useEffect(() => {
-    if (!isLoadingPreferences && !isLoadingSharedLayout && userColumns.length > 0) {
+    if (!isLoadingPreferences && !isLoadingSharedLayout) {
       const stabilizationTimer = setTimeout(() => {
         setIsLayoutStabilized(true);
       }, 100); // Shorter delay for faster reveal
@@ -130,7 +130,7 @@ const RundownIndexContent = () => {
     } else {
       setIsLayoutStabilized(false);
     }
-  }, [isLoadingPreferences, isLoadingSharedLayout, userColumns.length]);
+  }, [isLoadingPreferences, isLoadingSharedLayout]); // Remove userColumns.length dependency
 
 
   // Create wrapper functions that operate on userColumns from useUserColumnPreferences
@@ -268,23 +268,9 @@ const RundownIndexContent = () => {
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
-    // Remove the items check since it's causing the infinite loading
-    // !items || items.length === 0 ||
     isLoadingSharedLayout ||
     !isLayoutStabilized
   );
-  
-  // Add debug logging to see what's causing the loading state
-  console.log('Loading check:', {
-    isLoading,
-    isInitialized,
-    hasLoadedInitialState,
-    rundownId: !!rundownId,
-    itemsCount: items?.length || 0,
-    isLoadingSharedLayout,
-    isLayoutStabilized,
-    isFullyLoading
-  });
   
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 

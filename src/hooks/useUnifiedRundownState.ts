@@ -162,7 +162,10 @@ export const useUnifiedRundownState = (): UnifiedRundownStateReturn => {
     isInitializingRef.current = true;
     
     try {
-      setIsLoading(true);
+      // Only set loading if not already initialized to prevent oscillation
+      if (!isInitialized) {
+        setIsLoading(true);
+      }
       
       if (location.pathname === '/demo') {
         // Load demo data
