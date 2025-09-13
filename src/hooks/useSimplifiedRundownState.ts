@@ -566,14 +566,28 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
+          // CRITICAL FIX: Use LocalShadow for comprehensive field protection instead of limited typingSessionRef
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
-              // Only apply if not actively editing this exact field
-              const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
-              if (isActivelyEditing) {
-                console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
+              const fieldKey = `${update.itemId}-${update.field}`;
+              
+              // COMPREHENSIVE PROTECTION: Check both actively typing AND recently edited fields
+              const isActivelyTyping = typingSessionRef.current?.fieldKey === fieldKey;
+              const isRecentlyEdited = recentlyEditedFieldsRef.current.has(fieldKey);
+              const recentEditTime = recentlyEditedFieldsRef.current.get(fieldKey);
+              const isWithinProtectionWindow = recentEditTime && (Date.now() - recentEditTime) < 5000; // 5 second protection
+              
+              if (isActivelyTyping) {
+                console.log('🛡️ BLOCKING cell broadcast - actively typing:', update.itemId, update.field);
                 return item;
               }
+              
+              if (isRecentlyEdited && isWithinProtectionWindow) {
+                console.log('🛡️ BLOCKING cell broadcast - recently edited (within 5s):', update.itemId, update.field, 'time since edit:', Date.now() - recentEditTime!, 'ms');
+                return item;
+              }
+              
+              console.log('✅ ALLOWING cell broadcast - field not actively protected:', update.itemId, update.field);
               
               // Handle boolean normalization for float fields
               const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
@@ -799,6 +813,9 @@ export const useSimplifiedRundownState = () => {
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
+      
+      // CRITICAL FIX: Mark this field as recently edited for cell broadcast protection
+      markFieldAsRecentlyEdited(sessionKey);
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
