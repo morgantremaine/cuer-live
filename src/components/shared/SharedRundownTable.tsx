@@ -1053,8 +1053,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                   textColor = getContrastTextColor(item.color);
                   printRowClass = 'print-custom-colored-row';
                 } else if (item.type === 'header') {
-                  // Default header color only if no custom color is set
-                  rowBackgroundColor = isDark ? '#374151' : '#f3f4f6'; // gray-700 : gray-100
+                  // Default header color only if no custom color is set - use CSS custom property to match main rundown
+                  rowBackgroundColor = isDark ? 'hsl(217.2 32.6% 17.5%)' : 'hsl(210 40% 90%)'; // Use --header-background values
                   printRowClass = 'print-header-row';
                 } else {
                   // Default row - don't preserve colors in print
