@@ -81,122 +81,18 @@ export const useSimplifiedRundownState = () => {
   const lastSaveTimeRef = useRef<number>(0);
   
   // =================================================================================
-  // COMPREHENSIVE FIELD PROTECTION SYSTEM
+  // SIMPLE FIELD PROTECTION SYSTEM
   //
-  // Tracks which fields are actively being edited and protects them from remote updates
-  // Uses multiple protection layers to prevent text disappearing during concurrent editing.
+  // Just block cell broadcasts for the exact field being typed - no complex timers
   // =================================================================================
   
-  // Track which fields are actively being edited by this user
-  const activeEditingFieldsRef = useRef<Set<string>>(new Set());
-  
-  // Track recent typing activity for extended protection
-  const recentTypingActivityRef = useRef<Map<string, { timestamp: number; expiresAt: number }>>(new Map());
-  
-  // Track protection timeouts to clear them when extending protection
-  const protectionTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  
-  // User-aware field protection with timeout management
-  const protectFieldFromRemoteUpdates = useCallback((fieldKey: string, durationMs: number = 8000) => {
-    const now = Date.now();
-    const expiresAt = now + durationMs;
-    
-    // Clear any existing timeout for this field
-    const existingTimeout = protectionTimeoutsRef.current.get(fieldKey);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-      protectionTimeoutsRef.current.delete(fieldKey);
-    }
-    
-    activeEditingFieldsRef.current.add(fieldKey);
-    recentTypingActivityRef.current.set(fieldKey, { timestamp: now, expiresAt });
-    
-    console.log('🛡️ PROTECTING field from remote updates:', fieldKey, 'for', durationMs, 'ms');
-    
-    // Set new timeout that can be cleared if protection is extended
-    const timeout = setTimeout(() => {
-      activeEditingFieldsRef.current.delete(fieldKey);
-      const activity = recentTypingActivityRef.current.get(fieldKey);
-      // Only remove if this timeout hasn't been superseded by newer activity
-      if (activity && activity.expiresAt <= Date.now()) {
-        recentTypingActivityRef.current.delete(fieldKey);
-        console.log('🔓 AUTO-UNPROTECTING field:', fieldKey);
-      }
-      protectionTimeoutsRef.current.delete(fieldKey);
-    }, durationMs);
-    
-    protectionTimeoutsRef.current.set(fieldKey, timeout);
-  }, []);
-  
-  // Check if a field should be protected from incoming updates
-  const shouldProtectFieldFromUpdate = useCallback((fieldKey: string) => {
-    const now = Date.now();
-    
-    // PROTECTION 1: Currently actively editing this field
-    if (activeEditingFieldsRef.current.has(fieldKey)) {
-      return { protected: true, reason: 'actively editing' };
-    }
-    
-    // PROTECTION 2: Recently typed in this field (within protection window)
-    const activity = recentTypingActivityRef.current.get(fieldKey);
-    if (activity && now < activity.expiresAt) {
-      const age = now - activity.timestamp;
-      return { protected: true, reason: 'recently typed', age };
-    }
-    
-    // PROTECTION 3: Global focus tracker indicates active typing
-    if (activeFocusFieldRef.current === fieldKey) {
-      return { protected: true, reason: 'has focus' };
-    }
-    
-    // PROTECTION 4: Typing session tracker indicates active typing
-    if (typingSessionRef.current?.fieldKey === fieldKey) {
-      const sessionAge = now - typingSessionRef.current.startTime;
-      if (sessionAge < 5000) { // 5 second protection window
-        return { protected: true, reason: 'typing session active', age: sessionAge };
-      }
-    }
-    
-    return { protected: false, reason: 'safe to update' };
-  }, []);
-  
-  // Listen to global focus tracker for comprehensive field protection
+  // Listen to global focus tracker for simple field protection
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
       activeFocusFieldRef.current = fieldKey;
-      
-      if (fieldKey) {
-        // Protect this field from remote updates while user is typing
-        // Each keystroke extends the protection, clearing previous timeouts
-        protectFieldFromRemoteUpdates(fieldKey, 8000); // 8 second protection
-      }
     });
     
     return unsubscribe;
-  }, [protectFieldFromRemoteUpdates]);
-
-  // Cleanup protection timeouts and expired entries
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      // Clean up expired activities
-      for (const [fieldKey, activity] of recentTypingActivityRef.current.entries()) {
-        if (now >= activity.expiresAt) {
-          recentTypingActivityRef.current.delete(fieldKey);
-          activeEditingFieldsRef.current.delete(fieldKey);
-        }
-      }
-    }, 2000); // Clean up every 2 seconds
-
-    // Cleanup function to clear all timeouts
-    return () => {
-      clearInterval(interval);
-      // Clear all protection timeouts on unmount
-      for (const timeout of protectionTimeoutsRef.current.values()) {
-        clearTimeout(timeout);
-      }
-      protectionTimeoutsRef.current.clear();
-    };
   }, []);
 
 
@@ -682,47 +578,16 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
-          // COMPREHENSIVE FIELD PROTECTION: Multi-layer protection system
-          // Construct the field key exactly as the protection system uses it
+          // SIMPLE PROTECTION: Only block if actively typing this exact field
           const fieldKey = `item_${update.itemId}-${update.field}`;
+          const isActivelyTyping = activeFocusFieldRef.current === fieldKey;
           
-          // Check comprehensive protection system
-          const protection = shouldProtectFieldFromUpdate(fieldKey);
-          
-          if (protection.protected) {
-            console.log('🛡️ BLOCKING cell broadcast -', protection.reason + ':', update.itemId, update.field, 
-              protection.age ? `(${protection.age}ms ago)` : '');
-            return; // Block the entire update, don't process any items
+          if (isActivelyTyping) {
+            console.log('🛡️ BLOCKING cell broadcast - actively typing this field:', update.itemId, update.field);
+            return; // Block the update
           }
           
-          // ADDITIONAL PROTECTION: Check if this item has multiple actively protected fields
-          const itemFieldPrefix = `item_${update.itemId}-`;
-          const activeFields = Array.from(activeEditingFieldsRef.current).filter(field => 
-            field.startsWith(itemFieldPrefix)
-          );
-          
-          if (activeFields.length >= 2) {
-            console.log('🛡️ BLOCKING cell broadcast - item has multiple active fields:', update.itemId, update.field, 
-              'active fields:', activeFields, 'count:', activeFields.length);
-            return; // Block the entire update
-          }
-          
-          // ENHANCED PROTECTION: Check for recently typed activity
-          const recentActivity = recentTypingActivityRef.current.get(fieldKey);
-          if (recentActivity && Date.now() < recentActivity.expiresAt) {
-            const age = Date.now() - recentActivity.timestamp;
-            console.log('🛡️ BLOCKING cell broadcast - recent typing activity:', update.itemId, update.field, 
-              'age:', age, 'ms, expires in:', recentActivity.expiresAt - Date.now(), 'ms');
-            return;
-          }
-          
-          // FINAL PROTECTION: Check if the global focus tracker shows this field is active
-          if (activeFocusFieldRef.current === fieldKey) {
-            console.log('🛡️ BLOCKING cell broadcast - field has focus:', update.itemId, update.field);
-            return;
-          }
-          
-          console.log('✅ ALLOWING cell broadcast - all protection checks passed:', update.itemId, update.field);
+          console.log('✅ ALLOWING cell broadcast - not actively typing this field:', update.itemId, update.field);
 
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
