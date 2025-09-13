@@ -508,7 +508,7 @@ export const useSimplifiedRundownState = () => {
         if (update.itemId && update.field) {
           const { localShadowStore } = await import('@/state/localShadows');
           localShadowStore.setShadow(update.itemId, update.field, update.value, false); // inactive shadow to mark recent change
-          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`);
+          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
         }
         
         // LAST WRITER WINS: Just apply the change immediately
