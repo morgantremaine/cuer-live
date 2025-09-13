@@ -268,10 +268,24 @@ const RundownIndexContent = () => {
     !isInitialized ||
     !hasLoadedInitialState ||
     !rundownId ||
-    !items || items.length === 0 ||
+    // Remove the items check since it's causing the infinite loading
+    // !items || items.length === 0 ||
     isLoadingSharedLayout ||
     !isLayoutStabilized
   );
+  
+  // Add debug logging to see what's causing the loading state
+  console.log('Loading check:', {
+    isLoading,
+    isInitialized,
+    hasLoadedInitialState,
+    rundownId: !!rundownId,
+    itemsCount: items?.length || 0,
+    isLoadingSharedLayout,
+    isLayoutStabilized,
+    isFullyLoading
+  });
+  
   const showSkeleton = !hasRevealed ? isFullyLoading : false;
 
   // After core rundown loads, prevent skeleton from reappearing
