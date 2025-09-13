@@ -337,14 +337,14 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Skip content updates for shared views - they use cell broadcasts for instant updates
-      if (isSharedView) {
-        console.log('📱 Shared view: Skipping consolidated realtime content update (using cell broadcasts instead)', {
-          docVersion: incomingDocVersion,
-          timestamp: normalizedTimestamp
-        });
-        return;
-      }
+      // Skip content updates entirely - cell broadcasts handle real-time sync much better
+      // Full realtime updates cause overwrites and conflicts with instant cell broadcasts
+      console.log('📱 Skipping consolidated realtime content update (using cell broadcasts instead)', {
+        docVersion: incomingDocVersion,
+        timestamp: normalizedTimestamp,
+        reason: 'Cell broadcasts provide superior real-time sync'
+      });
+      return;
 
       // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
       console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
