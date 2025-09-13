@@ -29,8 +29,8 @@ const ProtectedRoute = ({ children, requiresSubscription = false }: ProtectedRou
 
   // If subscription is required, check subscription status
   if (requiresSubscription) {
-    // Allow access if user is subscribed, grandfathered, or has team access
-    const hasAccess = subscribed || grandfathered || access_type === 'team_member';
+    // Allow access if user is subscribed, grandfathered, has team access, or is on free tier
+    const hasAccess = subscribed || grandfathered || access_type === 'team_member' || access_type === 'free';
     if (!hasAccess) {
       return <Navigate to="/subscription" replace />
     }

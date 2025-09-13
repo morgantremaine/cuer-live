@@ -13,13 +13,11 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-// Tier configurations with team member limits
+// Tier configurations with team member limits - New simplified structure  
 const TIER_CONFIG = {
-  'Producer': { maxMembers: 2, monthly: 'price_1RihsRCDuejYEwM0uxW8S9tP', yearly: 'price_1RihtTCDuejYEwM0TSqVGjpG' },
-  'Show': { maxMembers: 4, monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', yearly: 'price_1RihvSCDuejYEwM0RykdDCs1' },
-  'Studio': { maxMembers: 7, monthly: 'price_1Rii29CDuejYEwM0YgMN0wXc', yearly: 'price_1Rii7LCDuejYEwM07aYUWYm7' },
-  'Studio Plus': { maxMembers: 10, monthly: 'price_1Rii7kCDuejYEwM00tOymcu5', yearly: 'price_1RiiGmCDuejYEwM0s0K9pEBQ' },
-  'Network': { maxMembers: 25, monthly: 'price_1RiiHzCDuejYEwM0GbBHczqJ', yearly: 'price_1RiiIJCDuejYEwM0CjfEcdls' }
+  'Producer': { maxMembers: 3, monthly: 'price_1RihsRCDuejYEwM0uxW8S9tP', yearly: 'price_1RihtTCDuejYEwM0TSqVGjpG' },
+  'Premium': { maxMembers: 15, monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', yearly: 'price_1RihvSCDuejYEwM0RykdDCs1' },
+  'Show': { maxMembers: 25, monthly: 'price_1Rii29CDuejYEwM0YgMN0wXc', yearly: 'price_1Rii7LCDuejYEwM07aYUWYm7' }
 };
 
 // Get tier from price ID

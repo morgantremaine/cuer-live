@@ -9,7 +9,7 @@ interface SubscriptionStatus {
   max_team_members: number;
   subscription_end: string | null;
   grandfathered: boolean;
-  access_type: 'personal' | 'team_member' | 'none';
+  access_type: 'personal' | 'team_member' | 'free' | 'none';
   user_role?: 'admin' | 'member';
   loading: boolean;
   error: string | null;
@@ -24,7 +24,7 @@ export const useSubscription = () => {
     max_team_members: 1,
     subscription_end: null,
     grandfathered: false,
-    access_type: 'none',
+    access_type: 'free',
     loading: true,
     error: null,
   });
@@ -70,7 +70,7 @@ export const useSubscription = () => {
             max_team_members: 1,
             subscription_end: null,
             grandfathered: false,
-            access_type: 'none',
+            access_type: 'free',
             loading: false,
             error: null,
           });
@@ -95,7 +95,7 @@ export const useSubscription = () => {
             max_team_members: 1,
             subscription_end: null,
             grandfathered: false,
-            access_type: 'none',
+            access_type: 'free',
             loading: false,
             error: null,
           });
@@ -110,7 +110,7 @@ export const useSubscription = () => {
         max_team_members: data.max_team_members || 1,
         subscription_end: data.subscription_end,
         grandfathered: data.grandfathered || false,
-        access_type: data.access_type || 'none',
+        access_type: data.access_type || 'free',
         user_role: data.user_role,
         loading: false,
         error: null,
@@ -129,7 +129,7 @@ export const useSubscription = () => {
           max_team_members: 1,
           subscription_end: null,
           grandfathered: false,
-          access_type: 'none',
+          access_type: 'free',
           loading: false,
           error: null,
         });
