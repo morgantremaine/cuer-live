@@ -43,12 +43,8 @@ const shouldLog = (level: LogLevel): boolean => {
   // Check if current user is in debug emails list
   const isDebugUser = currentUserEmail && config.debugEmails.includes(currentUserEmail);
   
-  // Always allow logging for debug users, check localStorage fallback, or check config
-  const loggingEnabled = isDebugUser || 
-    (config.isDevelopment && localStorage.getItem('debugLogs') === 'true') ||
-    config.enableConsoleLogging;
-    
-  return loggingEnabled && LOG_LEVELS[level] <= LOG_LEVELS[config.logLevel];
+  // Only allow logging for debug users - ignore localStorage and other flags
+  return isDebugUser && LOG_LEVELS[level] <= LOG_LEVELS[config.logLevel];
 };
 
 const formatMessage = (level: LogLevel, message: string, data?: any): string => {
