@@ -77,6 +77,9 @@ export const useSimplifiedRundownState = () => {
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
   
+  // Track last save time for race condition detection
+  const lastSaveTimeRef = useRef<number>(0);
+  
   // Listen to global focus tracker
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
@@ -156,6 +159,9 @@ export const useSimplifiedRundownState = () => {
     rundownId, 
     (meta?: { updatedAt?: string; docVersion?: number }) => {
       actions.markSaved();
+      
+      // Track save time for race condition detection in cell broadcasts
+      lastSaveTimeRef.current = Date.now();
       
       // Update our doc version and timestamp tracking
       if (meta?.docVersion) {
@@ -566,28 +572,32 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
-          // CRITICAL FIX: Use LocalShadow for comprehensive field protection instead of limited typingSessionRef
+          // CRITICAL FIX: Use broadcast timing + LocalShadow protection to prevent overwriting active typing
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
               const fieldKey = `${update.itemId}-${update.field}`;
               
-              // COMPREHENSIVE PROTECTION: Check both actively typing AND recently edited fields
+              // PROTECTION 1: Check if actively typing this exact field
               const isActivelyTyping = typingSessionRef.current?.fieldKey === fieldKey;
-              const isRecentlyEdited = recentlyEditedFieldsRef.current.has(fieldKey);
-              const recentEditTime = recentlyEditedFieldsRef.current.get(fieldKey);
-              const isWithinProtectionWindow = recentEditTime && (Date.now() - recentEditTime) < 5000; // 5 second protection
-              
               if (isActivelyTyping) {
                 console.log('🛡️ BLOCKING cell broadcast - actively typing:', update.itemId, update.field);
                 return item;
               }
               
-              if (isRecentlyEdited && isWithinProtectionWindow) {
-                console.log('🛡️ BLOCKING cell broadcast - recently edited (within 5s):', update.itemId, update.field, 'time since edit:', Date.now() - recentEditTime!, 'ms');
+              // PROTECTION 2: Check timing - if this update is too close to our last save, it's likely a race condition
+              const timeSinceUpdate = Date.now() - update.timestamp;
+              const timeSinceLastSave = lastSaveTimeRef.current ? Date.now() - lastSaveTimeRef.current : Infinity;
+              
+              // If update was sent very recently (within 1 second) and we saved very recently (within 2 seconds),
+              // this is likely a race condition where their update crossed with our save
+              if (timeSinceUpdate < 1000 && timeSinceLastSave < 2000) {
+                console.log('🛡️ BLOCKING cell broadcast - potential race condition (recent mutual edits):', 
+                  update.itemId, update.field, 'update age:', timeSinceUpdate, 'ms, last save:', timeSinceLastSave, 'ms');
                 return item;
               }
               
-              console.log('✅ ALLOWING cell broadcast - field not actively protected:', update.itemId, update.field);
+              console.log('✅ ALLOWING cell broadcast - safe to apply:', update.itemId, update.field, 
+                'update age:', timeSinceUpdate, 'ms');
               
               // Handle boolean normalization for float fields
               const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
