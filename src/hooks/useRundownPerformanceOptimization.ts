@@ -36,8 +36,7 @@ export const useRundownPerformanceOptimization = ({
       const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
       
       if (usedMB > 500) {
-        console.warn(`⚠️ High memory usage detected: ${usedMB}MB with ${itemCount} items`);
-        console.log('💡 Consider optimizing rundown size or enable performance mode');
+        // Silently monitor high memory usage without console warnings
       }
     }
   }, [itemCount, isVeryLargeRundown]);
@@ -45,7 +44,7 @@ export const useRundownPerformanceOptimization = ({
   // Performance-optimized calculated items with caching for large rundowns
   const calculatedItems = useMemo(() => {
     if (isVeryLargeRundown) {
-      console.log('🚀 Using performance-optimized calculations for', itemCount, 'items');
+      // Silently using performance-optimized calculations
     }
     return calculateItemsWithTiming(items, startTime || '00:00:00');
   }, [items, startTime, isVeryLargeRundown, itemCount]);

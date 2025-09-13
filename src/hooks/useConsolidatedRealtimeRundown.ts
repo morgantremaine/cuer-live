@@ -270,8 +270,8 @@ export const useConsolidatedRealtimeRundown = ({
       const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
       
       if (usedMB > 750) {
-        console.warn('⚠️ High memory usage detected:', usedMB, 'MB - consider refreshing page if performance degrades');
-        // Note: We still process the update - just warn the user
+        // Silently monitor high memory usage without console warnings
+        // Note: We still process the update - just skip the warning
       }
     }
 

@@ -51,8 +51,7 @@ export const useMemoryMonitor = ({
     const usedMB = Math.round(stats.usedJSHeapSize! / 1024 / 1024);
     const now = Date.now();
     
-    // Console logging for debugging
-    console.log(`💾 Memory Monitor: ${usedMB}MB used (${itemCount} items)`);
+    // Removed console logging to keep console clean
     
     // Only show warnings if enough time has passed
     if (now - lastWarningRef.current < WARNING_COOLDOWN) return;
