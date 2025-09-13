@@ -7,75 +7,61 @@ import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, 
 
 const PLANS = [
   {
+    name: 'Free',
+    description: 'Perfect for getting started',
+    maxMembers: 1,
+    teamRange: '1 team member',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    features: [
+      '1 team member',
+      'Unlimited rundowns',
+      'Real-time collaboration',
+      'Basic features',
+      'Community support'
+    ]
+  },
+  {
     name: 'Producer',
     description: 'Perfect for small productions',
-    maxMembers: 2,
-    teamRange: '1-2 team members',
-    monthlyPrice: 25,
-    yearlyPrice: 240,
+    maxMembers: 3,
+    teamRange: '1-3 team members',
+    monthlyPrice: 15,
+    yearlyPrice: 162, // 10% off: 15 * 12 * 0.9
     features: [
-      'Up to 2 team members',
+      'Up to 3 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
-      'AI helper'
+      'AI helper',
+      'Priority support'
+    ]
+  },
+  {
+    name: 'Premium',
+    description: 'Ideal for growing teams',
+    maxMembers: 15,
+    teamRange: '4-15 team members',
+    monthlyPrice: 45,
+    yearlyPrice: 486, // 10% off: 45 * 12 * 0.9
+    popular: true,
+    features: [
+      'Up to 15 team members',
+      'Unlimited rundowns',
+      'Real-time collaboration',
+      'Advanced features',
+      'AI helper',
+      'Priority support',
+      'Team management'
     ]
   },
   {
     name: 'Show',
-    description: 'Ideal for growing teams',
-    maxMembers: 4,
-    teamRange: '3-4 team members',
-    monthlyPrice: 35,
-    yearlyPrice: 315,
-    features: [
-      'Up to 4 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper'
-    ]
-  },
-  {
-    name: 'Studio',
-    description: 'Most popular for studios',
-    maxMembers: 7,
-    teamRange: '5-7 team members',
-    monthlyPrice: 55,
-    yearlyPrice: 594,
-    popular: true,
-    features: [
-      'Up to 7 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support'
-    ]
-  },
-  {
-    name: 'Studio Plus',
-    description: 'Enhanced studio capabilities',
-    maxMembers: 10,
-    teamRange: '8-10 team members',
-    monthlyPrice: 75,
-    yearlyPrice: 810,
-    features: [
-      'Up to 10 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support'
-    ]
-  },
-  {
-    name: 'Network',
-    description: 'For large organizations',
+    description: 'For large productions',
     maxMembers: 25,
-    teamRange: '11-25 team members',
-    monthlyPrice: 125,
-    yearlyPrice: 1350,
+    teamRange: '16-25 team members',
+    monthlyPrice: 75,
+    yearlyPrice: 810, // 10% off: 75 * 12 * 0.9
     features: [
       'Up to 25 team members',
       'Unlimited rundowns',
@@ -83,6 +69,7 @@ const PLANS = [
       'Advanced features',
       'AI helper',
       'Priority support',
+      'Team management',
       'Dedicated account manager'
     ]
   }
@@ -123,7 +110,7 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showArrows, setShowArrows] = useState(false);
 
-  // Center Studio plan on mount and check if arrows are needed
+  // Center Premium plan on mount and check if arrows are needed
   useEffect(() => {
     const checkArrowsNeeded = () => {
       if (scrollContainerRef.current) {
@@ -131,11 +118,11 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
         const needsScroll = container.scrollWidth > container.clientWidth;
         setShowArrows(needsScroll);
         
-        // Center Studio plan if arrows are needed
+        // Center Premium plan if arrows are needed
         if (needsScroll) {
-          const studioIndex = PLANS.findIndex(plan => plan.name === 'Studio');
+          const premiumIndex = PLANS.findIndex(plan => plan.name === 'Premium');
           const cardWidth = 320; // Approximate card width + gap
-          const scrollPosition = (studioIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+          const scrollPosition = (premiumIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
           container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
         }
       }
@@ -160,8 +147,12 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
     }
   };
 
-  const handleGetStarted = () => {
-    navigate('/login');
+  const handleGetStarted = (planName: string) => {
+    if (planName === 'Free') {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (
@@ -281,15 +272,17 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
             
             <CardContent className="pt-0 pb-6">
               <Button
-                onClick={handleGetStarted}
+                onClick={() => handleGetStarted(plan.name)}
                 className={`w-full mb-6 py-3 text-base font-semibold transition-all duration-300 ${
-                  plan.popular
+                  plan.name === 'Free'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl'
+                    : plan.popular
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
                     : 'border-2 border-slate-600 hover:border-blue-500 hover:bg-blue-950/20 text-white bg-slate-700/50'
                 }`}
-                variant={plan.popular ? 'default' : 'outline'}
+                variant={plan.name === 'Free' || plan.popular ? 'default' : 'outline'}
               >
-                Get Started
+                {plan.name === 'Free' ? 'Get Started Free' : 'Get Started'}
                 {plan.popular && <Crown className="w-4 h-4 ml-2" />}
               </Button>
               

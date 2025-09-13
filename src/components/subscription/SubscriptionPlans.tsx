@@ -9,73 +9,44 @@ const PLANS = [
   {
     name: 'Producer',
     description: 'Perfect for small productions',
-    maxMembers: 2,
-    teamRange: '1-2 team members',
-    monthlyPrice: 25,
-    yearlyPrice: 240,
+    maxMembers: 3,
+    teamRange: '1-3 team members',
+    monthlyPrice: 15,
+    yearlyPrice: 162, // 10% off: 15 * 12 * 0.9
     features: [
-      'Up to 2 team members',
+      'Up to 3 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
-      'AI helper'
+      'AI helper',
+      'Priority support'
+    ]
+  },
+  {
+    name: 'Premium',
+    description: 'Ideal for growing teams',
+    maxMembers: 15,
+    teamRange: '4-15 team members',
+    monthlyPrice: 45,
+    yearlyPrice: 486, // 10% off: 45 * 12 * 0.9
+    popular: true,
+    features: [
+      'Up to 15 team members',
+      'Unlimited rundowns',
+      'Real-time collaboration',
+      'Advanced features',
+      'AI helper',
+      'Priority support',
+      'Team management'
     ]
   },
   {
     name: 'Show',
-    description: 'Ideal for growing teams',
-    maxMembers: 4,
-    teamRange: '3-4 team members',
-    monthlyPrice: 35,
-    yearlyPrice: 315,
-    features: [
-      'Up to 4 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper'
-    ]
-  },
-  {
-    name: 'Studio',
-    description: 'Most popular for studios',
-    maxMembers: 7,
-    teamRange: '5-7 team members',
-    monthlyPrice: 55,
-    yearlyPrice: 594,
-    popular: true,
-    features: [
-      'Up to 7 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support'
-    ]
-  },
-  {
-    name: 'Studio Plus',
-    description: 'Enhanced studio capabilities',
-    maxMembers: 10,
-    teamRange: '8-10 team members',
-    monthlyPrice: 75,
-    yearlyPrice: 810,
-    features: [
-      'Up to 10 team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support'
-    ]
-  },
-  {
-    name: 'Network',
-    description: 'For large organizations',
+    description: 'For large productions',
     maxMembers: 25,
-    teamRange: '11-25 team members',
-    monthlyPrice: 125,
-    yearlyPrice: 1350,
+    teamRange: '16-25 team members',
+    monthlyPrice: 75,
+    yearlyPrice: 810, // 10% off: 75 * 12 * 0.9
     features: [
       'Up to 25 team members',
       'Unlimited rundowns',
@@ -83,6 +54,7 @@ const PLANS = [
       'Advanced features',
       'AI helper',
       'Priority support',
+      'Team management',
       'Dedicated account manager'
     ]
   }
@@ -127,7 +99,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
     return subscription_tier === planName;
   };
 
-  // Center Studio plan on mount and check if arrows are needed
+  // Center Premium plan on mount and check if arrows are needed
   useEffect(() => {
     const checkArrowsNeeded = () => {
       if (scrollContainerRef.current) {
@@ -135,11 +107,11 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
         const needsScroll = container.scrollWidth > container.clientWidth;
         setShowArrows(needsScroll);
         
-        // Center Studio plan if arrows are needed
+        // Center Premium plan if arrows are needed
         if (needsScroll) {
-          const studioIndex = PLANS.findIndex(plan => plan.name === 'Studio');
+          const premiumIndex = PLANS.findIndex(plan => plan.name === 'Premium');
           const cardWidth = 320; // Approximate card width + gap
-          const scrollPosition = (studioIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
+          const scrollPosition = (premiumIndex * cardWidth) - (container.clientWidth / 2) + (cardWidth / 2);
           container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
         }
       }
