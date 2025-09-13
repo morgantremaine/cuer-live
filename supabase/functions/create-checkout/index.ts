@@ -7,23 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Tier configurations with Price IDs - New simplified structure
+// Tier configurations with Price IDs - Updated for new structure
 const TIER_CONFIG = {
-  'Producer': { 
+  'Pro': { 
     maxMembers: 3, 
     monthly: 'price_1RihsRCDuejYEwM0uxW8S9tP', 
     yearly: 'price_1RihtTCDuejYEwM0TSqVGjpG' 
   },
   'Premium': { 
     maxMembers: 15, 
-    monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', // Using old Show tier prices temporarily
+    monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', 
     yearly: 'price_1RihvSCDuejYEwM0RykdDCs1' 
-  },
-  'Show': { 
-    maxMembers: 25, 
-    monthly: 'price_1Rii29CDuejYEwM0YgMN0wXc', // Using old Studio tier prices 
-    yearly: 'price_1Rii7LCDuejYEwM07aYUWYm7' 
   }
+  // Enterprise is contact-only, no Stripe checkout
 };
 
 const logStep = (step: string, details?: any) => {

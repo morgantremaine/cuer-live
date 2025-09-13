@@ -13,11 +13,11 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-// Tier configurations with team member limits - New simplified structure  
+// Tier configurations with team member limits - Updated for new structure  
 const TIER_CONFIG = {
-  'Producer': { maxMembers: 3, monthly: 'price_1RihsRCDuejYEwM0uxW8S9tP', yearly: 'price_1RihtTCDuejYEwM0TSqVGjpG' },
-  'Premium': { maxMembers: 15, monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', yearly: 'price_1RihvSCDuejYEwM0RykdDCs1' },
-  'Show': { maxMembers: 25, monthly: 'price_1Rii29CDuejYEwM0YgMN0wXc', yearly: 'price_1Rii7LCDuejYEwM07aYUWYm7' }
+  'Pro': { maxMembers: 3, monthly: 'price_1RihsRCDuejYEwM0uxW8S9tP', yearly: 'price_1RihtTCDuejYEwM0TSqVGjpG' },
+  'Premium': { maxMembers: 15, monthly: 'price_1RihugCDuejYEwM0TdzaQlsx', yearly: 'price_1RihvSCDuejYEwM0RykdDCs1' }
+  // Enterprise is contact-only, no Stripe pricing
 };
 
 // Get tier from price ID
