@@ -304,7 +304,10 @@ const RundownContent = React.memo<RundownContentProps>(({
                 width: `${totalTableWidth * zoomLevel}px`,
                 minWidth: `${totalTableWidth * zoomLevel}px`,
                 margin: 0,
-                padding: 0
+                padding: 0,
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                willChange: 'transform'
               }}
               data-rundown-table="header"
             >
@@ -344,7 +347,10 @@ const RundownContent = React.memo<RundownContentProps>(({
                 width: `${totalTableWidth}px`,
                 minWidth: `${totalTableWidth}px`,
                 margin: 0,
-                padding: 0
+                padding: 0,
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                willChange: 'transform'
               }}
               data-rundown-table="body"
             >
