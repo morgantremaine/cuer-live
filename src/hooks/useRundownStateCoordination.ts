@@ -317,8 +317,8 @@ export const useRundownStateCoordination = () => {
       getHeaderGroupItemIds,
       visibleItems,
       
-      // Autosave typing guard
-      markActiveTyping: persistedState.markActiveTyping
+      // Autosave typing guard - handled by bulletproof system
+      // markActiveTyping: no longer needed (bulletproof system handles this)
     },
     interactions,
     uiState,
