@@ -461,28 +461,34 @@ export const useSimpleShowcallerSync = ({
             console.log('📺 Simple: No current segment in saved state, initializing to first item');
             console.log('📺 DEBUG: LoadedState.currentSegmentId was:', currentSegmentId, 'type:', typeof currentSegmentId);
             
-            // FIXED: Don't immediately set to first item - wait for broadcasts from other users first
-            // This prevents overwriting valid positions when refreshing
-            setTimeout(() => {
-              // Only set to first item if no broadcast updates came in during the delay
-              setState(currentState => {
-                if (currentState.currentSegmentId) {
-                  console.log('📺 Simple: Position updated via broadcast, keeping existing:', currentState.currentSegmentId);
-                  return currentState; // Keep the broadcast-updated position
-                }
-                
-                console.log('📺 Simple: No position updates received, defaulting to first item');
-                const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-                if (firstSegment) {
-                  return {
-                    ...currentState,
-                    currentSegmentId: firstSegment.id,
-                    currentItemStatuses: buildStatusMap(firstSegment.id)
-                  };
-                }
-                return currentState;
+            // Initialize to first item immediately since no valid position was saved
+            console.log('📺 Simple: No position updates received, defaulting to first item');
+            const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+            if (firstSegment) {
+              setState({
+                isPlaying: false,
+                currentSegmentId: firstSegment.id,
+                timeRemaining: 0,
+                currentItemStatuses: buildStatusMap(firstSegment.id),
+                isController: false,
+                controllerId: null,
+                lastUpdate: new Date().toISOString()
               });
-            }, 2000); // 2-second delay to allow broadcast updates
+              
+              // Save the initial position immediately to prevent future resets
+              setTimeout(() => {
+                const stateToSave = {
+                  currentSegmentId: firstSegment.id,
+                  isPlaying: false,
+                  timeRemaining: 0,
+                  currentItemStatuses: buildStatusMap(firstSegment.id),
+                  isController: false,
+                  controllerId: null,
+                  lastUpdate: new Date().toISOString()
+                };
+                saveShowcallerState(stateToSave);
+              }, 500);
+            }
           }
         } else {
           console.log('📺 Simple: No saved showcaller state, initializing to first item');
@@ -540,8 +546,11 @@ export const useSimpleShowcallerSync = ({
       // CRITICAL: Only save if we have a valid currentSegmentId - never fallback to first item here
       if (!stateToSave.currentSegmentId) {
         console.warn('📺 Simple: Attempted to save showcaller state with no currentSegmentId - skipping save');
+        console.warn('📺 DEBUG: Save blocked - currentSegmentId:', stateToSave.currentSegmentId, 'full state:', stateToSave);
         return;
       }
+      
+      console.log('📺 Simple: Saving showcaller state with currentSegmentId:', stateToSave.currentSegmentId);
       
       const showcallerState = {
         currentSegmentId: stateToSave.currentSegmentId,
