@@ -176,11 +176,10 @@ export const useFieldDeltaSave = (
     const hasFullUpdate = deltas.some(d => d.field === 'fullState' || d.field === 'fullItem');
     const hasReorder = deltas.some(d => d.field === 'fullItemsReorder');
 
-    // MEMORY OPTIMIZED: Force full updates for large rundowns instead of complex delta logic
-    const itemCount = currentState.items?.length || 0;
-    if (itemCount > 100 || hasFullUpdate || hasReorder || globalDeltas.length > 3) {
-      // Fall back to full update for large rundowns or major changes
-      console.log('💾 Performing full rundown update (large rundown or major changes detected)');
+    // Only fall back to full updates for actual structural changes, not arbitrary size limits
+    if (hasFullUpdate || hasReorder) {
+      // Fall back to full update only for structural operations that require it
+      console.log('💾 Performing full rundown update (structural changes detected)');
       return await performFullUpdate(currentState, updateTimestamp);
     }
 
