@@ -58,7 +58,8 @@ const HeaderRowContent = ({
         style={{ 
           width: '64px',
           minWidth: '64px', 
-          maxWidth: '64px'
+          maxWidth: '64px',
+          borderRight: '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center justify-center w-full h-full">
@@ -94,7 +95,8 @@ const HeaderRowContent = ({
                   width: normalizedWidth,
                   minWidth: normalizedWidth,
                   maxWidth: normalizedWidth,
-                  overflow: 'visible'
+                  overflow: 'visible',
+                  borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
                 }}
             >
               <div 
@@ -163,7 +165,8 @@ const HeaderRowContent = ({
               style={{ 
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
-                maxWidth: normalizedWidth
+                maxWidth: normalizedWidth,
+                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8">
@@ -183,7 +186,8 @@ const HeaderRowContent = ({
               style={{ 
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
-                maxWidth: normalizedWidth
+                maxWidth: normalizedWidth,
+                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8"></div>
@@ -198,7 +202,8 @@ const HeaderRowContent = ({
               style={{ 
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
-                maxWidth: normalizedWidth
+                maxWidth: normalizedWidth,
+                borderRight: isLastColumn ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8"></div>
