@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
-import { UnifiedAutoSaveProvider, useUnifiedAutoSave } from '@/components/UnifiedAutoSaveProvider';
+import { useSimpleAutoSave } from './useSimpleAutoSave';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
@@ -17,7 +17,7 @@ import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuratio
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
-import { useBulletproofCellUpdates } from './useBulletproofCellUpdates';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
@@ -147,36 +147,14 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  // Create bulletproof auto-save callbacks
-  const handleAutoSaveComplete = useCallback((success: boolean) => {
-    if (success) {
-      actions.markSaved();
-      console.log('✅ Bulletproof auto-save completed successfully');
-    }
-  }, [actions]);
-
-  const handleDataUpdate = useCallback((data: any) => {
-    if (applyingCellBroadcastRef.current) return; // Skip if already processing broadcasts
-    
-    applyingCellBroadcastRef.current = true;
-    try {
-      // Apply incoming data updates with conflict protection
-      console.log('📨 Processing bulletproof auto-save data update:', data);
-      // Process data updates here - this will be handled by the bulletproof system
-    } finally {
-      applyingCellBroadcastRef.current = false;
-    }
-  }, []);
-
-  const handleConflictDetected = useCallback((conflict: any) => {
-    console.warn('⚠️ Bulletproof conflict detected and resolved:', conflict);
-    // The conflict has already been resolved by the bulletproof system
-  }, []);
-
-  // Auto-save functionality with bulletproof system
-  // NOTE: This will be wrapped with UnifiedAutoSaveProvider in the parent component
-  const bulletproofAutoSave = {
-    onSaved: (meta?: { updatedAt?: string; docVersion?: number }) => {
+  // Auto-save functionality with unified save pipeline
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
+    {
+      ...state,
+      columns: [] // Remove columns from team sync
+    }, 
+    rundownId, 
+    (meta?: { updatedAt?: string; docVersion?: number }) => {
       actions.markSaved();
       
       // Update our doc version and timestamp tracking
@@ -197,21 +175,14 @@ export const useSimplifiedRundownState = () => {
       if (teleprompterSync.isTeleprompterSaving) {
         debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
       }
-    }
-  };
-
-  // Legacy compatibility - provide placeholder functions for now
-  const isSaving = false; // Will be managed by bulletproof system
-  const setUndoActive = useCallback((active: boolean) => {
-    // This will be integrated with the bulletproof system
-  }, []);
-  const setTrackOwnUpdate = useCallback((fn: any) => {
-    // This will be integrated with the bulletproof system
-  }, []);
-  const markActiveTyping = useCallback(() => {
-    // This will be integrated with the bulletproof system  
-  }, []);
-  const isTypingActive = false; // Will be managed by bulletproof system
+    },
+    pendingStructuralChangeRef,
+    undefined, // Legacy ref no longer needed
+    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
+    blockUntilLocalEditRef,
+    cooldownUntilRef,
+    applyingCellBroadcastRef // Pass the cell broadcast flag
+  );
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
@@ -334,7 +305,7 @@ export const useSimplifiedRundownState = () => {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
-        isTyping: isTypingActive,
+        isTyping: isTypingActive(),
         activeField: typingSessionRef.current?.fieldKey,
         hasRecentCellUpdates
       });
@@ -488,8 +459,8 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isInitialized]);
 
-  // Connect realtime to auto-save typing/unsaved state - handled by bulletproof system
-  realtimeConnection.setTypingChecker(() => isTypingActive);
+  // Connect realtime to auto-save typing/unsaved state
+  realtimeConnection.setTypingChecker(() => isTypingActive());
   realtimeConnection.setUnsavedChecker(() => state.hasUnsavedChanges);
 
   // Get current user ID for cell broadcasts
@@ -502,66 +473,148 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Cell-level broadcast system for immediate sync
-  // Set up bulletproof cell updates (replaces old cellBroadcast system) with stable callback
-  const stableCellUpdateCallback = useCallback((itemId: string, fieldName: string, value: any) => {
-    if (applyingCellBroadcastRef.current) return; // Prevent recursive updates
-    
-    applyingCellBroadcastRef.current = true;
-    try {
-      console.log('📨 Bulletproof cell update received with protection:', { itemId, fieldName, value });
+  useEffect(() => {
+    if (!rundownId || !currentUserId) return;
+
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, (update) => {
+      console.log('📱 Cell broadcast received:', update);
       
-      if (itemId && fieldName !== 'reorder' && fieldName !== 'add' && fieldName !== 'remove') {
-        // Apply field-level update with conflict protection
-        executeWithCellUpdate(() => {
-          actions.updateItem(itemId, { [fieldName]: value });
-        });
-      } else if (fieldName === 'reorder' && Array.isArray(value)) {
-        // Handle reordering
-        executeWithCellUpdate(() => {
-          const reorderedItems = value.map(id => state.items.find(item => item.id === id)).filter(Boolean);
-          actions.setItems(reorderedItems as any[]);
-        });
-      } else if (fieldName === 'title') {
-        // Handle title updates
-        executeWithCellUpdate(() => {
-          actions.setTitle(value);
-        });
-      } else if (fieldName === 'startTime') {
-        // Handle start time updates
-        executeWithCellUpdate(() => {
-          actions.setStartTime(value);
-        });
-      } else if (fieldName === 'timezone') {
-        // Handle timezone updates  
-        executeWithCellUpdate(() => {
-          actions.setTimezone(value);
-        });
-      } else if (fieldName === 'showDate') {
-        // Handle show date updates
-        executeWithCellUpdate(() => {
-          actions.setShowDate(value);
-        });
+      // Skip our own updates (simplified for single sessions) - now handled early in cellBroadcast
+      if (cellBroadcast.isOwnUpdate(update, currentUserId)) {
+        console.log('📱 Skipping own cell broadcast update');
+        return;
       }
       
-    } finally {
-      applyingCellBroadcastRef.current = false;
-    }
-  }, [actions, executeWithCellUpdate, state.items]); // Stable dependencies
-  
-  const { updateCell: bulletproofUpdateCell } = useBulletproofCellUpdates(
-    rundownId || '',
-    stableCellUpdateCallback
-  );
-  
-  // Legacy cell broadcast cleanup (old system) - remove old subscription
-  useEffect(() => {
-    // The bulletproof system handles all cell updates now
-    console.log('📡 Using bulletproof cell updates instead of legacy cellBroadcast');
+      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
+      
+      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
+      applyingCellBroadcastRef.current = true;
+      
+      try {
+        // LAST WRITER WINS: Just apply the change immediately
+        // Use loadState to avoid triggering hasUnsavedChanges for remote data
+          // Handle rundown-level property updates (no itemId)
+        if (!update.itemId) {
+          // Check if we're actively editing this rundown-level field
+          const isActivelyEditing = typingSessionRef.current?.fieldKey === update.field;
+          if (isActivelyEditing) {
+            console.log('🛡️ Skipping rundown-level broadcast - actively editing:', update.field);
+            return;
+          }
+          
+          console.log('📲 Applying rundown-level broadcast update:', { field: update.field, value: update.value });
+          
+          // Apply rundown-level property changes using loadRemoteState to prevent AutoSave
+          switch (update.field) {
+            case 'title':
+              actionsRef.current.loadRemoteState({ title: update.value });
+              break;
+            case 'startTime':
+              actionsRef.current.loadRemoteState({ startTime: update.value });
+              break;
+            case 'timezone':
+              actionsRef.current.loadRemoteState({ timezone: update.value });
+              break;
+            case 'showDate':
+              actionsRef.current.loadRemoteState({ showDate: update.value });
+              break;
+            case 'items:reorder': {
+              const order: string[] = Array.isArray(update.value?.order) ? update.value.order : [];
+              if (order.length > 0) {
+                const indexMap = new Map(order.map((id, idx) => [id, idx]));
+                const reordered = [...stateRef.current.items].sort((a, b) => {
+                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                  return ai - bi;
+                });
+                actionsRef.current.loadState({ items: reordered });
+              }
+              break;
+            }
+            case 'items:add': {
+              const payload = update.value || {};
+              const item = payload.item;
+              const index = Math.max(0, Math.min(payload.index ?? stateRef.current.items.length, stateRef.current.items.length));
+              if (item && !stateRef.current.items.find(i => i.id === item.id)) {
+                const newItems = [...stateRef.current.items];
+                newItems.splice(index, 0, item);
+                actionsRef.current.loadState({ items: newItems });
+              }
+              break;
+            }
+            case 'items:remove': {
+              const id = update.value?.id as string;
+              if (id) {
+                const newItems = stateRef.current.items.filter(i => i.id !== id);
+                if (newItems.length !== stateRef.current.items.length) {
+                  actionsRef.current.loadState({ items: newItems });
+                }
+              }
+              break;
+            }
+            default:
+              console.warn('🚨 Unknown rundown-level field:', update.field);
+          }
+          
+          return;
+        }
+        
+          // Handle item-level updates (existing logic)
+          if (update.field === 'structuralChange') {
+            // Structural changes are handled by the normal realtime update flow
+            console.log('📱 Item structural change detected - handled by realtime');
+            return;
+          }
+          
+          const updatedItems = stateRef.current.items.map(item => {
+            if (item.id === update.itemId) {
+              // Only apply if not actively editing this exact field
+              const isActivelyEditing = typingSessionRef.current?.fieldKey === `${update.itemId}-${update.field}`;
+              if (isActivelyEditing) {
+                console.log('🛡️ Skipping cell broadcast - actively editing:', update.itemId, update.field);
+                return item;
+              }
+              
+              // Handle boolean normalization for float fields
+              const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
+              if (isBooleanFloatField) {
+                const boolVal = normalizeBoolean(update.value);
+                return {
+                  ...item,
+                  isFloating: boolVal,
+                  isFloated: boolVal
+                };
+              }
+              
+              if (update.field === 'customFields') {
+                return {
+                  ...item,
+                  customFields: { ...item.customFields, ...update.value }
+                };
+              } else {
+                return {
+                  ...item,
+                  [update.field]: update.value
+                };
+              }
+            }
+            return item;
+          });
+          
+          if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
+            actionsRef.current.loadRemoteState({ items: updatedItems });
+          }
+      } finally {
+        // Reset flag immediately since loadRemoteState won't trigger AutoSave
+        applyingCellBroadcastRef.current = false;
+      }
+    }, currentUserId);
+
     return () => {
-      console.log('🧹 Bulletproof cell updates cleanup handled automatically');
+      unsubscribe();
     };
-  }, [rundownId, currentUserId, bulletproofUpdateCell]);
-   
+  }, [rundownId, currentUserId]);
+  
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
   
@@ -701,18 +754,18 @@ export const useSimplifiedRundownState = () => {
   // Connect autosave tracking to realtime tracking
   useEffect(() => {
     if (realtimeConnection.trackOwnUpdate) {
-      // The bulletproof system will handle this automatically
-      console.log('📡 Bulletproof auto-save will handle own update tracking');
+      setTrackOwnUpdate((timestamp: string) => {
+        realtimeConnection.trackOwnUpdate(timestamp);
+      });
     }
-  }, [realtimeConnection.trackOwnUpdate]);
+  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
 
   // Connect typing state checker to realtime to prevent overwrites during typing
   useEffect(() => {
     if (realtimeConnection.setTypingChecker) {
-      // The bulletproof system will handle typing detection automatically
-      console.log('📡 Bulletproof auto-save will handle typing detection');
+      realtimeConnection.setTypingChecker(isTypingActive);
     }
-  }, [realtimeConnection.setTypingChecker]);
+  }, [realtimeConnection.setTypingChecker, isTypingActive]);
 
   // Connect unsaved changes checker to defer teammate updates until local save completes
   useEffect(() => {
@@ -738,14 +791,14 @@ export const useSimplifiedRundownState = () => {
     
     // Simplified: No field tracking needed - last writer wins
     
-        // Bulletproof cell update with conflict protection  
-        if (rundownId && currentUserId && bulletproofUpdateCell) {
-          bulletproofUpdateCell(id, field, value);
-        }
+    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
     
     if (isTypingField) {
-      // CRITICAL: The bulletproof auto-save system will handle typing detection automatically
-      console.log('⌨️ Bulletproof auto-save detected typing activity');
+      // CRITICAL: Tell autosave system that user is actively typing
+      markActiveTyping();
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -769,8 +822,8 @@ export const useSimplifiedRundownState = () => {
     } else if (isImmediateSyncField) {
       // For immediate sync fields like isFloating, save undo state and trigger immediate save
       saveUndoState(state.items, [], state.title, `Toggle ${field}`);
-      // The bulletproof auto-save system will handle immediate saves automatically
-      console.log('⚡ Bulletproof auto-save will handle immediate sync');
+      // Trigger immediate autosave for critical state changes like float/unfloat
+      markActiveTyping(); // This will trigger the autosave system to save immediately
     } else if (field === 'color') {
       saveUndoState(state.items, [], state.title, 'Change row color');
     }
@@ -1127,35 +1180,53 @@ export const useSimplifiedRundownState = () => {
       actions.deleteItem(id);
       
       // Broadcast row removal for immediate realtime sync
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
-        bulletproofUpdateCell(undefined, 'remove', { items: state.items });
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:remove',
+          { id },
+          currentUserId
+        );
       }
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, bulletproofUpdateCell]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
+      if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
         setTimeout(() => {
-          bulletproofUpdateCell(undefined, 'reorder', { order });
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
         }, 0);
       }
-    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, bulletproofUpdateCell]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
       
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
+      if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
         setTimeout(() => {
-          bulletproofUpdateCell(undefined, 'reorder', { order });
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
         }, 0);
       }
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, bulletproofUpdateCell]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
@@ -1168,8 +1239,8 @@ export const useSimplifiedRundownState = () => {
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
         // Broadcast rundown-level property change
-        if (rundownId && currentUserId && bulletproofUpdateCell) {
-          bulletproofUpdateCell(undefined, 'title', newTitle);
+        if (rundownId && currentUserId) {
+          cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'title', newTitle, currentUserId);
         }
         
         saveUndoState(state.items, [], state.title, 'Change title');
@@ -1182,7 +1253,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId, bulletproofUpdateCell]),
+    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId])
   };
 
   // Get visible columns from user preferences
@@ -1248,8 +1319,14 @@ export const useSimplifiedRundownState = () => {
     actions.setItems(newItems);
     
     // Broadcast add at index for immediate realtime sync
-    if (rundownId && currentUserId && bulletproofUpdateCell) {
-      bulletproofUpdateCell(undefined, 'add', { item: newItem, index: actualIndex });
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newItem, index: actualIndex },
+        currentUserId
+      );
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId]);
 
@@ -1285,8 +1362,14 @@ export const useSimplifiedRundownState = () => {
     actions.setItems(newItems);
     
     // Broadcast header add at index for immediate realtime sync
-    if (rundownId && currentUserId && bulletproofUpdateCell) {
-      bulletproofUpdateCell(undefined, 'add', { item: newHeader, index: actualIndex });
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newHeader, index: actualIndex },
+        currentUserId
+      );
     }
   }, [state.items, state.title, saveUndoState, actions.setItems]);
 
@@ -1370,8 +1453,8 @@ export const useSimplifiedRundownState = () => {
       const now = Date.now();
       
       // Broadcast rundown-level property change
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
-        bulletproofUpdateCell(undefined, 'startTime', newStartTime);
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'startTime', newStartTime, currentUserId);
       }
       
       actions.setStartTime(newStartTime);
@@ -1385,8 +1468,8 @@ export const useSimplifiedRundownState = () => {
       const now = Date.now();
       
       // Broadcast rundown-level property change
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
-        bulletproofUpdateCell(undefined, 'timezone', newTimezone);
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'timezone', newTimezone, currentUserId);
       }
       
       actions.setTimezone(newTimezone);
@@ -1400,8 +1483,8 @@ export const useSimplifiedRundownState = () => {
       const now = Date.now();
       
       // Broadcast rundown-level property change
-      if (rundownId && currentUserId && bulletproofUpdateCell) {
-        bulletproofUpdateCell(undefined, 'showDate', newShowDate);
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(rundownId, undefined, 'showDate', newShowDate, currentUserId);
       }
       
       actions.setShowDate(newShowDate);
@@ -1443,8 +1526,8 @@ export const useSimplifiedRundownState = () => {
       trackOwnUpdate: realtimeConnection.trackOwnUpdate // Pass through to realtime system
     },
     
-    // Autosave typing guard - handled by bulletproof system
-    // markActiveTyping: no longer needed
+    // Autosave typing guard
+    markActiveTyping,
     
     // Structural change handling
     markStructuralChange,
