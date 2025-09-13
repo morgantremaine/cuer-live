@@ -81,12 +81,13 @@ export const useSimplifiedRundownState = () => {
   const lastSaveTimeRef = useRef<number>(0);
   
   // =================================================================================
-  // SIMPLE FIELD PROTECTION SYSTEM
+  // ULTRA-SIMPLE FIELD PROTECTION
   //
-  // Just block cell broadcasts for the exact field being typed - no complex timers
+  // ONLY block cell broadcasts for the exact field being actively typed.
+  // No timers, no complex logic, no multiple protection layers.
   // =================================================================================
   
-  // Listen to global focus tracker for simple field protection
+  // Listen to global focus tracker  
   useEffect(() => {
     const unsubscribe = globalFocusTracker.onActiveFieldChange((fieldKey) => {
       activeFocusFieldRef.current = fieldKey;
@@ -578,46 +579,57 @@ export const useSimplifiedRundownState = () => {
             return;
           }
           
-          // SIMPLE PROTECTION: Only block if actively typing this exact field
+          // ULTRA-SIMPLE: Only block if THIS EXACT field is being typed right now
           const fieldKey = `item_${update.itemId}-${update.field}`;
-          const isActivelyTyping = activeFocusFieldRef.current === fieldKey;
+          const isTypingThisField = activeFocusFieldRef.current === fieldKey;
           
-          if (isActivelyTyping) {
-            console.log('🛡️ BLOCKING cell broadcast - actively typing this field:', update.itemId, update.field);
-            return; // Block the update
+          if (isTypingThisField) {
+            console.log('🛡️ BLOCKING - user is typing this exact field:', update.itemId, update.field);
+            return;
           }
           
-          console.log('✅ ALLOWING cell broadcast - not actively typing this field:', update.itemId, update.field);
+          console.log('✅ ALLOWING - user is NOT typing this field:', update.itemId, update.field);
 
           const updatedItems = stateRef.current.items.map(item => {
             if (item.id === update.itemId) {
-              
-              // Handle boolean normalization for float fields
-              const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
-              if (isBooleanFloatField) {
-                const boolVal = normalizeBoolean(update.value);
+              // Handle nested field updates (like customFields.field)
+              if (update.field.includes('.')) {
+                const [parentField, childField] = update.field.split('.');
                 return {
                   ...item,
-                  isFloating: boolVal,
-                  isFloated: boolVal
-                };
-              }
-              
-              if (update.field === 'customFields') {
-                return {
-                  ...item,
-                  customFields: { ...item.customFields, ...update.value }
+                  [parentField]: {
+                    ...(item[parentField as keyof typeof item] as Record<string, any> || {}),
+                    [childField]: update.value,
+                  }
                 };
               } else {
-                return {
-                  ...item,
-                  [update.field]: update.value
-                };
+                // Handle boolean normalization for float fields
+                const isBooleanFloatField = update.field === 'isFloating' || update.field === 'isFloated';
+                if (isBooleanFloatField) {
+                  const boolVal = normalizeBoolean(update.value);
+                  return {
+                    ...item,
+                    isFloating: boolVal,
+                    isFloated: boolVal
+                  };
+                }
+                
+                if (update.field === 'customFields') {
+                  return {
+                    ...item,
+                    customFields: { ...item.customFields, ...update.value }
+                  };
+                } else {
+                  return {
+                    ...item,
+                    [update.field]: update.value
+                  };
+                }
               }
             }
             return item;
           });
-          
+
           if (updatedItems.some((item, index) => item !== stateRef.current.items[index])) {
             actionsRef.current.loadRemoteState({ items: updatedItems });
           }
