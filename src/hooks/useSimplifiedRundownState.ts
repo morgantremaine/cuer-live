@@ -963,6 +963,11 @@ export const useSimplifiedRundownState = () => {
             startTime: DEMO_RUNDOWN_DATA.start_time,
             timezone: DEMO_RUNDOWN_DATA.timezone
           });
+
+          setIsInitialized(true);
+          setIsLoading(false);
+          setCacheLoading(false);
+          return; // Exit early for demo rundown
           
           
         } else {
