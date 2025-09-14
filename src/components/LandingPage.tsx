@@ -182,6 +182,8 @@ const LandingPage = () => {
 
       {/* Features Grid */}
       <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        {/* Gradient fade from transparent to black background */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent via-black/50 to-black pointer-events-none"></div>
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
             Everything you need for 
