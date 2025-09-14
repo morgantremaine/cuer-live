@@ -17,8 +17,7 @@ const PLANS = [
       '1 team member',
       '3 rundowns',
       'Real-time collaboration',
-      'Basic features',
-      'Community support'
+      'Basic features'
     ]
   },
   {
@@ -51,8 +50,7 @@ const PLANS = [
       'Real-time collaboration',
       'Advanced features',
       'AI helper',
-      'Priority support',
-      'Team management'
+      'Priority support'
     ]
   },
   {
@@ -70,7 +68,6 @@ const PLANS = [
       'Advanced features',
       'AI helper',
       'Priority support',
-      'Team management',
       'Dedicated account manager',
       'Custom integrations'
     ]
