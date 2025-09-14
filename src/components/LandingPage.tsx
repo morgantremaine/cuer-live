@@ -143,16 +143,7 @@ const LandingPage = () => {
               Purpose-built for speed, clarity, and control, Cuer delivers the high-end features of other premium rundown makers with the minimal and intuitive UI of Google Sheets.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate('/demo')}
-                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
-              >
-                <Eye className="mr-2 h-5 w-5" />
-                Try Demo
-              </Button>
+            <div className="flex justify-center fade-up">
               <Button 
                 onClick={handleGetStarted}
                 size="lg" 
