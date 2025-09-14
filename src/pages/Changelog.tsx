@@ -22,6 +22,53 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.2.1 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.2.1</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">🔍 Zoom Controls & 👥 Live User Presence</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Enhanced Rundown Navigation:</strong> New zoom functionality and real-time collaboration features to improve your workflow:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>Zoom In/Out Controls:</strong> New zoom controls allow you to adjust your rundown view for better readability and navigation</li>
+                      <li><strong>Live User Presence:</strong> See who is currently editing the rundown in real-time with user names displayed during active editing sessions</li>
+                      <li><strong>Improved Collaboration:</strong> Know when teammates are making changes to avoid conflicts and enhance team coordination</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600 flex gap-4">
+                      <div className="flex-1">
+                        <img 
+                          src="/src/assets/zoom_in_out.png"
+                          alt="Zoom in and zoom out controls in the rundown toolbar"
+                          className="w-full max-w-xs mx-auto rounded border border-slate-600"
+                        />
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          Zoom controls for better rundown navigation
+                        </p>
+                      </div>
+                      <div className="flex-1">
+                        <img 
+                          src="/src/assets/who_is_editing.png"
+                          alt="Live user presence showing who is editing the rundown"
+                          className="w-full max-w-xs mx-auto rounded border border-slate-600"
+                        />
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          Real-time display of active editors
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.1.9 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center mb-4">
