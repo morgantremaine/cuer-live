@@ -108,7 +108,7 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section with Full-Width Background */}
-      <div className="relative z-10 w-full pb-24">
+      <div className="relative z-10 w-full pb-12">
         {/* Hero Content with Background Image */}
         <div className="relative mb-16 w-full">
           {/* Background Image */}
