@@ -38,11 +38,20 @@ const Dashboard = () => {
   
   // Real-time rundown state with local updates
   const [liveRundowns, setLiveRundowns] = useState<SavedRundown[]>([]);
+  const [hasRundownsLoaded, setHasRundownsLoaded] = useState(false);
   
   // Update local rundowns when storage changes
   useEffect(() => {
     setLiveRundowns(savedRundowns);
-  }, [savedRundowns]);
+    
+    // Track when rundowns have actually been loaded
+    if (savedRundowns.length > 0 || (!loading && !!teamId)) {
+      if (!hasRundownsLoaded) {
+        console.log('📊 Rundowns data is ready:', savedRundowns.length, 'rundowns');
+        setHasRundownsLoaded(true);
+      }
+    }
+  }, [savedRundowns, loading, teamId, hasRundownsLoaded]);
   
   // Handle real-time rundown updates
   const handleRundownUpdate = (updatedRundown: SavedRundown) => {
@@ -90,23 +99,36 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Track when data has been loaded for the first time
+  // Track when data has been loaded for the first time  
   useEffect(() => {
-    // Wait for all essential data: user, team (if needed), and rundowns to be loaded
     const userReady = !!user;
-    const teamReady = !teamLoading; // Team loading is complete
-    const rundownsReady = !loading; // Rundowns loading is complete
+    const teamReady = !teamLoading && !!teamId;
+    const dataReady = hasRundownsLoaded; // Use our specific rundowns loaded flag
     
-    if (userReady && teamReady && rundownsReady && !hasInitiallyLoaded) {
-      console.log('Dashboard: Marking as initially loaded - user:', userReady, 'teamReady:', teamReady, 'rundownsReady:', rundownsReady);
+    console.log('🔍 Dashboard loading check:', {
+      userReady,
+      teamReady, 
+      dataReady,
+      hasRundownsLoaded,
+      loading,
+      teamLoading,
+      teamId: !!teamId,
+      savedRundownsLength: savedRundowns.length,
+      hasInitiallyLoaded
+    });
+    
+    // Only mark as loaded when ALL conditions are met
+    if (userReady && teamReady && dataReady && !hasInitiallyLoaded) {
+      console.log('✅ Dashboard: All data ready - showing dashboard');
       setHasInitiallyLoaded(true);
     }
-  }, [loading, teamLoading, hasInitiallyLoaded, user]);
+  }, [user, teamLoading, teamId, hasRundownsLoaded, hasInitiallyLoaded, savedRundowns.length]);
 
   // Reset loading state when user changes (but not team - team creation is part of the process)
   useEffect(() => {
     if (user?.id) {
       setHasInitiallyLoaded(false);
+      setHasRundownsLoaded(false);
     }
   }, [user?.id]);
 
@@ -357,6 +379,15 @@ const Dashboard = () => {
   // Show loading skeleton until all data is completely loaded
   // This prevents the brief "no rundowns" flash before rundowns are loaded
   const shouldShowLoadingSkeleton = !hasInitiallyLoaded;
+  
+  console.log('🔍 Dashboard render check:', {
+    shouldShowLoadingSkeleton,
+    hasInitiallyLoaded,
+    loading,
+    teamLoading,
+    savedRundownsCount: savedRundowns.length,
+    liveRundownsCount: liveRundowns.length
+  });
 
   if (shouldShowLoadingSkeleton) {
     return (
