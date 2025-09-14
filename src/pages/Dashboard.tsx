@@ -31,7 +31,7 @@ const Dashboard = () => {
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
-  const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
+  const { folders, moveRundownToFolder, loading: foldersLoading } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   // Remove unused useColumnsManager import since useUserColumnPreferences handles columns now
   const isMobile = useIsMobile();
@@ -84,11 +84,12 @@ const Dashboard = () => {
     const userReady = !!user;
     const teamReady = !!teamId && !teamLoading;
     const rundownsReady = !loading;
+    const foldersReady = !foldersLoading;
     
-    if (userReady && teamReady && rundownsReady && !hasInitiallyLoaded) {
+    if (userReady && teamReady && rundownsReady && foldersReady && !hasInitiallyLoaded) {
       setHasInitiallyLoaded(true);
     }
-  }, [user, teamId, teamLoading, loading, hasInitiallyLoaded]);
+  }, [user, teamId, teamLoading, loading, foldersLoading, hasInitiallyLoaded]);
 
   // Reset loading state when user changes
   useEffect(() => {
