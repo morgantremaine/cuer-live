@@ -178,15 +178,6 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Quick Features List */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          {testimonialFeatures.slice(0, 4).map((feature, index) => (
-            <div key={index} className="flex items-center space-x-3 text-slate-300 bg-slate-800/30 p-4 rounded-lg border border-slate-700/30 fade-up glow-box hover:bg-slate-800/50 transition-all duration-300">
-              <CheckCircle className="h-5 w-5 text-blue-400 flex-shrink-0" />
-              <span className="text-sm font-medium">{feature}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Features Grid */}
