@@ -398,6 +398,16 @@ export const useSimpleAutoSave = (
       return;
     }
 
+    // NEW: Block save if user is actively typing (unless it's a flush save)
+    if (!isFlushSave && isTypingActive()) {
+      console.log('🛑 AutoSave: blocked - user is actively typing');
+      // Reschedule save after typing stops
+      saveTimeoutRef.current = setTimeout(() => {
+        performSave(false, isSharedView);
+      }, typingIdleMs);
+      return;
+    }
+
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
       // Schedule retry if blocked by showcaller operation (short-term block)
@@ -584,12 +594,23 @@ export const useSimpleAutoSave = (
 
           // Check if content changed during save and handle appropriately
           if (currentSignatureAfterSave !== finalSignature) {
+            console.log('⚠️ Content changed during save - changes detected');
             const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-            if (timeSinceLastEdit > (typingIdleMs * 2)) {
-              console.log('⚠️ Content changed during save - scheduling micro-resave');
-              scheduleMicroResave();
+            
+            if (timeSinceLastEdit < typingIdleMs) {
+              // User is still actively typing - schedule save after they stop
+              console.log('📝 User still typing - scheduling save after typing stops');
+              if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+              }
+              saveTimeoutRef.current = setTimeout(() => {
+                console.log('🔄 AutoSave: executing follow-up save after typing stopped');
+                performSave(false, isSharedView);
+              }, typingIdleMs);
             } else {
-              console.log('ℹ️ Content changed during save but recent activity - state already captured');
+              // User stopped typing - schedule immediate micro-resave
+              console.log('🔄 User stopped typing - scheduling immediate micro-resave');
+              scheduleMicroResave();
             }
           }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
@@ -627,12 +648,23 @@ export const useSimpleAutoSave = (
 
           // Check if content changed during save and handle appropriately
           if (currentSignatureAfterSave !== finalSignature) {
+            console.log('⚠️ Content changed during save - changes detected');
             const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-            if (timeSinceLastEdit > (typingIdleMs * 2)) {
-              console.log('⚠️ Content changed during save - scheduling micro-resave');
-              scheduleMicroResave();
+            
+            if (timeSinceLastEdit < typingIdleMs) {
+              // User is still actively typing - schedule save after they stop
+              console.log('📝 User still typing - scheduling save after typing stops');
+              if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+              }
+              saveTimeoutRef.current = setTimeout(() => {
+                console.log('🔄 AutoSave: executing follow-up save after typing stopped');
+                performSave(false, isSharedView);
+              }, typingIdleMs);
             } else {
-              console.log('ℹ️ Content changed during save but recent activity - state already captured');
+              // User stopped typing - schedule immediate micro-resave
+              console.log('🔄 User stopped typing - scheduling immediate micro-resave');
+              scheduleMicroResave();
             }
           }
 
