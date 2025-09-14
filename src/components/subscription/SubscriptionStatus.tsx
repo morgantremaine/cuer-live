@@ -97,7 +97,7 @@ export const SubscriptionStatus = () => {
 
             {grandfathered && access_type === 'personal' && (
               <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-                🎉 Grandfathered - Free Network plan for life!
+                🎉 Grandfathered - Free Premium plan for life!
               </div>
             )}
           </div>
