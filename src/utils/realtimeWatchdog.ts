@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { TimeoutManager } from './realtimeUtils';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface WatchdogConfig {
   rundownId: string;
@@ -90,6 +91,12 @@ class RealtimeWatchdog {
 
   private async performCheck(source: string) {
     if (!this.isActive) return;
+    
+    // Skip watchdog checks for demo rundown
+    if (this.config.rundownId === DEMO_RUNDOWN_ID) {
+      console.log('📋 Skipping watchdog check for demo rundown');
+      return;
+    }
     
     try {
       console.log(`🔍 Watchdog check (${source}) for rundown:`, this.config.rundownId);

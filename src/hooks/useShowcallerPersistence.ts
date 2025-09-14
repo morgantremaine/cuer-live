@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ShowcallerState } from './useShowcallerState';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface UseShowcallerPersistenceProps {
   rundownId: string | null;
@@ -14,7 +15,11 @@ export const useShowcallerPersistence = ({
 }: UseShowcallerPersistenceProps) => {
 
   const saveShowcallerState = useCallback(async (state: ShowcallerState) => {
-    if (!rundownId) {
+    if (!rundownId || rundownId === DEMO_RUNDOWN_ID) {
+      if (rundownId === DEMO_RUNDOWN_ID) {
+        console.log('📺 Skipping showcaller state save for demo rundown');
+        return true; // Return true to avoid errors in demo mode
+      }
       console.warn('📺 Cannot save showcaller state: no rundown ID');
       return false;
     }
@@ -55,7 +60,10 @@ export const useShowcallerPersistence = ({
   }, [rundownId, trackOwnUpdate]);
 
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
-    if (!rundownId) {
+    if (!rundownId || rundownId === DEMO_RUNDOWN_ID) {
+      if (rundownId === DEMO_RUNDOWN_ID) {
+        console.log('📺 Skipping showcaller state load for demo rundown');
+      }
       return null;
     }
 

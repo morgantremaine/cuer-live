@@ -4,6 +4,7 @@ import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerBroadcastSync } from './useShowcallerBroadcastSync';
 import { ShowcallerBroadcastState } from '@/utils/showcallerBroadcast';
 import { supabase } from '@/integrations/supabase/client';
+import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 export interface SimpleShowcallerState {
   isPlaying: boolean;
@@ -397,6 +398,12 @@ export const useSimpleShowcallerSync = ({
     }
 
     const loadInitialState = async () => {
+      if (rundownId === DEMO_RUNDOWN_ID) {
+        console.log('📺 Simple: Skipping initial state load for demo rundown');
+        hasLoadedInitialState.current = true;
+        return;
+      }
+
       isLoadingInitialState.current = true;
       
       try {
