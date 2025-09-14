@@ -39,7 +39,6 @@ const Changelog: React.FC = () => {
                     <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
                       <li><strong>Zoom In/Out Controls:</strong> New zoom controls allow you to adjust your rundown view for better readability and navigation</li>
                       <li><strong>Live User Presence:</strong> See who is currently editing the rundown in real-time with user names displayed during active editing sessions</li>
-                      <li><strong>Improved Collaboration:</strong> Know when teammates are making changes to avoid conflicts and enhance team coordination</li>
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600 flex gap-4">
                       <div className="flex-1">
