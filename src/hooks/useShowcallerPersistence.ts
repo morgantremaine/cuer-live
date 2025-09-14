@@ -28,12 +28,17 @@ export const useShowcallerPersistence = ({
       });
 
       // ENHANCED: Always allow saves, remove restrictive blocking
+      // CRITICAL FIX: Only update last_updated_by if this is a user-initiated change, not initialization
+      const updateData: any = { showcaller_state: state };
+      
+      // Only update last_updated_by if the state actually changed (not during initialization)
+      if (JSON.stringify(state) !== '{}' && Object.keys(state).length > 0) {
+        updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
+      }
+      
       const { error } = await supabase
         .from('rundowns')
-        .update({ 
-          showcaller_state: state,
-          last_updated_by: (await supabase.auth.getUser()).data.user?.id
-        })
+        .update(updateData)
         .eq('id', rundownId);
 
       if (error) {

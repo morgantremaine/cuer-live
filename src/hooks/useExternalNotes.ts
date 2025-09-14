@@ -19,6 +19,7 @@ export const useExternalNotes = (rundownId: string) => {
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const realtimeChannelRef = useRef<any>(null);
   const lastUpdateTimestampRef = useRef<string | null>(null);
+  const originalNotesRef = useRef<Note[]>([]); // Track originally loaded notes for change detection
   
   // Track manually renamed notes
   const [manuallyRenamedNotes, setManuallyRenamedNotes] = useState<Set<string>>(new Set());
@@ -130,6 +131,7 @@ export const useExternalNotes = (rundownId: string) => {
         }
 
         setNotes(parsedNotes);
+        originalNotesRef.current = parsedNotes; // Track original state for change detection
         setActiveNoteId(parsedNotes[0]?.id || null);
         setIsInitialized(true);
       } catch (error) {
@@ -143,6 +145,7 @@ export const useExternalNotes = (rundownId: string) => {
           updatedAt: new Date().toISOString()
         };
         setNotes([defaultNote]);
+        originalNotesRef.current = [defaultNote]; // Track original state for change detection
         setActiveNoteId(defaultNote.id);
         setIsInitialized(true);
       } finally {
@@ -218,6 +221,7 @@ export const useExternalNotes = (rundownId: string) => {
 
               if (parsedNotes.length > 0) {
                 setNotes(parsedNotes);
+                originalNotesRef.current = parsedNotes; // Track server state for change detection
                 // Keep active note if it still exists, otherwise select first
                 if (!parsedNotes.find(n => n.id === activeNoteId)) {
                   setActiveNoteId(parsedNotes[0]?.id || null);
@@ -259,12 +263,18 @@ export const useExternalNotes = (rundownId: string) => {
         const notesJson = JSON.stringify(notesToSave);
         
         console.log('📝 Saving external notes to rundown');
+        
+        // CRITICAL FIX: Only update last_updated_by if notes actually changed from server state, not during initialization
+        const updateData: any = { external_notes: notesJson };
+        
+        // Only attribute the edit to the current user if notes were actually modified
+        if (JSON.stringify(notes) !== JSON.stringify(originalNotesRef.current)) {
+          updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
+        }
+        
         const { error } = await supabase
           .from('rundowns')
-          .update({
-            external_notes: notesJson,
-            last_updated_by: (await supabase.auth.getUser()).data.user?.id
-          })
+          .update(updateData)
           .eq('id', rundownId);
 
         if (error) {
