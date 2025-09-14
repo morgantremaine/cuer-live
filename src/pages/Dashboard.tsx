@@ -38,19 +38,11 @@ const Dashboard = () => {
   
   // Real-time rundown state with local updates
   const [liveRundowns, setLiveRundowns] = useState<SavedRundown[]>([]);
-  const [hasLoadedRundowns, setHasLoadedRundowns] = useState(false);
   
   // Update local rundowns when storage changes
   useEffect(() => {
-    console.log('📊 Rundowns updated:', savedRundowns.length, 'loading:', loading);
     setLiveRundowns(savedRundowns);
-    
-    // Mark as loaded when we get data (even if empty) AND loading is complete
-    if (!loading && !hasLoadedRundowns) {
-      console.log('✅ Rundowns loading completed - data ready');
-      setHasLoadedRundowns(true);
-    }
-  }, [savedRundowns, loading, hasLoadedRundowns]);
+  }, [savedRundowns]);
   
   // Handle real-time rundown updates
   const handleRundownUpdate = (updatedRundown: SavedRundown) => {
@@ -66,18 +58,7 @@ const Dashboard = () => {
     enabled: true
   });
 
-  // Log connection status for debugging
-  useEffect(() => {
-    if (totalRundowns > 0) {
-      console.log('🎯 Dashboard: Realtime status:', { 
-        connected: realtimeConnected, 
-        connectedCount, 
-        totalRundowns 
-      });
-    }
-  }, [realtimeConnected, connectedCount, totalRundowns]);
-  
-  // Improved loading state tracking
+  // Loading state tracking
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   
   // Sidebar state
@@ -98,35 +79,21 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Track when data has been loaded for the first time - FIXED VERSION
+  // Track when data has been loaded for the first time
   useEffect(() => {
     const userReady = !!user;
     const teamReady = !!teamId && !teamLoading;
-    const rundownsReady = hasLoadedRundowns; // Use our specific flag
-    
-    console.log('🔍 FIXED Dashboard check:', {
-      userReady,
-      teamReady, 
-      rundownsReady,
-      hasLoadedRundowns,
-      loading,
-      teamLoading,
-      teamId: !!teamId,
-      savedRundownsLength: savedRundowns.length,
-      hasInitiallyLoaded
-    });
+    const rundownsReady = !loading;
     
     if (userReady && teamReady && rundownsReady && !hasInitiallyLoaded) {
-      console.log('✅ FIXED: All conditions met - showing dashboard');
       setHasInitiallyLoaded(true);
     }
-  }, [user, teamId, teamLoading, hasLoadedRundowns, hasInitiallyLoaded, savedRundowns.length]);
+  }, [user, teamId, teamLoading, loading, hasInitiallyLoaded]);
 
   // Reset loading state when user changes
   useEffect(() => {
     if (user?.id) {
       setHasInitiallyLoaded(false);
-      setHasLoadedRundowns(false);
     }
   }, [user?.id]);
 
@@ -374,18 +341,8 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show skeleton until we have definitively loaded rundown data
+  // Show skeleton until we have loaded initial data
   const shouldShowLoadingSkeleton = !hasInitiallyLoaded;
-  
-  console.log('🔍 FINAL Dashboard render check:', {
-    shouldShowLoadingSkeleton,
-    hasInitiallyLoaded,
-    hasLoadedRundowns,
-    loading,
-    teamLoading,
-    savedRundownsCount: savedRundowns.length,
-    liveRundownsCount: liveRundowns.length
-  });
 
   if (shouldShowLoadingSkeleton) {
     return (
