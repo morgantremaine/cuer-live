@@ -405,19 +405,13 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with immediate typing cancellation
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
-    // TRACE: Entry flags
-    debugLogger.autosave('TRACE performSave(entry)', {
+    console.log('🔍 DEBUG: AutoSave performSave called', {
       isFlushSave,
       isSharedView,
-      isInitiallyLoaded,
-      hasUnsavedChanges: state.hasUnsavedChanges,
       rundownId,
-      typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
-      suppressUntil: suppressUntilRef?.current,
-      blockUntilLocalEdit: blockUntilLocalEditRef?.current,
-      cooldownUntil: cooldownUntilRef?.current,
-      applyingCellBroadcast: applyingCellBroadcastRef?.current,
-      pendingStructuralChange: pendingStructuralChangeRef?.current
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      initialLoadCooldownActive: initialLoadCooldownRef.current > Date.now(),
+      isInitiallyLoaded
     });
     
     // CRITICAL: Gate autosave until initial load is complete

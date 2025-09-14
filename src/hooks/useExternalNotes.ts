@@ -253,6 +253,22 @@ export const useExternalNotes = (rundownId: string) => {
   const saveNotes = useCallback(async (notesToSave: Note[]) => {
     if (!isInitialized || !rundownId) return;
     
+    // CRITICAL FIX: Don't save if notes haven't actually changed from original server state
+    const notesJson = JSON.stringify(notesToSave);
+    const originalJson = JSON.stringify(originalNotesRef.current);
+    
+    console.log('📝 DEBUG: External notes save check', {
+      notesLength: notesToSave.length,
+      originalLength: originalNotesRef.current.length,
+      notesChanged: notesJson !== originalJson,
+      isInitialized
+    });
+    
+    if (notesJson === originalJson) {
+      console.log('📝 DEBUG: Skipping external notes save - no changes from server state');
+      return;
+    }
+    
     // Clear existing timeout
     if (saveTimeout) {
       clearTimeout(saveTimeout);

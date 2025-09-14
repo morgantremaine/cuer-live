@@ -19,6 +19,18 @@ export const useShowcallerPersistence = ({
       return false;
     }
 
+    console.log('🔍 DEBUG: Showcaller save check', {
+      hasState: Object.keys(state).length > 0,
+      stateKeys: Object.keys(state),
+      isEmpty: Object.keys(state).length === 0
+    });
+
+    // CRITICAL FIX: Don't save empty or default showcaller states during initialization
+    if (Object.keys(state).length === 0) {
+      console.log('🔍 DEBUG: Skipping showcaller save - empty state');
+      return true; // Return success without saving
+    }
+
     try {
       console.log('📺 Saving showcaller state:', {
         isPlaying: state.isPlaying,
@@ -27,6 +39,12 @@ export const useShowcallerPersistence = ({
         rundownId
       });
 
+      console.log('🔍 DEBUG: Showcaller persistence save attempt', {
+        hasState: Object.keys(state).length > 0,
+        stateContent: JSON.stringify(state),
+        willUpdateLastUpdatedBy: JSON.stringify(state) !== '{}' && Object.keys(state).length > 0
+      });
+      
       // ENHANCED: Always allow saves, remove restrictive blocking
       // CRITICAL FIX: Only update last_updated_by if this is a user-initiated change, not initialization
       const updateData: any = { showcaller_state: state };
@@ -34,12 +52,18 @@ export const useShowcallerPersistence = ({
       // Only update last_updated_by if the state actually changed (not during initialization)
       if (JSON.stringify(state) !== '{}' && Object.keys(state).length > 0) {
         updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
+        console.log('🔍 DEBUG: Will update last_updated_by for showcaller');
+      } else {
+        console.log('🔍 DEBUG: Skipping last_updated_by for showcaller (empty state)');
       }
       
+      console.log('🔍 DEBUG: About to update rundowns table with showcaller data');
       const { error } = await supabase
         .from('rundowns')
         .update(updateData)
         .eq('id', rundownId);
+      
+      console.log('🔍 DEBUG: Showcaller update result', { error });
 
       if (error) {
         console.error('📺 Failed to save showcaller state:', error);
