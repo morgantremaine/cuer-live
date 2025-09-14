@@ -38,6 +38,13 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
       return;
     }
 
+    // Skip database operations for demo rundown
+    if (rundownId === 'demo-rundown-2024') {
+      setSharedLayout(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('shared_rundown_layouts')

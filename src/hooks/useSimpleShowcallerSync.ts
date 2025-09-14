@@ -396,6 +396,12 @@ export const useSimpleShowcallerSync = ({
       return;
     }
 
+    // Skip database operations for demo rundown
+    if (rundownId === 'demo-rundown-2024') {
+      hasLoadedInitialState.current = true;
+      return;
+    }
+
     const loadInitialState = async () => {
       isLoadingInitialState.current = true;
       
