@@ -79,12 +79,24 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Mark as loaded once we have rundowns data (even if empty) and user/team are ready
+  // Mark as loaded once we have ACTUAL rundowns data and user/team are ready
   useEffect(() => {
-    if (user && teamId && !loading && !initialDataLoaded) {
+    // We need user, teamId, and either rundowns data OR explicit loading state
+    const hasDataOrLoading = savedRundowns.length > 0 || loading;
+    console.log('🔍 Dashboard loading check:', { 
+      user: !!user, 
+      teamId: !!teamId, 
+      savedRundownsLength: savedRundowns.length,
+      loading,
+      hasDataOrLoading,
+      initialDataLoaded 
+    });
+    
+    if (user && teamId && hasDataOrLoading && !loading && !initialDataLoaded) {
+      console.log('✅ Setting initial data as loaded');
       setInitialDataLoaded(true);
     }
-  }, [user, teamId, loading, initialDataLoaded]);
+  }, [user, teamId, savedRundowns.length, loading, initialDataLoaded]);
 
   // Reset loading state when user changes
   useEffect(() => {
