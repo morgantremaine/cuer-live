@@ -458,44 +458,46 @@ export const useSimpleShowcallerSync = ({
               console.warn('📺 Simple: No valid items found, cannot restore showcaller');
             }
           } else {
-            console.log('📺 Simple: No current segment in saved state, preserving "no position" state');
+            console.log('📺 Simple: No current segment in saved state, initializing to first item');
             console.log('📺 DEBUG: LoadedState.currentSegmentId was:', currentSegmentId, 'type:', typeof currentSegmentId);
             
-            // FIXED: Respect when showcaller was left at "no position" - don't auto-default to first item
-            setState({
-              isPlaying: false,
-              currentSegmentId: null, // Preserve the "no position" state
-              timeRemaining: 0,
-              currentItemStatuses: {},
-              isController: false,
-              controllerId: loadedState.controllerId || null,
-              lastUpdate: loadedState.lastUpdate || new Date().toISOString()
-            });
-            
-            console.log('📺 Simple: Successfully preserved "no position" showcaller state');
+            // Initialize to first item when there's no saved position
+            const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+            if (firstSegment) {
+              setState({
+                isPlaying: false,
+                currentSegmentId: firstSegment.id,
+                timeRemaining: 0,
+                currentItemStatuses: buildStatusMap(firstSegment.id),
+                isController: false,
+                controllerId: loadedState.controllerId || null,
+                lastUpdate: loadedState.lastUpdate || new Date().toISOString()
+              });
+              
+              console.log('📺 Simple: Initialized showcaller to first item:', firstSegment.id);
+            } else {
+              console.warn('📺 Simple: No valid items found for initialization');
+            }
           }
         } else {
           console.log('📺 Simple: No saved showcaller state, initializing to first item');
-          // FIXED: Same delay logic for completely missing saved state
-          setTimeout(() => {
-            setState(currentState => {
-              if (currentState.currentSegmentId) {
-                console.log('📺 Simple: Position updated via broadcast during initialization');
-                return currentState;
-              }
-              
-              console.log('📺 Simple: No broadcasts received, initializing to first item');
-              const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-              if (firstSegment) {
-                return {
-                  ...currentState,
-                  currentSegmentId: firstSegment.id,
-                  currentItemStatuses: buildStatusMap(firstSegment.id)
-                };
-              }
-              return currentState;
+          // Initialize to first item when no saved state exists at all
+          const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+          if (firstSegment) {
+            setState({
+              isPlaying: false,
+              currentSegmentId: firstSegment.id,
+              timeRemaining: 0,
+              currentItemStatuses: buildStatusMap(firstSegment.id),
+              isController: false,
+              controllerId: null,
+              lastUpdate: new Date().toISOString()
             });
-          }, 2000);
+            
+            console.log('📺 Simple: Initialized showcaller to first item (no saved state):', firstSegment.id);
+          } else {
+            console.warn('📺 Simple: No valid items found for initialization (no saved state)');
+          }
         }
         // Only skip the next save if we loaded any existing showcaller state (including "no position")
         skipNextSaveRef.current = !!(data?.showcaller_state);
