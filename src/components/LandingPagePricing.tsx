@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck } from 'lucide-react';
+import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText } from 'lucide-react';
 
 const PLANS = [
   {
@@ -82,7 +82,7 @@ const getFeatureIcon = (feature: string) => {
     return <Infinity className="w-4 h-4 text-purple-500" />;
   }
   if (feature.includes('3 rundowns')) {
-    return <Infinity className="w-4 h-4 text-teal-500" />;
+    return <FileText className="w-4 h-4 text-teal-500" />;
   }
   if (feature.includes('Real-time collaboration')) {
     return <Zap className="w-4 h-4 text-yellow-500" />;
