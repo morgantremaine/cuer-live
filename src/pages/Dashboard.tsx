@@ -351,7 +351,8 @@ const Dashboard = () => {
   const showMainContent = !isMobile || sidebarCollapsed;
 
   // Show loading skeleton if we haven't loaded data yet OR if actively loading
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || (loading && savedRundowns.length === 0) || teamLoading;
+  // Also wait for rundowns to be loaded if we have any in the database
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || loading || teamLoading;
 
   if (shouldShowLoadingSkeleton) {
     return (
