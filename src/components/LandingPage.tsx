@@ -120,8 +120,8 @@ const LandingPage = () => {
               loading="eager"
               fetchPriority="high"
             />
-            {/* Dark overlay */}
-            <div className="absolute inset-0 bg-black/60"></div>
+            {/* Dark overlay with bottom fade */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/60 to-black/20"></div>
           </div>
           
           {/* Hero Text Content */}
