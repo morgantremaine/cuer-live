@@ -19,12 +19,6 @@ export const useShowcallerPersistence = ({
       return false;
     }
 
-    // Skip database operations for demo rundown
-    if (rundownId === 'demo-rundown-2024') {
-      console.log('📺 Skipping save for demo rundown');
-      return true;
-    }
-
     try {
       console.log('📺 Saving showcaller state:', {
         isPlaying: state.isPlaying,
@@ -62,11 +56,6 @@ export const useShowcallerPersistence = ({
 
   const loadShowcallerState = useCallback(async (): Promise<ShowcallerState | null> => {
     if (!rundownId) {
-      return null;
-    }
-
-    // Skip database operations for demo rundown
-    if (rundownId === 'demo-rundown-2024') {
       return null;
     }
 

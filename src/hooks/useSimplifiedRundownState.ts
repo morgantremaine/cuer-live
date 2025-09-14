@@ -28,11 +28,6 @@ export const useSimplifiedRundownState = () => {
   const navigate = useNavigate();
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
-  // Debug logging for demo rundown
-  if (location.pathname === '/demo') {
-    console.log('🔍 Demo rundown detected:', { rundownId, pathname: location.pathname });
-  }
-  
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
   
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -959,7 +954,6 @@ export const useSimplifiedRundownState = () => {
         // Check if this is a demo rundown
         if (rundownId === DEMO_RUNDOWN_ID) {
           console.log('📋 Loading demo rundown data');
-          console.log('📋 Demo data:', DEMO_RUNDOWN_DATA);
           
           // Load demo data instead of from database
           actions.loadState({
@@ -969,12 +963,6 @@ export const useSimplifiedRundownState = () => {
             startTime: DEMO_RUNDOWN_DATA.start_time,
             timezone: DEMO_RUNDOWN_DATA.timezone
           });
-
-          setIsInitialized(true);
-          setIsLoading(false);
-          setCacheLoading(false);
-          console.log('📋 Demo rundown loaded successfully');
-          return; // Exit early for demo rundown
           
           
         } else {
