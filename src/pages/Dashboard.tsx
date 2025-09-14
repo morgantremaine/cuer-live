@@ -18,6 +18,7 @@ import { Column } from '@/types/columns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDashboardRundownOptimized } from '@/hooks/useDashboardRundownOptimized';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import AdminNotificationSender from '@/components/AdminNotificationSender';
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const { team, teamMembers, isLoading: teamLoading } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
+  const { subscription_tier, access_type } = useSubscription();
   const { folders, moveRundownToFolder } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   // Remove unused useColumnsManager import since useUserColumnPreferences handles columns now
@@ -160,9 +162,31 @@ const Dashboard = () => {
   const handleUnarchiveRundown = async (rundownId: string, title: string, items: any[], e: React.MouseEvent) => {
     e.stopPropagation();
     try {
+      // Check rundown limits for free tier users when unarchiving
+      if (subscription_tier === 'Free' && access_type === 'free') {
+        const activeRundowns = savedRundowns.filter(r => !r.archived);
+        if (activeRundowns.length >= 3) {
+          toast({
+            title: 'Rundown Limit Reached',
+            description: 'Free tier users are limited to 3 active rundowns. Please upgrade your plan or archive other rundowns first.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+      
       await updateRundown(rundownId, title, items, false, false);
+      toast({
+        title: 'Success',
+        description: 'Rundown unarchived successfully.',
+      });
     } catch (error) {
       console.error('Error unarchiving rundown:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to unarchive rundown.',
+        variant: 'destructive',
+      });
     }
   };
 
