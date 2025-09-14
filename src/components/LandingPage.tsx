@@ -181,7 +181,7 @@ const LandingPage = () => {
       </div>
 
       {/* Features Grid */}
-      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24 -mt-12">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
             Everything you need for 
