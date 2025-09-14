@@ -4,6 +4,7 @@ import { useUniversalTimer } from './useUniversalTimer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useTeamId } from './useTeamId';
+import { useSubscription } from './useSubscription';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 
 interface SavedRundown {
@@ -30,6 +31,7 @@ interface SavedRundown {
 export const useRundownStorage = () => {
   const { user } = useAuth();
   const { teamId } = useTeamId();
+  const { subscription_tier, access_type } = useSubscription();
   const [savedRundowns, setSavedRundowns] = useState<SavedRundown[]>([]);
   const [loading, setLoading] = useState(false);
   const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('RundownStorage');
@@ -162,6 +164,14 @@ export const useRundownStorage = () => {
   const createRundown = useCallback(async (title: string, items: RundownItem[] = [], folderId?: string | null) => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
 
+    // Check rundown limits for free tier users
+    if (subscription_tier === 'Free' && access_type === 'free') {
+      const activeRundowns = savedRundowns.filter(r => !r.archived);
+      if (activeRundowns.length >= 3) {
+        throw new Error('Free tier users are limited to 3 rundowns. Please upgrade your plan or archive existing rundowns to create new ones.');
+      }
+    }
+
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
@@ -186,7 +196,7 @@ export const useRundownStorage = () => {
     setSavedRundowns(prev => [newRundown, ...prev]);
 
     return data.id;
-  }, [user, teamId]);
+  }, [user, teamId, subscription_tier, access_type, savedRundowns]);
 
   const saveRundown = useCallback(async (rundown: SavedRundown) => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
