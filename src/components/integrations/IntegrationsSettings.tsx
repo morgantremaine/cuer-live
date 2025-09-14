@@ -111,104 +111,22 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
 
   const handleCreateIntegration = async () => {
     try {
-      // Validation
-      if (!newIntegration.name.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Integration name is required",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (newIntegration.integration_type === 'webhook') {
-        if (!newIntegration.endpoint_url.trim()) {
-          toast({
-            title: "Validation Error",
-            description: "Endpoint URL is required for webhook integrations",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        // Validate URL format
-        try {
-          new URL(newIntegration.endpoint_url);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Please enter a valid URL",
-            variant: "destructive",
-          });
-          return;
-        }
-      } else {
-        if (!newIntegration.osc_host.trim() || !newIntegration.osc_port) {
-          toast({
-            title: "Validation Error",
-            description: "OSC host and port are required for OSC integrations",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (newIntegration.osc_port < 1 || newIntegration.osc_port > 65535) {
-          toast({
-            title: "Validation Error",
-            description: "OSC port must be between 1 and 65535",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      let authHeaders = {};
-      let customHeaders = {};
-      
-      // Parse JSON headers with error handling
-      if (newIntegration.auth_headers.trim()) {
-        try {
-          authHeaders = JSON.parse(newIntegration.auth_headers);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Auth headers must be valid JSON",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
-      if (newIntegration.custom_headers.trim()) {
-        try {
-          customHeaders = JSON.parse(newIntegration.custom_headers);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Custom headers must be valid JSON",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       const integrationData = {
         team_id: teamId,
-        name: newIntegration.name.trim(),
+        name: newIntegration.name,
         integration_type: newIntegration.integration_type,
         created_by: (await supabase.auth.getUser()).data.user?.id,
-        rate_limit_per_minute: Math.max(1, newIntegration.rate_limit_per_minute),
-        retry_attempts: Math.max(0, Math.min(10, newIntegration.retry_attempts)),
-        is_active: true,
+        rate_limit_per_minute: newIntegration.rate_limit_per_minute,
+        retry_attempts: newIntegration.retry_attempts,
         ...(newIntegration.integration_type === 'webhook' ? {
-          endpoint_url: newIntegration.endpoint_url.trim(),
+          endpoint_url: newIntegration.endpoint_url,
           http_method: newIntegration.http_method,
-          auth_headers: authHeaders,
-          custom_headers: customHeaders,
+          auth_headers: newIntegration.auth_headers ? JSON.parse(newIntegration.auth_headers) : {},
+          custom_headers: newIntegration.custom_headers ? JSON.parse(newIntegration.custom_headers) : {},
         } : {
-          osc_host: newIntegration.osc_host.trim(),
+          osc_host: newIntegration.osc_host,
           osc_port: newIntegration.osc_port,
-          osc_path: newIntegration.osc_path.trim() || '/cue',
+          osc_path: newIntegration.osc_path,
         }),
       };
 
@@ -400,98 +318,20 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
     if (!editingIntegration) return;
 
     try {
-      // Validation - same as create
-      if (!newIntegration.name.trim()) {
-        toast({
-          title: "Validation Error",
-          description: "Integration name is required",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (newIntegration.integration_type === 'webhook') {
-        if (!newIntegration.endpoint_url.trim()) {
-          toast({
-            title: "Validation Error",
-            description: "Endpoint URL is required for webhook integrations",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        try {
-          new URL(newIntegration.endpoint_url);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Please enter a valid URL",
-            variant: "destructive",
-          });
-          return;
-        }
-      } else {
-        if (!newIntegration.osc_host.trim() || !newIntegration.osc_port) {
-          toast({
-            title: "Validation Error",
-            description: "OSC host and port are required for OSC integrations",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        if (newIntegration.osc_port < 1 || newIntegration.osc_port > 65535) {
-          toast({
-            title: "Validation Error",
-            description: "OSC port must be between 1 and 65535",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      let authHeaders = {};
-      let customHeaders = {};
-      
-      if (newIntegration.auth_headers.trim()) {
-        try {
-          authHeaders = JSON.parse(newIntegration.auth_headers);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Auth headers must be valid JSON",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
-      if (newIntegration.custom_headers.trim()) {
-        try {
-          customHeaders = JSON.parse(newIntegration.custom_headers);
-        } catch {
-          toast({
-            title: "Validation Error",
-            description: "Custom headers must be valid JSON",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
       const integrationData = {
-        name: newIntegration.name.trim(),
-        rate_limit_per_minute: Math.max(1, newIntegration.rate_limit_per_minute),
-        retry_attempts: Math.max(0, Math.min(10, newIntegration.retry_attempts)),
+        name: newIntegration.name,
+        integration_type: newIntegration.integration_type,
+        rate_limit_per_minute: newIntegration.rate_limit_per_minute,
+        retry_attempts: newIntegration.retry_attempts,
         ...(newIntegration.integration_type === 'webhook' ? {
-          endpoint_url: newIntegration.endpoint_url.trim(),
+          endpoint_url: newIntegration.endpoint_url,
           http_method: newIntegration.http_method,
-          auth_headers: authHeaders,
-          custom_headers: customHeaders,
+          auth_headers: newIntegration.auth_headers ? JSON.parse(newIntegration.auth_headers) : {},
+          custom_headers: newIntegration.custom_headers ? JSON.parse(newIntegration.custom_headers) : {},
         } : {
-          osc_host: newIntegration.osc_host.trim(),
+          osc_host: newIntegration.osc_host,
           osc_port: newIntegration.osc_port,
-          osc_path: newIntegration.osc_path.trim() || '/cue',
+          osc_path: newIntegration.osc_path,
         }),
       };
 
@@ -661,16 +501,13 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                 {newIntegration.integration_type === 'webhook' ? (
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="endpoint-url">Endpoint URL *</Label>
+                      <Label htmlFor="endpoint-url">Endpoint URL</Label>
                       <Input
                         id="endpoint-url"
                         value={newIntegration.endpoint_url}
                         onChange={(e) => setNewIntegration({ ...newIntegration, endpoint_url: e.target.value })}
-                        placeholder="https://your-server.com/webhook/cue"
+                        placeholder="http://localhost:8080/cue"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Use a public URL or ngrok for testing. Localhost URLs won't work from the cloud.
-                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -691,65 +528,32 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
-                        <Label htmlFor="rate-limit">Rate Limit (per minute)</Label>
-                        <Input
-                          id="rate-limit"
-                          type="number"
-                          min="1"
-                          max="1000"
-                          value={newIntegration.rate_limit_per_minute}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, rate_limit_per_minute: parseInt(e.target.value) || 60 })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="auth-headers">Auth Headers (JSON)</Label>
-                        <Input
-                          id="auth-headers"
-                          value={newIntegration.auth_headers}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, auth_headers: e.target.value })}
-                          placeholder='{"Authorization": "Bearer token"}'
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="custom-headers">Custom Headers (JSON)</Label>
-                        <Input
-                          id="custom-headers"
-                          value={newIntegration.custom_headers}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, custom_headers: e.target.value })}
-                          placeholder='{"X-Custom": "value"}'
-                        />
-                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="osc-host">Host *</Label>
+                        <Label htmlFor="osc-host">Host</Label>
                         <Input
                           id="osc-host"
                           value={newIntegration.osc_host}
                           onChange={(e) => setNewIntegration({ ...newIntegration, osc_host: e.target.value })}
-                          placeholder="192.168.1.100"
+                          placeholder="localhost"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="osc-port">Port *</Label>
+                        <Label htmlFor="osc-port">Port</Label>
                         <Input
                           id="osc-port"
                           type="number"
-                          min="1"
-                          max="65535"
                           value={newIntegration.osc_port}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, osc_port: parseInt(e.target.value) || 3333 })}
+                          onChange={(e) => setNewIntegration({ ...newIntegration, osc_port: parseInt(e.target.value) })}
                           placeholder="3333"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="osc-path">OSC Address</Label>
+                        <Label htmlFor="osc-path">Path</Label>
                         <Input
                           id="osc-path"
                           value={newIntegration.osc_path}
@@ -758,33 +562,6 @@ export const IntegrationsSettings: React.FC<IntegrationsSettingsProps> = ({ team
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="rate-limit-osc">Rate Limit (per minute)</Label>
-                        <Input
-                          id="rate-limit-osc"
-                          type="number"
-                          min="1"
-                          max="1000"
-                          value={newIntegration.rate_limit_per_minute}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, rate_limit_per_minute: parseInt(e.target.value) || 60 })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="retry-attempts">Retry Attempts</Label>
-                        <Input
-                          id="retry-attempts"
-                          type="number"
-                          min="0"
-                          max="10"
-                          value={newIntegration.retry_attempts}
-                          onChange={(e) => setNewIntegration({ ...newIntegration, retry_attempts: parseInt(e.target.value) || 3 })}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      OSC messages are sent via HTTP to your OSC bridge server. Make sure your OSC server is configured to receive HTTP requests.
-                    </p>
                   </div>
                 )}
 

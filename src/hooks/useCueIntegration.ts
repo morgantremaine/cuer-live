@@ -121,43 +121,28 @@ export const useCueIntegration = (
       playbackStartTime?: number;
     }
   ) => {
-    if (!rundownId || !teamId) {
-      console.warn('🎯 Cue trigger skipped - missing rundownId or teamId:', { rundownId, teamId });
-      return;
-    }
+    if (!rundownId || !teamId) return;
 
     const payload = createCuePayload(event, currentSegment, nextSegment, showcallerState);
     
     // Create a unique key for this cue to prevent duplicates
-    const cueKey = `${event}-${currentSegment?.id}-${showcallerState.isPlaying}-${Date.now()}`;
+    const cueKey = `${event}-${currentSegment?.id}-${showcallerState.isPlaying}`;
     
-    // Debounce rapid successive calls, but allow different events through
+    // Debounce rapid successive calls
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
     debounceRef.current = setTimeout(async () => {
-      // Skip if this is the exact same cue as last time (within 1 second)
-      const now = Date.now();
-      const lastCueTime = parseInt(lastCueRef.current.split('-').pop() || '0');
-      const timeSinceLastCue = now - lastCueTime;
-      
-      if (lastCueRef.current.startsWith(`${event}-${currentSegment?.id}-${showcallerState.isPlaying}`) && timeSinceLastCue < 1000) {
-        console.log('🎯 Skipping duplicate cue trigger:', { event, segmentId: currentSegment?.id, timeSinceLastCue });
+      // Skip if this is the exact same cue as last time
+      if (lastCueRef.current === cueKey) {
         return;
       }
       
       lastCueRef.current = cueKey;
 
-      console.log('🎯 Sending cue trigger:', { 
-        event, 
-        segment: currentSegment?.name, 
-        isPlaying: showcallerState.isPlaying,
-        teamId: teamId.substring(0, 8)
-      });
-
       try {
-        const { data, error } = await supabase.functions.invoke('send-cue-trigger', {
+        const { error } = await supabase.functions.invoke('send-cue-trigger', {
           body: {
             teamId,
             rundownId,
@@ -166,12 +151,10 @@ export const useCueIntegration = (
         });
 
         if (error) {
-          console.error('❌ Failed to send cue trigger:', error);
-        } else {
-          console.log('✅ Cue trigger sent successfully:', data);
+          console.error('Failed to send cue trigger:', error);
         }
       } catch (error) {
-        console.error('❌ Error sending cue trigger:', error);
+        console.error('Error sending cue trigger:', error);
       }
     }, 200); // 200ms debounce
   }, [rundownId, teamId, createCuePayload]);

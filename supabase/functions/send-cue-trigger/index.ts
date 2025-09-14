@@ -84,68 +84,35 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
       };
     }
 
-    // Validate URL
-    let url: URL;
-    try {
-      url = new URL(integration.endpoint_url!);
-    } catch {
-      return {
-        success: false,
-        error: 'Invalid endpoint URL format',
-        responseTime: Date.now() - startTime,
-      };
-    }
-
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'User-Agent': 'Cuer-Webhook/1.0',
       ...integration.custom_headers,
       ...integration.auth_headers,
     };
 
-    // Add timeout to prevent hanging requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const response = await fetch(integration.endpoint_url!, {
+      method: integration.http_method || 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
 
-    try {
-      const response = await fetch(integration.endpoint_url!, {
-        method: integration.http_method || 'POST',
-        headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+    const responseBody = await response.text();
+    const responseTime = Date.now() - startTime;
 
-      clearTimeout(timeoutId);
-      
-      const responseBody = await response.text();
-      const responseTime = Date.now() - startTime;
+    console.log(`Webhook response: ${response.status} - ${responseBody.substring(0, 200)}`);
 
-      console.log(`Webhook response: ${response.status} - ${responseBody.substring(0, 200)}`);
-
-      return {
-        success: response.ok,
-        status: response.status,
-        responseBody: responseBody.substring(0, 1000), // Limit response size
-        responseTime,
-      };
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
-    }
+    return {
+      success: response.ok,
+      status: response.status,
+      responseBody: responseBody.substring(0, 1000), // Limit response size
+      responseTime,
+    };
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    let errorMessage = error.message;
-    
-    if (error.name === 'AbortError') {
-      errorMessage = 'Request timeout (30s)';
-    } else if (error.name === 'TypeError') {
-      errorMessage = 'Network error - unable to reach endpoint';
-    }
-    
-    console.error(`Webhook error: ${errorMessage}`);
+    console.error(`Webhook error: ${error.message}`);
     return {
       success: false,
-      error: errorMessage,
+      error: error.message,
       responseTime,
     };
   }
@@ -153,31 +120,13 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
 
 async function sendOSC(integration: Integration, payload: CuePayload): Promise<{
   success: boolean;
-  status?: number;
   error?: string;
   responseTime: number;
 }> {
   const startTime = Date.now();
   
   try {
-    // Validate OSC configuration
-    if (!integration.osc_host || !integration.osc_port) {
-      return {
-        success: false,
-        error: 'OSC host and port are required',
-        responseTime: Date.now() - startTime,
-      };
-    }
-
-    if (integration.osc_port < 1 || integration.osc_port > 65535) {
-      return {
-        success: false,
-        error: 'OSC port must be between 1 and 65535',
-        responseTime: Date.now() - startTime,
-      };
-    }
-
-    // Create OSC message with structured data
+    // Create OSC message - simplified JSON payload over WebSocket
     const oscMessage = {
       address: integration.osc_path || '/cue',
       args: [
@@ -186,61 +135,31 @@ async function sendOSC(integration: Integration, payload: CuePayload): Promise<{
         payload.current_segment.name || '',
         payload.showcaller_state.is_playing ? 1 : 0,
         payload.showcaller_state.time_remaining || 0,
-        payload.rundown.id,
-        payload.rundown.title,
       ],
       payload: payload, // Include full payload for advanced OSC clients
-      timestamp: Date.now(),
     };
 
-    console.log(`Sending OSC message to: ${integration.osc_host}:${integration.osc_port}${integration.osc_path}`);
-
-    // Try primary OSC bridge endpoint
-    const oscEndpoint = `http://${integration.osc_host}:${integration.osc_port}/osc`;
+    // For now, use HTTP POST to OSC bridge endpoint
+    // In production, this would use UDP or WebSocket to OSC server
+    const oscEndpoint = `http://${integration.osc_host}:${integration.osc_port || 3333}/osc`;
     
-    // Add timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for OSC
-    
-    try {
-      const response = await fetch(oscEndpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'User-Agent': 'Cuer-OSC/1.0'
-        },
-        body: JSON.stringify(oscMessage),
-        signal: controller.signal,
-      });
+    const response = await fetch(oscEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(oscMessage),
+    });
 
-      clearTimeout(timeoutId);
-      const responseTime = Date.now() - startTime;
-      
-      console.log(`OSC response: ${response.status}`);
-      
-      return {
-        success: response.ok,
-        status: response.status,
-        responseTime,
-      };
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
-    }
+    const responseTime = Date.now() - startTime;
+    
+    return {
+      success: response.ok,
+      responseTime,
+    };
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    let errorMessage = error.message;
-    
-    if (error.name === 'AbortError') {
-      errorMessage = 'OSC request timeout (15s)';
-    } else if (error.name === 'TypeError') {
-      errorMessage = 'Unable to reach OSC bridge server';
-    }
-    
-    console.error(`OSC error: ${errorMessage}`);
     return {
       success: false,
-      error: errorMessage,
+      error: error.message,
       responseTime,
     };
   }
@@ -317,60 +236,29 @@ serve(async (req) => {
 
     const results = [];
 
-    console.log(`Processing ${integrations?.length || 0} active integrations for team ${teamId}`);
-
-    // Send to each active integration with parallel processing for better performance
-    const integrationPromises = (integrations || []).map(async (integration) => {
+    // Send to each active integration
+    for (const integration of integrations || []) {
       let result;
       
-      try {
-        if (integration.integration_type === 'webhook') {
-          result = await sendWebhook(integration, payload);
-        } else if (integration.integration_type === 'osc') {
-          result = await sendOSC(integration, payload);
-        } else {
-          console.warn(`Unknown integration type: ${integration.integration_type}`);
-          return null;
-        }
+      if (integration.integration_type === 'webhook') {
+        result = await sendWebhook(integration, payload);
+      } else if (integration.integration_type === 'osc') {
+        result = await sendOSC(integration, payload);
+      }
 
+      if (result) {
         // Log the event
         await logCueEvent(supabase, teamId, rundownId, integration, payload, result);
         
-        return {
+        results.push({
           integration_id: integration.id,
-          integration_name: integration.name || 'Unnamed Integration',
           type: integration.integration_type,
           success: result.success,
           response_time: result.responseTime,
-          status: result.status,
           error: result.error,
-        };
-      } catch (error) {
-        console.error(`Failed to process integration ${integration.id}:`, error);
-        
-        const errorResult = {
-          success: false,
-          error: `Integration processing failed: ${error.message}`,
-          responseTime: 0,
-        };
-        
-        await logCueEvent(supabase, teamId, rundownId, integration, payload, errorResult);
-        
-        return {
-          integration_id: integration.id,
-          integration_name: integration.name || 'Unnamed Integration',
-          type: integration.integration_type,
-          success: false,
-          response_time: 0,
-          error: errorResult.error,
-        };
+        });
       }
-    });
-
-    // Wait for all integrations to complete
-    const results = (await Promise.allSettled(integrationPromises))
-      .map(result => result.status === 'fulfilled' ? result.value : null)
-      .filter(Boolean);
+    }
 
     return new Response(
       JSON.stringify({ 
