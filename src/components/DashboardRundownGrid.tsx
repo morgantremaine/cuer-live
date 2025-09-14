@@ -51,6 +51,7 @@ interface DashboardRundownGridProps {
   showEmptyState?: boolean
   currentUserId?: string
   teamMembers?: TeamMember[]
+  folderType?: 'all' | 'recent' | 'archived' | 'custom'
 }
 
 const DashboardRundownGrid = ({ 
@@ -66,7 +67,8 @@ const DashboardRundownGrid = ({
   isArchived = false,
   showEmptyState = true,
   currentUserId,
-  teamMembers = []
+  teamMembers = [],
+  folderType
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
   
@@ -237,12 +239,19 @@ const DashboardRundownGrid = ({
         )}
         <div className="text-center py-12">
           <h3 className="text-xl font-semibold text-gray-300 mb-4">
-            {isArchived ? 'No archived rundowns' : 'No rundowns yet'}
+            {isArchived 
+              ? 'No archived rundowns' 
+              : folderType === 'recent' 
+                ? 'No recent rundowns' 
+                : 'No rundowns yet'
+            }
           </h3>
           <p className="text-gray-400 mb-6">
             {isArchived 
               ? 'You haven\'t archived any rundowns yet.' 
-              : 'Create your first rundown to get started with organizing your content.'
+              : folderType === 'recent'
+                ? 'You haven\'t edited any rundowns in the last 7 days.'
+                : 'Create your first rundown to get started with organizing your content.'
             }
           </p>
           {!isArchived && onCreateNew && (

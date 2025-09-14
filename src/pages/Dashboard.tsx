@@ -443,6 +443,7 @@ const Dashboard = () => {
                 onUnarchive={handleUnarchiveRundown}
                 onDuplicate={handleDuplicateRundown}
                 isArchived={folderType === 'archived'}
+                folderType={folderType}
                 showEmptyState={true}
                 currentUserId={user?.id}
                 teamMembers={teamMembers}
