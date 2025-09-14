@@ -1190,6 +1190,10 @@ export type Database = {
         Args: { rundown_uuid: string }
         Returns: undefined
       }
+      update_showcaller_state_silent: {
+        Args: { new_showcaller_state: Json; rundown_uuid: string }
+        Returns: undefined
+      }
       validate_invitation_token: {
         Args: { token_param: string }
         Returns: Json

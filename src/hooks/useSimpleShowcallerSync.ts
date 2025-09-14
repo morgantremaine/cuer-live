@@ -514,7 +514,7 @@ export const useSimpleShowcallerSync = ({
     }
   }, [rundownId, items, buildStatusMap]);
 
-  // Save showcaller state to database whenever it changes
+  // Save showcaller state to database without updating rundown's updated_at timestamp
   const saveShowcallerState = useCallback(async (stateToSave: SimpleShowcallerState) => {
     if (!rundownId || !hasLoadedInitialState.current) return;
     
@@ -524,10 +524,7 @@ export const useSimpleShowcallerSync = ({
         setShowcallerUpdate(true);
       }
       
-      console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId || 'no position');
-      
-      // FIXED: Allow saving null currentSegmentId to preserve "no position" state
-      console.log('📺 Simple: Saving showcaller state with currentSegmentId:', stateToSave.currentSegmentId || 'null (no position)');
+      console.log('📺 Simple: Saving showcaller state silently:', stateToSave.currentSegmentId || 'no position');
       
       const showcallerState = {
         currentSegmentId: stateToSave.currentSegmentId, // Allow null for "no position"
@@ -538,13 +535,16 @@ export const useSimpleShowcallerSync = ({
         currentItemStatuses: stateToSave.currentItemStatuses
       };
 
-      const { error } = await supabase
-        .from('rundowns')
-        .update({ showcaller_state: showcallerState })
-        .eq('id', rundownId);
+      // Use the silent update function to avoid updating the rundown's updated_at timestamp
+      const { error } = await supabase.rpc('update_showcaller_state_silent', {
+        rundown_uuid: rundownId,
+        new_showcaller_state: showcallerState
+      });
 
       if (error) {
         console.error('📺 Simple: Error saving showcaller state:', error);
+      } else {
+        console.log('📺 Simple: Successfully saved showcaller state without updating rundown timestamp');
       }
     } catch (error) {
       console.error('📺 Simple: Error saving showcaller state:', error);
