@@ -180,6 +180,12 @@ export const useConsolidatedRealtimeRundown = ({
       
       (async () => {
         try {
+          // Skip database operations for demo rundown
+          if (rundownId === 'demo-rundown-2024') {
+            console.log('📺 Skipping gap detection for demo rundown');
+            return;
+          }
+
           const { data, error } = await supabase
             .from('rundowns')
             .select('id, items, title, start_time, timezone, external_notes, show_date, updated_at, doc_version, showcaller_state, last_updated_by')
@@ -503,6 +509,12 @@ export const useConsolidatedRealtimeRundown = ({
           console.log('✅ Consolidated realtime connected successfully');
           // Initial catch-up: read latest row to ensure no missed updates during subscribe
           try {
+            // Skip database operations for demo rundown
+            if (rundownId === 'demo-rundown-2024') {
+              console.log('📺 Skipping initial catch-up for demo rundown');
+              return;
+            }
+
             // Don't show processing indicator during initial load
             const { data, error } = await supabase
               .from('rundowns')
@@ -692,6 +704,13 @@ export const useConsolidatedRealtimeRundown = ({
     performCatchupSync: async () => {
       const state = globalSubscriptions.get(rundownId || '');
       if (!rundownId || !state) return;
+
+      // Skip database operations for demo rundown
+      if (rundownId === 'demo-rundown-2024') {
+        console.log('📺 Skipping manual catch-up for demo rundown');
+        return;
+      }
+
       try {
         // Manual catch-up sync should show processing indicator (not initial load)
         setIsProcessingUpdate(true);

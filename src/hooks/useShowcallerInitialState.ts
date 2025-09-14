@@ -22,6 +22,14 @@ export const useShowcallerInitialState = ({
       return;
     }
 
+    // Skip database operations for demo rundown
+    if (rundownId === 'demo-rundown-2024') {
+      console.log('📺 Skipping initial state load for demo rundown');
+      hasLoadedRef.current = true;
+      loadedRundownRef.current = rundownId;
+      return;
+    }
+
     // Prevent duplicate loading for the same rundown
     if (loadedRundownRef.current === rundownId && hasLoadedRef.current) {
       return;
