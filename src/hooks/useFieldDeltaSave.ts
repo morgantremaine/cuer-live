@@ -20,7 +20,7 @@ export const useFieldDeltaSave = (
   const pendingDeltasRef = useRef<FieldDelta[]>([]);
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
-  // Track field changes as deltas
+  // Optimized field change tracking with reduced logging
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
     const delta: FieldDelta = {
       itemId,
@@ -30,7 +30,14 @@ export const useFieldDeltaSave = (
     };
     
     pendingDeltasRef.current.push(delta);
-    console.log('📝 Field delta tracked:', { itemId, field, valueLength: JSON.stringify(value).length });
+    // Reduced logging frequency for performance
+    if (pendingDeltasRef.current.length % 10 === 0) {
+      console.log('📝 Field delta batch tracked:', { 
+        batchSize: pendingDeltasRef.current.length,
+        latestField: field,
+        itemId: itemId?.substring(0, 8)
+      });
+    }
   }, []);
 
   // Compare states and extract deltas

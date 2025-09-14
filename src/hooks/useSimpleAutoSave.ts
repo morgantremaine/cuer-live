@@ -285,7 +285,7 @@ export const useSimpleAutoSave = (
     trackMyUpdate
   );
 
-  // Simplified typing activity tracker - single save mechanism
+  // Enhanced typing tracker with immediate save cancellation
   const markActiveTyping = useCallback(() => {
     const now = Date.now();
     lastEditAtRef.current = now;
@@ -298,9 +298,22 @@ export const useSimpleAutoSave = (
       blockUntilLocalEditRef.current = false;
     }
     
-    debugLogger.autosave('AutoSave: typing activity recorded - rescheduling save');
+    // IMMEDIATE SAVE CANCELLATION: Cancel any ongoing save when user types
+    if (saveInProgressRef.current) {
+      console.log('🛑 AutoSave: CANCELLING save due to typing activity');
+      // The save will complete but we'll immediately mark as unsaved
+      pendingFollowUpSaveRef.current = false; // Don't follow up
+    }
     
-    // Record typing in journal for debugging and recovery (but don't trigger snapshot update)
+    // IMMEDIATE UI UPDATE: Show unsaved changes when typing starts
+    if (isSaving) {
+      setIsSaving(false);
+      console.log('📝 AutoSave: immediately showing unsaved state due to typing');
+    }
+    
+    debugLogger.autosave('AutoSave: typing activity recorded - save cancelled/rescheduled');
+    
+    // Record typing in journal for debugging and recovery
     keystrokeJournal.recordTyping('user typing activity');
     
     // Record that this save will be initiated while tab is active
@@ -330,7 +343,7 @@ export const useSimpleAutoSave = (
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef]);
+  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
 
   // Check if user is currently typing
   const isTypingActive = useCallback(() => {
@@ -375,36 +388,33 @@ export const useSimpleAutoSave = (
     }, microResaveMs);
   }, [microResaveMs, createContentSignature]);
 
-  // Enhanced save function with conflict prevention
+  // Enhanced save function with immediate typing cancellation
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
     // TRACE: Entry flags
-      debugLogger.autosave('TRACE performSave(entry)', {
-        isFlushSave,
-        isSharedView,
-        isInitiallyLoaded,
-        hasUnsavedChanges: state.hasUnsavedChanges,
-        rundownId,
-        typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
-        suppressUntil: suppressUntilRef?.current,
-        blockUntilLocalEdit: blockUntilLocalEditRef?.current,
-        cooldownUntil: cooldownUntilRef?.current,
-        applyingCellBroadcast: applyingCellBroadcastRef?.current,
-        pendingStructuralChange: pendingStructuralChangeRef?.current
-      });
+    debugLogger.autosave('TRACE performSave(entry)', {
+      isFlushSave,
+      isSharedView,
+      isInitiallyLoaded,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      rundownId,
+      typingActive: Date.now() - lastEditAtRef.current < typingIdleMs,
+      suppressUntil: suppressUntilRef?.current,
+      blockUntilLocalEdit: blockUntilLocalEditRef?.current,
+      cooldownUntil: cooldownUntilRef?.current,
+      applyingCellBroadcast: applyingCellBroadcastRef?.current,
+      pendingStructuralChange: pendingStructuralChangeRef?.current
+    });
+    
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
-      debugLogger.autosave('AutoSave: blocked - initial load not complete');
       return;
     }
 
-    // NEW: Block save if user is actively typing (unless it's a flush save)
+    // IMMEDIATE TYPING CANCELLATION: Stop saving if user is typing
     if (!isFlushSave && isTypingActive()) {
-      console.log('🛑 AutoSave: blocked - user is actively typing');
-      // Reschedule save after typing stops
-      saveTimeoutRef.current = setTimeout(() => {
-        performSave(false, isSharedView);
-      }, typingIdleMs);
+      console.log('🛑 AutoSave: cancelled - user is actively typing');
+      // Don't reschedule here - let markActiveTyping handle it
       return;
     }
 
@@ -483,16 +493,12 @@ export const useSimpleAutoSave = (
       console.log('⚡ AutoSave: forcing save after max delay despite typing');
     }
     
-    // Final check before saving - prevent overlapping saves
+    // Final check before saving - cancel if save in progress
     if (saveInProgressRef.current || undoActiveRef.current) {
       debugLogger.autosave('Save blocked: already saving or undo active');
       console.log('🛑 AutoSave: blocked - already saving or undo active');
       
-      // Ensure a follow-up save runs right after the current one finishes
-      if (saveInProgressRef.current) {
-        pendingFollowUpSaveRef.current = true;
-        console.log('🕒 AutoSave: follow-up save scheduled after in-progress save');
-      }
+      // SIMPLIFIED: No follow-up saves - typing will trigger new save when stopped
       return;
     }
     
@@ -592,26 +598,9 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = currentSignatureAfterSave;
           console.log('📝 Setting lastSavedRef to current state after full save:', currentSignatureAfterSave.length);
 
-          // Check if content changed during save and handle appropriately
+          // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
-            console.log('⚠️ Content changed during save - changes detected');
-            const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-            
-            if (timeSinceLastEdit < typingIdleMs) {
-              // User is still actively typing - schedule save after they stop
-              console.log('📝 User still typing - scheduling save after typing stops');
-              if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-              }
-              saveTimeoutRef.current = setTimeout(() => {
-                console.log('🔄 AutoSave: executing follow-up save after typing stopped');
-                performSave(false, isSharedView);
-              }, typingIdleMs);
-            } else {
-              // User stopped typing - schedule immediate micro-resave
-              console.log('🔄 User stopped typing - scheduling immediate micro-resave');
-              scheduleMicroResave();
-            }
+            console.log('⚠️ Content changed during save - will be caught by next typing cycle');
           }
           onSavedRef.current?.({ updatedAt: newRundown?.updated_at ? normalizeTimestamp(newRundown.updated_at) : undefined, docVersion: (newRundown as any)?.doc_version });
           navigate(`/rundown/${newRundown.id}`, { replace: true });
@@ -646,26 +635,9 @@ export const useSimpleAutoSave = (
           lastSavedRef.current = currentSignatureAfterSave;
           console.log('📝 Setting lastSavedRef to current state after delta save:', currentSignatureAfterSave.length);
 
-          // Check if content changed during save and handle appropriately
+          // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
-            console.log('⚠️ Content changed during save - changes detected');
-            const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-            
-            if (timeSinceLastEdit < typingIdleMs) {
-              // User is still actively typing - schedule save after they stop
-              console.log('📝 User still typing - scheduling save after typing stops');
-              if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-              }
-              saveTimeoutRef.current = setTimeout(() => {
-                console.log('🔄 AutoSave: executing follow-up save after typing stopped');
-                performSave(false, isSharedView);
-              }, typingIdleMs);
-            } else {
-              // User stopped typing - schedule immediate micro-resave
-              console.log('🔄 User stopped typing - scheduling immediate micro-resave');
-              scheduleMicroResave();
-            }
+            console.log('⚠️ Content changed during save - will be caught by next typing cycle');
           }
 
           // Invoke callback with metadata
@@ -716,18 +688,7 @@ export const useSimpleAutoSave = (
         pendingStructuralChangeRef.current = false;
       }
       
-      // If a save request came in during the in-progress save, run it now
-      if (pendingFollowUpSaveRef.current) {
-        pendingFollowUpSaveRef.current = false;
-        console.log('🔁 AutoSave: executing pending follow-up save');
-        setTimeout(() => {
-          try {
-            performSaveRef.current();
-          } catch (e) {
-            console.error('❌ AutoSave: pending follow-up save failed', e);
-          }
-        }, 0);
-      }
+      // SIMPLIFIED: No follow-up saves - let typing detection handle new saves
       
       // Simplified retry logic - reduce complexity
       const currentSignature = createContentSignature();
@@ -855,6 +816,12 @@ export const useSimpleAutoSave = (
         return;
       }
       
+      // IMMEDIATE CANCELLATION: Don't save if user is actively typing
+      if (isTypingActive()) {
+        console.log('⌨️ AutoSave(effect): skipped - user actively typing');
+        return; // Let markActiveTyping handle scheduling
+      }
+      
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
       
@@ -865,27 +832,15 @@ export const useSimpleAutoSave = (
       const isStructuralChange = pendingStructuralChangeRef?.current || false;
       const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
       
-      // Faster saves during multi-user activity
-      const debounceTime = isStructuralChange ? 100 : (isMultiUserActive ? 300 : typingIdleMs);
+      // Simplified timing - no complex conditional logic
+      const debounceTime = isStructuralChange ? 100 : 1500;
       
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
 
       saveTimeoutRef.current = setTimeout(async () => {
-        // Reduced typing interference for better multi-user flow
-        const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-        if (isTypingActive() && timeSinceLastEdit < (isMultiUserActive ? 500 : maxSaveDelay)) {
-          console.log('⌨️ AutoSave(effect): brief typing defer');
-          // Brief reschedule but don't let it delay too long in multi-user scenarios
-          if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-          saveTimeoutRef.current = setTimeout(async () => {
-            console.log('⏱️ AutoSave: executing save now (post-defer)');
-            try {
-              await performSaveRef.current();
-              console.log('✅ AutoSave: save completed successfully');
-            } catch (error) {
-              console.error('❌ AutoSave: save execution failed:', error);
-            }
-          }, isMultiUserActive ? 200 : typingIdleMs);
+        // Final check - don't save if user started typing while we were waiting
+        if (isTypingActive()) {
+          console.log('⌨️ AutoSave(effect): cancelled at execution - user started typing');
           return;
         }
 

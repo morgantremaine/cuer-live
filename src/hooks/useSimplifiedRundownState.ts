@@ -899,11 +899,15 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
 
-  // Mark field as recently edited helper
+  // Optimized field tracking with debouncing
   const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
     const now = Date.now();
     recentlyEditedFieldsRef.current.set(fieldKey, now);
-    console.log(`🛡️ Field marked as recently edited: ${fieldKey}`);
+    
+    // Use debounced tracker to reduce logging overhead
+    import('@/utils/debouncedFieldTracker').then(({ debouncedFieldTracker }) => {
+      debouncedFieldTracker.trackField(fieldKey);
+    });
   }, []);
 
   // Simplified handlers - no special structural change handling needed
