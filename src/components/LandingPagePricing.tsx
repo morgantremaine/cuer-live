@@ -33,7 +33,7 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
-      'AI helper',
+      'AI Assistant',
       'Priority support'
     ]
   },
@@ -49,7 +49,7 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
-      'AI helper',
+      'AI Assistant',
       'Priority support'
     ]
   },
@@ -66,7 +66,7 @@ const PLANS = [
       'Unlimited rundowns',
       'Real-time collaboration',
       'Advanced features',
-      'AI helper',
+      'AI Assistant',
       'Priority support',
       'Dedicated account manager',
       'Custom integrations'
