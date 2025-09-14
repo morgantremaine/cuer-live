@@ -58,8 +58,8 @@ const Dashboard = () => {
     enabled: true
   });
 
-  // Loading state tracking
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  // Simple loading state - show skeleton until we have actual rundown data
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   
   // Sidebar state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -79,22 +79,17 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Track when data has been loaded for the first time
+  // Mark as loaded once we have rundowns data (even if empty) and user/team are ready
   useEffect(() => {
-    const userReady = !!user;
-    const teamReady = !!teamId && !teamLoading;
-    const rundownsReady = !loading;
-    const foldersReady = !foldersLoading;
-    
-    if (userReady && teamReady && rundownsReady && foldersReady && !hasInitiallyLoaded) {
-      setHasInitiallyLoaded(true);
+    if (user && teamId && !loading && !initialDataLoaded) {
+      setInitialDataLoaded(true);
     }
-  }, [user, teamId, teamLoading, loading, foldersLoading, hasInitiallyLoaded]);
+  }, [user, teamId, loading, initialDataLoaded]);
 
   // Reset loading state when user changes
   useEffect(() => {
     if (user?.id) {
-      setHasInitiallyLoaded(false);
+      setInitialDataLoaded(false);
     }
   }, [user?.id]);
 
@@ -343,7 +338,7 @@ const Dashboard = () => {
   const showMainContent = !isMobile || sidebarCollapsed;
 
   // Show skeleton until we have loaded initial data
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded;
+  const shouldShowLoadingSkeleton = !initialDataLoaded;
 
   if (shouldShowLoadingSkeleton) {
     return (
