@@ -281,7 +281,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
                   </>
                 ) : (
                   <>
-                    {plan.isEnterprise ? 'Contact Sales' : 'Get Started'}
+                    {plan.isEnterprise ? 'Contact Sales' : 'Upgrade'}
                     {plan.popular && <Crown className="w-4 h-4 ml-2" />}
                   </>
                 )}
