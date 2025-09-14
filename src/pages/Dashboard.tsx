@@ -82,17 +82,19 @@ const Dashboard = () => {
   // Mark as loaded once we have ACTUAL rundowns data and user/team are ready
   useEffect(() => {
     // We need user, teamId, and either rundowns data OR explicit loading state
-    const hasDataOrLoading = savedRundowns.length > 0 || loading;
+    const hasValidState = user && teamId && (!loading || savedRundowns.length > 0);
+    
     console.log('🔍 Dashboard loading check:', { 
       user: !!user, 
       teamId: !!teamId, 
       savedRundownsLength: savedRundowns.length,
       loading,
-      hasDataOrLoading,
+      hasValidState,
       initialDataLoaded 
     });
     
-    if (user && teamId && hasDataOrLoading && !loading && !initialDataLoaded) {
+    // Only mark as loaded if we have a valid state (not loading) AND either have data or confirmed empty
+    if (hasValidState && !initialDataLoaded) {
       console.log('✅ Setting initial data as loaded');
       setInitialDataLoaded(true);
     }
