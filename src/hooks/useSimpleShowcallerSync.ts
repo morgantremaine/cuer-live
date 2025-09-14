@@ -458,37 +458,21 @@ export const useSimpleShowcallerSync = ({
               console.warn('📺 Simple: No valid items found, cannot restore showcaller');
             }
           } else {
-            console.log('📺 Simple: No current segment in saved state, initializing to first item');
+            console.log('📺 Simple: No current segment in saved state, preserving "no position" state');
             console.log('📺 DEBUG: LoadedState.currentSegmentId was:', currentSegmentId, 'type:', typeof currentSegmentId);
             
-            // Initialize to first item immediately since no valid position was saved
-            console.log('📺 Simple: No position updates received, defaulting to first item');
-            const firstSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-            if (firstSegment) {
-              setState({
-                isPlaying: false,
-                currentSegmentId: firstSegment.id,
-                timeRemaining: 0,
-                currentItemStatuses: buildStatusMap(firstSegment.id),
-                isController: false,
-                controllerId: null,
-                lastUpdate: new Date().toISOString()
-              });
-              
-              // Save the initial position immediately to prevent future resets
-              setTimeout(() => {
-                const stateToSave = {
-                  currentSegmentId: firstSegment.id,
-                  isPlaying: false,
-                  timeRemaining: 0,
-                  currentItemStatuses: buildStatusMap(firstSegment.id),
-                  isController: false,
-                  controllerId: null,
-                  lastUpdate: new Date().toISOString()
-                };
-                saveShowcallerState(stateToSave);
-              }, 500);
-            }
+            // FIXED: Respect when showcaller was left at "no position" - don't auto-default to first item
+            setState({
+              isPlaying: false,
+              currentSegmentId: null, // Preserve the "no position" state
+              timeRemaining: 0,
+              currentItemStatuses: {},
+              isController: false,
+              controllerId: loadedState.controllerId || null,
+              lastUpdate: loadedState.lastUpdate || new Date().toISOString()
+            });
+            
+            console.log('📺 Simple: Successfully preserved "no position" showcaller state');
           }
         } else {
           console.log('📺 Simple: No saved showcaller state, initializing to first item');
@@ -513,8 +497,8 @@ export const useSimpleShowcallerSync = ({
             });
           }, 2000);
         }
-        // Only skip if there was a saved currentSegmentId
-        skipNextSaveRef.current = !!(data?.showcaller_state && data.showcaller_state.currentSegmentId);
+        // Only skip the next save if we loaded any existing showcaller state (including "no position")
+        skipNextSaveRef.current = !!(data?.showcaller_state);
         hasLoadedInitialState.current = true;
       } catch (error) {
         console.error('📺 Simple: Error loading initial state:', error);
@@ -540,20 +524,13 @@ export const useSimpleShowcallerSync = ({
         setShowcallerUpdate(true);
       }
       
-      console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId);
+      console.log('📺 Simple: Saving showcaller state:', stateToSave.currentSegmentId || 'no position');
       
-      // Convert to the format expected by the database
-      // CRITICAL: Only save if we have a valid currentSegmentId - never fallback to first item here
-      if (!stateToSave.currentSegmentId) {
-        console.warn('📺 Simple: Attempted to save showcaller state with no currentSegmentId - skipping save');
-        console.warn('📺 DEBUG: Save blocked - currentSegmentId:', stateToSave.currentSegmentId, 'full state:', stateToSave);
-        return;
-      }
-      
-      console.log('📺 Simple: Saving showcaller state with currentSegmentId:', stateToSave.currentSegmentId);
+      // FIXED: Allow saving null currentSegmentId to preserve "no position" state
+      console.log('📺 Simple: Saving showcaller state with currentSegmentId:', stateToSave.currentSegmentId || 'null (no position)');
       
       const showcallerState = {
-        currentSegmentId: stateToSave.currentSegmentId,
+        currentSegmentId: stateToSave.currentSegmentId, // Allow null for "no position"
         isPlaying: stateToSave.isPlaying,
         timeRemaining: stateToSave.timeRemaining,
         controllerId: stateToSave.controllerId,
