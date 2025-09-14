@@ -52,7 +52,7 @@ const Changelog: React.FC = () => {
                           Zoom controls for better rundown navigation
                         </p>
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 flex flex-col justify-center">
                         <img 
                           src="/src/assets/who_is_editing.png"
                           alt="Live user presence showing who is editing the rundown"
