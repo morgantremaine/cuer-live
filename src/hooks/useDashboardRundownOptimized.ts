@@ -36,10 +36,36 @@ export const useDashboardRundownOptimized = ({
   const handleRundownUpdate = useCallback((payload: { new: PartialRundownUpdate }) => {
     const updatedData = payload.new;
     
+    console.log('🎯 DEBUG: Dashboard received realtime update', {
+      rundownId: updatedData.id,
+      hasUpdatedAt: !!updatedData.updated_at,
+      hasLastUpdatedBy: !!updatedData.last_updated_by,
+      updatedAtValue: updatedData.updated_at,
+      lastUpdatedByValue: updatedData.last_updated_by
+    });
+    
     // Find the current rundown to merge with
     const currentRundown = rundownsRef.current.find(r => r.id === updatedData.id);
     if (!currentRundown) {
       console.log('🎯 Dashboard: Rundown not found for update:', updatedData.id);
+      return;
+    }
+
+    // CRITICAL FIX: Only update if the timestamp actually changed significantly
+    const currentTimestamp = new Date(currentRundown.updated_at).getTime();
+    const newTimestamp = new Date(updatedData.updated_at).getTime();
+    const timeDifference = newTimestamp - currentTimestamp;
+    
+    console.log('🎯 DEBUG: Timestamp comparison', {
+      currentTimestamp: currentRundown.updated_at,
+      newTimestamp: updatedData.updated_at,
+      timeDifferenceMs: timeDifference,
+      willUpdate: timeDifference > 1000 // Only update if more than 1 second difference
+    });
+    
+    // Only update dashboard if timestamp changed by more than 1 second (real change)
+    if (timeDifference < 1000) {
+      console.log('🎯 DEBUG: Ignoring realtime update - timestamp too similar (likely background save)');
       return;
     }
 
