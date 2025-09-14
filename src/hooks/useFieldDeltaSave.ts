@@ -5,6 +5,25 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { registerRecentSave } from './useRundownResumption';
 import { getTabId } from '@/utils/tabUtils';
 
+// Add global logging for ALL rundowns table updates
+const originalUpdate = supabase.from('rundowns').update;
+if (originalUpdate) {
+  supabase.from = ((tableName: string) => {
+    const table = supabase.constructor.prototype.from.call(supabase, tableName);
+    if (tableName === 'rundowns') {
+      const originalTableUpdate = table.update;
+      table.update = function(updateData: any) {
+        console.log('🚨 RUNDOWNS UPDATE DETECTED!', {
+          updateData,
+          stack: new Error().stack?.split('\n').slice(1, 6)
+        });
+        return originalTableUpdate.call(this, updateData);
+      };
+    }
+    return table;
+  }) as any;
+}
+
 // Field delta tracking for granular saves
 interface FieldDelta {
   itemId?: string;
