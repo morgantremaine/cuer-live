@@ -149,7 +149,7 @@ const LandingPage = () => {
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto glow-box relative overflow-hidden group"
               >
-                <span className="relative z-10">Get Started</span>
+                <span className="relative z-10">Get Started for Free</span>
                 <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
                 <div className="absolute inset-0 shimmer"></div>
               </Button>
