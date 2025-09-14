@@ -145,15 +145,6 @@ const LandingPage = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center fade-up">
               <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate('/demo')}
-                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
-              >
-                <Eye className="mr-2 h-5 w-5" />
-                Try Demo
-              </Button>
-              <Button 
                 onClick={handleGetStarted}
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto glow-box relative overflow-hidden group"
@@ -161,6 +152,15 @@ const LandingPage = () => {
                 <span className="relative z-10">Get Started for Free</span>
                 <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
                 <div className="absolute inset-0 shimmer"></div>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => navigate('/demo')}
+                className="border-slate-300/30 text-white hover:bg-slate-700/50 text-lg px-8 py-4 h-auto glow-box"
+              >
+                <Eye className="mr-2 h-5 w-5" />
+                Try Demo
               </Button>
             </div>
 
@@ -181,7 +181,7 @@ const LandingPage = () => {
       </div>
 
       {/* Features Grid */}
-      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24 -mt-12">
+      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
             Everything you need for 
