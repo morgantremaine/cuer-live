@@ -92,9 +92,13 @@ const Dashboard = () => {
 
   // Track when data has been loaded for the first time
   useEffect(() => {
-    if (!loading && !teamLoading && !hasInitiallyLoaded && user) {
-      // Mark as initially loaded even if there's no team yet (for new users)
-      console.log('Dashboard: Marking as initially loaded - user:', !!user, 'teamId:', !!teamId, 'loading:', loading, 'teamLoading:', teamLoading);
+    // Wait for all essential data: user, team (if needed), and rundowns to be loaded
+    const userReady = !!user;
+    const teamReady = !teamLoading; // Team loading is complete
+    const rundownsReady = !loading; // Rundowns loading is complete
+    
+    if (userReady && teamReady && rundownsReady && !hasInitiallyLoaded) {
+      console.log('Dashboard: Marking as initially loaded - user:', userReady, 'teamReady:', teamReady, 'rundownsReady:', rundownsReady);
       setHasInitiallyLoaded(true);
     }
   }, [loading, teamLoading, hasInitiallyLoaded, user]);
@@ -350,9 +354,9 @@ const Dashboard = () => {
   // On mobile, when sidebar is expanded, hide main content
   const showMainContent = !isMobile || sidebarCollapsed;
 
-  // Show loading skeleton if we haven't loaded data yet OR if actively loading
-  // Also wait for rundowns to be loaded if we have any in the database
-  const shouldShowLoadingSkeleton = !hasInitiallyLoaded || loading || teamLoading;
+  // Show loading skeleton until all data is completely loaded
+  // This prevents the brief "no rundowns" flash before rundowns are loaded
+  const shouldShowLoadingSkeleton = !hasInitiallyLoaded;
 
   if (shouldShowLoadingSkeleton) {
     return (
