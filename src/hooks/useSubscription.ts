@@ -203,23 +203,24 @@ export const useSubscription = () => {
     }
   }, [user, toast]);
 
-  // Load subscription data when user changes
+  // Load subscription data when user changes - with strict change detection
   useEffect(() => {
-    if (user?.id && user.id !== loadedUserRef.current) {
+    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
       console.log('🔄 useSubscription: Loading subscription data for user change:', user.id);
       checkSubscription();
-    } else if (!user?.id) {
+    } else if (!user?.id && loadedUserRef.current) {
       console.log('🔄 useSubscription: Clearing subscription data (no user)');
       setStatus(prev => ({ ...prev, loading: false }));
       loadedUserRef.current = null;
+      isLoadingRef.current = false;
     }
     
     // Check for subscription success in URL params (after Stripe redirect)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('subscription') === 'success') {
+    if (urlParams.get('subscription') === 'success' && user?.id && !isLoadingRef.current) {
       // Wait a moment for Stripe to process, then check subscription
       setTimeout(() => {
-        if (user?.id) {
+        if (user?.id && !isLoadingRef.current) {
           loadedUserRef.current = null; // Reset to force reload
           checkSubscription();
         }

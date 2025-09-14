@@ -43,6 +43,17 @@ export const useDashboardRundownOptimized = ({
       return;
     }
 
+    // CRITICAL: Only update if the timestamp actually changed significantly
+    const currentTimestamp = new Date(currentRundown.updated_at).getTime();
+    const newTimestamp = new Date(updatedData.updated_at).getTime();
+    const timeDifference = newTimestamp - currentTimestamp;
+    
+    // Only update dashboard if timestamp changed by more than 2 seconds (real change)
+    if (timeDifference < 2000) {
+      console.log('🎯 Dashboard: Ignoring realtime update - timestamp too similar (likely view/access action)');
+      return;
+    }
+
     // Create updated rundown by merging relevant fields
     const updatedRundown: SavedRundown = {
       ...currentRundown,
@@ -57,15 +68,16 @@ export const useDashboardRundownOptimized = ({
       id: updatedData.id,
       title: updatedData.title,
       itemCount: updatedData.items?.length,
-      updatedBy: updatedData.last_updated_by
+      updatedBy: updatedData.last_updated_by,
+      timeDifferenceMs: timeDifference
     });
 
     onRundownUpdate(updatedRundown);
   }, [onRundownUpdate]);
 
-  // Set up individual subscriptions for each rundown (more efficient than bulk filter)
+  // Set up individual subscriptions for each rundown (more efficient than bulk filter) - with stability checks
   useEffect(() => {
-    if (!enabled || !user || rundowns.length === 0) {
+    if (!enabled || !user) {
       console.log('🎯 Dashboard: Realtime subscription not ready:', { 
         enabled, 
         user: !!user, 
@@ -73,12 +85,16 @@ export const useDashboardRundownOptimized = ({
       });
       
       // Clean up if disabled
-      subscriptionsRef.current.forEach((channel, rundownId) => {
-        console.log('🎯 Dashboard: Cleaning up subscription for:', rundownId);
+      subscriptionsRef.current.forEach((channel) => {
         supabase.removeChannel(channel);
       });
       subscriptionsRef.current.clear();
       setConnectedCount(0);
+      return;
+    }
+
+    // Skip if no rundowns yet (still loading)
+    if (rundowns.length === 0) {
       return;
     }
 
@@ -158,7 +174,7 @@ export const useDashboardRundownOptimized = ({
       subscriptionsRef.current.clear();
       setConnectedCount(0);
     };
-  }, [enabled, user?.id, rundowns.length, JSON.stringify(rundowns.map(r => r.id).sort())]);
+  }, [enabled, user?.id, rundowns.map(r => r.id).join(',')]); // Simplified dependency to prevent churn
 
   return {
     isConnected: connectedCount > 0,

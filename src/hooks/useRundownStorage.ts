@@ -42,7 +42,7 @@ export const useRundownStorage = () => {
   const lastLoadedUserRef = useRef<string | null>(null);
   const lastLoadedTeamRef = useRef<string | null>(null);
 
-  // Debounced load function
+  // Debounced load function - with better stability checks
   const debouncedLoadRundowns = useCallback(async () => {
     if (!user || isLoadingRef.current) {
       return;
@@ -59,7 +59,8 @@ export const useRundownStorage = () => {
     // Check if we already loaded for this user/team combination
     const currentKey = `${user.id}-${teamId}`;
     const lastKey = `${lastLoadedUserRef.current}-${lastLoadedTeamRef.current}`;
-    if (currentKey === lastKey) {
+    if (currentKey === lastKey && savedRundowns.length > 0) {
+      // Already loaded and we have data - no need to reload
       return;
     }
 
@@ -68,7 +69,8 @@ export const useRundownStorage = () => {
       clearTimer(loadTimeoutRef.current);
     }
 
-    // Set a debounce timeout
+    // Set a debounce timeout - but if we have no data, load faster
+    const debounceDelay = savedRundowns.length === 0 ? 100 : 300;
     loadTimeoutRef.current = setManagedTimeout(async () => {
       if (isLoadingRef.current) return;
       
@@ -102,8 +104,8 @@ export const useRundownStorage = () => {
         setLoading(false);
         isLoadingRef.current = false;
       }
-    }, 300); // Increased debounce timeout
-  }, [user, teamId, setManagedTimeout, clearTimer]);
+    }, debounceDelay);
+  }, [user, teamId, savedRundowns.length, setManagedTimeout, clearTimer]);
 
   // Load rundowns when user or team changes
   useEffect(() => {

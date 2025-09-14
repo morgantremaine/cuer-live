@@ -79,10 +79,10 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Mark as loaded once we have ACTUAL rundowns data and user/team are ready
+  // Mark as loaded once we have ACTUAL rundowns data and user/team are ready - with debounce
   useEffect(() => {
-    // We need user, teamId, and either rundowns data OR explicit loading state
-    const hasValidState = user && teamId && (!loading || savedRundowns.length > 0);
+    // We need user, teamId, and stable loading state
+    const hasValidState = user && teamId && !loading;
     
     console.log('🔍 Dashboard loading check:', { 
       user: !!user, 
@@ -93,12 +93,17 @@ const Dashboard = () => {
       initialDataLoaded 
     });
     
-    // Only mark as loaded if we have a valid state (not loading) AND either have data or confirmed empty
+    // Only mark as loaded if we have a stable valid state AND we haven't already marked it
     if (hasValidState && !initialDataLoaded) {
-      console.log('✅ Setting initial data as loaded');
-      setInitialDataLoaded(true);
+      // Use a small timeout to prevent flashing when data loads immediately
+      const timeoutId = setTimeout(() => {
+        console.log('✅ Setting initial data as loaded');
+        setInitialDataLoaded(true);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [user, teamId, savedRundowns.length, loading, initialDataLoaded]);
+  }, [user, teamId, loading, initialDataLoaded]); // Removed savedRundowns.length to prevent churn
 
   // Reset loading state when user changes
   useEffect(() => {
