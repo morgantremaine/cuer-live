@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface SharedRundownLayout {
   id: string;
@@ -34,7 +33,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
 
   // Load current shared layout for rundown
   const loadSharedLayout = useCallback(async () => {
-    if (!rundownId || rundownId === DEMO_RUNDOWN_ID) {
+    if (!rundownId) {
       setIsLoading(false);
       return;
     }
@@ -137,7 +136,7 @@ export const useSharedRundownLayout = (rundownId: string | null) => {
 
   // Update shared layout
   const updateSharedLayout = useCallback(async (layoutId: string | null) => {
-    if (!rundownId || !user?.id || rundownId === DEMO_RUNDOWN_ID) return;
+    if (!rundownId || !user?.id) return;
 
     try {
       const { error } = await supabase

@@ -1,7 +1,6 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface UseShowcallerInitialStateProps {
   rundownId: string | null;
@@ -19,12 +18,7 @@ export const useShowcallerInitialState = ({
   const loadedRundownRef = useRef<string | null>(null);
 
   const loadInitialState = useCallback(async () => {
-    if (!rundownId || isLoadingRef.current || rundownId === DEMO_RUNDOWN_ID) {
-      if (rundownId === DEMO_RUNDOWN_ID) {
-        console.log('📺 Skipping showcaller state load for demo rundown');
-        hasLoadedRef.current = true;
-        loadedRundownRef.current = rundownId;
-      }
+    if (!rundownId || isLoadingRef.current) {
       return;
     }
 

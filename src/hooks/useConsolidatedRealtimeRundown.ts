@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -447,13 +446,6 @@ export const useConsolidatedRealtimeRundown = ({
   useEffect(() => {
     // For shared views, allow subscription without authentication
     if (!rundownId || (!user && !isSharedView) || !enabled) {
-      return;
-    }
-
-    // Skip realtime for demo rundown
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      console.log('📋 Skipping realtime subscription for demo rundown');
-      setIsConnected(false);
       return;
     }
 

@@ -1,6 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 
-export const DEMO_RUNDOWN_ID = 'demo-rundown-2024'; // Special demo ID - not a UUID
+export const DEMO_RUNDOWN_ID = 'demo-rundown-2024';
 
 export const DEMO_RUNDOWN_DATA = {
   id: DEMO_RUNDOWN_ID,
