@@ -75,11 +75,14 @@ const PLANS = [
 ];
 
 const getFeatureIcon = (feature: string) => {
-  if (feature.includes('team members')) {
+  if (feature.includes('team members') || feature.includes('team member')) {
     return <UserPlus className="w-4 h-4 text-blue-500" />;
   }
   if (feature.includes('Unlimited rundowns')) {
     return <Infinity className="w-4 h-4 text-purple-500" />;
+  }
+  if (feature.includes('3 rundowns')) {
+    return <Infinity className="w-4 h-4 text-teal-500" />;
   }
   if (feature.includes('Real-time collaboration')) {
     return <Zap className="w-4 h-4 text-yellow-500" />;
@@ -87,7 +90,10 @@ const getFeatureIcon = (feature: string) => {
   if (feature.includes('Advanced features')) {
     return <Crown className="w-4 h-4 text-orange-500" />;
   }
-  if (feature.includes('AI helper')) {
+  if (feature.includes('Basic features')) {
+    return <Crown className="w-4 h-4 text-slate-500" />;
+  }
+  if (feature.includes('AI Assistant') || feature.includes('AI helper')) {
     return <Bot className="w-4 h-4 text-green-500" />;
   }
   if (feature.includes('Priority support')) {
