@@ -85,6 +85,15 @@ export const useSimpleAutoSave = (
     return createContentSignatureFromState(state);
   }, [state]);
 
+  // Set initial load cooldown to prevent false attribution
+  useEffect(() => {
+    if (isInitiallyLoaded) {
+      // Prevent saves for 3 seconds after initial load to avoid false attribution
+      initialLoadCooldownRef.current = Date.now() + 3000;
+      console.log('🔒 Initial load cooldown set - saves blocked for 3 seconds');
+    }
+  }, [isInitiallyLoaded]);
+
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
   const SIGNATURE_CACHE_TTL = 1000; // FIXED: Reduced from 5000ms to 1000ms for better edit responsiveness
@@ -292,6 +301,12 @@ export const useSimpleAutoSave = (
     recentKeystrokes.current = now;
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
+    // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
+    if (initialLoadCooldownRef.current > now) {
+      initialLoadCooldownRef.current = 0;
+      console.log('🔓 Initial load cooldown cleared - user is actively typing');
+    }
+    
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
       debugLogger.autosave('AutoSave: local edit detected - re-enabling saves');
@@ -408,6 +423,13 @@ export const useSimpleAutoSave = (
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
+      return;
+    }
+
+    // CRITICAL: Prevent saves during initial load period to avoid false attribution
+    if (initialLoadCooldownRef.current > Date.now()) {
+      debugLogger.autosave('Save blocked: initial load cooldown active');
+      console.log('🛑 AutoSave: blocked - initial load cooldown active');
       return;
     }
 
