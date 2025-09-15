@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
 import RundownHeaderSection from './RundownHeaderSection';
 import RundownMainContent from './RundownMainContent';
 import RealtimeStatusIndicator from './RealtimeStatusIndicator';
@@ -111,6 +112,33 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   // Calculate current segment name for RundownMainContent
   const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
 
+  // Move item up/down handlers for mobile context menu
+  const handleMoveItemUp = (index: number) => {
+    if (index > 0 && items) {
+      // Create a synthetic drag event to move item up
+      const fromIndex = index;
+      const toIndex = index - 1;
+      
+      // Create mock drag events to trigger existing reorder logic
+      const mockDragEvent = new Event('drag') as any;
+      onDragStart(mockDragEvent, fromIndex);
+      onDrop(mockDragEvent, toIndex);
+    }
+  };
+
+  const handleMoveItemDown = (index: number) => {
+    if (index < (items?.length || 0) - 1 && items) {
+      // Create a synthetic drag event to move item down
+      const fromIndex = index;
+      const toIndex = index + 1;
+      
+      // Create mock drag events to trigger existing reorder logic
+      const mockDragEvent = new Event('drag') as any;
+      onDragStart(mockDragEvent, fromIndex);
+      onDrop(mockDragEvent, toIndex);
+    }
+  };
+
   // Function to manually scroll to current segment (matches autoscroll behavior)
   const handleJumpToCurrentSegment = () => {
     if (!currentSegmentId) return;
@@ -218,6 +246,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
           totalDuration={totalRuntime}
           savedLayouts={savedLayouts}
           layoutOperations={layoutOperations}
+          onMoveItemUp={handleMoveItemUp}
+          onMoveItemDown={handleMoveItemDown}
         />
       </div>
       
