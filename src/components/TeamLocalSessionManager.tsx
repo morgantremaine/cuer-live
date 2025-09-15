@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Copy, QrCode, Users, Wifi, WifiOff, Play, Square, Shield, AlertTriangle, FileText, Monitor, Smartphone } from 'lucide-react';
+import { Copy, QrCode, Users, Wifi, WifiOff, Play, Square, Shield, AlertTriangle, FileText, Monitor } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTeam } from '@/hooks/useTeam';
 import { supabase } from '@/integrations/supabase/client';
@@ -424,61 +424,47 @@ const TeamLocalSessionManager = () => {
             </div>
           )}
           
-          {/* Download Native App Section */}
+          {/* Start Local Host Section */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                <Monitor className="h-6 w-6 text-blue-600" />
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
+                <Monitor className="h-6 w-6 text-green-600" />
               </div>
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Run as Local Host
+                  Start Local Host Server
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Download the native Cuer app to run as a dedicated local collaboration server. 
-                  Perfect for venues, studios, or offices that need reliable offline sync.
+                  Launch a local collaboration server on your computer. Perfect for offline collaboration
+                  when internet is unreliable or unavailable.
                 </p>
                 
-                <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      // In production, these would link to actual app store pages or downloads
-                      toast({
-                        title: "Download Info",
-                        description: "Export your project to build native apps using Capacitor. See instructions below.",
-                      });
-                    }}
-                  >
-                    <Smartphone className="h-4 w-4 mr-2" />
-                    Mobile App
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      toast({
-                        title: "Desktop App",
-                        description: "Use the mobile app on tablets or build desktop version with Capacitor + Electron.",
-                      });
-                    }}
-                  >
-                    <Monitor className="h-4 w-4 mr-2" />
-                    Desktop App
-                  </Button>
-                </div>
+                <Button 
+                  size="lg"
+                  onClick={() => {
+                    // Open the local host interface in a new tab
+                    const localHostUrl = 'http://localhost:5173/#/host-mode';
+                    window.open(localHostUrl, '_blank');
+                    toast({
+                      title: "Local Host Started",
+                      description: "Opening local host interface in new tab. If it doesn't load, make sure the local server is running.",
+                    });
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Local Host
+                </Button>
                 
-                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    Build Instructions:
+                <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-2">
+                    📋 Quick Setup (First Time Only):
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                    <div>1. Export project to GitHub using the "Export to GitHub" button</div>
-                    <div>2. Clone and run: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">npm install</code></div>
-                    <div>3. Add platform: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">npx cap add ios/android</code></div>
-                    <div>4. Build: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">npm run build && npx cap sync</code></div>
-                    <div>5. Run: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">npx cap run ios/android</code></div>
+                  <div className="text-xs text-amber-700 dark:text-amber-200 space-y-1">
+                    <div>1. Download the Cuer Local Host from your admin</div>
+                    <div>2. Extract and run: <code className="bg-amber-100 dark:bg-amber-900 px-1 rounded">cuer-local.exe</code></div>
+                    <div>3. Click "Start Local Host" above to begin hosting</div>
+                    <div>4. Share the generated PIN with your team members</div>
                   </div>
                 </div>
               </div>
