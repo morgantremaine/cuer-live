@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import CuerChatPanel from './CuerChatPanel';
 import { useDraggable } from '@/hooks/useDraggable';
@@ -11,21 +11,41 @@ interface CuerChatButtonProps {
 
 const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const hasInitialized = useRef(false);
+  const lastViewportSize = useRef({ width: window.innerWidth, height: window.innerHeight });
   
   const { position, isDragging, dragRef, startDrag, handleClick, resetToBottomRight } = useDraggable({
     initialPosition: { x: window.innerWidth - 120, y: window.innerHeight - 80 },
     storageKey: 'cuerChatButtonPosition'
   });
 
-  // Reset position when rundown data changes (when a rundown is opened)
+  // Reset position only on initial rundown load (not on every data change)
   useEffect(() => {
-    if (rundownData) {
-      // Small delay to ensure DOM is updated
+    if (rundownData && !hasInitialized.current) {
+      hasInitialized.current = true;
       setTimeout(() => {
         resetToBottomRight();
       }, 100);
     }
   }, [rundownData, resetToBottomRight]);
+
+  // Reset position on viewport changes
+  useEffect(() => {
+    const handleResize = () => {
+      const currentViewport = { width: window.innerWidth, height: window.innerHeight };
+      const lastViewport = lastViewportSize.current;
+      
+      // Only reset if viewport changed significantly (more than 50px in either dimension)
+      if (Math.abs(currentViewport.width - lastViewport.width) > 50 || 
+          Math.abs(currentViewport.height - lastViewport.height) > 50) {
+        resetToBottomRight();
+        lastViewportSize.current = currentViewport;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [resetToBottomRight]);
 
   return (
     <>
