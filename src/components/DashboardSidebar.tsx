@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useRundownFolders, RundownFolder } from '@/hooks/useRundownFolders';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DashboardSidebarProps {
   selectedFolder: string | null;
@@ -67,6 +68,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   searchQuery,
   onSearchChange
 }) => {
+  const isMobile = useIsMobile();
   const { folders, createFolder, updateFolder, deleteFolder, reorderFolders } = useRundownFolders(teamId);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -277,7 +279,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-slate-950 border-r border-gray-700 flex flex-col">
+    <div className={`${isMobile ? 'fixed inset-0 z-50 w-full' : 'w-64'} bg-slate-950 border-r border-gray-700 flex flex-col`}>
       {/* Header with Search */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <div className="flex-1 mr-2">

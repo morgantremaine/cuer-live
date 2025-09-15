@@ -61,8 +61,8 @@ const Dashboard = () => {
   // Simple loading state - show skeleton until we have actual rundown data
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   
-  // Sidebar state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar state - collapsed by default on mobile
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [folderType, setFolderType] = useState<'all' | 'recent' | 'archived' | 'custom'>('recent');
   
