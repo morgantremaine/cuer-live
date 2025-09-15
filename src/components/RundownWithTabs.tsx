@@ -54,7 +54,7 @@ const RundownWithTabs = () => {
 
   return (
     <CellUpdateProvider>
-      <div className="min-h-screen">
+      <div className="h-screen overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
           {/* Hidden tabs list - navigation happens through other UI elements */}
           <TabsList className="hidden">
