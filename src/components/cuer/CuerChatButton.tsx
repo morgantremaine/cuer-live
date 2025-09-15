@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CuerChatPanel from './CuerChatPanel';
@@ -13,10 +13,20 @@ interface CuerChatButtonProps {
 const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  const { position, isDragging, dragRef, startDrag, handleClick } = useDraggable({
+  const { position, isDragging, dragRef, startDrag, handleClick, resetToBottomRight } = useDraggable({
     initialPosition: { x: window.innerWidth - 120, y: window.innerHeight - 80 },
     storageKey: 'cuerChatButtonPosition'
   });
+
+  // Reset position when rundown data changes (when a rundown is opened)
+  useEffect(() => {
+    if (rundownData) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        resetToBottomRight();
+      }, 100);
+    }
+  }, [rundownData, resetToBottomRight]);
 
   return (
     <>

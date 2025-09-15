@@ -143,12 +143,26 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     };
   }, [hasMoved]);
 
+  // Function to reset position to bottom-right of viewport
+  const resetToBottomRight = useCallback(() => {
+    if (dragRef.current) {
+      const rect = dragRef.current.getBoundingClientRect();
+      const newPosition = {
+        x: window.innerWidth - rect.width - 20,
+        y: window.innerHeight - rect.height - 20
+      };
+      const constrainedPosition = constrainToViewport(newPosition, rect.width, rect.height);
+      setPosition(constrainedPosition);
+    }
+  }, [constrainToViewport]);
+
   return {
     position,
     isDragging,
     dragRef,
     startDrag,
     handleClick,
-    hasMoved
+    hasMoved,
+    resetToBottomRight
   };
 };
