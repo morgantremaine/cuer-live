@@ -292,27 +292,34 @@ const RundownHeader = ({
   if (isMobile) {
     return (
       <div className="p-3 bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        {/* Top row - Title only */}
+        {/* Top row - Mobile logo and title */}
         <div className="mb-3">
-          <div className="flex-1 min-w-0">
-            {isEditingTitle ? (
-              <Input
-                value={title}
-                onChange={(e) => onTitleChange(e.target.value)}
-                onBlur={handleTitleSubmit}
-                onKeyDown={handleTitleKeyPress}
-                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-                placeholder="Untitled Rundown"
-                autoFocus
-              />
-            ) : (
-              <span 
-                onClick={handleTitleEdit}
-                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
-              >
-                {title || "Untitled Rundown"}
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <img 
+              src="/uploads/logos/cuer-mobile-logo.png" 
+              alt="Cuer" 
+              className="h-6 w-6 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              {isEditingTitle ? (
+                <Input
+                  value={title}
+                  onChange={(e) => onTitleChange(e.target.value)}
+                  onBlur={handleTitleSubmit}
+                  onKeyDown={handleTitleKeyPress}
+                  className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+                  placeholder="Untitled Rundown"
+                  autoFocus
+                />
+              ) : (
+                <span 
+                  onClick={handleTitleEdit}
+                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
+                >
+                  {title || "Untitled Rundown"}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
