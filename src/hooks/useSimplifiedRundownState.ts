@@ -1134,7 +1134,8 @@ export const useSimplifiedRundownState = () => {
               user_id: userData.user.id,
               team_id: teamData.team_id,
               folder_id: folderId,
-              archived: false
+              archived: false,
+              show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format
             })
             .select()
             .single();
