@@ -48,39 +48,33 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        // Get the viewport directly - no scrollIntoView to prevent document scrolling
-        const viewport = scrollContainer;
-        
-        // Verify this is actually the Radix scroll viewport, not a document-level container
-        if (!viewport.hasAttribute('data-radix-scroll-area-viewport') && 
-            !viewport.classList.contains('rundown-body-scroll-target')) {
-          console.warn('🔄 useRundownAutoscroll: Invalid scroll container detected, aborting autoscroll');
-          return;
-        }
+        // Simple approach: center first, then offset
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
 
-        // Additional safety check - ensure viewport is not document-level
-        if (viewport === document.documentElement || 
-            viewport === document.body ||
-            viewport.classList.contains('h-screen') ||
-            viewport.classList.contains('h-full') ||
-            viewport.tagName === 'HTML' ||
-            viewport.tagName === 'BODY') {
-          console.warn('🔄 useRundownAutoscroll: Detected document-level scroll target, aborting to prevent header movement');
-          return;
-        }
+        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
+              || scrollContainer;
 
-        // Calculate scroll position manually without using scrollIntoView
-        const viewportRect = viewport.getBoundingClientRect();
-        const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
 
-        // Desired position: 1/4 down from the top of the viewport
-        const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-        const offsetNeeded = elementRect.top - desiredTop;
+            // Desired position: 1/4 down from the top of the viewport
+            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+            const offsetNeeded = elementRect.top - desiredTop;
 
-        // Only scroll if there's a meaningful difference
-        if (Math.abs(offsetNeeded) > 10) {
-          viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-        }
+            if (Math.abs(offsetNeeded) > 4) {
+              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+            }
+          });
+        });
 
         lastScrolledSegmentRef.current = currentSegmentId;
       }
