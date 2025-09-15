@@ -6,27 +6,7 @@ import { useAuth } from './useAuth';
 import { useTeamId } from './useTeamId';
 import { useSubscription } from './useSubscription';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
-
-interface SavedRundown {
-  id: string;
-  title: string;
-  items: RundownItem[];
-  created_at: string;
-  updated_at: string;
-  archived: boolean;
-  folder_id?: string;
-  user_id: string;
-  team_id: string;
-  columns?: any;
-  timezone?: string;
-  start_time?: string;
-  icon?: string | null;
-  visibility?: string;
-  undo_history?: any[];
-  teams?: any;
-  creator_profile?: any;
-  last_updated_by?: string | null;
-}
+import { SavedRundown } from './useRundownStorage/types';
 
 export const useRundownStorage = () => {
   const { user } = useAuth();
@@ -183,7 +163,8 @@ export const useRundownStorage = () => {
         team_id: teamId,
         folder_id: folderId,
         archived: false,
-        last_updated_by: user.id
+        last_updated_by: user.id,
+        show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format
       })
       .select()
       .single();
@@ -214,7 +195,8 @@ export const useRundownStorage = () => {
         timezone: rundown.timezone,
         start_time: rundown.start_time,
         archived: false,
-        last_updated_by: user.id
+        last_updated_by: user.id,
+        show_date: rundown.show_date || new Date().toISOString().split('T')[0] // Set current date if not provided
       })
       .select()
       .single();
