@@ -663,9 +663,6 @@ const RundownIndexContent = () => {
           markAsChanged: coreState.markAsChanged
         }}
       />
-      
-      {/* Enhanced Transport Status Bar */}
-      <TransportStatusBar />
     </RealtimeConnectionProvider>
   );
 };
