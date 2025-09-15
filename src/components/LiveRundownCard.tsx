@@ -79,7 +79,9 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
 
   const formatDate = (dateString: string) => {
     if (!dateString || dateString.trim() === '') return null;
-    const date = new Date(dateString + 'T00:00:00');
+    
+    // Check if it's already a full timestamp (updated_at) or just a date (show_date)
+    const date = dateString.includes('T') ? new Date(dateString) : new Date(dateString + 'T00:00:00');
     return !isNaN(date.getTime()) ? date.toLocaleDateString() : null;
   };
 
