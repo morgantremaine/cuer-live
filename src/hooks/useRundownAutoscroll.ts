@@ -55,13 +55,43 @@ export const useRundownAutoscroll = ({
           inline: 'nearest'
         });
 
-        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
+        // After scroll starts, schedule a single offset to place at 1/4 down in the scroll viewport
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
-              || scrollContainer;
+            // Find the proper scroll viewport - be more specific for mobile/tablet
+            let viewport: HTMLElement | null = null;
+            
+            // First try to find Radix UI scroll area viewport
+            viewport = scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+            
+            // If not found, try other common viewport selectors
+            if (!viewport) {
+              viewport = scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement;
+            }
+            
+            if (!viewport) {
+              viewport = scrollContainer.querySelector('.scroll-viewport') as HTMLElement;
+            }
+            
+            // As a last resort, check if scrollContainer itself is the viewport
+            // but ONLY if it has overflow properties indicating it's a scroll container
+            if (!viewport) {
+              const computedStyle = getComputedStyle(scrollContainer);
+              const hasOverflow = computedStyle.overflow === 'auto' || 
+                                computedStyle.overflow === 'scroll' ||
+                                computedStyle.overflowY === 'auto' || 
+                                computedStyle.overflowY === 'scroll';
+              
+              if (hasOverflow) {
+                viewport = scrollContainer;
+              }
+            }
+            
+            // If we still don't have a proper viewport, abort to prevent scrolling wrong container
+            if (!viewport) {
+              console.warn('🔄 useRundownAutoscroll: Could not find proper scroll viewport, aborting offset scroll');
+              return;
+            }
 
             const viewportRect = viewport.getBoundingClientRect();
             const elementRect = (targetElement as HTMLElement).getBoundingClientRect();

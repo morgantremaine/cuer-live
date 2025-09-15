@@ -1,4 +1,40 @@
 
+/* Mobile and tablet specific fixes */
+html, body {
+  height: 100%;
+  /* Prevent document-level bouncing/overscroll on mobile */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure the root container takes full height and prevents unintended scroll */
+#root {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+/* iOS Safari specific fixes to prevent bounce scrolling on the main viewport */
+body {
+  /* Prevent pull-to-refresh and overscroll bounce */
+  overscroll-behavior-y: none;
+  -webkit-overscroll-behavior-y: none;
+  /* Ensure touch scrolling works properly */
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+}
+
+/* Re-enable proper scrolling for designated scroll containers */
+[data-radix-scroll-area-viewport],
+[data-scroll-viewport],
+.scroll-viewport {
+  -webkit-overflow-scrolling: touch;
+  overflow: auto !important;
+  touch-action: pan-y;
+  /* Allow momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
