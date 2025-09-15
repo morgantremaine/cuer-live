@@ -140,20 +140,17 @@ const MobileToolbar = ({
 
           {/* Autoscroll toggle on toolbar */}
           {onToggleAutoScroll && (
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onJumpToCurrentSegment}
-                title="Jump to current segment"
-                className="h-8 w-8 p-0"
-              >
-                <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
-              </Button>
+            <div 
+              className="flex items-center space-x-1.5 px-2 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer h-9"
+              onClick={onJumpToCurrentSegment}
+              title="Jump to current segment"
+            >
+              <MapPin className={`h-3.5 w-3.5 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
               <Switch
                 checked={autoScrollEnabled}
                 onCheckedChange={handleToggleAutoScroll}
                 className="scale-75"
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
           )}
