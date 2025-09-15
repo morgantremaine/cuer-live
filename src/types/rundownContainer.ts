@@ -105,4 +105,6 @@ export interface RundownContainerProps {
   isHeaderCollapsed: (headerId: string) => boolean;
   getHeaderGroupItemIds: (headerId: string) => string[];
   visibleItems: RundownItem[];
+  onMoveItemUp?: (index: number) => void;
+  onMoveItemDown?: (index: number) => void;
 }

@@ -7,6 +7,7 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
+import { arrayMove } from '@dnd-kit/sortable';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
@@ -111,6 +112,27 @@ export const useRundownStateCoordination = () => {
       persistedState.addHeaderAtIndex(insertIndex);
     } else {
       persistedState.addHeader();
+    }
+  };
+
+  // Add move up/down functions for mobile context menu
+  const moveItemUp = (index: number) => {
+    console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
+    if (index > 0) {
+      const currentItems = performanceOptimization.calculatedItems;
+      const newItems = arrayMove(currentItems, index, index - 1);
+      console.log('🔄 Moving item from', index, 'to', index - 1);
+      persistedState.setItems(newItems);
+    }
+  };
+
+  const moveItemDown = (index: number) => {
+    const currentItems = performanceOptimization.calculatedItems;
+    console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
+    if (index < currentItems.length - 1) {
+      const newItems = arrayMove(currentItems, index, index + 1);
+      console.log('🔄 Moving item from', index, 'to', index + 1);
+      persistedState.setItems(newItems);
     }
   };
 
@@ -318,7 +340,11 @@ export const useRundownStateCoordination = () => {
       visibleItems,
       
       // Autosave typing guard
-      markActiveTyping: persistedState.markActiveTyping
+      markActiveTyping: persistedState.markActiveTyping,
+      
+      // Move functions for mobile
+      moveItemUp,
+      moveItemDown
     },
     interactions,
     uiState,

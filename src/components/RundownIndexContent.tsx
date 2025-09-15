@@ -74,7 +74,10 @@ const RundownIndexContent = () => {
     toggleHeaderCollapse,
     isHeaderCollapsed,
     getHeaderGroupItemIds,
-    visibleItems
+    visibleItems,
+    // Move functions for mobile
+    moveItemUp,
+    moveItemDown
   } = coreState;
 
   // Get team data for column deletion
@@ -633,6 +636,8 @@ const RundownIndexContent = () => {
         isHeaderCollapsed={isHeaderCollapsed}
         getHeaderGroupItemIds={getHeaderGroupItemIds}
         visibleItems={visibleItems}
+        onMoveItemUp={moveItemUp}
+        onMoveItemDown={moveItemDown}
       />
       
       {/* Floating Notes Window */}

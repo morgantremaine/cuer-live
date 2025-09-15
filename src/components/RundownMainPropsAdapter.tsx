@@ -112,30 +112,16 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   // Calculate current segment name for RundownMainContent
   const currentSegmentName = currentSegmentId ? items?.find(item => item.id === currentSegmentId)?.name || '' : '';
 
-  // Move item up/down handlers for mobile context menu
+  // Move item up/down handlers for mobile context menu - use the actual move functions from props
   const handleMoveItemUp = (index: number) => {
-    if (index > 0 && items) {
-      // Create a synthetic drag event to move item up
-      const fromIndex = index;
-      const toIndex = index - 1;
-      
-      // Create mock drag events to trigger existing reorder logic
-      const mockDragEvent = new Event('drag') as any;
-      onDragStart(mockDragEvent, fromIndex);
-      onDrop(mockDragEvent, toIndex);
+    if (props.onMoveItemUp) {
+      props.onMoveItemUp(index);
     }
   };
 
   const handleMoveItemDown = (index: number) => {
-    if (index < (items?.length || 0) - 1 && items) {
-      // Create a synthetic drag event to move item down
-      const fromIndex = index;
-      const toIndex = index + 1;
-      
-      // Create mock drag events to trigger existing reorder logic
-      const mockDragEvent = new Event('drag') as any;
-      onDragStart(mockDragEvent, fromIndex);
-      onDrop(mockDragEvent, toIndex);
+    if (props.onMoveItemDown) {
+      props.onMoveItemDown(index);
     }
   };
 
