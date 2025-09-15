@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -182,22 +182,18 @@ const RundownContent = React.memo<RundownContentProps>(({
     });
   }, [items, isHeaderCollapsed, toggleHeaderCollapse]);
 
-  // Create separate refs for different scroll behaviors
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const scrollBodyRef = useRef<HTMLDivElement>(null);
-
-  // Initialize autoscroll functionality - targets just the body content
-  const { scrollContainerRef: autoScrollRef } = useRundownAutoscroll({
+  // Initialize autoscroll functionality
+  const { scrollContainerRef } = useRundownAutoscroll({
     currentSegmentId,
     isPlaying,
     autoScrollEnabled,
     items
   });
 
-  // Initialize drag auto-scroll functionality - targets the scroll area
+  // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
   const { handleDragAutoScroll } = useDragAutoScroll({
-    scrollContainerRef: scrollAreaRef,
+    scrollContainerRef,
     isActive: isDragging
   });
 
@@ -295,7 +291,7 @@ const RundownContent = React.memo<RundownContentProps>(({
       </div>
       
       {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollAreaRef} data-rundown-table="true">
+      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
         <div className="relative">
           {/* Sticky Header - Outside of Transform */}
           <div 
@@ -340,7 +336,6 @@ const RundownContent = React.memo<RundownContentProps>(({
           
           {/* Scaled Table Body */}
           <div 
-            ref={autoScrollRef}
             className="bg-background zoom-container" 
             style={{ 
               minWidth: `${totalTableWidth}px`,

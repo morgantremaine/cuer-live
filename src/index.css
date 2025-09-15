@@ -76,17 +76,7 @@
   * {
     @apply border-border;
   }
-  html {
-    height: 100%;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-  }
   body {
-    height: 100%;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
     @apply bg-background text-foreground;
   }
 }

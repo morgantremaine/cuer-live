@@ -1125,10 +1125,6 @@ export const useSimplifiedRundownState = () => {
           // Get folder ID from location state if available
           const folderId = location.state?.folderId || null;
           
-          // Set the show_date to today's date in YYYY-MM-DD format
-          const today = new Date();
-          const showDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-          
           // Create the rundown in the database
           const { data, error } = await supabase
             .from('rundowns')
@@ -1138,7 +1134,6 @@ export const useSimplifiedRundownState = () => {
               user_id: userData.user.id,
               team_id: teamData.team_id,
               folder_id: folderId,
-              show_date: showDate,
               archived: false
             })
             .select()
@@ -1169,16 +1164,12 @@ export const useSimplifiedRundownState = () => {
         } catch (error) {
           console.error('❌ Failed to create new rundown:', error);
           // Fallback to local-only mode
-          const today = new Date();
-          const fallbackShowDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          
           actions.loadState({
             items: createDefaultRundownItems(),
             columns: [],
             title: 'Untitled Rundown',
             startTime: '09:00:00',
-            timezone: 'America/New_York',
-            showDate: fallbackShowDate
+            timezone: 'America/New_York'
           });
           setIsInitialized(true);
           setIsLoading(false);
