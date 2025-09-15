@@ -31,6 +31,9 @@ const AccountManagement = () => {
   const { toast } = useToast()
   const navigate = useNavigate()
 
+  // Check if current user has access to beta features
+  const hasBetaAccess = user?.email === 'morgan@cuer.live'
+
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
@@ -128,7 +131,7 @@ const AccountManagement = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-gray-800">
+          <TabsList className={`grid w-full ${hasBetaAccess ? 'grid-cols-6' : 'grid-cols-4'} bg-gray-800`}>
             <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Profile
             </TabsTrigger>
@@ -138,12 +141,16 @@ const AccountManagement = () => {
             <TabsTrigger value="subscription" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Subscription
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
-              Integrations (beta)
-            </TabsTrigger>
-            <TabsTrigger value="collaboration" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
-              Collaboration
-            </TabsTrigger>
+            {hasBetaAccess && (
+              <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+                Integrations (beta)
+              </TabsTrigger>
+            )}
+            {hasBetaAccess && (
+              <TabsTrigger value="collaboration" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+                Collaboration
+              </TabsTrigger>
+            )}
             <TabsTrigger value="team" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Team
             </TabsTrigger>
@@ -263,35 +270,39 @@ const AccountManagement = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="integrations">
-            {team ? (
-              <IntegrationsSettings teamId={team.id} />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Integrations</CardTitle>
-                  <CardDescription>
-                    You need to be part of a team to manage integrations
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            )}
-          </TabsContent>
+          {hasBetaAccess && (
+            <TabsContent value="integrations">
+              {team ? (
+                <IntegrationsSettings teamId={team.id} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team Integrations</CardTitle>
+                    <CardDescription>
+                      You need to be part of a team to manage integrations
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
-          <TabsContent value="collaboration">
-            {team ? (
-              <TeamLocalSessionManager />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Collaboration</CardTitle>
-                  <CardDescription>
-                    You need to be part of a team to manage local collaboration sessions
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            )}
-          </TabsContent>
+          {hasBetaAccess && (
+            <TabsContent value="collaboration">
+              {team ? (
+                <TeamLocalSessionManager />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team Collaboration</CardTitle>
+                    <CardDescription>
+                      You need to be part of a team to manage local collaboration sessions
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="team">
             <TeamManagement />
