@@ -323,6 +323,13 @@ const LandingPage = () => {
         </div>
         
         <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="group fade-up flex justify-center">
+            <img 
+              src="/uploads/mobile-rundown-mockup.png" 
+              alt="Cuer Live running on iPhone showing mobile-optimized rundown interface"
+              className="h-auto max-w-sm group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
           <div className="space-y-6">
             <h3 className="text-3xl font-bold text-white">Mobile & Tablet Ready</h3>
             <p className="text-xl text-slate-400">
@@ -346,13 +353,6 @@ const LandingPage = () => {
                 <span>No matter where your team is, everyone stays connected</span>
               </div>
             </div>
-          </div>
-          <div className="group fade-up flex justify-center">
-            <img 
-              src="/uploads/mobile-rundown-mockup.png" 
-              alt="Cuer Live running on iPhone showing mobile-optimized rundown interface"
-              className="h-auto max-w-sm rounded-3xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
           </div>
         </div>
       </div>
