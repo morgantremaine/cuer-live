@@ -322,14 +322,15 @@ const LandingPage = () => {
           </p>
         </div>
         
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="group fade-up flex justify-center">
+        <div className="flex justify-center">
+          <div className="group fade-up">
             <img 
               src="/src/assets/mobile-mockups.png" 
               alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
               className="h-auto max-w-sm group-hover:scale-[1.02] transition-all duration-500"
             />
           </div>
+        </div>
         </div>
       </div>
 
@@ -581,7 +582,6 @@ const LandingPage = () => {
         <div className="absolute top-1/2 -left-40 w-80 h-80 bg-slate-500/10 rounded-full blur-3xl floating-element" style={{ animationDelay: '2s' }}></div>
         <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl floating-element" style={{ animationDelay: '4s' }}></div>
         <div className="absolute top-1/4 left-1/3 w-60 h-60 bg-purple-500/5 rounded-full blur-2xl pulse-glow"></div>
-      </div>
       </div>
     </>
   );
