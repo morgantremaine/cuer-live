@@ -443,7 +443,6 @@ const RundownHeader = ({
           
           <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex items-center gap-2">
-              <span>Start:</span>
               <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
                 <input
                   ref={timeInputRef}
@@ -569,7 +568,6 @@ const RundownHeader = ({
           
           
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Start:</span>
             <div className="flex border border-gray-300 dark:border-gray-600 rounded overflow-hidden">
               <input
                 ref={timeInputRef}
