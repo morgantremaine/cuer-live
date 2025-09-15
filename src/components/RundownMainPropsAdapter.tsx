@@ -163,69 +163,71 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Toolbar Section */}
-      <RundownHeaderSection
-        currentTime={currentTime}
-        timezone={timezone}
-        onTimezoneChange={onTimezoneChange}
-        totalRuntime={totalRuntime}
-        onAddRow={onAddRow}
-        onAddHeader={onAddHeader}
-         onShowColumnManager={() => setShowColumnManager(true)}
-        selectedCount={selectedCount}
-        hasClipboardData={hasClipboardData}
-        onCopySelectedRows={onCopySelectedRows}
-        onPasteRows={onPasteRows}
-        onDeleteSelectedRows={onDeleteSelectedRows}
-        onClearSelection={onClearSelection}
-        selectedRowId={selectedRowId}
-        isPlaying={isPlaying}
-        currentSegmentId={currentSegmentId}
-        timeRemaining={timeRemaining}
-        onPlay={onPlay}
-        onPause={onPause}
-        onForward={onForward}
-        onBackward={onBackward}
-        onReset={onReset}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
-        rundownTitle={rundownTitle}
-        onTitleChange={onTitleChange}
-        rundownStartTime={rundownStartTime}
-        onRundownStartTimeChange={onRundownStartTimeChange}
-        showDate={showDate}
-        onShowDateChange={onShowDateChange}
-        rundownId={rundownId}
-        onOpenTeleprompter={onOpenTeleprompter}
-        items={items}
-        visibleColumns={visibleColumns}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        lastAction={lastAction}
-        isConnected={isConnected}
-        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-        hasActiveTeammates={hasActiveTeammates}
-        activeTeammateNames={activeTeammateNames}
-        rundownData={rundownData}
-        autoScrollEnabled={autoScrollEnabled}
-        onToggleAutoScroll={onToggleAutoScroll}
-        onJumpToCurrentSegment={handleJumpToCurrentSegment}
-        onUpdateItem={onUpdateItem}
-        onShowFindReplace={() => setShowFindReplace(true)}
-        onShowNotes={onShowNotes}
-        // Zoom controls
-        zoomLevel={zoomLevel}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onResetZoom={onResetZoom}
-        canZoomIn={canZoomIn}
-        canZoomOut={canZoomOut}
-        isDefaultZoom={isDefaultZoom}
-      />
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Toolbar Section - Fixed Header */}
+      <div className="flex-shrink-0">
+        <RundownHeaderSection
+          currentTime={currentTime}
+          timezone={timezone}
+          onTimezoneChange={onTimezoneChange}
+          totalRuntime={totalRuntime}
+          onAddRow={onAddRow}
+          onAddHeader={onAddHeader}
+           onShowColumnManager={() => setShowColumnManager(true)}
+          selectedCount={selectedCount}
+          hasClipboardData={hasClipboardData}
+          onCopySelectedRows={onCopySelectedRows}
+          onPasteRows={onPasteRows}
+          onDeleteSelectedRows={onDeleteSelectedRows}
+          onClearSelection={onClearSelection}
+          selectedRowId={selectedRowId}
+          isPlaying={isPlaying}
+          currentSegmentId={currentSegmentId}
+          timeRemaining={timeRemaining}
+          onPlay={onPlay}
+          onPause={onPause}
+          onForward={onForward}
+          onBackward={onBackward}
+          onReset={onReset}
+          hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
+          rundownTitle={rundownTitle}
+          onTitleChange={onTitleChange}
+          rundownStartTime={rundownStartTime}
+          onRundownStartTimeChange={onRundownStartTimeChange}
+          showDate={showDate}
+          onShowDateChange={onShowDateChange}
+          rundownId={rundownId}
+          onOpenTeleprompter={onOpenTeleprompter}
+          items={items}
+          visibleColumns={visibleColumns}
+          onUndo={onUndo}
+          canUndo={canUndo}
+          lastAction={lastAction}
+          isConnected={isConnected}
+          isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+          hasActiveTeammates={hasActiveTeammates}
+          activeTeammateNames={activeTeammateNames}
+          rundownData={rundownData}
+          autoScrollEnabled={autoScrollEnabled}
+          onToggleAutoScroll={onToggleAutoScroll}
+          onJumpToCurrentSegment={handleJumpToCurrentSegment}
+          onUpdateItem={onUpdateItem}
+          onShowFindReplace={() => setShowFindReplace(true)}
+          onShowNotes={onShowNotes}
+          // Zoom controls
+          zoomLevel={zoomLevel}
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onResetZoom={onResetZoom}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          isDefaultZoom={isDefaultZoom}
+        />
+      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      {/* Main Content - Scrollable Area */}
+      <div className="flex-1 overflow-hidden min-h-0">
         <RundownMainContent
           {...props}
           currentSegmentName={currentSegmentName}
