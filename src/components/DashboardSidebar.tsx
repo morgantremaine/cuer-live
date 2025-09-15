@@ -279,7 +279,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }
 
   return (
-    <div className={`${isMobile ? 'fixed inset-0 z-50 w-full' : 'w-64'} bg-slate-950 border-r border-gray-700 flex flex-col`}>
+    <div className={`${isMobile ? 'fixed top-16 left-0 right-0 bottom-0 z-40 w-full' : 'w-64'} bg-slate-950 border-r border-gray-700 flex flex-col`}>
       {/* Header with Search */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
         <div className="flex-1 mr-2">
