@@ -1,7 +1,6 @@
 import React from 'react';
 import TransportStatus from './transport/TransportStatus';
 import LocalHostManager from './transport/LocalHostManager';
-import LocalSessionManager from './LocalSessionManager';
 import SessionDiscoveryPanel from './SessionDiscoveryPanel';
 import SmartTransportIndicator from './SmartTransportIndicator';
 import { Button } from '@/components/ui/button';
@@ -41,12 +40,8 @@ const TransportStatusBar = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="sessions" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="sessions" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Local Sessions
-              </TabsTrigger>
+          <Tabs defaultValue="discover" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="discover">
                 <Wifi className="h-4 w-4 mr-2" />
                 Discover
@@ -61,22 +56,16 @@ const TransportStatusBar = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="sessions" className="space-y-4">
-              <LocalSessionManager 
-                rundownId={coreState.rundownId}
-                rundownTitle={coreState.rundownTitle}
-                teamId={undefined} // Add team support later
-                onSessionStart={(session) => {
-                  console.log('Session started:', session);
-                  // Here you would integrate with the CRDT sync system
-                }}
-                onSessionEnd={() => {
-                  console.log('Session ended');
-                }}
-              />
-            </TabsContent>
-            
             <TabsContent value="discover" className="space-y-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                <div className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  Looking to start a local session?
+                </div>
+                <div className="text-sm text-blue-700 dark:text-blue-200">
+                  Local session management has been moved to Account Settings → Collaboration for better team-wide control across all rundowns.
+                </div>
+              </div>
+              
               <SessionDiscoveryPanel 
                 onSessionConnect={(websocketUrl, session) => {
                   console.log('Connecting to session:', session, 'via', websocketUrl);
