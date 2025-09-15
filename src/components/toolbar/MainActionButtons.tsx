@@ -149,28 +149,6 @@ const MainActionButtons = ({
             </div>
           </div>
         )}
-
-        {/* Autoscroll Toggle - only in mobile view */}
-        {onToggleAutoScroll && (
-          <div className="border-t pt-3">
-            <div className="flex items-center justify-between p-2 rounded-md border border-input bg-background">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="cursor-pointer" 
-                  onClick={onJumpToCurrentSegment}
-                  title="Jump to current segment"
-                >
-                  <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500 hover:text-blue-600' : 'text-gray-400 hover:text-gray-500'}`} />
-                </div>
-                <span className="text-sm">Auto-scroll</span>
-              </div>
-              <Switch
-                checked={autoScrollEnabled}
-                onCheckedChange={handleToggleAutoScroll}
-              />
-            </div>
-          </div>
-        )}
       </div>
     );
   }

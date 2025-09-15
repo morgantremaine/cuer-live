@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,70 +84,99 @@ const MobileToolbar = ({
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleToggleAutoScroll = (checked: boolean) => {
+    if (onToggleAutoScroll) {
+      onToggleAutoScroll();
+    }
+  };
+
   return (
     <div className="p-2 border-b bg-gray-50 dark:bg-gray-700">
-      {/* Single row - Actions dropdown and theme toggle */}
+      {/* First row - Actions dropdown, autoscroll, zoom, and theme toggle */}
       <div className="flex items-center justify-between gap-2">
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
-              <span className="text-sm">Actions</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align="start" 
-            className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
-            sideOffset={4}
-          >
-            <div className="space-y-2">
-              <MainActionButtons
-                onAddRow={onAddRow}
-                onAddHeader={onAddHeader}
-                onShowColumnManager={onShowColumnManager}
-                onUndo={onUndo}
-                canUndo={canUndo}
-                lastAction={lastAction}
-                rundownId={rundownId}
-                onOpenTeleprompter={onOpenTeleprompter}
-                selectedRowId={selectedRowId}
-                isMobile={true}
-                rundownTitle={rundownTitle}
-                rundownData={rundownData}
-                autoScrollEnabled={autoScrollEnabled}
-                onToggleAutoScroll={onToggleAutoScroll}
-                onJumpToCurrentSegment={onJumpToCurrentSegment}
-                // Pass playback controls for mobile
-                isPlaying={isPlaying}
-                currentSegmentId={currentSegmentId}
-                timeRemaining={timeRemaining}
-                onPlay={onPlay}
-                onPause={onPause}
-                onForward={onForward}
-                onBackward={onBackward}
-                onReset={onReset}
-                onShowFindReplace={onShowFindReplace}
-                onShowNotes={onShowNotes}
+        {/* Left side - Actions dropdown */}
+        <div className="flex items-center gap-2">
+          <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-1 px-3">
+                <span className="text-sm">Actions</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="start" 
+              className="w-80 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg z-50"
+              sideOffset={4}
+            >
+              <div className="space-y-2">
+                <MainActionButtons
+                  onAddRow={onAddRow}
+                  onAddHeader={onAddHeader}
+                  onShowColumnManager={onShowColumnManager}
+                  onUndo={onUndo}
+                  canUndo={canUndo}
+                  lastAction={lastAction}
+                  rundownId={rundownId}
+                  onOpenTeleprompter={onOpenTeleprompter}
+                  selectedRowId={selectedRowId}
+                  isMobile={true}
+                  rundownTitle={rundownTitle}
+                  rundownData={rundownData}
+                  // Pass playback controls for mobile
+                  isPlaying={isPlaying}
+                  currentSegmentId={currentSegmentId}
+                  timeRemaining={timeRemaining}
+                  onPlay={onPlay}
+                  onPause={onPause}
+                  onForward={onForward}
+                  onBackward={onBackward}
+                  onReset={onReset}
+                  onShowFindReplace={onShowFindReplace}
+                  onShowNotes={onShowNotes}
+                />
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Autoscroll toggle on toolbar */}
+          {onToggleAutoScroll && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onJumpToCurrentSegment}
+                title="Jump to current segment"
+                className="h-8 w-8 p-0"
+              >
+                <MapPin className={`h-4 w-4 transition-colors ${autoScrollEnabled ? 'text-blue-500' : 'text-gray-400'}`} />
+              </Button>
+              <Switch
+                checked={autoScrollEnabled}
+                onCheckedChange={handleToggleAutoScroll}
+                className="scale-75"
               />
             </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
 
-        {/* Zoom controls on mobile */}
-        {onZoomIn && onZoomOut && onResetZoom && (
-          <ZoomControls
-            zoomLevel={zoomLevel || 1}
-            onZoomIn={onZoomIn}
-            onZoomOut={onZoomOut}
-            onResetZoom={onResetZoom}
-            canZoomIn={canZoomIn || false}
-            canZoomOut={canZoomOut || false}
-            isDefaultZoom={isDefaultZoom || false}
-            size="sm"
-          />
-        )}
+        {/* Right side - Zoom controls and theme toggle */}
+        <div className="flex items-center gap-2">
+          {/* Zoom controls on mobile */}
+          {onZoomIn && onZoomOut && onResetZoom && (
+            <ZoomControls
+              zoomLevel={zoomLevel || 1}
+              onZoomIn={onZoomIn}
+              onZoomOut={onZoomOut}
+              onResetZoom={onResetZoom}
+              canZoomIn={canZoomIn || false}
+              canZoomOut={canZoomOut || false}
+              isDefaultZoom={isDefaultZoom || false}
+              size="sm"
+            />
+          )}
 
-        <ThemeToggle />
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );
