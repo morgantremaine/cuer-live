@@ -78,6 +78,7 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
   const activityStatus = useLiveActivityStatus(rundown, currentUserId, teamMembers);
 
   const formatDate = (dateString: string) => {
+    if (!dateString || dateString.trim() === '') return null;
     const date = new Date(dateString + 'T00:00:00');
     return !isNaN(date.getTime()) ? date.toLocaleDateString() : null;
   };
@@ -152,7 +153,11 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
               <CardDescription className="text-gray-400 flex items-center gap-2 text-xs mt-1">
                 <span>{getOwnerInfo(rundown)}</span>
                 <span>•</span>
-                <span>{rundown.show_date && formatDate(rundown.show_date) ? formatDate(rundown.show_date) : formatDate(rundown.updated_at)}</span>
+                <span>
+                  {rundown.show_date && formatDate(rundown.show_date) 
+                    ? `Show: ${formatDate(rundown.show_date)}` 
+                    : `Modified: ${formatDate(rundown.updated_at)}`}
+                </span>
               </CardDescription>
             </div>
             
@@ -265,7 +270,11 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>{rundown.show_date && formatDate(rundown.show_date) ? formatDate(rundown.show_date) : formatDate(rundown.updated_at)}</span>
+                <span>
+                  {rundown.show_date && formatDate(rundown.show_date) 
+                    ? `Show: ${formatDate(rundown.show_date)}` 
+                    : `Modified: ${formatDate(rundown.updated_at)}`}
+                </span>
               </div>
             </CardDescription>
           </div>
