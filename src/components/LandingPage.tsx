@@ -311,6 +311,52 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* Mobile & Tablet Compatibility Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Stay in sync on <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">every device</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
+          </p>
+        </div>
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Mobile & Tablet Ready</h3>
+            <p className="text-xl text-slate-400">
+              Native mobile interface with optimized touch controls, responsive layout, and full feature access. Your rundown works perfectly on phones, tablets, and desktops.
+            </p>
+            <div className="grid grid-cols-1 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Touch-optimized interface for phones and tablets</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Real-time sync across all devices</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Full feature access on mobile devices</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>No matter where your team is, everyone stays connected</span>
+              </div>
+            </div>
+          </div>
+          <div className="group fade-up flex justify-center">
+            <img 
+              src="/uploads/mobile-rundown-mockup.png" 
+              alt="Cuer Live running on iPhone showing mobile-optimized rundown interface"
+              className="h-auto max-w-sm rounded-3xl shadow-2xl border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Teleprompter Section */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
