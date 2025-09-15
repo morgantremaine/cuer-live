@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, QrCode, Users, Wifi, WifiOff, Play, Square } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Copy, QrCode, Users, Wifi, WifiOff, Play, Square, Shield, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTeam } from '@/hooks/useTeam';
 import { supabase } from '@/integrations/supabase/client';
 
 interface LocalSession {
@@ -34,6 +36,7 @@ const LocalSessionManager = ({
   onSessionEnd 
 }: LocalSessionManagerProps) => {
   const { toast } = useToast();
+  const { userRole, team } = useTeam();
   
   const [activeSession, setActiveSession] = useState<LocalSession | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
@@ -41,11 +44,24 @@ const LocalSessionManager = ({
   const [allowedIPs, setAllowedIPs] = useState('');
   const [isStartDialogOpen, setIsStartDialogOpen] = useState(false);
 
+  // Check if user is admin
+  const isTeamAdmin = userRole === 'admin';
+  const teamName = team?.name || 'Unknown Team';
+
   const createLocalSession = async () => {
     if (!rundownId) {
       toast({
         title: "No rundown selected",
         description: "Please open a rundown before starting a local session",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!isTeamAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "Only team administrators can start local sessions",
         variant: "destructive"
       });
       return;
@@ -160,6 +176,24 @@ const LocalSessionManager = ({
         {!activeSession ? (
           // Start session UI
           <div className="space-y-4">
+            {/* Admin Permission Check */}
+            {!isTeamAdmin ? (
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  Only team administrators can start local sessions. You are currently a <strong>{userRole || 'member'}</strong> in <strong>{teamName}</strong>.
+                  {userRole === 'member' && ' Contact your team admin to start a local session.'}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  You have administrator privileges and can start local sessions for <strong>{teamName}</strong>.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="text-center py-8">
               <WifiOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <div className="font-medium mb-2">No Local Session Active</div>
@@ -169,9 +203,9 @@ const LocalSessionManager = ({
               
               <Dialog open={isStartDialogOpen} onOpenChange={setIsStartDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button disabled={!isTeamAdmin}>
                     <Play className="h-4 w-4 mr-2" />
-                    Start Local Session
+                    {isTeamAdmin ? 'Start Local Session' : 'Admin Access Required'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -303,6 +337,7 @@ const LocalSessionManager = ({
               </Card>
             </div>
             
+            {/* Instructions */}
             {/* Instructions */}
             <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="font-medium text-blue-900 dark:text-blue-100 mb-2">

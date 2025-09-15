@@ -3,10 +3,11 @@ import TransportStatus from './transport/TransportStatus';
 import LocalHostManager from './transport/LocalHostManager';
 import LocalSessionManager from './LocalSessionManager';
 import SessionDiscoveryPanel from './SessionDiscoveryPanel';
+import SmartTransportIndicator from './SmartTransportIndicator';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Wifi, Users } from 'lucide-react';
+import { Settings, Wifi, Users, Activity } from 'lucide-react';
 import { useTransportManager } from '@/hooks/useTransportManager';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 
@@ -20,7 +21,11 @@ const TransportStatusBar = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-      <TransportStatus transport={transport} />
+      {/* Smart Transport Indicator - shows health and allows manual switching */}
+      <SmartTransportIndicator 
+        rundownId={coreState.rundownId}
+        showDetails={showEnhancedUI}
+      />
       
       <Dialog open={isManagerOpen} onOpenChange={setIsManagerOpen}>
         <DialogTrigger asChild>
@@ -37,7 +42,7 @@ const TransportStatusBar = () => {
           </DialogHeader>
           
           <Tabs defaultValue="sessions" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="sessions" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Local Sessions
@@ -49,6 +54,10 @@ const TransportStatusBar = () => {
               <TabsTrigger value="hosts">
                 <Settings className="h-4 w-4 mr-2" />
                 Host Manager
+              </TabsTrigger>
+              <TabsTrigger value="health">
+                <Activity className="h-4 w-4 mr-2" />
+                Health
               </TabsTrigger>
             </TabsList>
             
@@ -79,6 +88,13 @@ const TransportStatusBar = () => {
             
             <TabsContent value="hosts" className="space-y-4">
               <LocalHostManager />
+            </TabsContent>
+            
+            <TabsContent value="health" className="space-y-4">
+              <SmartTransportIndicator 
+                rundownId={coreState.rundownId}
+                showDetails={true}
+              />
             </TabsContent>
           </Tabs>
         </DialogContent>
