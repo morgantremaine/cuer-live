@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '../ThemeToggle';
 import MainActionButtons from './MainActionButtons';
+import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface MobileToolbarProps {
@@ -36,6 +37,14 @@ interface MobileToolbarProps {
   onJumpToCurrentSegment?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
+  // Zoom controls
+  zoomLevel?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  canZoomIn?: boolean;
+  canZoomOut?: boolean;
+  isDefaultZoom?: boolean;
 }
 
 const MobileToolbar = ({
@@ -62,7 +71,15 @@ const MobileToolbar = ({
   onToggleAutoScroll,
   onJumpToCurrentSegment,
   onShowFindReplace,
-  onShowNotes
+  onShowNotes,
+  // Zoom props
+  zoomLevel,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  canZoomIn,
+  canZoomOut,
+  isDefaultZoom
 }: MobileToolbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -114,6 +131,20 @@ const MobileToolbar = ({
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Zoom controls on mobile */}
+        {onZoomIn && onZoomOut && onResetZoom && (
+          <ZoomControls
+            zoomLevel={zoomLevel || 1}
+            onZoomIn={onZoomIn}
+            onZoomOut={onZoomOut}
+            onResetZoom={onResetZoom}
+            canZoomIn={canZoomIn || false}
+            canZoomOut={canZoomOut || false}
+            isDefaultZoom={isDefaultZoom || false}
+            size="sm"
+          />
+        )}
 
         <ThemeToggle />
       </div>
