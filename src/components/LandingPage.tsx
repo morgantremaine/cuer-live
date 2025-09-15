@@ -325,8 +325,8 @@ const LandingPage = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="group fade-up flex justify-center">
             <img 
-              src="/uploads/mobile-rundown-mockup.png" 
-              alt="Cuer Live running on iPhone showing mobile-optimized rundown interface"
+              src="/src/assets/mobile-mockups.png" 
+              alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
               className="h-auto max-w-sm group-hover:scale-[1.02] transition-all duration-500"
             />
           </div>
