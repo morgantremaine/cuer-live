@@ -330,12 +330,6 @@ const LandingPage = () => {
               className="h-auto max-w-sm group-hover:scale-[1.02] transition-all duration-500"
             />
           </div>
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Stay in sync on every device</h3>
-            <p className="text-xl text-slate-400">
-              Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
-            </p>
-          </div>
         </div>
       </div>
 
