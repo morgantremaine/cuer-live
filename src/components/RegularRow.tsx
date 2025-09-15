@@ -43,6 +43,8 @@ interface RegularRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
@@ -72,6 +74,8 @@ const RegularRow = (props: RegularRowProps) => {
     onAddRow,
     onAddHeader,
     onJumpToHere,
+    onMoveUp,
+    onMoveDown,
     onDragStart,
     onDragOver,
     onDrop,
@@ -208,6 +212,8 @@ const RegularRow = (props: RegularRowProps) => {
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
       onJumpToHere={handleJumpToHere}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
       onAutoTimeToScript={handleAutoTimeToScript}
       onAutoTimeToScriptMultiple={handleAutoTimeToScriptMultiple}
       scriptText={item.script}

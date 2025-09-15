@@ -9,6 +9,8 @@ interface RundownMainContentProps extends RundownContainerProps {
   totalDuration: string;
   savedLayouts: any[]; // Add savedLayouts as a prop
   layoutOperations?: any; // Shared operations from a single hook instance
+  onMoveItemUp?: (index: number) => void;
+  onMoveItemDown?: (index: number) => void;
 }
 
 const RundownMainContent = ({
@@ -30,6 +32,8 @@ const RundownMainContent = ({
   onToggleAutoScroll,
   savedLayouts, // Accept savedLayouts as prop
   layoutOperations,
+  onMoveItemUp,
+  onMoveItemDown,
   ...contentProps
 }: RundownMainContentProps) => {
 
@@ -45,6 +49,8 @@ const RundownMainContent = ({
         onToggleColumnVisibility={handleToggleColumnVisibility}
         title={contentProps.rundownTitle}
         totalRuntime={totalDuration}
+        onMoveItemUp={onMoveItemUp}
+        onMoveItemDown={onMoveItemDown}
         items={contentProps.items} // Pass original items for duration calculations
         visibleItems={contentProps.visibleItems} // Pass visible items for display
         savedLayouts={savedLayouts}

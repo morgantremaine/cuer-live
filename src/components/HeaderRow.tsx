@@ -40,6 +40,8 @@ interface HeaderRowProps {
   onRowSelect?: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, headerGroupItemIds?: string[]) => void;
   onAddRow?: () => void;
   onAddHeader?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
@@ -64,6 +66,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     onClearSelection,
     onAddRow,
     onAddHeader,
+    onMoveUp,
+    onMoveDown,
     onToggleCollapse,
     onDragStart,
     onDragOver,
@@ -146,6 +150,8 @@ const HeaderRow = (props: HeaderRowProps) => {
       onClearSelection={onClearSelection}
       onAddRow={onAddRow}
       onAddHeader={onAddHeader}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
     >
       <tr 
         className={`border-b border-border ${rowClass} transition-colors cursor-pointer h-16 min-h-16 animate-fade-in`}

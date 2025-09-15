@@ -1,6 +1,7 @@
 
 import React, { memo } from 'react';
-import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy, Clock } from 'lucide-react';
+import { Trash2, Copy, Palette, ClipboardPaste, X, Plus, Navigation, LifeBuoy, Clock, ArrowUp, ArrowDown } from 'lucide-react';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -35,6 +36,8 @@ interface RundownContextMenuProps {
   onJumpToHere?: (segmentId: string) => void;
   onAutoTimeToScript?: () => void;
   onAutoTimeToScriptMultiple?: (selectedRows: Set<string>) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   scriptText?: string;
   allItems?: any[];
 }
@@ -61,9 +64,12 @@ const RundownContextMenu = memo(({
   onJumpToHere,
   onAutoTimeToScript,
   onAutoTimeToScriptMultiple,
+  onMoveUp,
+  onMoveDown,
   scriptText,
   allItems
 }: RundownContextMenuProps) => {
+  const { isMobile } = useResponsiveLayout();
   const isMultipleSelection = selectedCount > 1;
 
   
@@ -272,6 +278,31 @@ const RundownContextMenu = memo(({
             </ContextMenuItem>
           )}
           
+          
+          {/* Mobile-only move up/down buttons */}
+          {isMobile && (onMoveUp || onMoveDown) && (
+            <>
+              <ContextMenuSeparator />
+              {onMoveUp && (
+                <ContextMenuItem 
+                  onClick={onMoveUp} 
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <ArrowUp className="mr-2 h-4 w-4" />
+                  Move up
+                </ContextMenuItem>
+              )}
+              {onMoveDown && (
+                <ContextMenuItem 
+                  onClick={onMoveDown} 
+                  className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <ArrowDown className="mr-2 h-4 w-4" />
+                  Move down
+                </ContextMenuItem>
+              )}
+            </>
+          )}
           
           <ContextMenuSub>
             <ContextMenuSubTrigger className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">

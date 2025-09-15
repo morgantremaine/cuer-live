@@ -46,6 +46,8 @@ interface RundownTableProps {
   isHeaderCollapsed?: (headerId: string) => boolean;
   getHeaderGroupItemIds?: (headerId: string) => string[];
   onJumpToHere?: (segmentId: string) => void;
+  onMoveItemUp?: (index: number) => void;
+  onMoveItemDown?: (index: number) => void;
   markActiveTyping?: () => void;
 }
 
@@ -91,6 +93,8 @@ const RundownTable = ({
   isHeaderCollapsed,
   getHeaderGroupItemIds,
   onJumpToHere,
+  onMoveItemUp,
+  onMoveItemDown,
   markActiveTyping
 }: RundownTableProps) => {
 
@@ -178,9 +182,11 @@ const RundownTable = ({
                   onToggleCollapse={onToggleHeaderCollapse}
                   onPasteRows={onPasteRows}
                   onClearSelection={onClearSelection}
-                  onAddRow={onAddRow}
-                  onAddHeader={onAddHeader}
+                   onAddRow={onAddRow}
+                   onAddHeader={onAddHeader}
                    onJumpToHere={onJumpToHere}
+                   onMoveUp={() => onMoveItemUp?.(index)}
+                   onMoveDown={() => onMoveItemDown?.(index)}
                    markActiveTyping={markActiveTyping}
                    getColumnWidth={getColumnWidth}
                    isHeaderCollapsed={isHeaderCollapsed}

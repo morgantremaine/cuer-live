@@ -43,6 +43,8 @@ interface RundownRowProps {
   onAddRow?: () => void;
   onAddHeader?: () => void;
   onJumpToHere?: (segmentId: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   markActiveTyping?: () => void;
   isDragging: boolean;
   getColumnWidth: (column: Column) => string;
@@ -80,6 +82,8 @@ const RundownRow = (props: RundownRowProps) => {
         onClearSelection={props.onClearSelection}
         onAddRow={props.onAddRow}
         onAddHeader={props.onAddHeader}
+        onMoveUp={props.onMoveUp}
+        onMoveDown={props.onMoveDown}
         onDragEnd={props.onDragEnd}
         markActiveTyping={props.markActiveTyping}
         isHeaderCollapsed={props.isHeaderCollapsed}
@@ -106,6 +110,8 @@ const RundownRow = (props: RundownRowProps) => {
       onAddRow={props.onAddRow}
       onAddHeader={props.onAddHeader}
       onJumpToHere={handleJumpToHere}
+      onMoveUp={props.onMoveUp}
+      onMoveDown={props.onMoveDown}
       onDragEnd={props.onDragEnd}
       markActiveTyping={props.markActiveTyping}
       isHeaderCollapsed={props.isHeaderCollapsed}
