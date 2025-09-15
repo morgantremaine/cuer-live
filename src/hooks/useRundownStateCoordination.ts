@@ -7,6 +7,7 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
+import { useEnhancedRundownSync } from './useEnhancedRundownSync';
 import { arrayMove } from '@dnd-kit/sortable';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
