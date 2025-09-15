@@ -40,27 +40,15 @@ const Changelog: React.FC = () => {
                       <li><strong>Zoom In/Out Controls:</strong> New zoom controls allow you to adjust your rundown view for better readability and navigation</li>
                       <li><strong>Live User Presence:</strong> See who is currently editing the rundown in real-time with user names displayed during active editing sessions</li>
                     </ul>
-                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600 flex gap-4">
-                      <div className="flex-1">
-                        <img 
-                          src="/src/assets/zoom_in_out.png"
-                          alt="Zoom in and zoom out controls in the rundown toolbar"
-                          className="w-full max-w-xs mx-auto rounded border border-slate-600"
-                        />
-                        <p className="text-xs text-gray-500 text-center mt-2">
-                          Zoom controls for better rundown navigation
-                        </p>
-                      </div>
-                      <div className="flex-1 flex flex-col justify-center">
-                        <img 
-                          src="/src/assets/who_is_editing.png"
-                          alt="Live user presence showing who is editing the rundown"
-                          className="w-full max-w-xs mx-auto rounded border border-slate-600"
-                        />
-                        <p className="text-xs text-gray-500 text-center mt-2">
-                          Real-time display of active editors
-                        </p>
-                      </div>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src="/uploads/changelog-collaboration-features.png"
+                        alt="Collaboration features including zoom controls and live user presence"
+                        className="w-full max-w-2xl mx-auto rounded border border-slate-600"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        Enhanced collaboration features: zoom controls and real-time user presence
+                      </p>
                     </div>
                   </div>
                 </div>
