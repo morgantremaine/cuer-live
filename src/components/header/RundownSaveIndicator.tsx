@@ -15,9 +15,10 @@ interface RundownSaveIndicatorProps {
   shouldShowSavedFlash?: boolean;
   isTeammateEditing?: boolean;
   activeTeammateNames?: string[];
+  isMobile?: boolean; // Add mobile prop to suppress teammate editing
 }
 
-const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [] }: RundownSaveIndicatorProps) => {
+const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditing = false, activeTeammateNames = [], isMobile = false }: RundownSaveIndicatorProps) => {
   const { isSaving, lastSaved, hasUnsavedChanges, saveError, hasContentChanges = true } = saveState;
   const [showSaved, setShowSaved] = useState(false);
   const [showTemporarySaved, setShowTemporarySaved] = useState(false);
@@ -96,8 +97,8 @@ const RundownSaveIndicator = ({ saveState, shouldShowSavedFlash, isTeammateEditi
     return null;
   }
 
-  // Show teammate editing state if teammates are making changes
-  if (isTeammateEditing) {
+  // Show teammate editing state if teammates are making changes (suppress in mobile)
+  if (isTeammateEditing && !isMobile) {
     const displayText = activeTeammateNames.length > 0 
       ? `${activeTeammateNames.join(', ')} ${activeTeammateNames.length === 1 ? 'is' : 'are'} editing...`
       : 'Teammate editing...';

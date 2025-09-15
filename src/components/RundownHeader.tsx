@@ -292,36 +292,31 @@ const RundownHeader = ({
   if (isMobile) {
     return (
       <div className="p-3 bg-gray-200 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        {/* Top row - Title and Save Indicator */}
+        {/* Top row - Title only */}
         <div className="mb-3">
-          <div className="flex items-center justify-between min-h-[1.75rem]">
-            <div className="flex-1 min-w-0 mr-2">
-              {isEditingTitle ? (
-                <Input
-                  value={title}
-                  onChange={(e) => onTitleChange(e.target.value)}
-                  onBlur={handleTitleSubmit}
-                  onKeyDown={handleTitleKeyPress}
-                  className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
-                  placeholder="Untitled Rundown"
-                  autoFocus
-                />
-              ) : (
-                <span 
-                  onClick={handleTitleEdit}
-                  className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
-                >
-                  {title || "Untitled Rundown"}
-                </span>
-              )}
-            </div>
-            <div className="flex-shrink-0">
-              <RundownSaveIndicator saveState={saveState} shouldShowSavedFlash={shouldShowSavedFlash} isTeammateEditing={showTeammateEditing} activeTeammateNames={activeTeammateNames} />
-            </div>
+          <div className="flex-1 min-w-0">
+            {isEditingTitle ? (
+              <Input
+                value={title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                onBlur={handleTitleSubmit}
+                onKeyDown={handleTitleKeyPress}
+                className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 focus:border-none"
+                placeholder="Untitled Rundown"
+                autoFocus
+              />
+            ) : (
+              <span 
+                onClick={handleTitleEdit}
+                className="text-lg font-semibold cursor-pointer hover:text-gray-600 dark:hover:text-gray-300 inline-block"
+              >
+                {title || "Untitled Rundown"}
+              </span>
+            )}
           </div>
         </div>
         
-        {/* Bottom row - Compact info */}
+        {/* Bottom row - Compact info with save indicator */}
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -329,6 +324,13 @@ const RundownHeader = ({
           </div>
           
           <div className="flex items-center gap-2">
+            <RundownSaveIndicator 
+              saveState={saveState} 
+              shouldShowSavedFlash={shouldShowSavedFlash} 
+              isTeammateEditing={showTeammateEditing} 
+              activeTeammateNames={activeTeammateNames}
+              isMobile={true}
+            />
             <ShowcallerTimingIndicator
               {...timingStatus}
               size="compact"
