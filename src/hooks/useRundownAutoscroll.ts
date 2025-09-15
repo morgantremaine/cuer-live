@@ -55,56 +55,59 @@ export const useRundownAutoscroll = ({
           inline: 'nearest'
         });
 
-        // After scroll starts, schedule a single offset to place at 1/4 down in the scroll viewport
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            // Find the proper scroll viewport - be more specific for mobile/tablet
-            let viewport: HTMLElement | null = null;
-            
-            // First try to find Radix UI scroll area viewport
-            viewport = scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-            
-            // If not found, try other common viewport selectors
-            if (!viewport) {
-              viewport = scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement;
-            }
-            
-            if (!viewport) {
-              viewport = scrollContainer.querySelector('.scroll-viewport') as HTMLElement;
-            }
-            
-            // As a last resort, check if scrollContainer itself is the viewport
-            // but ONLY if it has overflow properties indicating it's a scroll container
-            if (!viewport) {
-              const computedStyle = getComputedStyle(scrollContainer);
-              const hasOverflow = computedStyle.overflow === 'auto' || 
-                                computedStyle.overflow === 'scroll' ||
-                                computedStyle.overflowY === 'auto' || 
-                                computedStyle.overflowY === 'scroll';
-              
-              if (hasOverflow) {
-                viewport = scrollContainer;
-              }
-            }
-            
-            // If we still don't have a proper viewport, abort to prevent scrolling wrong container
-            if (!viewport) {
-              console.warn('🔄 useRundownAutoscroll: Could not find proper scroll viewport, aborting offset scroll');
-              return;
-            }
+        // Find the proper scroll viewport - prioritize the rundown body scroll target
+        let viewport: HTMLElement | null = null;
+        
+        // First try to find the dedicated rundown body scroll target
+        viewport = scrollContainer.querySelector('.rundown-body-scroll-target') as HTMLElement;
+        
+        // If not found, try to find the specific data-scroll-viewport within the scroll container
+        if (!viewport) {
+          viewport = scrollContainer.querySelector('[data-scroll-viewport="true"]') as HTMLElement;
+        }
+        
+        // Fall back to Radix UI scroll area viewport within the container
+        if (!viewport) {
+          viewport = scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+        }
+        
+        // As a last resort, check if scrollContainer itself is a proper scroll viewport
+        // but ONLY if it has the correct attributes or classes
+        if (!viewport) {
+          const hasScrollViewportAttr = scrollContainer.hasAttribute('data-scroll-viewport') ||
+                                      scrollContainer.classList.contains('rundown-body-scroll-target');
+          if (hasScrollViewportAttr) {
+            viewport = scrollContainer;
+          }
+        }
+        
+        // If we still don't have a proper viewport, abort to prevent scrolling wrong container
+        if (!viewport) {
+          console.warn('🔄 useRundownAutoscroll: Could not find proper body scroll viewport, aborting autoscroll');
+          return;
+        }
 
-            const viewportRect = viewport.getBoundingClientRect();
-            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+        // Only proceed if the viewport is NOT the main document or a container that includes headers
+        const isDocumentLevel = viewport === document.documentElement || 
+                               viewport === document.body ||
+                               viewport.classList.contains('h-screen') ||
+                               viewport.classList.contains('h-full');
+        
+        if (isDocumentLevel) {
+          console.warn('🔄 useRundownAutoscroll: Detected document-level scroll target, aborting to prevent header movement');
+          return;
+        }
 
-            // Desired position: 1/4 down from the top of the viewport
-            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-            const offsetNeeded = elementRect.top - desiredTop;
+        const viewportRect = viewport.getBoundingClientRect();
+        const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
 
-            if (Math.abs(offsetNeeded) > 4) {
-              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-            }
-          });
-        });
+        // Desired position: 1/4 down from the top of the viewport
+        const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+        const offsetNeeded = elementRect.top - desiredTop;
+
+        if (Math.abs(offsetNeeded) > 4) {
+          viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+        }
 
         lastScrolledSegmentRef.current = currentSegmentId;
       }

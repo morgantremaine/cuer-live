@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -182,13 +182,24 @@ const RundownContent = React.memo<RundownContentProps>(({
     });
   }, [items, isHeaderCollapsed, toggleHeaderCollapse]);
 
-  // Initialize autoscroll functionality
+  // Initialize autoscroll functionality - use a ref callback to get the actual ScrollArea viewport
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { scrollContainerRef } = useRundownAutoscroll({
     currentSegmentId,
     isPlaying,
     autoScrollEnabled,
     items
   });
+  
+  // Set up the scroll container ref to point to the ScrollArea viewport
+  React.useEffect(() => {
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement;
+      if (viewport && scrollContainerRef.current !== viewport) {
+        (scrollContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = viewport;
+      }
+    }
+  }, [scrollContainerRef]);
 
   // Initialize drag auto-scroll functionality
   const isDragging = draggedItemIndex !== null;
@@ -291,7 +302,7 @@ const RundownContent = React.memo<RundownContentProps>(({
       </div>
       
       {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
+      <ScrollArea ref={scrollAreaRef} className="w-full h-full bg-background print:hidden" data-rundown-table="true">
         <div className="relative">
           {/* Sticky Header - Outside of Transform */}
           <div 

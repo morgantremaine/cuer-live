@@ -142,10 +142,21 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
       // Apply the same offset logic as autoscroll to position at 1/4 down
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement
-            || document.querySelector('[data-scroll-viewport]') as HTMLElement
-            || document.querySelector('.scroll-viewport') as HTMLElement
-            || document.documentElement;
+          // Look for the rundown body scroll target first, then fall back to other options
+          let scrollContainer: HTMLElement | null = 
+            document.querySelector('.rundown-body-scroll-target') as HTMLElement ||
+            document.querySelector('[data-scroll-viewport="true"]') as HTMLElement ||
+            document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+
+          // Prevent using document-level containers that would move the header
+          if (!scrollContainer || 
+              scrollContainer === document.documentElement || 
+              scrollContainer === document.body ||
+              scrollContainer.classList.contains('h-screen') ||
+              scrollContainer.classList.contains('h-full')) {
+            console.warn('🔄 handleJumpToCurrentSegment: Could not find proper body scroll container, aborting offset scroll');
+            return;
+          }
 
           const viewportRect = scrollContainer.getBoundingClientRect();
           const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
