@@ -196,6 +196,9 @@ const RundownContent = React.memo<RundownContentProps>(({
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLDivElement;
       if (viewport && scrollContainerRef.current !== viewport) {
+        // Add specific data attribute to identify this as the rundown body scroll target
+        viewport.setAttribute('data-scroll-viewport', 'true');
+        viewport.classList.add('rundown-body-scroll-target');
         (scrollContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = viewport;
       }
     }

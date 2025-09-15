@@ -55,35 +55,13 @@ export const useRundownAutoscroll = ({
           inline: 'nearest'
         });
 
-        // Find the proper scroll viewport - prioritize the rundown body scroll target
-        let viewport: HTMLElement | null = null;
+        // Only use the scroll container if it's the correct one we set up
+        const viewport = scrollContainer;
         
-        // First try to find the dedicated rundown body scroll target
-        viewport = scrollContainer.querySelector('.rundown-body-scroll-target') as HTMLElement;
-        
-        // If not found, try to find the specific data-scroll-viewport within the scroll container
-        if (!viewport) {
-          viewport = scrollContainer.querySelector('[data-scroll-viewport="true"]') as HTMLElement;
-        }
-        
-        // Fall back to Radix UI scroll area viewport within the container
-        if (!viewport) {
-          viewport = scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-        }
-        
-        // As a last resort, check if scrollContainer itself is a proper scroll viewport
-        // but ONLY if it has the correct attributes or classes
-        if (!viewport) {
-          const hasScrollViewportAttr = scrollContainer.hasAttribute('data-scroll-viewport') ||
-                                      scrollContainer.classList.contains('rundown-body-scroll-target');
-          if (hasScrollViewportAttr) {
-            viewport = scrollContainer;
-          }
-        }
-        
-        // If we still don't have a proper viewport, abort to prevent scrolling wrong container
-        if (!viewport) {
-          console.warn('🔄 useRundownAutoscroll: Could not find proper body scroll viewport, aborting autoscroll');
+        // Verify this is actually the Radix scroll viewport, not a document-level container
+        if (!viewport.hasAttribute('data-radix-scroll-area-viewport') && 
+            !viewport.classList.contains('rundown-body-scroll-target')) {
+          console.warn('🔄 useRundownAutoscroll: Invalid scroll container detected, aborting autoscroll');
           return;
         }
 
