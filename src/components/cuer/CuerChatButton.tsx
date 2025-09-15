@@ -39,11 +39,11 @@ const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
           top: position.y,
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
-        onMouseDown={startDrag}
-        onClick={handleClick(() => setIsChatOpen(true))}
       >
         <Button
           className="h-12 px-4 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white select-none"
+          onMouseDown={startDrag}
+          onClick={handleClick(() => setIsChatOpen(true))}
         >
           <MessageCircle className="w-5 h-5 text-white" />
           <span className="text-sm font-medium text-white">Cuer AI</span>

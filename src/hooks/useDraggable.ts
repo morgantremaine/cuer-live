@@ -62,8 +62,8 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
     
-    // Mark as moved if dragged more than 5px
-    if (!hasMoved && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+    // Mark as moved if dragged more than 3px (reduced threshold for better responsiveness)
+    if (!hasMoved && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
       setHasMoved(true);
     }
     
@@ -98,8 +98,9 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   }, [isDragging, onDragEnd]);
 
   const startDrag = useCallback((e: React.MouseEvent) => {
-    // Prevent default to avoid text selection
+    // Prevent default to avoid text selection and other browser behaviors
     e.preventDefault();
+    e.stopPropagation();
     
     setDragStart({ x: e.clientX, y: e.clientY });
     setElementStart(position);
@@ -135,10 +136,14 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
   }, []);
 
   const handleClick = useCallback((originalOnClick?: () => void) => {
-    return () => {
+    return (e: React.MouseEvent) => {
       // Only trigger click if we haven't moved (i.e., it's a click, not a drag)
       if (!hasMoved && originalOnClick) {
         originalOnClick();
+      } else if (hasMoved) {
+        // Prevent click event if we just finished dragging
+        e.preventDefault();
+        e.stopPropagation();
       }
     };
   }, [hasMoved]);
