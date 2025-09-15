@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import CuerChatPanel from './CuerChatPanel';
 import { useDraggable } from '@/hooks/useDraggable';
 
@@ -33,21 +32,17 @@ const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
       {/* Floating Chat Button */}
       <div
         ref={dragRef}
-        className="fixed z-40"
+        className="fixed z-40 h-12 px-4 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white select-none cursor-grab transition-colors"
         style={{ 
           left: position.x,
           top: position.y,
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
+        onMouseDown={startDrag}
+        onClick={handleClick(() => setIsChatOpen(true))}
       >
-        <Button
-          className="h-12 px-4 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white select-none"
-          onMouseDown={startDrag}
-          onClick={handleClick(() => setIsChatOpen(true))}
-        >
-          <MessageCircle className="w-5 h-5 text-white" />
-          <span className="text-sm font-medium text-white">Cuer AI</span>
-        </Button>
+        <MessageCircle className="w-5 h-5 text-white" />
+        <span className="text-sm font-medium text-white">Cuer AI</span>
       </div>
 
       {/* Chat Panel */}
