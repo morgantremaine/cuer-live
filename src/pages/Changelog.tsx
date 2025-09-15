@@ -44,7 +44,7 @@ const Changelog: React.FC = () => {
                       <img 
                         src="/uploads/changelog-collaboration-features.png"
                         alt="Collaboration features including zoom controls and live user presence"
-                        className="w-full max-w-2xl mx-auto rounded border border-slate-600"
+                        className="w-full max-w-2xl mx-auto rounded"
                       />
                       <p className="text-xs text-gray-500 text-center mt-2">
                         Enhanced collaboration features: zoom controls and real-time user presence
