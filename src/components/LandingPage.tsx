@@ -331,28 +331,10 @@ const LandingPage = () => {
             />
           </div>
           <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Mobile & Tablet Ready</h3>
+            <h3 className="text-3xl font-bold text-white">Stay in sync on every device</h3>
             <p className="text-xl text-slate-400">
-              Native mobile interface with optimized touch controls, responsive layout, and full feature access. Your rundown works perfectly on phones, tablets, and desktops.
+              Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
             </p>
-            <div className="grid grid-cols-1 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Touch-optimized interface for phones and tablets</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time sync across all devices</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Full feature access on mobile devices</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>No matter where your team is, everyone stays connected</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
