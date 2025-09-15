@@ -48,14 +48,7 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        // Simple approach: center first, then offset
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
-        });
-
-        // Only use the scroll container if it's the correct one we set up
+        // Get the viewport directly - no scrollIntoView to prevent document scrolling
         const viewport = scrollContainer;
         
         // Verify this is actually the Radix scroll viewport, not a document-level container
@@ -65,17 +58,18 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        // Only proceed if the viewport is NOT the main document or a container that includes headers
-        const isDocumentLevel = viewport === document.documentElement || 
-                               viewport === document.body ||
-                               viewport.classList.contains('h-screen') ||
-                               viewport.classList.contains('h-full');
-        
-        if (isDocumentLevel) {
+        // Additional safety check - ensure viewport is not document-level
+        if (viewport === document.documentElement || 
+            viewport === document.body ||
+            viewport.classList.contains('h-screen') ||
+            viewport.classList.contains('h-full') ||
+            viewport.tagName === 'HTML' ||
+            viewport.tagName === 'BODY') {
           console.warn('🔄 useRundownAutoscroll: Detected document-level scroll target, aborting to prevent header movement');
           return;
         }
 
+        // Calculate scroll position manually without using scrollIntoView
         const viewportRect = viewport.getBoundingClientRect();
         const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
 
@@ -83,7 +77,8 @@ export const useRundownAutoscroll = ({
         const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
         const offsetNeeded = elementRect.top - desiredTop;
 
-        if (Math.abs(offsetNeeded) > 4) {
+        // Only scroll if there's a meaningful difference
+        if (Math.abs(offsetNeeded) > 10) {
           viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
         }
 
