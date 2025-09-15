@@ -1,5 +1,5 @@
 
-/* Mobile and tablet specific fixes */
+/* Aggressive mobile viewport locking to prevent header movement */
 html, body {
   height: 100%;
   /* Prevent document-level bouncing/overscroll on mobile */
@@ -9,14 +9,20 @@ html, body {
   overflow: hidden !important;
   position: fixed;
   width: 100%;
+  /* Prevent touch actions that could cause scrolling */
+  touch-action: none;
 }
 
 /* Ensure the root container takes full height and prevents unintended scroll */
 #root {
   height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile */
   max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden !important;
   position: relative;
+  /* Prevent any touch actions on the root */
+  touch-action: none;
 }
 
 /* Re-enable proper scrolling ONLY for designated scroll containers */
@@ -25,7 +31,7 @@ html, body {
 .scroll-viewport {
   -webkit-overflow-scrolling: touch;
   overflow: auto !important;
-  touch-action: pan-y;
+  touch-action: pan-y; /* Only allow vertical scrolling */
   /* Allow momentum scrolling */
   -webkit-overflow-scrolling: touch;
 }
