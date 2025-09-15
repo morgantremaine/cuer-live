@@ -200,6 +200,28 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* Mobile & Tablet Compatibility Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Stay in sync on <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">every device</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
+          </p>
+        </div>
+        
+        <div className="flex justify-center">
+          <div className="group fade-up">
+            <img 
+              src="/src/assets/mobile-mockups.png" 
+              alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
+              className="h-auto max-w-lg group-hover:scale-[1.02] transition-all duration-500"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Live Show Control - Simple image only */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center space-y-6 mb-16">
@@ -311,27 +333,6 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Mobile & Tablet Compatibility Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">
-            Stay in sync on <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">every device</span>
-          </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
-          </p>
-        </div>
-        
-        <div className="flex justify-center">
-          <div className="group fade-up">
-            <img 
-              src="/src/assets/mobile-mockups.png" 
-              alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
-              className="h-auto max-w-lg group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-        </div>
-        </div>
       </div>
 
       {/* Teleprompter Section */}
