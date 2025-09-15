@@ -127,7 +127,7 @@ const AccountManagement = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+          <TabsList className={`grid w-full ${user?.email === 'morgan@cuer.live' ? 'grid-cols-5' : 'grid-cols-4'} bg-gray-800`}>
             <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Profile
             </TabsTrigger>
@@ -137,9 +137,11 @@ const AccountManagement = () => {
             <TabsTrigger value="subscription" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Subscription
             </TabsTrigger>
-            <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
-              Integrations (beta)
-            </TabsTrigger>
+            {user?.email === 'morgan@cuer.live' && (
+              <TabsTrigger value="integrations" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
+                Integrations (beta)
+              </TabsTrigger>
+            )}
             <TabsTrigger value="team" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white text-gray-300">
               Team
             </TabsTrigger>
@@ -259,20 +261,22 @@ const AccountManagement = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="integrations">
-            {team ? (
-              <IntegrationsSettings teamId={team.id} />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Team Integrations</CardTitle>
-                  <CardDescription>
-                    You need to be part of a team to manage integrations
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            )}
-          </TabsContent>
+          {user?.email === 'morgan@cuer.live' && (
+            <TabsContent value="integrations">
+              {team ? (
+                <IntegrationsSettings teamId={team.id} />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team Integrations</CardTitle>
+                    <CardDescription>
+                      You need to be part of a team to manage integrations
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="team">
             <TeamManagement />
