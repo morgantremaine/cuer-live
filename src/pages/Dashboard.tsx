@@ -429,12 +429,14 @@ const Dashboard = () => {
               {/* Action buttons */}
               <div className="flex gap-4 mb-6 flex-wrap">
                 <CreateNewButton onClick={handleCreateNew} />
-                <CSVImportDialog onImport={handleCSVImport}>
-                  <Button size="lg" className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Import CSV
-                  </Button>
-                </CSVImportDialog>
+                {!isMobile && (
+                  <CSVImportDialog onImport={handleCSVImport}>
+                    <Button size="lg" className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Import CSV
+                    </Button>
+                  </CSVImportDialog>
+                )}
                 <AdminNotificationSender userEmail={user?.email} />
               </div>
 
