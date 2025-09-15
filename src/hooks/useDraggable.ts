@@ -62,8 +62,9 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
     const deltaX = e.clientX - dragStart.x;
     const deltaY = e.clientY - dragStart.y;
     
-    // Mark as moved if dragged more than 3px (reduced threshold for better responsiveness)
-    if (!hasMoved && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
+    // Mark as moved if dragged more than 2px (very sensitive for better detection)
+    if (!hasMoved && (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2)) {
+      console.log('🚀 Drag movement detected, deltaX:', deltaX, 'deltaY:', deltaY);
       setHasMoved(true);
     }
     
@@ -87,17 +88,24 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
 
   const handleMouseUp = useCallback(() => {
     if (isDragging) {
+      console.log('🛑 Mouse up, isDragging:', isDragging, 'hasMoved:', hasMoved);
       setIsDragging(false);
-      setHasMoved(false);
+      
+      // Don't reset hasMoved immediately - let the click handler see it first
+      setTimeout(() => {
+        setHasMoved(false);
+      }, 10);
+      
       onDragEnd?.();
       
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     }
-  }, [isDragging, onDragEnd]);
+  }, [isDragging, hasMoved, onDragEnd]);
 
   const startDrag = useCallback((e: React.MouseEvent) => {
+    console.log('🎯 Starting drag');
     // Prevent default to avoid text selection and other browser behaviors
     e.preventDefault();
     e.stopPropagation();
@@ -137,16 +145,20 @@ export const useDraggable = (options: UseDraggableOptions = {}) => {
 
   const handleClick = useCallback((originalOnClick?: () => void) => {
     return (e: React.MouseEvent) => {
+      console.log('🖱️ Click detected, hasMoved:', hasMoved, 'isDragging:', isDragging);
+      
       // Only trigger click if we haven't moved (i.e., it's a click, not a drag)
       if (!hasMoved && originalOnClick) {
+        console.log('✅ Triggering original click');
         originalOnClick();
       } else if (hasMoved) {
         // Prevent click event if we just finished dragging
+        console.log('❌ Preventing click due to drag movement');
         e.preventDefault();
         e.stopPropagation();
       }
     };
-  }, [hasMoved]);
+  }, [hasMoved, isDragging]);
 
   // Function to reset position to bottom-right of viewport
   const resetToBottomRight = useCallback(() => {
