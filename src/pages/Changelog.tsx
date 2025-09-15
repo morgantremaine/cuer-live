@@ -42,7 +42,7 @@ const Changelog: React.FC = () => {
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/changelog-collaboration-features.png"
+                        src="/uploads/changelog-collaboration-features.png"
                         alt="Collaboration features including zoom controls and live user presence"
                         className="w-full max-w-2xl mx-auto rounded"
                       />
