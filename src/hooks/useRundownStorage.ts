@@ -174,6 +174,10 @@ export const useRundownStorage = () => {
       }
     }
 
+    // Set the show_date to today's date in YYYY-MM-DD format
+    const today = new Date();
+    const showDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
     const { data, error } = await supabase
       .from('rundowns')
       .insert({
@@ -183,6 +187,7 @@ export const useRundownStorage = () => {
         team_id: teamId,
         folder_id: folderId,
         archived: false,
+        show_date: showDate,
         last_updated_by: user.id
       })
       .select()
