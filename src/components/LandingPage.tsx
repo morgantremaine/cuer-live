@@ -214,7 +214,7 @@ const LandingPage = () => {
         <div className="flex justify-center">
           <div className="group fade-up">
             <img 
-              src="/src/assets/mobile-mockups.png" 
+              src="/mobile-mockups.png" 
               alt="Cuer Live running on mobile devices showing professional rundown interface with tablet and phone views"
               className="h-auto max-w-xl group-hover:scale-[1.02] transition-all duration-500"
             />
