@@ -486,9 +486,8 @@ const Dashboard = () => {
                   ) : (
                     <Button 
                       size="lg" 
-                      disabled
                       onClick={handleDisabledImportClick}
-                      className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2 disabled:opacity-50 disabled:cursor-pointer"
+                      className="bg-gray-300 text-gray-600 border-0 flex items-center gap-2 opacity-60 cursor-pointer"
                       title={`Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.`}
                     >
                       <Plus className="h-4 w-4" />

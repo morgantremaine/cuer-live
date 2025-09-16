@@ -23,8 +23,10 @@ const CreateNewButton = ({ onClick, disabled = false, disabledReason, onDisabled
     <Button 
       onClick={handleClick} 
       size="lg" 
-      disabled={disabled}
-      className="bg-blue-600 hover:bg-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-pointer"
+      className={`border-0 ${disabled 
+        ? 'bg-blue-400 text-white opacity-60 cursor-pointer' 
+        : 'bg-blue-600 hover:bg-blue-700 text-white'
+      }`}
     >
       <Plus className="h-5 w-5 mr-2" />
       Create New Rundown
