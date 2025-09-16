@@ -7,6 +7,8 @@ import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useSubscription } from './useSubscription';
+import { useToast } from './use-toast';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +28,8 @@ export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { subscription_tier, access_type } = useSubscription();
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
@@ -1120,6 +1124,28 @@ export const useSimplifiedRundownState = () => {
           
           if (teamError || !teamData) {
             throw new Error('No team found for user');
+          }
+
+          // Check rundown limits for free tier users before creating
+          if ((subscription_tier === 'Free' || subscription_tier === null) && (access_type === 'free' || access_type === 'none')) {
+            const { data: existingRundowns, error: rundownsError } = await supabase
+              .from('rundowns')
+              .select('id')
+              .eq('team_id', teamData.team_id)
+              .eq('archived', false);
+            
+            if (rundownsError) {
+              console.error('Error checking existing rundowns:', rundownsError);
+            } else if (existingRundowns && existingRundowns.length >= 3) {
+              toast({
+                title: 'Rundown Limit Reached',
+                description: 'Free tier users are limited to 3 rundowns. Please upgrade your plan or archive existing rundowns to create new ones.',
+                variant: 'destructive',
+              });
+              navigate('/dashboard', { replace: true });
+              setIsLoading(false);
+              return;
+            }
           }
           
           // Get folder ID from location state if available
