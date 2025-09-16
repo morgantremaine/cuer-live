@@ -7,15 +7,24 @@ interface CreateNewButtonProps {
   onClick: () => void
   disabled?: boolean
   disabledReason?: string
+  onDisabledClick?: () => void
 }
 
-const CreateNewButton = ({ onClick, disabled = false, disabledReason }: CreateNewButtonProps) => {
+const CreateNewButton = ({ onClick, disabled = false, disabledReason, onDisabledClick }: CreateNewButtonProps) => {
+  const handleClick = () => {
+    if (disabled && onDisabledClick) {
+      onDisabledClick();
+    } else if (!disabled) {
+      onClick();
+    }
+  };
+
   const button = (
     <Button 
-      onClick={onClick} 
+      onClick={handleClick} 
       size="lg" 
       disabled={disabled}
-      className="bg-blue-600 hover:bg-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="bg-blue-600 hover:bg-blue-700 text-white border-0 disabled:opacity-50 disabled:cursor-pointer"
     >
       <Plus className="h-5 w-5 mr-2" />
       Create New Rundown

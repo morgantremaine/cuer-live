@@ -139,6 +139,22 @@ const Dashboard = () => {
     navigate('/rundown/new', { state: { folderId: targetFolder } });
   };
 
+  const handleDisabledCreateClick = () => {
+    toast({
+      title: 'Upgrade Required',
+      description: `You've reached the free tier limit of ${rundownLimits.maxRundowns} rundowns. To unlock unlimited rundowns, upgrade your plan in Account Settings.`,
+      variant: 'destructive',
+    });
+  };
+
+  const handleDisabledImportClick = () => {
+    toast({
+      title: 'Upgrade Required', 
+      description: `You've reached the free tier limit of ${rundownLimits.maxRundowns} rundowns. To unlock unlimited rundowns, upgrade your plan in Account Settings.`,
+      variant: 'destructive',
+    });
+  };
+
   const handleDeleteRundown = async (rundownId: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setDeleteDialog({
@@ -454,6 +470,7 @@ const Dashboard = () => {
                   onClick={handleCreateNew}
                   disabled={!rundownLimits.canCreateNew}
                   disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
+                  onDisabledClick={handleDisabledCreateClick}
                 />
                 {!isMobile && (
                   rundownLimits.canImport ? (
@@ -470,7 +487,8 @@ const Dashboard = () => {
                     <Button 
                       size="lg" 
                       disabled
-                      className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleDisabledImportClick}
+                      className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2 disabled:opacity-50 disabled:cursor-pointer"
                       title={`Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.`}
                     >
                       <Plus className="h-4 w-4" />
