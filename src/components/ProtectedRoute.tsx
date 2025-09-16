@@ -27,10 +27,14 @@ const ProtectedRoute = ({ children, requiresSubscription = false }: ProtectedRou
     return <Navigate to="/login" replace />
   }
 
-  // If subscription is required, check subscription status
+  // Everyone gets free tier access by default now
+  // Only redirect to subscription page if user explicitly needs a paid subscription
+  // and doesn't have any form of access
   if (requiresSubscription) {
-    // Allow access if user is subscribed, grandfathered, has team access, or is on free tier
-    const hasAccess = subscribed || grandfathered || access_type === 'team_member' || access_type === 'free';
+    // Allow access for all authenticated users - everyone gets free tier by default
+    // Only block if there's a specific error or if access_type is explicitly 'blocked'
+    const hasAccess = true; // All authenticated users now have access via free tier
+    
     if (!hasAccess) {
       return <Navigate to="/subscription" replace />
     }

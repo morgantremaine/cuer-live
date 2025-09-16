@@ -110,7 +110,8 @@ export const useSubscription = () => {
         max_team_members: data.max_team_members || 1,
         subscription_end: data.subscription_end,
         grandfathered: data.grandfathered || false,
-        access_type: data.access_type || 'free',
+        // If access_type is 'none', treat as 'free' since all users get free tier by default
+        access_type: data.access_type === 'none' ? 'free' : (data.access_type || 'free'),
         user_role: data.user_role,
         loading: false,
         error: null,
