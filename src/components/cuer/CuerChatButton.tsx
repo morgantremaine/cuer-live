@@ -59,7 +59,7 @@ const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
     if (isFreeUser) {
       toast({
         title: "Upgrade Required",
-        description: "Cuer AI is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        description: "Cuer AI is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
         variant: "destructive"
       });
       return;

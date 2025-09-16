@@ -466,7 +466,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     if (isFreeUser) {
       toast({
         title: "Upgrade Required",
-        description: "CSV Export is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        description: "CSV Export is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
         variant: "destructive"
       });
       return;

@@ -88,7 +88,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     if (isFreeUser) {
       toast({
         title: "Upgrade Required",
-        description: "Teleprompter is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        description: "Teleprompter is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
         variant: "destructive"
       });
       return;
@@ -123,7 +123,7 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
     if (isFreeUser) {
       toast({
         title: "Upgrade Required",
-        description: "AD View is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        description: "AD View is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
         variant: "destructive"
       });
       return;
