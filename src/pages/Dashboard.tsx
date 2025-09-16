@@ -169,7 +169,7 @@ const Dashboard = () => {
     e.stopPropagation();
     try {
       // Check rundown limits for free tier users when unarchiving
-      if (subscription_tier === 'Free' && access_type === 'free') {
+      if ((subscription_tier === 'Free' || subscription_tier === null) && access_type === 'free') {
         const activeRundowns = savedRundowns.filter(r => !r.archived);
         if (activeRundowns.length >= 3) {
           toast({

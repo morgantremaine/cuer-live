@@ -147,7 +147,7 @@ export const useRundownStorage = () => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
 
     // Check rundown limits for free tier users
-    if (subscription_tier === 'Free' && access_type === 'free') {
+    if ((subscription_tier === 'Free' || subscription_tier === null) && access_type === 'free') {
       const activeRundowns = savedRundowns.filter(r => !r.archived);
       if (activeRundowns.length >= 3) {
         throw new Error('Free tier users are limited to 3 rundowns. Please upgrade your plan or archive existing rundowns to create new ones.');
