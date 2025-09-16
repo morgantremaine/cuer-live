@@ -420,35 +420,8 @@ const LandingPage = () => {
         </div>
         */}
         
-        {/* Rich Notes & Documentation */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
-            <p className="text-xl text-slate-400">
-              Capture and organize show notes with rich text formatting, search functionality, and collaborative editing for your entire team.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Rich text formatting</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Searchable documentation</span>
-              </div>
-            </div>
-          </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-              alt="Notes and Documentation"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-        </div>
-
         {/* Team Management */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
           <div className="group fade-up">
             <img 
               src="/uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
@@ -471,6 +444,33 @@ const LandingPage = () => {
                 <span>Real-time collaboration</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Rich Notes & Documentation */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
+            <p className="text-xl text-slate-400">
+              Capture and organize show notes with rich text formatting, search functionality, and collaborative editing for your entire team.
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Rich text formatting</span>
+              </div>
+              <div className="flex items-center space-x-2 text-slate-300">
+                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                <span>Searchable documentation</span>
+              </div>
+            </div>
+          </div>
+          <div className="group fade-up">
+            <img 
+              src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+              alt="Notes and Documentation"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
           </div>
         </div>
       </div>
