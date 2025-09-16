@@ -21,8 +21,7 @@ const config: LoggerConfig = {
   debugEmails: [
     'morgantremaine@gmail.com',
     'morgan@cuer.live', 
-    'morgantremaine@me.com',
-    'cuertest@gmail.com'
+    'morgantremaine@me.com'
   ]
 };
 
