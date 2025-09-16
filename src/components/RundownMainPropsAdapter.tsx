@@ -164,9 +164,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Fixed Header Section on Mobile/Tablet */}
-      <div className="lg:relative lg:z-auto fixed top-0 left-0 right-0 z-50 lg:block">
-        <RundownHeaderSection
+      {/* Toolbar Section */}
+      <RundownHeaderSection
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={onTimezoneChange}
@@ -223,11 +222,10 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         canZoomIn={canZoomIn}
         canZoomOut={canZoomOut}
         isDefaultZoom={isDefaultZoom}
-        />
-      </div>
+      />
 
-      {/* Main Content with top spacing on mobile/tablet to account for fixed header */}
-      <div className="flex-1 overflow-hidden pt-32 lg:pt-0">
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
         <RundownMainContent
           {...props}
           currentSegmentName={currentSegmentName}
