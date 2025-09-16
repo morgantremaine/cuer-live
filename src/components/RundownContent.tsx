@@ -295,10 +295,11 @@ const RundownContent = React.memo<RundownContentProps>(({
         <div className="relative">
           {/* Sticky Header - Outside of Transform */}
           <div 
-            className="sticky top-0 z-20 bg-background"
+            className="sticky top-0 md:top-0 z-20 bg-background"
             style={{ 
               width: `${totalTableWidth * zoomLevel}px`,
-              minWidth: `${totalTableWidth * zoomLevel}px`
+              minWidth: `${totalTableWidth * zoomLevel}px`,
+              top: window.innerWidth < 768 ? '0px' : '0px' // Keep at 0 since we handled offset in parent
             }}
           >
             <table 
