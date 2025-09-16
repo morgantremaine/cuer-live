@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { RundownActionLog } from '@/components/RundownActionLog';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface ToolsMenuProps {
   rundownId: string | undefined;
@@ -31,8 +32,13 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { subscription_tier, access_type } = useSubscription();
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const historyButtonRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is on free tier
+  const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
+                    (access_type === 'free' || access_type === 'none');
 
   useEffect(() => {
     if (showHistoryDialog && historyButtonRef.current) {
@@ -78,6 +84,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       return;
     }
 
+    // Block for free tier users
+    if (isFreeUser) {
+      toast({
+        title: "Upgrade Required",
+        description: "Teleprompter is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Check if this is the demo rundown
     if (rundownId === DEMO_RUNDOWN_ID) {
       toast({
@@ -98,6 +114,16 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
       toast({
         title: "Cannot open AD View",
         description: "Save this rundown first before opening AD View.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Block for free tier users
+    if (isFreeUser) {
+      toast({
+        title: "Upgrade Required",
+        description: "AD View is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
         variant: "destructive"
       });
       return;

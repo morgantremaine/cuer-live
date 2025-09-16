@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 import CuerChatPanel from './CuerChatPanel';
 import { useDraggable } from '@/hooks/useDraggable';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
 
 interface CuerChatButtonProps {
   rundownData?: any;
@@ -11,8 +13,14 @@ interface CuerChatButtonProps {
 
 const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const { subscription_tier, access_type } = useSubscription();
+  const { toast } = useToast();
   const hasInitialized = useRef(false);
   const lastViewportSize = useRef({ width: window.innerWidth, height: window.innerHeight });
+  
+  // Check if user is on free tier
+  const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
+                    (access_type === 'free' || access_type === 'none');
   
   const { position, isDragging, dragRef, startDrag, handleClick, resetToBottomRight } = useDraggable({
     initialPosition: { x: window.innerWidth - 120, y: window.innerHeight - 80 },
@@ -47,31 +55,49 @@ const CuerChatButton = ({ rundownData, modDeps }: CuerChatButtonProps) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [resetToBottomRight]);
 
+  const handleChatOpen = () => {
+    if (isFreeUser) {
+      toast({
+        title: "Upgrade Required",
+        description: "Cuer AI is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsChatOpen(true);
+  };
+
   return (
     <>
       {/* Floating Chat Button */}
       <div
         ref={dragRef}
-        className="fixed z-40 h-12 px-4 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white select-none cursor-grab transition-colors"
+        className={`fixed z-40 h-12 px-4 rounded-full shadow-lg flex items-center gap-2 text-white select-none cursor-grab transition-colors ${
+          isFreeUser 
+            ? 'bg-gray-400 hover:bg-gray-500' 
+            : 'bg-blue-600 hover:bg-blue-700'
+        }`}
         style={{ 
           left: position.x,
           top: position.y,
           cursor: isDragging ? 'grabbing' : 'grab'
         }}
         onMouseDown={startDrag}
-        onClick={handleClick(() => setIsChatOpen(true))}
+        onClick={handleClick(handleChatOpen)}
       >
         <MessageCircle className="w-5 h-5 text-white" />
         <span className="text-sm font-medium text-white">Cuer AI</span>
       </div>
 
-      {/* Chat Panel */}
-      <CuerChatPanel
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        rundownData={rundownData}
-        modDeps={modDeps}
-      />
+      {/* Chat Panel - only show if not free user */}
+      {!isFreeUser && (
+        <CuerChatPanel
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          rundownData={rundownData}
+          modDeps={modDeps}
+        />
+      )}
     </>
   );
 };

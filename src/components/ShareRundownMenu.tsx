@@ -17,6 +17,7 @@ import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { exportRundownAsCSV, CSVExportData } from '@/utils/csvExport';
 import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface ShareRundownMenuProps {
   rundownId: string;
@@ -30,6 +31,7 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   rundownData
 }) => {
   const { toast } = useToast();
+  const { subscription_tier, access_type } = useSubscription();
   const [copied, setCopied] = useState(false);
   const {
     sharedLayout,
@@ -38,6 +40,10 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
     reloadLayouts,
     isLoading
   } = useSharedRundownLayout(rundownId);
+
+  // Check if user is on free tier
+  const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
+                    (access_type === 'free' || access_type === 'none');
 
   // Always use the same permanent URL
   const permanentUrl = `${window.location.origin}/shared/rundown/${rundownId}`;
@@ -456,6 +462,16 @@ export const ShareRundownMenu: React.FC<ShareRundownMenuProps> = ({
   };
 
   const handleExportCSV = () => {
+    // Block for free tier users
+    if (isFreeUser) {
+      toast({
+        title: "Upgrade Required",
+        description: "CSV Export is a premium feature. Upgrade your plan in Account Settings to unlock unlimited access.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Check if this is the demo rundown
     if (rundownId === DEMO_RUNDOWN_ID) {
       toast({
