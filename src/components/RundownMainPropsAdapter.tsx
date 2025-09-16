@@ -8,7 +8,6 @@ import FindReplaceDialog from './FindReplaceDialog';
 import { RundownContainerProps } from '@/types/rundownContainer';
 import { CSVExportData } from '@/utils/csvExport';
 import { useColumnLayoutStorage } from '@/hooks/useColumnLayoutStorage';
-import { useResponsiveLayout } from '@/hooks/use-mobile';
 
 interface RundownMainPropsAdapterProps {
   props: RundownContainerProps;
@@ -18,9 +17,6 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   const [showFindReplace, setShowFindReplace] = useState(false);
   const { savedLayouts, loading, saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout } = useColumnLayoutStorage();
   const layoutOperations = { saveLayout, updateLayout, renameLayout, deleteLayout, canEditLayout, loading };
-  
-  // Mobile layout detection
-  const { isMobileOrTablet } = useResponsiveLayout();
   
   const {
     currentTime,
@@ -167,71 +163,69 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header Section - Fixed on mobile/tablet */}
-      <div className={`${isMobileOrTablet ? 'fixed top-0 left-0 right-0 z-30 bg-background border-b' : ''} flex-shrink-0`}>
-        <RundownHeaderSection
-          currentTime={currentTime}
-          timezone={timezone}
-          onTimezoneChange={onTimezoneChange}
-          totalRuntime={totalRuntime}
-          onAddRow={onAddRow}
-          onAddHeader={onAddHeader}
-           onShowColumnManager={() => setShowColumnManager(true)}
-          selectedCount={selectedCount}
-          hasClipboardData={hasClipboardData}
-          onCopySelectedRows={onCopySelectedRows}
-          onPasteRows={onPasteRows}
-          onDeleteSelectedRows={onDeleteSelectedRows}
-          onClearSelection={onClearSelection}
-          selectedRowId={selectedRowId}
-          isPlaying={isPlaying}
-          currentSegmentId={currentSegmentId}
-          timeRemaining={timeRemaining}
-          onPlay={onPlay}
-          onPause={onPause}
-          onForward={onForward}
-          onBackward={onBackward}
-          onReset={onReset}
-          hasUnsavedChanges={hasUnsavedChanges}
-          isSaving={isSaving}
-          rundownTitle={rundownTitle}
-          onTitleChange={onTitleChange}
-          rundownStartTime={rundownStartTime}
-          onRundownStartTimeChange={onRundownStartTimeChange}
-          showDate={showDate}
-          onShowDateChange={onShowDateChange}
-          rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
-          items={items}
-          visibleColumns={visibleColumns}
-          onUndo={onUndo}
-          canUndo={canUndo}
-          lastAction={lastAction}
-          isConnected={isConnected}
-          isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-          hasActiveTeammates={hasActiveTeammates}
-          activeTeammateNames={activeTeammateNames}
-          rundownData={rundownData}
-          autoScrollEnabled={autoScrollEnabled}
-          onToggleAutoScroll={onToggleAutoScroll}
-          onJumpToCurrentSegment={handleJumpToCurrentSegment}
-          onUpdateItem={onUpdateItem}
-          onShowFindReplace={() => setShowFindReplace(true)}
-          onShowNotes={onShowNotes}
-          // Zoom controls
-          zoomLevel={zoomLevel}
-          onZoomIn={onZoomIn}
-          onZoomOut={onZoomOut}
-          onResetZoom={onResetZoom}
-          canZoomIn={canZoomIn}
-          canZoomOut={canZoomOut}
-          isDefaultZoom={isDefaultZoom}
-        />
-      </div>
+    <div className="flex flex-col h-full">
+      {/* Toolbar Section */}
+      <RundownHeaderSection
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={onTimezoneChange}
+        totalRuntime={totalRuntime}
+        onAddRow={onAddRow}
+        onAddHeader={onAddHeader}
+         onShowColumnManager={() => setShowColumnManager(true)}
+        selectedCount={selectedCount}
+        hasClipboardData={hasClipboardData}
+        onCopySelectedRows={onCopySelectedRows}
+        onPasteRows={onPasteRows}
+        onDeleteSelectedRows={onDeleteSelectedRows}
+        onClearSelection={onClearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        currentSegmentId={currentSegmentId}
+        timeRemaining={timeRemaining}
+        onPlay={onPlay}
+        onPause={onPause}
+        onForward={onForward}
+        onBackward={onBackward}
+        onReset={onReset}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        rundownTitle={rundownTitle}
+        onTitleChange={onTitleChange}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={onRundownStartTimeChange}
+        showDate={showDate}
+        onShowDateChange={onShowDateChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={onOpenTeleprompter}
+        items={items}
+        visibleColumns={visibleColumns}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        lastAction={lastAction}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        hasActiveTeammates={hasActiveTeammates}
+        activeTeammateNames={activeTeammateNames}
+        rundownData={rundownData}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={onToggleAutoScroll}
+        onJumpToCurrentSegment={handleJumpToCurrentSegment}
+        onUpdateItem={onUpdateItem}
+        onShowFindReplace={() => setShowFindReplace(true)}
+        onShowNotes={onShowNotes}
+        // Zoom controls
+        zoomLevel={zoomLevel}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetZoom={onResetZoom}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+        isDefaultZoom={isDefaultZoom}
+      />
 
-      {/* Main Content - Add top padding on mobile to account for fixed header */}
-      <div className={`flex-1 min-h-0 overflow-hidden ${isMobileOrTablet ? 'pt-20' : ''}`}>
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
         <RundownMainContent
           {...props}
           currentSegmentName={currentSegmentName}

@@ -8,7 +8,6 @@ import { Column } from '@/types/columns';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 import { getMinimumWidth } from '@/utils/columnSizing';
-import { useResponsiveLayout } from '@/hooks/use-mobile';
 
 interface RundownContentProps {
   title?: string;
@@ -130,9 +129,6 @@ const RundownContent = React.memo<RundownContentProps>(({
   onLoadLayout,
   zoomLevel = 1.0
 }) => {
-  // Mobile layout detection
-  const { isMobileOrTablet } = useResponsiveLayout();
-  
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
 
@@ -295,13 +291,12 @@ const RundownContent = React.memo<RundownContentProps>(({
       </div>
       
       {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden mobile-scroll-area" ref={scrollContainerRef} data-rundown-table="true">
+      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
         <div className="relative">
           {/* Sticky Header - Outside of Transform */}
           <div 
-            className="sticky z-20 bg-background"
+            className="sticky top-0 z-20 bg-background"
             style={{ 
-              top: isMobileOrTablet ? '80px' : '0px', // Account for fixed header on mobile
               width: `${totalTableWidth * zoomLevel}px`,
               minWidth: `${totalTableWidth * zoomLevel}px`
             }}
