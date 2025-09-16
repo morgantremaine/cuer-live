@@ -8,6 +8,7 @@ import { Column } from '@/types/columns';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
 import { getMinimumWidth } from '@/utils/columnSizing';
+import { useResponsiveLayout } from '@/hooks/use-mobile';
 
 interface RundownContentProps {
   title?: string;
@@ -129,6 +130,9 @@ const RundownContent = React.memo<RundownContentProps>(({
   onLoadLayout,
   zoomLevel = 1.0
 }) => {
+  // Mobile layout detection
+  const { isMobileOrTablet } = useResponsiveLayout();
+  
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
 
@@ -297,7 +301,7 @@ const RundownContent = React.memo<RundownContentProps>(({
           <div 
             className="sticky z-20 bg-background"
             style={{ 
-              top: '0px',
+              top: isMobileOrTablet ? '80px' : '0px', // Account for fixed header on mobile
               width: `${totalTableWidth * zoomLevel}px`,
               minWidth: `${totalTableWidth * zoomLevel}px`
             }}

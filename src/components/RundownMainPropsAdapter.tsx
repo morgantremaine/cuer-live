@@ -167,9 +167,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   };
 
   return (
-    <div className={`${isMobileOrTablet ? 'mobile-full-height' : 'h-full'} ${isMobileOrTablet ? 'grid grid-rows-[auto_1fr]' : 'flex flex-col h-full'}`}>
-      {/* Header Section - Sticky on mobile/tablet */}
-      <div className={`${isMobileOrTablet ? 'sticky top-0 z-30 bg-background' : ''}`}>
+    <div className="h-full flex flex-col">
+      {/* Header Section - Fixed on mobile/tablet */}
+      <div className={`${isMobileOrTablet ? 'fixed top-0 left-0 right-0 z-30 bg-background border-b' : ''} flex-shrink-0`}>
         <RundownHeaderSection
           currentTime={currentTime}
           timezone={timezone}
@@ -230,8 +230,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         />
       </div>
 
-      {/* Main Content - Scrollable area */}
-      <div className={`${isMobileOrTablet ? 'mobile-full-height overflow-hidden' : 'flex-1 overflow-hidden'}`}>
+      {/* Main Content - Add top padding on mobile to account for fixed header */}
+      <div className={`flex-1 min-h-0 overflow-hidden ${isMobileOrTablet ? 'pt-20' : ''}`}>
         <RundownMainContent
           {...props}
           currentSegmentName={currentSegmentName}
