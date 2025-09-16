@@ -20,8 +20,9 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
   const startAutoScroll = useCallback((direction: 'up' | 'down', speed: number) => {
     stopAutoScroll();
     
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    // Target the table scroll container specifically
+    const tableScrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!tableScrollContainer) return;
 
     // Throttle scroll updates to avoid performance issues
     const scrollDelay = Math.max(16, 100 - speed); // 16ms minimum (60fps), faster for higher speed
@@ -33,16 +34,16 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       lastScrollTimeRef.current = now;
       
       const scrollAmount = Math.max(2, speed / 10); // Minimum 2px scroll
-      const currentScrollTop = scrollContainer.scrollTop;
+      const currentScrollTop = tableScrollContainer.scrollTop;
       
       if (direction === 'up') {
-        scrollContainer.scrollTop = Math.max(0, currentScrollTop - scrollAmount);
+        tableScrollContainer.scrollTop = Math.max(0, currentScrollTop - scrollAmount);
       } else {
-        const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
-        scrollContainer.scrollTop = Math.min(maxScroll, currentScrollTop + scrollAmount);
+        const maxScroll = tableScrollContainer.scrollHeight - tableScrollContainer.clientHeight;
+        tableScrollContainer.scrollTop = Math.min(maxScroll, currentScrollTop + scrollAmount);
       }
     }, scrollDelay);
-  }, [scrollContainerRef, stopAutoScroll]);
+  }, [stopAutoScroll]);
 
   const handleDragAutoScroll = useCallback((e: React.DragEvent) => {
     if (!isActive) {
@@ -50,10 +51,11 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       return;
     }
 
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    // Target the table scroll container specifically
+    const tableScrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!tableScrollContainer) return;
 
-    const rect = scrollContainer.getBoundingClientRect();
+    const rect = tableScrollContainer.getBoundingClientRect();
     const mouseY = e.clientY;
     
     // Define scroll zones (top and bottom 80px of the container)
@@ -75,7 +77,7 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       // Mouse is not in scroll zones
       stopAutoScroll();
     }
-  }, [isActive, scrollContainerRef, startAutoScroll, stopAutoScroll]);
+  }, [isActive, startAutoScroll, stopAutoScroll]);
 
   // Stop auto-scroll when dragging becomes inactive
   useEffect(() => {

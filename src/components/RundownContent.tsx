@@ -290,12 +290,16 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
       </div>
       
-      {/* Scrollable Content with Separate Header and Body */}
-      <ScrollArea className="w-full h-full bg-background print:hidden" ref={scrollContainerRef} data-rundown-table="true">
+      {/* Auto-scrollable Table Content Only - Header stays fixed */}
+      <ScrollArea 
+        className="w-full h-full bg-background print:hidden" 
+        ref={scrollContainerRef} 
+        data-rundown-table="true"
+      >
         <div className="relative">
-          {/* Sticky Header - Outside of Transform */}
+          {/* Sticky Table Header */}
           <div 
-            className="sticky top-0 z-20 bg-background"
+            className="sticky top-0 z-20 bg-background border-b border-border"
             style={{ 
               width: `${totalTableWidth * zoomLevel}px`,
               minWidth: `${totalTableWidth * zoomLevel}px`

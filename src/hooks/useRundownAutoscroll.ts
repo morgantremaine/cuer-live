@@ -18,7 +18,7 @@ export const useRundownAutoscroll = ({
   const lastScrolledSegmentRef = useRef<string | null>(null);
 
   const scrollToCurrentSegment = useCallback(() => {
-    if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
+    if (!currentSegmentId || !autoScrollEnabled) {
       return;
     }
 
@@ -28,56 +28,46 @@ export const useRundownAutoscroll = ({
     }
 
     try {
-      // Look for the target element with data-item-id attribute
-      const targetElement = scrollContainerRef.current.querySelector(
-        `[data-item-id="${currentSegmentId}"]`
-      );
-
-      if (targetElement) {
-        // Check if user is currently scrolling manually by detecting recent scroll events
-        const scrollContainer = scrollContainerRef.current;
-        const now = Date.now();
-        const lastUserScroll = (scrollContainer as any)._lastUserScroll || 0;
-        const userScrollingStopped = (scrollContainer as any)._userScrollingStopped || 0;
-        const timeSinceLastScroll = now - lastUserScroll;
-        const timeSinceScrollingStopped = now - userScrollingStopped;
-        
-        // If user scrolled recently (within 3 seconds) OR if they're still actively scrolling, skip autoscroll
-        // This prevents autoscroll during manual scrolling and for a period after scrolling stops
-        if (timeSinceLastScroll < 3000 || timeSinceScrollingStopped < 1000) {
-          return;
-        }
-
-        // Simple approach: center first, then offset
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
-        });
-
-        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
-              || scrollContainer;
-
-            const viewportRect = viewport.getBoundingClientRect();
-            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
-
-            // Desired position: 1/4 down from the top of the viewport
-            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-            const offsetNeeded = elementRect.top - desiredTop;
-
-            if (Math.abs(offsetNeeded) > 4) {
-              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-            }
-          });
-        });
-
-        lastScrolledSegmentRef.current = currentSegmentId;
+      // Find the specific table scroll container - this is our new target
+      const tableScrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+      if (!tableScrollContainer) {
+        return;
       }
+
+      // Look for the target element with data-item-id attribute
+      const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`) as HTMLElement;
+      if (!targetElement) {
+        return;
+      }
+
+      // Check if user is currently scrolling manually by detecting recent scroll events
+      const now = Date.now();
+      const lastUserScroll = (tableScrollContainer as any)._lastUserScroll || 0;
+      const userScrollingStopped = (tableScrollContainer as any)._userScrollingStopped || 0;
+      const timeSinceLastScroll = now - lastUserScroll;
+      const timeSinceScrollingStopped = now - userScrollingStopped;
+      
+      // If user scrolled recently (within 3 seconds) OR if they're still actively scrolling, skip autoscroll
+      // This prevents autoscroll during manual scrolling and for a period after scrolling stops
+      if (timeSinceLastScroll < 3000 || timeSinceScrollingStopped < 1000) {
+        return;
+      }
+
+      // Calculate the position relative to the table scroll container
+      const elementRect = targetElement.getBoundingClientRect();
+      const containerRect = tableScrollContainer.getBoundingClientRect();
+      const scrollTop = elementRect.top - containerRect.top + tableScrollContainer.scrollTop;
+
+      // Position element at 1/4 down from top of the table scroll container
+      const targetPosition = scrollTop - (tableScrollContainer.clientHeight * 1 / 4);
+      const finalScrollTop = Math.max(0, targetPosition);
+
+      tableScrollContainer.scrollTo({
+        top: finalScrollTop,
+        behavior: 'smooth'
+      });
+
+      lastScrolledSegmentRef.current = currentSegmentId;
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
     }
@@ -95,28 +85,31 @@ export const useRundownAutoscroll = ({
     }
   }, [currentSegmentId, autoScrollEnabled, scrollToCurrentSegment]);
 
-  // Track manual scrolling to prevent autoscroll interference
+  // Track manual scrolling on the table container to prevent autoscroll interference
   useEffect(() => {
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
-
     let scrollTimeout: NodeJS.Timeout;
 
     const handleUserScroll = () => {
-      (scrollContainer as any)._lastUserScroll = Date.now();
+      const tableScrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+      if (!tableScrollContainer) return;
+
+      (tableScrollContainer as any)._lastUserScroll = Date.now();
       
       // Also set a longer timeout to detect when user stops scrolling
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        (scrollContainer as any)._userScrollingStopped = Date.now();
+        (tableScrollContainer as any)._userScrollingStopped = Date.now();
       }, 500); // 500ms after scrolling stops
     };
 
-    // Listen for scroll events to detect manual scrolling
-    scrollContainer.addEventListener('scroll', handleUserScroll, { passive: true });
+    // Find the specific table scroll container and listen for scroll events
+    const tableScrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!tableScrollContainer) return;
+
+    tableScrollContainer.addEventListener('scroll', handleUserScroll, { passive: true });
     
     return () => {
-      scrollContainer.removeEventListener('scroll', handleUserScroll);
+      tableScrollContainer.removeEventListener('scroll', handleUserScroll);
       clearTimeout(scrollTimeout);
     };
   }, []);
