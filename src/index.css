@@ -34,6 +34,11 @@
     /* Header background for light mode - darker than muted */
     --header-background: 210 40% 90%;
     
+    /* Mobile viewport height variables */
+    --app-height: 100vh;
+    --viewport-height: 100vh;
+    --viewport-width: 100vw;
+    
     /* Subtle glow and animation variables */
     --glow-primary: 217 91% 60%;
     --glow-secondary: 262 83% 58%;
@@ -78,6 +83,37 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Mobile-specific layout utilities */
+@media (max-width: 1023px) {
+  .mobile-app-height {
+    height: var(--app-height) !important;
+    min-height: var(--app-height) !important;
+    max-height: var(--app-height) !important;
+  }
+  
+  .mobile-full-height {
+    height: 100% !important;
+  }
+  
+  .mobile-no-scroll {
+    overflow: hidden !important;
+    position: relative !important;
+  }
+}
+
+/* Touch optimizations for mobile */
+@media (max-width: 1023px) {
+  .mobile-scroll-area {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+  
+  .mobile-scroll-area::-webkit-scrollbar {
+    display: none;
   }
 }
 
