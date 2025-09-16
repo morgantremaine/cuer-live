@@ -129,23 +129,35 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
   const handleJumpToCurrentSegment = () => {
     if (!currentSegmentId) return;
     
-    // Target the table scroll container specifically, not the page
-    const scrollContainer = document.querySelector('[data-rundown-table="true"] [data-radix-scroll-area-viewport]') as HTMLElement;
+    // Find the element with the current segment ID
     const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
-    
-    if (targetElement && scrollContainer) {
-      // Calculate the position relative to the scroll container
-      const elementRect = targetElement.getBoundingClientRect();
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const scrollTop = elementRect.top - containerRect.top + scrollContainer.scrollTop;
-      
-      // Position at 1/4 down from the top of the scroll container
-      const targetPosition = scrollTop - (scrollContainer.clientHeight * 1 / 4);
-      const finalScrollTop = Math.max(0, targetPosition);
-      
-      scrollContainer.scrollTo({
-        top: finalScrollTop,
-        behavior: 'smooth'
+    if (targetElement) {
+      // First scroll to center, then apply offset like autoscroll does
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+
+      // Apply the same offset logic as autoscroll to position at 1/4 down
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement
+            || document.querySelector('[data-scroll-viewport]') as HTMLElement
+            || document.querySelector('.scroll-viewport') as HTMLElement
+            || document.documentElement;
+
+          const viewportRect = scrollContainer.getBoundingClientRect();
+          const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+
+          // Desired position: 1/4 down from the top of the viewport (same as autoscroll)
+          const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+          const offsetNeeded = elementRect.top - desiredTop;
+
+          if (Math.abs(offsetNeeded) > 4) {
+            scrollContainer.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+          }
+        });
       });
     }
   };
