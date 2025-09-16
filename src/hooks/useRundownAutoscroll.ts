@@ -53,14 +53,20 @@ export const useRundownAutoscroll = ({
         return;
       }
 
-      // Calculate the position relative to the table scroll container
+      // Calculate position within the scroll container - improved calculation for nested containers
       const elementRect = targetElement.getBoundingClientRect();
       const containerRect = tableScrollContainer.getBoundingClientRect();
-      const scrollTop = elementRect.top - containerRect.top + tableScrollContainer.scrollTop;
-
-      // Position element at 1/4 down from top of the table scroll container
-      const targetPosition = scrollTop - (tableScrollContainer.clientHeight * 1 / 4);
-      const finalScrollTop = Math.max(0, targetPosition);
+      
+      // Get the element's position relative to the scroll container's content
+      const elementTopInContainer = tableScrollContainer.scrollTop + (elementRect.top - containerRect.top);
+      
+      // Position element at 1/4 down from visible area top
+      const visibleHeight = tableScrollContainer.clientHeight;
+      const targetScrollPosition = elementTopInContainer - (visibleHeight * 0.25);
+      
+      // Ensure we don't scroll past the beginning or end
+      const maxScroll = tableScrollContainer.scrollHeight - visibleHeight;
+      const finalScrollTop = Math.max(0, Math.min(maxScroll, targetScrollPosition));
 
       tableScrollContainer.scrollTo({
         top: finalScrollTop,
