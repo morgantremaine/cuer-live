@@ -146,12 +146,11 @@ export const useRundownStorage = () => {
   const createRundown = useCallback(async (title: string, items: RundownItem[] = [], folderId?: string | null) => {
     if (!user || !teamId) throw new Error('User not authenticated or no team');
 
-    // Check rundown limits for free tier users
-    console.log('🔍 Checking rundown limits:', { subscription_tier, access_type, activeRundowns: savedRundowns.filter(r => !r.archived).length });
+    // Check rundown limits for free tier users - total count (active + archived)
+    console.log('🔍 Checking rundown limits:', { subscription_tier, access_type, totalRundowns: savedRundowns.length });
     if ((subscription_tier === 'Free' || subscription_tier === null) && (access_type === 'free' || access_type === 'none')) {
-      const activeRundowns = savedRundowns.filter(r => !r.archived);
-      if (activeRundowns.length >= 3) {
-        throw new Error('Free tier users are limited to 3 rundowns. Please upgrade your plan or archive existing rundowns to create new ones.');
+      if (savedRundowns.length >= 3) {
+        throw new Error('Free tier users are limited to 3 rundowns total (active + archived). Please upgrade your plan or delete existing rundowns to create new ones.');
       }
     }
 

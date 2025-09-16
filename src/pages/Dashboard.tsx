@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useRundownFolders } from '@/hooks/useRundownFolders';
 import { useTeam } from '@/hooks/useTeam';
+import { useRundownLimits } from '@/hooks/useRundownLimits';
 import { useToast } from '@/hooks/use-toast';
 import { Column } from '@/types/columns';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -31,6 +32,7 @@ const Dashboard = () => {
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
+  const rundownLimits = useRundownLimits(savedRundowns);
   const { folders, moveRundownToFolder, loading: foldersLoading } = useRundownFolders(teamId || undefined);
   const { toast } = useToast();
   // Remove unused useColumnsManager import since useUserColumnPreferences handles columns now
@@ -122,6 +124,16 @@ const Dashboard = () => {
   };
 
   const handleCreateNew = () => {
+    // Check limits before creating
+    if (!rundownLimits.canCreateNew) {
+      toast({
+        title: 'Rundown Limit Reached',
+        description: `Free tier users are limited to ${rundownLimits.maxRundowns} rundowns total (active + archived). Please upgrade your plan or delete existing rundowns to create new ones.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     // Pass current folder info to the new rundown creation
     const targetFolder = folderType === 'custom' ? selectedFolder : null;
     navigate('/rundown/new', { state: { folderId: targetFolder } });
@@ -235,6 +247,16 @@ const Dashboard = () => {
         toast({
           title: 'No data to import',
           description: 'The CSV file does not contain any valid rundown data.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check limits before importing
+      if (!rundownLimits.canImport) {
+        toast({
+          title: 'Rundown Limit Reached',
+          description: `Free tier users are limited to ${rundownLimits.maxRundowns} rundowns total (active + archived). Please upgrade your plan or delete existing rundowns to import new ones.`,
           variant: 'destructive',
         });
         return;
@@ -428,14 +450,33 @@ const Dashboard = () => {
             <div className="container mx-auto px-4 py-8">
               {/* Action buttons */}
               <div className="flex gap-4 mb-6 flex-wrap">
-                <CreateNewButton onClick={handleCreateNew} />
+                <CreateNewButton 
+                  onClick={handleCreateNew}
+                  disabled={!rundownLimits.canCreateNew}
+                  disabledReason={!rundownLimits.canCreateNew ? `Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.` : undefined}
+                />
                 {!isMobile && (
-                  <CSVImportDialog onImport={handleCSVImport}>
-                    <Button size="lg" className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2">
+                  rundownLimits.canImport ? (
+                    <CSVImportDialog onImport={handleCSVImport}>
+                      <Button 
+                        size="lg" 
+                        className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Import CSV
+                      </Button>
+                    </CSVImportDialog>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      disabled
+                      className="bg-white hover:bg-gray-100 text-black border-0 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={`Free tier limited to ${rundownLimits.maxRundowns} rundowns total (${rundownLimits.totalCount}/${rundownLimits.maxRundowns}). Upgrade or delete rundowns to continue.`}
+                    >
                       <Plus className="h-4 w-4" />
                       Import CSV
                     </Button>
-                  </CSVImportDialog>
+                  )
                 )}
                 <AdminNotificationSender userEmail={user?.email} />
               </div>
