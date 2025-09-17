@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles, Package } from 'lucide-react';
+import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles, Package, Clock } from 'lucide-react';
 
 const PLANS = [
   {
@@ -17,6 +17,7 @@ const PLANS = [
       '1 team member',
       '3 rundowns',
       'Read-Only Share Links',
+      'Precision Showcaller Controls',
       'Basic features'
     ]
   },
@@ -32,6 +33,7 @@ const PLANS = [
       'Up to 3 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
+      'Precision Showcaller Controls',
       'Read-Only Share Links',
       'Teleprompter',
       'AD View',
@@ -50,6 +52,7 @@ const PLANS = [
       'Up to 15 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
+      'Precision Showcaller Controls',
       'Read-Only Share Links',
       'Teleprompter',
       'AD View',
@@ -119,6 +122,9 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('Early Access to New Features')) {
     return <Sparkles className="w-4 h-4 text-pink-500" />;
+  }
+  if (feature.includes('Precision Showcaller Controls')) {
+    return <Clock className="w-4 h-4 text-orange-500" />;
   }
   return <UserPlus className="w-4 h-4 text-gray-500" />;
 };
