@@ -140,8 +140,8 @@
   height: 0;
 }
 
-/* Mobile-specific scroll container isolation */
-@media (max-width: 640px) {
+/* Mobile and Tablet scroll container isolation */
+@media (max-width: 1024px) {
   .rundown-container [data-radix-scroll-area-viewport],
   .rundown-container [data-scroll-viewport],
   .rundown-container .scroll-viewport {

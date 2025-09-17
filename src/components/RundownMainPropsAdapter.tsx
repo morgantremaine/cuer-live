@@ -147,11 +147,11 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         return;
       }
 
-      // Check if mobile (same logic as useIsMobile hook)
-      const isMobile = window.innerWidth < 640;
+      // Check if mobile or tablet (same logic as useIsMobile and useIsTablet hooks)
+      const isMobileOrTablet = window.innerWidth < 1024;
 
-      if (isMobile) {
-        // Mobile: Use manual scroll calculation to stay within container bounds
+      if (isMobileOrTablet) {
+        // Mobile/Tablet: Use manual scroll calculation to stay within container bounds
         const viewportRect = viewport.getBoundingClientRect();
         const elementRect = targetElement.getBoundingClientRect();
         const currentScrollTop = viewport.scrollTop;

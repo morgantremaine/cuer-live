@@ -1,6 +1,6 @@
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useIsMobile } from './use-mobile';
+import { useIsMobile, useIsTablet } from './use-mobile';
 
 interface UseRundownAutoscrollProps {
   currentSegmentId: string | null;
@@ -18,6 +18,8 @@ export const useRundownAutoscroll = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastScrolledSegmentRef = useRef<string | null>(null);
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isMobileOrTablet = isMobile || isTablet;
 
   const scrollToCurrentSegment = useCallback(() => {
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
@@ -56,7 +58,7 @@ export const useRundownAutoscroll = ({
           || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
           || scrollContainer;
 
-        if (isMobile) {
+        if (isMobileOrTablet) {
           // Mobile-specific scroll: Use manual calculation to stay within container bounds
           const viewportRect = viewport.getBoundingClientRect();
           const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
@@ -115,7 +117,7 @@ export const useRundownAutoscroll = ({
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
     }
-  }, [currentSegmentId, autoScrollEnabled, isMobile]);
+  }, [currentSegmentId, autoScrollEnabled, isMobileOrTablet]);
 
   // Scroll when current segment changes - now works regardless of playing state
   useEffect(() => {
