@@ -53,5 +53,8 @@ verify_jwt = false
 [functions.send-welcome-email]
 verify_jwt = false
 
+[functions.test-welcome-email]
+verify_jwt = false
+
 [functions.delete-test-user]
 verify_jwt = false
