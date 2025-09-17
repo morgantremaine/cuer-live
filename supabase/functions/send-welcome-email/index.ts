@@ -271,9 +271,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi ${userName || 'there'}!</p>
                 
-                <p>Welcome to <span class="highlight">Cuer Live</span> - the professional broadcast rundown management platform trusted by production teams worldwide.</p>
-                
-                <p>You now have access to powerful tools that will transform how your team collaborates on live broadcasts and productions.</p>
+                <p>Welcome to <span class="highlight">Cuer Live</span>. You now have access to powerful tools that will transform how your team collaborates on live broadcasts and productions.</p>
                 
                 <div class="button-container">
                   <a href="${siteUrl}/dashboard" class="button">Start Your First Rundown</a>
@@ -300,6 +298,11 @@ serve(async (req) => {
                   <div class="feature-item">
                     <div class="feature-title">🔗 Shared Read-Only Rundowns</div>
                     <div class="feature-desc">Share rundowns with unlimited users in read-only mode for seamless coordination.</div>
+                  </div>
+                  
+                  <div class="feature-item">
+                    <div class="feature-title">⏱️ Precision Showcaller Controls</div>
+                    <div class="feature-desc">Advanced timing controls and precision features for professional broadcast showcallers.</div>
                   </div>
                   
                   <div class="feature-item">
@@ -333,8 +336,6 @@ serve(async (req) => {
                     <div class="feature-desc">Intelligent rundown analysis, content suggestions, and timing optimization powered by AI.</div>
                   </div>
                 </div>
-
-                <img src="${siteUrl}/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" alt="Cuer AI Assistant" class="mockup-image" style="display: block; margin: 20px auto;" />
 
                 <div class="paid-note">
                   These premium features are available with paid subscription plans. <a href="${siteUrl}/subscription" style="color: #92400e !important; text-decoration: underline;">View pricing plans</a>
