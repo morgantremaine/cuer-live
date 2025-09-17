@@ -135,7 +135,9 @@ const RundownContent = React.memo<RundownContentProps>(({
   // Toggle column expand state
   const handleToggleColumnExpand = useCallback((columnKey: string) => {
     // Store the current scroll position and active element to preserve viewport
-    const currentScrollTop = window.scrollY;
+    // Only do this on desktop - mobile browsers handle viewport differently
+    const isMobile = window.innerWidth <= 1024;
+    const currentScrollTop = !isMobile ? window.scrollY : 0;
     const currentActiveElement = document.activeElement;
     
     setColumnExpandState(prev => ({
@@ -143,19 +145,21 @@ const RundownContent = React.memo<RundownContentProps>(({
       [columnKey]: !prev[columnKey]
     }));
 
-    // Restore scroll position and focus after state updates
-    requestAnimationFrame(() => {
-      // Restore the scroll position
-      window.scrollTo(0, currentScrollTop);
+    // Restore scroll position and focus after state updates - only on desktop
+    if (!isMobile) {
+      requestAnimationFrame(() => {
+        // Restore the scroll position
+        window.scrollTo(0, currentScrollTop);
       
       // If there was an active element that's still in the DOM and focusable, restore focus
-      if (currentActiveElement && 
-          document.contains(currentActiveElement) && 
-          currentActiveElement instanceof HTMLElement &&
-          currentActiveElement.tabIndex >= 0) {
-        currentActiveElement.focus();
-      }
-    });
+        if (currentActiveElement && 
+            document.contains(currentActiveElement) && 
+            currentActiveElement instanceof HTMLElement &&
+            currentActiveElement.tabIndex >= 0) {
+          currentActiveElement.focus();
+        }
+      });
+    }
   }, []);
 
   // Toggle all header groups expand/collapse state
