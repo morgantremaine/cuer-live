@@ -52,7 +52,7 @@ serve(async (req) => {
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
-      subject: `Welcome to Cuer Live! Your professional rundown platform is ready`,
+      subject: `Welcome to Cuer`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -265,8 +265,7 @@ serve(async (req) => {
             <div class="container">
               <div class="header">
                 <img src="${logoUrl}" alt="Cuer Logo" class="logo-img" />
-                <h1>Welcome to Cuer Live!</h1>
-                <p style="font-size: 18px; color: #4b5563 !important; margin-top: 10px;">Your professional rundown platform is ready</p>
+                <h1>Welcome to Cuer</h1>
               </div>
               
               <div class="content">
@@ -304,28 +303,33 @@ serve(async (req) => {
                   </div>
                   
                   <div class="feature-item">
-                    <div class="feature-title">👥 Team Collaboration</div>
-                    <div class="feature-desc">Invite team members, set roles, and work together seamlessly on any production.</div>
+                    <div class="feature-title">🔗 Shared Read-Only Rundowns</div>
+                    <div class="feature-desc">Share rundowns with unlimited users in read-only mode for seamless coordination.</div>
                   </div>
                 </div>
 
                 <img src="${siteUrl}/uploads/mobile-mockups-v2.png" alt="Cuer on mobile devices" class="mockup-image" style="display: block; margin: 20px auto;" />
 
-                <h2>⭐ Premium Features Available <span class="asterisk">*</span></h2>
+                <h2>⭐ Upgrade today for premium features</h2>
                 
                 <div class="feature-grid">
                   <div class="feature-item">
-                    <div class="feature-title">🎬 Teleprompter Mode <span class="asterisk">*</span></div>
+                    <div class="feature-title">👥 Team Collaboration</div>
+                    <div class="feature-desc">Invite team members, set roles, and work together seamlessly on any production.</div>
+                  </div>
+                  
+                  <div class="feature-item">
+                    <div class="feature-title">🎬 Teleprompter Mode</div>
                     <div class="feature-desc">Full-screen teleprompter with speed controls and professional formatting options.</div>
                   </div>
                   
                   <div class="feature-item">
-                    <div class="feature-title">📺 AD View Dashboard <span class="asterisk">*</span></div>
+                    <div class="feature-title">📺 AD View Dashboard</div>
                     <div class="feature-desc">Dedicated Assistant Director view with live timing and comprehensive show control.</div>
                   </div>
                   
                   <div class="feature-item">
-                    <div class="feature-title">🤖 AI Assistant <span class="asterisk">*</span></div>
+                    <div class="feature-title">🤖 AI Assistant</div>
                     <div class="feature-desc">Intelligent rundown analysis, content suggestions, and timing optimization powered by AI.</div>
                   </div>
                 </div>
@@ -333,7 +337,7 @@ serve(async (req) => {
                 <img src="${siteUrl}/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" alt="Cuer AI Assistant" class="mockup-image" style="display: block; margin: 20px auto;" />
 
                 <div class="paid-note">
-                  <span class="asterisk">*</span> These premium features are available with paid subscription plans. <a href="${siteUrl}/subscription" style="color: #92400e !important; text-decoration: underline;">View pricing plans</a>
+                  These premium features are available with paid subscription plans. <a href="${siteUrl}/subscription" style="color: #92400e !important; text-decoration: underline;">View pricing plans</a>
                 </div>
 
                 <div class="pricing-section">
