@@ -20,7 +20,6 @@ export interface SavedRundown {
   team_id?: string
   visibility?: string
   folder_id?: string | null
-  is_demo?: boolean
   teams?: {
     id: string
     name: string

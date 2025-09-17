@@ -21,7 +21,6 @@ export const mapDatabaseToRundown = (dbRundown: any): SavedRundown => {
     team_id: dbRundown.team_id,
     visibility: dbRundown.visibility,
     folder_id: dbRundown.folder_id || null,
-    is_demo: dbRundown.is_demo || false,
     teams: dbRundown.teams,
     creator_profile: dbRundown.creator_profile
   };
@@ -44,7 +43,6 @@ export const mapRundownToDatabase = (rundown: SavedRundown, userId: string) => {
     team_id: rundown.team_id,
     visibility: rundown.visibility || 'private',
     folder_id: rundown.folder_id || null,
-    is_demo: rundown.is_demo || false,
     updated_at: new Date().toISOString()
   };
 };
