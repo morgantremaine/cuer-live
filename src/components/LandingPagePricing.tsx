@@ -280,7 +280,7 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
               
                <div className="py-6">
                 <div className={`text-5xl font-bold ${plan.popular ? 'text-white' : 'text-white'}`}>
-                  {plan.isEnterprise ? 'Custom Pricing' : `$${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
+                  {plan.isEnterprise ? 'Custom' : `$${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
                 </div>
                 <div className="text-sm text-slate-400 mt-1">
                   {plan.isEnterprise ? 'Contact Us' : (interval === 'monthly' ? 'per month' : 'per year')}
