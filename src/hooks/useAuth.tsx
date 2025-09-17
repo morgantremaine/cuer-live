@@ -133,6 +133,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logger.debug('No immediate session - email confirmation required')
       }
       
+      // Send welcome email for new users (not team invitations)
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email,
+            userName: fullName
+          }
+        });
+        logger.debug('Welcome email sent successfully');
+      } catch (emailError) {
+        // Don't fail the signup if welcome email fails
+        logger.warn('Failed to send welcome email', emailError);
+      }
+      
       return { error: null, data }
     } catch (err) {
       logger.error('Sign up catch error', err)
