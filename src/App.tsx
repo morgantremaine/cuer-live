@@ -30,6 +30,7 @@ import LandingPage from "./components/LandingPage";
 import Changelog from "./pages/Changelog";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DeleteTestUser from "./pages/DeleteTestUser";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const AppRoutes = () => {
       <Route path="/changelog" element={<Changelog />} />
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/delete-test-user" element={<DeleteTestUser />} />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />
