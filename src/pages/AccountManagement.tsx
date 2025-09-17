@@ -17,6 +17,7 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { useTeam } from '@/hooks/useTeam'
 import { supabase } from '@/integrations/supabase/client'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
 const AccountManagement = () => {
   const [fullName, setFullName] = useState('')
@@ -27,6 +28,7 @@ const AccountManagement = () => {
   const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [showPlans, setShowPlans] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteOptions, setShowDeleteOptions] = useState(false)
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { subscribed, access_type, openCustomerPortal } = useSubscription()
   const { team } = useTeam()
@@ -281,61 +283,78 @@ const AccountManagement = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {subscribed ? (
-                  <div className="space-y-4">
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        <strong>Paid Account:</strong> To delete your account, please:
-                      </p>
-                      <ol className="mt-2 text-sm text-yellow-800 dark:text-yellow-200 list-decimal list-inside space-y-1">
-                        <li>Cancel your subscription first</li>
-                        <li>Contact help@cuer.live for manual account deletion</li>
-                      </ol>
-                    </div>
-                    <Button 
-                      onClick={openCustomerPortal}
-                      variant="outline"
-                    >
-                      Manage Subscription
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                      <p className="text-sm text-red-800 dark:text-red-200">
-                        <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account and remove all data including rundowns, blueprints, and team memberships.
-                      </p>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={isDeleting}>
-                          {isDeleting ? 'Deleting Account...' : 'Delete Account'}
+                <Button
+                  onClick={() => setShowDeleteOptions(!showDeleteOptions)}
+                  variant="outline"
+                  className="w-full justify-between text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                >
+                  Delete Account
+                  {showDeleteOptions ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+                
+                {showDeleteOptions && (
+                  <div className="mt-4 space-y-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border">
+                    {subscribed ? (
+                      <div className="space-y-4">
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            <strong>Paid Account:</strong> To delete your account, please:
+                          </p>
+                          <ol className="mt-2 text-sm text-yellow-800 dark:text-yellow-200 list-decimal list-inside space-y-1">
+                            <li>Cancel your subscription first</li>
+                            <li>Contact help@cuer.live for manual account deletion</li>
+                          </ol>
+                        </div>
+                        <Button 
+                          onClick={openCustomerPortal}
+                          variant="outline"
+                        >
+                          Manage Subscription
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your account
-                            and remove all your data from our servers including:
-                            <br /><br />
-                            • All rundowns and blueprints
-                            <br />
-                            • Team memberships
-                            <br />
-                            • User preferences and settings
-                            <br />
-                            • Account profile and history
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
-                            Delete Account Permanently
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                          <p className="text-sm text-red-800 dark:text-red-200">
+                            <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account and remove all data including rundowns, blueprints, and team memberships.
+                          </p>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" disabled={isDeleting}>
+                              {isDeleting ? 'Deleting Account...' : 'Delete Account'}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-white dark:bg-gray-800 z-50">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your account
+                                and remove all your data from our servers including:
+                                <br /><br />
+                                • All rundowns and blueprints
+                                <br />
+                                • Team memberships
+                                <br />
+                                • User preferences and settings
+                                <br />
+                                • Account profile and history
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
+                                Delete Account Permanently
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
