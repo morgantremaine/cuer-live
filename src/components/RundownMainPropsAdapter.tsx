@@ -131,34 +131,78 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     
     // Find the element with the current segment ID
     const targetElement = document.querySelector(`[data-item-id="${currentSegmentId}"]`);
-    if (targetElement) {
-      // First scroll to center, then apply offset like autoscroll does
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'nearest'
-      });
+    if (!targetElement) return;
 
-      // Apply the same offset logic as autoscroll to position at 1/4 down
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const scrollContainer = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement
-            || document.querySelector('[data-scroll-viewport]') as HTMLElement
-            || document.querySelector('.scroll-viewport') as HTMLElement
-            || document.documentElement;
-
-          const viewportRect = scrollContainer.getBoundingClientRect();
-          const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
-
-          // Desired position: 1/4 down from the top of the viewport (same as autoscroll)
-          const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-          const offsetNeeded = elementRect.top - desiredTop;
-
-          if (Math.abs(offsetNeeded) > 4) {
-            scrollContainer.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-          }
+    try {
+      // Find the scroll container - same logic as useRundownAutoscroll
+      const viewport = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      
+      if (!viewport) {
+        // Fallback to desktop scrollIntoView if no proper viewport found
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
         });
-      });
+        return;
+      }
+
+      // Check if mobile (same logic as useIsMobile hook)
+      const isMobile = window.innerWidth < 640;
+
+      if (isMobile) {
+        // Mobile: Use manual scroll calculation to stay within container bounds
+        const viewportRect = viewport.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
+        const currentScrollTop = viewport.scrollTop;
+        
+        // Calculate where the element is relative to the viewport top
+        const elementOffsetFromViewportTop = elementRect.top - viewportRect.top;
+        
+        // Position at 1/4 down from viewport top
+        const desiredPositionInViewport = viewportRect.height * 0.25;
+        
+        // Calculate the scroll adjustment needed
+        const scrollAdjustment = elementOffsetFromViewportTop - desiredPositionInViewport;
+        const targetScrollTop = currentScrollTop + scrollAdjustment;
+        
+        // Ensure we don't scroll beyond container bounds
+        const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+        const finalScrollTop = Math.max(0, Math.min(maxScrollTop, targetScrollTop));
+        
+        // Perform the scroll operation only within the container
+        if (Math.abs(finalScrollTop - currentScrollTop) > 4) {
+          viewport.scrollTo({ 
+            top: finalScrollTop, 
+            behavior: 'smooth' 
+          });
+        }
+      } else {
+        // Desktop: Use the existing scrollIntoView approach
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
+
+        // Apply the same offset logic for desktop positioning
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const viewportRect = viewport.getBoundingClientRect();
+            const elementRect = targetElement.getBoundingClientRect();
+
+            // Desired position: 1/4 down from the top of the viewport
+            const desiredTop = viewportRect.top + (viewportRect.height * 0.25);
+            const offsetNeeded = elementRect.top - desiredTop;
+
+            if (Math.abs(offsetNeeded) > 4) {
+              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+            }
+          });
+        });
+      }
+    } catch (error) {
+      console.warn('Error in handleJumpToCurrentSegment:', error);
     }
   };
 
