@@ -16,7 +16,8 @@ export function useIsMobile() {
       // Consider it mobile if width is less than 640px (phones)
       const shouldUseMobileLayout = width < MOBILE_BREAKPOINT
       
-      setIsMobile(shouldUseMobileLayout)
+      // Only update state if the value actually changed
+      setIsMobile(prev => prev !== shouldUseMobileLayout ? shouldUseMobileLayout : prev)
     }
     
     checkDevice()
@@ -47,7 +48,8 @@ export function useIsTablet() {
       // Consider it tablet if width is between 640px and 1024px
       const shouldUseTabletLayout = width >= MOBILE_BREAKPOINT && width < DESKTOP_BREAKPOINT
       
-      setIsTablet(shouldUseTabletLayout)
+      // Only update state if the value actually changed
+      setIsTablet(prev => prev !== shouldUseTabletLayout ? shouldUseTabletLayout : prev)
     }
     
     checkDevice()

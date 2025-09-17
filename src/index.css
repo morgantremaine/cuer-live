@@ -96,19 +96,6 @@
     overflow: hidden;
     position: relative;
   }
-  
-  /* Debug: Let's see what autoscroll is actually affecting */
-  .rundown-container {
-    border: 2px solid red !important;
-  }
-  
-  [data-radix-scroll-area-viewport] {
-    border: 2px solid blue !important;
-  }
-  
-  .flex.flex-col.h-full {
-    border: 2px solid green !important;
-  }
 }
 
 /* Enhanced scratchpad editor formatting styles */
