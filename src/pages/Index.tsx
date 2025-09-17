@@ -6,7 +6,7 @@ import { CellUpdateProvider } from '@/contexts/CellUpdateContext';
 const Index = () => {
   return (
     <CellUpdateProvider>
-      <div className="h-full overflow-hidden">
+      <div className="h-screen overflow-hidden">
         <RundownIndexContent />
       </div>
     </CellUpdateProvider>
