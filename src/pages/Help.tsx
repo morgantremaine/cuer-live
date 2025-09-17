@@ -22,16 +22,18 @@ const Help = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full">
-        <DashboardHeader 
-          userEmail={user?.email}
-          onSignOut={handleSignOut}
-          showBackButton={true}
-          onBack={handleBack}
-        />
-        
-        <div className="flex w-full">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      {/* Full-width Header */}
+      <DashboardHeader 
+        userEmail={user?.email}
+        onSignOut={handleSignOut}
+        showBackButton={true}
+        onBack={handleBack}
+      />
+      
+      {/* Content area with sidebar and main content */}
+      <SidebarProvider>
+        <div className="flex flex-1 w-full">
           <HelpSidebar />
           
           <main className="flex-1 py-8 px-4">
@@ -419,20 +421,20 @@ const Help = () => {
 
                 {/* Support */}
                 <section id="support" className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              If you need additional assistance or have questions about specific features, you can reach out to our support team at <a href="mailto:help@cuer.live" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">help@cuer.live</a> or contact your system administrator.
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              This guide covers the core functionality of Cuer. Features may vary based on your access level and configuration.
-            </p>
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                    If you need additional assistance or have questions about specific features, you can reach out to our support team at <a href="mailto:help@cuer.live" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">help@cuer.live</a> or contact your system administrator.
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    This guide covers the core functionality of Cuer. Features may vary based on your access level and configuration.
+                  </p>
                 </section>
               </div>
             </div>
           </main>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 };
 

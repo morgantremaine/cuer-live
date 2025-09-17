@@ -89,22 +89,24 @@ export function HelpSidebar() {
 
   return (
     <Sidebar
-      className={state === 'collapsed' ? "w-14" : "w-64"}
+      className={state === 'collapsed' ? "w-14 bg-gray-800 dark:bg-gray-800 border-r border-gray-700" : "w-64 bg-gray-800 dark:bg-gray-800 border-r border-gray-700"}
       collapsible="icon"
     >
-      <SidebarContent>
+      <SidebarContent className="bg-gray-800 dark:bg-gray-800">
         <SidebarGroup>
-          <SidebarGroupLabel>Help Topics</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-300 dark:text-gray-300 px-3 py-2 text-sm font-medium">
+            Help Topics
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {helpSections.map((section) => (
                 <SidebarMenuItem key={section.id}>
                   <SidebarMenuButton
                     onClick={() => scrollToSection(section.id)}
-                    className={`cursor-pointer ${
+                    className={`cursor-pointer text-gray-300 hover:text-white hover:bg-gray-700 rounded-md mx-2 ${
                       activeSection === section.id
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'hover:bg-muted/50'
+                        ? 'bg-gray-700 text-white font-medium'
+                        : ''
                     }`}
                   >
                     <section.icon className="h-4 w-4" />
