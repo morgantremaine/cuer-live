@@ -97,6 +97,48 @@ export const useRundownZoom = (rundownId: string | null) => {
     }, 500); // Debounce saves
   }, [user?.id, rundownId]);
 
+  // Helper to preserve viewport position during zoom
+  const preserveViewportPosition = useCallback((zoomChangeCallback: () => void) => {
+    try {
+      // Find the scroll container
+      const viewport = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (!viewport) {
+        zoomChangeCallback();
+        return;
+      }
+
+      // Get the current scroll position and viewport dimensions
+      const oldScrollTop = viewport.scrollTop;
+      const oldScrollHeight = viewport.scrollHeight;
+      const oldZoom = zoomLevel;
+      
+      // Apply the zoom change
+      zoomChangeCallback();
+      
+      // Wait for the DOM to update with the new zoom
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const newScrollHeight = viewport.scrollHeight;
+          
+          // Calculate the relative position as a percentage
+          const scrollPercentage = oldScrollTop / (oldScrollHeight - viewport.clientHeight);
+          
+          // Calculate new scroll position maintaining the same relative position
+          const newScrollTop = scrollPercentage * (newScrollHeight - viewport.clientHeight);
+          
+          // Apply the preserved scroll position
+          if (isFinite(newScrollTop)) {
+            viewport.scrollTo({ top: newScrollTop, behavior: 'auto' });
+          }
+        });
+      });
+    } catch (error) {
+      // Fallback: just apply zoom without position preservation
+      console.warn('Could not preserve viewport position during zoom:', error);
+      zoomChangeCallback();
+    }
+  }, [zoomLevel]);
+
   // Update zoom level
   const updateZoomLevel = useCallback((newZoomLevel: number) => {
     // Clamp to valid range
@@ -108,24 +150,30 @@ export const useRundownZoom = (rundownId: string | null) => {
     }
   }, [saveZoomPreferences]);
 
-  // Zoom in to next level
+  // Zoom in to next level with viewport preservation
   const zoomIn = useCallback(() => {
-    const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
-    const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
-    updateZoomLevel(ZOOM_LEVELS[nextIndex]);
-  }, [zoomLevel, updateZoomLevel]);
+    preserveViewportPosition(() => {
+      const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
+      const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
+      updateZoomLevel(ZOOM_LEVELS[nextIndex]);
+    });
+  }, [zoomLevel, updateZoomLevel, preserveViewportPosition]);
 
-  // Zoom out to previous level
+  // Zoom out to previous level with viewport preservation
   const zoomOut = useCallback(() => {
-    const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
-    const prevIndex = Math.max((currentIndex === -1 ? ZOOM_LEVELS.length - 1 : currentIndex) - 1, 0);
-    updateZoomLevel(ZOOM_LEVELS[prevIndex]);
-  }, [zoomLevel, updateZoomLevel]);
+    preserveViewportPosition(() => {
+      const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
+      const prevIndex = Math.max((currentIndex === -1 ? ZOOM_LEVELS.length - 1 : currentIndex) - 1, 0);
+      updateZoomLevel(ZOOM_LEVELS[prevIndex]);
+    });
+  }, [zoomLevel, updateZoomLevel, preserveViewportPosition]);
 
-  // Reset to default zoom
+  // Reset to default zoom with viewport preservation
   const resetZoom = useCallback(() => {
-    updateZoomLevel(DEFAULT_ZOOM);
-  }, [updateZoomLevel]);
+    preserveViewportPosition(() => {
+      updateZoomLevel(DEFAULT_ZOOM);
+    });
+  }, [updateZoomLevel, preserveViewportPosition]);
 
   // Check if zoom actions are available
   const canZoomIn = zoomLevel < 2.0;
