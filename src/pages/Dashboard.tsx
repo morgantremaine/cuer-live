@@ -391,8 +391,8 @@ const Dashboard = () => {
   const filteredRundowns = getFilteredRundowns();
   const folderTitle = getFolderTitle();
 
-  // On mobile, when sidebar is expanded, hide main content
-  const showMainContent = !isMobile || sidebarCollapsed;
+  // Always show main content, let the sidebar width handle the layout
+  const showMainContent = true;
 
   // Show skeleton until we have loaded initial data
   const shouldShowLoadingSkeleton = !initialDataLoaded;
