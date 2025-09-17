@@ -138,6 +138,24 @@
   display: none;
   width: 0;
   height: 0;
+}
+
+/* Mobile-specific scroll container isolation */
+@media (max-width: 640px) {
+  .rundown-container [data-radix-scroll-area-viewport],
+  .rundown-container [data-scroll-viewport],
+  .rundown-container .scroll-viewport {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .rundown-container {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
   background: transparent;
 }
 

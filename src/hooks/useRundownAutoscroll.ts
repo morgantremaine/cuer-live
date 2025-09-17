@@ -1,5 +1,6 @@
 
 import { useRef, useEffect, useCallback } from 'react';
+import { useIsMobile } from './use-mobile';
 
 interface UseRundownAutoscrollProps {
   currentSegmentId: string | null;
@@ -16,6 +17,7 @@ export const useRundownAutoscroll = ({
 }: UseRundownAutoscrollProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastScrolledSegmentRef = useRef<string | null>(null);
+  const isMobile = useIsMobile();
 
   const scrollToCurrentSegment = useCallback(() => {
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
@@ -48,40 +50,72 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        // Simple approach: center first, then offset
-        targetElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
-        });
+        // Get the proper viewport container
+        const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
+          || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
+          || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
+          || scrollContainer;
 
-        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
-              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
-              || scrollContainer;
-
-            const viewportRect = viewport.getBoundingClientRect();
-            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
-
-            // Desired position: 1/4 down from the top of the viewport
-            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-            const offsetNeeded = elementRect.top - desiredTop;
-
-            if (Math.abs(offsetNeeded) > 4) {
-              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-            }
+        if (isMobile) {
+          // Mobile-specific scroll: Use manual calculation to stay within container bounds
+          const viewportRect = viewport.getBoundingClientRect();
+          const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+          
+          // Calculate current scroll position
+          const currentScrollTop = viewport.scrollTop;
+          
+          // Calculate where element should be positioned (1/4 down from viewport top)
+          const desiredPositionInViewport = viewportRect.height * 0.25;
+          
+          // Calculate element's current position relative to viewport top
+          const elementOffsetFromViewportTop = elementRect.top - viewportRect.top;
+          
+          // Calculate the scroll adjustment needed
+          const scrollAdjustment = elementOffsetFromViewportTop - desiredPositionInViewport;
+          const targetScrollTop = currentScrollTop + scrollAdjustment;
+          
+          // Ensure we don't scroll beyond container bounds
+          const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+          const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+          
+          // Perform the scroll operation only within the container
+          if (Math.abs(finalScrollTop - currentScrollTop) > 4) {
+            viewport.scrollTo({ 
+              top: finalScrollTop, 
+              behavior: 'smooth' 
+            });
+          }
+        } else {
+          // Desktop: Use existing scrollIntoView approach
+          targetElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
           });
-        });
+
+          // After scroll starts, schedule a single offset to place at 1/4 down in the scroll viewport
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const viewportRect = viewport.getBoundingClientRect();
+              const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+
+              // Desired position: 1/4 down from the top of the viewport
+              const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+              const offsetNeeded = elementRect.top - desiredTop;
+
+              if (Math.abs(offsetNeeded) > 4) {
+                viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+              }
+            });
+          });
+        }
 
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
     }
-  }, [currentSegmentId, autoScrollEnabled]);
+  }, [currentSegmentId, autoScrollEnabled, isMobile]);
 
   // Scroll when current segment changes - now works regardless of playing state
   useEffect(() => {
