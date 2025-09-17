@@ -496,6 +496,17 @@ const Dashboard = () => {
                   )
                 )}
                 <AdminNotificationSender userEmail={user?.email} />
+                {/* Admin only: Delete test user button */}
+                {user?.email === 'morgan@cuer.live' && (
+                  <Button
+                    size="lg"
+                    onClick={() => navigate('/delete-test-user')}
+                    variant="outline"
+                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                  >
+                    Delete Test User
+                  </Button>
+                )}
               </div>
 
               <DashboardRundownGrid
