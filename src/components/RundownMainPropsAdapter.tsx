@@ -147,8 +147,9 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         return;
       }
 
-      // Check if mobile or tablet (same logic as useIsMobile and useIsTablet hooks)
-      const isMobileOrTablet = window.innerWidth < 1024;
+      // Check if mobile or tablet (including landscape tablets)
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isMobileOrTablet = window.innerWidth < 1280 && isTouchDevice;
 
       if (isMobileOrTablet) {
         // Mobile/Tablet: Use manual scroll calculation to stay within container bounds

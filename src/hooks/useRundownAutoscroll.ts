@@ -19,7 +19,9 @@ export const useRundownAutoscroll = ({
   const lastScrolledSegmentRef = useRef<string | null>(null);
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const isMobileOrTablet = isMobile || isTablet;
+  // Include wider tablets in landscape mode
+  const isWideTablet = typeof window !== 'undefined' && window.innerWidth < 1280 && window.innerWidth >= 1024 && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const isMobileOrTablet = isMobile || isTablet || isWideTablet;
 
   const scrollToCurrentSegment = useCallback(() => {
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
