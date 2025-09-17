@@ -131,8 +131,11 @@ const AccountManagement = () => {
     
     setIsDeleting(true)
     try {
-      // First verify the password by attempting to update it with the same password
-      const { error: passwordError } = await updatePassword(deletePassword, deletePassword)
+      // Verify password by attempting to sign in
+      const { error: passwordError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword
+      })
       
       if (passwordError) {
         toast({
