@@ -52,7 +52,7 @@ serve(async (req) => {
     const emailResult = await resend.emails.send({
       from: 'Cuer Team <noreply@cuer.live>',
       to: [email],
-      subject: `Welcome to Cuer`,
+      subject: `Welcome to Cuer!`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -265,7 +265,7 @@ serve(async (req) => {
             <div class="container">
               <div class="header">
                 <img src="${logoUrl}" alt="Cuer Logo" class="logo-img" />
-                <h1>Welcome to Cuer</h1>
+                <h1>Welcome to Cuer!</h1>
               </div>
               
               <div class="content">
@@ -282,11 +282,6 @@ serve(async (req) => {
                 <h2>🚀 Core Features You Can Use Right Now</h2>
                 
                 <div class="feature-grid">
-                  <div class="feature-item">
-                    <div class="feature-title">⚡ Real-time Sync Across Users</div>
-                    <div class="feature-desc">See changes instantly as your team collaborates. No more version conflicts or lost updates.</div>
-                  </div>
-                  
                   <div class="feature-item">
                     <div class="feature-title">💾 Auto-save</div>
                     <div class="feature-desc">Never lose your work again. Every change is automatically saved in real-time.</div>
@@ -306,16 +301,21 @@ serve(async (req) => {
                     <div class="feature-title">🔗 Shared Read-Only Rundowns</div>
                     <div class="feature-desc">Share rundowns with unlimited users in read-only mode for seamless coordination.</div>
                   </div>
+                  
+                  <div class="feature-item">
+                    <div class="feature-title">🎨 Custom Saved Layouts</div>
+                    <div class="feature-desc">Create and save personalized column layouts that match your workflow needs.</div>
+                  </div>
                 </div>
 
                 <img src="${siteUrl}/uploads/mobile-mockups-v2.png" alt="Cuer on mobile devices" class="mockup-image" style="display: block; margin: 20px auto;" />
 
-                <h2>⭐ Upgrade today for premium features</h2>
+                <h2>⭐ Upgrade Today For Premium Features</h2>
                 
                 <div class="feature-grid">
                   <div class="feature-item">
-                    <div class="feature-title">👥 Team Collaboration</div>
-                    <div class="feature-desc">Invite team members, set roles, and work together seamlessly on any production.</div>
+                    <div class="feature-title">⚡ Real-time Sync Across Users</div>
+                    <div class="feature-desc">See changes instantly as your team collaborates. No more version conflicts or lost updates.</div>
                   </div>
                   
                   <div class="feature-item">
