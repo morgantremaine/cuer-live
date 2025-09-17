@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv } from 'lucide-react';
+import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles } from 'lucide-react';
 
 const PLANS = [
   {
@@ -72,7 +72,7 @@ const PLANS = [
       'AI Assistant',
       'Priority support',
       'Dedicated account manager',
-      'Custom integrations'
+      'Early Access to New Features'
     ]
   }
 ];
@@ -113,6 +113,9 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('Dedicated account manager')) {
     return <UserCheck className="w-4 h-4 text-indigo-500" />;
+  }
+  if (feature.includes('Early Access to New Features')) {
+    return <Sparkles className="w-4 h-4 text-pink-500" />;
   }
   return <UserPlus className="w-4 h-4 text-gray-500" />;
 };
