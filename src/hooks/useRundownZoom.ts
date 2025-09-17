@@ -97,8 +97,8 @@ export const useRundownZoom = (rundownId: string | null) => {
     }, 500); // Debounce saves
   }, [user?.id, rundownId]);
 
-  // Helper to zoom toward the center of the viewport
-  const zoomTowardCenter = useCallback((zoomChangeCallback: () => void) => {
+  // Helper to preserve viewport position during zoom
+  const preserveViewportPosition = useCallback((zoomChangeCallback: () => void) => {
     try {
       // Find the scroll container
       const viewport = document.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
@@ -107,16 +107,9 @@ export const useRundownZoom = (rundownId: string | null) => {
         return;
       }
 
-      // Get current viewport state
+      // Get the current scroll position and viewport dimensions
       const oldScrollTop = viewport.scrollTop;
-      const viewportHeight = viewport.clientHeight;
-      const oldContentHeight = viewport.scrollHeight;
-      
-      // Calculate what's currently at the center of the viewport
-      const viewportCenter = oldScrollTop + (viewportHeight / 2);
-      const centerRatio = viewportCenter / oldContentHeight;
-      
-      // Store the old zoom level
+      const oldScrollHeight = viewport.scrollHeight;
       const oldZoom = zoomLevel;
       
       // Apply the zoom change
@@ -125,27 +118,23 @@ export const useRundownZoom = (rundownId: string | null) => {
       // Wait for the DOM to update with the new zoom
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          const newContentHeight = viewport.scrollHeight;
+          const newScrollHeight = viewport.scrollHeight;
           
-          // Calculate where the center content is now positioned
-          const newCenterPosition = centerRatio * newContentHeight;
+          // Calculate the relative position as a percentage
+          const scrollPercentage = oldScrollTop / (oldScrollHeight - viewport.clientHeight);
           
-          // Calculate new scroll position to keep the center content centered
-          const newScrollTop = newCenterPosition - (viewportHeight / 2);
+          // Calculate new scroll position maintaining the same relative position
+          const newScrollTop = scrollPercentage * (newScrollHeight - viewport.clientHeight);
           
-          // Ensure we don't scroll beyond bounds
-          const maxScroll = newContentHeight - viewportHeight;
-          const clampedScrollTop = Math.max(0, Math.min(newScrollTop, maxScroll));
-          
-          // Apply the new scroll position
-          if (isFinite(clampedScrollTop)) {
-            viewport.scrollTo({ top: clampedScrollTop, behavior: 'auto' });
+          // Apply the preserved scroll position
+          if (isFinite(newScrollTop)) {
+            viewport.scrollTo({ top: newScrollTop, behavior: 'auto' });
           }
         });
       });
     } catch (error) {
       // Fallback: just apply zoom without position preservation
-      console.warn('Could not zoom toward center:', error);
+      console.warn('Could not preserve viewport position during zoom:', error);
       zoomChangeCallback();
     }
   }, [zoomLevel]);
@@ -161,30 +150,30 @@ export const useRundownZoom = (rundownId: string | null) => {
     }
   }, [saveZoomPreferences]);
 
-  // Zoom in to next level with center-focused zooming
+  // Zoom in to next level with viewport preservation
   const zoomIn = useCallback(() => {
-    zoomTowardCenter(() => {
+    preserveViewportPosition(() => {
       const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
       const nextIndex = Math.min(currentIndex + 1, ZOOM_LEVELS.length - 1);
       updateZoomLevel(ZOOM_LEVELS[nextIndex]);
     });
-  }, [zoomLevel, updateZoomLevel, zoomTowardCenter]);
+  }, [zoomLevel, updateZoomLevel, preserveViewportPosition]);
 
-  // Zoom out to previous level with center-focused zooming
+  // Zoom out to previous level with viewport preservation
   const zoomOut = useCallback(() => {
-    zoomTowardCenter(() => {
+    preserveViewportPosition(() => {
       const currentIndex = ZOOM_LEVELS.findIndex(level => level >= zoomLevel);
       const prevIndex = Math.max((currentIndex === -1 ? ZOOM_LEVELS.length - 1 : currentIndex) - 1, 0);
       updateZoomLevel(ZOOM_LEVELS[prevIndex]);
     });
-  }, [zoomLevel, updateZoomLevel, zoomTowardCenter]);
+  }, [zoomLevel, updateZoomLevel, preserveViewportPosition]);
 
-  // Reset to default zoom with center-focused zooming
+  // Reset to default zoom with viewport preservation
   const resetZoom = useCallback(() => {
-    zoomTowardCenter(() => {
+    preserveViewportPosition(() => {
       updateZoomLevel(DEFAULT_ZOOM);
     });
-  }, [updateZoomLevel, zoomTowardCenter]);
+  }, [updateZoomLevel, preserveViewportPosition]);
 
   // Check if zoom actions are available
   const canZoomIn = zoomLevel < 2.0;
