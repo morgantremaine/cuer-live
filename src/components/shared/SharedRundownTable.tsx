@@ -418,9 +418,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   // Helper function to toggle column expand state (expand/collapse all cells in a column)
   const toggleColumnExpand = (columnKey: string) => {
     // Store the current scroll position and active element
-    // Only do this on desktop - mobile browsers handle viewport differently
-    const isMobile = window.innerWidth <= 1024;
-    const currentScrollTop = !isMobile ? window.scrollY : 0;
+    const currentScrollTop = window.scrollY;
     const currentActiveElement = document.activeElement;
     
     const newState = !columnExpandState[columnKey];
@@ -440,21 +438,19 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       return newSet;
     });
 
-    // Restore scroll position and focus after state updates - only on desktop
-    if (!isMobile) {
-      requestAnimationFrame(() => {
-        // Restore the scroll position
-        window.scrollTo(0, currentScrollTop);
+    // Restore scroll position and focus after state updates
+    requestAnimationFrame(() => {
+      // Restore the scroll position
+      window.scrollTo(0, currentScrollTop);
       
       // If there was an active element that's still in the DOM and focusable, restore focus
-        if (currentActiveElement && 
-            document.contains(currentActiveElement) && 
-            currentActiveElement instanceof HTMLElement &&
-            currentActiveElement.tabIndex >= 0) {
-          currentActiveElement.focus();
-        }
-      });
-    }
+      if (currentActiveElement && 
+          document.contains(currentActiveElement) && 
+          currentActiveElement instanceof HTMLElement &&
+          currentActiveElement.tabIndex >= 0) {
+        currentActiveElement.focus();
+      }
+    });
   };
 
   // Helper function to toggle header collapse state

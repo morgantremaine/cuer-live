@@ -1,6 +1,5 @@
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useResponsiveLayout } from './use-mobile';
 
 interface UseRundownAutoscrollProps {
   currentSegmentId: string | null;
@@ -17,7 +16,6 @@ export const useRundownAutoscroll = ({
 }: UseRundownAutoscrollProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastScrolledSegmentRef = useRef<string | null>(null);
-  const { isMobileOrTablet } = useResponsiveLayout();
 
   const scrollToCurrentSegment = useCallback(() => {
     if (!scrollContainerRef.current || !currentSegmentId || !autoScrollEnabled) {
@@ -50,50 +48,40 @@ export const useRundownAutoscroll = ({
           return;
         }
 
-        // On mobile/tablet, use a simpler scroll approach to prevent header displacement
-        if (isMobileOrTablet) {
-          // Use a gentle scroll that keeps elements in the visible area without aggressive positioning
-          targetElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest', // Use 'nearest' instead of 'center' to minimize movement
-            inline: 'nearest'
-          });
-        } else {
-          // Desktop behavior: center first, then offset
-          targetElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest'
-          });
+        // Simple approach: center first, then offset
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest'
+        });
 
-          // After scroll starts, schedule a single offset to place at 1/4 down in the scroll viewport
+        // After scroll starts, schedule a single offset to place at 2/3 down in the scroll viewport
+        requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
-                || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
-                || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
-                || scrollContainer;
+            const viewport = (scrollContainer.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('[data-scroll-viewport]') as HTMLElement)
+              || (scrollContainer.querySelector('.scroll-viewport') as HTMLElement)
+              || scrollContainer;
 
-              const viewportRect = viewport.getBoundingClientRect();
-              const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const elementRect = (targetElement as HTMLElement).getBoundingClientRect();
 
-              // Desired position: 1/4 down from the top of the viewport
-              const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
-              const offsetNeeded = elementRect.top - desiredTop;
+            // Desired position: 1/4 down from the top of the viewport
+            const desiredTop = viewportRect.top + (viewportRect.height * 1 / 4);
+            const offsetNeeded = elementRect.top - desiredTop;
 
-              if (Math.abs(offsetNeeded) > 4) {
-                viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
-              }
-            });
+            if (Math.abs(offsetNeeded) > 4) {
+              viewport.scrollBy({ top: offsetNeeded, behavior: 'smooth' });
+            }
           });
-        }
+        });
 
         lastScrolledSegmentRef.current = currentSegmentId;
       }
     } catch (error) {
       console.warn('🔄 useRundownAutoscroll: Scroll failed:', error);
     }
-  }, [currentSegmentId, autoScrollEnabled, isMobileOrTablet]);
+  }, [currentSegmentId, autoScrollEnabled]);
 
   // Scroll when current segment changes - now works regardless of playing state
   useEffect(() => {
