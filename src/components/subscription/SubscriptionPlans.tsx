@@ -2,10 +2,24 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck } from 'lucide-react';
+import { Check, Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles, Package } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const PLANS = [
+  {
+    name: 'Free',
+    description: 'Perfect for getting started',
+    maxMembers: 1,
+    teamRange: '1 team member',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    features: [
+      '1 team member',
+      '3 rundowns',
+      'Read-Only Share Links',
+      'Basic features'
+    ]
+  },
   {
     name: 'Pro',
     description: 'Perfect for small productions',
@@ -18,8 +32,9 @@ const PLANS = [
       'Up to 3 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
+      'Teleprompter',
+      'AD View',
+      'AI Assistant',
       'Priority support'
     ]
   },
@@ -34,48 +49,64 @@ const PLANS = [
       'Up to 15 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support',
-      'Team management'
+      'Teleprompter',
+      'AD View',
+      'AI Assistant',
+      'Priority support'
     ]
   },
   {
     name: 'Enterprise',
     description: 'Scales to your company',
     maxMembers: null,
-    teamRange: 'Unlimited team members',
+    teamRange: 'Custom Seat Package',
     monthlyPrice: null,
     yearlyPrice: null,
     isEnterprise: true,
     features: [
-      'Unlimited team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Advanced features',
-      'AI helper',
-      'Priority support',
-      'Team management',
+      'Custom Seat Package',
+      'Full Features',
       'Dedicated account manager',
-      'Custom integrations'
+      'Early Access to New Features'
     ]
   }
 ];
 
 const getFeatureIcon = (feature: string) => {
-  if (feature.includes('team members')) {
+  if (feature.includes('team members') || feature.includes('team member')) {
     return <UserPlus className="w-4 h-4 text-blue-500" />;
+  }
+  if (feature.includes('Custom Seat Package')) {
+    return <Package className="w-4 h-4 text-amber-500" />;
   }
   if (feature.includes('Unlimited rundowns')) {
     return <Infinity className="w-4 h-4 text-purple-500" />;
   }
+  if (feature.includes('3 rundowns')) {
+    return <FileText className="w-4 h-4 text-teal-500" />;
+  }
   if (feature.includes('Real-time collaboration')) {
     return <Zap className="w-4 h-4 text-yellow-500" />;
+  }
+  if (feature.includes('Read-Only Share Links')) {
+    return <Share className="w-4 h-4 text-cyan-500" />;
+  }
+  if (feature.includes('Teleprompter')) {
+    return <Monitor className="w-4 h-4 text-emerald-500" />;
+  }
+  if (feature.includes('AD View')) {
+    return <Tv className="w-4 h-4 text-violet-500" />;
+  }
+  if (feature.includes('Full Features')) {
+    return <Crown className="w-4 h-4 text-amber-500" />;
   }
   if (feature.includes('Advanced features')) {
     return <Crown className="w-4 h-4 text-orange-500" />;
   }
-  if (feature.includes('AI helper')) {
+  if (feature.includes('Basic features')) {
+    return <Crown className="w-4 h-4 text-slate-500" />;
+  }
+  if (feature.includes('AI Assistant') || feature.includes('AI helper')) {
     return <Bot className="w-4 h-4 text-green-500" />;
   }
   if (feature.includes('Priority support')) {
@@ -83,6 +114,9 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('Dedicated account manager')) {
     return <UserCheck className="w-4 h-4 text-indigo-500" />;
+  }
+  if (feature.includes('Early Access to New Features')) {
+    return <Sparkles className="w-4 h-4 text-pink-500" />;
   }
   return <Check className="w-4 h-4 text-gray-500" />;
 };
@@ -246,10 +280,10 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
               
                <div className="py-6">
                 <div className={`text-5xl font-bold ${plan.popular ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'}`}>
-                  {plan.isEnterprise ? 'Contact us' : `$${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
+                  {plan.isEnterprise ? 'Custom' : `$${interval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {plan.isEnterprise ? 'Custom pricing' : (interval === 'monthly' ? 'per month' : 'per year')}
+                  {plan.isEnterprise ? 'Contact Us' : (interval === 'monthly' ? 'per month' : 'per year')}
                 </div>
                 {interval === 'yearly' && !plan.isEnterprise && (
                   <div className="text-sm text-green-600 dark:text-green-400 font-semibold mt-2 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full inline-block">
@@ -261,18 +295,29 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
             
             <CardContent className="pt-0 pb-6">
               <Button
-                onClick={() => plan.isEnterprise ? window.location.href = 'mailto:sales@cuer.live?subject=Enterprise Plan Inquiry' : createCheckout(plan.name, interval)}
+                onClick={() => {
+                  if (plan.name === 'Free') {
+                    // Handle free plan logic if needed
+                    return;
+                  } else if (plan.isEnterprise) {
+                    window.location.href = 'mailto:sales@cuer.live?subject=Enterprise Plan Inquiry';
+                  } else {
+                    createCheckout(plan.name, interval);
+                  }
+                }}
                 disabled={loading || isCurrentPlan(plan.name)}
                 className={`w-full mb-6 py-3 text-base font-semibold transition-all duration-300 ${
                   isCurrentPlan(plan.name)
                     ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
+                    : plan.name === 'Free'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl'
                     : plan.isEnterprise
                     ? 'bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg hover:shadow-xl'
                     : plan.popular
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
                     : 'border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20'
                 }`}
-                variant={isCurrentPlan(plan.name) || plan.popular || plan.isEnterprise ? 'default' : 'outline'}
+                variant={isCurrentPlan(plan.name) || plan.name === 'Free' || plan.popular || plan.isEnterprise ? 'default' : 'outline'}
               >
                 {isCurrentPlan(plan.name) ? (
                   <>
@@ -281,7 +326,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
                   </>
                 ) : (
                   <>
-                    {plan.isEnterprise ? 'Contact Sales' : 'Upgrade'}
+                    {plan.name === 'Free' ? 'Get Started Free' : plan.isEnterprise ? 'Contact Sales' : 'Upgrade'}
                     {plan.popular && <Crown className="w-4 h-4 ml-2" />}
                   </>
                 )}
