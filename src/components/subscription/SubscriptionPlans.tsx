@@ -142,7 +142,7 @@ export const SubscriptionPlans = ({ interval, onIntervalChange }: SubscriptionPl
   const isCurrentPlan = (planName: string) => {
     // For free users (no paid subscription), Free is their current plan
     if (planName === 'Free') {
-      return !subscription_tier || subscription_tier === 'Free' || subscription_tier === null;
+      return !subscription_tier || subscription_tier === 'Free' || subscription_tier === null || subscription_tier === '';
     }
     return subscription_tier === planName;
   };
