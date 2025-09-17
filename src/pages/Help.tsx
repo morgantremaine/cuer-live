@@ -42,15 +42,24 @@ const Help = () => {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Get the main content container to scroll within it
+      const mainContent = document.querySelector('main[class*="overflow-y-auto"]');
+      if (mainContent) {
+        const elementTop = element.offsetTop;
+        mainContent.scrollTo({ top: elementTop - 100, behavior: 'smooth' });
+      } else {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       setActiveSection(sectionId);
     }
   };
 
   // Track which section is currently in view
   useEffect(() => {
+    const mainContent = document.querySelector('main[class*="overflow-y-auto"]');
+    
     const observerOptions = {
-      root: null,
+      root: mainContent,
       rootMargin: '-10% 0px -60% 0px',
       threshold: 0.1
     };
@@ -77,42 +86,46 @@ const Help = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* Fixed Header */}
-      <DashboardHeader 
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
-        showBackButton={true}
-        onBack={handleBack}
-      />
+      <div className="flex-shrink-0">
+        <DashboardHeader 
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+          showBackButton={true}
+          onBack={handleBack}
+        />
+      </div>
       
       {/* Content area with fixed sidebar and scrollable main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Fixed Sidebar */}
-        <div className="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0">
-          <div className="p-4">
-            <h2 className="text-gray-300 text-sm font-medium mb-4">Help Topics</h2>
-            <nav className="space-y-1">
-              {helpSections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => scrollToSection(section.id)}
-                  className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-gray-700 text-white font-medium'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                  }`}
-                >
-                  <section.icon className="h-4 w-4 mr-3" />
-                  {section.title}
-                </button>
-              ))}
-            </nav>
+        <div className="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 overflow-hidden">
+          <div className="h-full overflow-y-auto">
+            <div className="p-4">
+              <h2 className="text-gray-300 text-sm font-medium mb-4">Help Topics</h2>
+              <nav className="space-y-1">
+                {helpSections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => scrollToSection(section.id)}
+                    className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                      activeSection === section.id
+                        ? 'bg-gray-700 text-white font-medium'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    <section.icon className="h-4 w-4 mr-3" />
+                    {section.title}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
         
         {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="max-w-4xl mx-auto py-8 px-4">
             <div className="mb-8">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
