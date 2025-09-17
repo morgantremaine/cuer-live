@@ -96,6 +96,12 @@
     overflow: hidden;
     position: relative;
   }
+  
+  /* Ensure ScrollArea viewport also respects mobile constraints */
+  [data-radix-scroll-area-viewport] {
+    overscroll-behavior: none;
+    touch-action: pan-y;
+  }
 }
 
 /* Enhanced scratchpad editor formatting styles */
