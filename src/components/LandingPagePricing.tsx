@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText } from 'lucide-react';
+import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv } from 'lucide-react';
 
 const PLANS = [
   {
@@ -16,7 +16,7 @@ const PLANS = [
     features: [
       '1 team member',
       '3 rundowns',
-      'Real-time collaboration',
+      'Read-Only Share Links',
       'Basic features'
     ]
   },
@@ -32,7 +32,8 @@ const PLANS = [
       'Up to 3 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Advanced features',
+      'Teleprompter',
+      'AD View',
       'AI Assistant',
       'Priority support'
     ]
@@ -48,7 +49,8 @@ const PLANS = [
       'Up to 15 team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Advanced features',
+      'Teleprompter',
+      'AD View',
       'AI Assistant',
       'Priority support'
     ]
@@ -65,7 +67,8 @@ const PLANS = [
       'Unlimited team members',
       'Unlimited rundowns',
       'Real-time collaboration',
-      'Advanced features',
+      'Teleprompter',
+      'AD View',
       'AI Assistant',
       'Priority support',
       'Dedicated account manager',
@@ -86,6 +89,15 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('Real-time collaboration')) {
     return <Zap className="w-4 h-4 text-yellow-500" />;
+  }
+  if (feature.includes('Read-Only Share Links')) {
+    return <Share className="w-4 h-4 text-cyan-500" />;
+  }
+  if (feature.includes('Teleprompter')) {
+    return <Monitor className="w-4 h-4 text-emerald-500" />;
+  }
+  if (feature.includes('AD View')) {
+    return <Tv className="w-4 h-4 text-violet-500" />;
   }
   if (feature.includes('Advanced features')) {
     return <Crown className="w-4 h-4 text-orange-500" />;
