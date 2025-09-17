@@ -81,6 +81,23 @@
   }
 }
 
+/* Mobile viewport fix - prevents header from scrolling out of view */
+@media (max-width: 1024px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+  
+  #root {
+    height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height for mobile browsers */
+    overflow: hidden;
+    position: relative;
+  }
+}
+
 /* Enhanced scratchpad editor formatting styles */
 .scratchpad-editor b,
 .scratchpad-editor strong {
