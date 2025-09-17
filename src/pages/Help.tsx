@@ -5,6 +5,8 @@ import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { HelpSidebar } from '@/components/HelpSidebar';
 
 const Help = () => {
   const navigate = useNavigate();
@@ -20,23 +22,32 @@ const Help = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <DashboardHeader 
-        userEmail={user?.email}
-        onSignOut={handleSignOut}
-        showBackButton={true}
-        onBack={handleBack}
-      />
-      
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">Learn how to use Cuer effectively for your broadcast productions</p>
-        </div>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full">
+        <DashboardHeader 
+          userEmail={user?.email}
+          onSignOut={handleSignOut}
+          showBackButton={true}
+          onBack={handleBack}
+        />
+        
+        <div className="flex w-full">
+          <HelpSidebar />
+          
+          <main className="flex-1 py-8 px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-4 flex items-center gap-2">
+                <SidebarTrigger />
+              </div>
+              
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
+                <p className="text-lg text-gray-600 dark:text-gray-300">Learn how to use Cuer effectively for your broadcast productions</p>
+              </div>
 
-        <div className="space-y-8">
-          {/* Getting Started */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="space-y-8">
+                {/* Getting Started */}
+                <section id="getting-started" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <FileText className="h-6 w-6 mr-2 text-blue-600" />
               Getting Started
@@ -60,8 +71,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Basic Operations */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Basic Operations */}
+                <section id="basic-operations" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <MousePointer className="h-6 w-6 mr-2 text-green-600" />
               Basic Operations
@@ -88,8 +99,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Column Manager */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Column Manager */}
+                <section id="column-manager" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <FileText className="h-6 w-6 mr-2 text-orange-600" />
               Column Manager
@@ -124,8 +135,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Find & Replace */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Find & Replace */}
+                <section id="find-replace" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Search className="h-6 w-6 mr-2 text-blue-600" />
               Find & Replace
@@ -141,8 +152,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Team Collaboration */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Team Collaboration */}
+                <section id="team-collaboration" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Users className="h-6 w-6 mr-2 text-purple-600" />
               Team Collaboration
@@ -159,8 +170,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Connection Status */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Connection Status */}
+                <section id="connection-status" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Wifi className="h-6 w-6 mr-2 text-green-600" />
               Connection Status Icons
@@ -204,8 +215,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Showcaller */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Showcaller */}
+                <section id="showcaller" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Radio className="h-6 w-6 mr-2 text-red-600" />
               Showcaller
@@ -234,8 +245,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* AI Helper */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* AI Helper */}
+                <section id="ai-helper" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Bot className="h-6 w-6 mr-2 text-purple-600" />
               AI Helper (Cuer)
@@ -251,8 +262,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Blueprints */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Blueprints */}
+                <section id="blueprints" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <FileText className="h-6 w-6 mr-2 text-indigo-600" />
               Blueprints
@@ -286,8 +297,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Shared Read-Only Rundowns */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Shared Read-Only Rundowns */}
+                <section id="shared-rundowns" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Share2 className="h-6 w-6 mr-2 text-indigo-600" />
               Shared Read-Only Rundowns
@@ -306,8 +317,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* AD View */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* AD View */}
+                <section id="ad-view" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Eye className="h-6 w-6 mr-2 text-green-600" />
               AD View (Assistant Director)
@@ -325,8 +336,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* CSV Import */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* CSV Import */}
+                <section id="csv-import" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Upload className="h-6 w-6 mr-2 text-blue-600" />
               Importing CSV Files
@@ -341,8 +352,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Teleprompter Operation */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Teleprompter Operation */}
+                <section id="teleprompter" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Monitor className="h-6 w-6 mr-2 text-purple-600" />
               Teleprompter Operation
@@ -379,8 +390,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Keyboard Shortcuts */}
-          <section className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                {/* Keyboard Shortcuts */}
+                <section id="keyboard-shortcuts" className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
               <Keyboard className="h-6 w-6 mr-2 text-indigo-600" />
               Keyboard Shortcuts
@@ -406,8 +417,8 @@ const Help = () => {
             </div>
           </section>
 
-          {/* Support */}
-          <section className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+                {/* Support */}
+                <section id="support" className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
             <p className="text-gray-700 dark:text-gray-300 mb-4">
               If you need additional assistance or have questions about specific features, you can reach out to our support team at <a href="mailto:help@cuer.live" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">help@cuer.live</a> or contact your system administrator.
@@ -415,10 +426,13 @@ const Help = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               This guide covers the core functionality of Cuer. Features may vary based on your access level and configuration.
             </p>
-          </section>
+                </section>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
