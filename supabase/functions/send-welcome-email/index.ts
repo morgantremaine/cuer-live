@@ -297,7 +297,7 @@ serve(async (req) => {
                   
                   <div class="feature-item">
                     <div class="feature-title">🔗 Shared Read-Only Rundowns</div>
-                    <div class="feature-desc">Share rundowns with unlimited users in read-only mode for seamless coordination.</div>
+                    <div class="feature-desc">Share rundowns with unlimited users in read-only mode for seamless coordination. No account needed.</div>
                   </div>
                   
                   <div class="feature-item">
@@ -322,13 +322,13 @@ serve(async (req) => {
                   </div>
                   
                   <div class="feature-item">
-                    <div class="feature-title">🎬 Teleprompter Mode</div>
+                    <div class="feature-title">🎬 Teleprompter</div>
                     <div class="feature-desc">Full-screen teleprompter with speed controls and professional formatting options.</div>
                   </div>
                   
                   <div class="feature-item">
                     <div class="feature-title">📺 AD View Dashboard</div>
-                    <div class="feature-desc">Dedicated Assistant Director view with live timing and comprehensive show control.</div>
+                    <div class="feature-desc">Dedicated Assistant Director view with live timing and comprehensive show overview.</div>
                   </div>
                   
                   <div class="feature-item">
@@ -368,7 +368,7 @@ serve(async (req) => {
                 
                 <p style="text-align: center; font-size: 14px; color: #6b7280 !important; margin-top: 25px;">
                   Ready to transform your broadcast production workflow?<br>
-                  Your team is going to love working with Cuer Live.
+                  Your team is going to love working with Cuer.
                 </p>
               </div>
               
