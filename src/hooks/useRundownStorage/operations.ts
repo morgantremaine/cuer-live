@@ -112,6 +112,7 @@ export class RundownOperations {
         team_id: rundown.team_id,
         archived: false, // Always create duplicates as active
         undo_history: [], // Start with empty undo history
+        is_demo: false, // Duplicated rundowns are never demo rundowns
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

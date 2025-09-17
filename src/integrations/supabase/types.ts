@@ -456,6 +456,7 @@ export type Database = {
           folder_id: string | null
           icon: string | null
           id: string
+          is_demo: boolean
           items: Json
           last_updated_by: string | null
           logo_url: string | null
@@ -480,6 +481,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
+          is_demo?: boolean
           items: Json
           last_updated_by?: string | null
           logo_url?: string | null
@@ -504,6 +506,7 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
+          is_demo?: boolean
           items?: Json
           last_updated_by?: string | null
           logo_url?: string | null

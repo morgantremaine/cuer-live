@@ -16,9 +16,11 @@ export const useRundownLimits = (rundowns: SavedRundown[]): RundownLimits => {
   const { subscription_tier, access_type } = useSubscription();
 
   return useMemo(() => {
-    const activeRundowns = rundowns.filter(r => !r.archived);
-    const archivedRundowns = rundowns.filter(r => r.archived);
-    const totalCount = rundowns.length;
+    // Filter out demo rundowns when counting toward limits
+    const nonDemoRundowns = rundowns.filter(r => !r.is_demo);
+    const activeRundowns = nonDemoRundowns.filter(r => !r.archived);
+    const archivedRundowns = nonDemoRundowns.filter(r => r.archived);
+    const totalCount = nonDemoRundowns.length;
     const activeCount = activeRundowns.length;
     const archivedCount = archivedRundowns.length;
 
