@@ -1,16 +1,33 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, Users, FileText, Keyboard, MousePointer, Monitor, Upload, Share2, Bot, Image, Eye, Radio, Wifi, WifiOff, LoaderCircle, Search } from 'lucide-react';
 import AnimatedWifiIcon from '@/components/AnimatedWifiIcon';
 import DashboardHeader from '@/components/DashboardHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { HelpSidebar } from '@/components/HelpSidebar';
+
+const helpSections = [
+  { id: 'getting-started', title: 'Getting Started', icon: FileText },
+  { id: 'basic-operations', title: 'Basic Operations', icon: MousePointer },
+  { id: 'column-manager', title: 'Column Manager', icon: FileText },
+  { id: 'find-replace', title: 'Find & Replace', icon: Search },
+  { id: 'team-collaboration', title: 'Team Collaboration', icon: Users },
+  { id: 'connection-status', title: 'Connection Status', icon: Wifi },
+  { id: 'showcaller', title: 'Showcaller', icon: Radio },
+  { id: 'ai-helper', title: 'AI Helper', icon: Bot },
+  { id: 'blueprints', title: 'Blueprints', icon: FileText },
+  { id: 'shared-rundowns', title: 'Shared Rundowns', icon: Share2 },
+  { id: 'ad-view', title: 'AD View', icon: Eye },
+  { id: 'csv-import', title: 'CSV Import', icon: Upload },
+  { id: 'teleprompter', title: 'Teleprompter', icon: Monitor },
+  { id: 'keyboard-shortcuts', title: 'Keyboard Shortcuts', icon: Keyboard },
+  { id: 'support', title: 'Support', icon: Clock }
+];
 
 const Help = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [activeSection, setActiveSection] = useState('getting-started');
 
   const handleSignOut = async () => {
     await signOut();
@@ -21,9 +38,47 @@ const Help = () => {
     navigate('/dashboard');
   };
 
+  // Handle smooth scrolling to sections
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveSection(sectionId);
+    }
+  };
+
+  // Track which section is currently in view
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -60% 0px',
+      threshold: 0.1
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observe all sections
+    helpSections.forEach(({ id }) => {
+      const element = document.getElementById(id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Full-width Header */}
+      {/* Fixed Header */}
       <DashboardHeader 
         userEmail={user?.email}
         onSignOut={handleSignOut}
@@ -31,21 +86,38 @@ const Help = () => {
         onBack={handleBack}
       />
       
-      {/* Content area with sidebar and main content */}
-      <SidebarProvider>
-        <div className="flex flex-1 w-full">
-          <HelpSidebar />
-          
-          <main className="flex-1 py-8 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="mb-4 flex items-center gap-2">
-                <SidebarTrigger />
-              </div>
-              
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
-                <p className="text-lg text-gray-600 dark:text-gray-300">Learn how to use Cuer effectively for your broadcast productions</p>
-              </div>
+      {/* Content area with fixed sidebar and scrollable main content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Fixed Sidebar */}
+        <div className="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0">
+          <div className="p-4">
+            <h2 className="text-gray-300 text-sm font-medium mb-4">Help Topics</h2>
+            <nav className="space-y-1">
+              {helpSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)}
+                  className={`w-full flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                    activeSection === section.id
+                      ? 'bg-gray-700 text-white font-medium'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                  }`}
+                >
+                  <section.icon className="h-4 w-4 mr-3" />
+                  {section.title}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+        
+        {/* Scrollable Main Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-4xl mx-auto py-8 px-4">
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">User Guide</h1>
+              <p className="text-lg text-gray-600 dark:text-gray-300">Learn how to use Cuer effectively for your broadcast productions</p>
+            </div>
 
               <div className="space-y-8">
                 {/* Getting Started */}
@@ -429,11 +501,10 @@ const Help = () => {
                     This guide covers the core functionality of Cuer. Features may vary based on your access level and configuration.
                   </p>
                 </section>
-              </div>
             </div>
-          </main>
-        </div>
-      </SidebarProvider>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
