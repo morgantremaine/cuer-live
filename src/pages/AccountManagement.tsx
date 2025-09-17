@@ -29,7 +29,6 @@ const AccountManagement = () => {
   const [showPlans, setShowPlans] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
-  const [deletePassword, setDeletePassword] = useState('')
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { subscribed, access_type, openCustomerPortal } = useSubscription()
   const { team } = useTeam()
@@ -120,31 +119,9 @@ const AccountManagement = () => {
   const handleDeleteAccount = async () => {
     if (!user?.email) return
     
-    if (!deletePassword.trim()) {
-      toast({
-        title: 'Password Required',
-        description: 'Please enter your password to confirm account deletion.',
-        variant: 'destructive',
-      })
-      return
-    }
-    
     setIsDeleting(true)
     try {
-      // First verify the password by attempting to update it with the same password
-      const { error: passwordError } = await updatePassword(deletePassword, deletePassword)
-      
-      if (passwordError) {
-        toast({
-          title: 'Incorrect Password',
-          description: 'The password you entered is incorrect.',
-          variant: 'destructive',
-        })
-        setIsDeleting(false)
-        return
-      }
-      
-      // If password is correct, proceed with deletion
+      // Proceed with deletion
       const { error } = await supabase.functions.invoke('delete-user-account', {
         body: { email: user.email }
       })
@@ -173,7 +150,6 @@ const AccountManagement = () => {
       })
     }
     setIsDeleting(false)
-    setDeletePassword('')
   }
 
   return (
@@ -311,12 +287,7 @@ const AccountManagement = () => {
                   </CardDescription>
                 </div>
                 <Button
-                  onClick={() => {
-                    setShowDeleteOptions(!showDeleteOptions)
-                    if (!showDeleteOptions) {
-                      setDeletePassword('')
-                    }
-                  }}
+                  onClick={() => setShowDeleteOptions(!showDeleteOptions)}
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -357,23 +328,11 @@ const AccountManagement = () => {
                           </p>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="deletePassword">Enter your password to confirm:</Label>
-                          <Input
-                            id="deletePassword"
-                            type="password"
-                            value={deletePassword}
-                            onChange={(e) => setDeletePassword(e.target.value)}
-                            placeholder="Enter your password"
-                            className="max-w-sm"
-                          />
-                        </div>
-                        
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button 
                               variant="destructive" 
-                              disabled={isDeleting || !deletePassword.trim()}
+                              disabled={isDeleting}
                             >
                               {isDeleting ? 'Deleting Account...' : 'Delete Account Permanently'}
                             </Button>
