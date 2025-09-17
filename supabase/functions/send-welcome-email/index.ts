@@ -271,7 +271,7 @@ serve(async (req) => {
               <div class="content">
                 <p>Hi ${userName || 'there'}!</p>
                 
-                <p>Welcome to <span class="highlight">Cuer Live</span>. You now have access to powerful tools that will transform how your team collaborates on live broadcasts and productions.</p>
+                <p>Welcome to <span class="highlight">Cuer</span>. You now have access to powerful tools that will transform how your team collaborates on live broadcasts and productions.</p>
                 
                 <div class="button-container">
                   <a href="${siteUrl}/dashboard" class="button">Start Your First Rundown</a>
