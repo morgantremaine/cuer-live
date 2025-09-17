@@ -96,25 +96,6 @@
     overflow: hidden;
     position: relative;
   }
-  
-  /* Ensure flex containers maintain proper bounds */
-  .flex.flex-col.h-full {
-    height: 100% !important;
-    overflow: hidden;
-  }
-  
-  /* Constrain ScrollArea and its viewport on mobile */
-  [data-radix-scroll-area-viewport] {
-    overscroll-behavior: none;
-    touch-action: pan-y;
-    position: relative;
-  }
-  
-  /* Prevent any scroll behavior from affecting parent containers */
-  .rundown-container {
-    contain: layout style paint;
-    isolation: isolate;
-  }
 }
 
 /* Enhanced scratchpad editor formatting styles */
