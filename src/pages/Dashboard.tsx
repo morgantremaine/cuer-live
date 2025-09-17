@@ -399,7 +399,7 @@ const Dashboard = () => {
 
   if (shouldShowLoadingSkeleton) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
+      <div className="h-full bg-gray-900 flex flex-col overflow-hidden">
         <DashboardHeader 
           userEmail={user?.email}
           onSignOut={handleSignOut}
@@ -437,7 +437,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="h-full bg-gray-900 flex flex-col overflow-hidden">
       {/* Full-width Header */}
       <DashboardHeader 
         userEmail={user?.email}

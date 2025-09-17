@@ -16,7 +16,7 @@ const RundownLayout = () => {
   // This component stays mounted while the nested routes change
   // The rundown ID is available in context for all child components
   return (
-    <div className="h-screen overflow-hidden">
+    <div className="h-full overflow-hidden">
       <RundownLayoutRouter />
     </div>
   );
