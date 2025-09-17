@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles } from 'lucide-react';
+import { Crown, Users, ChevronLeft, ChevronRight, UserPlus, Infinity, Zap, Bot, Headphones, UserCheck, FileText, Share, Monitor, Tv, Sparkles, Package } from 'lucide-react';
 
 const PLANS = [
   {
@@ -59,18 +59,13 @@ const PLANS = [
     name: 'Enterprise',
     description: 'Scales to your company',
     maxMembers: null,
-    teamRange: 'Unlimited team members',
+    teamRange: 'Custom Seat Package',
     monthlyPrice: null,
     yearlyPrice: null,
     isEnterprise: true,
     features: [
-      'Unlimited team members',
-      'Unlimited rundowns',
-      'Real-time collaboration',
-      'Teleprompter',
-      'AD View',
-      'AI Assistant',
-      'Priority support',
+      'Custom Seat Package',
+      'Full Features',
       'Dedicated account manager',
       'Early Access to New Features'
     ]
@@ -80,6 +75,9 @@ const PLANS = [
 const getFeatureIcon = (feature: string) => {
   if (feature.includes('team members') || feature.includes('team member')) {
     return <UserPlus className="w-4 h-4 text-blue-500" />;
+  }
+  if (feature.includes('Custom Seat Package')) {
+    return <Package className="w-4 h-4 text-amber-500" />;
   }
   if (feature.includes('Unlimited rundowns')) {
     return <Infinity className="w-4 h-4 text-purple-500" />;
@@ -98,6 +96,9 @@ const getFeatureIcon = (feature: string) => {
   }
   if (feature.includes('AD View')) {
     return <Tv className="w-4 h-4 text-violet-500" />;
+  }
+  if (feature.includes('Full Features')) {
+    return <Crown className="w-4 h-4 text-amber-500" />;
   }
   if (feature.includes('Advanced features')) {
     return <Crown className="w-4 h-4 text-orange-500" />;
