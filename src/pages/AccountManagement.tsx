@@ -276,28 +276,29 @@ const AccountManagement = () => {
             <Separator className="my-6" />
             
             <Card>
-              <CardHeader>
-                <CardTitle className="text-red-600">Delete Account</CardTitle>
-                <CardDescription>
-                  Permanently delete your account and all associated data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div>
+                  <CardTitle className="text-red-600">Delete Account</CardTitle>
+                  <CardDescription>
+                    Permanently delete your account and all associated data
+                  </CardDescription>
+                </div>
                 <Button
                   onClick={() => setShowDeleteOptions(!showDeleteOptions)}
-                  variant="outline"
-                  className="w-full justify-between text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                  Delete Account
                   {showDeleteOptions ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
                     <ChevronRight className="h-4 w-4" />
                   )}
                 </Button>
-                
+              </CardHeader>
+              <CardContent>
                 {showDeleteOptions && (
-                  <div className="mt-4 space-y-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border">
+                  <div className="space-y-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border">
                     {subscribed ? (
                       <div className="space-y-4">
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
