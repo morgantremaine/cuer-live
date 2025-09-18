@@ -105,9 +105,14 @@ const LandingPage = () => {
               Dashboard
             </Button>
           ) : (
-            <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
-              Sign In
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
+                Sign In
+              </Button>
+              <Button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white glow-box">
+                Get Started for Free
+              </Button>
+            </div>
           )}
         </div>
       </nav>
