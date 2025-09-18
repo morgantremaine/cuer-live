@@ -407,13 +407,14 @@ const BlogPost = () => {
         {/* Article Body */}
         <div 
           className="prose prose-lg prose-invert max-w-none 
-                     prose-headings:text-white prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
-                     prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
-                     prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4
-                     prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-6
-                     prose-ul:text-slate-300 prose-ul:mb-6
-                     prose-li:mb-2 prose-li:leading-relaxed
-                     prose-strong:text-white prose-strong:font-semibold"
+                     prose-headings:text-white prose-headings:font-bold 
+                     prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-slate-700 prose-h2:pb-2
+                     prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:text-blue-300
+                     prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-6 prose-p:text-lg
+                     prose-ul:text-slate-300 prose-ul:mb-6 prose-ul:space-y-2
+                     prose-li:mb-2 prose-li:leading-relaxed prose-li:text-slate-300
+                     prose-strong:text-white prose-strong:font-semibold
+                     prose-code:text-blue-400 prose-code:bg-slate-800 prose-code:px-2 prose-code:py-1 prose-code:rounded"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
