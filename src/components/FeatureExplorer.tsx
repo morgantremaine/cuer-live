@@ -231,12 +231,6 @@ export const FeatureExplorer: React.FC = () => {
       {/* Feature Buttons */}
       {currentStage && (
         <div className="animate-fade-in">
-          <div className="text-center mb-8">
-            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 text-lg px-4 py-2">
-              <currentStage.icon className="w-5 h-5 mr-2" />
-              {currentStage.title}
-            </Badge>
-          </div>
           <div className="flex justify-center">
             <div className={`
               gap-4 
