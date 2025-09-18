@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { LandingPagePricing } from '@/components/LandingPagePricing';
+import { FeatureExplorer } from '@/components/FeatureExplorer';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -255,208 +256,19 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Professional Views Section - Consolidated */}
+      {/* Interactive Feature Explorer */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 text-white">
-            Every view your team needs 
-            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">for professional production</span>
+            Complete workflow coverage 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">from planning to broadcast</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            From control room displays to talent teleprompters - the right interface for every role.
+            Every tool your team needs, organized by how you actually work.
           </p>
         </div>
 
-        {/* Live Show Control */}
-        <div className="mb-20">
-          <div className="text-center space-y-6 mb-12">
-            <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              Real-time timing and status tracking keeps your entire production team synchronized.
-            </p>
-          </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
-              alt="Live Show Controls"
-              className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-        </div>
-
-        {/* Production Views Grid */}
-        <div className="grid lg:grid-cols-2 gap-16 mb-20">
-          {/* AI Assistant */}
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 className="text-3xl font-bold text-white mb-4">AI Assistant</h3>
-              <p className="text-lg text-slate-400 mb-6">
-                Catch problems before they happen with intelligent analysis and suggestions.
-              </p>
-            </div>
-            <div className="group fade-up">
-              <img 
-                src="/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
-                alt="Cuer AI Assistant Interface"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time rundown analysis</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Issue detection and solutions</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Content and timing suggestions</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Control Room Display */}
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 className="text-3xl font-bold text-white mb-4">Control Room Display</h3>
-              <p className="text-lg text-slate-400 mb-6">
-                Dedicated AD view with live timing, perfect for multiviewer displays.
-              </p>
-            </div>
-            <div className="group fade-up">
-              <img 
-                src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
-                alt="AD View Dashboard"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Live timing display</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Current script panel</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Secondary Views */}
-        <div className="grid lg:grid-cols-2 gap-16">
-          {/* Stakeholder Views */}
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 className="text-3xl font-bold text-white mb-4">Stakeholder Views</h3>
-              <p className="text-lg text-slate-400 mb-6">
-                Share read-only rundowns with clients and executives. No login required.
-              </p>
-            </div>
-            <div className="group fade-up">
-              <img 
-                src="/uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
-                alt="Shared Rundown View"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-          </div>
-
-          {/* Professional Teleprompter */}
-          <div className="space-y-8">
-            <div className="text-center">
-              <h3 className="text-3xl font-bold text-white mb-4">Professional Teleprompter</h3>
-              <p className="text-lg text-slate-400 mb-6">
-                Full-screen mode with speed controls and real-time script sync.
-              </p>
-            </div>
-            <div className="group fade-up">
-              <img 
-                src="/uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
-                alt="Teleprompter Full Screen"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pre-Production & Collaboration */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">
-            Pre-production to post 
-            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">collaboration tools</span>
-          </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Everything your team needs for planning, organizing, and documenting successful productions.
-          </p>
-        </div>
-
-        {/* Four-column grid for collaboration features */}
-        <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8 mb-16">
-          {/* Blueprint Planning */}
-          <div className="text-center space-y-6">
-            <div className="group fade-up">
-              <img 
-                src="/uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
-                alt="Blueprint Planning Interface"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <h3 className="text-xl font-bold text-white">Smart Planning</h3>
-            <p className="text-slate-400 text-sm">
-              Organize show elements with smart checklists and intuitive filtering tools.
-            </p>
-          </div>
-
-          {/* Team Management */}
-          <div className="text-center space-y-6">
-            <div className="group fade-up">
-              <img 
-                src="/uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-                alt="Team Management Interface"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <h3 className="text-xl font-bold text-white">Team Collaboration</h3>
-            <p className="text-slate-400 text-sm">
-              Role-based permissions and real-time collaboration across your organization.
-            </p>
-          </div>
-
-          {/* Rich Notes */}
-          <div className="text-center space-y-6">
-            <div className="group fade-up">
-              <img 
-                src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-                alt="Notes and Documentation"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <h3 className="text-xl font-bold text-white">Rich Documentation</h3>
-            <p className="text-slate-400 text-sm">
-              Capture show notes with rich formatting and collaborative editing capabilities.
-            </p>
-          </div>
-
-          {/* Project Overview */}
-          <div className="text-center space-y-6">
-            <div className="group fade-up">
-              <img 
-                src="/uploads/fda659c6-14fe-4a8f-9b42-efba05fb6022.png" 
-                alt="Detailed Rundown Card Interface"
-                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-              />
-            </div>
-            <h3 className="text-xl font-bold text-white">Project Overview</h3>
-            <p className="text-slate-400 text-sm">
-              Comprehensive rundown cards with segment counts, duration, and activity tracking.
-            </p>
-          </div>
-        </div>
+        <FeatureExplorer />
       </div>
 
 
