@@ -48,7 +48,7 @@ const workflowStages: WorkflowStage[] = [
       {
         id: 'smart-planning',
         title: 'Smart Planning',
-        description: 'Organize show elements with smart checklists and intuitive filtering tools.',
+        description: 'Organize show elements with Cuer Blueprints using smart checklists and intuitive filtering tools.',
         image: '/uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png',
         alt: 'Blueprint Planning Interface',
         details: [
