@@ -214,7 +214,7 @@ const BlogPost = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-4 mb-4 md:mb-0">
               <CuerLogo className="h-8 w-auto" />
-              <span className="text-slate-400">© 2024 Cuer. All rights reserved.</span>
+              <span className="text-slate-400">© {new Date().getFullYear()} Cuer. All rights reserved.</span>
             </div>
             <div className="flex items-center space-x-6">
               <Link to="/blog" className="text-slate-300 hover:text-white transition-colors">
