@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, Calendar, Clock, User, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Calendar, Clock, User, Tag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +17,7 @@ const CreateBlog = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [heroImagePreview, setHeroImagePreview] = useState<string>('');
   
@@ -138,6 +140,80 @@ const CreateBlog = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const PreviewModal = () => {
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    const readTime = formData.readTime || calculateReadTime(formData.content);
+    
+    return (
+      <div className="max-w-4xl mx-auto">
+        {/* Article Header */}
+        <header className="mb-8">
+          <div className="flex items-center space-x-4 mb-6 text-sm text-slate-400">
+            <Badge variant="outline" className="border-slate-600 text-slate-300">
+              {formData.category || 'Uncategorized'}
+            </Badge>
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-4 w-4" />
+              <span>{currentDate}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Clock className="h-4 w-4" />
+              <span>{readTime}</span>
+            </div>
+          </div>
+          
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4 text-white">
+            {formData.title || 'Blog Post Title'}
+          </h1>
+          
+          <p className="text-lg text-slate-300 leading-relaxed mb-6">
+            {formData.excerpt || 'Blog post excerpt will appear here...'}
+          </p>
+          
+          <div className="flex items-center space-x-2 text-slate-400">
+            <User className="h-5 w-5" />
+            <span>By {formData.author}</span>
+          </div>
+        </header>
+
+        {/* Hero Image */}
+        {(heroImagePreview || formData.heroImage) && (
+          <div className="mb-8">
+            <img 
+              src={heroImagePreview || formData.heroImage}
+              alt={formData.title || 'Hero image'}
+              className="w-full h-48 md:h-64 object-cover rounded-lg"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-48 md:h-64 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-lg flex items-center justify-center"><span class="text-slate-400">Image not available</span></div>';
+              }}
+            />
+          </div>
+        )}
+
+        {/* Article Body */}
+        <div 
+          className="prose prose-lg prose-invert max-w-none 
+                     prose-headings:text-white prose-headings:font-bold 
+                     prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
+                     prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
+                     prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-4
+                     prose-ul:text-slate-300 prose-li:mb-2
+                     prose-strong:text-white prose-strong:font-semibold
+                     prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline"
+          dangerouslySetInnerHTML={{ 
+            __html: formData.content || '<p class="text-slate-400 italic">Start writing your blog content...</p>' 
+          }}
+        />
+      </div>
+    );
   };
 
   return (
@@ -313,23 +389,45 @@ const CreateBlog = () => {
                 Cancel
               </Button>
               
-              <Button
-                onClick={handleSave}
-                disabled={isLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Create Blog Post
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center space-x-3">
+                <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl max-h-[90vh] bg-slate-900 border-slate-700 overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="text-white">Blog Post Preview</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <PreviewModal />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Create Blog Post
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
