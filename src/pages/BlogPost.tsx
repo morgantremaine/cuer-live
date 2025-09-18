@@ -435,7 +435,7 @@ const BlogPost = () => {
           </h3>
           <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">
             Experience the future of broadcast production with Cuer's intuitive rundown management. 
-            Get started with a free account and see how we're revolutionizing live production workflows.
+            Get started with a free account today.
           </p>
           <Button 
             onClick={handleGetStarted}
