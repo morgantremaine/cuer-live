@@ -78,7 +78,6 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 max-w-7xl mx-auto fade-up bg-transparent">
         <div className="flex items-center">
-          <CuerLogo className="h-8 w-auto" />
         </div>
         <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-white">
@@ -138,7 +137,7 @@ const LandingPage = () => {
             </Badge>
             
             <div className="fade-up">
-              <CuerLogo className="h-24 md:h-32 lg:h-40 w-auto mx-auto drop-shadow-2xl" />
+              <CuerLogo className="h-40 md:h-56 lg:h-72 xl:h-80 w-auto mx-auto drop-shadow-2xl" />
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
