@@ -212,7 +212,7 @@ const LandingPage = () => {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-purple-400">3</div>
             <h3 className="text-2xl font-bold text-white">Execute Live</h3>
-            <p className="text-slate-400">Live showcaller controls keep your crew in sync and on time, while floating items and rundown-to-prompter updates flow instantly to air.</p>
+            <p className="text-slate-400">Live showcaller controls keep your crew in sync and on time, while floating segments and rundown-to-prompter updates flow instantly to air.</p>
           </div>
         </div>
 
