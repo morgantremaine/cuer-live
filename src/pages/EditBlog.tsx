@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Upload, Calendar, Clock, User, Tag, Eye, ArrowRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -32,7 +36,8 @@ const EditBlog = () => {
     category: '',
     readTime: '',
     content: '',
-    featured: false
+    featured: false,
+    publishDate: new Date()
   });
 
   // Check if user is authorized to edit blog posts
@@ -78,7 +83,8 @@ const EditBlog = () => {
           category: data.category || '',
           readTime: data.read_time,
           content: data.content,
-          featured: data.featured
+          featured: data.featured,
+          publishDate: new Date(data.publish_date)
         });
         
         if (data.hero_image) {
@@ -125,7 +131,7 @@ const EditBlog = () => {
     );
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -195,7 +201,8 @@ const EditBlog = () => {
         category: formData.category || null,
         read_time: readTime,
         slug: slug,
-        featured: formData.featured
+        featured: formData.featured,
+        publish_date: formData.publishDate.toISOString().split('T')[0]
       };
 
       // Update in database
@@ -432,8 +439,8 @@ const EditBlog = () => {
               )}
             </div>
 
-            {/* Category and Read Time */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Category, Read Time, and Publish Date */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category" className="text-slate-200">Category</Label>
                 <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
@@ -459,6 +466,33 @@ const EditBlog = () => {
                   placeholder="e.g., 5 min read (auto-calculated if empty)"
                   className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-400"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-200">Publish Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600/50",
+                        !formData.publishDate && "text-slate-400"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {formData.publishDate ? format(formData.publishDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-600" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.publishDate}
+                      onSelect={(date) => handleInputChange('publishDate', date || new Date())}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
