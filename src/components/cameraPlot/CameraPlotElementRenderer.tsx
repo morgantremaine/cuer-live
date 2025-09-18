@@ -38,9 +38,9 @@ const CameraPlotElementRenderer = ({ element }: CameraPlotElementRendererProps) 
       const personColor = element.personColor || 'blue';
       const personImages = {
         blue: "/uploads/64bd14bd-89fd-47d4-aec8-d162eca2c39b.png",
-        green: "/lovable-uploads/7cef3c07-b97e-4c4d-9e76-c82887e6daca.png",
-        red: "/lovable-uploads/015d9013-eab5-4289-9d5c-4eb40acf8f85.png",
-        yellow: "/lovable-uploads/dc66e775-442f-4da6-b615-e79e7ad9ef2f.png"
+        green: "/uploads/camera-dot-green.png",
+        red: "/uploads/camera-dot-red.png",
+        yellow: "/uploads/camera-dot-yellow.png"
       };
       
       return (

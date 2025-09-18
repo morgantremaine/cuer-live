@@ -77,7 +77,7 @@ const Changelog: React.FC = () => {
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/ac008c6d-5fc5-4e20-8239-c3e1c37146ab.png"
+                        src="/uploads/auto-time-to-script-feature.png"
                         alt="Auto Time to Script context menu option"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />
@@ -113,7 +113,7 @@ const Changelog: React.FC = () => {
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
-                        src="/lovable-uploads/f388475d-536b-443c-9853-b1b7c6042b73.png" 
+                        src="/uploads/find-replace-dialog.png" 
                         alt="Find & Replace dialog showing search and replace functionality"
                         className="w-full max-w-md mx-auto rounded border border-slate-600"
                       />
