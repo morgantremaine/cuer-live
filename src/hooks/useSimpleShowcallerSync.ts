@@ -45,7 +45,6 @@ export const useSimpleShowcallerSync = ({
   const lastActionTimeRef = useRef<number | null>(null);
   const skipNextSaveRef = useRef<boolean>(false);
   const immediateSave = useRef<(s: SimpleShowcallerState) => void>(() => {});
-  const previousItemsRef = useRef<RundownItem[]>(items); // Track previous items for deletion handling
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
     if (!str) return 0;
@@ -401,37 +400,10 @@ export const useSimpleShowcallerSync = ({
     const currentItemExists = items.find(item => item.id === state.currentSegmentId);
     
     if (!currentItemExists) {
-      console.log('📺 Simple: Current segment deleted, finding next segment after deleted position');
+      console.log('📺 Simple: Current segment deleted, moving to next available segment');
       
-      // Find the index of the deleted item in the previous items array
-      const previousItems = previousItemsRef.current;
-      const deletedItemIndex = previousItems.findIndex(item => item.id === state.currentSegmentId);
-      
-      let nextSegment = null;
-      
-      if (deletedItemIndex !== -1) {
-        console.log('📺 Simple: Deleted item was at index:', deletedItemIndex);
-        
-        // Look for the next regular, non-floated item starting from the deleted position
-        // Check items that would come after the deleted position
-        for (let i = deletedItemIndex; i < previousItems.length; i++) {
-          const previousItem = previousItems[i];
-          // Find this item in the current items (it might have moved up due to deletion)
-          const currentItem = items.find(item => item.id === previousItem.id);
-          if (currentItem && currentItem.type === 'regular' && !isFloated(currentItem)) {
-            nextSegment = currentItem;
-            break;
-          }
-        }
-        
-        // If no item found after deleted position, fall back to first available
-        if (!nextSegment) {
-          nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-        }
-      } else {
-        // Fallback: just find first available item
-        nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
-      }
+      // Just find the first available segment (this naturally gives us the "next" item since everything shifted up)
+      const nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
       
       if (nextSegment) {
         console.log('📺 Simple: Moving showcaller to next segment:', nextSegment.id);
@@ -489,12 +461,7 @@ export const useSimpleShowcallerSync = ({
         immediateSave.current(resetState);
       }
     }
-  }, [items, state.currentSegmentId, state.isPlaying, state.isController, hasLoadedInitialState.current, parseDurationToSeconds, buildStatusMap, broadcastState, stopTimer]);
-
-  // Update previous items ref whenever items change
-  useEffect(() => {
-    previousItemsRef.current = items;
-  }, [items]);
+  }, [items, state.currentSegmentId, state.isPlaying, state.isController, parseDurationToSeconds, buildStatusMap, broadcastState, stopTimer]);
 
   // Load initial showcaller state from database
   useEffect(() => {
