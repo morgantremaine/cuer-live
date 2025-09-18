@@ -1,0 +1,30 @@
+#,Segment Name,Talent,Script,GFX,Video,Duration,Start,End,Elapsed
+,TOP OF SHOW,,,,,,,,
+1,Pre-Service,Host/AV,General welcome notes,Welcome slide,,15:00,09:00:00,09:15:00,00:00:00
+2,Countdown Timer,AV,Service start prep,Countdown graphic,Countdown video,05:00,09:15:00,09:20:00,00:15:00
+3,Welcome / Greeting,Host,Greeting + opening remarks,Lower-third name/title,,05:00,09:20:00,09:25:00,00:20:00
+4,Song 1,Band/Performer,Introductory song,Lyrics on screen,,07:00,09:25:00,09:32:00,00:25:00
+5,Song 2,Band/Performer,Second performance piece,Lyrics on screen,,06:00,09:32:00,09:38:00,00:32:00
+6,Transition / Prayer,Host,Transition from music to announcements,,,03:00,09:38:00,09:41:00,00:38:00
+,ANNOUNCEMENTS,,,,,,,,
+7,Announcements,Host,Upcoming events & notices,Announcement slides,,05:00,09:41:00,09:46:00,00:41:00
+8,Special Video Message,AV,Guest or remote announcement,,Pre-recorded video,03:00,09:46:00,09:49:00,00:46:00
+9,Volunteer Highlight,Host,Thank key volunteers,Volunteer graphic,,03:00,09:49:00,09:52:00,00:49:00
+10,Offering,Host,Encourage contributions,Offering slide,Giving options video,05:00,09:52:00,09:57:00,00:52:00
+,SERMON / TALK,,,,,,,,
+11,Sermon Intro,Host,Introduce speaker,Intro slide,,02:00,09:57:00,09:59:00,00:57:00
+12,Message Part 1,Speaker,Core teaching block,Slides/Key points,,12:00,09:59:00,10:11:00,00:59:00
+13,Illustration Video,AV,Supporting example,,Illustration video,04:00,10:11:00,10:15:00,01:11:00
+14,Message Part 2,Speaker,Continuation of message,Slides/Key points,,12:00,10:15:00,10:27:00,01:15:00
+15,Scripture/Quote Slide,AV,Key reference point,Quote slide,,02:00,10:27:00,10:29:00,01:27:00
+16,Message Part 3,Speaker,Wrap-up and application,Slides/Key points,,10:00,10:29:00,10:39:00,01:29:00
+,RESPONSE,,,,,,,,
+17,Response Song 1,Band/Performer,Reflective or thematic song,Lyrics on screen,,06:00,10:39:00,10:45:00,01:39:00
+18,Reflection / Prayer,Host/Speaker,Quiet reflection moment,,,04:00,10:45:00,10:49:00,01:45:00
+19,Response Song 2,Band/Performer,Uplifting transition,Lyrics on screen,,05:00,10:49:00,10:54:00,01:49:00
+,CLOSING,,,,,,,,
+20,Closing Remarks,Host,Thank-yous + next steps,Closing slide,,05:00,10:54:00,10:59:00,01:54:00
+21,Closing Song / Finale,Band/Performer,Finale,Lyrics on screen,,05:00,10:59:00,11:04:00,01:59:00
+22,Benediction / Farewell,Host,Dismiss congregation,,,03:00,11:04:00,11:07:00,02:04:00
+23,Post-Service Dismissal,AV,Outro loop,Outro slides,,10:00,11:07:00,11:17:00,02:07:00
+24,Volunteer Callout,Host,Remind about volunteer meeting after service,,,02:00,11:17:00,11:19:00,02:17:00
