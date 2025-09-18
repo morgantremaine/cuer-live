@@ -1,10 +1,10 @@
 import { RundownItem } from '@/types/rundown';
 
-export const DEMO_RUNDOWN_ID = 'demo-rundown-2024';
+export const DEMO_RUNDOWN_ID = 'demo-rundown-template';
 
 export const DEMO_RUNDOWN_DATA = {
   id: DEMO_RUNDOWN_ID,
-  title: 'DEMO RUNDOWN - Try Me Out!',
+  title: 'Demo Rundown - Your Template',
   start_time: '09:00:00',
   timezone: 'America/New_York',
   items: [
@@ -84,7 +84,7 @@ export const DEMO_RUNDOWN_DATA = {
       video: 'Team A Hype Video',
       images: 'https://news.illinoisstate.edu/files/2022/10/RedbirdEsports2.jpg',
       notes: '',
-      color: '',
+      color: '#86efac',
       isFloating: false,
       customFields: {
         music: 'Heroic Electronic Theme'
@@ -145,7 +145,7 @@ export const DEMO_RUNDOWN_DATA = {
       video: 'Match transition animation',
       images: 'https://www.figma.com/design/L8u3SPqxEDa8vAxlafd6DB/FORMAT-GFX?node-id=0-1&t=6AMO5H3s5mTIHLyH-1',
       notes: '',
-      color: '',
+      color: '#93c5fd',
       isFloating: false,
       customFields: {
         music: 'Match Start Theme'

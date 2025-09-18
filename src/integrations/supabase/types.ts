@@ -1091,6 +1091,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_demo_content_for_user: {
+        Args: { target_team_id: string; target_user_id: string }
+        Returns: undefined
+      }
       delete_user_completely: {
         Args: { user_uuid: string }
         Returns: undefined
