@@ -13,18 +13,25 @@ export interface ShowcallerVisualState {
   playbackStartTime: number | null;
   lastUpdate: string;
   controllerId: string | null;
+  // Rehearsal timer state
+  isRecording: boolean;
+  rehearsalStartTime: number | null;
+  rehearsalElapsedTime: number;
+  rehearsalSegmentId: string | null;
 }
 
 interface UseShowcallerVisualStateProps {
   items: RundownItem[];
   rundownId: string | null;
   userId?: string;
+  updateItem?: (id: string, field: string, value: string) => void;
 }
 
 export const useShowcallerVisualState = ({
   items,
   rundownId,
-  userId
+  userId,
+  updateItem
 }: UseShowcallerVisualStateProps) => {
   const [visualState, setVisualState] = useState<ShowcallerVisualState>({
     currentItemStatuses: new Map(),
@@ -33,7 +40,12 @@ export const useShowcallerVisualState = ({
     timeRemaining: 0,
     playbackStartTime: null,
     lastUpdate: new Date().toISOString(),
-    controllerId: null
+    controllerId: null,
+    // Rehearsal timer initial state
+    isRecording: false,
+    rehearsalStartTime: null,
+    rehearsalElapsedTime: 0,
+    rehearsalSegmentId: null
   });
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -44,6 +56,8 @@ export const useShowcallerVisualState = ({
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
   const precisionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Rehearsal timer refs
+  const rehearsalTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use precision timing utility
   const {
@@ -184,6 +198,132 @@ export const useShowcallerVisualState = ({
       return newState;
     });
   }, [debouncedSaveVisualState]);
+
+  // Rehearsal timer management functions
+  const formatRehearsalTime = useCallback((seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const updateRehearsalDuration = useCallback((segmentId: string, elapsedSeconds: number) => {
+    if (!updateItem) return;
+    
+    const formattedTime = formatRehearsalTime(elapsedSeconds);
+    console.log('🎯 Updating duration for segment', segmentId, 'to', formattedTime);
+    updateItem(segmentId, 'duration', formattedTime);
+  }, [updateItem, formatRehearsalTime]);
+
+  const startRehearsalTimer = useCallback(() => {
+    if (rehearsalTimerRef.current) {
+      clearInterval(rehearsalTimerRef.current);
+    }
+
+    const updateElapsedTime = () => {
+      setVisualState(prevState => {
+        if (!prevState.isRecording || !prevState.rehearsalStartTime) {
+          return prevState;
+        }
+
+        const now = getPreciseTime();
+        const elapsedMs = now - prevState.rehearsalStartTime;
+        const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+        return {
+          ...prevState,
+          rehearsalElapsedTime: elapsedSeconds,
+          lastUpdate: new Date().toISOString()
+        };
+      });
+    };
+
+    rehearsalTimerRef.current = setInterval(updateElapsedTime, 100);
+  }, [getPreciseTime]);
+
+  const stopRehearsalTimer = useCallback(() => {
+    if (rehearsalTimerRef.current) {
+      clearInterval(rehearsalTimerRef.current);
+      rehearsalTimerRef.current = null;
+    }
+  }, []);
+
+  const startRecording = useCallback((segmentId?: string) => {
+    console.log('🎯 Starting rehearsal recording for segment:', segmentId);
+    
+    // Prevent recording if already playing
+    if (visualState.isPlaying) {
+      console.warn('🎯 Cannot start recording while playback is active');
+      return;
+    }
+
+    const targetSegmentId = segmentId || visualState.currentSegmentId;
+    if (!targetSegmentId) {
+      console.warn('🎯 No segment selected for recording');
+      return;
+    }
+
+    const preciseStartTime = getPreciseTime();
+    
+    updateVisualState({
+      isRecording: true,
+      rehearsalStartTime: preciseStartTime,
+      rehearsalElapsedTime: 0,
+      rehearsalSegmentId: targetSegmentId,
+      controllerId: userId
+    }, true, true);
+
+    startRehearsalTimer();
+  }, [visualState.isPlaying, visualState.currentSegmentId, userId, updateVisualState, startRehearsalTimer, getPreciseTime]);
+
+  const pauseRecording = useCallback(() => {
+    console.log('🎯 Pausing rehearsal recording');
+    
+    stopRehearsalTimer();
+    updateVisualState({
+      isRecording: false,
+      rehearsalStartTime: null,
+      controllerId: userId
+    }, true, true);
+  }, [stopRehearsalTimer, updateVisualState, userId]);
+
+  const stopRecording = useCallback(() => {
+    console.log('🎯 Stopping rehearsal recording and updating duration');
+    
+    if (visualState.rehearsalSegmentId && visualState.rehearsalElapsedTime > 0) {
+      updateRehearsalDuration(visualState.rehearsalSegmentId, visualState.rehearsalElapsedTime);
+    }
+
+    stopRehearsalTimer();
+    updateVisualState({
+      isRecording: false,
+      rehearsalStartTime: null,
+      rehearsalElapsedTime: 0,
+      rehearsalSegmentId: null,
+      controllerId: userId
+    }, true, true);
+  }, [visualState.rehearsalSegmentId, visualState.rehearsalElapsedTime, updateRehearsalDuration, stopRehearsalTimer, updateVisualState, userId]);
+
+  const resetRecording = useCallback(() => {
+    console.log('🎯 Resetting rehearsal recording');
+    
+    if (visualState.isRecording && visualState.rehearsalSegmentId) {
+      const preciseStartTime = getPreciseTime();
+      
+      updateVisualState({
+        rehearsalStartTime: preciseStartTime,
+        rehearsalElapsedTime: 0,
+        controllerId: userId
+      }, true, false);
+
+      stopRehearsalTimer();
+      setTimeout(() => startRehearsalTimer(), 50);
+    }
+  }, [visualState.isRecording, visualState.rehearsalSegmentId, updateVisualState, userId, stopRehearsalTimer, startRehearsalTimer, getPreciseTime]);
 
   // Navigation helpers - now skip floated items
   const getNextSegment = useCallback((currentId: string) => {
@@ -415,6 +555,12 @@ export const useShowcallerVisualState = ({
   const play = useCallback((selectedSegmentId?: string) => {
     console.log('📺 Visual play called with segmentId:', selectedSegmentId);
     
+    // Prevent playback if already recording
+    if (visualState.isRecording) {
+      console.warn('📺 Cannot start playback while recording is active');
+      return;
+    }
+    
     const newStatuses = new Map();
     const preciseStartTime = getPreciseTime();
     
@@ -485,6 +631,15 @@ export const useShowcallerVisualState = ({
   const forward = useCallback(() => {
     console.log('📺 Visual forward called');
     
+    // Handle rehearsal timer navigation
+    let wasRecording = false;
+    if (visualState.isRecording && visualState.rehearsalSegmentId && visualState.rehearsalElapsedTime > 0) {
+      console.log('🎯 Saving rehearsal time before forward navigation');
+      updateRehearsalDuration(visualState.rehearsalSegmentId, visualState.rehearsalElapsedTime);
+      stopRehearsalTimer();
+      wasRecording = true;
+    }
+    
     if (visualState.currentSegmentId) {
       const nextSegment = getNextSegment(visualState.currentSegmentId);
       if (nextSegment) {
@@ -495,24 +650,45 @@ export const useShowcallerVisualState = ({
         const duration = timeToSeconds(nextSegment.duration || '00:00');
         const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
         
+        // If was recording, start new rehearsal for the next segment
+        const rehearsalStartTime = wasRecording ? getPreciseTime() : null;
+        
         updateVisualState({
           currentSegmentId: nextSegment.id,
           timeRemaining: duration,
           playbackStartTime: preciseStartTime,
           controllerId: userId,
-          currentItemStatuses: newStatuses
+          currentItemStatuses: newStatuses,
+          // Rehearsal state updates
+          isRecording: wasRecording,
+          rehearsalStartTime: rehearsalStartTime,
+          rehearsalElapsedTime: 0,
+          rehearsalSegmentId: wasRecording ? nextSegment.id : null
         }, true, true);
         
         if (visualState.isPlaying) {
           resetDriftCompensation();
           startPrecisionTimer();
         }
+        
+        if (wasRecording) {
+          startRehearsalTimer();
+        }
       }
     }
-  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+  }, [visualState, getNextSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime, updateRehearsalDuration, stopRehearsalTimer, startRehearsalTimer]);
 
   const backward = useCallback(() => {
     console.log('📺 Visual backward called');
+    
+    // Handle rehearsal timer navigation
+    let wasRecording = false;
+    if (visualState.isRecording && visualState.rehearsalSegmentId && visualState.rehearsalElapsedTime > 0) {
+      console.log('🎯 Saving rehearsal time before backward navigation');
+      updateRehearsalDuration(visualState.rehearsalSegmentId, visualState.rehearsalElapsedTime);
+      stopRehearsalTimer();
+      wasRecording = true;
+    }
     
     if (visualState.currentSegmentId) {
       const prevSegment = getPreviousSegment(visualState.currentSegmentId);
@@ -524,27 +700,43 @@ export const useShowcallerVisualState = ({
         const duration = timeToSeconds(prevSegment.duration || '00:00');
         const preciseStartTime = visualState.isPlaying ? getPreciseTime() : null;
         
+        // If was recording, start new rehearsal for the previous segment
+        const rehearsalStartTime = wasRecording ? getPreciseTime() : null;
+        
         updateVisualState({
           currentSegmentId: prevSegment.id,
           timeRemaining: duration,
           playbackStartTime: preciseStartTime,
           controllerId: userId,
-          currentItemStatuses: newStatuses
+          currentItemStatuses: newStatuses,
+          // Rehearsal state updates
+          isRecording: wasRecording,
+          rehearsalStartTime: rehearsalStartTime,
+          rehearsalElapsedTime: 0,
+          rehearsalSegmentId: wasRecording ? prevSegment.id : null
         }, true, true);
         
         if (visualState.isPlaying) {
           resetDriftCompensation();
           startPrecisionTimer();
         }
+        
+        if (wasRecording) {
+          startRehearsalTimer();
+        }
       }
     }
-  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+  }, [visualState, getPreviousSegment, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime, updateRehearsalDuration, stopRehearsalTimer, startRehearsalTimer]);
 
-  // Reset function with precision timing
+  // Reset function with precision timing - handles both playback and rehearsal
   const reset = useCallback(() => {
     console.log('📺 Visual reset called');
     
-    if (visualState.currentSegmentId) {
+    if (visualState.isRecording) {
+      // Reset rehearsal timer if recording
+      resetRecording();
+    } else if (visualState.currentSegmentId) {
+      // Reset playback timer
       const currentSegment = items.find(item => item.id === visualState.currentSegmentId);
       if (currentSegment) {
         const duration = timeToSeconds(currentSegment.duration || '00:00');
@@ -562,7 +754,7 @@ export const useShowcallerVisualState = ({
         }
       }
     }
-  }, [visualState, items, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime]);
+  }, [visualState, items, timeToSeconds, userId, updateVisualState, startPrecisionTimer, resetDriftCompensation, getPreciseTime, resetRecording]);
 
   // Enhanced apply external visual state with precision synchronization
   const applyExternalVisualState = useCallback((externalState: any, isTiming: boolean = false) => {
@@ -834,6 +1026,14 @@ export const useShowcallerVisualState = ({
     isController: visualState.controllerId === userId,
     trackOwnUpdate,
     isInitialized,
-    getPreciseTime // Export getPreciseTime for coordination layer
+    getPreciseTime, // Export getPreciseTime for coordination layer
+    // Rehearsal timer exports
+    isRecording: visualState.isRecording,
+    rehearsalElapsedTime: visualState.rehearsalElapsedTime,
+    rehearsalSegmentId: visualState.rehearsalSegmentId,
+    startRecording,
+    pauseRecording,
+    stopRecording,
+    resetRecording
   };
 };

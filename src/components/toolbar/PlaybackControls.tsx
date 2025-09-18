@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, RotateCcw, MapPin, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 
@@ -18,6 +18,12 @@ interface PlaybackControlsProps {
   autoScrollEnabled?: boolean;
   onToggleAutoScroll?: () => void;
   onJumpToCurrentSegment?: () => void;
+  // Rehearsal timer props
+  isRecording?: boolean;
+  rehearsalElapsedTime?: number;
+  onStartRecording?: (segmentId?: string) => void;
+  onPauseRecording?: () => void;
+  onStopRecording?: () => void;
 }
 
 const PlaybackControls = ({
@@ -33,7 +39,13 @@ const PlaybackControls = ({
   size = 'default',
   autoScrollEnabled = false,
   onToggleAutoScroll,
-  onJumpToCurrentSegment
+  onJumpToCurrentSegment,
+  // Rehearsal timer props
+  isRecording = false,
+  rehearsalElapsedTime = 0,
+  onStartRecording,
+  onPauseRecording,
+  onStopRecording
 }: PlaybackControlsProps) => {
   const [hasBeenStarted, setHasBeenStarted] = useState(false);
   const [lastSegmentId, setLastSegmentId] = useState<string | null>(null);
@@ -63,12 +75,26 @@ const PlaybackControls = ({
   };
 
   const handleReset = () => {
-    // Keep indicator and timer visible for current segment; only reset timer value upstream
+    // Reset works for both playback and rehearsal
     if (currentSegmentId) {
       setHasBeenStarted(true);
       setLastSegmentId(currentSegmentId);
     }
     onReset();
+  };
+
+  const handleRecording = () => {
+    if (isRecording) {
+      onPauseRecording?.();
+    } else {
+      onStartRecording?.(selectedRowId || undefined);
+    }
+  };
+
+  const formatRehearsalTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatTime = (seconds: number): string => {
@@ -126,6 +152,22 @@ const PlaybackControls = ({
       >
         <RotateCcw className="h-4 w-4" />
       </Button>
+
+      {/* Rehearsal Timer Button */}
+      {onStartRecording && (
+        <Button
+          onClick={handleRecording}
+          variant="outline"
+          size={size}
+          className="flex items-center space-x-1"
+          disabled={isPlaying}
+        >
+          {isRecording ? <Pause className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+          {isRecording && (
+            <span className="text-xs font-mono">{formatRehearsalTime(rehearsalElapsedTime)}</span>
+          )}
+        </Button>
+      )}
 
       {/* Autoscroll Toggle */}
       {onToggleAutoScroll && (
