@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, User, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,52 +6,66 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
-// Sample blog data - in a real app, this would come from a CMS or database
-const blogPosts = [
-  {
-    id: 'the-future-of-broadcast-production',
-    title: 'The Future of Broadcast Production: How AI is Transforming Live TV',
-    excerpt: 'Discover how artificial intelligence is revolutionizing the way we produce live television, from automated cue timing to intelligent content suggestions.',
-    heroImage: '/uploads/ai-broadcast-hero.jpg',
-    author: 'Cuer Team',
-    publishDate: '2025-08-14',
-    readTime: '6 min read',
-    category: 'Technology',
-    featured: true
-  },
-  {
-    id: 'real-time-collaboration-tips',
-    title: 'Mastering Real-Time Collaboration in Remote Production Teams',
-    excerpt: 'Learn best practices for managing distributed production teams and keeping everyone in sync across multiple locations.',
-    heroImage: '/uploads/collaboration-hero.jpg',
-    author: 'Cuer Team',
-    publishDate: '2025-09-03',
-    readTime: '4 min read',
-    category: 'Best Practices',
-    featured: false
-  },
-  {
-    id: 'rundown-optimization-guide',
-    title: 'Complete Guide to Rundown Optimization for Live Shows',
-    excerpt: 'From timing precision to team coordination, learn how to create rundowns that keep your production running smoothly.',
-    heroImage: '/uploads/rundown-optimization-hero.jpg',
-    author: 'Cuer Team',
-    publishDate: '2024-01-01',
-    readTime: '8 min read',
-    category: 'Guide',
-    featured: true
-  }
-];
+interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  hero_image: string | null;
+  author: string;
+  publish_date: string;
+  read_time: string;
+  category: string | null;
+  featured: boolean;
+  slug: string;
+}
 
 const Blog = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBlogPosts();
+  }, []);
+
+  const fetchBlogPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('publish_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching blog posts:', error);
+      } else {
+        setBlogPosts(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const featuredPost = blogPosts.find(post => post.featured);
   const otherPosts = blogPosts.filter(post => !post.featured);
 
   // Check if user is authorized to create blog posts
   const canCreateBlog = user?.email === 'morgan@cuer.live';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading blog posts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white">
@@ -111,7 +125,7 @@ const Blog = () => {
               <div className="grid lg:grid-cols-2 gap-0">
                 <div className="relative">
                   <img 
-                    src={featuredPost.heroImage}
+                    src={featuredPost.hero_image || '/uploads/default-blog-hero.jpg'}
                     alt={featuredPost.title}
                     className="w-full h-64 lg:h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
@@ -128,11 +142,11 @@ const Blog = () => {
                     </Badge>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>{new Date(featuredPost.publishDate).toLocaleDateString()}</span>
+                      <span>{new Date(featuredPost.publish_date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
-                      <span>{featuredPost.readTime}</span>
+                      <span>{featuredPost.read_time}</span>
                     </div>
                   </div>
                   <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors">
@@ -147,7 +161,7 @@ const Blog = () => {
                       <span>{featuredPost.author}</span>
                     </div>
                     <Button 
-                      onClick={() => navigate(`/blog/${featuredPost.id}`)}
+                      onClick={() => navigate(`/blog/${featuredPost.slug}`)}
                       variant="outline" 
                       className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
                     >
@@ -168,7 +182,7 @@ const Blog = () => {
               <Card key={post.id} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group overflow-hidden">
                 <div className="relative">
                   <img 
-                    src={post.heroImage}
+                    src={post.hero_image || '/uploads/default-blog-hero.jpg'}
                     alt={post.title}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
@@ -185,7 +199,7 @@ const Blog = () => {
                     </Badge>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
-                      <span>{post.readTime}</span>
+                      <span>{post.read_time}</span>
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors">
@@ -200,7 +214,7 @@ const Blog = () => {
                       <span>{post.author}</span>
                     </div>
                     <Button 
-                      onClick={() => navigate(`/blog/${post.id}`)}
+                      onClick={() => navigate(`/blog/${post.slug}`)}
                       variant="ghost" 
                       size="sm"
                       className="text-blue-400 hover:text-blue-300"
