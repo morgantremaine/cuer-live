@@ -827,7 +827,7 @@ export const useSimplifiedRundownState = () => {
     // Check if this is a typing field or immediate-sync field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
-    const isImmediateSyncField = field === 'isFloating' || field === 'color'; // Fields that need immediate database sync
+    const isImmediateSyncField = field === 'isFloating'; // Fields that need immediate database sync (removed color)
     
     const sessionKey = `${id}-${field}`;
     
@@ -870,7 +870,10 @@ export const useSimplifiedRundownState = () => {
       // Trigger immediate autosave for critical state changes like float/unfloat
       markActiveTyping(); // This will trigger the autosave system to save immediately
     } else if (field === 'color') {
+      // Handle color changes separately - save undo state but don't trigger typing state
       saveUndoState(state.items, [], state.title, 'Change row color');
+      // Color changes should trigger immediate save without marking as typing
+      // The auto-save system will pick this up in the next cycle without the typing delay
     }
     
     if (field.startsWith('customFields.')) {
