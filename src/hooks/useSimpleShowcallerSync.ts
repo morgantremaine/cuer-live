@@ -45,6 +45,7 @@ export const useSimpleShowcallerSync = ({
   const lastActionTimeRef = useRef<number | null>(null);
   const skipNextSaveRef = useRef<boolean>(false);
   const immediateSave = useRef<(s: SimpleShowcallerState) => void>(() => {});
+  const currentSegmentIndexRef = useRef<number>(-1); // Track current segment index
   // Helper functions
   const parseDurationToSeconds = useCallback((str: string | undefined) => {
     if (!str) return 0;
@@ -390,6 +391,14 @@ export const useSimpleShowcallerSync = ({
     console.log('📺 Simple: Jump to:', segmentId);
   }, [items, parseDurationToSeconds, buildStatusMap, state, broadcastState]);
 
+  // Track current segment index for deletion handling
+  useEffect(() => {
+    if (state.currentSegmentId) {
+      const currentIndex = items.findIndex(item => item.id === state.currentSegmentId);
+      currentSegmentIndexRef.current = currentIndex;
+    }
+  }, [items, state.currentSegmentId]);
+
   // Handle when current segment is deleted from items
   useEffect(() => {
     if (!state.currentSegmentId || !hasLoadedInitialState.current) {
@@ -400,13 +409,25 @@ export const useSimpleShowcallerSync = ({
     const currentItemExists = items.find(item => item.id === state.currentSegmentId);
     
     if (!currentItemExists) {
-      console.log('📺 Simple: Current segment deleted, moving to next available segment');
+      console.log('📺 Simple: Current segment deleted, finding item at same position');
       
-      // Just find the first available segment (this naturally gives us the "next" item since everything shifted up)
-      const nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      // Get the regular, non-floated items only
+      const regularItems = items.filter(item => item.type === 'regular' && !isFloated(item));
+      
+      // Use the stored index to find the item that's now at that position
+      const targetIndex = currentSegmentIndexRef.current;
+      let nextSegment = null;
+      
+      if (targetIndex >= 0 && targetIndex < regularItems.length) {
+        // Item at the same index position
+        nextSegment = regularItems[targetIndex];
+      } else if (regularItems.length > 0) {
+        // If index is out of bounds, use the last item
+        nextSegment = regularItems[regularItems.length - 1];
+      }
       
       if (nextSegment) {
-        console.log('📺 Simple: Moving showcaller to next segment:', nextSegment.id);
+        console.log('📺 Simple: Moving showcaller to item at position:', targetIndex, 'item:', nextSegment.id);
         
         const duration = parseDurationToSeconds(nextSegment.duration);
         const newState = {
