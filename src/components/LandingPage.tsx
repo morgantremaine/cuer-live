@@ -89,6 +89,12 @@ const LandingPage = () => {
               Features
             </button>
             <button 
+              onClick={() => navigate('/blog')}
+              className="text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              Blog
+            </button>
+            <button 
               onClick={() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
