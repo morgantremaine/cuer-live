@@ -14,6 +14,7 @@ interface UseShowcallerStateCoordinationProps {
   rundownTitle?: string;
   rundownStartTime?: string;
   setShowcallerUpdate?: (isUpdate: boolean) => void;
+  updateItem?: (id: string, field: string, value: string) => void;
 }
 
 export const useShowcallerStateCoordination = ({ 
@@ -23,7 +24,8 @@ export const useShowcallerStateCoordination = ({
   teamId,
   rundownTitle = '',
   rundownStartTime,
-  setShowcallerUpdate
+  setShowcallerUpdate,
+  updateItem
 }: UseShowcallerStateCoordinationProps) => {
   const initializationRef = useRef<boolean>(false);
   const prevSegmentRef = useRef<string | null>(null);
@@ -41,7 +43,8 @@ export const useShowcallerStateCoordination = ({
     items,
     rundownId,
     userId,
-    setShowcallerUpdate
+    setShowcallerUpdate,
+    updateItem
   });
 
   // Helper to get current and next segments using simple sync state
@@ -204,6 +207,11 @@ export const useShowcallerStateCoordination = ({
     isConnected: simpleSync.isConnected,
     hasLoadedInitialState: true,
     
+    // Rehearsal timer state
+    isRecording: simpleSync.isRecording,
+    rehearsalElapsedTime: simpleSync.rehearsalElapsedTime,
+    rehearsalSegmentId: simpleSync.rehearsalSegmentId,
+    
     // Visual state management - use simple sync
     getItemVisualStatus: simpleSync.getItemVisualStatus,
     setItemVisualStatus: () => {}, // Not needed with simple sync
@@ -216,6 +224,12 @@ export const useShowcallerStateCoordination = ({
     backward: coordinatedBackward,
     reset: coordinatedReset,
     jumpToSegment: coordinatedJumpToSegment,
+    
+    // Rehearsal timer functions
+    startRecording: simpleSync.startRecording,
+    pauseRecording: simpleSync.pauseRecording,
+    stopRecording: simpleSync.stopRecording,
+    resetRecording: simpleSync.resetRecording,
     
     // Tracking - simplified
     trackOwnUpdate: () => {},

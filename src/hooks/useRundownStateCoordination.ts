@@ -64,7 +64,8 @@ export const useRundownStateCoordination = () => {
     teamId: null,
     rundownTitle: persistedState.rundownTitle,
     rundownStartTime: persistedState.rundownStartTime,
-    setShowcallerUpdate: undefined // Add this when change tracking is available
+    setShowcallerUpdate: undefined, // Add this when change tracking is available
+    updateItem: persistedState.updateItem
   });
 
   // Helper function to calculate end time - memoized for performance
@@ -316,6 +317,15 @@ export const useRundownStateCoordination = () => {
       backward: showcallerCoordination.backward,
       reset: showcallerCoordination.reset,
       jumpToSegment: showcallerCoordination.jumpToSegment,
+      
+      // Rehearsal timer state and functions
+      isRecording: showcallerCoordination.isRecording || false,
+      rehearsalElapsedTime: showcallerCoordination.rehearsalElapsedTime || 0,
+      rehearsalSegmentId: showcallerCoordination.rehearsalSegmentId || null,
+      startRecording: showcallerCoordination.startRecording || (() => {}),
+      pauseRecording: showcallerCoordination.pauseRecording || (() => {}),
+      stopRecording: showcallerCoordination.stopRecording || (() => {}),
+      resetRecording: showcallerCoordination.resetRecording || (() => {}),
       
       // Undo functionality
       undo: persistedState.undo,
