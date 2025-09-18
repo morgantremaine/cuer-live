@@ -38,7 +38,7 @@ const LandingPage = () => {
     {
       icon: Clock,
       title: "Stop Timing Disasters",
-      description: "Never miss a cue or run long again. Smart timing keeps your show on track automatically.",
+      description: "Never miss a cue. Smart timing keeps your show on track automatically.",
       color: "text-blue-500"
     },
     {
