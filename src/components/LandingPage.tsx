@@ -32,42 +32,25 @@ const LandingPage = () => {
     }
   };
 
-  const features = [
+  // Core benefits focused on outcomes, not features
+  const coreBenefits = [
     {
       icon: Clock,
-      title: "Precision Timing",
-      description: "Automated cue timing that adapts to changes in real-time, minimizing manual cueing and errors.",
+      title: "Stop Timing Disasters",
+      description: "Never miss a cue or run long again. Smart timing keeps your show on track automatically.",
       color: "text-blue-500"
     },
     {
       icon: Users,
-      title: "Team Collaboration", 
-      description: "Real-time collaboration with your entire team. See changes instantly, work together seamlessly.",
+      title: "End Team Chaos",
+      description: "Everyone sees the same rundown instantly. No more outdated scripts or missed changes.",
       color: "text-green-500"
     },
     {
       icon: Bot,
-      title: "AI-Powered Assistant",
-      description: "Intelligent AI helper for rundown analysis, content suggestions, and timing assistance.",
+      title: "Catch Problems Early",
+      description: "AI spots issues before they derail your show. Get warnings for timing conflicts and missing elements.",
       color: "text-purple-500"
-    },
-    {
-      icon: Share2,
-      title: "Share & Display",
-      description: "Create public read-only links for stakeholders and external viewing without login required.",
-      color: "text-indigo-500"
-    },
-    {
-      icon: Monitor,
-      title: "Teleprompter Ready",
-      description: "Full-screen teleprompter mode with scrolling controls for talent and operators.",
-      color: "text-amber-500"
-    },
-    {
-      icon: Eye,
-      title: "AD View Dashboard",
-      description: "Dedicated Assistant Director view with live timing for control room displays.",
-      color: "text-red-500"
     }
   ];
 
@@ -169,7 +152,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
-              Purpose-built for speed, clarity, and control, Cuer delivers the high-end features of other premium rundown makers with the minimal and intuitive UI of Google Sheets.
+              Turn broadcast chaos into seamless execution. The professional rundown tool that actually works the way your team thinks.
             </p>
 
             <div className="flex justify-center fade-up">
@@ -202,46 +185,65 @@ const LandingPage = () => {
 
       </div>
 
-      {/* Features Grid */}
+      {/* Core Benefits - Problem/Solution Focus */}
       <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">
-            Everything you need for 
-            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent"> professional broadcasts</span>
+            The broadcast problems 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">you'll never face again</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            From pre-production planning to live show execution, Cuer Live provides all the tools your team needs.
+            Stop fighting your tools. Start delivering flawless shows every time.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+        <div className="grid md:grid-cols-3 gap-8">
+          {coreBenefits.map((benefit, index) => (
             <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group glow-box fade-up">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className={`p-3 rounded-lg bg-slate-700/50 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                    <feature.icon className={`h-6 w-6 ${feature.color}`} />
+              <CardContent className="p-8 text-center">
+                <div className="flex justify-center mb-6">
+                  <div className={`p-4 rounded-full bg-slate-700/50 group-hover:scale-110 transition-all duration-300`}>
+                    <benefit.icon className={`h-8 w-8 ${benefit.color}`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-white group-hover:text-blue-300 transition-colors">{feature.title}</h3>
                 </div>
-                <p className="text-slate-300 leading-relaxed">{feature.description}</p>
+                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors">{benefit.title}</h3>
+                <p className="text-slate-300 leading-relaxed text-lg">{benefit.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
 
-      {/* Mobile & Tablet Compatibility Section */}
+      {/* How It Works - Process Flow */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 text-white">
-            Stay in sync on <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">every device</span>
+            From planning to air 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">in three simple steps</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Full mobile and tablet compatibility ensures your entire team can collaborate seamlessly, whether they're in the studio, control room, or on the go.
+            The streamlined workflow that gets your team from rundown creation to flawless execution.
           </p>
         </div>
         
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-blue-500/20 border-2 border-blue-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-blue-400">1</div>
+            <h3 className="text-2xl font-bold text-white">Plan & Build</h3>
+            <p className="text-slate-400">Create your rundown with smart templates. Import existing scripts or start fresh with our blueprint tools.</p>
+          </div>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-green-400">2</div>
+            <h3 className="text-2xl font-bold text-white">Execute Live</h3>
+            <p className="text-slate-400">Real-time timing, teleprompter mode, and live cues keep everyone perfectly synchronized during broadcast.</p>
+          </div>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-purple-400">3</div>
+            <h3 className="text-2xl font-bold text-white">Collaborate</h3>
+            <p className="text-slate-400">Team sees changes instantly. Share with stakeholders. Access from any device, anywhere.</p>
+          </div>
+        </div>
+
         <div className="flex justify-center">
           <div className="group fade-up">
             <img 
@@ -253,13 +255,26 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Live Show Control - Simple image only */}
+      {/* Professional Views Section - Consolidated */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center space-y-6 mb-16">
-          <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
-          <p className="text-xl text-slate-400">
-            Professional timing controls and real-time status tracking for your entire production team.
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Every view your team needs 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">for professional production</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
+            From control room displays to talent teleprompters - the right interface for every role.
           </p>
+        </div>
+
+        {/* Live Show Control */}
+        <div className="mb-20">
+          <div className="text-center space-y-6 mb-12">
+            <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              Real-time timing and status tracking keeps your entire production team synchronized.
+            </p>
+          </div>
           <div className="group fade-up">
             <img 
               src="/uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
@@ -269,37 +284,25 @@ const LandingPage = () => {
           </div>
         </div>
 
-      </div>
-
-      {/* AI Assistant Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">
-            Smart AI assistance for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">perfect rundowns</span>
-          </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Get intelligent insights and suggestions from our AI assistant to optimize your rundown and catch potential issues before they happen.
-          </p>
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* AI Assistant */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
           <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Cuer AI Assistant</h3>
+            <h3 className="text-3xl font-bold text-white">AI Assistant</h3>
             <p className="text-xl text-slate-400">
-              Your intelligent production companion analyzes your rundown in real-time, offering suggestions and identifying potential issues to keep your show running smoothly.
+              Catch problems before they happen. Get intelligent suggestions for timing, content, and show flow optimization.
             </p>
-            <div className="grid grid-cols-1 gap-4 text-sm">
+            <div className="space-y-3">
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time rundown analysis and optimization</span>
+                <span>Real-time rundown analysis</span>
               </div>
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Issue detection and suggestions</span>
+                <span>Issue detection and solutions</span>
               </div>
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Intelligent timing and content recommendations</span>
+                <span>Content and timing suggestions</span>
               </div>
             </div>
           </div>
@@ -311,23 +314,9 @@ const LandingPage = () => {
             />
           </div>
         </div>
-      </div>
 
-      {/* Additional Features Showcase */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">
-            Every view you need for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">professional production</span>
-          </h2>
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Shared Public Views</h3>
-            <p className="text-xl text-slate-400">
-              Create read-only links for stakeholders, clients, and external viewers. Perfect for control rooms and public displays.
-            </p>
-          </div>
+        {/* Shared Views */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
           <div className="group fade-up">
             <img 
               src="/uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
@@ -335,25 +324,25 @@ const LandingPage = () => {
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
           </div>
-        </div>
-        
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="group fade-up">
-            <img 
-              src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
-              alt="AD View Dashboard"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
           <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">AD View Dashboard</h3>
+            <h3 className="text-3xl font-bold text-white">Stakeholder Views</h3>
             <p className="text-xl text-slate-400">
-              Dedicated Assistant Director view with live timing, script tracking, and comprehensive show control for professional broadcast environments and multiviewer placement.
+              Share read-only rundowns with clients, executives, and external viewers. No login required.
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          </div>
+        </div>
+
+        {/* AD View */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Control Room Display</h3>
+            <p className="text-xl text-slate-400">
+              Dedicated Assistant Director view with live timing and script tracking. Perfect for multiviewer displays.
+            </p>
+            <div className="space-y-3">
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Live timing and status tracking</span>
+                <span>Live timing display</span>
               </div>
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
@@ -361,26 +350,29 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      </div>
-
-      {/* Teleprompter Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Full-Screen Teleprompter</h3>
-            <p className="text-xl text-slate-400">
-              Professional teleprompter mode with speed controls, formatting options, and realtime sync for back-and-forth editing and script writing.
-            </p>
+          <div className="group fade-up">
+            <img 
+              src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
+              alt="AD View Dashboard"
+              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+            />
           </div>
+        </div>
+
+        {/* Teleprompter */}
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="group fade-up">
             <img 
               src="/uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
               alt="Teleprompter Full Screen"
               className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
             />
+          </div>
+          <div className="space-y-6">
+            <h3 className="text-3xl font-bold text-white">Professional Teleprompter</h3>
+            <p className="text-xl text-slate-400">
+              Full-screen teleprompter with speed controls and real-time script sync for talent and operators.
+            </p>
           </div>
         </div>
       </div>
@@ -574,21 +566,22 @@ const LandingPage = () => {
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24 text-center">
         <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-12">
           <h2 className="text-4xl font-bold mb-6 text-white">
-            Ready to transform your productions?
+            Stop fighting your rundown software
           </h2>
           <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            Join broadcast professionals who trust Cuer Live for their most important shows.
-            Start building your first rundown today.
+            Join broadcast professionals who've already eliminated timing disasters and team chaos.
+            Create your first flawless rundown in minutes.
           </p>
           <Button 
             onClick={handleGetStarted}
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-12 py-4 h-auto"
           >
-            Get Started
+            Get Started for Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
+      </div>
       </div>
 
       {/* Copyright Footer */}
