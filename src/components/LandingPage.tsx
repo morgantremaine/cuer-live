@@ -137,13 +137,9 @@ const LandingPage = () => {
               Professional Broadcast Tool
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight max-w-6xl mx-auto drop-shadow-2xl fade-up">
-              Run Your Show
-              <br />
-              <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Not Your Rundown Software
-              </span>
-            </h1>
+            <div className="fade-up">
+              <CuerLogo className="h-24 md:h-32 lg:h-40 w-auto mx-auto drop-shadow-2xl" />
+            </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
               Purpose-built for speed, clarity, and control, Cuer delivers the high-end features of other premium rundown makers with the minimal and intuitive UI of Google Sheets.
