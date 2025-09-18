@@ -11,7 +11,7 @@ const blogPosts = {
     title: 'The Future of Broadcast Production: How AI is Transforming Live TV',
     excerpt: 'Discover how artificial intelligence is revolutionizing the way we produce live television, from automated cue timing to intelligent content suggestions.',
     heroImage: '/uploads/ai-broadcast-hero.jpg',
-    author: 'Sarah Chen',
+    author: 'Cuer Team',
     publishDate: '2024-01-15',
     readTime: '6 min read',
     category: 'Technology',
@@ -51,7 +51,7 @@ const blogPosts = {
       <p>The key to successful AI implementation in broadcasting is finding the right balance between automation and human creativity. While AI can handle many technical aspects of production, the creative vision and editorial judgment of human professionals remain irreplaceable.</p>
 
       <h2>Getting Started with AI in Your Production</h2>
-      <p>For production teams looking to integrate AI into their workflows, the key is to start with focused applications that address specific pain points. Tools like Cuer Live demonstrate how AI can enhance existing processes without completely disrupting established workflows.</p>
+      <p>For production teams looking to integrate AI into their workflows, the key is to start with focused applications that address specific pain points. Tools like Cuer demonstrate how AI can enhance existing processes without completely disrupting established workflows.</p>
 
       <p>The future of broadcast production is undoubtedly AI-enhanced, but it's a future where technology amplifies human capability rather than replacing it. By embracing these tools thoughtfully, production teams can achieve new levels of efficiency and quality while maintaining the creative excellence that defines great television.</p>
     `
@@ -60,7 +60,7 @@ const blogPosts = {
     title: 'Mastering Real-Time Collaboration in Remote Production Teams',
     excerpt: 'Learn best practices for managing distributed production teams and keeping everyone in sync across multiple locations.',
     heroImage: '/uploads/collaboration-hero.jpg',
-    author: 'Mike Rodriguez',
+    author: 'Cuer Team',
     publishDate: '2024-01-08',
     readTime: '4 min read',
     category: 'Best Practices',
@@ -146,7 +146,7 @@ const blogPosts = {
     title: 'Complete Guide to Rundown Optimization for Live Shows',
     excerpt: 'From timing precision to team coordination, learn how to create rundowns that keep your production running smoothly.',
     heroImage: '/uploads/rundown-optimization-hero.jpg',
-    author: 'Emily Turner',
+    author: 'Cuer Team',
     publishDate: '2024-01-01',
     readTime: '8 min read',
     category: 'Guide',

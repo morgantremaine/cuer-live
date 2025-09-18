@@ -13,7 +13,7 @@ const blogPosts = [
     title: 'The Future of Broadcast Production: How AI is Transforming Live TV',
     excerpt: 'Discover how artificial intelligence is revolutionizing the way we produce live television, from automated cue timing to intelligent content suggestions.',
     heroImage: '/uploads/ai-broadcast-hero.jpg',
-    author: 'Sarah Chen',
+    author: 'Cuer Team',
     publishDate: '2024-01-15',
     readTime: '6 min read',
     category: 'Technology',
@@ -24,7 +24,7 @@ const blogPosts = [
     title: 'Mastering Real-Time Collaboration in Remote Production Teams',
     excerpt: 'Learn best practices for managing distributed production teams and keeping everyone in sync across multiple locations.',
     heroImage: '/uploads/collaboration-hero.jpg',
-    author: 'Mike Rodriguez',
+    author: 'Cuer Team',
     publishDate: '2024-01-08',
     readTime: '4 min read',
     category: 'Best Practices',
@@ -35,7 +35,7 @@ const blogPosts = [
     title: 'Complete Guide to Rundown Optimization for Live Shows',
     excerpt: 'From timing precision to team coordination, learn how to create rundowns that keep your production running smoothly.',
     heroImage: '/uploads/rundown-optimization-hero.jpg',
-    author: 'Emily Turner',
+    author: 'Cuer Team',
     publishDate: '2024-01-01',
     readTime: '8 min read',
     category: 'Guide',
@@ -78,7 +78,7 @@ const Blog = () => {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            Cuer Live
+            Cuer
             <span className="text-blue-500 bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent"> Blog</span>
           </h1>
           <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto">
