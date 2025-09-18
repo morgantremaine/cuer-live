@@ -284,14 +284,24 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* AI Assistant */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">AI Assistant</h3>
-            <p className="text-xl text-slate-400">
-              Catch problems before they happen. Get intelligent suggestions for timing, content, and show flow optimization.
-            </p>
-            <div className="space-y-3">
+        {/* Production Views Grid */}
+        <div className="grid lg:grid-cols-2 gap-16 mb-20">
+          {/* AI Assistant */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-white mb-4">AI Assistant</h3>
+              <p className="text-lg text-slate-400 mb-6">
+                Catch problems before they happen with intelligent analysis and suggestions.
+              </p>
+            </div>
+            <div className="group fade-up">
+              <img 
+                src="/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
+                alt="Cuer AI Assistant Interface"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
                 <span>Real-time rundown analysis</span>
@@ -306,40 +316,23 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/d4e97f8e-fc43-4829-9671-f784ebd3ce47.png" 
-              alt="Cuer AI Assistant Interface"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-        </div>
 
-        {/* Shared Views */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-          <div className="group fade-up">
-            <img 
-              src="/uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
-              alt="Shared Rundown View"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Stakeholder Views</h3>
-            <p className="text-xl text-slate-400">
-              Share read-only rundowns with clients, executives, and external viewers. No login required.
-            </p>
-          </div>
-        </div>
-
-        {/* AD View */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Control Room Display</h3>
-            <p className="text-xl text-slate-400">
-              Dedicated Assistant Director view with live timing and script tracking. Perfect for multiviewer displays.
-            </p>
-            <div className="space-y-3">
+          {/* Control Room Display */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-white mb-4">Control Room Display</h3>
+              <p className="text-lg text-slate-400 mb-6">
+                Dedicated AD view with live timing, perfect for multiviewer displays.
+              </p>
+            </div>
+            <div className="group fade-up">
+              <img 
+                src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
+                alt="AD View Dashboard"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="flex items-center space-x-2 text-slate-300">
                 <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
                 <span>Live timing display</span>
@@ -350,150 +343,103 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/832f09fb-bddb-4ced-b089-44bc34a1ac96.png" 
-              alt="AD View Dashboard"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
         </div>
 
-        {/* Teleprompter */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="group fade-up">
-            <img 
-              src="/uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
-              alt="Teleprompter Full Screen"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
+        {/* Secondary Views */}
+        <div className="grid lg:grid-cols-2 gap-16">
+          {/* Stakeholder Views */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-white mb-4">Stakeholder Views</h3>
+              <p className="text-lg text-slate-400 mb-6">
+                Share read-only rundowns with clients and executives. No login required.
+              </p>
+            </div>
+            <div className="group fade-up">
+              <img 
+                src="/uploads/f4dc4d90-0508-49ae-8aad-abaaf909a734.png" 
+                alt="Shared Rundown View"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
           </div>
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Professional Teleprompter</h3>
-            <p className="text-xl text-slate-400">
-              Full-screen teleprompter with speed controls and real-time script sync for talent and operators.
-            </p>
+
+          {/* Professional Teleprompter */}
+          <div className="space-y-8">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-white mb-4">Professional Teleprompter</h3>
+              <p className="text-lg text-slate-400 mb-6">
+                Full-screen mode with speed controls and real-time script sync.
+              </p>
+            </div>
+            <div className="group fade-up">
+              <img 
+                src="/uploads/1461f5d6-383a-421e-ade7-2791f4afce6c.png" 
+                alt="Teleprompter Full Screen"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Blueprint Planning & Pre-Production */}
+      {/* Pre-Production & Collaboration */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 text-white">
-            Complete planning tools for <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">seamless pre-production</span>
+            Pre-production to post 
+            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">collaboration tools</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            From initial planning to live execution, Blueprint mode provides all the organizational tools your team needs for successful productions.
+            Everything your team needs for planning, organizing, and documenting successful productions.
           </p>
         </div>
-        {/* Smart Lists & Organization */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Smart Lists & Organization</h3>
-            <p className="text-xl text-slate-400">
-              Organize your show elements with smart checklists. Track talent, graphics, and show blocks with intuitive filtering and organization tools.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Smart filtering and organization</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Checklist management</span>
-              </div>
-            </div>
-          </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
-              alt="Blueprint Planning Interface"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-        </div>
 
-        {/* Camera Plot Editor - Temporarily Disabled */}
-        {/* 
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="group fade-up">
-            <img 
-              src="/uploads/4ec27fa0-44b5-4515-bb67-9e999dca2f59.png" 
-              alt="Camera Plot Editor"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Camera Plot Editor</h3>
-            <p className="text-xl text-slate-400">
-              Visual camera plotting with drag-and-drop elements. Plan your camera positions, set layouts, and coordinate shots with precision for professional broadcast environments.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Drag-and-drop positioning</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Multi-scene planning</span>
-              </div>
+        {/* Three-column grid for collaboration features */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          {/* Blueprint Planning */}
+          <div className="text-center space-y-6">
+            <div className="group fade-up">
+              <img 
+                src="/uploads/0dd96b7d-2278-4e88-abd7-ebff65c98dd7.png" 
+                alt="Blueprint Planning Interface"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
             </div>
-          </div>
-        </div>
-        */}
-        
-        {/* Team Management */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <div className="group fade-up">
-            <img 
-              src="/uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
-              alt="Team Management Interface"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
-          </div>
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Team Management</h3>
-            <p className="text-xl text-slate-400">
-              Invite team members, manage permissions, and collaborate seamlessly across your entire organization.
+            <h3 className="text-2xl font-bold text-white">Smart Planning</h3>
+            <p className="text-slate-400">
+              Organize show elements with smart checklists and intuitive filtering tools.
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Role-based permissions</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Real-time collaboration</span>
-              </div>
-            </div>
           </div>
-        </div>
 
-        {/* Rich Notes & Documentation */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h3 className="text-3xl font-bold text-white">Rich Notes & Documentation</h3>
-            <p className="text-xl text-slate-400">
-              Capture and organize show notes with rich text formatting, search functionality, and collaborative editing for your entire team.
-            </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Rich text formatting</span>
-              </div>
-              <div className="flex items-center space-x-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                <span>Searchable documentation</span>
-              </div>
+          {/* Team Management */}
+          <div className="text-center space-y-6">
+            <div className="group fade-up">
+              <img 
+                src="/uploads/c1aca8d4-0287-46a0-ab8d-f31ce3d5cbbd.png" 
+                alt="Team Management Interface"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
             </div>
+            <h3 className="text-2xl font-bold text-white">Team Collaboration</h3>
+            <p className="text-slate-400">
+              Role-based permissions and real-time collaboration across your entire organization.
+            </p>
           </div>
-          <div className="group fade-up">
-            <img 
-              src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
-              alt="Notes and Documentation"
-              className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-            />
+
+          {/* Rich Notes */}
+          <div className="text-center space-y-6">
+            <div className="group fade-up">
+              <img 
+                src="/uploads/d8bd00f7-e579-4df8-8fcf-4d4c1466eae9.png" 
+                alt="Notes and Documentation"
+                className="w-full h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
+            <h3 className="text-2xl font-bold text-white">Rich Documentation</h3>
+            <p className="text-slate-400">
+              Capture show notes with rich formatting and collaborative editing capabilities.
+            </p>
           </div>
         </div>
       </div>
