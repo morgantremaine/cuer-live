@@ -186,34 +186,6 @@ const LandingPage = () => {
 
       </div>
 
-      {/* Core Benefits - Problem/Solution Focus */}
-      <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">
-            Stop fighting your tools. Start delivering flawless shows every time.
-          </h2>
-          <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            The core benefits that eliminate broadcast headaches.
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-8">
-          {coreBenefits.map((benefit, index) => (
-            <Card key={index} className="bg-slate-800/30 backdrop-blur-sm border-slate-700/30 hover:bg-slate-800/50 transition-all duration-300 group glow-box fade-up">
-              <CardContent className="p-8 text-center">
-                <div className="flex justify-center mb-6">
-                  <div className={`p-4 rounded-full bg-slate-700/50 group-hover:scale-110 transition-all duration-300`}>
-                    <benefit.icon className={`h-8 w-8 ${benefit.color}`} />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-300 transition-colors">{benefit.title}</h3>
-                <p className="text-slate-300 leading-relaxed text-lg">{benefit.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
       {/* How It Works - Process Flow */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
