@@ -406,7 +406,14 @@ const BlogPost = () => {
 
         {/* Article Body */}
         <div 
-          className="prose prose-lg prose-invert max-w-none"
+          className="prose prose-lg prose-invert max-w-none 
+                     prose-headings:text-white prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-4
+                     prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
+                     prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-4
+                     prose-p:text-slate-300 prose-p:leading-relaxed prose-p:mb-6
+                     prose-ul:text-slate-300 prose-ul:mb-6
+                     prose-li:mb-2 prose-li:leading-relaxed
+                     prose-strong:text-white prose-strong:font-semibold"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
