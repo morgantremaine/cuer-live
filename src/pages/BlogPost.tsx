@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
+import { useAuth } from '@/hooks/useAuth';
 
 // Sample blog post content - in a real app, this would come from a CMS or database
 const blogPosts = {
@@ -308,6 +309,15 @@ const blogPosts = {
 const BlogPost = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const handleGetStarted = () => {
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
   
   const post = postId ? blogPosts[postId as keyof typeof blogPosts] : null;
 
@@ -418,8 +428,27 @@ const BlogPost = () => {
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
+        {/* Call to Action Section */}
+        <div className="mt-16 mb-16 text-center bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-8 md:p-12">
+          <h3 className="text-3xl font-bold text-white mb-4">
+            Ready to Transform Your Production Workflow?
+          </h3>
+          <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">
+            Join thousands of broadcast professionals who trust Cuer for their live production needs. 
+            Get started with a free account and experience the difference.
+          </p>
+          <Button 
+            onClick={handleGetStarted}
+            size="lg" 
+            className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-4 h-auto relative overflow-hidden group"
+          >
+            <span className="relative z-10">Get Started for Free</span>
+            <ArrowRight className="ml-2 h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+
         {/* Back to Blog CTA */}
-        <div className="mt-16 pt-8 border-t border-slate-700">
+        <div className="mt-8 pt-8 border-t border-slate-700">
           <Button 
             onClick={() => navigate('/blog')}
             variant="outline" 
