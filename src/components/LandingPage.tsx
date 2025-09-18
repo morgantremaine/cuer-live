@@ -260,7 +260,7 @@ const LandingPage = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 text-white">
-            Complete workflow coverage 
+            Complete workflow coverage{' '}
             <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">from planning to broadcast</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
