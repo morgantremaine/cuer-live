@@ -35,6 +35,12 @@ interface MainActionButtonsProps {
   onForward?: () => void;
   onBackward?: () => void;
   onReset?: () => void;
+  // Rehearsal timer props
+  isRecording?: boolean;
+  rehearsalElapsedTime?: number;
+  onStartRecording?: (segmentId?: string) => void;
+  onPauseRecording?: () => void;
+  onStopRecording?: () => void;
   onShowFindReplace?: () => void;
   onShowNotes?: () => void;
 }
@@ -63,6 +69,12 @@ const MainActionButtons = ({
   onForward,
   onBackward,
   onReset,
+  // Rehearsal timer props
+  isRecording,
+  rehearsalElapsedTime,
+  onStartRecording,
+  onPauseRecording,
+  onStopRecording,
   onShowFindReplace,
   onShowNotes
 }: MainActionButtonsProps) => {
@@ -145,6 +157,12 @@ const MainActionButtons = ({
                 onReset={onReset}
                 size="sm"
                 onJumpToCurrentSegment={onJumpToCurrentSegment}
+                // Rehearsal timer props
+                isRecording={isRecording}
+                rehearsalElapsedTime={rehearsalElapsedTime}
+                onStartRecording={onStartRecording}
+                onPauseRecording={onPauseRecording}
+                onStopRecording={onStopRecording}
               />
             </div>
           </div>

@@ -42,6 +42,12 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onForward,
     onBackward,
     onReset,
+    // Rehearsal timer props
+    isRecording,
+    rehearsalElapsedTime,
+    onStartRecording,
+    onPauseRecording,
+    onStopRecording,
     hasUnsavedChanges,
     isSaving,
     rundownTitle,
@@ -233,6 +239,12 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onForward={onForward}
         onBackward={onBackward}
         onReset={onReset}
+        // Rehearsal timer props
+        isRecording={isRecording}
+        rehearsalElapsedTime={rehearsalElapsedTime}
+        onStartRecording={onStartRecording}
+        onPauseRecording={onPauseRecording}
+        onStopRecording={onStopRecording}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
         rundownTitle={rundownTitle}
