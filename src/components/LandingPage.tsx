@@ -91,7 +91,9 @@ const LandingPage = () => {
         isScrolled ? 'backdrop-blur-sm' : ''
       }`}
       style={{
-        background: isScrolled ? 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%)' : 'transparent'
+        background: isScrolled ? 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%)' : 'transparent',
+        maskImage: isScrolled ? 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)' : 'none',
+        WebkitMaskImage: isScrolled ? 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)' : 'none'
       }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between p-6 pb-16">
           <div className={`flex items-center transition-all duration-500 ${
