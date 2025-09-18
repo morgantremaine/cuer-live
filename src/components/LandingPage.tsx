@@ -87,9 +87,9 @@ const LandingPage = () => {
       
       <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-6 transition-all duration-300 ${
+      <nav className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between p-6 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-gradient-to-r from-black/90 via-slate-900/90 to-black/90 backdrop-blur-md border-b border-slate-700/30' 
+          ? 'bg-gradient-to-b from-black/60 via-black/40 to-transparent backdrop-blur-sm' 
           : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
