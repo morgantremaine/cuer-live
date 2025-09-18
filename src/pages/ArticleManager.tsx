@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Star, StarOff, Calendar, Clock, User, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Star, StarOff, Calendar, Clock, User, Plus, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ interface BlogPost {
   featured: boolean;
   slug: string;
   created_at: string;
+  view_count?: number;
 }
 
 const ArticleManager = () => {
@@ -45,7 +46,12 @@ const ArticleManager = () => {
     try {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('*')
+        .select(`
+          *,
+          blog_post_views (
+            view_count
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -56,7 +62,12 @@ const ArticleManager = () => {
           variant: "destructive"
         });
       } else {
-        setBlogPosts(data || []);
+        // Map the data to include view_count directly on the blog post object
+        const postsWithViews = (data || []).map(post => ({
+          ...post,
+          view_count: post.blog_post_views?.[0]?.view_count || 0
+        }));
+        setBlogPosts(postsWithViews);
       }
     } catch (error) {
       console.error('Error fetching blog posts:', error);
@@ -273,6 +284,10 @@ const ArticleManager = () => {
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
                         <span>{post.read_time}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Eye className="h-3 w-3" />
+                        <span>{post.view_count || 0} views</span>
                       </div>
                     </div>
                   </div>

@@ -70,6 +70,41 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_post_views: {
+        Row: {
+          created_at: string
+          id: string
+          last_viewed_at: string
+          post_id: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_viewed_at?: string
+          post_id: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_viewed_at?: string
+          post_id?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_blog_post_views_post_id"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author: string
@@ -1175,6 +1210,10 @@ export type Database = {
       }
       grandfather_existing_admins: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      increment_blog_post_view: {
+        Args: { post_uuid: string }
         Returns: undefined
       }
       is_layout_shared_for_public_rundown: {
