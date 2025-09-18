@@ -1,0 +1,23 @@
+#,Segment Name,Talent,GFX,Script,Video,Duration,Start,End,Elapsed
+,TOP OF SHOW,,,,,,,,
+1,Show Open,Host: Alex,"Logo animation, Show title screen","[ALEX {Blue}] Welcome to the Clash of Champions! We’ve got an electrifying best-of-three showdown coming your way today, featuring two of the most hyped teams in the league. Buckle up — it’s going to be a wild ride!",Hype intro sizzle,02:00,09:00:00,09:02:00,00:00:00
+2,Analyst Desk Intro,Host + Casters Moxie & Rekkz,"Team logos, headshots","[ALEX {Blue}] Let’s get into the nitty-gritty with our expert casters. Moxie and Rekkz, walk us through the stakes and what to expect from today’s teams.",Desk Cam Feed,03:00,09:02:00,09:05:00,00:02:00
+3,Team A Introduction,Caster: Moxie,"Team A stats, roster gfx","[MOXIE {Green}] Team A has had an incredible run so far, dominating the group stage with near-perfect macro play and excellent synergy. Keep your eyes on their mid laner — he’s been a difference-maker all tournament long.",Team A Hype Video,02:00,09:05:00,09:07:00,00:05:00
+4,Team B Introduction,Caster: Rekkz,"Team B stats, player cards","[REKKZ {Orange}] Meanwhile, Team B has clawed their way through the lower bracket and they’ve got momentum on their side. Their aggressive bot lane duo will definitely be a factor to watch today.",Team B Intro Package,02:00,09:07:00,09:09:00,00:07:00
+,GAME 1,,,,,,,,
+5,Game 1 Intro,Host,Match countdown,[ALEX {Blue}] Game 1 is moments away! Let’s set the stage and see who comes out swinging in this first clash of titans.,Match transition animation,01:00,09:09:00,09:10:00,00:09:00
+6,Game 1 – Live,Casters,In-game overlays,"[MOXIE {Green}] & [REKKZ {Orange}] Welcome to Game 1 of the Clash of Champions! Team A on blue side, Team B on red. Let’s see who sets the pace early!",Live Game Feed,30:00,09:10:00,09:40:00,00:10:00
+7,Game 1 Recap,Host + Casters,"Scoreboard, replays","[ALEX {Blue}] What a match! Team A takes Game 1 in commanding fashion, controlling objectives and closing out with textbook precision. Let’s break down the key plays.",Game 1 Highlights,04:00,09:40:00,09:44:00,00:40:00
+8,Mid-Round Interview,Host + Team A Player,Interview L3,"[ALEX {Blue}] Joining us now is (PlayerName), the jungler for Team A. Congratulations on the win! Walk us through your early-game pathing and how you read the map so effectively.",Remote or Studio Interview,03:00,09:44:00,09:47:00,00:44:00
+,GAME 2,,,,,,,,
+9,Game 2 Intro,Host,Match graphic: Game 2,"[ALEX {Blue}] With Team A up 1-0, the pressure is on Team B. Let’s head into Game 2 and see if they can even the score.",Transition to Game Feed,01:00,09:47:00,09:48:00,00:47:00
+10,Game 2 – Live,Casters,In-game overlays,[MOXIE {Green}] & [REKKZ {Orange}] Game 2 underway! Team B is out for revenge. Will they tie it up or fall to the sweep?,Live Game Feed,30:00,09:48:00,10:18:00,00:48:00
+11,Game 2 Recap,Host + Casters,"Scoreboard, Key Plays GFX",[ALEX {Blue}] A huge bounce back by Team B! They adapted brilliantly and punished every overextension from Team A. Let’s look at how this series is shaping up.,Game 2 Highlights,04:00,10:18:00,10:22:00,01:18:00
+12,Halftime Fun Segment,Host,"Fan Tweets, Meme Graphics ","[ALEX {Blue}] While the teams prepare for the final showdown, let’s take a quick break with some fun — community tweets, memes, and fan predictions coming your way!",Short comedic intermission,03:00,10:22:00,10:25:00,01:22:00
+,GAME 3,,,,,,,,
+13,Game 3 Intro,Host,Final Matchup Slate,[ALEX {Blue}] It’s all on the line now — Game 3. One game to crown the champions. Let’s get into it!,Transition Animation,01:00,10:25:00,10:26:00,01:25:00
+14,Game 3 – Live,"Casters ",In-game overlays,[MOXIE {Green}] & [REKKZ {Orange}] Here we go — the deciding game! The draft was spicy and both teams are locked in. May the better squad win!,Live Game Feed,30:00,10:26:00,10:56:00,01:26:00
+15,Game 3 Recap,Host + Casters,"Final Scoreboard, MVP",[ALEX {Blue}] What a finale! Let’s relive the biggest moments from Game 3 and crown our MVP of the series.,Game 3 Highlights,04:00,10:56:00,11:00:00,01:56:00
+,BOTTOM OF SHOW,,,,,,,,
+16,Winner Interview,Host + Team B Player,Interview L3,[ALEX {Blue}] We’re joined now by the captain of Team B — a well-earned victory and a thrilling reverse sweep. How are you feeling after such a clutch performance?,Player Interview Clip,03:00,11:00:00,11:03:00,02:00:00
+17,Closing Segment,Host,"End Credits, Sponsor L3s ","[ALEX {Blue}] That’s it for Clash of Champions! Thanks to our players, production team, and fans worldwide. We’ll see you next time for more epic League of Legends action!",Event montage + slow-motion,02:00,11:03:00,11:05:00,02:03:00
