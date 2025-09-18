@@ -212,7 +212,7 @@ const LandingPage = () => {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-purple-400">3</div>
             <h3 className="text-2xl font-bold text-white">Execute Live</h3>
-            <p className="text-slate-400">Professional Showcaller functions with real-time script sync to the teleprompter directly from your rundown. Perfect timing control during broadcast.</p>
+            <p className="text-slate-400">Professional Showcaller controls keep your whole crew in sync and on time, while segment floating and real-time script sync to the teleprompter directly from your rundown allow for quick changes.</p>
           </div>
         </div>
 
