@@ -137,7 +137,7 @@ const LandingPage = () => {
             </Badge>
             
             <div className="fade-up">
-              <CuerLogo className="h-32 md:h-44 lg:h-56 xl:h-64 w-auto mx-auto drop-shadow-2xl" />
+              <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
