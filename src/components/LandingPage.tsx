@@ -86,15 +86,12 @@ const LandingPage = () => {
       <link rel="preload" as="image" href="/lovable-uploads/2b9f2ed6-75af-4407-b9e6-db8c27ed5de4.png" />
       
       <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white overflow-hidden relative">
-      {/* Navigation Overlay */}
-      <div className={`fixed top-0 left-0 right-0 z-10 h-32 transition-opacity duration-500 pointer-events-none ${
-        isScrolled 
-          ? 'bg-gradient-to-b from-black/40 via-black/15 to-transparent backdrop-blur-sm opacity-100' 
-          : 'opacity-0'
-      }`}></div>
-      
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-20">
+      <nav className={`fixed top-0 left-0 right-0 z-20 transition-all duration-500 ${
+        isScrolled 
+          ? 'bg-gradient-to-b from-black/40 via-black/15 to-transparent backdrop-blur-sm' 
+          : 'bg-transparent'
+      } pb-8`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between p-6">
           <div className="flex items-center">
           </div>
