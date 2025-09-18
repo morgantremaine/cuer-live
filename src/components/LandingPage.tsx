@@ -194,7 +194,7 @@ const LandingPage = () => {
             <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">three simple steps</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            The streamlined workflow that gets your team from rundown creation to flawless execution.
+            Streamline your workflow with Cuer's suite of broadcast tools.
           </p>
         </div>
         
