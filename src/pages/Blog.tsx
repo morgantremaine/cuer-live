@@ -25,7 +25,7 @@ const blogPosts = [
     excerpt: 'Learn best practices for managing distributed production teams and keeping everyone in sync across multiple locations.',
     heroImage: '/uploads/collaboration-hero.jpg',
     author: 'Cuer Team',
-    publishDate: '2024-01-08',
+    publishDate: '2025-09-03',
     readTime: '4 min read',
     category: 'Best Practices',
     featured: false
