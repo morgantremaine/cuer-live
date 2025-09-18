@@ -88,7 +88,7 @@ const LandingPage = () => {
           <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-white">
             <button 
-              onClick={() => document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('feature-explorer-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
               Features
@@ -257,7 +257,7 @@ const LandingPage = () => {
       </div>
 
       {/* Interactive Feature Explorer */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+      <div id="feature-explorer-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4 text-white">
             Complete workflow coverage{' '}
