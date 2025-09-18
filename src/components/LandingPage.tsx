@@ -8,6 +8,7 @@ import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { LandingPagePricing } from '@/components/LandingPagePricing';
 import { FeatureExplorer } from '@/components/FeatureExplorer';
+import rundownScreenshot from '@/assets/cuer-on-laptop-mockup.png';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -176,7 +177,7 @@ const LandingPage = () => {
           <div className="max-w-6xl mx-auto px-6 pt-0 pb-12 fade-up">
             <div className="relative group">
               <img 
-                src="/uploads/cuer-rundown-screenshot.png" 
+                src={rundownScreenshot} 
                 alt="Cuer Live Professional Rundown Interface with Advanced Features"
                 className="w-full h-auto rounded-2xl shadow-2xl group-hover:scale-[1.02] transition-all duration-500"
               />
