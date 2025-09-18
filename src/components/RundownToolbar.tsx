@@ -20,12 +20,6 @@ interface RundownToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   onReset: () => void;
-  // Rehearsal timer props
-  isRecording?: boolean;
-  rehearsalElapsedTime?: number;
-  onStartRecording?: (segmentId?: string) => void;
-  onPauseRecording?: () => void;
-  onStopRecording?: () => void;
   // Share functionality
   rundownId: string | undefined;
   // Teleprompter functionality
@@ -67,12 +61,6 @@ const RundownToolbar = ({
   onForward,
   onBackward,
   onReset,
-  // Rehearsal timer props
-  isRecording,
-  rehearsalElapsedTime,
-  onStartRecording,
-  onPauseRecording,
-  onStopRecording,
   rundownId,
   onOpenTeleprompter,
   onUndo,
@@ -114,27 +102,21 @@ const RundownToolbar = ({
     onForward,
     onBackward,
     onReset,
-    // Rehearsal timer props
-    isRecording,
-    rehearsalElapsedTime,
-    onStartRecording,
-    onPauseRecording,
-    onStopRecording,
     rundownTitle,
-    rundownData,
-    autoScrollEnabled,
-    onToggleAutoScroll,
-    onJumpToCurrentSegment,
-    onShowFindReplace,
-    onShowNotes,
-    zoomLevel,
-    onZoomIn,
-    onZoomOut,
-    onResetZoom,
-    canZoomIn,
-    canZoomOut,
-    isDefaultZoom
-  };
+      rundownData,
+      autoScrollEnabled,
+      onToggleAutoScroll,
+      onJumpToCurrentSegment,
+      onShowFindReplace,
+      onShowNotes,
+      zoomLevel,
+      onZoomIn,
+      onZoomOut,
+      onResetZoom,
+      canZoomIn,
+      canZoomOut,
+      isDefaultZoom
+    };
 
   if (isMobile) {
     return <MobileToolbar {...commonProps} />;

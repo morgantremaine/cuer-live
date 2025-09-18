@@ -30,12 +30,6 @@ interface TabletToolbarProps {
   onForward: () => void;
   onBackward: () => void;
   onReset: () => void;
-  // Rehearsal timer props
-  isRecording?: boolean;
-  rehearsalElapsedTime?: number;
-  onStartRecording?: (segmentId?: string) => void;
-  onPauseRecording?: () => void;
-  onStopRecording?: () => void;
   rundownTitle?: string;
   rundownData?: CSVExportData;
   autoScrollEnabled?: boolean;
@@ -71,12 +65,6 @@ const TabletToolbar = ({
   onForward,
   onBackward,
   onReset,
-  // Rehearsal timer props
-  isRecording,
-  rehearsalElapsedTime,
-  onStartRecording,
-  onPauseRecording,
-  onStopRecording,
   rundownTitle,
   rundownData,
   autoScrollEnabled,
@@ -147,12 +135,6 @@ const TabletToolbar = ({
             autoScrollEnabled={autoScrollEnabled}
             onToggleAutoScroll={onToggleAutoScroll}
             onJumpToCurrentSegment={onJumpToCurrentSegment}
-            // Rehearsal timer props
-            isRecording={isRecording}
-            rehearsalElapsedTime={rehearsalElapsedTime}
-            onStartRecording={onStartRecording}
-            onPauseRecording={onPauseRecording}
-            onStopRecording={onStopRecording}
           />
         </div>
 

@@ -49,13 +49,6 @@ const RundownIndexContent = () => {
     forward,
     backward,
     reset,
-    // Rehearsal timer from coordinated state
-    isRecording: showcallerCoordination.isRecording || false,
-    rehearsalElapsedTime: showcallerCoordination.rehearsalElapsedTime || 0,
-    startRecording: showcallerCoordination.startRecording || (() => {}),
-    pauseRecording: showcallerCoordination.pauseRecording || (() => {}),
-    stopRecording: showcallerCoordination.stopRecording || (() => {}),
-    resetRecording: showcallerCoordination.resetRecording || (() => {}),
     hasUnsavedChanges,
     isSaving,
     isLoading,

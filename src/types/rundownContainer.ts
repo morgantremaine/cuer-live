@@ -52,12 +52,6 @@ export interface RundownContainerProps {
   onForward: () => void;
   onBackward: () => void;
   onReset: () => void;
-  // Rehearsal timer props
-  isRecording?: boolean;
-  rehearsalElapsedTime?: number;
-  onStartRecording?: (segmentId?: string) => void;
-  onPauseRecording?: () => void;
-  onStopRecording?: () => void;
   handleAddColumn: (name: string) => void;
   handleReorderColumns: (columns: Column[]) => void;
   handleDeleteColumnWithCleanup: (columnId: string) => void;

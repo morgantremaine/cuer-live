@@ -33,19 +33,11 @@ export const usePlaybackControls = (
     timeRemaining,
     isController,
     trackOwnUpdate,
-    isInitialized,
-    // Rehearsal timer
-    isRecording,
-    rehearsalElapsedTime,
-    startRecording,
-    pauseRecording,
-    stopRecording,
-    resetRecording
+    isInitialized
   } = useShowcallerVisualState({
     items,
     rundownId,
-    userId: user?.id,
-    updateItem
+    userId: user?.id
   });
 
   // Use broadcast sync only (DISABLED to prevent conflicts with simpleSync)
@@ -164,13 +156,6 @@ export const usePlaybackControls = (
     jumpToSegment: safeJumpToSegment,
     isController: controlsReady ? isController : false,
     isInitialized,
-    isConnected: isBroadcastConnected,
-    // Rehearsal timer
-    isRecording: controlsReady ? isRecording : false,
-    rehearsalElapsedTime: controlsReady ? rehearsalElapsedTime : 0,
-    startRecording: controlsReady ? startRecording : () => {},
-    pauseRecording: controlsReady ? pauseRecording : () => {},
-    stopRecording: controlsReady ? stopRecording : () => {},
-    resetRecording: controlsReady ? resetRecording : () => {}
+    isConnected: isBroadcastConnected
   };
 };

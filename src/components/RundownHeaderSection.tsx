@@ -27,12 +27,6 @@ interface RundownHeaderSectionProps {
   onForward: () => void;
   onBackward: () => void;
   onReset: () => void;
-  // Rehearsal timer props
-  isRecording?: boolean;
-  rehearsalElapsedTime?: number;
-  onStartRecording?: (segmentId?: string) => void;
-  onPauseRecording?: () => void;
-  onStopRecording?: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
   rundownTitle: string;
@@ -92,12 +86,6 @@ const RundownHeaderSection = ({
   onForward,
   onBackward,
   onReset,
-  // Rehearsal timer props
-  isRecording,
-  rehearsalElapsedTime,
-  onStartRecording,
-  onPauseRecording,
-  onStopRecording,
   hasUnsavedChanges,
   isSaving,
   rundownTitle,
@@ -178,12 +166,6 @@ const RundownHeaderSection = ({
         onForward={onForward}
         onBackward={onBackward}
         onReset={onReset}
-        // Rehearsal timer props
-        isRecording={isRecording}
-        rehearsalElapsedTime={rehearsalElapsedTime}
-        onStartRecording={onStartRecording}
-        onPauseRecording={onPauseRecording}
-        onStopRecording={onStopRecording}
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}
