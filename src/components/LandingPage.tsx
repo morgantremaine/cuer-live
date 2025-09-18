@@ -113,9 +113,9 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section with Full-Width Background */}
-      <div className="relative z-10 w-full pb-12">
+      <div className="relative z-10 w-full">
         {/* Hero Content with Background Image */}
-        <div className="relative mb-16 w-full">
+        <div className="relative w-full">
           {/* Background Image */}
           <div className="absolute inset-0 w-full">
             <img 
@@ -159,14 +159,16 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Hero Rundown Interface - Much Larger */}
-        <div className="relative max-w-6xl mx-auto mb-16 fade-up">
-          <div className="relative group">
-            <img 
-              src="/uploads/cuer-rundown-screenshot.png" 
-              alt="Cuer Live Professional Rundown Interface with Advanced Features"
-              className="w-full h-auto rounded-2xl shadow-2xl group-hover:scale-[1.02] transition-all duration-500"
-            />
+        {/* Hero Rundown Interface - Seamless Integration */}
+        <div className="relative -mt-12 pt-12 bg-gradient-to-br from-black to-slate-950">
+          <div className="max-w-6xl mx-auto px-6 pb-24 fade-up">
+            <div className="relative group">
+              <img 
+                src="/uploads/cuer-rundown-screenshot.png" 
+                alt="Cuer Live Professional Rundown Interface with Advanced Features"
+                className="w-full h-auto rounded-2xl shadow-2xl group-hover:scale-[1.02] transition-all duration-500"
+              />
+            </div>
           </div>
         </div>
 
