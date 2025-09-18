@@ -238,7 +238,13 @@ export const FeatureExplorer: React.FC = () => {
             </Badge>
           </div>
           <div className="flex justify-center">
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 max-w-5xl">
+            <div className={`
+              gap-4 
+              ${currentStage.features.length === 4 
+                ? 'grid grid-cols-2 lg:grid-cols-4 max-w-4xl' 
+                : 'grid grid-cols-2 lg:grid-cols-5 max-w-5xl'
+              }
+            `}>
               {currentStage.features.map((feature) => {
                 const isActive = activeFeature === feature.id;
                 return (
