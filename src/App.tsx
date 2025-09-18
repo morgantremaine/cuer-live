@@ -33,6 +33,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import CreateBlog from "./pages/CreateBlog";
+import EditBlog from "./pages/EditBlog";
 import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 
@@ -72,6 +73,7 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/blog" element={<Blog />} />
       <Route path="/blog/create" element={<CreateBlog />} />
+      <Route path="/blog/edit/:postId" element={<EditBlog />} />
       <Route path="/blog/manage" element={<ArticleManager />} />
       <Route path="/blog/:postId" element={<BlogPost />} />
       <Route path="/delete-test-user" element={<DeleteTestUser />} />
