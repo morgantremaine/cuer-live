@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Star, StarOff, Calendar, Clock, User, Plus, Trash2, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, Star, StarOff, Clock, User, Plus, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -276,10 +276,6 @@ const ArticleManager = () => {
                       <div className="flex items-center space-x-1">
                         <User className="h-3 w-3" />
                         <span>{post.author}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{new Date(post.publish_date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3" />

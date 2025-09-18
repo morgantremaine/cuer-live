@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, User, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, Clock, User, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,6 @@ interface BlogPost {
   excerpt: string;
   hero_image: string | null;
   author: string;
-  publish_date: string;
   read_time: string;
   category: string | null;
   featured: boolean;
@@ -36,7 +35,7 @@ const Blog = () => {
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
-        .order('publish_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching blog posts:', error);
@@ -150,10 +149,6 @@ const Blog = () => {
                     <Badge variant="outline" className="border-slate-600 text-slate-300">
                       {featuredPost.category}
                     </Badge>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(featuredPost.publish_date).toLocaleDateString()}</span>
-                    </div>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
                       <span>{featuredPost.read_time}</span>

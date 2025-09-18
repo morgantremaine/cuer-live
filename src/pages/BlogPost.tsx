@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, User, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Clock, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
@@ -13,7 +13,6 @@ interface BlogPost {
   excerpt: string;
   hero_image: string | null;
   author: string;
-  publish_date: string;
   read_time: string | null;
   category: string | null;
   featured: boolean;
@@ -144,14 +143,6 @@ const BlogPost = () => {
                 {post.category}
               </Badge>
             )}
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(post.publish_date).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
-            </div>
             {post.read_time && (
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
