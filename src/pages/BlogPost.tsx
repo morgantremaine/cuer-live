@@ -184,7 +184,7 @@ const BlogPost = () => {
         <div className="mt-16 p-8 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to Streamline Your Production?</h2>
           <p className="text-slate-300 mb-6">
-            Join thousands of production teams using Cuer to create better, more organized rundowns.
+            Get your first show organized in minutes. Create your free Cuer account today.
           </p>
           <Button 
             onClick={handleGetStarted}
