@@ -434,8 +434,8 @@ const BlogPost = () => {
             Ready to Transform Your Production Workflow?
           </h3>
           <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto mb-8">
-            Join thousands of broadcast professionals who trust Cuer for their live production needs. 
-            Get started with a free account and experience the difference.
+            Experience the future of broadcast production with Cuer's intuitive rundown management. 
+            Get started with a free account and see how we're revolutionizing live production workflows.
           </p>
           <Button 
             onClick={handleGetStarted}
