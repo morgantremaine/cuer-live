@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, User, Plus } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, User, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,14 +88,24 @@ const Blog = () => {
             Home
           </Link>
           {canCreateBlog && (
-            <Button 
-              onClick={() => navigate('/blog/create')} 
-              variant="outline" 
-              className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Post
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => navigate('/blog/manage')} 
+                variant="outline" 
+                className="border-slate-600/50 text-slate-300 hover:bg-slate-600/20"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Articles
+              </Button>
+              <Button 
+                onClick={() => navigate('/blog/create')} 
+                variant="outline" 
+                className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Post
+              </Button>
+            </div>
           )}
           <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
             Sign In
