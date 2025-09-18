@@ -130,7 +130,7 @@ const LandingPage = () => {
           </div>
           
           {/* Hero Text Content */}
-          <div className="relative z-10 text-center space-y-4 py-12 px-8 max-w-7xl mx-auto">
+          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto">
             <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 fade-up pulse-glow">
               <Zap className="w-4 h-4 mr-2" />
               Professional Broadcast Tool
