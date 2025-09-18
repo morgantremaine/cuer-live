@@ -182,7 +182,7 @@ export const LandingPagePricing = ({ interval, onIntervalChange }: LandingPagePr
     } else if (planName === 'Enterprise') {
       window.location.href = 'mailto:sales@cuer.live?subject=Enterprise Plan Inquiry';
     } else {
-      navigate('/login');
+      navigate('/login?tab=signup');
     }
   };
 

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +11,8 @@ import Footer from '@/components/Footer'
 import CuerLogo from '@/components/common/CuerLogo'
 
 const Login = () => {
+  const [searchParams] = useSearchParams()
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin'
   // Separate form states for clarity
   const [signInData, setSignInData] = useState({ email: '', password: '' })
   const [signUpData, setSignUpData] = useState({ email: '', password: '', confirmPassword: '', fullName: '', agreeToTerms: false })
@@ -235,7 +238,7 @@ const Login = () => {
                 </Button>
               </div>
             ) : (
-              <Tabs defaultValue="signin" className="w-full">
+              <Tabs defaultValue={defaultTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-gray-700">
                   <TabsTrigger value="signin" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white text-gray-300">Sign In</TabsTrigger>
                   <TabsTrigger value="signup" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white text-gray-300">Sign Up</TabsTrigger>

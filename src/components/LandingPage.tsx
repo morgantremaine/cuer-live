@@ -28,7 +28,7 @@ const LandingPage = () => {
     if (user) {
       navigate('/dashboard');
     } else {
-      navigate('/login');
+      navigate('/login?tab=signup');
     }
   };
 
