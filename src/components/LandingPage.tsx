@@ -153,7 +153,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
-              Turn broadcast chaos into seamless execution. The professional rundown tool that actually works the way your team thinks.
+              Turn broadcast chaos into seamless execution. Cuer is the professional rundown tool that works the way your team thinks.
             </p>
 
             <div className="flex justify-center fade-up">
