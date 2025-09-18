@@ -189,9 +189,8 @@ const LandingPage = () => {
       {/* Core Benefits - Problem/Solution Focus */}
       <div id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">
-            Broadcast problems you'll never face again{' '}
-            <span className="bg-gradient-to-r from-blue-400 to-slate-400 bg-clip-text text-transparent">with Cuer</span>
+          <h2 className="text-4xl font-bold mb-4 text-white">
+            Stop fighting your tools. Start delivering flawless shows every time.
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
             Stop fighting your tools. Start delivering flawless shows every time.
