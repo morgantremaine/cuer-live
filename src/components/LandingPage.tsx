@@ -235,13 +235,13 @@ const LandingPage = () => {
           </div>
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-green-400">2</div>
-            <h3 className="text-2xl font-bold text-white">Execute Live</h3>
-            <p className="text-slate-400">Real-time timing, teleprompter mode, and live cues keep everyone perfectly synchronized during broadcast.</p>
+            <h3 className="text-2xl font-bold text-white">Collaborate</h3>
+            <p className="text-slate-400">Team sees changes instantly. Share with stakeholders. Access from any device, anywhere.</p>
           </div>
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-purple-400">3</div>
-            <h3 className="text-2xl font-bold text-white">Collaborate</h3>
-            <p className="text-slate-400">Team sees changes instantly. Share with stakeholders. Access from any device, anywhere.</p>
+            <h3 className="text-2xl font-bold text-white">Execute Live</h3>
+            <p className="text-slate-400">Real-time timing, teleprompter mode, and live cues keep everyone perfectly synchronized during broadcast.</p>
           </div>
         </div>
 
