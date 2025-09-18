@@ -89,9 +89,9 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-20 transition-all duration-500 ${
         isScrolled 
-          ? 'bg-gradient-to-b from-black/50 via-black/20 via-black/10 to-transparent backdrop-blur-sm' 
+          ? 'bg-gradient-to-b from-black/40 via-black/15 via-transparent to-transparent backdrop-blur-sm' 
           : 'bg-transparent'
-      } pb-8`}>
+      }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between p-6">
           <div className="flex items-center">
           </div>
