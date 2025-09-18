@@ -158,7 +158,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -866,14 +866,16 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (isImmediateSyncField) {
       // For immediate sync fields like isFloating, save undo state and trigger immediate save
+      console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
       saveUndoState(state.items, [], state.title, `Toggle ${field}`);
-      // Trigger immediate autosave for critical state changes like float/unfloat
-      markActiveTyping(); // This will trigger the autosave system to save immediately
+      // DON'T use markActiveTyping() for floating - that triggers typing delay
+      // Instead, trigger an immediate flush save that bypasses the typing delay mechanism
+      triggerImmediateSave();
     } else if (field === 'color') {
-      // Handle color changes separately - save undo state but don't trigger typing state
+      // Handle color changes separately - save undo state and trigger immediate save
       saveUndoState(state.items, [], state.title, 'Change row color');
       // Color changes should trigger immediate save without marking as typing
-      // The auto-save system will pick this up in the next cycle without the typing delay
+      triggerImmediateSave();
     }
     
     if (field.startsWith('customFields.')) {

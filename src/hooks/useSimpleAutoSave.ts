@@ -948,6 +948,7 @@ export const useSimpleAutoSave = (
     setTrackOwnUpdate,
     markActiveTyping,
     isTypingActive,
+    triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,
     setVerboseLogging: keystrokeJournal.setVerboseLogging,
