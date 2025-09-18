@@ -152,7 +152,7 @@ const LandingPage = () => {
               <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
             </div>
             
-            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto drop-shadow-xl fade-up">
+            <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
               Turn broadcast chaos into seamless execution with Cuer, the professional rundown tool that works the way your team thinks.
             </p>
 
