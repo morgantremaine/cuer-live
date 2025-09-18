@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const CreateBlog = () => {
   const navigate = useNavigate();
@@ -92,6 +93,15 @@ const CreateBlog = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to create blog posts.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -104,23 +114,37 @@ const CreateBlog = () => {
       // Get current date
       const publishDate = new Date().toISOString().split('T')[0];
 
-      // Create blog post object
-      const blogPost = {
-        id: slug,
+      // Create blog post object for database
+      const blogPostData = {
         title: formData.title,
         excerpt: formData.excerpt,
-        heroImage: formData.heroImage || '/uploads/default-blog-hero.jpg',
-        author: formData.author,
-        publishDate,
-        readTime,
-        category: formData.category,
         content: formData.content,
-        featured: false
+        hero_image: formData.heroImage || null,
+        author: formData.author,
+        category: formData.category || null,
+        read_time: readTime,
+        publish_date: publishDate,
+        slug: slug,
+        featured: false,
+        created_by: user.id
       };
 
-      // In a real app, this would save to a database
-      // For now, we'll just show a success message and log the data
-      console.log('Blog post created:', blogPost);
+      // Save to database
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .insert([blogPostData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating blog post:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create blog post. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       toast({
         title: "Blog Post Created",

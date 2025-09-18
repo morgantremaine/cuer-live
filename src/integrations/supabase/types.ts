@@ -70,6 +70,57 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          author: string
+          category: string | null
+          content: string
+          created_at: string
+          created_by: string
+          excerpt: string
+          featured: boolean
+          hero_image: string | null
+          id: string
+          publish_date: string
+          read_time: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          category?: string | null
+          content: string
+          created_at?: string
+          created_by: string
+          excerpt: string
+          featured?: boolean
+          hero_image?: string | null
+          id?: string
+          publish_date?: string
+          read_time?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          excerpt?: string
+          featured?: boolean
+          hero_image?: string | null
+          id?: string
+          publish_date?: string
+          read_time?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blueprints: {
         Row: {
           camera_plots: Json | null
