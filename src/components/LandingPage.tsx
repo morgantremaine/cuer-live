@@ -115,13 +115,13 @@ const LandingPage = () => {
       {/* Hero Section with Full-Width Background */}
       <div className="relative z-10 w-full">
         {/* Hero Content with Background Image */}
-        <div className="relative w-full">
-          {/* Background Image */}
-          <div className="absolute inset-0 w-full">
+        <div className="relative w-full min-h-screen">
+          {/* Background Image - Fixed aspect ratio */}
+          <div className="absolute inset-0 w-full h-full">
             <img 
               src="/lovable-uploads/2b9f2ed6-75af-4407-b9e6-db8c27ed5de4.png" 
               alt="Professional Broadcast Control Room"
-              className="w-full h-full object-cover animate-fade-in"
+              className="w-full h-full object-cover object-center animate-fade-in"
               loading="eager"
               fetchPriority="high"
             />
@@ -130,7 +130,7 @@ const LandingPage = () => {
           </div>
           
           {/* Hero Text Content */}
-          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto">
+          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto min-h-screen flex flex-col justify-center">
             <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 fade-up pulse-glow">
               <Zap className="w-4 h-4 mr-2" />
               Professional Broadcast Tool
@@ -159,9 +159,9 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* Hero Rundown Interface - Seamless Integration */}
-        <div className="relative -mt-12 pt-12 bg-gradient-to-br from-black to-slate-950">
-          <div className="max-w-6xl mx-auto px-6 pb-24 fade-up">
+        {/* Hero Rundown Interface - Starts exactly at image bottom */}
+        <div className="relative bg-gradient-to-br from-black to-slate-950">
+          <div className="max-w-6xl mx-auto px-6 py-24 fade-up">
             <div className="relative group">
               <img 
                 src="/uploads/cuer-rundown-screenshot.png" 
