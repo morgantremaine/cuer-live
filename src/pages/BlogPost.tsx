@@ -48,6 +48,19 @@ const BlogPost = () => {
         setNotFound(true);
       } else {
         setPost(data);
+        
+        // Increment page view count
+        try {
+          const { error: viewError } = await supabase.rpc('increment_blog_post_view', {
+            post_uuid: data.id
+          });
+          
+          if (viewError) {
+            console.error('Error incrementing page view:', viewError);
+          }
+        } catch (viewError) {
+          console.error('Error incrementing page view:', viewError);
+        }
       }
     } catch (error) {
       console.error('Error fetching blog post:', error);
