@@ -265,11 +265,11 @@ const LandingPage = () => {
       <div className="relative z-10 max-w-4xl mx-auto px-6 pb-24 text-center">
         <div className="bg-slate-800/30 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-12">
           <h2 className="text-4xl font-bold mb-6 text-white">
-            Stop fighting your rundown software
+            Create seamless shows, every time.
           </h2>
           <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
             Join broadcast professionals who've already eliminated timing disasters and team chaos.
-            Create your first flawless rundown in minutes.
+            Create your first rundown in minutes.
           </p>
           <Button 
             onClick={handleGetStarted}
