@@ -390,6 +390,79 @@ export const useSimpleShowcallerSync = ({
     console.log('📺 Simple: Jump to:', segmentId);
   }, [items, parseDurationToSeconds, buildStatusMap, state, broadcastState]);
 
+  // Handle when current segment is deleted from items
+  useEffect(() => {
+    if (!state.currentSegmentId || !hasLoadedInitialState.current) {
+      return;
+    }
+
+    // Check if current segment still exists in items
+    const currentItemExists = items.find(item => item.id === state.currentSegmentId);
+    
+    if (!currentItemExists) {
+      console.log('📺 Simple: Current segment deleted, finding next available segment');
+      
+      // Find the next available segment (first regular, non-floated item)
+      const nextSegment = items.find(item => item.type === 'regular' && !isFloated(item));
+      
+      if (nextSegment) {
+        console.log('📺 Simple: Moving showcaller to next available segment:', nextSegment.id);
+        
+        const duration = parseDurationToSeconds(nextSegment.duration);
+        const newState = {
+          ...state,
+          currentSegmentId: nextSegment.id,
+          timeRemaining: state.isPlaying ? duration : 0, // Preserve playing state
+          currentItemStatuses: buildStatusMap(nextSegment.id),
+          lastUpdate: new Date().toISOString()
+        };
+        
+        setState(newState);
+        
+        // Broadcast the change if we're the controller
+        if (state.isController) {
+          broadcastState({
+            action: 'jump',
+            isPlaying: state.isPlaying,
+            currentSegmentId: nextSegment.id,
+            timeRemaining: newState.timeRemaining
+          });
+        }
+        
+        // Persist immediately
+        skipNextSaveRef.current = true;
+        immediateSave.current(newState);
+      } else {
+        console.log('📺 Simple: No available segments, resetting showcaller');
+        
+        // No segments available, reset to initial state
+        const resetState = {
+          ...state,
+          isPlaying: false,
+          currentSegmentId: null,
+          timeRemaining: 0,
+          currentItemStatuses: {},
+          lastUpdate: new Date().toISOString()
+        };
+        
+        setState(resetState);
+        stopTimer();
+        
+        if (state.isController) {
+          broadcastState({
+            action: 'reset',
+            isPlaying: false,
+            currentSegmentId: null,
+            timeRemaining: 0
+          });
+        }
+        
+        skipNextSaveRef.current = true;
+        immediateSave.current(resetState);
+      }
+    }
+  }, [items, state.currentSegmentId, state.isPlaying, state.isController, hasLoadedInitialState.current, parseDurationToSeconds, buildStatusMap, broadcastState, stopTimer]);
+
   // Load initial showcaller state from database
   useEffect(() => {
     if (!rundownId || hasLoadedInitialState.current || isLoadingInitialState.current) {
