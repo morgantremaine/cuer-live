@@ -394,7 +394,9 @@ export const useSimpleShowcallerSync = ({
   // Track current segment index for deletion handling
   useEffect(() => {
     if (state.currentSegmentId) {
-      const currentIndex = items.findIndex(item => item.id === state.currentSegmentId);
+      // Track index within regular, non-floated items only
+      const regularItems = items.filter(item => item.type === 'regular' && !isFloated(item));
+      const currentIndex = regularItems.findIndex(item => item.id === state.currentSegmentId);
       currentSegmentIndexRef.current = currentIndex;
     }
   }, [items, state.currentSegmentId]);
@@ -414,20 +416,25 @@ export const useSimpleShowcallerSync = ({
       // Get the regular, non-floated items only
       const regularItems = items.filter(item => item.type === 'regular' && !isFloated(item));
       
-      // Use the stored index to find the item that's now at that position
+      // Use the stored index within regular items to find the item that's now at that position
       const targetIndex = currentSegmentIndexRef.current;
       let nextSegment = null;
       
       if (targetIndex >= 0 && targetIndex < regularItems.length) {
-        // Item at the same index position
+        // Item at the same index position within regular items
         nextSegment = regularItems[targetIndex];
-      } else if (regularItems.length > 0) {
-        // If index is out of bounds, use the last item
+        console.log('📺 Simple: Found item at same position:', targetIndex, 'item:', nextSegment.id);
+      } else if (targetIndex >= regularItems.length && regularItems.length > 0) {
+        // If we deleted the last item, go to the new last item
         nextSegment = regularItems[regularItems.length - 1];
+        console.log('📺 Simple: Deleted last item, moving to new last item:', nextSegment.id);
+      } else if (regularItems.length > 0) {
+        // Fallback to first item
+        nextSegment = regularItems[0];
+        console.log('📺 Simple: Fallback to first item:', nextSegment.id);
       }
       
       if (nextSegment) {
-        console.log('📺 Simple: Moving showcaller to item at position:', targetIndex, 'item:', nextSegment.id);
         
         const duration = parseDurationToSeconds(nextSegment.duration);
         const newState = {
