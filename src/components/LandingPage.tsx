@@ -207,7 +207,7 @@ const LandingPage = () => {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-green-400">2</div>
             <h3 className="text-2xl font-bold text-white">Collaborate</h3>
-            <p className="text-slate-400">Real-time collaboration between multiple users with instant sync. Share with stakeholders using Read-Only Share Links - no login required.</p>
+            <p className="text-slate-400">Edit together in real time with instant sync for your whole team. Share with stakeholders using Read-Only Share Links - no login required.</p>
           </div>
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-purple-500/20 border-2 border-purple-500 rounded-full flex items-center justify-center mx-auto text-2xl font-bold text-purple-400">3</div>
