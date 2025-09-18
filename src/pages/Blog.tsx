@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, User } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, User, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import CuerLogo from '@/components/common/CuerLogo';
+import { useAuth } from '@/hooks/useAuth';
 
 // Sample blog data - in a real app, this would come from a CMS or database
 const blogPosts = [
@@ -45,8 +46,12 @@ const blogPosts = [
 
 const Blog = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const featuredPost = blogPosts.find(post => post.featured);
   const otherPosts = blogPosts.filter(post => !post.featured);
+
+  // Check if user is authorized to create blog posts
+  const canCreateBlog = user?.email === 'morgan@cuer.live';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black to-slate-950 text-white">
@@ -68,6 +73,16 @@ const Blog = () => {
           <Link to="/" className="text-slate-300 hover:text-white transition-colors">
             Home
           </Link>
+          {canCreateBlog && (
+            <Button 
+              onClick={() => navigate('/blog/create')} 
+              variant="outline" 
+              className="border-blue-600/50 text-blue-400 hover:bg-blue-600/20"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Post
+            </Button>
+          )}
           <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50">
             Sign In
           </Button>
