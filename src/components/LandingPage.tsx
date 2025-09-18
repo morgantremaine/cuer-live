@@ -173,7 +173,7 @@ const LandingPage = () => {
 
         {/* Hero Rundown Interface - Starts exactly at image bottom */}
         <div className="relative bg-gradient-to-br from-black to-slate-950">
-          <div className="max-w-6xl mx-auto px-6 py-12 fade-up">
+          <div className="max-w-6xl mx-auto px-6 pt-0 pb-12 fade-up">
             <div className="relative group">
               <img 
                 src="/uploads/cuer-rundown-screenshot.png" 
