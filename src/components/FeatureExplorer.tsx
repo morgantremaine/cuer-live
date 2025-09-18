@@ -97,6 +97,20 @@ const workflowStages: WorkflowStage[] = [
     color: 'from-green-500 to-blue-600',
     features: [
       {
+        id: 'live-show-control',
+        title: 'Live Show Control',
+        description: 'Real-time timing and status tracking keeps your entire production team synchronized.',
+        image: '/uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png',
+        alt: 'Live Show Controls',
+        details: [
+          'Real-time timing controls',
+          'Status tracking for all segments',
+          'Team synchronization',
+          'Live cue management'
+        ],
+        icon: Clock
+      },
+      {
         id: 'control-room',
         title: 'Control Room Display',
         description: 'Dedicated AD view with live timing, perfect for multiviewer displays.',
@@ -157,99 +171,102 @@ const workflowStages: WorkflowStage[] = [
 ];
 
 export const FeatureExplorer: React.FC = () => {
-  const [activeStage, setActiveStage] = useState<string>('planning');
-  const [activeFeature, setActiveFeature] = useState<string>('ai-assistant');
+  const [activeStage, setActiveStage] = useState<string>('broadcasting');
+  const [activeFeature, setActiveFeature] = useState<string>('live-show-control');
 
   const currentStage = workflowStages.find(stage => stage.id === activeStage);
   const currentFeature = currentStage?.features.find(feature => feature.id === activeFeature);
 
   return (
-    <div className="space-y-8">
-      {/* Live Show Control - Standalone */}
-      <div className="mb-20">
-        <div className="text-center space-y-6 mb-12">
-          <h3 className="text-3xl font-bold text-white">Live Show Control</h3>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Real-time timing and status tracking keeps your entire production team synchronized.
-          </p>
-        </div>
-        <div className="group fade-up">
-          <img 
-            src="/uploads/68360f2b-6961-47f6-a334-0ac01a4de303.png" 
-            alt="Live Show Controls"
-            className="w-full max-w-4xl mx-auto h-auto rounded-lg shadow-lg border border-slate-600/30 glow-box group-hover:scale-[1.02] transition-all duration-500"
-          />
-        </div>
-      </div>
-
-      {/* Workflow Stage Tabs */}
-      <div className="flex justify-center mb-8">
-        <div className="flex space-x-4 p-2 bg-slate-800/50 rounded-xl backdrop-blur-sm border border-slate-700/30">
+    <div className="space-y-12">
+      {/* Workflow Stage Tabs - Much Bigger */}
+      <div className="flex justify-center">
+        <div className="flex flex-col lg:flex-row gap-6 max-w-4xl w-full">
           {workflowStages.map((stage) => {
             const isActive = activeStage === stage.id;
             return (
               <Button
                 key={stage.id}
-                variant={isActive ? "default" : "ghost"}
+                variant="ghost"
                 size="lg"
                 onClick={() => {
                   setActiveStage(stage.id);
                   setActiveFeature(stage.features[0].id);
                 }}
                 className={`
-                  relative px-6 py-3 text-sm font-medium transition-all duration-300
+                  relative p-8 h-auto flex-1 text-left transition-all duration-500 group
                   ${isActive 
-                    ? `bg-gradient-to-r ${stage.color} text-white shadow-lg` 
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    ? `bg-gradient-to-br ${stage.color} text-white shadow-2xl scale-105 border-transparent` 
+                    : 'bg-slate-800/30 text-slate-300 hover:bg-slate-700/50 border border-slate-700/50 hover:scale-102'
                   }
+                  rounded-2xl backdrop-blur-sm
                 `}
               >
-                <stage.icon className="w-5 h-5 mr-2" />
-                {stage.title}
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className={`
+                    p-6 rounded-full transition-all duration-300
+                    ${isActive 
+                      ? 'bg-white/20 shadow-lg' 
+                      : 'bg-slate-700/50 group-hover:bg-slate-600/50'
+                    }
+                  `}>
+                    <stage.icon className="w-12 h-12" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">{stage.title}</h3>
+                    <p className={`text-sm leading-relaxed ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                      {stage.description}
+                    </p>
+                  </div>
+                </div>
+                {isActive && (
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                )}
               </Button>
             );
           })}
         </div>
       </div>
 
-      {/* Current Stage Info */}
-      {currentStage && (
-        <div className="text-center mb-12 animate-fade-in">
-          <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 mb-4">
-            <currentStage.icon className="w-4 h-4 mr-2" />
-            {currentStage.title}
-          </Badge>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            {currentStage.description}
-          </p>
-        </div>
-      )}
-
       {/* Feature Buttons */}
       {currentStage && (
-        <div className="flex justify-center mb-12">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl">
-            {currentStage.features.map((feature) => {
-              const isActive = activeFeature === feature.id;
-              return (
-                <Button
-                  key={feature.id}
-                  variant={isActive ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={() => setActiveFeature(feature.id)}
-                  className={`
-                    flex flex-col items-center space-y-2 p-4 h-auto text-center transition-all duration-300
-                    ${isActive 
-                      ? 'bg-slate-700 text-white border-slate-600' 
-                      : 'bg-slate-800/30 text-slate-300 border-slate-700/50 hover:bg-slate-700/50 hover:text-white'
-                    }
-                  `}
-                >
-                  <feature.icon className="w-6 h-6" />
-                  <span className="text-sm font-medium">{feature.title}</span>
-                </Button>
-              );
-            })}
+        <div className="animate-fade-in">
+          <div className="text-center mb-8">
+            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 text-lg px-4 py-2">
+              <currentStage.icon className="w-5 h-5 mr-2" />
+              {currentStage.title}
+            </Badge>
+          </div>
+          <div className="flex justify-center">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 max-w-5xl">
+              {currentStage.features.map((feature) => {
+                const isActive = activeFeature === feature.id;
+                return (
+                  <Button
+                    key={feature.id}
+                    variant={isActive ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveFeature(feature.id)}
+                    className={`
+                      flex flex-col items-center space-y-3 p-6 h-auto text-center transition-all duration-300
+                      ${isActive 
+                        ? 'bg-slate-700 text-white border-slate-600 shadow-lg scale-105' 
+                        : 'bg-slate-800/30 text-slate-300 border-slate-700/50 hover:bg-slate-700/50 hover:text-white hover:scale-102'
+                      }
+                      rounded-xl
+                    `}
+                  >
+                    <div className={`
+                      p-3 rounded-lg transition-all duration-300
+                      ${isActive ? 'bg-slate-600/50' : 'bg-slate-700/50'}
+                    `}>
+                      <feature.icon className="w-6 h-6" />
+                    </div>
+                    <span className="text-sm font-medium leading-tight">{feature.title}</span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
