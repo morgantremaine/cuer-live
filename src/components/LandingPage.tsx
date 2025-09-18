@@ -193,7 +193,7 @@ const LandingPage = () => {
             Stop fighting your tools. Start delivering flawless shows every time.
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Stop fighting your tools. Start delivering flawless shows every time.
+            The core benefits that eliminate broadcast headaches.
           </p>
         </div>
         
