@@ -91,12 +91,13 @@ const LandingPage = () => {
         isScrolled ? 'backdrop-blur-sm' : ''
       }`}
       style={{
-        background: isScrolled ? 'linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.1), transparent)' : 'transparent',
-        maskImage: isScrolled ? 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)' : 'none',
-        WebkitMaskImage: isScrolled ? 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)' : 'none'
+        background: isScrolled ? 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0) 100%)' : 'transparent'
       }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between p-6 pb-12">
-          <div className="flex items-center">
+        <div className="max-w-7xl mx-auto flex items-center justify-between p-6 pb-16">
+          <div className={`flex items-center transition-all duration-500 ${
+            isScrolled ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
+          }`}>
+            <CuerLogo className="h-8 w-auto" />
           </div>
           <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-white">
