@@ -13,7 +13,7 @@ const blogPosts = {
     excerpt: 'Discover how artificial intelligence is revolutionizing the way we produce live television, from automated cue timing to intelligent content suggestions.',
     heroImage: '/uploads/ai-broadcast-hero.jpg',
     author: 'Cuer Team',
-    publishDate: '2024-01-15',
+    publishDate: '2025-08-14',
     readTime: '6 min read',
     category: 'Technology',
     content: `
