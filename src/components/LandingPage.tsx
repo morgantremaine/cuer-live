@@ -143,23 +143,25 @@ const LandingPage = () => {
           </div>
           
           {/* Hero Text Content */}
-          <div className="relative z-10 text-center space-y-8 py-24 px-8 max-w-7xl mx-auto min-h-screen flex flex-col justify-center">
-            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 fade-up pulse-glow">
+          <div className="relative z-10 text-center py-24 px-8 max-w-7xl mx-auto min-h-screen flex flex-col justify-center">
+            <Badge variant="secondary" className="bg-slate-700/50 text-slate-200 border-slate-600/50 fade-up pulse-glow mb-8">
               <Zap className="w-4 h-4 mr-2" />
               Professional Broadcast Tool
             </Badge>
             
-            <div className="fade-up">
+            <div className="fade-up mb-8">
               <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
             </div>
             
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-0 fade-up">
-              Run your show, not your rundown software.
-            </h1>
-            <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
-              Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>,<br />
-              without the learning curve of traditional broadcast tools.
-            </p>
+            <div className="space-y-2 mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent fade-up">
+                Run your show, not your rundown software.
+              </h1>
+              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
+                Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>,<br />
+                without the learning curve of traditional broadcast tools.
+              </p>
+            </div>
 
             <div className="flex justify-center fade-up">
               <Button 
