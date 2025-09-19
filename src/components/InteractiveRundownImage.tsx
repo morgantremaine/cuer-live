@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import HotspotEditor from './HotspotEditor';
+import { Edit3 } from 'lucide-react';
 
 interface Hotspot {
   id: string;
@@ -11,7 +14,7 @@ interface Hotspot {
   height: number; // percentage height
 }
 
-const hotspots: Hotspot[] = [
+const initialHotspots: Hotspot[] = [
   {
     id: 'showcaller-indicator', // #1 - Current row indicator (left side)
     title: 'Showcaller Visual Indicator',
@@ -130,76 +133,112 @@ interface InteractiveRundownImageProps {
 
 const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundownImageProps) => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [hotspots, setHotspots] = useState<Hotspot[]>(initialHotspots);
+
+  const handleSaveHotspots = (newHotspots: Hotspot[]) => {
+    setHotspots(newHotspots);
+    setIsEditing(false);
+    console.log('Updated hotspots:', newHotspots);
+  };
+
+  if (isEditing) {
+    return (
+      <div className={className}>
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Edit Interactive Areas</h3>
+          <Button onClick={() => setIsEditing(false)} variant="outline" size="sm">
+            Cancel
+          </Button>
+        </div>
+        <HotspotEditor 
+          src={src} 
+          alt={alt} 
+          initialHotspots={hotspots}
+          onSave={handleSaveHotspots}
+        />
+      </div>
+    );
+  }
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className={`relative inline-block ${className}`}>
-        <img 
-          src={src} 
-          alt={alt}
-          className="w-full h-auto rounded-lg shadow-2xl"
-          draggable={false}
-        />
-        
-        {/* Rectangular highlight areas */}
-        {hotspots.map((hotspot) => (
-          <Tooltip key={hotspot.id}>
-            <TooltipTrigger asChild>
-              <button
-                className="absolute group"
-                style={{
-                  left: `${hotspot.x}%`,
-                  top: `${hotspot.y}%`,
-                  width: `${hotspot.width}%`,
-                  height: `${hotspot.height}%`,
-                }}
-                onMouseEnter={() => setActiveHotspot(hotspot.id)}
-                onMouseLeave={() => setActiveHotspot(null)}
-                onFocus={() => setActiveHotspot(hotspot.id)}
-                onBlur={() => setActiveHotspot(null)}
-                aria-label={`Learn about ${hotspot.title}`}
+    <div className={`relative ${className}`}>
+      <div className="mb-4 flex justify-end">
+        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+          <Edit3 className="w-4 h-4 mr-2" />
+          Edit Hotspots
+        </Button>
+      </div>
+      
+      <TooltipProvider delayDuration={300}>
+        <div className="relative inline-block">
+          <img 
+            src={src} 
+            alt={alt}
+            className="w-full h-auto rounded-lg shadow-2xl"
+            draggable={false}
+          />
+          
+          {/* Rectangular highlight areas */}
+          {hotspots.map((hotspot) => (
+            <Tooltip key={hotspot.id}>
+              <TooltipTrigger asChild>
+                <button
+                  className="absolute group"
+                  style={{
+                    left: `${hotspot.x}%`,
+                    top: `${hotspot.y}%`,
+                    width: `${hotspot.width}%`,
+                    height: `${hotspot.height}%`,
+                  }}
+                  onMouseEnter={() => setActiveHotspot(hotspot.id)}
+                  onMouseLeave={() => setActiveHotspot(null)}
+                  onFocus={() => setActiveHotspot(hotspot.id)}
+                  onBlur={() => setActiveHotspot(null)}
+                  aria-label={`Learn about ${hotspot.title}`}
+                >
+                  {/* Transparent blue overlay on hover */}
+                  <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-blue-400/50" />
+                  
+                  {/* Subtle pulse border on active */}
+                  <div 
+                    className={`absolute inset-0 border-2 border-blue-400 ${
+                      activeHotspot === hotspot.id ? 'opacity-40 animate-pulse' : 'opacity-0'
+                    } transition-opacity duration-200`}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="top" 
+                className="max-w-xs p-3 bg-background/95 backdrop-blur-sm border shadow-lg"
+                sideOffset={8}
               >
-                {/* Transparent blue overlay on hover */}
-                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-blue-400/50" />
-                
-                {/* Subtle pulse border on active */}
-                <div 
-                  className={`absolute inset-0 border-2 border-blue-400 ${
-                    activeHotspot === hotspot.id ? 'opacity-40 animate-pulse' : 'opacity-0'
-                  } transition-opacity duration-200`}
-                />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="top" 
-              className="max-w-xs p-3 bg-background/95 backdrop-blur-sm border shadow-lg"
-              sideOffset={8}
-            >
-              <div className="space-y-1">
-                <h4 className="font-semibold text-sm text-foreground">{hotspot.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">{hotspot.description}</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-        
-        {/* Legend for mobile */}
-        <div className="mt-4 p-3 bg-background/50 backdrop-blur-sm rounded-lg border md:hidden">
-          <h4 className="font-semibold text-sm mb-2 text-foreground">Tap the numbered areas above to explore features:</h4>
-          <div className="grid grid-cols-1 gap-1 text-xs">
-            {hotspots.slice(0, 6).map((hotspot, index) => (
-              <div key={hotspot.id} className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                  {index + 1}
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-sm text-foreground">{hotspot.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{hotspot.description}</p>
                 </div>
-                <span className="text-muted-foreground">{hotspot.title}</span>
-              </div>
-            ))}
-            <div className="text-muted-foreground mt-1">+ {hotspots.length - 6} more features...</div>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          
+          {/* Legend for mobile */}
+          <div className="mt-4 p-3 bg-background/50 backdrop-blur-sm rounded-lg border md:hidden">
+            <h4 className="font-semibold text-sm mb-2 text-foreground">Tap the numbered areas above to explore features:</h4>
+            <div className="grid grid-cols-1 gap-1 text-xs">
+              {hotspots.slice(0, 6).map((hotspot, index) => (
+                <div key={hotspot.id} className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                    {index + 1}
+                  </div>
+                  <span className="text-muted-foreground">{hotspot.title}</span>
+                </div>
+              ))}
+              <div className="text-muted-foreground mt-1">+ {hotspots.length - 6} more features...</div>
+            </div>
           </div>
         </div>
-      </div>
-    </TooltipProvider>
+      </TooltipProvider>
+    </div>
   );
 };
 
