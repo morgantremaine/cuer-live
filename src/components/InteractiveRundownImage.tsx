@@ -141,17 +141,16 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
           draggable={false}
         />
         
-        {/* Hotspot overlays */}
+        {/* Subtle hotspot indicators */}
         {hotspots.map((hotspot) => (
           <Tooltip key={hotspot.id}>
             <TooltipTrigger asChild>
               <button
-                className="absolute border-2 border-blue-400/60 bg-blue-400/20 hover:bg-blue-400/40 hover:border-blue-400/80 transition-all duration-200 rounded-md backdrop-blur-sm"
+                className="absolute w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-500 hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm border-2 border-white/50"
                 style={{
-                  left: `${hotspot.x}%`,
-                  top: `${hotspot.y}%`,
-                  width: `${hotspot.width}%`,
-                  height: `${hotspot.height}%`,
+                  left: `${hotspot.x + hotspot.width/2}%`,
+                  top: `${hotspot.y + hotspot.height/2}%`,
+                  transform: 'translate(-50%, -50%)',
                 }}
                 onMouseEnter={() => setActiveHotspot(hotspot.id)}
                 onMouseLeave={() => setActiveHotspot(null)}
@@ -159,17 +158,17 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
                 onBlur={() => setActiveHotspot(null)}
                 aria-label={`Learn about ${hotspot.title}`}
               >
-                {/* Pulse animation for visual feedback */}
+                {/* Subtle pulse ring on hover */}
                 <div 
-                  className={`absolute inset-0 rounded-md border-2 border-blue-400 animate-pulse ${
-                    activeHotspot === hotspot.id ? 'opacity-100' : 'opacity-0'
+                  className={`absolute inset-0 rounded-full border-2 border-blue-400 animate-ping ${
+                    activeHotspot === hotspot.id ? 'opacity-30' : 'opacity-0'
                   } transition-opacity duration-200`}
                 />
                 
-                {/* Hotspot number indicator */}
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {/* Hotspot number */}
+                <span className="text-white text-xs font-bold">
                   {hotspots.indexOf(hotspot) + 1}
-                </div>
+                </span>
               </button>
             </TooltipTrigger>
             <TooltipContent 
