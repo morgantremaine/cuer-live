@@ -154,7 +154,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
-              Cuer makes rundowns fast and easy, without the learning curve of traditional broadcast tools. Real-time sync, showcaller controls, teleprompter integration, and AI assistance — all in one intuitive app.
+              Cuer makes rundowns fast and easy, without the learning curve of traditional broadcast tools. Get started today and experience pro-level features in an app your whole team will actually love using.
             </p>
 
             <div className="flex justify-center fade-up">
