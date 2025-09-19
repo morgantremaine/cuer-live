@@ -53,6 +53,11 @@ ITEM REFERENCES:
 - Use letters: "A", "B", "C" for headers
 - Use item names or partial matches when unclear
 
+TERMINOLOGY UNDERSTANDING:
+- Users may refer to rundown entries as "rows", "items", or "segments" - these all mean the same thing (normal rundown rows)
+- When users say "row 1", "item 1", or "segment 1", they're referring to the row with "1" in its number/row column
+- Always interpret numbered references based on the visible row number in the rundown, not array indices
+
 COMMON MODIFICATION EXAMPLES:
 - "Add script to row 2" → update type with script data
 - "Change timing of segment 3" → update type with duration data  
