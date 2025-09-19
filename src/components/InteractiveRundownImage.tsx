@@ -141,16 +141,17 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
           draggable={false}
         />
         
-        {/* Circular highlight areas */}
+        {/* Rectangular highlight areas */}
         {hotspots.map((hotspot) => (
           <Tooltip key={hotspot.id}>
             <TooltipTrigger asChild>
               <button
-                className="absolute group w-12 h-12 rounded-full"
+                className="absolute group"
                 style={{
-                  left: `${hotspot.x + hotspot.width/2}%`,
-                  top: `${hotspot.y + hotspot.height/2}%`,
-                  transform: 'translate(-50%, -50%)',
+                  left: `${hotspot.x}%`,
+                  top: `${hotspot.y}%`,
+                  width: `${hotspot.width}%`,
+                  height: `${hotspot.height}%`,
                 }}
                 onMouseEnter={() => setActiveHotspot(hotspot.id)}
                 onMouseLeave={() => setActiveHotspot(null)}
@@ -158,13 +159,13 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
                 onBlur={() => setActiveHotspot(null)}
                 aria-label={`Learn about ${hotspot.title}`}
               >
-                {/* Very subtle circular overlay hint */}
-                <div className="absolute inset-0 bg-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full border border-blue-400/30" />
+                {/* Transparent blue overlay on hover */}
+                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-blue-400/50" />
                 
-                {/* Subtle pulse ring on active */}
+                {/* Subtle pulse border on active */}
                 <div 
-                  className={`absolute inset-0 rounded-full border-2 border-blue-400 animate-ping ${
-                    activeHotspot === hotspot.id ? 'opacity-20' : 'opacity-0'
+                  className={`absolute inset-0 border-2 border-blue-400 ${
+                    activeHotspot === hotspot.id ? 'opacity-40 animate-pulse' : 'opacity-0'
                   } transition-opacity duration-200`}
                 />
               </button>
