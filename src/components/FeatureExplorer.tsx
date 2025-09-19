@@ -181,7 +181,7 @@ export const FeatureExplorer: React.FC = () => {
     <div className="space-y-12">
       {/* Workflow Stage Tabs - Much Bigger */}
       <div className="flex justify-center">
-        <div className="flex flex-col lg:flex-row gap-6 max-w-4xl w-full">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 max-w-4xl w-full">
           {workflowStages.map((stage) => {
             const isActive = activeStage === stage.id;
             return (
@@ -194,7 +194,7 @@ export const FeatureExplorer: React.FC = () => {
                   setActiveFeature(stage.features[0].id);
                 }}
                 className={`
-                  relative p-8 h-auto flex-1 text-left transition-all duration-500 group
+                  relative p-4 sm:p-6 lg:p-8 h-auto flex-1 text-left transition-all duration-500 group
                   ${isActive 
                     ? `bg-gradient-to-br ${stage.color} text-white shadow-2xl scale-105 border-transparent` 
                     : 'bg-slate-800/30 text-slate-300 hover:bg-slate-700/50 border border-slate-700/50 hover:scale-102'
@@ -202,19 +202,19 @@ export const FeatureExplorer: React.FC = () => {
                   rounded-2xl backdrop-blur-sm
                 `}
               >
-                <div className="flex flex-col items-center text-center space-y-4">
+                <div className="flex flex-col items-center text-center space-y-2 sm:space-y-4">
                   <div className={`
-                    p-6 rounded-full transition-all duration-300
+                    p-3 sm:p-4 lg:p-6 rounded-full transition-all duration-300
                     ${isActive 
                       ? 'bg-white/20 shadow-lg' 
                       : 'bg-slate-700/50 group-hover:bg-slate-600/50'
                     }
                   `}>
-                    <stage.icon className="w-12 h-12" />
+                    <stage.icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">{stage.title}</h3>
-                    <p className={`text-sm leading-relaxed ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 sm:mb-2 leading-tight">{stage.title}</h3>
+                    <p className={`text-xs sm:text-sm leading-relaxed ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
                       {stage.description}
                     </p>
                   </div>
@@ -231,12 +231,12 @@ export const FeatureExplorer: React.FC = () => {
       {/* Feature Buttons */}
       {currentStage && (
         <div className="animate-fade-in">
-          <div className="flex justify-center">
+          <div className="flex justify-center px-4">
             <div className={`
-              gap-4 
+              gap-3 sm:gap-4 w-full
               ${currentStage.features.length === 4 
-                ? 'grid grid-cols-2 lg:grid-cols-4 max-w-4xl' 
-                : 'grid grid-cols-2 lg:grid-cols-5 max-w-5xl'
+                ? 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 max-w-4xl' 
+                : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 max-w-5xl'
               }
             `}>
               {currentStage.features.map((feature) => {
@@ -248,7 +248,7 @@ export const FeatureExplorer: React.FC = () => {
                     size="sm"
                     onClick={() => setActiveFeature(feature.id)}
                     className={`
-                      flex flex-col items-center space-y-3 p-6 h-auto text-center transition-all duration-300
+                      flex flex-col items-center space-y-2 sm:space-y-3 p-3 sm:p-4 lg:p-6 h-auto text-center transition-all duration-300
                       ${isActive 
                         ? 'bg-slate-700 text-white border-slate-600 shadow-lg scale-105' 
                         : 'bg-slate-800/30 text-slate-300 border-slate-700/50 hover:bg-slate-700/50 hover:text-white hover:scale-102'
@@ -257,12 +257,12 @@ export const FeatureExplorer: React.FC = () => {
                     `}
                   >
                     <div className={`
-                      p-3 rounded-lg transition-all duration-300
+                      p-2 sm:p-3 rounded-lg transition-all duration-300
                       ${isActive ? 'bg-slate-600/50' : 'bg-slate-700/50'}
                     `}>
-                      <feature.icon className="w-6 h-6" />
+                      <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-sm font-medium leading-tight">{feature.title}</span>
+                    <span className="text-xs sm:text-sm font-medium leading-tight">{feature.title}</span>
                   </Button>
                 );
               })}
