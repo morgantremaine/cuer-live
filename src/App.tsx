@@ -61,6 +61,9 @@ const AppRoutes = () => {
         element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
       />
       
+      {/* Homepage route for authenticated users */}
+      <Route path="/home" element={<LandingPage />} />
+      
       {/* Public routes */}
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/demo" element={<Index />} />

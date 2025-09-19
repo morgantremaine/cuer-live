@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, User, LogOut, HelpCircle, Crown } from 'lucide-react'
+import { ArrowLeft, User, LogOut, HelpCircle, Crown, Home } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,13 +52,20 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                   {userEmail}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
-                <DropdownMenuItem 
-                  onClick={() => navigate('/account')}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                >
-                  Account Settings
-                </DropdownMenuItem>
+               <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 z-50">
+                 <DropdownMenuItem 
+                   onClick={() => navigate('/home')}
+                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                 >
+                   <Home className="h-4 w-4 mr-2" />
+                   Home
+                 </DropdownMenuItem>
+                 <DropdownMenuItem 
+                   onClick={() => navigate('/account')}
+                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                 >
+                   Account Settings
+                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={handleHelpClick}
                   className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
