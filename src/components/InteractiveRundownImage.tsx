@@ -44,15 +44,6 @@ const initialHotspots: Hotspot[] = [
     height: 5
   },
   {
-    id: 'theme-toggle', // #4 - Theme toggle (top right)
-    title: 'Light & Dark Mode',
-    description: 'Switch between light and dark themes to match your studio lighting and personal preference',
-    x: 94,
-    y: 19,
-    width: 6,
-    height: 6
-  },
-  {
     id: 'saved-layouts', // #5 - Layouts button (top toolbar)
     title: 'Saved Layouts',
     description: 'Create and save custom column layouts for different show types - news, sports, variety, and more',
