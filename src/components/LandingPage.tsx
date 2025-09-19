@@ -154,7 +154,7 @@ const LandingPage = () => {
             </div>
             
             <div className="space-y-2 mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold fade-up">
+              <h1 className="text-4xl md:text-5xl font-bold fade-up">
                 <span className="text-white">Run your show, </span>
                 <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">not your software.</span>
               </h1>
