@@ -214,7 +214,7 @@ export const FeatureExplorer: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 sm:mb-2 leading-tight">{stage.title}</h3>
-                    <p className={`text-xs sm:text-sm leading-relaxed ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                    <p className={`text-xs sm:text-sm leading-relaxed hidden sm:block ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
                       {stage.description}
                     </p>
                   </div>
