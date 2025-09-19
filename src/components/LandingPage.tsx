@@ -153,7 +153,7 @@ const LandingPage = () => {
               <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
             </div>
             
-            <p className="text-xl text-slate-300 leading-relaxed max-w-4xl mx-auto drop-shadow-xl fade-up">
+            <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
               Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>, without the learning curve of traditional broadcast tools.
             </p>
 
