@@ -20,28 +20,28 @@ const initialHotspots: Hotspot[] = [
     id: 'showcaller-indicator', // #1 - Current row indicator (left side)
     title: 'Showcaller Visual Indicator',
     description: 'Real-time visual feedback shows exactly where you are in your show with precision timing',
-    x: 5,
-    y: 32,
-    width: 6,
-    height: 6
+    x: 11.589045516933519,
+    y: 35.314568402085634,
+    width: 11.44863379284887,
+    height: 7.3258273608342535
   },
   {
     id: 'showcaller-controls', // #2 - Play/pause controls (top toolbar)
     title: 'Showcaller Controls',
     description: 'Professional playback controls for seamless show execution - play, pause, skip ahead or back',
-    x: 76,
-    y: 19,
-    width: 6,
-    height: 6
+    x: 65.48286965566383,
+    y: 20.988741041251384,
+    width: 10.054797241189846,
+    height: 5
   },
   {
     id: 'zoom-controls', // #3 - Zoom controls (top right)
     title: 'Zoom Controls',
     description: 'Adjust your view from overview to detail - perfect for different screen sizes and preferences',
-    x: 91,
-    y: 19,
-    width: 6,
-    height: 6
+    x: 82.00341862111001,
+    y: 21.20971226805709,
+    width: 5,
+    height: 5
   },
   {
     id: 'theme-toggle', // #4 - Theme toggle (top right)
@@ -56,73 +56,73 @@ const initialHotspots: Hotspot[] = [
     id: 'saved-layouts', // #5 - Layouts button (top toolbar)
     title: 'Saved Layouts',
     description: 'Create and save custom column layouts for different show types - news, sports, variety, and more',
-    x: 34,
-    y: 19,
-    width: 6,
-    height: 6
+    x: 29.81849034502296,
+    y: 20.988741041251377,
+    width: 6.126712413787182,
+    height: 5
   },
   {
     id: 'share-links', // #6 - Share button (top toolbar)
     title: 'Read-Only Share Links',
     description: 'Share view-only rundowns with talent, directors, and stakeholders - no login required',
-    x: 46,
-    y: 19,
-    width: 6,
-    height: 6
+    x: 39.66437931064084,
+    y: 20.98874104125138,
+    width: 5.493150344851266,
+    height: 5
   },
   {
     id: 'resize-columns', // #7 - Column border (between columns)
     title: 'Resizable Columns',
     description: 'Drag column borders to customize your workspace - see more of what matters most',
-    x: 32,
-    y: 26,
-    width: 6,
-    height: 6
+    x: 49.48631310263128,
+    y: 24.674172639165743,
+    width: 13.856169654805342,
+    height: 5
   },
   {
     id: 'script-areas', // #8 - Script content area (expandable)
     title: 'Collapsible Script Areas',
     description: 'Expand scripts that sync perfectly with the teleprompter - seamless talent experience',
-    x: 34,
-    y: 37,
-    width: 6,
-    height: 6
+    x: 29.94520275881014,
+    y: 35.453201412360045,
+    width: 14.99658137889,
+    height: 12.850108030976976
   },
   {
     id: 'cuer-ai', // #9 - AI chat button (bottom right)
     title: 'Cuer AI',
     description: 'AI-powered suggestions for timing, content optimization, and show flow improvements',
-    x: 84,
-    y: 84,
-    width: 8,
-    height: 4
+    x: 80.83218965532042,
+    y: 83.77902877319428,
+    width: 7.746575172425636,
+    height: 6.209712268057103
   },
   {
     id: 'custom-colors', // #10 - Colored row (green segment)
     title: 'Custom Row Colors',
     description: 'Color-code segments by type, talent, or any system that works for your team',
-    x: 15,
-    y: 42,
-    width: 6,
-    height: 6
+    x: 11.705477241533242,
+    y: 48.18719435055985,
+    width: 76.45210206567376,
+    height: 7.767769814445664
   },
   {
     id: 'collapsible-headers', // #11 - Section header with collapse arrow
     title: 'Collapsible Show Blocks',
     description: 'Organize your rundown into logical blocks - collapse sections for easy reordering and overview',
-    x: 13,
-    y: 26,
-    width: 6,
-    height: 6
+    x: 11.73117639291768,
+    y: 62.49243540664217,
+    width: 76.45210206567376,
+    height: 7.430683494862791
   },
   {
     id: 'autoscroll', // #12 - Timeline/progress area (top)
     title: 'Auto-scroll Following',
     description: 'Automatically follows along with the showcaller so you never lose your place',
-    x: 65,
-    y: 15,
-    width: 6,
-    height: 6
+    x: 77.29110413735677,
+    y: 21.187194350559842,
+    width: 5,
+    height: 5
   }
 ];
 
