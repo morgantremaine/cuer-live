@@ -146,11 +146,13 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
           <Tooltip key={hotspot.id}>
             <TooltipTrigger asChild>
               <button
-                className="absolute w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-500 hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm border-2 border-white/50"
+                className="absolute group"
                 style={{
                   left: `${hotspot.x + hotspot.width/2}%`,
                   top: `${hotspot.y + hotspot.height/2}%`,
                   transform: 'translate(-50%, -50%)',
+                  width: `${hotspot.width}%`,
+                  height: `${hotspot.height}%`,
                 }}
                 onMouseEnter={() => setActiveHotspot(hotspot.id)}
                 onMouseLeave={() => setActiveHotspot(null)}
@@ -158,17 +160,24 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
                 onBlur={() => setActiveHotspot(null)}
                 aria-label={`Learn about ${hotspot.title}`}
               >
-                {/* Subtle pulse ring on hover */}
+                {/* Subtle corner indicator - only visible on hover */}
+                <div className="absolute top-0 right-0 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-full h-full bg-blue-500/80 rounded-full shadow-lg flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">
+                      {hotspots.indexOf(hotspot) + 1}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Very subtle overlay hint */}
+                <div className="absolute inset-0 bg-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded border border-blue-400/30" />
+                
+                {/* Subtle pulse ring on active */}
                 <div 
-                  className={`absolute inset-0 rounded-full border-2 border-blue-400 animate-ping ${
-                    activeHotspot === hotspot.id ? 'opacity-30' : 'opacity-0'
+                  className={`absolute inset-0 rounded border-2 border-blue-400 animate-ping ${
+                    activeHotspot === hotspot.id ? 'opacity-20' : 'opacity-0'
                   } transition-opacity duration-200`}
                 />
-                
-                {/* Hotspot number */}
-                <span className="text-white text-xs font-bold">
-                  {hotspots.indexOf(hotspot) + 1}
-                </span>
               </button>
             </TooltipTrigger>
             <TooltipContent 
