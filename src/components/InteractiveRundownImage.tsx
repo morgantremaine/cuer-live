@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 import HotspotEditor from './HotspotEditor';
 import { Edit3 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Hotspot {
   id: string;
@@ -135,6 +136,9 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [hotspots, setHotspots] = useState<Hotspot[]>(initialHotspots);
+  const { user } = useAuth();
+  
+  const isAuthorizedEditor = user?.email === 'morgan@cuer.live';
 
   const handleSaveHotspots = (newHotspots: Hotspot[]) => {
     setHotspots(newHotspots);
@@ -163,12 +167,14 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
 
   return (
     <div className={`relative ${className}`}>
-      <div className="mb-4 flex justify-end">
-        <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-          <Edit3 className="w-4 h-4 mr-2" />
-          Edit Hotspots
-        </Button>
-      </div>
+      {isAuthorizedEditor && (
+        <div className="mb-4 flex justify-end">
+          <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+            <Edit3 className="w-4 h-4 mr-2" />
+            Edit Hotspots
+          </Button>
+        </div>
+      )}
       
       <TooltipProvider delayDuration={300}>
         <div className="relative inline-block">
