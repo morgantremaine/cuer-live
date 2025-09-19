@@ -88,8 +88,8 @@ const hotspots: Hotspot[] = [
     id: 'cuer-ai', // #9 - AI chat button (bottom right)
     title: 'Cuer AI',
     description: 'AI-powered suggestions for timing, content optimization, and show flow improvements',
-    x: 91,
-    y: 71,
+    x: 85,
+    y: 85,
     width: 6,
     height: 6
   },
