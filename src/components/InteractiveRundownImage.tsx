@@ -13,110 +13,110 @@ interface Hotspot {
 
 const hotspots: Hotspot[] = [
   {
-    id: 'showcaller-indicator', // #1 - Bottom left of first segment
+    id: 'showcaller-indicator', // #1 - Current row indicator (left side)
     title: 'Showcaller Visual Indicator',
     description: 'Real-time visual feedback shows exactly where you are in your show with precision timing',
-    x: 8,
-    y: 58,
+    x: 5,
+    y: 32,
     width: 6,
     height: 6
   },
   {
-    id: 'showcaller-controls', // #2 - Top right controls  
+    id: 'showcaller-controls', // #2 - Play/pause controls (top toolbar)
     title: 'Showcaller Controls',
     description: 'Professional playback controls for seamless show execution - play, pause, skip ahead or back',
-    x: 75,
+    x: 76,
     y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'zoom-controls', // #3 - Top right controls
+    id: 'zoom-controls', // #3 - Zoom controls (top right)
     title: 'Zoom Controls',
     description: 'Adjust your view from overview to detail - perfect for different screen sizes and preferences',
-    x: 82,
+    x: 91,
     y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'theme-toggle', // #4 - Top right controls  
+    id: 'theme-toggle', // #4 - Theme toggle (top right)
     title: 'Light & Dark Mode',
     description: 'Switch between light and dark themes to match your studio lighting and personal preference',
-    x: 89,
+    x: 94,
     y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'saved-layouts', // #5 - Top right controls (off screen but conceptually there)
+    id: 'saved-layouts', // #5 - Layouts button (top toolbar)
     title: 'Saved Layouts',
     description: 'Create and save custom column layouts for different show types - news, sports, variety, and more',
-    x: 32,
+    x: 34,
     y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'share-links', // #6 - Left side controls
+    id: 'share-links', // #6 - Share button (top toolbar)
     title: 'Read-Only Share Links',
     description: 'Share view-only rundowns with talent, directors, and stakeholders - no login required',
-    x: 45,
-    y: 21,
+    x: 46,
+    y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'resize-columns', // #7 - Column headers area
+    id: 'resize-columns', // #7 - Column border (between columns)
     title: 'Resizable Columns',
     description: 'Drag column borders to customize your workspace - see more of what matters most',
-    x: 70,
-    y: 25,
+    x: 32,
+    y: 26,
     width: 6,
     height: 6
   },
   {
-    id: 'script-areas', // #8 - Script content area
+    id: 'script-areas', // #8 - Script content area (expandable)
     title: 'Collapsible Script Areas',
     description: 'Expand scripts that sync perfectly with the teleprompter - seamless talent experience',
-    x: 46,
-    y: 53,
+    x: 34,
+    y: 37,
     width: 6,
     height: 6
   },
   {
-    id: 'cuer-ai', // #9 - AI button (bottom right)
+    id: 'cuer-ai', // #9 - AI chat button (bottom right)
     title: 'Cuer AI',
     description: 'AI-powered suggestions for timing, content optimization, and show flow improvements',
-    x: 92,
-    y: 77,
+    x: 93,
+    y: 70,
     width: 6,
     height: 6
   },
   {
-    id: 'custom-colors', // #10 - Segment rows with colors
+    id: 'custom-colors', // #10 - Colored row (green segment)
     title: 'Custom Row Colors',
     description: 'Color-code segments by type, talent, or any system that works for your team',
-    x: 25,
-    y: 46,
+    x: 15,
+    y: 42,
     width: 6,
     height: 6
   },
   {
-    id: 'collapsible-headers', // #11 - Collapsible section
+    id: 'collapsible-headers', // #11 - Section header with collapse arrow
     title: 'Collapsible Show Blocks',
     description: 'Organize your rundown into logical blocks - collapse sections for easy reordering and overview',
-    x: 23,
-    y: 59,
+    x: 13,
+    y: 26,
     width: 6,
     height: 6
   },
   {
-    id: 'autoscroll', // #12 - Top center area
+    id: 'autoscroll', // #12 - Timeline/progress area (top)
     title: 'Auto-scroll Following',
     description: 'Automatically follows along with the showcaller so you never lose your place',
-    x: 58,
-    y: 21,
+    x: 65,
+    y: 15,
     width: 6,
     height: 6
   }
