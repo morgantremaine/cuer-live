@@ -150,8 +150,8 @@ const LandingPage = () => {
               Professional Broadcast Tool
             </Badge>
             
-            <div className="fade-up mb-8">
-              <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
+            <div className="fade-up mb-8 px-4">
+              <CuerLogo className="h-16 sm:h-24 md:h-32 lg:h-40 xl:h-48 w-auto mx-auto drop-shadow-2xl max-w-full object-contain" />
             </div>
             
             <div className="space-y-2 mb-8">
