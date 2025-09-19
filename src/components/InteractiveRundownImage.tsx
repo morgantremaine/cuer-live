@@ -135,22 +135,22 @@ interface InteractiveRundownImageProps {
 const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundownImageProps) => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  
-  // Load hotspots from localStorage or use initial hotspots
-  const [hotspots, setHotspots] = useState<Hotspot[]>(() => {
-    const saved = localStorage.getItem('interactive-hotspots');
-    return saved ? JSON.parse(saved) : initialHotspots;
-  });
-  
+  const [hotspots, setHotspots] = useState<Hotspot[]>(initialHotspots);
   const { user } = useAuth();
   
   const isAuthorizedEditor = user?.email === 'morgan@cuer.live';
 
   const handleSaveHotspots = (newHotspots: Hotspot[]) => {
     setHotspots(newHotspots);
-    localStorage.setItem('interactive-hotspots', JSON.stringify(newHotspots));
     setIsEditing(false);
-    console.log('Updated hotspots saved to localStorage:', newHotspots);
+    
+    // Show the updated coordinates in console for manual code update
+    console.log('=== HOTSPOT COORDINATES TO UPDATE IN CODE ===');
+    console.log('Copy and paste these coordinates into the initialHotspots array:');
+    newHotspots.forEach((hotspot, index) => {
+      console.log(`${hotspot.id}: { x: ${hotspot.x}, y: ${hotspot.y}, width: ${hotspot.width}, height: ${hotspot.height} }`);
+    });
+    console.log('===============================================');
   };
 
   if (isEditing) {
