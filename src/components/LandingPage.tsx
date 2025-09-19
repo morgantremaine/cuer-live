@@ -84,7 +84,7 @@ const LandingPage = () => {
           <div className={`flex items-center transition-all duration-500 ${
             isScrolled ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
           }`}>
-            <CuerLogo className="h-8 w-auto" />
+            <CuerLogo className="h-6 sm:h-8 w-auto" />
           </div>
           <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-white">
