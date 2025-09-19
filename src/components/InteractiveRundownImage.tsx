@@ -135,15 +135,22 @@ interface InteractiveRundownImageProps {
 const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundownImageProps) => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [hotspots, setHotspots] = useState<Hotspot[]>(initialHotspots);
+  
+  // Load hotspots from localStorage or use initial hotspots
+  const [hotspots, setHotspots] = useState<Hotspot[]>(() => {
+    const saved = localStorage.getItem('interactive-hotspots');
+    return saved ? JSON.parse(saved) : initialHotspots;
+  });
+  
   const { user } = useAuth();
   
   const isAuthorizedEditor = user?.email === 'morgan@cuer.live';
 
   const handleSaveHotspots = (newHotspots: Hotspot[]) => {
     setHotspots(newHotspots);
+    localStorage.setItem('interactive-hotspots', JSON.stringify(newHotspots));
     setIsEditing(false);
-    console.log('Updated hotspots:', newHotspots);
+    console.log('Updated hotspots saved to localStorage:', newHotspots);
   };
 
   if (isEditing) {
