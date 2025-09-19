@@ -154,7 +154,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
-              Turn broadcast chaos into seamless execution with Cuer, the professional rundown tool that combines the power of other high-end broadcast tools with the ease of Google Sheets.
+              Cuer is the fast, intuitive rundown app that gives you the advanced features of pro broadcast software without the learning curve.
             </p>
 
             <div className="flex justify-center fade-up">
