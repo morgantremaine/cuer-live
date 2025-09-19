@@ -154,7 +154,7 @@ const LandingPage = () => {
             </div>
             
             <p className="text-xl text-slate-300 leading-relaxed max-w-4xl mx-auto drop-shadow-xl fade-up">
-              Cuer makes rundowns <span className="font-semibold text-white">fast and easy</span>, <span className="font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">without the learning curve</span> of traditional broadcast tools. Get started today and experience <span className="font-semibold text-white">pro-level features</span> in an app your <span className="font-semibold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">whole team will actually love using</span>.
+              Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>, without the learning curve of traditional broadcast tools.
             </p>
 
             <div className="flex justify-center fade-up">
