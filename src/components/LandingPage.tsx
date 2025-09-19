@@ -154,8 +154,9 @@ const LandingPage = () => {
             </div>
             
             <div className="space-y-2 mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent fade-up">
-                Run your show, not your rundown software.
+              <h1 className="text-3xl md:text-4xl font-bold fade-up">
+                <span className="text-white">Run your show, </span>
+                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">not your software.</span>
               </h1>
               <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
                 Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>,<br />
