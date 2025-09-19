@@ -153,7 +153,7 @@ const LandingPage = () => {
               <CuerLogo className="h-24 sm:h-32 md:h-40 lg:h-48 xl:h-56 w-auto mx-auto drop-shadow-2xl max-w-full" />
             </div>
             
-            <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
+            <p className="text-xl text-slate-300 leading-relaxed max-w-lg mx-auto drop-shadow-xl fade-up">
               Cuer makes rundowns fast and easy, without the learning curve of traditional broadcast tools. Get started today and experience pro-level features in an app your whole team will actually love using.
             </p>
 
