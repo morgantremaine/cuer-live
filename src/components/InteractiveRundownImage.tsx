@@ -16,17 +16,17 @@ const hotspots: Hotspot[] = [
     id: 'showcaller-indicator', // #1 - Bottom left of first segment
     title: 'Showcaller Visual Indicator',
     description: 'Real-time visual feedback shows exactly where you are in your show with precision timing',
-    x: 13,
-    y: 65,
+    x: 8,
+    y: 58,
     width: 6,
     height: 6
   },
   {
-    id: 'showcaller-controls', // #2 - Top right controls
+    id: 'showcaller-controls', // #2 - Top right controls  
     title: 'Showcaller Controls',
     description: 'Professional playback controls for seamless show execution - play, pause, skip ahead or back',
-    x: 82,
-    y: 24,
+    x: 75,
+    y: 19,
     width: 6,
     height: 6
   },
@@ -34,8 +34,8 @@ const hotspots: Hotspot[] = [
     id: 'zoom-controls', // #3 - Top right controls
     title: 'Zoom Controls',
     description: 'Adjust your view from overview to detail - perfect for different screen sizes and preferences',
-    x: 90,
-    y: 24,
+    x: 82,
+    y: 19,
     width: 6,
     height: 6
   },
@@ -43,17 +43,17 @@ const hotspots: Hotspot[] = [
     id: 'theme-toggle', // #4 - Top right controls  
     title: 'Light & Dark Mode',
     description: 'Switch between light and dark themes to match your studio lighting and personal preference',
-    x: 95,
-    y: 24,
+    x: 89,
+    y: 19,
     width: 6,
     height: 6
   },
   {
-    id: 'saved-layouts', // #5 - Top right controls
+    id: 'saved-layouts', // #5 - Top right controls (off screen but conceptually there)
     title: 'Saved Layouts',
     description: 'Create and save custom column layouts for different show types - news, sports, variety, and more',
-    x: 100,
-    y: 24,
+    x: 32,
+    y: 19,
     width: 6,
     height: 6
   },
@@ -61,8 +61,8 @@ const hotspots: Hotspot[] = [
     id: 'share-links', // #6 - Left side controls
     title: 'Read-Only Share Links',
     description: 'Share view-only rundowns with talent, directors, and stakeholders - no login required',
-    x: 37,
-    y: 24,
+    x: 45,
+    y: 21,
     width: 6,
     height: 6
   },
@@ -70,8 +70,8 @@ const hotspots: Hotspot[] = [
     id: 'resize-columns', // #7 - Column headers area
     title: 'Resizable Columns',
     description: 'Drag column borders to customize your workspace - see more of what matters most',
-    x: 60,
-    y: 28,
+    x: 70,
+    y: 25,
     width: 6,
     height: 6
   },
@@ -79,8 +79,8 @@ const hotspots: Hotspot[] = [
     id: 'script-areas', // #8 - Script content area
     title: 'Collapsible Script Areas',
     description: 'Expand scripts that sync perfectly with the teleprompter - seamless talent experience',
-    x: 39,
-    y: 62,
+    x: 46,
+    y: 53,
     width: 6,
     height: 6
   },
@@ -88,8 +88,8 @@ const hotspots: Hotspot[] = [
     id: 'cuer-ai', // #9 - AI button (bottom right)
     title: 'Cuer AI',
     description: 'AI-powered suggestions for timing, content optimization, and show flow improvements',
-    x: 95,
-    y: 92,
+    x: 92,
+    y: 77,
     width: 6,
     height: 6
   },
@@ -97,8 +97,8 @@ const hotspots: Hotspot[] = [
     id: 'custom-colors', // #10 - Segment rows with colors
     title: 'Custom Row Colors',
     description: 'Color-code segments by type, talent, or any system that works for your team',
-    x: 21,
-    y: 54,
+    x: 25,
+    y: 46,
     width: 6,
     height: 6
   },
@@ -106,8 +106,8 @@ const hotspots: Hotspot[] = [
     id: 'collapsible-headers', // #11 - Collapsible section
     title: 'Collapsible Show Blocks',
     description: 'Organize your rundown into logical blocks - collapse sections for easy reordering and overview',
-    x: 18,
-    y: 70,
+    x: 23,
+    y: 59,
     width: 6,
     height: 6
   },
@@ -115,8 +115,8 @@ const hotspots: Hotspot[] = [
     id: 'autoscroll', // #12 - Top center area
     title: 'Auto-scroll Following',
     description: 'Automatically follows along with the showcaller so you never lose your place',
-    x: 49,
-    y: 24,
+    x: 58,
+    y: 21,
     width: 6,
     height: 6
   }
