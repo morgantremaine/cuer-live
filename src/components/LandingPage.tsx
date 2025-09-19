@@ -81,12 +81,12 @@ const LandingPage = () => {
         WebkitMaskImage: isScrolled ? 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)' : 'none'
       }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between p-6 pb-16">
-          <div className={`flex items-center transition-all duration-500 ${
+          <div className={`flex items-center transition-all duration-500 min-w-0 flex-shrink-0 ${
             isScrolled ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
           }`}>
-            <CuerLogo className="h-6 sm:h-8 w-auto" />
+            <CuerLogo className="h-6 sm:h-8 w-auto max-w-full" />
           </div>
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3 sm:space-x-6 min-w-0">
           <div className="hidden md:flex items-center space-x-6 text-white">
             <button 
               onClick={() => document.getElementById('feature-explorer-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -108,16 +108,17 @@ const LandingPage = () => {
             </button>
           </div>
           {user ? (
-            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
+            <Button onClick={() => navigate('/dashboard')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box text-sm">
               Dashboard
             </Button>
           ) : (
-            <div className="flex items-center space-x-3">
-              <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Button onClick={() => navigate('/login')} variant="outline" className="border-slate-300/30 text-white hover:bg-slate-700/50 glow-box text-sm px-3 sm:px-4">
                 Sign In
               </Button>
-              <Button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white glow-box">
-                Get Started for Free
+              <Button onClick={handleGetStarted} className="bg-blue-600 hover:bg-blue-700 text-white glow-box text-sm px-3 sm:px-4">
+                <span className="hidden sm:inline">Get Started for Free</span>
+                <span className="sm:hidden">Get Started</span>
               </Button>
             </div>
            )}
