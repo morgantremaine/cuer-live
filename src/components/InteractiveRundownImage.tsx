@@ -141,12 +141,12 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
           draggable={false}
         />
         
-        {/* Simple circle hotspot indicators */}
+        {/* Circular highlight areas */}
         {hotspots.map((hotspot) => (
           <Tooltip key={hotspot.id}>
             <TooltipTrigger asChild>
               <button
-                className="absolute w-6 h-6 rounded-full bg-blue-500/80 hover:bg-blue-500 hover:scale-110 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm border-2 border-white/50"
+                className="absolute group w-12 h-12 rounded-full"
                 style={{
                   left: `${hotspot.x + hotspot.width/2}%`,
                   top: `${hotspot.y + hotspot.height/2}%`,
@@ -158,17 +158,15 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
                 onBlur={() => setActiveHotspot(null)}
                 aria-label={`Learn about ${hotspot.title}`}
               >
-                {/* Subtle pulse ring on hover */}
+                {/* Very subtle circular overlay hint */}
+                <div className="absolute inset-0 bg-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full border border-blue-400/30" />
+                
+                {/* Subtle pulse ring on active */}
                 <div 
                   className={`absolute inset-0 rounded-full border-2 border-blue-400 animate-ping ${
-                    activeHotspot === hotspot.id ? 'opacity-30' : 'opacity-0'
+                    activeHotspot === hotspot.id ? 'opacity-20' : 'opacity-0'
                   } transition-opacity duration-200`}
                 />
-                
-                {/* Hotspot number */}
-                <span className="text-white text-xs font-bold">
-                  {hotspots.indexOf(hotspot) + 1}
-                </span>
               </button>
             </TooltipTrigger>
             <TooltipContent 
