@@ -159,7 +159,7 @@ const LandingPage = () => {
                 <span className="text-white">Run your show, </span>
                 <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">not your software.</span>
               </h1>
-              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up">
+              <p className="text-xl text-slate-300 leading-relaxed max-w-2xl mx-auto drop-shadow-xl fade-up hidden sm:block">
                 Cuer makes running your shows <span className="font-semibold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">fast and easy</span>,<br />
                 without the learning curve of traditional broadcast tools.
               </p>
