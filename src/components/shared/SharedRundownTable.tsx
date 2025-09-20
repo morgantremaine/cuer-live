@@ -574,11 +574,11 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       if (isLikelyImage) {
         const displayUrl = getDisplayUrl(value);
         return (
-          <div className="flex items-center justify-center h-16">
+          <div className="flex items-center justify-center p-1" style={{ minHeight: '60px' }}>
             <img
               src={displayUrl}
               alt="Rundown image"
-              className="max-w-16 max-h-16 object-contain rounded print:max-w-12 print:max-h-12"
+              className="max-w-full h-auto object-contain rounded print:max-w-12 print:max-h-12"
               onError={(e) => {
                 // If image fails to load, show "Invalid image URL"
                 const target = e.target as HTMLImageElement;
@@ -587,6 +587,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                 if (parent) {
                   parent.innerHTML = `<span class="text-xs text-gray-500">Invalid image URL</span>`;
                 }
+              }}
+              style={{ 
+                maxHeight: '100px', // Allow larger images like in main rundown
+                width: 'auto' // Maintain aspect ratio
               }}
             />
           </div>
