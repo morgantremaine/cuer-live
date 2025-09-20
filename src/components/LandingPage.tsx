@@ -182,7 +182,7 @@ const LandingPage = () => {
         </div>
 
         {/* Hero Rundown Interface - Starts exactly at image bottom */}
-        <div className="relative bg-gradient-to-br from-black to-slate-950">
+        <div className="relative">
           <div className="max-w-6xl mx-auto px-6 pt-0 pb-12 fade-up">
             <div className="relative group">
               <InteractiveRundownImage
