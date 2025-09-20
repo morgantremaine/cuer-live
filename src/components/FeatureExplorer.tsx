@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -173,6 +173,20 @@ const workflowStages: WorkflowStage[] = [
 export const FeatureExplorer: React.FC = () => {
   const [activeStage, setActiveStage] = useState<string>('broadcasting');
   const [activeFeature, setActiveFeature] = useState<string>('live-show-control');
+
+  // Preload all feature images for faster switching
+  useEffect(() => {
+    const preloadImages = () => {
+      workflowStages.forEach(stage => {
+        stage.features.forEach(feature => {
+          const img = new Image();
+          img.src = feature.image;
+        });
+      });
+    };
+    
+    preloadImages();
+  }, []);
 
   const currentStage = workflowStages.find(stage => stage.id === activeStage);
   const currentFeature = currentStage?.features.find(feature => feature.id === activeFeature);
