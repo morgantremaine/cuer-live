@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import HotspotEditor from './HotspotEditor';
 import { Edit3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Hotspot {
   id: string;
@@ -128,6 +129,7 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
   const [isEditing, setIsEditing] = useState(false);
   const [hotspots, setHotspots] = useState<Hotspot[]>(initialHotspots);
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   const isAuthorizedEditor = user?.email === 'morgan@cuer.live';
 
@@ -174,59 +176,63 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
         </div>
       )}
       
-      <TooltipProvider delayDuration={300}>
-        <div className="relative inline-block">
-          <img 
-            src={src} 
-            alt={alt}
-            className="w-full h-auto rounded-lg shadow-2xl"
-            draggable={false}
-          />
-          
-          {/* Rectangular highlight areas */}
-          {hotspots.map((hotspot) => (
-            <Tooltip key={hotspot.id}>
-              <TooltipTrigger asChild>
-                <button
-                  className="absolute group"
-                  style={{
-                    left: `${hotspot.x}%`,
-                    top: `${hotspot.y}%`,
-                    width: `${hotspot.width}%`,
-                    height: `${hotspot.height}%`,
-                  }}
-                  onMouseEnter={() => setActiveHotspot(hotspot.id)}
-                  onMouseLeave={() => setActiveHotspot(null)}
-                  onFocus={() => setActiveHotspot(hotspot.id)}
-                  onBlur={() => setActiveHotspot(null)}
-                  aria-label={`Learn about ${hotspot.title}`}
+      <div className="relative inline-block">
+        <img 
+          src={src} 
+          alt={alt}
+          className="w-full h-auto rounded-lg shadow-2xl"
+          draggable={false}
+        />
+        
+        {/* Interactive hotspots - desktop only */}
+        {!isMobile && (
+          <TooltipProvider delayDuration={300}>
+            {hotspots.map((hotspot) => (
+              <Tooltip key={hotspot.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    className="absolute group"
+                    style={{
+                      left: `${hotspot.x}%`,
+                      top: `${hotspot.y}%`,
+                      width: `${hotspot.width}%`,
+                      height: `${hotspot.height}%`,
+                    }}
+                    onMouseEnter={() => setActiveHotspot(hotspot.id)}
+                    onMouseLeave={() => setActiveHotspot(null)}
+                    onFocus={() => setActiveHotspot(hotspot.id)}
+                    onBlur={() => setActiveHotspot(null)}
+                    aria-label={`Learn about ${hotspot.title}`}
+                  >
+                    {/* Transparent blue overlay on hover */}
+                    <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-blue-400/50" />
+                    
+                    {/* Subtle pulse border on active */}
+                    <div 
+                      className={`absolute inset-0 border-2 border-blue-400 ${
+                        activeHotspot === hotspot.id ? 'opacity-40 animate-pulse' : 'opacity-0'
+                      } transition-opacity duration-200`}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="top" 
+                  className="max-w-xs p-3 bg-background/95 backdrop-blur-sm border shadow-lg"
+                  sideOffset={8}
                 >
-                  {/* Transparent blue overlay on hover */}
-                  <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-blue-400/50" />
-                  
-                  {/* Subtle pulse border on active */}
-                  <div 
-                    className={`absolute inset-0 border-2 border-blue-400 ${
-                      activeHotspot === hotspot.id ? 'opacity-40 animate-pulse' : 'opacity-0'
-                    } transition-opacity duration-200`}
-                  />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side="top" 
-                className="max-w-xs p-3 bg-background/95 backdrop-blur-sm border shadow-lg"
-                sideOffset={8}
-              >
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm text-foreground">{hotspot.title}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{hotspot.description}</p>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-          
-          {/* Legend for mobile */}
-          <div className="mt-4 p-3 bg-background/50 backdrop-blur-sm rounded-lg border md:hidden">
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm text-foreground">{hotspot.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{hotspot.description}</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
+        )}
+        
+        {/* Legend - mobile only */}
+        {isMobile && (
+          <div className="mt-4 p-3 bg-background/50 backdrop-blur-sm rounded-lg border">
             <h4 className="font-semibold text-sm mb-2 text-foreground">Tap the numbered areas above to explore features:</h4>
             <div className="grid grid-cols-1 gap-1 text-xs">
               {hotspots.slice(0, 6).map((hotspot, index) => (
@@ -240,8 +246,8 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
               <div className="text-muted-foreground mt-1">+ {hotspots.length - 6} more features...</div>
             </div>
           </div>
-        </div>
-      </TooltipProvider>
+        )}
+      </div>
     </div>
   );
 };
