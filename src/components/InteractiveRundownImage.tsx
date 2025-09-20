@@ -229,24 +229,6 @@ const InteractiveRundownImage = ({ src, alt, className = '' }: InteractiveRundow
             ))}
           </TooltipProvider>
         )}
-        
-        {/* Legend - mobile only */}
-        {isMobile && (
-          <div className="mt-4 p-3 bg-background/50 backdrop-blur-sm rounded-lg border">
-            <h4 className="font-semibold text-sm mb-2 text-foreground">Tap the numbered areas above to explore features:</h4>
-            <div className="grid grid-cols-1 gap-1 text-xs">
-              {hotspots.slice(0, 6).map((hotspot, index) => (
-                <div key={hotspot.id} className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center flex-shrink-0">
-                    {index + 1}
-                  </div>
-                  <span className="text-muted-foreground">{hotspot.title}</span>
-                </div>
-              ))}
-              <div className="text-muted-foreground mt-1">+ {hotspots.length - 6} more features...</div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
