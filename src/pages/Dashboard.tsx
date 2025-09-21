@@ -81,26 +81,44 @@ const Dashboard = () => {
   // Handle any pending team invitations after login
   useInvitationHandler();
 
-  // Load Tawk.to chat widget
+  // Load and show Tawk.to chat widget
   useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = 'https://embed.tawk.to/68cfa27c4ad9d919216ba7a7/1j5lh5dkg';
-    script.charset = 'UTF-8';
-    script.setAttribute('crossorigin', '*');
-    
-    // Initialize Tawk_API
+    // Initialize Tawk_API if not already done
     (window as any).Tawk_API = (window as any).Tawk_API || {};
-    (window as any).Tawk_LoadStart = new Date();
     
-    document.body.appendChild(script);
+    // Check if script is already loaded
+    const existingScript = document.querySelector('script[src*="tawk.to"]');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.async = true;
+      script.src = 'https://embed.tawk.to/68cfa27c4ad9d919216ba7a7/1j5lh5dkg';
+      script.charset = 'UTF-8';
+      script.setAttribute('crossorigin', '*');
+      
+      (window as any).Tawk_LoadStart = new Date();
+      document.body.appendChild(script);
+    }
+    
+    // Show the widget when component mounts
+    const showWidget = () => {
+      if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
+        (window as any).Tawk_API.showWidget();
+      }
+    };
+    
+    // If Tawk is already loaded, show immediately, otherwise wait for it to load
+    if ((window as any).Tawk_API && (window as any).Tawk_API.showWidget) {
+      showWidget();
+    } else {
+      (window as any).Tawk_API = (window as any).Tawk_API || {};
+      (window as any).Tawk_API.onLoad = showWidget;
+    }
     
     return () => {
-      // Cleanup if needed
-      const existingScript = document.querySelector('script[src*="tawk.to"]');
-      if (existingScript) {
-        existingScript.remove();
+      // Hide the widget when component unmounts
+      if ((window as any).Tawk_API && (window as any).Tawk_API.hideWidget) {
+        (window as any).Tawk_API.hideWidget();
       }
     };
   }, []);
