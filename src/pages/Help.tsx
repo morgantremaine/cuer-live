@@ -85,6 +85,30 @@ const Help = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Load Tawk.to chat widget
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.async = true;
+    script.src = 'https://embed.tawk.to/68cfa27c4ad9d919216ba7a7/1j5lh5dkg';
+    script.charset = 'UTF-8';
+    script.setAttribute('crossorigin', '*');
+    
+    // Initialize Tawk_API
+    (window as any).Tawk_API = (window as any).Tawk_API || {};
+    (window as any).Tawk_LoadStart = new Date();
+    
+    document.body.appendChild(script);
+    
+    return () => {
+      // Cleanup if needed
+      const existingScript = document.querySelector('script[src*="tawk.to"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* Fixed Header */}
