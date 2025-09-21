@@ -27,26 +27,6 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Load HubSpot chat widget
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.id = 'hs-script-loader';
-    script.async = true;
-    script.defer = true;
-    script.src = '//js-na2.hs-scripts.com/243915665.js';
-    
-    document.body.appendChild(script);
-
-    return () => {
-      // Clean up script when component unmounts
-      const existingScript = document.getElementById('hs-script-loader');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-    };
-  }, []);
-
   const handleGetStarted = () => {
     if (user) {
       navigate('/dashboard');
