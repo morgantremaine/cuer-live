@@ -99,9 +99,10 @@ const HeaderRowContent = ({
                 className="align-middle min-h-[115px] relative"
                 style={{ 
                   width: normalizedWidth,
-                  minWidth: normalizedWidth,
-                  maxWidth: normalizedWidth,
+                  minWidth: `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
+                  maxWidth: 'none',
                   backgroundColor: cellBackgroundColor,
+                  overflow: 'visible',
                   borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))'
                 }}
             >
@@ -113,6 +114,10 @@ const HeaderRowContent = ({
                     ref={(el) => {
                       if (el) {
                         cellRefs.current[`${item.id}-name`] = el;
+                        // Auto-resize with buffer for cross-browser compatibility
+                        const contentLength = headerName.length || 1;
+                        const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                        el.style.width = `${bufferWidth}ch`;
                       }
                     }}
                     type="text"
@@ -120,6 +125,10 @@ const HeaderRowContent = ({
                     onChange={(e) => {
                       markActiveTyping?.();
                       onUpdateItem(item.id, 'name', e.target.value);
+                      // Auto-resize on change with buffer
+                      const contentLength = e.target.value.length || 1;
+                      const bufferWidth = contentLength + 3; // Add buffer for PC browsers
+                      e.target.style.width = `${bufferWidth}ch`;
                     }}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
@@ -133,7 +142,7 @@ const HeaderRowContent = ({
                       lineHeight: 'inherit',
                       padding: 0,
                       margin: 0,
-                      width: '100%',
+                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
                       minWidth: '4ch'
                     }}
                     placeholder="Header Name"
