@@ -12,9 +12,7 @@ import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import RundownSummary from '@/components/blueprint/RundownSummary';
-import AddListDialog from '@/components/blueprint/AddListDialog';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
-import { RefreshCw } from 'lucide-react';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
 import { logger } from '@/utils/logger';
 
@@ -334,32 +332,15 @@ const BlueprintContent = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
           rundown={rundown}
+          availableColumns={availableColumns}
+          onAddList={addNewList}
+          onRefreshAll={refreshAllLists}
         />
 
         <RundownSummary 
           rundownItems={rundown?.items || []}
           rundownTitle={rundown?.title || 'Unknown Rundown'}
         />
-
-        {/* Blueprint Controls - moved below AI summary */}
-        <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-lg font-medium text-white">Blueprint Lists</h3>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshAllLists}
-              className="text-gray-300 hover:text-white border-gray-600 hover:border-gray-500"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh All
-            </Button>
-            <AddListDialog
-              availableColumns={availableColumns}
-              onAddList={addNewList}
-            />
-          </div>
-        </div>
 
         <div 
           data-drop-container

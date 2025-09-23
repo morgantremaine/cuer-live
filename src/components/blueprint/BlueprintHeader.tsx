@@ -2,7 +2,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FileText, Clock } from 'lucide-react';
+import { RefreshCw, FileText, Clock } from 'lucide-react';
+import AddListDialog from './AddListDialog';
 
 interface BlueprintHeaderProps {
   rundown: {
@@ -10,10 +11,16 @@ interface BlueprintHeaderProps {
     title: string;
     startTime?: string;
   };
+  availableColumns: { name: string; value: string }[];
+  onAddList: (name: string, sourceColumn: string) => void;
+  onRefreshAll: () => void;
 }
 
 const BlueprintHeader = ({
-  rundown
+  rundown,
+  availableColumns,
+  onAddList,
+  onRefreshAll
 }: BlueprintHeaderProps) => {
   const navigate = useNavigate();
 
@@ -34,6 +41,18 @@ const BlueprintHeader = ({
         )}
         
         <div className="flex flex-col sm:flex-row gap-2">
+          <AddListDialog
+            availableColumns={availableColumns}
+            onAddList={onAddList}
+          />
+          <Button
+            variant="outline"
+            onClick={onRefreshAll}
+            className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh All
+          </Button>
           <Button
             variant="outline"
             onClick={() => navigate(`/rundown/${rundown.id}`)}

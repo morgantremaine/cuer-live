@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
 import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,39 +50,9 @@ const calculateSectionDuration = (header: RundownItem, items: RundownItem[]): st
 };
 
 const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTitle }) => {
-  const { id: rundownId } = useParams<{ id: string }>();
   const [summaries, setSummaries] = useState<Record<string, SectionSummary>>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Load summaries from database on initialization
-  useEffect(() => {
-    const loadSummariesFromDatabase = async () => {
-      if (!rundownId) return;
-      
-      try {
-        const { data: blueprint, error } = await supabase
-          .from('blueprints')
-          .select('ai_summaries')
-          .eq('rundown_id', rundownId)
-          .maybeSingle();
-
-        if (error) {
-          logger.error('Error loading AI summaries:', error);
-          return;
-        }
-
-        if (blueprint?.ai_summaries) {
-          logger.blueprint('Loading AI summaries from database:', blueprint.ai_summaries);
-          setSummaries(blueprint.ai_summaries);
-        }
-      } catch (error) {
-        logger.error('Failed to load AI summaries:', error);
-      }
-    };
-
-    loadSummariesFromDatabase();
-  }, [rundownId]);
 
   // Group rundown items by sections
   const sections = useMemo(() => {
@@ -120,42 +89,6 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
     }));
   }, [rundownItems]);
 
-  // Save summaries to database
-  const saveSummariesToDatabase = async (updatedSummaries: Record<string, SectionSummary>) => {
-    if (!rundownId) return;
-    
-    try {
-      const { data: blueprint, error: fetchError } = await supabase
-        .from('blueprints')
-        .select('id')
-        .eq('rundown_id', rundownId)
-        .maybeSingle();
-
-      if (fetchError) {
-        logger.error('Error fetching blueprint:', fetchError);
-        return;
-      }
-
-      if (!blueprint) {
-        logger.blueprint('No blueprint found for rundown, cannot save summaries');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('blueprints')
-        .update({ ai_summaries: updatedSummaries })
-        .eq('id', blueprint.id);
-
-      if (updateError) {
-        logger.error('Error saving AI summaries:', updateError);
-      } else {
-        logger.blueprint('AI summaries saved successfully');
-      }
-    } catch (error) {
-      logger.error('Failed to save AI summaries:', error);
-    }
-  };
-
   // Generate summary for a specific section
   const generateSectionSummary = async (section: RundownSection) => {
     const sectionKey = `${section.header.id}_${section.items.length}`;
@@ -167,16 +100,14 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
 
     const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
     
-    const updatedSummaries = {
-      ...summaries,
+    setSummaries(prev => ({
+      ...prev,
       [sectionKey]: {
         header: headerName,
         summary: '',
         isLoading: true
       }
-    };
-    
-    setSummaries(updatedSummaries);
+    }));
 
     try {
       // Prepare section data for AI
@@ -210,31 +141,26 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
         throw error;
       }
 
-      const finalSummaries = {
-        ...summaries,
+      setSummaries(prev => ({
+        ...prev,
         [sectionKey]: {
           header: headerName,
           summary: data.message || 'Unable to generate summary',
           isLoading: false
         }
-      };
-
-      setSummaries(finalSummaries);
-      await saveSummariesToDatabase(finalSummaries);
+      }));
 
     } catch (error) {
       logger.error('Failed to generate section summary:', error);
-      const errorSummaries = {
-        ...summaries,
+      setSummaries(prev => ({
+        ...prev,
         [sectionKey]: {
           header: headerName,
           summary: '',
           isLoading: false,
           error: 'Failed to generate summary'
         }
-      };
-      setSummaries(errorSummaries);
-      await saveSummariesToDatabase(errorSummaries);
+      }));
     }
   };
 
@@ -251,7 +177,12 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
     setIsRefreshing(false);
   };
 
-  // Don't auto-generate summaries - only when user clicks refresh
+  // Auto-generate summaries when sections change
+  useEffect(() => {
+    if (sections.length > 0 && Object.keys(summaries).length === 0) {
+      generateAllSummaries();
+    }
+  }, [sections]);
 
   if (sections.length === 0) {
     return null;
