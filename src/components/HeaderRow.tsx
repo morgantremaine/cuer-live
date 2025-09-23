@@ -116,11 +116,21 @@ const HeaderRow = (props: HeaderRowProps) => {
     const hasTextSelection = window.getSelection()?.toString().length > 0;
     const isContentEditable = target.contentEditable === 'true';
     
-    // Additional check: if the target is inside a text input or has text content
-    const isInsideTextInput = target.closest('input, textarea');
-    const isClickableText = target.tagName === 'SPAN' && target.textContent;
+    // Check if target is within any editable area
+    const isInEditableArea = target.closest('[contenteditable="true"]') !== null || 
+                            target.closest('textarea') !== null || 
+                            target.closest('input') !== null;
     
-    if (isTextInput || hasTextSelection || isContentEditable || isInsideTextInput || isClickableText) {
+    // Check if we're in an active editing state by looking for focused text inputs
+    const activeElement = document.activeElement as HTMLElement;
+    const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
+                             activeElement?.tagName === 'INPUT' ||
+                             activeElement?.contentEditable === 'true';
+    
+    // Check if we're clicking on or inside text elements that should be selectable
+    const isSelectableText = target.closest('input') || target.closest('span') || target.closest('div[contenteditable]');
+    
+    if (isTextInput || hasTextSelection || isContentEditable || isInEditableArea || isActivelyEditing || isSelectableText) {
       e.preventDefault();
       e.stopPropagation();
       return;
