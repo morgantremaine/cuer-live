@@ -65,10 +65,7 @@ const HeaderRowContent = ({
           minWidth: '64px', 
           maxWidth: '64px',
           backgroundColor: cellBackgroundColor,
-          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))',
-          marginRight: cellBackgroundColor ? '-0.5px' : '0',
-          transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden'
+          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))'
         }}
       >
         <div className="flex items-center justify-center w-full h-full">
@@ -105,20 +102,11 @@ const HeaderRowContent = ({
                   minWidth: normalizedWidth,
                   maxWidth: normalizedWidth,
                   backgroundColor: cellBackgroundColor,
-                  overflow: 'visible',
-                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                  marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
-                  transform: 'translateZ(0)',
-                  backfaceVisibility: 'hidden'
+                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))'
                 }}
             >
               <div 
                 className="px-2 py-8 flex items-center"
-                style={{ 
-                  position: 'relative',
-                  zIndex: 10,
-                  minWidth: '100%'
-                }}
               >
                 <span className="inline-flex items-center">
                   <input
