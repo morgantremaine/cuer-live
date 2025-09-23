@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Download Cuer Stream Deck Plugin</title>
+    <script>
+        // Simple download script that creates a temporary link to download all files
+        function downloadAllFiles() {
+            const files = [
+                'manifest.json',
+                'app.html', 
+                'propertyinspector.html',
+                'js/index.js',
+                'js/propertyinspector.js',
+                'css/propertyinspector.css',
+                'Images/play.png',
+                'Images/pause.png',
+                'Images/forward.png',
+                'Images/backward.png',
+                'Images/reset.png',
+                'Images/status.png',
+                'Images/pluginIcon.png',
+                'Images/categoryIcon.png'
+            ];
+            
+            // Create instructions for manual download
+            alert('Please manually download each file from the com.cuer.showcaller.sdPlugin folder and place them in a folder named "com.cuer.showcaller.streamDeckPlugin"');
+            
+            // Open the plugin folder
+            window.open('/stream-deck-plugin/com.cuer.showcaller.sdPlugin/', '_blank');
+        }
+    </script>
+</head>
+<body>
+    <h1>Download Plugin Files</h1>
+    <button onclick="downloadAllFiles()">Download Plugin</button>
+</body>
+</html>
