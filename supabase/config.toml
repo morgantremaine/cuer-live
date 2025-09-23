@@ -64,3 +64,6 @@ verify_jwt = false
 
 [functions.delete-user-account]
 verify_jwt = false
+
+[functions.stream-deck-download]
+verify_jwt = false
