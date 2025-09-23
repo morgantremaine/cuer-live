@@ -240,9 +240,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                             borderRight: '1px solid hsl(var(--border))'
                           }}
                         >
-                          <div className="flex items-center justify-center w-full h-full text-gray-400">
-                            {String.fromCharCode(65 + index)}
-                          </div>
+                          {/* Empty row number column to match rundown styling */}
                         </td>
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
