@@ -681,6 +681,8 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     let currentTime = rundownStartTime;
     const itemsWithTimes: Array<{ item: RundownItem; calculatedStartTime: string }> = [];
 
+    console.log('📋 SharedRundownTable calculating times, start:', rundownStartTime);
+
     items.forEach((item, index) => {
       if (item.type === 'header') {
         // Headers don't advance time
@@ -693,7 +695,10 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
         if (!item.isFloating && !item.isFloated && item.duration) {
           const durationSeconds = timeToSeconds(item.duration);
           const currentSeconds = timeToSeconds(currentTime);
-          currentTime = secondsToTime(currentSeconds + durationSeconds);
+          const newTime = secondsToTime(currentSeconds + durationSeconds);
+          
+          console.log(`Item: ${item.name}, Duration: ${item.duration}, Start: ${currentTime}, End: ${newTime}`);
+          currentTime = newTime;
         }
       }
     });
