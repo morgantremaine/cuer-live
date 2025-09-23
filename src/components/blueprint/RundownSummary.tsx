@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 interface RundownSection {
   header: RundownItem;
   items: RundownItem[];
+  duration: string;
 }
 
 interface SectionSummary {
@@ -23,6 +24,30 @@ interface RundownSummaryProps {
   rundownItems: RundownItem[];
   rundownTitle: string;
 }
+
+// Calculate total duration for a section
+const calculateSectionDuration = (header: RundownItem, items: RundownItem[]): string => {
+  const allItems = [header, ...items];
+  let totalMinutes = 0;
+
+  allItems.forEach(item => {
+    if (item.duration) {
+      const duration = item.duration.trim();
+      const parts = duration.split(':');
+      if (parts.length === 2) {
+        const minutes = parseInt(parts[0], 10);
+        const seconds = parseInt(parts[1], 10);
+        if (!isNaN(minutes) && !isNaN(seconds)) {
+          totalMinutes += minutes + (seconds / 60);
+        }
+      }
+    }
+  });
+
+  const totalMins = Math.floor(totalMinutes);
+  const totalSecs = Math.round((totalMinutes - totalMins) * 60);
+  return `${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
+};
 
 const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTitle }) => {
   const [summaries, setSummaries] = useState<Record<string, SectionSummary>>({});
@@ -43,7 +68,8 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
         // Start new section
         currentSection = {
           header: item,
-          items: []
+          items: [],
+          duration: '00:00'
         };
       } else if (currentSection) {
         currentSection.items.push(item);
@@ -56,7 +82,11 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       grouped.push(currentSection);
     }
 
-    return grouped;
+    // Calculate durations for each section
+    return grouped.map(section => ({
+      ...section,
+      duration: calculateSectionDuration(section.header, section.items)
+    }));
   }, [rundownItems]);
 
   // Generate summary for a specific section
@@ -189,42 +219,82 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       
       {!isCollapsed && (
         <CardContent className="pt-0">
-          <div className="space-y-4">
-            {sections.map((section, index) => {
-              const sectionKey = `${section.header.id}_${section.items.length}`;
-              const summary = summaries[sectionKey];
-              const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
+          <div className="rounded-lg border border-gray-600 overflow-hidden">
+            <table className="w-full">
+              <tbody className="bg-background">
+                {sections.map((section, index) => {
+                  const sectionKey = `${section.header.id}_${section.items.length}`;
+                  const summary = summaries[sectionKey];
+                  const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
 
-              return (
-                <div
-                  key={sectionKey}
-                  className="border border-gray-600 rounded-lg p-4 bg-gray-750"
-                >
-                  <h4 className="font-medium text-white mb-2 text-sm">
-                    {headerName}
-                  </h4>
-                  
-                  {summary?.isLoading ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-3 w-full bg-gray-600" />
-                      <Skeleton className="h-3 w-3/4 bg-gray-600" />
-                    </div>
-                  ) : summary?.error ? (
-                    <div className="text-red-400 text-sm">
-                      {summary.error}
-                    </div>
-                  ) : summary?.summary ? (
-                    <p className="text-gray-300 text-sm leading-relaxed">
-                      {summary.summary}
-                    </p>
-                  ) : (
-                    <div className="text-gray-500 text-sm">
-                      No summary available
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  return (
+                    <React.Fragment key={sectionKey}>
+                      {/* Header Row - matches rundown styling */}
+                      <tr className="border-b border-gray-600 bg-gray-750">
+                        <td 
+                          className="px-2 py-6 text-lg font-mono font-semibold align-middle"
+                          style={{ 
+                            width: '64px',
+                            minWidth: '64px', 
+                            maxWidth: '64px',
+                            borderRight: '1px solid hsl(var(--border))'
+                          }}
+                        >
+                          <div className="flex items-center justify-center w-full h-full text-gray-400">
+                            {String.fromCharCode(65 + index)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-6 align-middle">
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-white">
+                              {headerName}
+                            </span>
+                            <span className="text-base font-medium text-gray-300 ml-6">
+                              ({section.duration})
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Summary Row */}
+                      <tr className="border-b border-gray-600 bg-gray-800">
+                        <td 
+                          className="px-2 py-4 align-middle"
+                          style={{ 
+                            width: '64px',
+                            minWidth: '64px', 
+                            maxWidth: '64px',
+                            borderRight: '1px solid hsl(var(--border))'
+                          }}
+                        >
+                          {/* Empty for alignment */}
+                        </td>
+                        <td className="px-4 py-4">
+                          {summary?.isLoading ? (
+                            <div className="space-y-2">
+                              <Skeleton className="h-3 w-full bg-gray-600" />
+                              <Skeleton className="h-3 w-3/4 bg-gray-600" />
+                            </div>
+                          ) : summary?.error ? (
+                            <div className="text-red-400 text-sm italic">
+                              {summary.error}
+                            </div>
+                          ) : summary?.summary ? (
+                            <p className="text-gray-300 text-sm leading-relaxed italic">
+                              {summary.summary}
+                            </p>
+                          ) : (
+                            <div className="text-gray-500 text-sm italic">
+                              No summary available
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       )}
