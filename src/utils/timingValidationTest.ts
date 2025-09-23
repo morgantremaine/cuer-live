@@ -69,6 +69,36 @@ export const runTimingTests = () => {
   console.log(`Expected: ${test6Expected}, Got: ${test6Result}`);
   console.log(`✅ Pass: ${test6Result === test6Expected}`);
 
+  // Test 7: 24-hour wrap around scenarios
+  console.log('\n📋 Test 7: 24-hour wrap around');
+  
+  // Test case 1: Start late, duration crosses midnight
+  const test7Start1 = '23:30:00';
+  const test7Duration1 = '02:00:00'; // 2 hours
+  const test7Expected1 = '01:30:00'; // Should wrap to next day
+  const test7Result1 = calculateEndTime(test7Start1, test7Duration1);
+  console.log(`Start: ${test7Start1}, Duration: ${test7Duration1}`);
+  console.log(`Expected: ${test7Expected1}, Got: ${test7Result1}`);
+  console.log(`✅ Pass: ${test7Result1 === test7Expected1}`);
+  
+  // Test case 2: Start at midnight, add time
+  const test7Start2 = '00:00:00';
+  const test7Duration2 = '25:30:00'; // Over 24 hours
+  const test7Expected2 = '01:30:00'; // Should wrap around
+  const test7Result2 = calculateEndTime(test7Start2, test7Duration2);
+  console.log(`Start: ${test7Start2}, Duration: ${test7Duration2}`);
+  console.log(`Expected: ${test7Expected2}, Got: ${test7Result2}`);
+  console.log(`✅ Pass: ${test7Result2 === test7Expected2}`);
+  
+  // Test case 3: Very long duration
+  const test7Start3 = '12:00:00';
+  const test7Duration3 = '36:00:00'; // 36 hours = 1.5 days
+  const test7Expected3 = '00:00:00'; // Should wrap around 1.5 times to midnight
+  const test7Result3 = calculateEndTime(test7Start3, test7Duration3);
+  console.log(`Start: ${test7Start3}, Duration: ${test7Duration3}`);
+  console.log(`Expected: ${test7Expected3}, Got: ${test7Result3}`);
+  console.log(`✅ Pass: ${test7Result3 === test7Expected3}`);
+  
   console.log('\n🎉 All timing tests completed!');
 };
 

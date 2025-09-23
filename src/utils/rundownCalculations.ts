@@ -28,9 +28,12 @@ export const secondsToTime = (seconds: number): string => {
   // Ensure we're working with a positive integer to prevent jumping
   const totalSeconds = Math.max(0, Math.floor(Math.abs(seconds)));
   
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const secs = Math.floor(totalSeconds % 60);
+  // Wrap around at 24 hours (86400 seconds)
+  const wrappedSeconds = totalSeconds % 86400;
+  
+  const hours = Math.floor(wrappedSeconds / 3600);
+  const minutes = Math.floor((wrappedSeconds % 3600) / 60);
+  const secs = Math.floor(wrappedSeconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
