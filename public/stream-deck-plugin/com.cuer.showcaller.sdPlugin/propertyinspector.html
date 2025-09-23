@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Cuer Showcaller Configuration</title>
+    <link rel="stylesheet" href="css/propertyinspector.css">
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">API Token</div>
+            <input class="sdpi-item-value" id="apiToken" type="password" placeholder="Enter your Cuer API token">
+        </div>
+        
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Rundown</div>
+            <select class="sdpi-item-value" id="rundownSelect">
+                <option value="">Select a rundown...</option>
+            </select>
+        </div>
+        
+        <div class="sdpi-item">
+            <button class="sdpi-item-value" id="refreshButton">Refresh Rundowns</button>
+        </div>
+        
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Status</div>
+            <div class="sdpi-item-value" id="connectionStatus">Not connected</div>
+        </div>
+    </div>
+    
+    <script src="js/propertyinspector.js"></script>
+</body>
+</html>
