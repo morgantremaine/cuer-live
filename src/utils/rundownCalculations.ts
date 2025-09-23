@@ -98,15 +98,22 @@ export const calculateItemsWithTiming = (
     let calculatedEndTime = currentTime;
     let calculatedRowNumber = '';
 
-    // Elapsed time is simply the cumulative duration up to this point
-    const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
-
     if (isHeaderItem(item)) {
       // Headers get the current timeline position and don't advance time
       calculatedStartTime = currentTime;
       calculatedEndTime = currentTime;
       // Headers don't have row numbers
       calculatedRowNumber = '';
+      // Elapsed time for headers is the cumulative duration up to this point
+      const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
+      
+      return {
+        ...item,
+        calculatedStartTime,
+        calculatedEndTime,
+        calculatedElapsedTime,
+        calculatedRowNumber
+      };
     } else {
       // Regular items
       calculatedStartTime = currentTime;
@@ -114,10 +121,10 @@ export const calculateItemsWithTiming = (
       if (item.duration) {
         calculatedEndTime = calculateEndTime(currentTime, item.duration);
         
-        // Only advance timeline and cumulative duration if item is not floated
+        // Only advance timeline if item is not floated
         if (!isFloated(item)) {
           currentTime = calculatedEndTime;
-          // Add this item's duration to cumulative total AFTER calculating elapsed for this item
+          // Add this item's duration to cumulative total
           cumulativeDurationSeconds += timeToSeconds(item.duration);
         }
       } else {
@@ -127,15 +134,18 @@ export const calculateItemsWithTiming = (
       // Sequential numbering for regular items
       regularRowCount++;
       calculatedRowNumber = regularRowCount.toString();
-    }
+      
+      // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)
+      const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
 
-    return {
-      ...item,
-      calculatedStartTime,
-      calculatedEndTime,
-      calculatedElapsedTime,
-      calculatedRowNumber
-    };
+      return {
+        ...item,
+        calculatedStartTime,
+        calculatedEndTime,
+        calculatedElapsedTime,
+        calculatedRowNumber
+      };
+    }
   });
 };
 

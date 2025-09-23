@@ -120,10 +120,10 @@ export const runTimingTests = () => {
   const test8Result2Simple = calculateElapsedTime(test8Start2Simple, test8RundownStart2Simple);
   console.log(`Start: ${test8Start2Simple}, Rundown Start: ${test8RundownStart2Simple}`);
   console.log(`Expected Elapsed: ${test8Expected2Simple}, Got: ${test8Result2Simple}`);
-  // Test 9: Duration-based elapsed time (much simpler approach!)
-  console.log('\n📋 Test 9: Duration-based elapsed time');
+  // Test 9: Duration-based elapsed time INCLUDING current item (broadcast style)
+  console.log('\n📋 Test 9: Duration-based elapsed time INCLUDING current item');
   
-  // Test the new simpler approach: elapsed time = cumulative durations
+  // Test the broadcast-style approach: elapsed time = cumulative durations INCLUDING current item
   const items = [
     { id: '1', type: 'regular', duration: '90:00', name: 'Item 1' }, // 1.5 hours
     { id: '2', type: 'regular', duration: '120:00', name: 'Item 2' }, // 2 hours  
@@ -132,17 +132,17 @@ export const runTimingTests = () => {
   
   const calculated = calculateItemsWithTiming(items as any, '09:00:00');
   
-  // Item 1: Elapsed should be 00:00:00 (starts at beginning)
-  // Item 2: Elapsed should be 01:30:00 (after 90 minutes of content)
-  // Item 3: Elapsed should be 03:30:00 (after 90 + 120 = 210 minutes of content)
+  // Item 1: Elapsed should be 01:30:00 (after this 90-minute item completes)
+  // Item 2: Elapsed should be 03:30:00 (after this 120-minute item completes = 90 + 120 minutes)
+  // Item 3: Elapsed should be 05:10:00 (after this 80-minute item completes = 90 + 120 + 80 minutes)
   
-  console.log('Item 1 elapsed:', calculated[0].calculatedElapsedTime, '(expected: 00:00:00)');
-  console.log('Item 2 elapsed:', calculated[1].calculatedElapsedTime, '(expected: 01:30:00)');  
-  console.log('Item 3 elapsed:', calculated[2].calculatedElapsedTime, '(expected: 03:30:00)');
+  console.log('Item 1 elapsed:', calculated[0].calculatedElapsedTime, '(expected: 01:30:00)');
+  console.log('Item 2 elapsed:', calculated[1].calculatedElapsedTime, '(expected: 03:30:00)');  
+  console.log('Item 3 elapsed:', calculated[2].calculatedElapsedTime, '(expected: 05:10:00)');
   
-  const pass1 = calculated[0].calculatedElapsedTime === '00:00:00';
-  const pass2 = calculated[1].calculatedElapsedTime === '01:30:00';
-  const pass3 = calculated[2].calculatedElapsedTime === '03:30:00';
+  const pass1 = calculated[0].calculatedElapsedTime === '01:30:00';
+  const pass2 = calculated[1].calculatedElapsedTime === '03:30:00';
+  const pass3 = calculated[2].calculatedElapsedTime === '05:10:00';
   
   console.log(`✅ Pass: ${pass1 && pass2 && pass3}`);
   

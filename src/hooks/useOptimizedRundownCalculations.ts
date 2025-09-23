@@ -27,23 +27,23 @@ export const useOptimizedRundownCalculations = (
     let totalRuntimeSeconds = 0;
     const headerDurations = new Map<string, string>();
     
-    // Calculate timing for all items - simple duration-based elapsed time
+    // Calculate timing for all items - elapsed time INCLUDING current item's duration
     let cumulativeDurationSeconds = 0;
     const itemsWithTiming = items.map((item, index) => {
       const startTimeForItem = secondsToTime(currentTimeSeconds);
       const durationSeconds = item.type === 'header' ? 0 : timeToSeconds(item.duration || '00:00');
       const endTimeForItem = secondsToTime(currentTimeSeconds + durationSeconds);
       
-      // Elapsed time is simply cumulative duration up to this point (much simpler!)
-      const elapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
-
       // Only advance timeline for non-floated regular items
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
         currentTimeSeconds += durationSeconds;
         totalRuntimeSeconds += durationSeconds;
-        // Add to cumulative duration AFTER calculating elapsed time for this item
+        // Add to cumulative duration (now BEFORE calculating elapsed time for broadcast-style display)
         cumulativeDurationSeconds += durationSeconds;
       }
+      
+      // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)
+      const elapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
 
       return {
         ...item,

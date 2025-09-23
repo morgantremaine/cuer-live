@@ -38,8 +38,8 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
 const calculateDurationBasedElapsedTime = (items: RundownItem[], itemIndex: number): string => {
   let cumulativeDurationSeconds = 0;
   
-  // Sum up durations of all non-floated items before this one
-  for (let i = 0; i < itemIndex; i++) {
+  // Sum up durations of all non-floated items up to AND INCLUDING this one
+  for (let i = 0; i <= itemIndex; i++) {
     const item = items[i];
     if (item && item.type !== 'header' && !item.isFloating && !item.isFloated && item.duration) {
       cumulativeDurationSeconds += timeToSeconds(item.duration);
