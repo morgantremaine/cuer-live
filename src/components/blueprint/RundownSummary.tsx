@@ -190,7 +190,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
 
   return (
     <Card className="mb-6 bg-gray-800 border-gray-700">
-      <CardHeader className="pb-3">
+      <CardHeader className={isCollapsed ? "py-4" : "pb-3"}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium text-white">
             AI Rundown Summary
