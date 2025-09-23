@@ -1,6 +1,5 @@
 
 import React, { useRef, useState } from 'react';
-import { GripVertical } from 'lucide-react';
 import ScratchpadEnhancedSidebar from './scratchpad/ScratchpadEnhancedSidebar';
 import ScratchpadRichTextEditor from './scratchpad/ScratchpadRichTextEditor';
 import ScratchpadStreamlinedToolbar from './scratchpad/ScratchpadStreamlinedToolbar';
@@ -73,10 +72,7 @@ const BlueprintScratchpad = ({ rundownId, rundownTitle }: BlueprintScratchpadPro
   return (
     <div className="w-full mt-8 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
       <div className="flex items-center p-4 border-b border-gray-700">
-        <div className="flex items-center gap-2">
-          <GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
-          <h2 className="text-xl font-semibold text-white">Notes</h2>
-        </div>
+        <h2 className="text-xl font-semibold text-white">Notes</h2>
       </div>
       
       <div className="flex h-[600px]">
