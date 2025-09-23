@@ -231,17 +231,6 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                     <React.Fragment key={sectionKey}>
                       {/* Header Row - matches rundown styling */}
                       <tr className="border-b border-gray-600 bg-gray-750">
-                        <td 
-                          className="px-2 py-6 text-lg font-mono font-semibold align-middle"
-                          style={{ 
-                            width: '64px',
-                            minWidth: '64px', 
-                            maxWidth: '64px',
-                            borderRight: '1px solid hsl(var(--border))'
-                          }}
-                        >
-                          {/* Empty row number column to match rundown styling */}
-                        </td>
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-white">
@@ -256,17 +245,6 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                       
                       {/* Summary Row */}
                       <tr className="border-b border-gray-600 bg-gray-800">
-                        <td 
-                          className="px-2 py-4 align-middle"
-                          style={{ 
-                            width: '64px',
-                            minWidth: '64px', 
-                            maxWidth: '64px',
-                            borderRight: '1px solid hsl(var(--border))'
-                          }}
-                        >
-                          {/* Empty for alignment */}
-                        </td>
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
