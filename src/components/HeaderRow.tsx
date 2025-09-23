@@ -116,14 +116,19 @@ const HeaderRow = (props: HeaderRowProps) => {
     const hasTextSelection = window.getSelection()?.toString().length > 0;
     const isContentEditable = target.contentEditable === 'true';
     
-    // Check if we're actively focused on an input element
+    // Check if target is within an expanded script cell or any editable area
+    const isInExpandedCell = target.closest('.expandable-script-cell') !== null;
+    const isInEditableArea = target.closest('[contenteditable="true"]') !== null || 
+                            target.closest('textarea') !== null || 
+                            target.closest('input') !== null;
+    
+    // Check if we're in an active editing state by looking for focused text inputs
     const activeElement = document.activeElement as HTMLElement;
     const isActivelyEditing = activeElement?.tagName === 'TEXTAREA' || 
                              activeElement?.tagName === 'INPUT' ||
                              activeElement?.contentEditable === 'true';
     
-    // Only prevent dragging if we're actually interacting with text
-    if (isTextInput || hasTextSelection || isContentEditable || isActivelyEditing) {
+    if (isTextInput || hasTextSelection || isContentEditable || isInExpandedCell || isInEditableArea || isActivelyEditing) {
       e.preventDefault();
       e.stopPropagation();
       return;
