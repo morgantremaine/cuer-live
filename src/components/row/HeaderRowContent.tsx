@@ -113,10 +113,6 @@ const HeaderRowContent = ({
                     ref={(el) => {
                       if (el) {
                         cellRefs.current[`${item.id}-name`] = el;
-                        // Auto-resize with buffer for cross-browser compatibility
-                        const contentLength = headerName.length || 1;
-                        const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                        el.style.width = `${bufferWidth}ch`;
                       }
                     }}
                     type="text"
@@ -124,10 +120,6 @@ const HeaderRowContent = ({
                     onChange={(e) => {
                       markActiveTyping?.();
                       onUpdateItem(item.id, 'name', e.target.value);
-                      // Auto-resize on change with buffer
-                      const contentLength = e.target.value.length || 1;
-                      const bufferWidth = contentLength + 3; // Add buffer for PC browsers
-                      e.target.style.width = `${bufferWidth}ch`;
                     }}
                     onClick={() => onCellClick(item.id, 'name')}
                     onKeyDown={(e) => onKeyDown(e, item.id, 'name')}
@@ -141,7 +133,7 @@ const HeaderRowContent = ({
                       lineHeight: 'inherit',
                       padding: 0,
                       margin: 0,
-                      width: `${Math.max(headerName.length + 3, 4)}ch`, // Add buffer
+                      width: '100%',
                       minWidth: '4ch'
                     }}
                     placeholder="Header Name"
@@ -168,10 +160,7 @@ const HeaderRowContent = ({
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
                 backgroundColor: cellBackgroundColor,
-                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden'
+                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))'
               }}
             >
               <div className="px-2 py-8">
