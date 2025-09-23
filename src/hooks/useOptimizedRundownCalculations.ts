@@ -27,18 +27,22 @@ export const useOptimizedRundownCalculations = (
     let totalRuntimeSeconds = 0;
     const headerDurations = new Map<string, string>();
     
-    // Calculate timing for all items
+    // Calculate timing for all items - track elapsed time properly  
+    let totalElapsedSeconds = 0;
     const itemsWithTiming = items.map((item, index) => {
       const startTimeForItem = secondsToTime(currentTimeSeconds);
       const durationSeconds = item.type === 'header' ? 0 : timeToSeconds(item.duration || '00:00');
       const endTimeForItem = secondsToTime(currentTimeSeconds + durationSeconds);
-      const elapsedSeconds = currentTimeSeconds - timeToSeconds(startTime);
-      const elapsedTime = secondsToTimeNoWrap(Math.max(0, elapsedSeconds)); // Use no-wrap for elapsed time
+      
+      // Elapsed time is how much time has passed from rundown start to when THIS item starts
+      const elapsedTime = secondsToTimeNoWrap(totalElapsedSeconds);
 
       // Only advance timeline for non-floated regular items
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
         currentTimeSeconds += durationSeconds;
         totalRuntimeSeconds += durationSeconds;
+        // Add to elapsed time tracker AFTER calculating elapsed time for this item
+        totalElapsedSeconds += durationSeconds;
       }
 
       return {

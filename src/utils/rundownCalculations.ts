@@ -91,6 +91,7 @@ export const calculateItemsWithTiming = (
   
   let currentTime = rundownStartTime;
   let regularRowCount = 0;
+  let totalElapsedSeconds = 0; // Track total elapsed time from rundown start to current position
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
@@ -113,6 +114,8 @@ export const calculateItemsWithTiming = (
         // Only advance timeline if item is not floated
         if (!isFloated(item)) {
           currentTime = calculatedEndTime;
+          // AFTER processing this item, add its duration to elapsed time
+          // But we need elapsed time for when THIS item STARTS, not ends
         }
       } else {
         calculatedEndTime = currentTime;
@@ -123,7 +126,14 @@ export const calculateItemsWithTiming = (
       calculatedRowNumber = regularRowCount.toString();
     }
 
-    const calculatedElapsedTime = calculateElapsedTime(calculatedStartTime, rundownStartTime);
+    // Elapsed time is how much time has passed from rundown start to when THIS item starts
+    // This should be the total elapsed time BEFORE this item begins
+    const calculatedElapsedTime = secondsToTimeNoWrap(totalElapsedSeconds);
+
+    // NOW advance the elapsed time tracker for the next item
+    if (!isHeaderItem(item) && item.duration && !isFloated(item)) {
+      totalElapsedSeconds += timeToSeconds(item.duration);
+    }
 
     return {
       ...item,
