@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
+import { timeToSeconds } from '@/utils/rundownCalculations';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -285,18 +286,7 @@ export const useSharedRundownState = () => {
       return showcallerState?.timeRemaining || 0;
     }
 
-    // Calculate time remaining based on playback start time
-    const timeToSeconds = (timeStr: string) => {
-      if (!timeStr) return 0;
-      const parts = timeStr.split(':').map(Number);
-      if (parts.length === 2) {
-        return Math.floor(parts[0] * 60 + parts[1]);
-      } else if (parts.length === 3) {
-        return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]);
-      }
-      return 0;
-    };
-
+    // Calculate time remaining based on playback start time  
     const segmentDuration = timeToSeconds(currentSegment.duration);
     const elapsedTime = Math.floor((Date.now() - showcallerState.playbackStartTime) / 1000);
     const remaining = Math.max(0, segmentDuration - elapsedTime);

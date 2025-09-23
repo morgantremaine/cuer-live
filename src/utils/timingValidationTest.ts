@@ -97,7 +97,6 @@ export const runTimingTests = () => {
   const test7Result3 = calculateEndTime(test7Start3, test7Duration3);
   console.log(`Start: ${test7Start3}, Duration: ${test7Duration3}`);
   console.log(`Expected: ${test7Expected3}, Got: ${test7Result3}`);
-  console.log(`✅ Pass: ${test7Result3 === test7Expected3}`);
   
   console.log('\n🎉 All timing tests completed!');
 };

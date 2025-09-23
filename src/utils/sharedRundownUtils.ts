@@ -1,5 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
+import { timeToSeconds, secondsToTime, calculateEndTime, calculateElapsedTime } from '@/utils/rundownCalculations';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns || !Array.isArray(columns)) return [];
@@ -31,43 +32,6 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   }
   
   return regularRowCount.toString();
-};
-
-// Helper function to convert time string to seconds
-const timeToSeconds = (timeStr: string): number => {
-  if (!timeStr) return 0;
-  const parts = timeStr.split(':').map(Number);
-  if (parts.length === 2) {
-    const [minutes, seconds] = parts;
-    return minutes * 60 + seconds;
-  } else if (parts.length === 3) {
-    const [hours, minutes, seconds] = parts;
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-  return 0;
-};
-
-// Helper function to convert seconds to time string
-const secondsToTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
-
-// Helper function to calculate end time
-const calculateEndTime = (startTime: string, duration: string): string => {
-  const startSeconds = timeToSeconds(startTime);
-  const durationSeconds = timeToSeconds(duration);
-  return secondsToTime(startSeconds + durationSeconds);
-};
-
-// Helper function to calculate elapsed time from rundown start
-const calculateElapsedTime = (startTime: string, rundownStartTime: string): string => {
-  const startSeconds = timeToSeconds(startTime);
-  const rundownStartSeconds = timeToSeconds(rundownStartTime);
-  const elapsedSeconds = startSeconds - rundownStartSeconds;
-  return secondsToTime(Math.max(0, elapsedSeconds));
 };
 
 export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: string, calculatedStartTime?: string) => {

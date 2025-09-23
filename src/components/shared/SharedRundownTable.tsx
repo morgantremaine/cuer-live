@@ -9,7 +9,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
+import { timeToSeconds, secondsToTime, calculateEndTime } from '@/utils/rundownCalculations';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
