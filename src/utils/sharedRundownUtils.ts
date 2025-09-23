@@ -1,6 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
-import { timeToSeconds, secondsToTime, calculateEndTime, calculateElapsedTime } from '@/utils/rundownCalculations';
+import { timeToSeconds, secondsToTime, calculateEndTime, calculateElapsedTime, secondsToTimeNoWrap } from '@/utils/rundownCalculations';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns || !Array.isArray(columns)) return [];

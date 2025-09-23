@@ -28,12 +28,25 @@ export const secondsToTime = (seconds: number): string => {
   // Ensure we're working with a positive integer to prevent jumping
   const totalSeconds = Math.max(0, Math.floor(Math.abs(seconds)));
   
-  // Wrap around at 24 hours (86400 seconds)
+  // Wrap around at 24 hours (86400 seconds) for time-of-day values
   const wrappedSeconds = totalSeconds % 86400;
   
   const hours = Math.floor(wrappedSeconds / 3600);
   const minutes = Math.floor((wrappedSeconds % 3600) / 60);
   const secs = Math.floor(wrappedSeconds % 60);
+  
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Pure function to convert seconds to time string WITHOUT 24-hour wrap (for elapsed/duration times)
+export const secondsToTimeNoWrap = (seconds: number): string => {
+  // Ensure we're working with a positive integer to prevent jumping
+  const totalSeconds = Math.max(0, Math.floor(Math.abs(seconds)));
+  
+  // NO wrap-around - let it continue beyond 24 hours
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = Math.floor(totalSeconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
@@ -50,7 +63,7 @@ export const calculateElapsedTime = (startTime: string, rundownStartTime: string
   const startSeconds = timeToSeconds(startTime);
   const rundownStartSeconds = timeToSeconds(rundownStartTime);
   const elapsedSeconds = startSeconds - rundownStartSeconds;
-  return secondsToTime(Math.max(0, elapsedSeconds));
+  return secondsToTimeNoWrap(Math.max(0, elapsedSeconds)); // Use no-wrap version for elapsed time
 };
 
 // Pure function to check if item is floated
@@ -129,7 +142,7 @@ export const calculateTotalRuntime = (items: RundownItem[]): string => {
     return acc + timeToSeconds(item.duration || '00:00');
   }, 0);
 
-  return secondsToTime(totalSeconds);
+  return secondsToTimeNoWrap(totalSeconds); // Use no-wrap version for total runtime
 };
 
 // Pure function to calculate header duration
@@ -149,7 +162,7 @@ export const calculateHeaderDuration = (items: RundownItem[], headerIndex: numbe
     i++;
   }
 
-  return secondsToTime(totalSeconds);
+  return secondsToTimeNoWrap(totalSeconds); // Use no-wrap version for header duration
 };
 
 // Enhanced version that works with original items array for proper duration calculation

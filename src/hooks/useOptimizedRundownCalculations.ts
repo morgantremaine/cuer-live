@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
+import { timeToSeconds, secondsToTime, secondsToTimeNoWrap } from '@/utils/rundownCalculations';
 
 interface CalculationResult {
   itemsWithTiming: RundownItem[];
@@ -33,7 +33,7 @@ export const useOptimizedRundownCalculations = (
       const durationSeconds = item.type === 'header' ? 0 : timeToSeconds(item.duration || '00:00');
       const endTimeForItem = secondsToTime(currentTimeSeconds + durationSeconds);
       const elapsedSeconds = currentTimeSeconds - timeToSeconds(startTime);
-      const elapsedTime = secondsToTime(Math.max(0, elapsedSeconds));
+      const elapsedTime = secondsToTimeNoWrap(Math.max(0, elapsedSeconds)); // Use no-wrap for elapsed time
 
       // Only advance timeline for non-floated regular items
       if (item.type === 'regular' && !item.isFloating && !item.isFloated) {
@@ -61,13 +61,13 @@ export const useOptimizedRundownCalculations = (
             segmentDuration += timeToSeconds(nextItem.duration || '00:00');
           }
         }
-        headerDurations.set(item.id, secondsToTime(segmentDuration));
+        headerDurations.set(item.id, secondsToTimeNoWrap(segmentDuration)); // Use no-wrap for header duration
       }
     });
 
     return {
       itemsWithTiming,
-      totalRuntime: secondsToTime(totalRuntimeSeconds),
+      totalRuntime: secondsToTimeNoWrap(totalRuntimeSeconds), // Use no-wrap for total runtime
       headerDurations
     };
   }, [items, startTime]);
