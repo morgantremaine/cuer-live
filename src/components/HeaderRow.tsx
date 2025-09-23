@@ -107,7 +107,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
-  // Custom drag start handler to show full header row
+  // Clone the actual row for drag image to match exactly
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
@@ -134,47 +134,33 @@ const HeaderRow = (props: HeaderRowProps) => {
       return;
     }
     
-    // Create a drag image that matches the actual header row appearance
-    const headerName = item.name || 'Header';
-    const headerDuration = props.headerDuration;
-    const dragContainer = document.createElement('div');
-    
-    dragContainer.innerHTML = `
-      <div style="
-        display: flex;
-        align-items: center;
-        background: ${backgroundColor || 'white'};
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 12px 16px;
-        font-family: system-ui, -apple-system, sans-serif;
-        font-size: 18px;
-        font-weight: bold;
-        color: ${item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'white' : 'black'};
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        white-space: nowrap;
-        max-width: 400px;
-        min-width: 200px;
-      ">
-        <span style="margin-right: 8px;">▼</span>
-        <span style="font-weight: bold;">${headerName}</span>
-        <span style="font-weight: normal; margin-left: 24px; opacity: 0.8;">(${headerDuration})</span>
-      </div>
-    `;
-    
-    dragContainer.style.position = 'absolute';
-    dragContainer.style.top = '-1000px';
-    dragContainer.style.left = '-1000px';
-    
-    document.body.appendChild(dragContainer);
-    e.dataTransfer.setDragImage(dragContainer, 20, 20);
-    
-    // Clean up after drag starts
-    setTimeout(() => {
-      if (document.body.contains(dragContainer)) {
-        document.body.removeChild(dragContainer);
-      }
-    }, 100);
+    // Find the actual row element and clone it
+    const rowElement = e.currentTarget as HTMLTableRowElement;
+    if (rowElement) {
+      const clonedRow = rowElement.cloneNode(true) as HTMLTableRowElement;
+      
+      // Create a table wrapper to maintain proper rendering
+      const tableWrapper = document.createElement('table');
+      tableWrapper.style.position = 'absolute';
+      tableWrapper.style.top = '-1000px';
+      tableWrapper.style.left = '-1000px';
+      tableWrapper.style.borderCollapse = 'collapse';
+      tableWrapper.style.backgroundColor = backgroundColor || 'white';
+      
+      const tbody = document.createElement('tbody');
+      tbody.appendChild(clonedRow);
+      tableWrapper.appendChild(tbody);
+      
+      document.body.appendChild(tableWrapper);
+      e.dataTransfer.setDragImage(tableWrapper, 20, 20);
+      
+      // Clean up after drag starts
+      setTimeout(() => {
+        if (document.body.contains(tableWrapper)) {
+          document.body.removeChild(tableWrapper);
+        }
+      }, 100);
+    }
     
     onDragStart(e, index);
   };
