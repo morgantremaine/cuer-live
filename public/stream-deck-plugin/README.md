@@ -18,15 +18,12 @@ Control your Cuer rundown showcaller directly from your Elgato Stream Deck!
    - Double-click the downloaded `.streamDeckPlugin` file
    - Stream Deck software will automatically install it
 
-3. **Get Your API Token**
-   - Go to [cuer.live/account](https://cuer.live/account) 
-   - Copy your API token from the Account page
-
-4. **Configure the Plugin**
+3. **Configure the Plugin**
    - Drag any Cuer action to your Stream Deck
-   - In the property inspector, enter your API token
-   - Select the rundown you want to control
-   - Click "Refresh Rundowns" if needed
+   - In the property inspector, click "Login to Cuer"
+   - A popup window will open for you to sign in
+   - Once logged in, select the rundown you want to control
+   - Repeat for additional buttons
 
 ## Button Actions
 
@@ -55,7 +52,7 @@ Control your Cuer rundown showcaller directly from your Elgato Stream Deck!
 
 Each button needs to be configured with:
 
-1. **API Token**: Your personal Cuer authentication token
+1. **Login**: Click "Login to Cuer" and sign in with your account
 2. **Rundown**: Select which rundown to control
 
 ## Requirements
@@ -67,14 +64,14 @@ Each button needs to be configured with:
 ## Troubleshooting
 
 ### "Access Denied" Error
-- Verify your API token is correct
-- Make sure you have access to the selected rundown
-- Check if you're a team member for team rundowns
+- Make sure you're logged in to your Cuer account
+- Verify you have access to the selected rundown
+- Try logging out and back in
 
 ### "Connection Failed" Error  
 - Check your internet connection
-- Verify the API token is valid
-- Try refreshing the rundown list
+- Try logging out and back in
+- Restart the Stream Deck software
 
 ### Plugin Not Loading
 - Restart Stream Deck software
@@ -82,8 +79,8 @@ Each button needs to be configured with:
 - Check if you have the latest version
 
 ### Buttons Not Responding
-- Verify rundown selection in property inspector
-- Check API token configuration
+- Verify you're logged in to your Cuer account
+- Check rundown selection in property inspector
 - Look for error indicators on the buttons
 
 ## Support

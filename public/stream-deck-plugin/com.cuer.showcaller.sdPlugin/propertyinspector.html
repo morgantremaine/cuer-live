@@ -8,19 +8,23 @@
 <body>
     <div class="sdpi-wrapper">
         <div class="sdpi-item">
-            <div class="sdpi-item-label">API Token</div>
-            <input class="sdpi-item-value" id="apiToken" type="password" placeholder="Enter your Cuer API token">
+            <div class="sdpi-item-label">Account</div>
+            <button class="sdpi-item-value" id="loginButton">Login to Cuer</button>
+            <div class="sdpi-item-value" id="userInfo" style="display: none;">
+                <span id="userEmail"></span>
+                <button id="logoutButton" style="margin-left: 10px; padding: 4px 8px; font-size: 12px;">Logout</button>
+            </div>
         </div>
         
         <div class="sdpi-item">
             <div class="sdpi-item-label">Rundown</div>
-            <select class="sdpi-item-value" id="rundownSelect">
-                <option value="">Select a rundown...</option>
+            <select class="sdpi-item-value" id="rundownSelect" disabled>
+                <option value="">Login first to see rundowns...</option>
             </select>
         </div>
         
         <div class="sdpi-item">
-            <button class="sdpi-item-value" id="refreshButton">Refresh Rundowns</button>
+            <button class="sdpi-item-value" id="refreshButton" disabled>Refresh Rundowns</button>
         </div>
         
         <div class="sdpi-item">

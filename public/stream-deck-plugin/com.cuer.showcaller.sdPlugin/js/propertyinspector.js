@@ -5,7 +5,8 @@ class CuerPropertyInspector {
         this.uuid = null;
         this.actionInfo = null;
         this.apiBase = 'https://khdiwrkgahsbjszlwnob.functions.supabase.co/functions/v1/stream-deck-api';
-        
+        this.authToken = null;
+        this.currentUser = null;
         this.initializeElements();
     }
 
@@ -20,15 +21,21 @@ class CuerPropertyInspector {
 
     setupElements() {
         // Get elements
-        this.apiTokenInput = document.getElementById('apiToken');
+        this.loginButton = document.getElementById('loginButton');
+        this.userInfo = document.getElementById('userInfo');
+        this.userEmail = document.getElementById('userEmail');
+        this.logoutButton = document.getElementById('logoutButton');
         this.rundownSelect = document.getElementById('rundownSelect');
         this.refreshButton = document.getElementById('refreshButton');
         this.connectionStatus = document.getElementById('connectionStatus');
 
         // Add event listeners
-        if (this.apiTokenInput) {
-            this.apiTokenInput.addEventListener('input', () => this.saveSettings());
-            this.apiTokenInput.addEventListener('blur', () => this.testConnection());
+        if (this.loginButton) {
+            this.loginButton.addEventListener('click', () => this.handleLogin());
+        }
+
+        if (this.logoutButton) {
+            this.logoutButton.addEventListener('click', () => this.handleLogout());
         }
 
         if (this.rundownSelect) {
@@ -43,6 +50,96 @@ class CuerPropertyInspector {
         }
 
         console.log('🔧 Property inspector elements initialized');
+    }
+
+    // Handle login via browser popup
+    async handleLogin() {
+        this.updateConnectionStatus('Opening login window...', 'testing');
+        
+        try {
+            // Open popup window for Cuer login
+            const popup = window.open(
+                'https://cuer.live/login?streamdeck=true',
+                'cuer-login',
+                'width=500,height=600,scrollbars=yes,resizable=yes'
+            );
+
+            // Listen for messages from the popup
+            const messageHandler = (event) => {
+                if (event.origin !== 'https://cuer.live') return;
+                
+                if (event.data.type === 'CUER_AUTH_SUCCESS') {
+                    this.authToken = event.data.token;
+                    this.currentUser = event.data.user;
+                    
+                    popup.close();
+                    window.removeEventListener('message', messageHandler);
+                    
+                    this.onAuthSuccess();
+                } else if (event.data.type === 'CUER_AUTH_ERROR') {
+                    popup.close();
+                    window.removeEventListener('message', messageHandler);
+                    
+                    this.updateConnectionStatus('Login failed ❌', 'error');
+                }
+            };
+
+            window.addEventListener('message', messageHandler);
+
+            // Check if popup was closed without auth
+            const checkClosed = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(checkClosed);
+                    window.removeEventListener('message', messageHandler);
+                    
+                    if (!this.authToken) {
+                        this.updateConnectionStatus('Login cancelled', 'error');
+                    }
+                }
+            }, 1000);
+
+        } catch (error) {
+            console.error('❌ Login error:', error);
+            this.updateConnectionStatus('Login failed ❌', 'error');
+        }
+    }
+
+    // Handle successful authentication
+    onAuthSuccess() {
+        console.log('✅ Authentication successful');
+        
+        // Update UI
+        this.loginButton.style.display = 'none';
+        this.userInfo.style.display = 'block';
+        this.userEmail.textContent = this.currentUser.email;
+        
+        // Enable controls
+        this.rundownSelect.disabled = false;
+        this.refreshButton.disabled = false;
+        
+        // Load rundowns
+        this.loadRundowns();
+        this.saveSettings();
+        
+        this.updateConnectionStatus('Logged in ✅', 'success');
+    }
+
+    // Handle logout
+    handleLogout() {
+        this.authToken = null;
+        this.currentUser = null;
+        
+        // Update UI
+        this.loginButton.style.display = 'block';
+        this.userInfo.style.display = 'none';
+        
+        // Disable controls
+        this.rundownSelect.disabled = true;
+        this.refreshButton.disabled = true;
+        this.rundownSelect.innerHTML = '<option value="">Login first to see rundowns...</option>';
+        
+        this.saveSettings();
+        this.updateConnectionStatus('Logged out', 'default');
     }
 
     // Initialize with Stream Deck
@@ -64,18 +161,14 @@ class CuerPropertyInspector {
         if (this.actionInfo && this.actionInfo.payload && this.actionInfo.payload.settings) {
             const settings = this.actionInfo.payload.settings;
             
-            if (this.apiTokenInput && settings.apiToken) {
-                this.apiTokenInput.value = settings.apiToken;
+            if (settings.authToken && settings.user) {
+                this.authToken = settings.authToken;
+                this.currentUser = settings.user;
+                this.onAuthSuccess();
             }
             
             if (settings.rundownId) {
                 this.selectedRundownId = settings.rundownId;
-            }
-            
-            // Load rundowns if we have a token
-            if (settings.apiToken) {
-                this.testConnection();
-                this.loadRundowns();
             }
         }
     }
@@ -85,7 +178,8 @@ class CuerPropertyInspector {
         if (!this.websocket) return;
 
         const settings = {
-            apiToken: this.apiTokenInput ? this.apiTokenInput.value : '',
+            authToken: this.authToken || '',
+            user: this.currentUser || null,
             rundownId: this.rundownSelect ? this.rundownSelect.value : ''
         };
 
@@ -99,40 +193,9 @@ class CuerPropertyInspector {
         console.log('💾 Settings saved:', settings);
     }
 
-    // Test API connection
-    async testConnection() {
-        if (!this.apiTokenInput || !this.apiTokenInput.value) {
-            this.updateConnectionStatus('Enter API token', 'error');
-            return;
-        }
-
-        this.updateConnectionStatus('Testing connection...', 'testing');
-
-        try {
-            const response = await fetch(`${this.apiBase}/rundowns`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.apiTokenInput.value}`
-                }
-            });
-
-            if (response.ok) {
-                this.updateConnectionStatus('Connected ✅', 'success');
-                return true;
-            } else {
-                this.updateConnectionStatus('Invalid token ❌', 'error');
-                return false;
-            }
-        } catch (error) {
-            console.error('❌ Connection test failed:', error);
-            this.updateConnectionStatus('Connection failed ❌', 'error');
-            return false;
-        }
-    }
-
     // Load rundowns from API
     async loadRundowns() {
-        if (!this.apiTokenInput || !this.apiTokenInput.value) {
+        if (!this.authToken) {
             return;
         }
 
@@ -140,7 +203,7 @@ class CuerPropertyInspector {
             const response = await fetch(`${this.apiBase}/rundowns`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.apiTokenInput.value}`
+                    'Authorization': `Bearer ${this.authToken}`
                 }
             });
 

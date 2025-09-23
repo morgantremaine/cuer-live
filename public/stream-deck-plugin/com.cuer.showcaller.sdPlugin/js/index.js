@@ -74,12 +74,12 @@ class CuerShowcallerPlugin {
         
         console.log(`🔘 Key pressed: ${action}`);
         
-        if (!settings.apiToken || !settings.rundownId) {
+        if (!settings.authToken || !settings.rundownId) {
             this.showAlert(context);
             return;
         }
 
-        this.apiToken = settings.apiToken;
+        this.apiToken = settings.authToken;
         this.selectedRundown = settings.rundownId;
 
         switch (action) {
@@ -232,15 +232,15 @@ class CuerShowcallerPlugin {
         this.contextToAction[context] = action;
         
         // Update play/pause button state based on current status
-        if (action === this.actions.PLAY_PAUSE && settings.apiToken && settings.rundownId) {
-            this.apiToken = settings.apiToken;
+        if (action === this.actions.PLAY_PAUSE && settings.authToken && settings.rundownId) {
+            this.apiToken = settings.authToken;
             this.selectedRundown = settings.rundownId;
             this.updatePlayPauseState(context);
         }
         
         // Update status display
-        if (action === this.actions.STATUS && settings.apiToken && settings.rundownId) {
-            this.apiToken = settings.apiToken;
+        if (action === this.actions.STATUS && settings.authToken && settings.rundownId) {
+            this.apiToken = settings.authToken;
             this.selectedRundown = settings.rundownId;
             this.updateStatus(context);
         }
@@ -272,8 +272,8 @@ class CuerShowcallerPlugin {
         
         console.log('⚙️ Settings received:', settings);
         
-        if (settings.apiToken && settings.rundownId) {
-            this.apiToken = settings.apiToken;
+        if (settings.authToken && settings.rundownId) {
+            this.apiToken = settings.authToken;
             this.selectedRundown = settings.rundownId;
             
             // Update button states

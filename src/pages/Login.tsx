@@ -13,6 +13,8 @@ import CuerLogo from '@/components/common/CuerLogo'
 const Login = () => {
   const [searchParams] = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin'
+  const isStreamDeck = searchParams.get('streamdeck') === 'true'
+  
   // Separate form states for clarity
   const [signInData, setSignInData] = useState({ email: '', password: '' })
   const [signUpData, setSignUpData] = useState({ email: '', password: '', confirmPassword: '', fullName: '', agreeToTerms: false })
@@ -21,8 +23,26 @@ const Login = () => {
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
-  const { signIn, signUp, resetPassword, resendConfirmation } = useAuth()
+  const { signIn, signUp, resetPassword, resendConfirmation, session } = useAuth()
   const { toast } = useToast()
+
+  // Handle Stream Deck authentication success
+  useEffect(() => {
+    if (isStreamDeck && session?.access_token) {
+      // Send auth success message to parent window (Stream Deck popup)
+      window.opener?.postMessage({
+        type: 'CUER_AUTH_SUCCESS',
+        token: session.access_token,
+        user: { 
+          email: session.user?.email,
+          id: session.user?.id 
+        }
+      }, 'https://127.0.0.1');
+      
+      // Close the popup
+      window.close();
+    }
+  }, [isStreamDeck, session]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,12 +65,21 @@ const Login = () => {
             description: error.message,
             variant: 'destructive',
           })
+          
+          // Send error to Stream Deck if needed
+          if (isStreamDeck) {
+            window.opener?.postMessage({
+              type: 'CUER_AUTH_ERROR',
+              error: error.message
+            }, 'https://127.0.0.1');
+          }
         }
       } else {
         toast({
           title: 'Success',
           description: 'Signed in successfully!',
         })
+        // Stream Deck success is handled in useEffect above
       }
     } catch (err) {
       toast({
@@ -221,6 +250,11 @@ const Login = () => {
             <div className="flex justify-center mb-2">
               <CuerLogo className="h-12 w-auto" isDark={true} />
             </div>
+            {isStreamDeck && (
+              <CardDescription className="text-blue-400">
+                🎛️ Stream Deck Plugin Login
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             {showEmailConfirmation ? (
