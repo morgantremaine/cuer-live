@@ -174,32 +174,7 @@ const BlueprintContent = () => {
       return;
     }
 
-    // Handle special components reordering (camera plot temporarily disabled)
-    if (draggedId === 'scratchpad') {
-      const currentComponentOrder = [...state.componentOrder];
-      const draggedIndex = currentComponentOrder.indexOf(draggedId);
-      
-      if (draggedIndex !== -1) {
-        // Remove from current position
-        currentComponentOrder.splice(draggedIndex, 1);
-        
-        // Calculate insertion position relative to component order
-        let targetPosition = insertionIndex - state.lists.length;
-        if (targetPosition < 0) targetPosition = 0;
-        if (targetPosition > currentComponentOrder.length) targetPosition = currentComponentOrder.length;
-        
-        // Insert at new position
-        currentComponentOrder.splice(targetPosition, 0, draggedId);
-        
-        // Update the component order
-        logger.blueprint('Updating component order:', currentComponentOrder);
-        updateComponentOrder(currentComponentOrder);
-      }
-      
-      setDraggedListId(null);
-      setInsertionIndex(null);
-      return;
-    }
+    // Skip special component handling - scratchpad is no longer draggable
 
     // Handle list reordering
     const draggedIndex = state.lists.findIndex(list => list.id === draggedId);
@@ -303,18 +278,7 @@ const BlueprintContent = () => {
     //   </div>
     // ),
     'scratchpad': (
-      <div 
-        key="scratchpad"
-        className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
-        draggable
-        onDragStart={(e) => handleDragStart(e, 'scratchpad')}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          const componentIndex = state.lists.length + state.componentOrder.indexOf('scratchpad');
-          handleDragEnterContainer(e, componentIndex);
-        }}
-        onDragEnd={handleDragEnd}
-      >
+      <div key="scratchpad">
         <BlueprintScratchpad
           rundownId={id || ''}
           rundownTitle={rundown?.title || 'Unknown Rundown'}
