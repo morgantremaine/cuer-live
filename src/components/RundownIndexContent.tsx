@@ -1,14 +1,9 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { DragOverlay, DndContext, useSensors, useSensor, PointerSensor, KeyboardSensor, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import RundownContainer from '@/components/RundownContainer';
 import CuerChatButton from '@/components/cuer/CuerChatButton';
 import RealtimeConnectionProvider from '@/components/RealtimeConnectionProvider';
 import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
-import HeaderRow from '@/components/HeaderRow';
-import RegularRow from '@/components/RegularRow';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
@@ -522,246 +517,112 @@ const RundownIndexContent = () => {
     return <RundownLoadingSkeleton />;
   }
 
-  // Set up @dnd-kit sensors for proper drag handling
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  );
-
-  // Get the active drag item ID for DragOverlay
-  const activeId = draggedItemIndex !== null ? items[draggedItemIndex]?.id : null;
-
-  // Create sortable items list
-  const sortableItems = items.map(item => item.id);
-
   return (
     <RealtimeConnectionProvider
       isConnected={isConnected || false}
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
     >
-      {/* Wrap with DndContext for proper row dragging */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        modifiers={[restrictToVerticalAxis]}
-      >
-        <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
-          <RundownContainer
-            currentTime={currentTime}
-            timezone={timezone}
-            onTimezoneChange={handleTimezoneChange}
-            totalRuntime={totalRuntime}
-            showColumnManager={showColumnManager}
-            setShowColumnManager={(show: boolean) => {
-              if (show) {
-                // Column manager will use the current columns from state
-                console.log('🔄 Opening column manager - using current columns from state');
-              }
-              setShowColumnManager(show);
-            }}
-            items={items}
-            visibleColumns={visibleColumns}
-            columns={userColumns}
-            showColorPicker={showColorPicker}
-            cellRefs={cellRefs}
-            selectedRows={selectedRows}
-            draggedItemIndex={draggedItemIndex}
-            isDraggingMultiple={isDraggingMultiple}
-            dropTargetIndex={dropTargetIndex}
-            currentSegmentId={currentSegmentId}
-            getColumnWidth={getColumnWidth}
-            updateColumnWidth={handleUpdateColumnWidthWrapper}
-            getRowNumber={getRowNumber}
-            getRowStatus={getRowStatusForContainer}
-            calculateHeaderDuration={calculateHeaderDuration}
-            onUpdateItem={updateItem}
-            onCellClick={handleCellClickWrapper}
-            onKeyDown={handleKeyDownWrapper}
-            onToggleColorPicker={handleToggleColorPicker}
-            onColorSelect={(id, color) => selectColor(id, color)}
-            onDeleteRow={deleteRow}
-            onToggleFloat={toggleFloatRow}
-            onRowSelect={handleRowSelection} // Use the proper grid row selection handler
-            onDragStart={handleDragStartWrapper}
-            onDragOver={handleDragOverWrapper}
-            onDragLeave={handleDragLeaveWrapper}
-            onDrop={handleDropWrapper}
-            onAddRow={handleAddRow}
-            onAddHeader={handleAddHeader}
-            selectedCount={selectedRows.size}
-            hasClipboardData={hasClipboardData()}
-            onCopySelectedRows={handleCopySelectedRows}
-            onPasteRows={handlePasteRows}
-            onDeleteSelectedRows={handleDeleteSelectedRows}
-            onClearSelection={clearSelection}
-            selectedRowId={selectedRowId}
-            isPlaying={isPlaying}
-            timeRemaining={timeRemainingNumber}
-            onPlay={play}
-            onPause={pause}
-            onForward={forward}
-            onBackward={backward}
-            onReset={reset}
-            handleAddColumn={handleAddColumnWrapper}
-            handleReorderColumns={handleReorderColumnsWrapper}
-            handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
-            handleRenameColumn={handleRenameColumnWrapper}
-            handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
-            handleLoadLayout={handleLoadLayoutWrapper}
-            debugColumns={debugColumns}
-            resetToDefaults={resetToDefaults}
-            hasUnsavedChanges={hasUnsavedChanges}
-            isSaving={isSaving || isSavingPreferences}
-            rundownTitle={rundownTitle}
-            onTitleChange={setTitle}
-            rundownStartTime={rundownStartTime}
-            onRundownStartTimeChange={handleRundownStartTimeChange}
-            showDate={showDate}
-            onShowDateChange={handleShowDateChange}
-            rundownId={rundownId}
-            onOpenTeleprompter={handleOpenTeleprompter}
-            onUndo={undo}
-            canUndo={canUndo}
-            lastAction={lastAction || ''}
-            isConnected={isConnected}
-            isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
-            hasActiveTeammates={hasActiveTeammates}
-            activeTeammateNames={activeTeammateNames}
-            onJumpToHere={handleJumpToHere}
-            autoScrollEnabled={autoScrollEnabled}
-            onToggleAutoScroll={toggleAutoScroll}
-            onShowNotes={() => setShowNotesWindow(true)}
-            // Zoom controls
-            zoomLevel={zoomLevel}
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            onResetZoom={resetZoom}
-            canZoomIn={canZoomIn}
-            canZoomOut={canZoomOut}
-            isDefaultZoom={isDefaultZoom}
-            // Header collapse functions
-            toggleHeaderCollapse={toggleHeaderCollapse}
-            isHeaderCollapsed={isHeaderCollapsed}
-            getHeaderGroupItemIds={getHeaderGroupItemIds}
-            visibleItems={visibleItems}
-            onMoveItemUp={moveItemUp}
-            onMoveItemDown={moveItemDown}
-          />
-        </SortableContext>
-        
-        {/* DragOverlay for row dragging */}
-        <DragOverlay>
-          {activeId && draggedItemIndex !== null ? (
-            (() => {
-              const draggedItem = items[draggedItemIndex];
-              if (!draggedItem) return null;
-              
-              const isHeader = draggedItem.type === 'header';
-              const backgroundColor = draggedItem.color && draggedItem.color !== '#FFFFFF' && draggedItem.color !== '#ffffff' 
-                ? draggedItem.color 
-                : isHeader ? 'hsl(var(--header-background))' : undefined;
-                
-              // Calculate total width for the drag preview
-              let totalWidth = 64; // Row number column
-              visibleColumns.forEach(column => {
-                const width = getColumnWidth(column);
-                const widthValue = parseFloat(width.replace('px', ''));
-                totalWidth += isNaN(widthValue) ? 100 : widthValue;
-              });
-              
-              return (
-                <div 
-                  className="shadow-lg border border-border rounded-sm"
-                  style={{ 
-                    backgroundColor: backgroundColor || 'hsl(var(--background))',
-                    width: `${totalWidth}px`,
-                    minWidth: `${totalWidth}px`,
-                    opacity: 0.9,
-                    zIndex: 1000
-                  }}
-                >
-                  <table 
-                    className="border-collapse w-full"
-                    style={{ 
-                      tableLayout: 'fixed',
-                      width: '100%'
-                    }}
-                  >
-                    <tbody>
-                      {isHeader ? (
-                        <HeaderRow
-                          item={draggedItem}
-                          index={draggedItemIndex}
-                          rowNumber=""
-                          cellRefs={cellRefs}
-                          columns={visibleColumns}
-                          headerDuration={calculateHeaderDuration(draggedItemIndex)}
-                          selectedRowsCount={selectedRows.size}
-                          selectedRows={selectedRows}
-                          isSelected={selectedRows.has(draggedItem.id)}
-                          showColorPicker={null}
-                          hasClipboardData={false}
-                          currentSegmentId={currentSegmentId}
-                          isCollapsed={isHeaderCollapsed(draggedItem.id)}
-                          isDragging={true}
-                          onUpdateItem={() => {}}
-                          onCellClick={() => {}}
-                          onKeyDown={() => {}}
-                          onDeleteRow={() => {}}
-                          onDragStart={() => {}}
-                          onDragOver={() => {}}
-                          onDrop={() => {}}
-                          onDragEnd={() => {}}
-                          onCopySelectedRows={() => {}}
-                          onDeleteSelectedRows={() => {}}
-                          onToggleColorPicker={() => {}}
-                          onColorSelect={() => {}}
-                          onToggleCollapse={() => {}}
-                          getColumnWidth={getColumnWidth}
-                          isHeaderCollapsed={isHeaderCollapsed}
-                          getHeaderGroupItemIds={getHeaderGroupItemIds}
-                        />
-                      ) : (
-                        <RegularRow
-                          item={draggedItem}
-                          index={draggedItemIndex}
-                          rowNumber={getRowNumber(draggedItemIndex)}
-                          status={getRowStatusForContainer(draggedItem)}
-                          cellRefs={cellRefs}
-                          columns={visibleColumns}
-                          selectedRowsCount={selectedRows.size}
-                          selectedRows={selectedRows}
-                          isSelected={selectedRows.has(draggedItem.id)}
-                          showColorPicker={null}
-                          hasClipboardData={false}
-                          currentSegmentId={currentSegmentId}
-                          isDragging={true}
-                          onUpdateItem={() => {}}
-                          onCellClick={() => {}}
-                          onKeyDown={() => {}}
-                          onDeleteRow={() => {}}
-                          onToggleFloat={() => {}}
-                          onDragStart={() => {}}
-                          onDragOver={() => {}}
-                          onDrop={() => {}}
-                          onDragEnd={() => {}}
-                          onCopySelectedRows={() => {}}
-                          onDeleteSelectedRows={() => {}}
-                          onToggleColorPicker={() => {}}
-                          onColorSelect={() => {}}
-                          getColumnWidth={getColumnWidth}
-                          isHeaderCollapsed={isHeaderCollapsed}
-                          getHeaderGroupItemIds={getHeaderGroupItemIds}
-                        />
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+      <RundownContainer
+        currentTime={currentTime}
+        timezone={timezone}
+        onTimezoneChange={handleTimezoneChange}
+        totalRuntime={totalRuntime}
+        showColumnManager={showColumnManager}
+        setShowColumnManager={(show: boolean) => {
+          if (show) {
+            // Column manager will use the current columns from state
+            console.log('🔄 Opening column manager - using current columns from state');
+          }
+          setShowColumnManager(show);
+        }}
+        items={items}
+        visibleColumns={visibleColumns}
+        columns={userColumns}
+        showColorPicker={showColorPicker}
+        cellRefs={cellRefs}
+        selectedRows={selectedRows}
+        draggedItemIndex={draggedItemIndex}
+        isDraggingMultiple={isDraggingMultiple}
+        dropTargetIndex={dropTargetIndex}
+        currentSegmentId={currentSegmentId}
+        getColumnWidth={getColumnWidth}
+        updateColumnWidth={handleUpdateColumnWidthWrapper}
+        getRowNumber={getRowNumber}
+        getRowStatus={getRowStatusForContainer}
+        calculateHeaderDuration={calculateHeaderDuration}
+        onUpdateItem={updateItem}
+        onCellClick={handleCellClickWrapper}
+        onKeyDown={handleKeyDownWrapper}
+        onToggleColorPicker={handleToggleColorPicker}
+        onColorSelect={(id, color) => selectColor(id, color)}
+        onDeleteRow={deleteRow}
+        onToggleFloat={toggleFloatRow}
+        onRowSelect={handleRowSelection} // Use the proper grid row selection handler
+        onDragStart={handleDragStartWrapper}
+        onDragOver={handleDragOverWrapper}
+        onDragLeave={handleDragLeaveWrapper}
+        onDrop={handleDropWrapper}
+        onAddRow={handleAddRow}
+        onAddHeader={handleAddHeader}
+        selectedCount={selectedRows.size}
+        hasClipboardData={hasClipboardData()}
+        onCopySelectedRows={handleCopySelectedRows}
+        onPasteRows={handlePasteRows}
+        onDeleteSelectedRows={handleDeleteSelectedRows}
+        onClearSelection={clearSelection}
+        selectedRowId={selectedRowId}
+        isPlaying={isPlaying}
+        timeRemaining={timeRemainingNumber}
+        onPlay={play}
+        onPause={pause}
+        onForward={forward}
+        onBackward={backward}
+        onReset={reset}
+        handleAddColumn={handleAddColumnWrapper}
+        handleReorderColumns={handleReorderColumnsWrapper}
+        handleDeleteColumnWithCleanup={handleDeleteColumnWrapper}
+        handleRenameColumn={handleRenameColumnWrapper}
+        handleToggleColumnVisibility={handleToggleColumnVisibilityWrapper}
+        handleLoadLayout={handleLoadLayoutWrapper}
+        debugColumns={debugColumns}
+        resetToDefaults={resetToDefaults}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving || isSavingPreferences}
+        rundownTitle={rundownTitle}
+        onTitleChange={setTitle}
+        rundownStartTime={rundownStartTime}
+        onRundownStartTimeChange={handleRundownStartTimeChange}
+        showDate={showDate}
+        onShowDateChange={handleShowDateChange}
+        rundownId={rundownId}
+        onOpenTeleprompter={handleOpenTeleprompter}
+        onUndo={undo}
+        canUndo={canUndo}
+        lastAction={lastAction || ''}
+        isConnected={isConnected}
+        isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
+        hasActiveTeammates={hasActiveTeammates}
+        activeTeammateNames={activeTeammateNames}
+        onJumpToHere={handleJumpToHere}
+        autoScrollEnabled={autoScrollEnabled}
+        onToggleAutoScroll={toggleAutoScroll}
+        onShowNotes={() => setShowNotesWindow(true)}
+        // Zoom controls
+        zoomLevel={zoomLevel}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onResetZoom={resetZoom}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+        isDefaultZoom={isDefaultZoom}
+        // Header collapse functions
+        toggleHeaderCollapse={toggleHeaderCollapse}
+        isHeaderCollapsed={isHeaderCollapsed}
+        getHeaderGroupItemIds={getHeaderGroupItemIds}
+        visibleItems={visibleItems}
+        onMoveItemUp={moveItemUp}
+        onMoveItemDown={moveItemDown}
+      />
       
       {/* Floating Notes Window */}
       {showNotesWindow && rundownId && (
