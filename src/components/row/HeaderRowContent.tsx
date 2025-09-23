@@ -15,6 +15,7 @@ interface HeaderRowContentProps {
   currentSegmentId?: string | null;
   cellRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>;
   isCollapsed?: boolean;
+  isDragging?: boolean;
   onUpdateItem: (id: string, field: string, value: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
@@ -32,6 +33,7 @@ const HeaderRowContent = ({
   currentSegmentId,
   cellRefs,
   isCollapsed = false,
+  isDragging = false,
   onUpdateItem,
   onCellClick,
   onKeyDown,
@@ -41,6 +43,9 @@ const HeaderRowContent = ({
 }: HeaderRowContentProps) => {
   // Calculate text color based on background color
   const textColor = backgroundColor ? getContrastTextColor(backgroundColor) : undefined;
+  
+  // During drag, ensure all cells have header background to maintain solid block appearance
+  const cellBackgroundColor = isDragging ? 'hsl(var(--header-background))' : backgroundColor;
 
   // Handle collapse toggle
   const handleToggleCollapse = (e: React.MouseEvent) => {
@@ -59,8 +64,9 @@ const HeaderRowContent = ({
           width: '64px',
           minWidth: '64px', 
           maxWidth: '64px',
-          borderRight: backgroundColor ? 'none' : '1px solid hsl(var(--border))',
-          marginRight: backgroundColor ? '-0.5px' : '0',
+          backgroundColor: cellBackgroundColor,
+          borderRight: cellBackgroundColor ? 'none' : '1px solid hsl(var(--border))',
+          marginRight: cellBackgroundColor ? '-0.5px' : '0',
           transform: 'translateZ(0)',
           backfaceVisibility: 'hidden'
         }}
@@ -98,9 +104,10 @@ const HeaderRowContent = ({
                   width: normalizedWidth,
                   minWidth: normalizedWidth,
                   maxWidth: normalizedWidth,
+                  backgroundColor: cellBackgroundColor,
                   overflow: 'visible',
-                  borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                  marginRight: backgroundColor && !isLastColumn ? '-0.5px' : '0',
+                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                  marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
                   transform: 'translateZ(0)',
                   backfaceVisibility: 'hidden'
                 }}
@@ -172,8 +179,9 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                marginRight: backgroundColor && !isLastColumn ? '-0.5px' : '0',
+                backgroundColor: cellBackgroundColor,
+                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
                 transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden'
               }}
@@ -196,8 +204,9 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                marginRight: backgroundColor && !isLastColumn ? '-0.5px' : '0',
+                backgroundColor: cellBackgroundColor,
+                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
                 transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden'
               }}
@@ -215,8 +224,9 @@ const HeaderRowContent = ({
                 width: normalizedWidth,
                 minWidth: normalizedWidth,
                 maxWidth: normalizedWidth,
-                borderRight: (isLastColumn || backgroundColor) ? 'none' : '1px solid hsl(var(--border))',
-                marginRight: backgroundColor && !isLastColumn ? '-0.5px' : '0',
+                backgroundColor: cellBackgroundColor,
+                borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                marginRight: cellBackgroundColor && !isLastColumn ? '-0.5px' : '0',
                 transform: 'translateZ(0)',
                 backfaceVisibility: 'hidden'
               }}

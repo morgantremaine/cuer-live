@@ -193,6 +193,7 @@ const HeaderRow = (props: HeaderRowProps) => {
           currentSegmentId={currentSegmentId}
           cellRefs={props.cellRefs}
           isCollapsed={isCollapsed}
+          isDragging={isDragging}
           onUpdateItem={props.onUpdateItem}
           onCellClick={props.onCellClick}
           onKeyDown={props.onKeyDown}
