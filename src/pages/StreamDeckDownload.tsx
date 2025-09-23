@@ -4,10 +4,18 @@ const StreamDeckDownload = () => {
   useEffect(() => {
     // Auto-download the plugin file
     const downloadPlugin = () => {
-      // Create a link to download the plugin directory as a zip
-      // In a real implementation, this would be a pre-built zip file
-      // For now, we'll redirect to the installation page with instructions
-      window.location.href = '/stream-deck-plugin/install-instructions.html';
+      // Create a download link for the zip file
+      const link = document.createElement('a');
+      link.href = '/com.cuer.showcaller.streamDeckPlugin';
+      link.download = 'com.cuer.showcaller.streamDeckPlugin';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Then redirect to instructions
+      setTimeout(() => {
+        window.location.href = '/stream-deck-plugin/install-instructions.html';
+      }, 500);
     };
 
     // Small delay to ensure page loads

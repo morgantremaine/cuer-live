@@ -1,0 +1,102 @@
+{
+  "Actions": [
+    {
+      "Icon": "Images/play",
+      "Name": "Play/Pause",
+      "States": [
+        {
+          "Image": "Images/play",
+          "TitleAlignment": "bottom",
+          "ShowTitle": true
+        },
+        {
+          "Image": "Images/pause",
+          "TitleAlignment": "bottom", 
+          "ShowTitle": true
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Play or pause the current rundown",
+      "UUID": "com.cuer.showcaller.playpause"
+    },
+    {
+      "Icon": "Images/forward",
+      "Name": "Forward",
+      "States": [
+        {
+          "Image": "Images/forward",
+          "TitleAlignment": "bottom",
+          "ShowTitle": true
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Go to next segment",
+      "UUID": "com.cuer.showcaller.forward"
+    },
+    {
+      "Icon": "Images/backward",
+      "Name": "Backward", 
+      "States": [
+        {
+          "Image": "Images/backward",
+          "TitleAlignment": "bottom",
+          "ShowTitle": true
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Go to previous segment",
+      "UUID": "com.cuer.showcaller.backward"
+    },
+    {
+      "Icon": "Images/reset",
+      "Name": "Reset",
+      "States": [
+        {
+          "Image": "Images/reset",
+          "TitleAlignment": "bottom",
+          "ShowTitle": true
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "Tooltip": "Reset to beginning",
+      "UUID": "com.cuer.showcaller.reset"
+    },
+    {
+      "Icon": "Images/status",
+      "Name": "Status Display",
+      "States": [
+        {
+          "Image": "Images/status",
+          "TitleAlignment": "bottom",
+          "ShowTitle": true
+        }
+      ],
+      "SupportedInMultiActions": false,
+      "Tooltip": "Shows current segment and status",
+      "UUID": "com.cuer.showcaller.status"
+    }
+  ],
+  "Author": "Cuer",
+  "CodePath": "app.html",
+  "Description": "Control your Cuer rundowns from Stream Deck",
+  "Name": "Cuer Showcaller",
+  "Icon": "Images/pluginIcon",
+  "PropertyInspectorPath": "propertyinspector.html",
+  "Category": "Cuer",
+  "CategoryIcon": "Images/categoryIcon",
+  "UUID": "com.cuer.showcaller",
+  "Version": "1.0.0",
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    },
+    {
+      "Platform": "windows", 
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.0"
+  }
+}
