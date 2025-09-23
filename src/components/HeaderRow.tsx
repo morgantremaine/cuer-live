@@ -116,7 +116,11 @@ const HeaderRow = (props: HeaderRowProps) => {
     const hasTextSelection = window.getSelection()?.toString().length > 0;
     const isContentEditable = target.contentEditable === 'true';
     
-    if (isTextInput || hasTextSelection || isContentEditable) {
+    // Additional check: if the target is inside a text input or has text content
+    const isInsideTextInput = target.closest('input, textarea');
+    const isClickableText = target.tagName === 'SPAN' && target.textContent;
+    
+    if (isTextInput || hasTextSelection || isContentEditable || isInsideTextInput || isClickableText) {
       e.preventDefault();
       e.stopPropagation();
       return;
