@@ -525,7 +525,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
       </div>
     );
   };
-  const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string) => {
+  const renderCellContent = (item: RundownItem, column: any, calculatedStartTime: string, itemIndex: number) => {
     // Get the raw value first
     let value;
     
@@ -533,7 +533,7 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
     if (column.key === 'images' || column.id === 'images') {
       value = item.images || '';
     } else {
-      value = getCellValue(item, column, rundownStartTime, calculatedStartTime);
+      value = getCellValue(item, column, rundownStartTime, calculatedStartTime, items, itemIndex);
     }
     
     // Special handling for images column
@@ -1258,13 +1258,13 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
                             } : {})
                           }}
                         >
-                          <div className="break-words whitespace-pre-wrap overflow-hidden">
-                            {(column.key === 'script' || column.key === 'notes') ? 
-                              renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime), item.id, column.key) ||
-                              <div>{renderCellContent(item, column, calculatedStartTime)}</div> :
-                              renderCellContent(item, column, calculatedStartTime)
-                            }
-                          </div>
+                           <div className="break-words whitespace-pre-wrap overflow-hidden">
+                             {(column.key === 'script' || column.key === 'notes') ? 
+                               renderExpandableCell(getCellValue(item, column, rundownStartTime, calculatedStartTime, items, originalIndex), item.id, column.key) ||
+                               <div>{renderCellContent(item, column, calculatedStartTime, originalIndex)}</div> :
+                               renderCellContent(item, column, calculatedStartTime, originalIndex)
+                             }
+                           </div>
                         </td>
                       );
                     })}

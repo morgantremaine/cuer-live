@@ -1,6 +1,6 @@
 import { RundownItem } from '@/types/rundown';
 import { generateHeaderLabel, checkRowsBeforeFirstHeader } from '@/utils/headerUtils';
-import { timeToSeconds, secondsToTime, calculateEndTime, calculateElapsedTime, secondsToTimeNoWrap } from '@/utils/rundownCalculations';
+import { timeToSeconds, secondsToTime, calculateEndTime, secondsToTimeNoWrap } from '@/utils/rundownCalculations';
 
 export const getVisibleColumns = (columns: any[]) => {
   if (!columns || !Array.isArray(columns)) return [];
@@ -34,7 +34,22 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
   return regularRowCount.toString();
 };
 
-export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: string, calculatedStartTime?: string) => {
+// Helper function to calculate duration-based elapsed time for shared rundowns
+const calculateDurationBasedElapsedTime = (items: RundownItem[], itemIndex: number): string => {
+  let cumulativeDurationSeconds = 0;
+  
+  // Sum up durations of all non-floated items before this one
+  for (let i = 0; i < itemIndex; i++) {
+    const item = items[i];
+    if (item && item.type !== 'header' && !item.isFloating && !item.isFloated && item.duration) {
+      cumulativeDurationSeconds += timeToSeconds(item.duration);
+    }
+  }
+  
+  return secondsToTimeNoWrap(cumulativeDurationSeconds);
+};
+
+export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: string, calculatedStartTime?: string, allItems?: RundownItem[], itemIndex?: number) => {
   let value = '';
   
   if (column.isCustom) {
@@ -64,11 +79,11 @@ export const getCellValue = (item: RundownItem, column: any, rundownStartTime?: 
         }
         break;
       case 'elapsedTime':
-        // Calculate elapsed time if we have start time and rundown start time
-        const startForElapsed = calculatedStartTime || item.startTime || '';
-        if (startForElapsed && rundownStartTime) {
-          value = calculateElapsedTime(startForElapsed, rundownStartTime);
+        // Use duration-based elapsed time calculation (same as main rundown)
+        if (allItems && typeof itemIndex === 'number') {
+          value = calculateDurationBasedElapsedTime(allItems, itemIndex);
         } else {
+          // Fallback to stored value if context not available
           value = item.elapsedTime || '';
         }
         break;
