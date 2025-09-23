@@ -4,6 +4,8 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import AddListDialog from '@/components/blueprint/AddListDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
@@ -345,6 +347,22 @@ const BlueprintContent = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
+          {/* Always visible buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+            <AddListDialog
+              availableColumns={availableColumns}
+              onAddList={addNewList}
+            />
+            <Button
+              variant="outline"
+              onClick={refreshAllLists}
+              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh All
+            </Button>
+          </div>
+
           {state.lists.length === 0 ? (
             <BlueprintEmptyState
               availableColumns={availableColumns}
@@ -354,15 +372,12 @@ const BlueprintContent = () => {
             <BlueprintListsGrid
               lists={state.lists}
               rundownItems={rundown?.items || []}
-              availableColumns={availableColumns}
               draggedListId={draggedListId}
               insertionIndex={insertionIndex}
               onDeleteList={deleteList}
               onRenameList={renameList}
               onUpdateCheckedItems={updateCheckedItems}
               onToggleUnique={toggleUniqueItems}
-              onAddList={addNewList}
-              onRefreshAll={refreshAllLists}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnterContainer={handleDragEnterContainer}
