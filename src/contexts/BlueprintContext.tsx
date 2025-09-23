@@ -40,7 +40,7 @@ const initialState: BlueprintState = {
   showDate: '',
   notes: '',
   cameraPlots: [],
-  componentOrder: ['ai-summary', 'lists-section', 'scratchpad'], // Updated with new draggable components
+  componentOrder: ['scratchpad'], // Keep old format for backward compatibility initially
   isLoading: false,
   isInitialized: false,
   isSaving: false,
@@ -219,18 +219,27 @@ export const BlueprintProvider: React.FC<BlueprintProviderProps> = ({
           }
           logger.blueprint('INITIALIZATION - Component order:', blueprintData.component_order);
           
+          // Migrate old component order to new format
+          let migratedComponentOrder = blueprintData.component_order || ['scratchpad'];
+          if (!migratedComponentOrder.includes('ai-summary') && !migratedComponentOrder.includes('lists-section')) {
+            migratedComponentOrder = ['ai-summary', 'lists-section', ...migratedComponentOrder];
+            logger.blueprint('MIGRATION - Updated component order to include new sections:', migratedComponentOrder);
+          }
+          
           dispatch({ type: 'MERGE_REMOTE_STATE', payload: {
             lists: blueprintData.lists || [],
             showDate: blueprintData.show_date || '',
             notes: blueprintData.notes || '',
             cameraPlots: blueprintData.camera_plots || [],
-            componentOrder: blueprintData.component_order || ['camera-plot', 'scratchpad'] // Removed 'crew-list'
+            componentOrder: migratedComponentOrder
           }});
           
           // Mark that we'll need to auto-refresh once rundown items are available
           autoRefreshTriggeredRef.current = false;
         } else {
-          logger.blueprint('No existing blueprint found, starting with empty state');
+          logger.blueprint('No existing blueprint found, starting with default component order');
+          // Initialize with new component order for new blueprints
+          dispatch({ type: 'UPDATE_COMPONENT_ORDER', payload: ['ai-summary', 'lists-section', 'scratchpad'] });
           autoRefreshTriggeredRef.current = false;
         }
         
