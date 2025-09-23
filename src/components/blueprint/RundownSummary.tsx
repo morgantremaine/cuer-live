@@ -228,9 +228,9 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                   const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
 
                   return (
-                    <React.Fragment key={sectionKey}>
+                    <>
                       {/* Header Row - matches rundown styling */}
-                      <tr className="border-b border-gray-600 bg-gray-750">
+                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-750">
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
                             <span className="text-lg font-bold text-white">
@@ -244,7 +244,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                       </tr>
                       
                       {/* Summary Row */}
-                      <tr className="border-b border-gray-600 bg-gray-800">
+                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
@@ -266,7 +266,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                           )}
                         </td>
                       </tr>
-                    </React.Fragment>
+                    </>
                   );
                 })}
               </tbody>
