@@ -3,7 +3,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
@@ -177,6 +177,100 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
     setIsRefreshing(false);
   };
 
+  // Print function to create a print-friendly version
+  const handlePrint = () => {
+    const printContent = generatePrintContent();
+    const printWindow = window.open('', '_blank');
+    
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${rundownTitle} - AI Summary</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 40px;
+                line-height: 1.6;
+                color: #333;
+              }
+              h1 {
+                font-size: 24px;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 10px;
+              }
+              .section {
+                margin-bottom: 30px;
+                page-break-inside: avoid;
+              }
+              .section-header {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #2563eb;
+              }
+              .section-duration {
+                font-size: 14px;
+                color: #666;
+                margin-left: 10px;
+              }
+              .section-summary {
+                font-size: 14px;
+                margin-left: 20px;
+                font-style: italic;
+                color: #555;
+                line-height: 1.5;
+              }
+              .no-summary {
+                color: #999;
+              }
+              @media print {
+                body { margin: 20px; }
+                .section { page-break-inside: avoid; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    }
+  };
+
+  // Generate print content
+  const generatePrintContent = () => {
+    let content = `<h1>${rundownTitle} - AI Rundown Summary</h1>`;
+    
+    sections.forEach(section => {
+      const sectionKey = `${section.header.id}_${section.items.length}`;
+      const summary = summaries[sectionKey];
+      const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
+      
+      content += `
+        <div class="section">
+          <div class="section-header">
+            ${headerName}
+            <span class="section-duration">(${section.duration})</span>
+          </div>
+          <div class="section-summary ${!summary?.summary ? 'no-summary' : ''}">
+            ${summary?.summary || 'No summary available'}
+          </div>
+        </div>
+      `;
+    });
+    
+    return content;
+  };
+
   // Auto-generate summaries when sections change
   useEffect(() => {
     if (sections.length > 0 && Object.keys(summaries).length === 0) {
@@ -199,9 +293,19 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
             <Button
               variant="ghost"
               size="sm"
+              onClick={handlePrint}
+              className="text-gray-300 hover:text-white"
+              title="Print Summary"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={generateAllSummaries}
               disabled={isRefreshing}
               className="text-gray-300 hover:text-white"
+              title="Refresh All Summaries"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -210,6 +314,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               size="sm"
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="text-gray-300 hover:text-white"
+              title={isCollapsed ? "Expand Summary" : "Collapse Summary"}
             >
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </Button>
