@@ -13,6 +13,8 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
+// Import timing test to run calculations check
+import '@/utils/timingValidationTest';
 
 
 const RundownIndexContent = () => {

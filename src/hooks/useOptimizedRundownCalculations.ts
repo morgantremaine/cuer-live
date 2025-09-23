@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
-import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
+import { timeToSeconds, secondsToTime } from '@/utils/rundownCalculations';
 
 interface CalculationResult {
   itemsWithTiming: RundownItem[];

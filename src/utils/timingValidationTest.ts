@@ -3,8 +3,7 @@
  * Run this to verify all edge cases are handled properly
  */
 
-import { timeToSeconds, secondsToTime, addDurationToTime, isValidTimeFormat } from './timeUtils';
-import { calculateEndTime } from './rundownCalculations';
+import { timeToSeconds, secondsToTime, calculateEndTime } from './rundownCalculations';
 
 export const runTimingTests = () => {
   console.log('🧪 Running timing calculation tests...');
@@ -60,12 +59,12 @@ export const runTimingTests = () => {
   console.log(`Seconds: ${test5Seconds}, Expected: ${test5Expected}`);
   console.log(`✅ Pass: ${test5Seconds === test5Expected}`);
 
-  // Test 6: addDurationToTime function
-  console.log('\n📋 Test 6: addDurationToTime function');
-  const test6Start = '10:30:00';
-  const test6Duration = '45:15'; // 45 minutes 15 seconds
-  const test6Expected = '11:15:15';
-  const test6Result = addDurationToTime(test6Start, test6Duration);
+  // Test 6: Screenshot scenario from user
+  console.log('\n📋 Test 6: Screenshot scenario - Start 10:05:00, Duration 02:00');
+  const test6Start = '10:05:00';
+  const test6Duration = '02:00'; // 2 minutes
+  const test6Expected = '10:07:00';
+  const test6Result = calculateEndTime(test6Start, test6Duration);
   console.log(`Start: ${test6Start}, Duration: ${test6Duration}`);
   console.log(`Expected: ${test6Expected}, Got: ${test6Result}`);
   console.log(`✅ Pass: ${test6Result === test6Expected}`);
@@ -90,3 +89,10 @@ export const testScreenshotScenario = () => {
   
   return actualEnd === expectedEnd;
 };
+
+// Auto-run tests when imported  
+if (typeof window !== 'undefined') {
+  console.log('⚡ Running timing validation tests automatically...');
+  runTimingTests();
+  testScreenshotScenario();
+}
