@@ -14,7 +14,6 @@ import { normalizeBoolean } from '@/utils/booleanNormalization';
 import { Column } from '@/types/columns';
 import { createDefaultRundownItems } from '@/data/defaultRundownItems';
 import { calculateItemsWithTiming, calculateTotalRuntime, calculateHeaderDuration } from '@/utils/rundownCalculations';
-import '@/utils/timingValidationTest';
 import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 import { DEMO_RUNDOWN_ID, DEMO_RUNDOWN_DATA } from '@/data/demoRundownData';
 import { updateTimeFromServer } from '@/services/UniversalTimeService';
@@ -1206,22 +1205,9 @@ export const useSimplifiedRundownState = () => {
       return [];
     }
     
-    console.log('🧮 Calculating timing for rundown:', rundownId);
     const calculated = calculateItemsWithTiming(state.items, state.startTime);
-    
-    // Debug specific items for verification
-    calculated.slice(0, 3).forEach((item, i) => {
-      console.log(`Item ${i+1}:`, {
-        name: item.name,
-        duration: item.duration,
-        startTime: item.calculatedStartTime,
-        endTime: item.calculatedEndTime,
-        isFloating: item.isFloating
-      });
-    });
-    
     return calculated;
-  }, [state.items, state.startTime, rundownId]);
+  }, [state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
     if (!state.items || !Array.isArray(state.items)) return '00:00:00';
