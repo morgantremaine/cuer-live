@@ -8,6 +8,7 @@ import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
 import { arrayMove } from '@dnd-kit/sortable';
+import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
@@ -67,25 +68,6 @@ export const useRundownStateCoordination = () => {
     setShowcallerUpdate: undefined // Add this when change tracking is available
   });
 
-  // Helper function to calculate end time - memoized for performance
-  const calculateEndTime = useMemo(() => (startTime: string, duration: string) => {
-    const startParts = startTime.split(':').map(Number);
-    const durationParts = duration.split(':').map(Number);
-    
-    let totalSeconds = 0;
-    if (startParts.length >= 2) {
-      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
-    }
-    if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] * 60 + durationParts[1];
-    }
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, []);
 
   // Add the missing addMultipleRows function
   const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {

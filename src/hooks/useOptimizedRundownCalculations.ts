@@ -1,6 +1,7 @@
 
 import { useMemo } from 'react';
 import { RundownItem } from '@/types/rundown';
+import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 
 interface CalculationResult {
   itemsWithTiming: RundownItem[];
@@ -21,22 +22,6 @@ export const useOptimizedRundownCalculations = (
       };
     }
 
-    const timeToSeconds = (timeStr: string): number => {
-      const parts = timeStr.split(':').map(Number);
-      if (parts.length === 2) {
-        return parts[0] * 60 + parts[1];
-      } else if (parts.length === 3) {
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
-      }
-      return 0;
-    };
-
-    const secondsToTime = (seconds: number): string => {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
 
     let currentTimeSeconds = timeToSeconds(startTime);
     let totalRuntimeSeconds = 0;

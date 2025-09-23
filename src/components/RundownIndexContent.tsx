@@ -8,6 +8,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
+import { calculateEndTime } from '@/utils/rundownCalculations';
 import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
@@ -367,25 +368,6 @@ const RundownIndexContent = () => {
     };
   }, [rundownTitle]);
 
-  // Calculate end time helper
-  const calculateEndTime = (startTime: string, duration: string) => {
-    const startParts = startTime.split(':').map(Number);
-    const durationParts = duration.split(':').map(Number);
-    
-    let totalSeconds = 0;
-    if (startParts.length >= 2) {
-      totalSeconds += startParts[0] * 3600 + startParts[1] * 60 + (startParts[2] || 0);
-    }
-    if (durationParts.length >= 2) {
-      totalSeconds += durationParts[0] * 60 + durationParts[1];
-    }
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   // Create the handleJumpToHere function that respects current playing state
   const handleJumpToHere = (segmentId: string) => {
