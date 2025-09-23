@@ -36,6 +36,7 @@ import CreateBlog from "./pages/CreateBlog";
 import EditBlog from "./pages/EditBlog";
 import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
+import StreamDeckDownload from "./pages/StreamDeckDownload";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,8 @@ const AppRoutes = () => {
       <Route path="/blog/manage" element={<ArticleManager />} />
       <Route path="/blog/:postId" element={<BlogPost />} />
       <Route path="/delete-test-user" element={<DeleteTestUser />} />
+      <Route path="/stream-deck-plugin" element={<StreamDeckDownload />} />
+      <Route path="/stream-deck-plugin.zip" element={<StreamDeckDownload />} />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />
