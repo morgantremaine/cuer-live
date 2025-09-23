@@ -91,12 +91,15 @@ export const calculateItemsWithTiming = (
   
   let currentTime = rundownStartTime;
   let regularRowCount = 0;
-  let totalElapsedSeconds = 0; // Track total elapsed time from rundown start to current position
+  let cumulativeDurationSeconds = 0; // Track cumulative duration (much simpler!)
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;
     let calculatedEndTime = currentTime;
     let calculatedRowNumber = '';
+
+    // Elapsed time is simply the cumulative duration up to this point
+    const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);
 
     if (isHeaderItem(item)) {
       // Headers get the current timeline position and don't advance time
@@ -111,11 +114,11 @@ export const calculateItemsWithTiming = (
       if (item.duration) {
         calculatedEndTime = calculateEndTime(currentTime, item.duration);
         
-        // Only advance timeline if item is not floated
+        // Only advance timeline and cumulative duration if item is not floated
         if (!isFloated(item)) {
           currentTime = calculatedEndTime;
-          // AFTER processing this item, add its duration to elapsed time
-          // But we need elapsed time for when THIS item STARTS, not ends
+          // Add this item's duration to cumulative total AFTER calculating elapsed for this item
+          cumulativeDurationSeconds += timeToSeconds(item.duration);
         }
       } else {
         calculatedEndTime = currentTime;
@@ -124,15 +127,6 @@ export const calculateItemsWithTiming = (
       // Sequential numbering for regular items
       regularRowCount++;
       calculatedRowNumber = regularRowCount.toString();
-    }
-
-    // Elapsed time is how much time has passed from rundown start to when THIS item starts
-    // This should be the total elapsed time BEFORE this item begins
-    const calculatedElapsedTime = secondsToTimeNoWrap(totalElapsedSeconds);
-
-    // NOW advance the elapsed time tracker for the next item
-    if (!isHeaderItem(item) && item.duration && !isFloated(item)) {
-      totalElapsedSeconds += timeToSeconds(item.duration);
     }
 
     return {

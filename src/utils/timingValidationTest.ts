@@ -120,22 +120,21 @@ export const runTimingTests = () => {
   const test8Result2Simple = calculateElapsedTime(test8Start2Simple, test8RundownStart2Simple);
   console.log(`Start: ${test8Start2Simple}, Rundown Start: ${test8RundownStart2Simple}`);
   console.log(`Expected Elapsed: ${test8Expected2Simple}, Got: ${test8Result2Simple}`);
-  // Test 9: More comprehensive elapsed time test crossing midnight
-  console.log('\n📋 Test 9: Elapsed time crossing midnight');
+  // Test 9: Duration-based elapsed time (much simpler approach!)
+  console.log('\n📋 Test 9: Duration-based elapsed time');
   
-  // Simulate the exact scenario from the screenshot
-  // If rundown starts at 09:00:00 and we're now at 01:25:00 (next day)
-  // The elapsed time should be 16:25:00 (16 hours 25 minutes)
-  
-  // This is complex because we need to handle day boundaries
-  // For now, let's test that our cumulative approach works
+  // Test the new simpler approach: elapsed time = cumulative durations
   const items = [
-    { id: '1', type: 'regular', duration: '90:00', name: 'Item 1' },
-    { id: '2', type: 'regular', duration: '120:00', name: 'Item 2' },
-    { id: '3', type: 'regular', duration: '80:00', name: 'Item 3' }
+    { id: '1', type: 'regular', duration: '90:00', name: 'Item 1' }, // 1.5 hours
+    { id: '2', type: 'regular', duration: '120:00', name: 'Item 2' }, // 2 hours  
+    { id: '3', type: 'regular', duration: '80:00', name: 'Item 3' } // 1h 20m
   ];
   
   const calculated = calculateItemsWithTiming(items as any, '09:00:00');
+  
+  // Item 1: Elapsed should be 00:00:00 (starts at beginning)
+  // Item 2: Elapsed should be 01:30:00 (after 90 minutes of content)
+  // Item 3: Elapsed should be 03:30:00 (after 90 + 120 = 210 minutes of content)
   
   console.log('Item 1 elapsed:', calculated[0].calculatedElapsedTime, '(expected: 00:00:00)');
   console.log('Item 2 elapsed:', calculated[1].calculatedElapsedTime, '(expected: 01:30:00)');  
