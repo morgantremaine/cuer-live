@@ -132,20 +132,25 @@ serve(async (req) => {
     // Plugin files structure
     const pluginFiles = {
       'manifest.json': JSON.stringify({
+        "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
         "Name": "Cuer ShowCaller",
         "Description": "Control your Cuer rundown showcaller directly from Stream Deck",
         "Category": "Cuer",
         "Author": "Cuer",
         "Icon": "Images/pluginIcon",
-        "CodePath": "app.html",
-        "PropertyInspectorPath": "propertyinspector.html",
-        "Version": "1.0.0",
+        "UUID": "com.cuer.showcaller",
+        "CodePath": "bin/plugin.js",
+        "PropertyInspectorPath": "ui/propertyinspector.html",
+        "Version": "1.0.0.0",
         "SDKVersion": 2,
+        "Nodejs": {
+          "Version": "20"
+        },
         "Software": {
-          "MinimumVersion": "6.0"
+          "MinimumVersion": "6.6"
         },
         "OS": [
-          { "Platform": "mac", "MinimumVersion": "10.15" },
+          { "Platform": "mac", "MinimumVersion": "13" },
           { "Platform": "windows", "MinimumVersion": "10" }
         ],
         "Actions": [
@@ -154,10 +159,20 @@ serve(async (req) => {
             "Name": "Play/Pause",
             "Icon": "Images/play",
             "States": [
-              { "Image": "Images/play", "Name": "Play" },
-              { "Image": "Images/pause", "Name": "Pause" }
+              { 
+                "Image": "Images/play", 
+                "Name": "Play",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              },
+              { 
+                "Image": "Images/pause", 
+                "Name": "Pause",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              }
             ],
-            "PropertyInspectorPath": "propertyinspector.html",
+            "PropertyInspectorPath": "ui/propertyinspector.html",
             "SupportedInMultiActions": true,
             "Tooltip": "Toggle rundown play/pause"
           },
@@ -165,7 +180,14 @@ serve(async (req) => {
             "UUID": "com.cuer.showcaller.forward",
             "Name": "Forward",
             "Icon": "Images/forward",
-            "PropertyInspectorPath": "propertyinspector.html",
+            "States": [
+              {
+                "Image": "Images/forward",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              }
+            ],
+            "PropertyInspectorPath": "ui/propertyinspector.html",
             "SupportedInMultiActions": true,
             "Tooltip": "Move to next segment"
           },
@@ -173,7 +195,14 @@ serve(async (req) => {
             "UUID": "com.cuer.showcaller.backward",
             "Name": "Backward", 
             "Icon": "Images/backward",
-            "PropertyInspectorPath": "propertyinspector.html",
+            "States": [
+              {
+                "Image": "Images/backward",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              }
+            ],
+            "PropertyInspectorPath": "ui/propertyinspector.html",
             "SupportedInMultiActions": true,
             "Tooltip": "Move to previous segment"
           },
@@ -181,7 +210,14 @@ serve(async (req) => {
             "UUID": "com.cuer.showcaller.reset",
             "Name": "Reset",
             "Icon": "Images/reset",
-            "PropertyInspectorPath": "propertyinspector.html",
+            "States": [
+              {
+                "Image": "Images/reset",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              }
+            ],
+            "PropertyInspectorPath": "ui/propertyinspector.html",
             "SupportedInMultiActions": true,
             "Tooltip": "Reset to beginning"
           },
@@ -189,67 +225,22 @@ serve(async (req) => {
             "UUID": "com.cuer.showcaller.status",
             "Name": "Status Display",
             "Icon": "Images/status",
-            "PropertyInspectorPath": "propertyinspector.html",
+            "States": [
+              {
+                "Image": "Images/status",
+                "ShowTitle": true,
+                "TitleAlignment": "bottom"
+              }
+            ],
+            "PropertyInspectorPath": "ui/propertyinspector.html",
             "SupportedInMultiActions": false,
             "Tooltip": "Show current segment status"
           }
         ]
       }, null, 2),
       
-      'app.html': `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <title>Cuer ShowCaller Plugin</title>
-</head>
-<body>
-    <script src="js/index.js"></script>
-</body>
-</html>`,
-
-      'propertyinspector.html': `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <title>Cuer ShowCaller - Property Inspector</title>
-    <link rel="stylesheet" href="css/propertyinspector.css">
-</head>
-<body>
-    <div class="sdpi-wrapper">
-        <div class="sdpi-item">
-            <div class="sdpi-item-label">Account</div>
-            <button class="sdpi-item-value" id="loginButton">Login to Cuer</button>
-            <div class="sdpi-item-value" id="userInfo" style="display: none;">
-                <span id="userEmail"></span>
-                <button id="logoutButton" style="margin-left: 10px; padding: 4px 8px; font-size: 12px;">Logout</button>
-            </div>
-        </div>
-        
-        <div class="sdpi-item">
-            <div class="sdpi-item-label">Rundown</div>
-            <select class="sdpi-item-value" id="rundownSelect" disabled>
-                <option value="">Login first to see rundowns...</option>
-            </select>
-        </div>
-        
-        <div class="sdpi-item">
-            <button class="sdpi-item-value" id="refreshButton" disabled>Refresh Rundowns</button>
-        </div>
-        
-        <div class="sdpi-item">
-            <div class="sdpi-item-label">Status</div>
-            <div class="sdpi-item-value" id="connectionStatus">Not connected</div>
-        </div>
-    </div>
-    
-    <script src="js/propertyinspector.js"></script>
-</body>
-</html>`,
-
-      'js/index.js': `// Cuer ShowCaller Stream Deck Plugin
+      
+      'bin/plugin.js': `// Cuer ShowCaller Stream Deck Plugin
 class CuerShowcallerPlugin {
     constructor() {
         this.websocket = null;
@@ -452,6 +443,45 @@ function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, in
 if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     // This function will be called by Stream Deck with the appropriate parameters
 }`,
+
+      'ui/propertyinspector.html': `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Cuer ShowCaller - Property Inspector</title>
+    <link rel="stylesheet" href="../css/propertyinspector.css">
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Account</div>
+            <button class="sdpi-item-value" id="loginButton">Login to Cuer</button>
+            <div class="sdpi-item-value" id="userInfo" style="display: none;">
+                <span id="userEmail"></span>
+                <button id="logoutButton" style="margin-left: 10px; padding: 4px 8px; font-size: 12px;">Logout</button>
+            </div>
+        </div>
+        
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Rundown</div>
+            <select class="sdpi-item-value" id="rundownSelect" disabled>
+                <option value="">Login first to see rundowns...</option>
+            </select>
+        </div>
+        
+        <div class="sdpi-item">
+            <button class="sdpi-item-value" id="refreshButton" disabled>Refresh Rundowns</button>
+        </div>
+        
+        <div class="sdpi-item">
+            <div class="sdpi-item-label">Status</div>
+            <div class="sdpi-item-value" id="connectionStatus">Not connected</div>
+        </div>
+    </div>
+    
+    <script src="../js/propertyinspector.js"></script>
+</body>
+</html>`,
 
       'js/propertyinspector.js': `// Property Inspector for Cuer ShowCaller
 class CuerPropertyInspector {
