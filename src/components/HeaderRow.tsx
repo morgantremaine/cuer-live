@@ -107,7 +107,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
-  // Simple drag start handler - exactly like regular rows
+  // Custom drag start handler to show full header row
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
@@ -133,6 +133,48 @@ const HeaderRow = (props: HeaderRowProps) => {
       e.stopPropagation();
       return;
     }
+    
+    // Create a drag image that matches the actual header row appearance
+    const headerName = item.name || 'Header';
+    const headerDuration = props.headerDuration;
+    const dragContainer = document.createElement('div');
+    
+    dragContainer.innerHTML = `
+      <div style="
+        display: flex;
+        align-items: center;
+        background: ${backgroundColor || 'white'};
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 12px 16px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        color: ${item.color && item.color !== '#FFFFFF' && item.color !== '#ffffff' ? 'white' : 'black'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        white-space: nowrap;
+        max-width: 400px;
+        min-width: 200px;
+      ">
+        <span style="margin-right: 8px;">▼</span>
+        <span style="font-weight: bold;">${headerName}</span>
+        <span style="font-weight: normal; margin-left: 24px; opacity: 0.8;">(${headerDuration})</span>
+      </div>
+    `;
+    
+    dragContainer.style.position = 'absolute';
+    dragContainer.style.top = '-1000px';
+    dragContainer.style.left = '-1000px';
+    
+    document.body.appendChild(dragContainer);
+    e.dataTransfer.setDragImage(dragContainer, 20, 20);
+    
+    // Clean up after drag starts
+    setTimeout(() => {
+      if (document.body.contains(dragContainer)) {
+        document.body.removeChild(dragContainer);
+      }
+    }, 100);
     
     onDragStart(e, index);
   };
