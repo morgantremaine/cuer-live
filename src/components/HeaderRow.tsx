@@ -107,7 +107,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
-  // Enhanced drag start handler with better text selection detection
+  // Enhanced drag start handler with custom drag image for headers
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
@@ -134,7 +134,50 @@ const HeaderRow = (props: HeaderRowProps) => {
       return;
     }
     
+    // Create custom drag image for headers to show full text
+    const dragImage = document.createElement('div');
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    dragImage.style.left = '-1000px';
+    dragImage.style.padding = '8px 16px';
+    dragImage.style.backgroundColor = backgroundColor || 'hsl(var(--header-background))';
+    dragImage.style.color = backgroundColor ? getContrastColor(backgroundColor) : 'hsl(var(--foreground))';
+    dragImage.style.border = '1px solid hsl(var(--border))';
+    dragImage.style.borderRadius = '4px';
+    dragImage.style.fontSize = '14px';
+    dragImage.style.fontWeight = '600';
+    dragImage.style.whiteSpace = 'nowrap';
+    dragImage.style.zIndex = '9999';
+    dragImage.style.opacity = '0.9';
+    dragImage.textContent = item.segmentName || 'Header';
+    
+    document.body.appendChild(dragImage);
+    
+    // Set the custom drag image
+    e.dataTransfer.setDragImage(dragImage, 10, 10);
+    
+    // Clean up the temporary element after a short delay
+    setTimeout(() => {
+      if (document.body.contains(dragImage)) {
+        document.body.removeChild(dragImage);
+      }
+    }, 100);
+    
     onDragStart(e, index);
+  };
+
+  // Helper function to determine text color based on background
+  const getContrastColor = (hexColor: string): string => {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return black for light backgrounds, white for dark backgrounds
+    return luminance > 0.5 ? '#000000' : '#ffffff';
   };
 
   // Enhanced drag end handler
