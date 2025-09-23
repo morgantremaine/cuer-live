@@ -4,13 +4,10 @@ import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamCustomColumns } from '@/hooks/useTeamCustomColumns';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import AddListDialog from '@/components/blueprint/AddListDialog';
+import DraggableListsSection from '@/components/blueprint/DraggableListsSection';
 import { Skeleton } from '@/components/ui/skeleton';
 import DashboardHeader from '@/components/DashboardHeader';
 import BlueprintHeader from '@/components/blueprint/BlueprintHeader';
-import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
-import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CameraPlot from '@/components/blueprint/CameraPlot';
 import RundownSummary from '@/components/blueprint/RundownSummary';
@@ -131,15 +128,23 @@ const BlueprintContent = () => {
 
   // Drag and drop state for lists and components
   const [draggedListId, setDraggedListId] = React.useState<string | null>(null);
+  const [draggedComponentId, setDraggedComponentId] = React.useState<string | null>(null);
   const [insertionIndex, setInsertionIndex] = React.useState<number | null>(null);
 
-  // Drag handlers
-  const handleDragStart = (e: React.DragEvent, itemId: string) => {
-    logger.blueprint('Drag start:', itemId);
+  // Drag handlers for lists within the lists section
+  const handleListDragStart = (e: React.DragEvent, itemId: string) => {
+    logger.blueprint('List drag start:', itemId);
     setDraggedListId(itemId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', itemId);
-    // Don't add opacity class here as it's handled by the card component
+  };
+
+  // Drag handlers for section-level components
+  const handleSectionDragStart = (e: React.DragEvent, componentId: string) => {
+    logger.blueprint('Section drag start:', componentId);
+    setDraggedComponentId(componentId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', componentId);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -149,8 +154,8 @@ const BlueprintContent = () => {
 
   const handleDragEnterContainer = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (draggedListId) {
-      logger.blueprint('Drag enter container at index:', { index, draggedListId });
+    if (draggedListId || draggedComponentId) {
+      logger.blueprint('Drag enter container at index:', { index, draggedListId, draggedComponentId });
       setInsertionIndex(index);
     }
   };
@@ -166,63 +171,62 @@ const BlueprintContent = () => {
     e.preventDefault();
     
     const draggedId = e.dataTransfer.getData('text/plain');
-    logger.blueprint('Drop event:', { draggedId, insertionIndex });
+    logger.blueprint('Drop event:', { draggedId, insertionIndex, draggedListId, draggedComponentId });
     
     if (!draggedId || insertionIndex === null) {
       setDraggedListId(null);
+      setDraggedComponentId(null);
       setInsertionIndex(null);
       return;
     }
 
-    // Handle special components reordering (camera plot temporarily disabled)
-    if (draggedId === 'scratchpad') {
+    // Handle component-level reordering (AI summary, lists section, scratchpad)
+    if (draggedComponentId) {
       const currentComponentOrder = [...state.componentOrder];
-      const draggedIndex = currentComponentOrder.indexOf(draggedId);
+      const draggedIndex = currentComponentOrder.indexOf(draggedComponentId);
       
       if (draggedIndex !== -1) {
         // Remove from current position
         currentComponentOrder.splice(draggedIndex, 1);
         
-        // Calculate insertion position relative to component order
-        let targetPosition = insertionIndex - state.lists.length;
-        if (targetPosition < 0) targetPosition = 0;
-        if (targetPosition > currentComponentOrder.length) targetPosition = currentComponentOrder.length;
-        
         // Insert at new position
-        currentComponentOrder.splice(targetPosition, 0, draggedId);
+        currentComponentOrder.splice(insertionIndex, 0, draggedComponentId);
         
         // Update the component order
         logger.blueprint('Updating component order:', currentComponentOrder);
         updateComponentOrder(currentComponentOrder);
       }
       
-      setDraggedListId(null);
+      setDraggedComponentId(null);
       setInsertionIndex(null);
       return;
     }
 
-    // Handle list reordering
-    const draggedIndex = state.lists.findIndex(list => list.id === draggedId);
-    if (draggedIndex === -1) {
+    // Handle list reordering within lists section (existing logic)
+    if (draggedListId) {
+      const draggedIndex = state.lists.findIndex(list => list.id === draggedId);
+      if (draggedIndex === -1) {
+        setDraggedListId(null);
+        setInsertionIndex(null);
+        return;
+      }
+
+      const newLists = [...state.lists];
+      const [draggedList] = newLists.splice(draggedIndex, 1);
+      newLists.splice(insertionIndex, 0, draggedList);
+      
+      logger.blueprint('Reordered lists:', newLists.map(l => l.name));
+      updateLists(newLists);
+
       setDraggedListId(null);
       setInsertionIndex(null);
-      return;
     }
-
-    const newLists = [...state.lists];
-    const [draggedList] = newLists.splice(draggedIndex, 1);
-    newLists.splice(insertionIndex, 0, draggedList);
-    
-    logger.blueprint('Reordered lists:', newLists.map(l => l.name));
-    updateLists(newLists);
-
-    setDraggedListId(null);
-    setInsertionIndex(null);
   };
 
   const handleDragEnd = () => {
     logger.blueprint('Drag end');
     setDraggedListId(null);
+    setDraggedComponentId(null);
     setInsertionIndex(null);
     
     // Remove visual feedback
@@ -276,41 +280,54 @@ const BlueprintContent = () => {
     return <BlueprintLoadingSkeleton />;
   }
 
-  // Create component mapping for rendering in the correct order (removed crew-list)
+  // Create component mapping for rendering in the correct order
   const componentMap = {
-    // Temporarily disabled camera plot
-    // 'camera-plot': (
-    //   <div 
-    //     key="camera-plot"
-    //     className={`${draggedListId === 'camera-plot' ? 'opacity-50' : ''}`}
-    //     draggable
-    //     onDragStart={(e) => handleDragStart(e, 'camera-plot')}
-    //     onDragEnter={(e) => {
-    //       e.preventDefault();
-    //       const componentIndex = state.lists.length + state.componentOrder.indexOf('camera-plot');
-    //       handleDragEnterContainer(e, componentIndex);
-    //     }}
-    //     onDragEnd={handleDragEnd}
-    //   >
-    //     <CameraPlot
-    //       rundownId={id || ''}
-    //       rundownTitle={rundown?.title || 'Unknown Rundown'}
-    //       isDragging={draggedListId === 'camera-plot'}
-    //       onDragStart={handleDragStart}
-    //       onDragEnterContainer={handleDragEnterContainer}
-    //       onDragEnd={handleDragEnd}
-    //     />
-    //   </div>
-    // ),
+    'ai-summary': (
+      <RundownSummary 
+        key="ai-summary"
+        rundownItems={rundown?.items || []}
+        rundownTitle={rundown?.title || 'Unknown Rundown'}
+        isDragging={draggedComponentId === 'ai-summary'}
+        onDragStart={handleSectionDragStart}
+        onDragEnter={handleDragEnterContainer}
+        onDragEnd={handleDragEnd}
+      />
+    ),
+    'lists-section': (
+      <DraggableListsSection
+        key="lists-section"
+        lists={state.lists}
+        rundownItems={rundown?.items || []}
+        availableColumns={availableColumns}
+        draggedListId={draggedListId}
+        insertionIndex={insertionIndex}
+        onDeleteList={deleteList}
+        onRenameList={renameList}
+        onUpdateCheckedItems={updateCheckedItems}
+        onToggleUnique={toggleUniqueItems}
+        onAddList={addNewList}
+        onRefreshAll={refreshAllLists}
+        onDragStart={handleListDragStart}
+        onDragOver={handleDragOver}
+        onDragEnterContainer={handleDragEnterContainer}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
+        isDragging={draggedComponentId === 'lists-section'}
+        onSectionDragStart={handleSectionDragStart}
+        onSectionDragEnter={handleDragEnterContainer}
+        onSectionDragEnd={handleDragEnd}
+      />
+    ),
     'scratchpad': (
       <div 
         key="scratchpad"
-        className={`${draggedListId === 'scratchpad' ? 'opacity-50' : ''}`}
+        className={`${draggedComponentId === 'scratchpad' ? 'opacity-50' : ''}`}
         draggable
-        onDragStart={(e) => handleDragStart(e, 'scratchpad')}
+        onDragStart={(e) => handleSectionDragStart(e, 'scratchpad')}
         onDragEnter={(e) => {
           e.preventDefault();
-          const componentIndex = state.lists.length + state.componentOrder.indexOf('scratchpad');
+          const componentIndex = state.componentOrder.indexOf('scratchpad');
           handleDragEnterContainer(e, componentIndex);
         }}
         onDragEnd={handleDragEnd}
@@ -336,73 +353,25 @@ const BlueprintContent = () => {
           rundown={rundown}
         />
 
-        <RundownSummary 
-          rundownItems={rundown?.items || []}
-          rundownTitle={rundown?.title || 'Unknown Rundown'}
-        />
-
         <div 
           data-drop-container
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* Always visible buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-6">
-            <AddListDialog
-              availableColumns={availableColumns}
-              onAddList={addNewList}
-            />
-            <Button
-              variant="outline"
-              onClick={refreshAllLists}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh All
-            </Button>
-          </div>
-
-          {state.lists.length === 0 ? (
-            <BlueprintEmptyState
-              availableColumns={availableColumns}
-              onAddList={addNewList}
-            />
-          ) : (
-            <BlueprintListsGrid
-              lists={state.lists}
-              rundownItems={rundown?.items || []}
-              draggedListId={draggedListId}
-              insertionIndex={insertionIndex}
-              onDeleteList={deleteList}
-              onRenameList={renameList}
-              onUpdateCheckedItems={updateCheckedItems}
-              onToggleUnique={toggleUniqueItems}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnterContainer={handleDragEnterContainer}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-            />
-          )}
-
           {/* Render components in the specified order with insertion lines */}
-          {state.componentOrder.map((componentId, index) => {
-            const componentIndex = state.lists.length + index;
-            return (
-              <React.Fragment key={componentId}>
-                {/* Insertion line before component */}
-                {insertionIndex === componentIndex && (
-                  <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
-                )}
-                {componentMap[componentId as keyof typeof componentMap]}
-              </React.Fragment>
-            );
-          })}
+          {state.componentOrder.map((componentId, index) => (
+            <React.Fragment key={componentId}>
+              {/* Insertion line before component */}
+              {insertionIndex === index && (
+                <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+              )}
+              {componentMap[componentId as keyof typeof componentMap]}
+            </React.Fragment>
+          ))}
 
           {/* Final insertion line */}
-          {insertionIndex === state.lists.length + state.componentOrder.length && (
+          {insertionIndex === state.componentOrder.length && (
             <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>

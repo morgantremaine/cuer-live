@@ -40,7 +40,7 @@ const initialState: BlueprintState = {
   showDate: '',
   notes: '',
   cameraPlots: [],
-  componentOrder: ['camera-plot', 'scratchpad'], // Removed 'crew-list'
+  componentOrder: ['ai-summary', 'lists-section', 'scratchpad'], // Updated with new draggable components
   isLoading: false,
   isInitialized: false,
   isSaving: false,

@@ -23,6 +23,11 @@ interface SectionSummary {
 interface RundownSummaryProps {
   rundownItems: RundownItem[];
   rundownTitle: string;
+  // Drag props for section-level dragging
+  isDragging?: boolean;
+  onDragStart?: (e: React.DragEvent, componentId: string) => void;
+  onDragEnter?: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: () => void;
 }
 
 // Calculate total duration for a section
@@ -49,7 +54,14 @@ const calculateSectionDuration = (header: RundownItem, items: RundownItem[]): st
   return `${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
 };
 
-const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTitle }) => {
+const RundownSummary: React.FC<RundownSummaryProps> = ({ 
+  rundownItems, 
+  rundownTitle, 
+  isDragging,
+  onDragStart,
+  onDragEnter,
+  onDragEnd 
+}) => {
   const [summaries, setSummaries] = useState<Record<string, SectionSummary>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -307,7 +319,17 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
   }
 
   return (
-    <Card className="mb-6 bg-gray-800 border-gray-700">
+    <div
+      className={`${isDragging ? 'opacity-50' : ''}`}
+      draggable
+      onDragStart={(e) => onDragStart?.(e, 'ai-summary')}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        onDragEnter?.(e, 0); // AI summary is first in component order
+      }}
+      onDragEnd={onDragEnd}
+    >
+      <Card className="mb-6 bg-gray-800 border-gray-700">
       <CardHeader className="py-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium text-white">
@@ -404,6 +426,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
         </CardContent>
       )}
     </Card>
+    </div>
   );
 };
 
