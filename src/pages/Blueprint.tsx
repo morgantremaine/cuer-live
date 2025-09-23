@@ -332,9 +332,6 @@ const BlueprintContent = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BlueprintHeader
           rundown={rundown}
-          availableColumns={availableColumns}
-          onAddList={addNewList}
-          onRefreshAll={refreshAllLists}
         />
 
         <RundownSummary 
@@ -357,12 +354,15 @@ const BlueprintContent = () => {
             <BlueprintListsGrid
               lists={state.lists}
               rundownItems={rundown?.items || []}
+              availableColumns={availableColumns}
               draggedListId={draggedListId}
               insertionIndex={insertionIndex}
               onDeleteList={deleteList}
               onRenameList={renameList}
               onUpdateCheckedItems={updateCheckedItems}
               onToggleUnique={toggleUniqueItems}
+              onAddList={addNewList}
+              onRefreshAll={refreshAllLists}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnterContainer={handleDragEnterContainer}
