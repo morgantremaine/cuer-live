@@ -51,8 +51,13 @@ const calculateSectionDuration = (header: RundownItem, items: RundownItem[]): st
 
 const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTitle }) => {
   const [summaries, setSummaries] = useState<Record<string, SectionSummary>>({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Check if summaries have been generated before for this rundown
+  const storageKey = `rundown-summary-generated-${rundownTitle}`;
+  const hasGeneratedBefore = localStorage.getItem(storageKey) === 'true';
+  
+  const [isCollapsed, setIsCollapsed] = useState(hasGeneratedBefore);
 
   // Group rundown items by sections
   const sections = useMemo(() => {
@@ -174,6 +179,9 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
     const promises = sections.map(section => generateSectionSummary(section));
     await Promise.all(promises);
     
+    // Mark that summaries have been generated for this rundown
+    localStorage.setItem(storageKey, 'true');
+    
     setIsRefreshing(false);
   };
 
@@ -271,12 +279,28 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
     return content;
   };
 
-  // Auto-generate summaries when sections change
+  // Auto-generate summaries only on first visit when sections change
   useEffect(() => {
-    if (sections.length > 0 && Object.keys(summaries).length === 0) {
+    if (
+      sections.length > 0 && 
+      Object.keys(summaries).length === 0 && 
+      !hasGeneratedBefore &&
+      !isRefreshing
+    ) {
       generateAllSummaries();
     }
   }, [sections]);
+
+  // Handle expand/collapse - generate summaries when expanding for the first time
+  const handleToggleCollapse = () => {
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    
+    // If expanding and no summaries exist yet, generate them
+    if (!newCollapsedState && Object.keys(summaries).length === 0) {
+      generateAllSummaries();
+    }
+  };
 
   if (sections.length === 0) {
     return null;
@@ -312,7 +336,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={handleToggleCollapse}
               className="text-gray-300 hover:text-white"
               title={isCollapsed ? "Expand Summary" : "Collapse Summary"}
             >
