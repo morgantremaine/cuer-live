@@ -123,7 +123,7 @@ const RegularRow = (props: RegularRowProps) => {
     getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
-  // Enhanced drag start handler with better text selection detection
+  // Enhanced drag start handler with custom drag image to eliminate cell gaps
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
@@ -148,6 +148,35 @@ const RegularRow = (props: RegularRowProps) => {
       e.preventDefault();
       e.stopPropagation();
       return;
+    }
+    
+    // Find and clone the actual row element to create seamless drag image
+    const rowElement = e.currentTarget as HTMLTableRowElement;
+    if (rowElement) {
+      const clonedRow = rowElement.cloneNode(true) as HTMLTableRowElement;
+      
+      // Create a table wrapper to maintain proper rendering
+      const tableWrapper = document.createElement('table');
+      tableWrapper.style.position = 'absolute';
+      tableWrapper.style.top = '-1000px';
+      tableWrapper.style.left = '-1000px';
+      tableWrapper.style.borderCollapse = 'collapse';
+      tableWrapper.style.backgroundColor = backgroundColor || 'white';
+      tableWrapper.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      
+      const tbody = document.createElement('tbody');
+      tbody.appendChild(clonedRow);
+      tableWrapper.appendChild(tbody);
+      
+      document.body.appendChild(tableWrapper);
+      e.dataTransfer.setDragImage(tableWrapper, 20, 20);
+      
+      // Clean up after drag starts
+      setTimeout(() => {
+        if (document.body.contains(tableWrapper)) {
+          document.body.removeChild(tableWrapper);
+        }
+      }, 100);
     }
     
     onDragStart(e, index);
