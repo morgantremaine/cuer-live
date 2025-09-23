@@ -2,12 +2,8 @@ import { useEffect } from 'react';
 
 const StreamDeckDownload = () => {
   useEffect(() => {
-    // Redirect directly to instructions with download link
-    const timer = setTimeout(() => {
-      window.location.href = '/stream-deck-plugin/install-instructions.html';
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    // Redirect directly to instructions since we can't create a real zip
+    window.location.href = '/stream-deck-plugin/install-instructions.html';
   }, []);
 
   return (
