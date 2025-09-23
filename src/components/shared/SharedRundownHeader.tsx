@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import CuerLogo from '@/components/common/CuerLogo';
 import { handleSharedRundownPrint } from '@/utils/sharedRundownPrint';
+import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 
 interface SharedRundownHeaderProps {
   title: string;
@@ -36,16 +37,6 @@ export const SharedRundownHeader = ({
 }: SharedRundownHeaderProps) => {
   // Calculate total runtime (excluding floated items)
   const calculateTotalRuntime = () => {
-    const timeToSeconds = (timeStr: string) => {
-      if (!timeStr) return 0;
-      const parts = timeStr.split(':').map(Number);
-      if (parts.length === 2) {
-        return parts[0] * 60 + parts[1];
-      } else if (parts.length === 3) {
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
-      }
-      return 0;
-    };
 
     const totalSeconds = items.reduce((acc, item) => {
       // Skip floated items - they don't count towards runtime

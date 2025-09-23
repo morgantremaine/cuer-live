@@ -9,6 +9,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { timeToSeconds, secondsToTime } from '@/utils/timeUtils';
 
 interface SharedRundownTableProps {
   items: RundownItem[];
@@ -137,27 +138,6 @@ const SharedRundownTable = forwardRef<HTMLDivElement, SharedRundownTableProps>((
   const [collapsedHeaders, setCollapsedHeaders] = useState<Set<string>>(new Set());
   // State for managing column expand state (expand all cells in a column)
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
-  // Helper function to convert time string to seconds
-  const timeToSeconds = (timeStr: string): number => {
-    if (!timeStr) return 0;
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return minutes * 60 + seconds;
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-  };
-
-  // Helper function to convert seconds to time string
-  const secondsToTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Helper function to convert Dropbox links to direct image URLs
   const convertDropboxUrl = (url: string): string => {
