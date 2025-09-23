@@ -107,7 +107,7 @@ const HeaderRow = (props: HeaderRowProps) => {
     getHeaderGroupItemIds: props.getHeaderGroupItemIds
   });
 
-  // Simple drag start handler with minimal custom drag image
+  // Simple drag start handler - exactly like regular rows
   const handleDragStart = (e: React.DragEvent) => {
     const target = e.target as HTMLElement;
     
@@ -133,27 +133,6 @@ const HeaderRow = (props: HeaderRowProps) => {
       e.stopPropagation();
       return;
     }
-    
-    // Create a simple drag image showing just the header name
-    const headerName = item.segmentName || 'Header';
-    const dragElement = document.createElement('div');
-    dragElement.textContent = headerName;
-    dragElement.style.position = 'absolute';
-    dragElement.style.top = '-1000px';
-    dragElement.style.padding = '4px 8px';
-    dragElement.style.backgroundColor = 'white';
-    dragElement.style.color = 'black';
-    dragElement.style.border = '1px solid #ccc';
-    dragElement.style.fontSize = '14px';
-    dragElement.style.whiteSpace = 'nowrap';
-    
-    document.body.appendChild(dragElement);
-    e.dataTransfer.setDragImage(dragElement, 0, 0);
-    
-    // Clean up after drag starts
-    setTimeout(() => {
-      document.body.removeChild(dragElement);
-    }, 0);
     
     onDragStart(e, index);
   };
