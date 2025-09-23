@@ -11,6 +11,7 @@ import BlueprintEmptyState from '@/components/blueprint/BlueprintEmptyState';
 import BlueprintListsGrid from '@/components/blueprint/BlueprintListsGrid';
 import BlueprintScratchpad from '@/components/blueprint/BlueprintScratchpad';
 import CameraPlot from '@/components/blueprint/CameraPlot';
+import RundownSummary from '@/components/blueprint/RundownSummary';
 import { BlueprintProvider, useBlueprintContext } from '@/contexts/BlueprintContext';
 import { getAvailableColumns, generateListFromColumn } from '@/utils/blueprintUtils';
 import { logger } from '@/utils/logger';
@@ -334,6 +335,11 @@ const BlueprintContent = () => {
           availableColumns={availableColumns}
           onAddList={addNewList}
           onRefreshAll={refreshAllLists}
+        />
+
+        <RundownSummary 
+          rundownItems={rundown?.items || []}
+          rundownTitle={rundown?.title || 'Unknown Rundown'}
         />
 
         <div 

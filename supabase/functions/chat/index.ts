@@ -82,14 +82,35 @@ serve(async (req) => {
       }
     }
 
+    // Handle different types of requests
+    let systemPrompt = getSystemPrompt(rundownData) + teamContext
+    let userMessage = message
+
+    // Special handling for section summaries
+    if (rundownData?.type === 'section_summary' && rundownData?.section) {
+      systemPrompt = `You are Cuer, a broadcast production assistant. Your task is to provide concise, professional summaries of rundown sections for production teams.
+
+When summarizing a rundown section:
+- Focus on the key content, talent, and production elements
+- Keep it to 2-3 sentences maximum
+- Be specific about what viewers will see/hear
+- Mention important production notes or graphics
+- Use professional broadcast terminology
+
+Section Data:
+${JSON.stringify(rundownData.section, null, 2)}`
+
+      userMessage = `Summarize this rundown section: "${rundownData.section.header}"`
+    }
+
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: getSystemPrompt(rundownData) + teamContext,
+        content: systemPrompt,
       },
       {
         role: 'user',
-        content: message,
+        content: userMessage,
       },
     ]
 
