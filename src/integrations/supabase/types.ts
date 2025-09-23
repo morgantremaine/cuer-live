@@ -158,6 +158,7 @@ export type Database = {
       }
       blueprints: {
         Row: {
+          ai_summaries: Json | null
           camera_plots: Json | null
           component_order: Json | null
           created_at: string
@@ -173,6 +174,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_summaries?: Json | null
           camera_plots?: Json | null
           component_order?: Json | null
           created_at?: string
@@ -188,6 +190,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_summaries?: Json | null
           camera_plots?: Json | null
           component_order?: Json | null
           created_at?: string
