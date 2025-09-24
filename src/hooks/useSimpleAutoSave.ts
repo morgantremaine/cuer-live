@@ -667,20 +667,9 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        console.log('⚡ AutoSave: using delta save for rundown', { 
-          rundownId, 
-          itemCount: saveState.items?.length || 0,
-          isFlushSave 
-        });
-        
         try {
           // Use field-level delta save
           const { updatedAt, docVersion } = await saveDeltaState(saveState);
-          
-          console.log('✅ AutoSave: delta save response', { 
-            updatedAt,
-            docVersion 
-          });
 
           // Track the actual timestamp returned by the database
           if (updatedAt) {
@@ -694,7 +683,6 @@ export const useSimpleAutoSave = (
           // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log('📝 Setting lastSavedRef to current state after delta save:', currentSignatureAfterSave.length);
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {
@@ -709,7 +697,6 @@ export const useSimpleAutoSave = (
         } catch (deltaError: any) {
           // If delta save fails due to no changes, that's OK
           if (deltaError?.message === 'No changes to save') {
-            console.log('ℹ️ Delta save: no changes detected');
             onSavedRef.current?.();
           } else {
             throw deltaError;
@@ -824,13 +811,10 @@ export const useSimpleAutoSave = (
     const isStructuralChange = pendingStructuralChangeRef?.current || false;
     // Simplified debouncing
     const debounceTime = isStructuralChange ? 50 : 1000; // Faster, simpler timing
-    console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive: false });
 
     saveTimeoutRef.current = setTimeout(async () => {
-      console.log('⏱️ AutoSave: executing save now');
       try {
         await performSave(false, isSharedView);
-        console.log('✅ AutoSave: save completed successfully');
       } catch (error) {
         console.error('❌ AutoSave: save execution failed:', error);
       }
@@ -894,10 +878,7 @@ export const useSimpleAutoSave = (
       // Simplified timing - no complex conditional logic
       const debounceTime = isStructuralChange ? 100 : 800; // Shorter debounce for faster saves
       
-      console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
-
       saveTimeoutRef.current = setTimeout(async () => {
-    console.log('⏱️ AutoSave: executing save now');
     
     // CRITICAL: Clear typing flag immediately when save executes to prevent blocking
     userTypingRef.current = false;

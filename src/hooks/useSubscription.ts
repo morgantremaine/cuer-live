@@ -41,7 +41,6 @@ export const useSubscription = () => {
 
     // Prevent duplicate loading for the same user
     if (loadedUserRef.current === user.id) {
-      console.log('🔄 useSubscription: Skipping check - already loaded for user:', user.id);
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
@@ -50,7 +49,6 @@ export const useSubscription = () => {
     loadedUserRef.current = user.id;
 
     try {
-      console.log('🔄 useSubscription: Checking subscription for user:', user.id);
       setStatus(prev => ({ ...prev, loading: true, error: null }));
       
       // First sync with Stripe to ensure our database is up to date
@@ -207,10 +205,8 @@ export const useSubscription = () => {
   // Load subscription data when user changes - with strict change detection
   useEffect(() => {
     if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
-      console.log('🔄 useSubscription: Loading subscription data for user change:', user.id);
       checkSubscription();
     } else if (!user?.id && loadedUserRef.current) {
-      console.log('🔄 useSubscription: Clearing subscription data (no user)');
       setStatus(prev => ({ ...prev, loading: false }));
       loadedUserRef.current = null;
       isLoadingRef.current = false;
@@ -241,7 +237,6 @@ export const useSubscription = () => {
         
         // Only reload if we don't have subscription data and we should have it
         if (user?.id && !isLoadingRef.current && status.loading && loadedUserRef.current !== user.id) {
-          console.log('🔄 useSubscription: Reloading subscription data after visibility change');
           checkSubscription();
         }
       }

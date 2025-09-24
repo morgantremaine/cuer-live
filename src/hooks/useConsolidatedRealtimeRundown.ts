@@ -678,7 +678,6 @@ export const useConsolidatedRealtimeRundown = ({
   // SIMPLIFIED: No longer track timestamps, rely only on tab_id
   const trackOwnUpdateFunc = useCallback((timestamp: string) => {
     // Keep for backward compatibility but don't track timestamps
-    console.log('🏷️ Own update timestamp (not tracked):', timestamp);
   }, []);
 
   return {

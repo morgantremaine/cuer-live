@@ -87,20 +87,10 @@ const Dashboard = () => {
     // We need user, teamId, and stable loading state
     const hasValidState = user && teamId && !loading;
     
-    console.log('🔍 Dashboard loading check:', { 
-      user: !!user, 
-      teamId: !!teamId, 
-      savedRundownsLength: savedRundowns.length,
-      loading,
-      hasValidState,
-      initialDataLoaded 
-    });
-    
     // Only mark as loaded if we have a stable valid state AND we haven't already marked it
     if (hasValidState && !initialDataLoaded) {
       // Use a small timeout to prevent flashing when data loads immediately
       const timeoutId = setTimeout(() => {
-        console.log('✅ Setting initial data as loaded');
         setInitialDataLoaded(true);
       }, 100);
       

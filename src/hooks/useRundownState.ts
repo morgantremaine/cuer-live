@@ -60,7 +60,6 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
-    console.log('🔥 REDUCER markChanged called:', { actionType, hasUpdates: !!newState, stateKeys: Object.keys(newState) });
     debugLogger.autosave('Content change flagged (hasUnsavedChanges=true) via action:', actionType);
     try {
       debugLogger.autosave('Save cause trace');
@@ -78,13 +77,11 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return markChanged({ items: action.payload }, 'SET_ITEMS');
 
     case 'UPDATE_ITEM': {
-      console.log('🎯 REDUCER UPDATE_ITEM:', { id: action.payload.id, updates: action.payload.updates });
       const items = state.items.map(item =>
         item.id === action.payload.id 
           ? { ...item, ...action.payload.updates }
           : item
       );
-      console.log('🎯 REDUCER UPDATE_ITEM result:', { hasUnsavedChanges: true });
       return markChanged({ items }, 'UPDATE_ITEM');
     }
 

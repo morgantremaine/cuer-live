@@ -900,7 +900,6 @@ export const useSimplifiedRundownState = () => {
         updateValue = value === 'true';
       }
       
-      console.log('✅ enhancedUpdateItem: calling actions.updateItem', { id, updateField, updateValue });
       actions.updateItem(id, { [updateField]: updateValue });
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState]);
