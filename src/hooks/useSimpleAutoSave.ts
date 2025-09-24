@@ -294,12 +294,18 @@ export const useSimpleAutoSave = (
     trackMyUpdate
   );
 
-  // Enhanced typing tracker with immediate save cancellation
+  // Enhanced typing tracker with immediate save cancellation and proper timeout management
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const userTypingRef = useRef(false);
+  
   const markActiveTyping = useCallback(() => {
     const now = Date.now();
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
+    userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
+    
+    console.log('⌨️ User typing detected - marking active');
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
@@ -346,23 +352,52 @@ export const useSimpleAutoSave = (
       maxDelayTimeoutRef.current = null;
     }
     
+    // Clear existing typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set timeout to automatically clear typing state
+    typingTimeoutRef.current = setTimeout(() => {
+      console.log('⌨️ Typing timeout - clearing typing state');
+      userTypingRef.current = false;
+      typingTimeoutRef.current = undefined;
+    }, typingIdleMs + 100); // Slightly longer than typingIdleMs to ensure cleanup
+    
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
+      userTypingRef.current = false; // Clear typing flag before save
       performSave(false, isSharedView);
     }, typingIdleMs);
     
     // Max-delay forced save only if user keeps typing continuously
     maxDelayTimeoutRef.current = setTimeout(() => {
       console.log('⏲️ AutoSave: max delay reached - forcing save');
+      userTypingRef.current = false; // Clear typing flag before save
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
 
-  // Check if user is currently typing
+  // Check if user is currently typing with improved logic
   const isTypingActive = useCallback(() => {
-    return Date.now() - lastEditAtRef.current < typingIdleMs;
+    // Check the explicit typing flag first
+    if (userTypingRef.current) {
+      const timeSinceEdit = Date.now() - lastEditAtRef.current;
+      // If it's been too long since the last edit, clear the flag
+      if (timeSinceEdit > typingIdleMs + 500) {
+        console.log('⌨️ Typing state expired - auto-clearing');
+        userTypingRef.current = false;
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = undefined;
+        }
+        return false;
+      }
+      return true;
+    }
+    return false;
   }, [typingIdleMs]);
 
   // Micro-resave with consistent behavior across all rundown sizes
@@ -684,6 +719,16 @@ export const useSimpleAutoSave = (
       saveInProgressRef.current = false; // Reset save progress flag
       saveInitiatedWhileActiveRef.current = false; // Reset active initiation flag
       
+      // CRITICAL: Clear typing state when save completes successfully
+      if (userTypingRef.current) {
+        console.log('✅ Save completed - clearing typing state');
+        userTypingRef.current = false;
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = undefined;
+        }
+      }
+      
       // Reset max-delay timer and re-arm if user still typing
       if (maxDelayTimeoutRef.current) {
         clearTimeout(maxDelayTimeoutRef.current);
@@ -881,6 +926,10 @@ export const useSimpleAutoSave = (
         clearTimeout(maxDelayTimeoutRef.current);
         maxDelayTimeoutRef.current = null;
       }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
+      }
     };
   }, [state.hasUnsavedChanges, isInitiallyLoaded, rundownId, suppressUntilRef]);
 
@@ -927,6 +976,10 @@ export const useSimpleAutoSave = (
       }
       if (postTypingSafetyTimeoutRef.current) {
         clearTimeout(postTypingSafetyTimeoutRef.current);
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
       }
       if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
         console.log('🧯 AutoSave: flushing pending changes on unmount');
