@@ -131,9 +131,9 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // Use existing rowNumber if available (preserves drag operation results)
+      // Use existing rowNumber if available and not empty (preserves drag operation results)
       // Otherwise assign sequential number for new items
-      if (item.rowNumber) {
+      if (item.rowNumber && item.rowNumber.trim() !== '') {
         calculatedRowNumber = item.rowNumber;
       } else {
         regularRowCount++;

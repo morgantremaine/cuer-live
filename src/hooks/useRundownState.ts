@@ -271,9 +271,9 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
         return { ...item, rowNumber: item.rowNumber || '' };
       }
       
-      // Use existing rowNumber if it exists (preserves drag operation results)
+      // Use existing rowNumber if it exists and is not empty (preserves drag operation results)
       // Otherwise assign sequential number for new items
-      if (item.rowNumber) {
+      if (item.rowNumber && item.rowNumber.trim() !== '') {
         return { ...item };
       } else {
         regularRowCount++;
