@@ -121,6 +121,27 @@ export const useRundownStateCoordination = () => {
   // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
+  // Setup drag and drop with structural change integration - initialized early
+  const dragAndDrop = useDragAndDrop(
+    performanceOptimization.calculatedItems,
+    (items) => {
+      // Update items through persisted state
+      persistedState.setItems(items);
+      // Clear structural change flag after items are set
+      setTimeout(() => persistedState.clearStructuralChange(), 50);
+    },
+    new Set<string>(), // selectedRows - will be connected to interactions later
+    undefined, // scrollContainerRef - placeholder for now
+    persistedState.saveUndoState,
+    persistedState.columns,
+    persistedState.rundownTitle,
+    getHeaderGroupItemIds,
+    isHeaderCollapsed,
+    persistedState.markStructuralChange,
+    persistedState.rundownId, // Pass rundownId for broadcasts
+    userId // Pass userId for broadcasts
+  );
+
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
   const interactions = useRundownGridInteractions(
@@ -184,7 +205,19 @@ export const useRundownStateCoordination = () => {
     getHeaderGroupItemIds,
     isHeaderCollapsed,
     persistedState.rundownId,
-    userId
+    userId,
+    // Pass drag state from the primary drag instance and use the real selectedRows
+    {
+      draggedItemIndex: dragAndDrop.draggedItemIndex,
+      isDraggingMultiple: dragAndDrop.isDraggingMultiple,
+      dropTargetIndex: dragAndDrop.dropTargetIndex,
+      handleDragStart: dragAndDrop.handleDragStart,
+      handleDragOver: dragAndDrop.handleDragOver,
+      handleDragLeave: dragAndDrop.handleDragLeave,
+      handleDrop: dragAndDrop.handleDrop,
+      handleDragEnd: dragAndDrop.handleDragEnd,
+      resetDragState: dragAndDrop.resetDragState
+    }
   );
 
   // Get UI state with enhanced navigation - use performance-optimized data
@@ -196,26 +229,7 @@ export const useRundownStateCoordination = () => {
     persistedState.columns
   );
 
-  // Setup drag and drop with structural change integration
-  const dragAndDrop = useDragAndDrop(
-    performanceOptimization.calculatedItems,
-    (items) => {
-      // Update items through persisted state
-      persistedState.setItems(items);
-      // Clear structural change flag after items are set
-      setTimeout(() => persistedState.clearStructuralChange(), 50);
-    },
-    new Set<string>(), // selectedRows - placeholder for now
-    undefined, // scrollContainerRef - placeholder for now
-    persistedState.saveUndoState,
-    persistedState.columns,
-    persistedState.rundownTitle,
-    getHeaderGroupItemIds,
-    isHeaderCollapsed,
-    persistedState.markStructuralChange,
-    persistedState.rundownId, // Pass rundownId for broadcasts
-    userId // Pass userId for broadcasts
-  );
+  // dragAndDrop is now defined above before interactions
   
   // Update stable connection state only when rundown is truly ready
   useEffect(() => {

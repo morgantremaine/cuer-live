@@ -1,6 +1,5 @@
 
 import { useMultiRowSelection } from './useMultiRowSelection';
-import { useDragAndDrop } from './useDragAndDrop';
 import { useClipboard } from './useClipboard';
 import { useRundownGridHandlers } from './useRundownGridHandlers';
 import { RundownItem } from '@/types/rundown';
@@ -29,49 +28,25 @@ export const useRundownInteractionHandlers = (
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean,
   rundownId?: string,
-  currentUserId?: string
+  currentUserId?: string,
+  // Accept drag state from primary drag instance
+  dragState?: {
+    draggedItemIndex: number | null;
+    isDraggingMultiple: boolean;
+    dropTargetIndex: number | null;
+    handleDragStart: (e: React.DragEvent, index: number) => void;
+    handleDragOver: (e: React.DragEvent, index: number) => void;
+    handleDragLeave: (e: React.DragEvent) => void;
+    handleDrop: (e: React.DragEvent, index: number) => void;
+    handleDragEnd: (e: React.DragEvent) => void;
+    resetDragState: () => void;
+  }
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
 
-  // Enhanced drag and drop with better error handling
-  const { 
-    draggedItemIndex, 
-    isDraggingMultiple,
-    dropTargetIndex,
-    handleDragStart, 
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleDragEnd,
-    resetDragState
-  } = useDragAndDrop(
-    items, 
-    (newItems: RundownItem[]) => {
-      console.log('🔄 Setting items from drag and drop');
-      console.log('🔄 Items being set:', {
-        count: newItems.length,
-        firstFew: newItems.slice(0, 3).map(item => ({
-          id: item.id.slice(-6),
-          type: item.type,
-          rowNumber: item.rowNumber,
-          name: item.name?.slice(0, 15)
-        }))
-      });
-      setItems(() => newItems);
-      markAsChanged();
-    }, 
-    selectedRows,
-    undefined,
-    saveUndoState,
-    columns,
-    title,
-    getHeaderGroupItemIds,
-    isHeaderCollapsed,
-    markStructuralChange,
-    rundownId,
-    currentUserId
-  );
+  // Accept drag state and handlers as parameters (no duplicate drag instance)
+  // These will be passed from the primary drag instance
 
   // Clipboard functionality
   const { clipboardItems, copyItems, hasClipboardData } = useClipboard();
@@ -119,15 +94,16 @@ export const useRundownInteractionHandlers = (
     selectedRows,
     toggleRowSelection,
     clearSelection,
-    draggedItemIndex,
-    isDraggingMultiple,
-    dropTargetIndex,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleDragEnd,
-    resetDragState,
+    // Use drag state from primary instance if provided, otherwise provide fallbacks
+    draggedItemIndex: dragState?.draggedItemIndex ?? null,
+    isDraggingMultiple: dragState?.isDraggingMultiple ?? false,
+    dropTargetIndex: dragState?.dropTargetIndex ?? null,
+    handleDragStart: dragState?.handleDragStart ?? (() => {}),
+    handleDragOver: dragState?.handleDragOver ?? (() => {}),
+    handleDragLeave: dragState?.handleDragLeave ?? (() => {}),
+    handleDrop: dragState?.handleDrop ?? (() => {}),
+    handleDragEnd: dragState?.handleDragEnd ?? (() => {}),
+    resetDragState: dragState?.resetDragState ?? (() => {}),
     clipboardItems,
     copyItems,
     hasClipboardData,

@@ -26,7 +26,19 @@ export const useRundownGridInteractions = (
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean,
   rundownId?: string,
-  currentUserId?: string
+  currentUserId?: string,
+  // Accept drag state from primary drag instance  
+  dragState?: {
+    draggedItemIndex: number | null;
+    isDraggingMultiple: boolean;
+    dropTargetIndex: number | null;
+    handleDragStart: (e: React.DragEvent, index: number) => void;
+    handleDragOver: (e: React.DragEvent, index: number) => void;
+    handleDragLeave: (e: React.DragEvent) => void;
+    handleDrop: (e: React.DragEvent, index: number) => void;
+    handleDragEnd: (e: React.DragEvent) => void;
+    resetDragState: () => void;
+  }
 ) => {
   const {
     selectedRows,
@@ -80,7 +92,8 @@ export const useRundownGridInteractions = (
     getHeaderGroupItemIds,
     isHeaderCollapsed,
     rundownId,
-    currentUserId
+    currentUserId,
+    dragState // Pass the drag state from primary instance
   );
 
   return {
