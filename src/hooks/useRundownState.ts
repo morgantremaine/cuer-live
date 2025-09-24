@@ -265,19 +265,10 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
 
   // OPTIMIZED: Lazy calculation of row numbers
   const itemsWithRowNumbers = useMemo(() => {
-    // Find the highest existing row number to continue from (EXCLUDE headers)
+    // This is used when useRundownState is used standalone (not in main rundown)
+    // For main rundown, calculateItemsWithTiming handles row numbering
     let regularRowCount = 0;
-    itemsWithCalculatedTimes.forEach(item => {
-      if (!isHeaderItem(item) && item.rowNumber && item.rowNumber.trim() !== '') {
-        const num = parseInt(item.rowNumber);
-        if (!isNaN(num)) {
-          regularRowCount = Math.max(regularRowCount, num);
-        }
-      }
-    });
-    
-    
-    return itemsWithCalculatedTimes.map((item, index) => {
+    return itemsWithCalculatedTimes.map((item) => {
       if (isHeaderItem(item)) {
         return { ...item, rowNumber: item.rowNumber || '' };
       }

@@ -21,18 +21,17 @@ export const useRundownMemoization = (
   
   // EXTREME MEMORY OPTIMIZATION: Minimal processing for large rundowns
   const memoizedCalculations = useMemo(() => {
-    console.log('🔄 MEMO: Recalculating with', items.length, 'items');
     const itemCount = items.length;
     
     // For large rundowns, use memory-optimized calculations while preserving functionality
     if (itemCount > 100) {
       // Return items with minimal augmentation using stored rowNumber values
       const itemsWithStatus = items.map((item) => {
-        // Use stored rowNumber instead of recalculating for regular items
+        // For display optimization, use the calculated row numbers from the items
         let calculatedRowNumber = '';
         if (item.type !== 'header') {
-          calculatedRowNumber = item.rowNumber || '';
-          console.log('🔢 MEMO: Item', item.id.slice(-6), 'rowNumber:', `"${calculatedRowNumber}"`);
+          // Use the calculatedRowNumber if available (from calculateItemsWithTiming)
+          calculatedRowNumber = (item as any).calculatedRowNumber || item.rowNumber || '';
         }
         
         return {
@@ -104,11 +103,11 @@ export const useRundownMemoization = (
 
     // Memory efficient: Create enhanced items only for small rundowns
     const itemsWithStatus = items.map((item, index) => {
-      // Use stored rowNumber instead of recalculating for regular items
+      // For display optimization, use the calculated row numbers from the items
       let calculatedRowNumber = '';
       if (item.type !== 'header') {
-        calculatedRowNumber = item.rowNumber || '';
-        console.log('🔢 MEMO SMALL: Item', item.id.slice(-6), 'rowNumber:', `"${calculatedRowNumber}"`);
+        // Use the calculatedRowNumber if available (from calculateItemsWithTiming)
+        calculatedRowNumber = (item as any).calculatedRowNumber || item.rowNumber || '';
       }
 
       // Calculate status
