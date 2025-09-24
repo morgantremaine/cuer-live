@@ -66,7 +66,7 @@ const AppRoutes = () => {
       <Route path="/home" element={<LandingPage />} />
       
       {/* Public routes */}
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/demo" element={<Index />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/ad-view/:id" element={<ADView />} />

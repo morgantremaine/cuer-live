@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import CuerLogo from '@/components/common/CuerLogo'
 
 const Login = () => {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin'
   const isStreamDeck = searchParams.get('streamdeck') === 'true'
   
@@ -23,29 +24,34 @@ const Login = () => {
   const [showResetForm, setShowResetForm] = useState(false)
   const [showResendConfirmation, setShowResendConfirmation] = useState(false)
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
-  const { signIn, signUp, resetPassword, resendConfirmation, session } = useAuth()
+  const { signIn, signUp, resetPassword, resendConfirmation, session, user } = useAuth()
   const { toast } = useToast()
 
-  // Handle Stream Deck authentication success
+  // Handle navigation for authenticated users (both Stream Deck and normal)
   useEffect(() => {
-    if (isStreamDeck && session?.access_token) {
-      console.log('🎛️ Stream Deck: Sending auth success message');
-      // Send auth success message to parent window (Stream Deck popup)
-      window.opener?.postMessage({
-        type: 'CUER_AUTH_SUCCESS',
-        token: session.access_token,
-        user: { 
-          email: session.user?.email,
-          id: session.user?.id 
-        }
-      }, '*'); // Allow any origin for Stream Deck communication
-      
-      // Close the popup after a short delay
-      setTimeout(() => {
-        window.close();
-      }, 100);
+    if (user && session) {
+      if (isStreamDeck) {
+        console.log('🎛️ Stream Deck: Sending auth success message');
+        // Send auth success message to parent window (Stream Deck popup)
+        window.opener?.postMessage({
+          type: 'CUER_AUTH_SUCCESS',
+          token: session.access_token,
+          user: { 
+            email: session.user?.email,
+            id: session.user?.id 
+          }
+        }, '*'); // Allow any origin for Stream Deck communication
+        
+        // Close the popup after a short delay
+        setTimeout(() => {
+          window.close();
+        }, 100);
+      } else {
+        // For normal users, redirect to dashboard
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isStreamDeck, session]);
+  }, [user, session, isStreamDeck, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
