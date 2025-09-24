@@ -121,6 +121,7 @@ const CellRenderer = ({
         textColor={showcallerTextColor}
         backgroundColor={showcallerBackgroundColor}
         onUpdateValue={(newValue) => {
+          markActiveTyping?.();
           // Always use 'images' as the field name for the images column
           onUpdateItem(item.id, 'images', newValue);
         }}
@@ -144,11 +145,7 @@ const CellRenderer = ({
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
         onUpdateValue={(newValue) => {
-          console.log('🔄 CellRenderer ExpandableScriptCell onUpdateValue - SINGLE CHAR TEST', { 
-            newValue, 
-            length: newValue.length,
-            column: column.key 
-          });
+          markActiveTyping?.();
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
@@ -171,7 +168,7 @@ const CellRenderer = ({
       isDuration={isTimeField}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
-        console.log('🔄 CellRenderer onUpdateValue - SINGLE CHAR TEST', { newValue, length: newValue.length });
+        markActiveTyping?.();
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
           const field = `customFields.${column.key}`;
