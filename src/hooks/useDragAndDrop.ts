@@ -66,14 +66,16 @@ export const useDragAndDrop = (
 
   // Centralized state reset function
   const resetDragState = useCallback(() => {
-    console.log('🎯 === RESETTING DRAG STATE ===');
-    console.log('🎯 Previous state:', {
-      activeId,
-      draggedItemIndex,
-      isDraggingMultiple,
-      dropTargetIndex,
-      isDragActive: isDragActiveRef.current
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 === RESETTING DRAG STATE ===');
+      console.log('🎯 Previous state:', {
+        activeId,
+        draggedItemIndex,
+        isDraggingMultiple,
+        dropTargetIndex,
+        isDragActive: isDragActiveRef.current
+      });
+    }
     
     setActiveId(null);
     setDragInfo(null);
@@ -88,7 +90,9 @@ export const useDragAndDrop = (
       dragTimeoutRef.current = undefined;
     }
     
-    console.log('🎯 Drag state reset complete');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 Drag state reset complete');
+    }
   }, [activeId, draggedItemIndex, isDraggingMultiple, dropTargetIndex]);
 
   // Auto-cleanup timeout to prevent stuck states
@@ -97,12 +101,14 @@ export const useDragAndDrop = (
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 10-second timeout to force reset if drag gets stuck
-    console.log('🎯 Setting 10-second drag timeout');
+    // Set a 3-second timeout to force reset if drag gets stuck
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 Setting 3-second drag timeout');
+    }
     dragTimeoutRef.current = setTimeout(() => {
-      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 10 seconds');
+      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 3 seconds');
       resetDragState();
-    }, 10000);
+    }, 3000);
   }, [resetDragState]);
 
   // Cleanup on unmount
@@ -115,13 +121,15 @@ export const useDragAndDrop = (
   }, []);
 
   const renumberItems = useCallback((items: RundownItem[]) => {
-    console.log('🔢 === RENUMBERING ITEMS ===');
-    console.log('🔢 Before renumbering:', items.map(item => ({
-      id: item.id.slice(-6),
-      type: item.type,
-      name: item.name?.slice(0, 20),
-      rowNumber: item.rowNumber
-    })));
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔢 === RENUMBERING ITEMS ===');
+      console.log('🔢 Before renumbering:', items.map(item => ({
+        id: item.id.slice(-6),
+        type: item.type,
+        name: item.name?.slice(0, 20),
+        rowNumber: item.rowNumber
+      })));
+    }
     
     let headerIndex = 0;
     let regularItemIndex = 1;
@@ -131,7 +139,9 @@ export const useDragAndDrop = (
       if (item.type === 'header') {
         const newHeaderLetter = letters[headerIndex] || 'A';
         headerIndex++;
-        console.log(`🔢 Header ${item.id.slice(-6)}: ${item.rowNumber} → ${newHeaderLetter}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔢 Header ${item.id.slice(-6)}: ${item.rowNumber} → ${newHeaderLetter}`);
+        }
         return {
           ...item,
           rowNumber: newHeaderLetter,
@@ -141,7 +151,9 @@ export const useDragAndDrop = (
         // Renumber regular items sequentially (1, 2, 3, etc.)
         const newRowNumber = regularItemIndex.toString();
         regularItemIndex++;
-        console.log(`🔢 Regular ${item.id.slice(-6)}: ${item.rowNumber} → ${newRowNumber}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔢 Regular ${item.id.slice(-6)}: ${item.rowNumber} → ${newRowNumber}`);
+        }
         return {
           ...item,
           rowNumber: newRowNumber
@@ -149,12 +161,14 @@ export const useDragAndDrop = (
       }
     });
     
-    console.log('🔢 After renumbering:', result.map(item => ({
-      id: item.id.slice(-6),
-      type: item.type,
-      name: item.name?.slice(0, 20),
-      rowNumber: item.rowNumber
-    })));
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔢 After renumbering:', result.map(item => ({
+        id: item.id.slice(-6),
+        type: item.type,
+        name: item.name?.slice(0, 20),
+        rowNumber: item.rowNumber
+      })));
+    }
     
     return result;
   }, []);
@@ -165,19 +179,23 @@ export const useDragAndDrop = (
     const activeIndex = items.findIndex(item => item.id === active.id);
     const item = items[activeIndex];
     
-    console.log('🎯 === DRAG START ===');
-    console.log('🎯 Dragged item:', {
-      id: active.id,
-      index: activeIndex,
-      type: item?.type,
-      name: item?.name,
-      rowNumber: item?.rowNumber
-    });
-    console.log('🎯 Total items in rundown:', items.length);
-    console.log('🎯 Selected rows count:', selectedRows.size);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 === DRAG START ===');
+      console.log('🎯 Dragged item:', {
+        id: active.id,
+        index: activeIndex,
+        type: item?.type,
+        name: item?.name,
+        rowNumber: item?.rowNumber
+      });
+      console.log('🎯 Total items in rundown:', items.length);
+      console.log('🎯 Selected rows count:', selectedRows.size);
+    }
     
     if (!item) {
-      console.error('🚨 DRAG ERROR: Item not found for id:', active.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🚨 DRAG ERROR: Item not found for id:', active.id);
+      }
       return;
     }
 
@@ -188,28 +206,36 @@ export const useDragAndDrop = (
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
-      console.log('🎯 Dragging collapsed header group:', {
-        headerId: item.id,
-        itemCount: draggedIds.length,
-        itemIds: draggedIds
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 Dragging collapsed header group:', {
+          headerId: item.id,
+          itemCount: draggedIds.length,
+          itemIds: draggedIds
+        });
+      }
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(selectedRows);
-      console.log('🎯 Dragging multiple selected items:', {
-        count: draggedIds.length,
-        itemIds: draggedIds
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 Dragging multiple selected items:', {
+          count: draggedIds.length,
+          itemIds: draggedIds
+        });
+      }
     } else {
       // Single item
       draggedIds = [item.id];
-      console.log('🎯 Dragging single item:', item.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎯 Dragging single item:', item.id);
+      }
     }
     
     // CRITICAL: Mark structural change BEFORE starting drag to prevent realtime interference
     if (markStructuralChange) {
       markStructuralChange();
-      console.log('🏗️ Marked structural change at drag start');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🏗️ Marked structural change at drag start');
+      }
     }
     
     setActiveId(active.id);
@@ -223,12 +249,14 @@ export const useDragAndDrop = (
     setDragTimeout();
     isDragActiveRef.current = true;
     
-    console.log('🎯 Drag state set:', {
-      activeId: active.id,
-      draggedItemIndex: activeIndex,
-      isDraggingMultiple: draggedIds.length > 1,
-      isHeaderGroup
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 Drag state set:', {
+        activeId: active.id,
+        draggedItemIndex: activeIndex,
+        isDraggingMultiple: draggedIds.length > 1,
+        isHeaderGroup
+      });
+    }
   }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
 
   // @dnd-kit drag end handler

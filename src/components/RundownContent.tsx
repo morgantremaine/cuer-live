@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -68,6 +68,17 @@ interface RundownContentProps {
   onLoadLayout?: (columns: Column[]) => void;
   // Zoom functionality
   zoomLevel?: number;
+  // @dnd-kit integration
+  DndContext?: React.ComponentType<any>;
+  SortableContext?: React.ComponentType<any>;
+  sensors?: any;
+  sortableItems?: any[];
+  dndKitDragStart?: (event: any) => void;
+  dndKitDragEnd?: (event: any) => void;
+  modifiers?: any[];
+  collisionDetection?: any;
+  activeId?: any;
+  resetDragState?: () => void;
 }
 
 const RundownContent = React.memo<RundownContentProps>(({
@@ -127,7 +138,18 @@ const RundownContent = React.memo<RundownContentProps>(({
   visibleItems,
   savedLayouts,
   onLoadLayout,
-  zoomLevel = 1.0
+  zoomLevel = 1.0,
+  // @dnd-kit integration
+  DndContext,
+  SortableContext,
+  sensors,
+  sortableItems,
+  dndKitDragStart,
+  dndKitDragEnd,
+  modifiers,
+  collisionDetection,
+  activeId,
+  resetDragState
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
@@ -213,6 +235,31 @@ const RundownContent = React.memo<RundownContentProps>(({
     // Then handle regular drag over logic
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver, isDragging]);
+
+  // Add browser event coordination for drag reliability
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && resetDragState) {
+        console.log('🎯 Tab switched during drag - cancelling drag operation');
+        resetDragState();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (resetDragState && (draggedItemIndex !== null || isDragging)) {
+        console.log('🎯 Window lost focus during drag - cancelling drag operation');
+        resetDragState();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, [resetDragState, draggedItemIndex, isDragging]);
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {
@@ -358,8 +405,17 @@ const RundownContent = React.memo<RundownContentProps>(({
               }}
               data-rundown-table="body"
             >
-              {/* Table Body - Content */}
-              <OptimizedRundownTableWrapper
+              {/* Table Body - Content with @dnd-kit wrapper */}
+              {DndContext && SortableContext ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={collisionDetection}
+                  onDragStart={dndKitDragStart}
+                  onDragEnd={dndKitDragEnd}
+                  modifiers={modifiers}
+                >
+                  <SortableContext items={sortableItems || []} strategy={undefined}>
+                    <OptimizedRundownTableWrapper
               items={items} // Pass original items for duration calculations
               visibleItems={visibleItems} // Pass visible items for display
               visibleColumns={visibleColumns}
@@ -405,6 +461,56 @@ const RundownContent = React.memo<RundownContentProps>(({
               isHeaderCollapsed={isHeaderCollapsed}
               getHeaderGroupItemIds={getHeaderGroupItemIds}
               />
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <OptimizedRundownTableWrapper
+              items={items} // Pass original items for duration calculations
+              visibleItems={visibleItems} // Pass visible items for display
+              visibleColumns={visibleColumns}
+              currentTime={currentTime}
+              showColorPicker={showColorPicker}
+              cellRefs={cellRefs}
+              selectedRows={selectedRows}
+              draggedItemIndex={draggedItemIndex}
+              isDraggingMultiple={isDraggingMultiple}
+              dropTargetIndex={dropTargetIndex}
+              currentSegmentId={currentSegmentId}
+              hasClipboardData={hasClipboardData}
+              selectedRowId={selectedRowId}
+              startTime={startTime}
+              columnExpandState={columnExpandState}
+              getColumnWidth={getColumnWidth}
+              updateColumnWidth={updateColumnWidth}
+              onUpdateItem={onUpdateItem}
+              onCellClick={onCellClick}
+              onKeyDown={onKeyDown}
+              onToggleColorPicker={onToggleColorPicker}
+              onColorSelect={onColorSelect}
+              onDeleteRow={onDeleteRow}
+              onToggleFloat={onToggleFloat}
+              onRowSelect={onRowSelect}
+              onDragStart={onDragStart}
+              onDragOver={handleEnhancedDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onCopySelectedRows={onCopySelectedRows}
+              onDeleteSelectedRows={onDeleteSelectedRows}
+              onPasteRows={onPasteRows || (() => {})}
+              onClearSelection={onClearSelection || (() => {})}
+              onAddRow={onAddRow || (() => {})}
+              onAddHeader={onAddHeader || (() => {})}
+              onJumpToHere={onJumpToHere}
+              onMoveItemUp={onMoveItemUp}
+              onMoveItemDown={onMoveItemDown}
+              markActiveTyping={markActiveTyping}
+              // Header collapse functions
+              toggleHeaderCollapse={toggleHeaderCollapse}
+              isHeaderCollapsed={isHeaderCollapsed}
+              getHeaderGroupItemIds={getHeaderGroupItemIds}
+              />
+              )}
             </table>
           </div>
         </div>

@@ -107,4 +107,18 @@ export interface RundownContainerProps {
   visibleItems: RundownItem[];
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
+  
+  // @dnd-kit integration
+  dragAndDrop?: {
+    DndContext: React.ComponentType<any>;
+    SortableContext: React.ComponentType<any>;
+    sensors: any;
+    sortableItems: any[];
+    dndKitDragStart: (event: any) => void;
+    dndKitDragEnd: (event: any) => void;
+    modifiers: any[];
+    collisionDetection: any;
+    activeId: any;
+    resetDragState: () => void;
+  };
 }

@@ -100,7 +100,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onResetZoom,
     canZoomIn,
     canZoomOut,
-    isDefaultZoom
+    isDefaultZoom,
+    dragAndDrop
   } = props;
 
   // Create rundown data for CSV export
@@ -279,6 +280,7 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
           layoutOperations={layoutOperations}
           onMoveItemUp={handleMoveItemUp}
           onMoveItemDown={handleMoveItemDown}
+          dragAndDrop={dragAndDrop}
         />
       </div>
       

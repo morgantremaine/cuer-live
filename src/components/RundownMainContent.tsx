@@ -11,6 +11,19 @@ interface RundownMainContentProps extends RundownContainerProps {
   layoutOperations?: any; // Shared operations from a single hook instance
   onMoveItemUp?: (index: number) => void;
   onMoveItemDown?: (index: number) => void;
+  // @dnd-kit integration props
+  dragAndDrop?: {
+    DndContext: React.ComponentType<any>;
+    SortableContext: React.ComponentType<any>;
+    sensors: any;
+    sortableItems: any[];
+    dndKitDragStart: (event: any) => void;
+    dndKitDragEnd: (event: any) => void;
+    modifiers: any[];
+    collisionDetection: any;
+    activeId: any;
+    resetDragState: () => void;
+  };
 }
 
 const RundownMainContent = ({
@@ -34,6 +47,7 @@ const RundownMainContent = ({
   layoutOperations,
   onMoveItemUp,
   onMoveItemDown,
+  dragAndDrop,
   ...contentProps
 }: RundownMainContentProps) => {
 
@@ -56,6 +70,17 @@ const RundownMainContent = ({
         savedLayouts={savedLayouts}
         onLoadLayout={handleLoadLayout}
         zoomLevel={contentProps.zoomLevel}
+        // @dnd-kit integration
+        DndContext={dragAndDrop?.DndContext}
+        SortableContext={dragAndDrop?.SortableContext}
+        sensors={dragAndDrop?.sensors}
+        sortableItems={dragAndDrop?.sortableItems}
+        dndKitDragStart={dragAndDrop?.dndKitDragStart}
+        dndKitDragEnd={dragAndDrop?.dndKitDragEnd}
+        modifiers={dragAndDrop?.modifiers}
+        collisionDetection={dragAndDrop?.collisionDetection}
+        activeId={dragAndDrop?.activeId}
+        resetDragState={dragAndDrop?.resetDragState}
       />
       
       <ColumnManager

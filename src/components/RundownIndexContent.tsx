@@ -23,7 +23,8 @@ const RundownIndexContent = () => {
   const {
     coreState,
     interactions,
-    uiState
+    uiState,
+    dragAndDrop
   } = useRundownStateCoordination();
   
   // Extract all needed values from the unified state
@@ -622,6 +623,7 @@ const RundownIndexContent = () => {
         visibleItems={visibleItems}
         onMoveItemUp={moveItemUp}
         onMoveItemDown={moveItemDown}
+        dragAndDrop={dragAndDrop}
       />
       
       {/* Floating Notes Window */}
