@@ -224,9 +224,9 @@ serve(async (req) => {
     const pluginPng = createPluginIconPNG(100, 150, 200, 256); // 256x256 plugin icon
     const pluginPng2x = createPluginIconPNG(100, 150, 200, 512); // 512x512 @2x plugin icon
 
-    // Plugin files structure
+    // Plugin files structure - must be in a .sdPlugin folder
     const pluginFiles = {
-      'manifest.json': JSON.stringify({
+      'com.cuer.showcaller.sdPlugin/manifest.json': JSON.stringify({
         "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
         "Actions": [
           {
@@ -333,26 +333,26 @@ serve(async (req) => {
       }, null, 2),
       
       // Action images (72x72 and 144x144 @2x required)
-      'imgs/play.png': playPng,
-      'imgs/play@2x.png': playPng2x,
-      'imgs/pause.png': pausePng,
-      'imgs/pause@2x.png': pausePng2x,
-      'imgs/forward.png': forwardPng,
-      'imgs/forward@2x.png': forwardPng2x,
-      'imgs/backward.png': backwardPng,
-      'imgs/backward@2x.png': backwardPng2x,
-      'imgs/reset.png': resetPng,
-      'imgs/reset@2x.png': resetPng2x,
-      'imgs/status.png': statusPng,
-      'imgs/status@2x.png': statusPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/play.png': playPng,
+      'com.cuer.showcaller.sdPlugin/imgs/play@2x.png': playPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/pause.png': pausePng,
+      'com.cuer.showcaller.sdPlugin/imgs/pause@2x.png': pausePng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/forward.png': forwardPng,
+      'com.cuer.showcaller.sdPlugin/imgs/forward@2x.png': forwardPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/backward.png': backwardPng,
+      'com.cuer.showcaller.sdPlugin/imgs/backward@2x.png': backwardPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/reset.png': resetPng,
+      'com.cuer.showcaller.sdPlugin/imgs/reset@2x.png': resetPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/status.png': statusPng,
+      'com.cuer.showcaller.sdPlugin/imgs/status@2x.png': statusPng2x,
       
       // Plugin icons (256x256 and 512x512 @2x required)
-      'imgs/pluginIcon.png': pluginPng,
-      'imgs/pluginIcon@2x.png': pluginPng2x,
-      'imgs/categoryIcon.png': pluginPng,
-      'imgs/categoryIcon@2x.png': pluginPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/pluginIcon.png': pluginPng,
+      'com.cuer.showcaller.sdPlugin/imgs/pluginIcon@2x.png': pluginPng2x,
+      'com.cuer.showcaller.sdPlugin/imgs/categoryIcon.png': pluginPng,
+      'com.cuer.showcaller.sdPlugin/imgs/categoryIcon@2x.png': pluginPng2x,
       
-      'bin/plugin.js': `// Cuer ShowCaller Stream Deck Plugin
+      'com.cuer.showcaller.sdPlugin/bin/plugin.js': `// Cuer ShowCaller Stream Deck Plugin
 class CuerShowcallerPlugin {
     constructor() {
         this.websocket = null;
@@ -555,7 +555,7 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     // This will be called by Stream Deck with the appropriate parameters
 }`,
       
-      'ui/propertyinspector.html': `<!DOCTYPE html>
+      'com.cuer.showcaller.sdPlugin/ui/propertyinspector.html': `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -594,7 +594,7 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
 </body>
 </html>`,
       
-      'js/propertyinspector.js': `class CuerPropertyInspector {
+      'com.cuer.showcaller.sdPlugin/js/propertyinspector.js': `class CuerPropertyInspector {
     constructor() {
         this.websocket = null;
         this.uuid = null;
