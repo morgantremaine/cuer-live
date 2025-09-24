@@ -598,7 +598,7 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     constructor() {
         this.websocket = null;
         this.uuid = null;
-        this.apiBaseUrl = 'https://khdiwrkgahsbjszlwnob.supabase.co/functions/v1';
+        this.apiBaseUrl = 'http://localhost:3000';
         this.authToken = null;
         this.user = null;
         this.rundownId = null;
@@ -629,29 +629,43 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     }
 
     handleLogin() {
-        const authUrl = 'https://khdiwrkgahsbjszlwnob.supabase.co/auth/v1/authorize?provider=google';
-        const popup = window.open(authUrl, 'auth', 'width=500,height=600');
-        
+        const popup = window.open(
+            'http://localhost:3000/login?streamdeck=true',
+            'cuer-login',
+            'width=500,height=600,scrollbars=yes,resizable=yes'
+        );
+
+        const messageHandler = (event) => {
+            if (event.origin !== 'http://localhost:3000') return;
+            
+            if (event.data.type === 'CUER_AUTH_SUCCESS') {
+                this.authToken = event.data.token;
+                this.user = event.data.user;
+                
+                popup.close();
+                window.removeEventListener('message', messageHandler);
+                
+                this.onAuthSuccess({ access_token: event.data.token }, event.data.user);
+            } else if (event.data.type === 'CUER_AUTH_ERROR') {
+                popup.close();
+                window.removeEventListener('message', messageHandler);
+                
+                this.updateConnectionStatus('Login failed', 'error');
+            }
+        };
+
+        window.addEventListener('message', messageHandler);
+
         const checkClosed = setInterval(() => {
             if (popup.closed) {
                 clearInterval(checkClosed);
-                this.updateConnectionStatus('Login cancelled', 'error');
+                window.removeEventListener('message', messageHandler);
+                
+                if (!this.authToken) {
+                    this.updateConnectionStatus('Login cancelled', 'error');
+                }
             }
         }, 1000);
-
-        window.addEventListener('message', (event) => {
-            if (event.origin !== window.location.origin) return;
-            
-            if (event.data.type === 'auth_success') {
-                clearInterval(checkClosed);
-                popup.close();
-                this.onAuthSuccess(event.data.session, event.data.user);
-            } else if (event.data.type === 'auth_error') {
-                clearInterval(checkClosed);  
-                popup.close();
-                this.updateConnectionStatus('Login failed', 'error');
-            }
-        });
     }
 
     onAuthSuccess(session, user) {
