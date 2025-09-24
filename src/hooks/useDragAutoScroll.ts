@@ -72,9 +72,9 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
     const rect = scrollContainer.getBoundingClientRect();
     const mouseY = e.clientY;
     
-    // Slightly larger scroll zones for easier dragging
-    const scrollZone = 60;
-    const deadZone = 5; // Smaller dead zone for easier edge triggering
+    // Smaller scroll zones for more usable drop area
+    const scrollZone = 50;
+    const deadZone = 8; // Dead zone at very edge for precise positioning
     
     const topZoneStart = rect.top + deadZone;
     const topZoneEnd = rect.top + scrollZone;
@@ -86,8 +86,8 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       const distanceFromEdge = topZoneEnd - mouseY;
       const normalizedDistance = distanceFromEdge / (scrollZone - deadZone);
       
-      // Exponential speed curve with slight boost for upward scrolling
-      const speed = Math.pow(normalizedDistance, 1.2) * 120; // Slightly faster and less exponential
+      // Exponential speed curve: slower near edge, faster towards center
+      const speed = Math.pow(normalizedDistance, 1.5) * 100;
       startAutoScroll('up', speed);
     } else if (mouseY >= bottomZoneStart && mouseY <= bottomZoneEnd) {
       // Mouse is in bottom scroll zone  
