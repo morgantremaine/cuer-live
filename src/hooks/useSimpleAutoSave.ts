@@ -933,13 +933,21 @@ export const useSimpleAutoSave = (
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
 
       saveTimeoutRef.current = setTimeout(async () => {
-        console.log('⏱️ AutoSave: executing save now');
-        try {
-          await performSaveRef.current();
-          console.log('✅ AutoSave: save completed successfully');
-        } catch (error) {
-          console.error('❌ AutoSave: save execution failed:', error);
-        }
+    console.log('⏱️ AutoSave: executing save now');
+    
+    // CRITICAL: Clear typing flag immediately when save executes to prevent blocking
+    userTypingRef.current = false;
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = undefined;
+    }
+    
+    try {
+      await performSaveRef.current();
+      console.log('✅ AutoSave: save completed successfully');
+    } catch (error) {
+      console.error('❌ AutoSave: save execution failed:', error);
+    }
       }, debounceTime);
     }
 
