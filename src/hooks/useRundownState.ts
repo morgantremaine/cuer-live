@@ -266,7 +266,8 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
   // OPTIMIZED: Lazy calculation of row numbers
   const itemsWithRowNumbers = useMemo(() => {
     let regularRowCount = 0;
-    return itemsWithCalculatedTimes.map((item) => {
+    console.log('🔢 Calculating row numbers for', itemsWithCalculatedTimes.length, 'items');
+    return itemsWithCalculatedTimes.map((item, index) => {
       if (isHeaderItem(item)) {
         return { ...item, rowNumber: item.rowNumber || '' };
       }
@@ -274,9 +275,11 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
       // Use existing rowNumber if it exists and is not empty (preserves drag operation results)
       // Otherwise assign sequential number for new items
       if (item.rowNumber && item.rowNumber.trim() !== '') {
+        console.log(`🔢 Item ${index} keeping existing rowNumber: "${item.rowNumber}"`);
         return { ...item };
       } else {
         regularRowCount++;
+        console.log(`🔢 Item ${index} assigning new rowNumber: ${regularRowCount} (was: "${item.rowNumber}")`);
         return { ...item, rowNumber: regularRowCount.toString() };
       }
     });
@@ -428,6 +431,7 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
         color: RUNDOWN_DEFAULTS.DEFAULT_COLOR,
         isFloating: false
       };
+      console.log('🆕 Adding new row with empty rowNumber:', newItem.id);
       actions.addItem(newItem, insertIndex);
     },
 
