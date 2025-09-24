@@ -25,13 +25,12 @@ export const useRundownMemoization = (
     
     // For large rundowns, use memory-optimized calculations while preserving functionality
     if (itemCount > 100) {
-      // Return items with minimal augmentation using simple index-based numbering
-      let regularItemIndex = 0;
+      // Return items with minimal augmentation using stored rowNumber values
       const itemsWithStatus = items.map((item) => {
+        // Use stored rowNumber instead of recalculating for regular items
         let calculatedRowNumber = '';
         if (item.type !== 'header') {
-          regularItemIndex++;
-          calculatedRowNumber = regularItemIndex.toString();
+          calculatedRowNumber = item.rowNumber || '';
         }
         
         return {
@@ -103,16 +102,10 @@ export const useRundownMemoization = (
 
     // Memory efficient: Create enhanced items only for small rundowns
     const itemsWithStatus = items.map((item, index) => {
-      // Calculate row number - proper sequential numbering
+      // Use stored rowNumber instead of recalculating for regular items
       let calculatedRowNumber = '';
       if (item.type !== 'header') {
-        let regularItemCount = 0;
-        for (let i = 0; i <= index; i++) {
-          if (items[i]?.type !== 'header') {
-            regularItemCount++;
-          }
-        }
-        calculatedRowNumber = regularItemCount.toString();
+        calculatedRowNumber = item.rowNumber || '';
       }
 
       // Calculate status
@@ -155,7 +148,7 @@ export const useRundownMemoization = (
       headerDurations,
       totalCalculatedRuntime
     };
-  }, [items.length, currentSegmentId, startTime]); // FIXED: Include startTime for timing updates
+  }, [items, currentSegmentId, startTime]); // Include full items array to catch rowNumber updates
 
   return memoizedCalculations;
 };
