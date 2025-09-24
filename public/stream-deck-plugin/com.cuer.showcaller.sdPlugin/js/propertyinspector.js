@@ -59,14 +59,14 @@ class CuerPropertyInspector {
         try {
             // Open popup window for Cuer login
             const popup = window.open(
-                'http://localhost:3000/login?streamdeck=true',
+                'https://8194d7ef-dbfa-40fb-ac2a-5f6a35bd131a.lovableproject.com/login?streamdeck=true',
                 'cuer-login',
                 'width=500,height=600,scrollbars=yes,resizable=yes'
             );
 
             // Listen for messages from the popup
             const messageHandler = (event) => {
-                if (event.origin !== 'http://localhost:3000') return;
+                if (event.origin !== 'https://8194d7ef-dbfa-40fb-ac2a-5f6a35bd131a.lovableproject.com') return;
                 
                 if (event.data.type === 'CUER_AUTH_SUCCESS') {
                     this.authToken = event.data.token;
