@@ -29,7 +29,7 @@ interface DragInfo {
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
-  selectedRows: Set<string>,
+  getSelectedRows: () => Set<string>,
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
@@ -178,6 +178,7 @@ export const useDragAndDrop = (
     const { active } = event;
     const activeIndex = items.findIndex(item => item.id === active.id);
     const item = items[activeIndex];
+    const selectedRows = getSelectedRows();
     
     if (process.env.NODE_ENV === 'development') {
       console.log('🎯 === DRAG START ===');
@@ -191,7 +192,7 @@ export const useDragAndDrop = (
       console.log('🎯 Total items in rundown:', items.length);
       console.log('🎯 Selected rows count:', selectedRows.size);
     }
-    
+
     if (!item) {
       if (process.env.NODE_ENV === 'development') {
         console.error('🚨 DRAG ERROR: Item not found for id:', active.id);
@@ -267,7 +268,7 @@ export const useDragAndDrop = (
         isHeaderGroup
       });
     }
-  }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
+   }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {

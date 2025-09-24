@@ -20,6 +20,9 @@ export const useRundownStateCoordination = () => {
   const { user } = useAuth();
   const userId = user?.id;
 
+  // Ref to store interactions once they're created
+  const interactionsRef = useRef<any>(null);
+
   // Single source of truth for all rundown state (with persistence)
   const persistedState = usePersistedRundownState();
 
@@ -130,7 +133,7 @@ export const useRundownStateCoordination = () => {
       // Clear structural change flag after items are set
       setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
-    new Set<string>(), // selectedRows - will be connected to interactions later
+    () => interactionsRef.current?.selectedRows || new Set<string>(), // Get selectedRows from interactions when available
     undefined, // scrollContainerRef - placeholder for now
     persistedState.saveUndoState,
     persistedState.columns,
@@ -219,6 +222,9 @@ export const useRundownStateCoordination = () => {
       resetDragState: dragAndDrop.resetDragState
     }
   );
+
+  // Store interactions ref for drag and drop access
+  interactionsRef.current = interactions;
 
   // Get UI state with enhanced navigation - use performance-optimized data
   const uiState = useRundownUIState(
