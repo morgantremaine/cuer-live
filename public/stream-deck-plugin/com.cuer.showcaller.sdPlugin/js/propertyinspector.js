@@ -59,10 +59,22 @@ class CuerPropertyInspector {
             this.refreshButton.addEventListener('click', () => this.loadRundowns());
         }
 
-        // Attempt to restore auth if we have pending restoration
-        if (this.pendingAuthRestore || (this.authToken && this.currentUser)) {
-            console.log('🔧 Elements initialized, attempting auth restoration...');
+        // CRITICAL: Check for existing auth state from settings and restore immediately
+        console.log('🔍 Checking auth state after elements setup:', {
+            hasToken: !!this.authToken,
+            hasUser: !!this.currentUser,
+            pendingRestore: !!this.pendingAuthRestore
+        });
+
+        if (this.authToken && this.currentUser) {
+            console.log('🔧 Auth state exists, restoring authentication...');
+            this.onAuthSuccess();
+        } else if (this.pendingAuthRestore) {
+            console.log('🔧 Pending auth restore detected, attempting restoration...');
             this.attemptAuthRestore();
+        } else {
+            console.log('❌ No auth state found, user needs to login');
+            this.updateConnectionStatus('Please login', 'error');
         }
 
         console.log('🔧 Property inspector elements initialized');
@@ -122,7 +134,13 @@ class CuerPropertyInspector {
 
     // Handle successful authentication
     onAuthSuccess() {
-        console.log('✅ Authentication successful');
+        console.log('✅ Authentication successful for:', this.currentUser?.email);
+        
+        // Ensure we have the required elements before updating
+        if (!this.loginButton || !this.userInfo || !this.userEmail) {
+            console.log('❌ UI elements not ready for auth success');
+            return;
+        }
         
         // Update UI
         this.loginButton.style.display = 'none';
@@ -130,14 +148,16 @@ class CuerPropertyInspector {
         this.userEmail.textContent = this.currentUser.email;
         
         // Enable controls
-        this.rundownSelect.disabled = false;
-        this.refreshButton.disabled = false;
+        if (this.rundownSelect) this.rundownSelect.disabled = false;
+        if (this.refreshButton) this.refreshButton.disabled = false;
         
-        // Load rundowns
+        // Load rundowns and save settings
         this.loadRundowns();
         this.saveSettings();
         
         this.updateConnectionStatus('Logged in ✅', 'success');
+        
+        console.log('🎯 UI updated successfully for authenticated user');
     }
 
     // Handle logout
@@ -171,7 +191,7 @@ class CuerPropertyInspector {
         this.uuid = uuid;
         this.actionInfo = actionInfo;
 
-        // Load existing settings
+        // Load existing settings and restore auth if needed
         this.loadSettings();
         
         console.log('✅ Property inspector initialized');
@@ -185,16 +205,29 @@ class CuerPropertyInspector {
         if (this.actionInfo && this.actionInfo.payload && this.actionInfo.payload.settings) {
             const settings = this.actionInfo.payload.settings;
             console.log('⚙️ Found settings:', settings);
+            console.log('🔍 Settings details:', {
+                hasAuthToken: !!settings.authToken,
+                hasUser: !!settings.user,
+                tokenLength: settings.authToken ? settings.authToken.length : 0,
+                userEmail: settings.user ? settings.user.email : 'none'
+            });
             
             if (settings.authToken && settings.user) {
                 console.log('🔑 Restoring authentication from settings...');
                 this.authToken = settings.authToken;
                 this.currentUser = settings.user;
                 
-                // Try to restore immediately if elements are ready, otherwise defer
-                this.attemptAuthRestore();
+                // Force UI update immediately if elements exist
+                if (this.loginButton && this.userInfo) {
+                    console.log('🎯 Elements exist, updating UI immediately');
+                    this.onAuthSuccess();
+                } else {
+                    console.log('⏳ Elements not ready, marking for pending restoration');
+                    this.pendingAuthRestore = true;
+                }
             } else {
                 console.log('❌ No valid auth token or user in settings');
+                this.updateConnectionStatus('Please login', 'error');
             }
             
             if (settings.rundownId) {
@@ -207,6 +240,7 @@ class CuerPropertyInspector {
             }
         } else {
             console.log('❌ No settings found in actionInfo');
+            this.updateConnectionStatus('Please login', 'error');
         }
     }
 
