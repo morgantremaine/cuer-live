@@ -45,8 +45,8 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       const accelerationTime = now - accelerationStartTimeRef.current;
       const accelerationFactor = Math.min(2, 1 + (accelerationTime / 1000));
       
-      // More responsive linear base scroll amount: 8-30px range
-      const baseScrollAmount = Math.max(8, Math.min(30, speed / 4 + 8));
+      // Base scroll amount: 5-25px range with exponential curve
+      const baseScrollAmount = Math.max(5, Math.min(25, speed * speed / 400 + 5));
       const scrollAmount = baseScrollAmount * accelerationFactor;
       
       const currentScrollTop = scrollContainer.scrollTop;
@@ -72,9 +72,9 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
     const rect = scrollContainer.getBoundingClientRect();
     const mouseY = e.clientY;
     
-    // Larger scroll zones for easier dragging
-    const scrollZone = 80;
-    const deadZone = 3; // Smaller dead zone for easier edge triggering
+    // Slightly larger scroll zones for easier dragging
+    const scrollZone = 60;
+    const deadZone = 5; // Smaller dead zone for easier edge triggering
     
     const topZoneStart = rect.top + deadZone;
     const topZoneEnd = rect.top + scrollZone;
@@ -86,19 +86,16 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
       const distanceFromEdge = topZoneEnd - mouseY;
       const normalizedDistance = distanceFromEdge / (scrollZone - deadZone);
       
-      // More linear and responsive speed curve
-      // Give upward scrolling extra boost since it's typically harder
-      const baseSpeed = 120; // Extra boost for upward scrolling
-      const speed = Math.max(20, normalizedDistance * baseSpeed);
+      // Exponential speed curve with slight boost for upward scrolling
+      const speed = Math.pow(normalizedDistance, 1.2) * 120; // Slightly faster and less exponential
       startAutoScroll('up', speed);
     } else if (mouseY >= bottomZoneStart && mouseY <= bottomZoneEnd) {
       // Mouse is in bottom scroll zone  
       const distanceFromEdge = mouseY - bottomZoneStart;
       const normalizedDistance = distanceFromEdge / (scrollZone - deadZone);
       
-      // More linear and responsive speed curve
-      const baseSpeed = 100; // Standard speed for downward scrolling
-      const speed = Math.max(20, normalizedDistance * baseSpeed);
+      // Exponential speed curve: slower near edge, faster towards center
+      const speed = Math.pow(normalizedDistance, 1.5) * 100;
       startAutoScroll('down', speed);
     } else {
       // Mouse is not in scroll zones - add brief momentum before stopping
