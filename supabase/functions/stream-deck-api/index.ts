@@ -32,18 +32,28 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    // Handle both local and deployed URL patterns
-    let path = url.pathname;
-    if (path.startsWith('/functions/v1/stream-deck-api')) {
-      path = path.replace('/functions/v1/stream-deck-api', '');
-    } else if (path.startsWith('/stream-deck-api')) {
-      path = path.replace('/stream-deck-api', '');
-    }
-    path = path || '/';
-    
     console.log('📍 Full URL:', req.url);
     console.log('📍 Pathname:', url.pathname);
+    
+    // Extract the path after the function name
+    let path = url.pathname;
+    
+    // Remove the function prefix to get the actual endpoint path
+    if (path.includes('/stream-deck-api')) {
+      // Find the position after '/stream-deck-api' and extract everything after it
+      const streamDeckIndex = path.indexOf('/stream-deck-api');
+      path = path.substring(streamDeckIndex + '/stream-deck-api'.length);
+    } else if (path.includes('/functions/v1/stream-deck-api')) {
+      const functionsIndex = path.indexOf('/functions/v1/stream-deck-api');
+      path = path.substring(functionsIndex + '/functions/v1/stream-deck-api'.length);
+    }
+    
+    // Ensure we have a path, default to '/' if empty
+    path = path || '/';
+    
     console.log('📍 Extracted path:', path);
+    console.log('🔍 Looking for exact match: path === "/rundowns"?', path === '/rundowns');
+    console.log('🔍 Request method:', req.method);
 
     // Extract authorization header
     const authHeader = req.headers.get('authorization');
@@ -65,6 +75,17 @@ serve(async (req) => {
     }
 
     console.log('✅ Authenticated user:', user.id);
+
+    // Debug: Show available endpoints
+    console.log('📋 Available endpoints:');
+    console.log('  GET /rundowns');
+    console.log('  GET /status/{rundownId}');
+    console.log('  POST /play/{rundownId}');
+    console.log('  POST /pause/{rundownId}');
+    console.log('  POST /forward/{rundownId}');
+    console.log('  POST /backward/{rundownId}');
+    console.log('  POST /jump/{rundownId}');
+    console.log('  POST /reset/{rundownId}');
 
     // Route handling
     if (path === '/rundowns' && req.method === 'GET') {

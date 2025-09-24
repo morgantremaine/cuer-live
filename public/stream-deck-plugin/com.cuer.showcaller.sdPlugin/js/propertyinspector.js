@@ -142,8 +142,11 @@ class CuerPropertyInspector {
 
     // Handle logout
     handleLogout() {
+        console.log('🚪 Logging out and clearing auth state...');
+        
         this.authToken = null;
         this.currentUser = null;
+        this.pendingAuthRestore = false;
         
         // Update UI
         this.loginButton.style.display = 'block';
@@ -155,7 +158,9 @@ class CuerPropertyInspector {
         this.rundownSelect.innerHTML = '<option value="">Login first to see rundowns...</option>';
         
         this.saveSettings();
-        this.updateConnectionStatus('Logged out', 'default');
+        this.updateConnectionStatus('Logged out - please login again', 'error');
+        
+        console.log('✅ Logout complete and settings saved');
     }
 
     // Initialize with Stream Deck
@@ -356,6 +361,16 @@ function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegist
 // Stream Deck SDK integration
 if (typeof $PI !== 'undefined') {
     $PI.on('connected', (jsonObj) => {
+        console.log('🎛️ Stream Deck SDK connected to property inspector');
+        console.log('🎛️ Connection data:', jsonObj);
+        
         propertyInspector.init($PI.websocket, jsonObj.uuid, jsonObj.actionInfo);
+        
+        // Additional debugging for auth state
+        console.log('🔑 Auth state after SDK init:', {
+            hasToken: !!propertyInspector.authToken,
+            hasUser: !!propertyInspector.currentUser,
+            tokenLength: propertyInspector.authToken ? propertyInspector.authToken.length : 0
+        });
     });
 }
