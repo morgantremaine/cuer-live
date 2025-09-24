@@ -202,13 +202,13 @@ export const useDragAndDrop = (
     let draggedIds: string[] = [];
     let isHeaderGroup = false;
     
-    // Check if it's a collapsed header group - ONLY when collapsed
-    if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
+    // Always move header groups together, regardless of collapse state
+    if (item.type === 'header' && getHeaderGroupItemIds) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
-      console.log('🎯 HEADER GROUP DRAG - Collapsed header detected:', {
+      console.log('🎯 HEADER GROUP DRAG - Header detected:', {
         headerId: item.id,
-        isCollapsed: isHeaderCollapsed(item.id),
+        isCollapsed: isHeaderCollapsed ? isHeaderCollapsed(item.id) : 'unknown',
         itemCount: draggedIds.length,
         itemIds: draggedIds,
         firstFewNames: draggedIds.slice(0, 3).map(id => {
@@ -218,7 +218,7 @@ export const useDragAndDrop = (
       });
       
       if (draggedIds.length === 0) {
-        console.warn('🚨 HEADER GROUP ERROR: No items found for collapsed header:', item.id);
+        console.warn('🚨 HEADER GROUP ERROR: No items found for header:', item.id);
         // Fall back to single item drag
         draggedIds = [item.id];
         isHeaderGroup = false;
