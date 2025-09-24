@@ -103,6 +103,7 @@ export const useDragAndDrop = (
 
   const renumberItems = useCallback((items: RundownItem[]) => {
     let headerIndex = 0;
+    let regularItemIndex = 1;
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
     return items.map(item => {
@@ -115,7 +116,13 @@ export const useDragAndDrop = (
           segmentName: newHeaderLetter
         };
       } else {
-        return item;
+        // Renumber regular items sequentially (1, 2, 3, etc.)
+        const newRowNumber = regularItemIndex.toString();
+        regularItemIndex++;
+        return {
+          ...item,
+          rowNumber: newRowNumber
+        };
       }
     });
   }, []);
@@ -258,9 +265,8 @@ export const useDragAndDrop = (
         actionDescription = `Reorder "${draggedItem?.name || 'row'}"`;
       }
       
-      if (hasHeaderMoved) {
-        newItems = renumberItems(newItems);
-      }
+      // Always renumber items after any drag operation to ensure proper sequencing
+      newItems = renumberItems(newItems);
       
       if (saveUndoState && columns && title) {
         saveUndoState(items, columns, title, actionDescription);
