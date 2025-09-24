@@ -76,6 +76,8 @@ const HeaderRow = (props: HeaderRowProps) => {
     isDragging
   } = props;
 
+  const groupSelectionClass = props.isInDraggedHeaderGroup ? 'header-group-selection' : '';
+
   const { rowClass } = useRowStyling({
     isDragging,
     isSelected,

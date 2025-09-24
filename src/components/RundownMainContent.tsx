@@ -22,6 +22,7 @@ interface RundownMainContentProps extends RundownContainerProps {
     modifiers: any[];
     collisionDetection: any;
     activeId: any;
+    dragInfo: any;
     resetDragState: () => void;
   };
 }
@@ -80,6 +81,7 @@ const RundownMainContent = ({
         modifiers={dragAndDrop?.modifiers}
         collisionDetection={dragAndDrop?.collisionDetection}
         activeId={dragAndDrop?.activeId}
+        dragInfo={dragAndDrop?.dragInfo}
         resetDragState={dragAndDrop?.resetDragState}
       />
       

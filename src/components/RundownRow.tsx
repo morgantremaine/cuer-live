@@ -6,6 +6,7 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 
 interface RundownRowProps {
+  isInDraggedHeaderGroup?: boolean;
   item: RundownItem;
   index: number;
   rowNumber: string;

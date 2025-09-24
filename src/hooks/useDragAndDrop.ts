@@ -24,6 +24,7 @@ interface DragInfo {
   draggedIds: string[];
   isHeaderGroup: boolean;
   originalIndex: number;
+  draggedHeaderId?: string;
 }
 
 export const useDragAndDrop = (
@@ -254,7 +255,8 @@ export const useDragAndDrop = (
     setDragInfo({
       draggedIds,
       isHeaderGroup,
-      originalIndex: activeIndex
+      originalIndex: activeIndex,
+      draggedHeaderId: isHeaderGroup ? item.id : undefined
     });
     setDragTimeout();
     isDragActiveRef.current = true;
@@ -574,6 +576,7 @@ export const useDragAndDrop = (
     modifiers: [restrictToVerticalAxis],
     collisionDetection: closestCenter,
     activeId,
+    dragInfo,
     
     // Legacy compatibility
     draggedItemIndex,

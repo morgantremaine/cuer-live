@@ -1,0 +1,44 @@
+/* Header Group Drag Selection Styles */
+.header-group-selection {
+  position: relative;
+}
+
+.header-group-selection::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -4px;
+  right: -4px;
+  bottom: -2px;
+  border: 2px solid hsl(var(--primary));
+  border-radius: 8px;
+  background: hsl(var(--primary) / 0.1);
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+  pointer-events: none;
+  z-index: 10;
+  animation: pulse-selection 2s infinite;
+}
+
+@keyframes pulse-selection {
+  0%, 100% {
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  }
+}
+
+/* Dark mode adjustments */
+.dark .header-group-selection::before {
+  background: hsl(var(--primary) / 0.15);
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
+}
+
+.dark @keyframes pulse-selection {
+  0%, 100% {
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+}

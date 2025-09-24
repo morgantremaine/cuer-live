@@ -78,6 +78,7 @@ interface RundownContentProps {
   modifiers?: any[];
   collisionDetection?: any;
   activeId?: any;
+  dragInfo?: any;
   resetDragState?: () => void;
 }
 
@@ -149,6 +150,7 @@ const RundownContent = React.memo<RundownContentProps>(({
   modifiers,
   collisionDetection,
   activeId,
+  dragInfo,
   resetDragState
 }) => {
   // Column expand state for script and notes columns
@@ -416,6 +418,7 @@ const RundownContent = React.memo<RundownContentProps>(({
                 >
                   <SortableContext items={sortableItems || []} strategy={undefined}>
                     <OptimizedRundownTableWrapper
+              dragInfo={dragInfo}
               items={items} // Pass original items for duration calculations
               visibleItems={visibleItems} // Pass visible items for display
               visibleColumns={visibleColumns}
