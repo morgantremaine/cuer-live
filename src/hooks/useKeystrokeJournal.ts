@@ -126,7 +126,7 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
       const itemDiff = itemCount - prevItemCount;
       
       if (Math.abs(itemDiff) > 0) {
-        console.log(`📊 Journal: ${description} - items changed by ${itemDiff} (${prevItemCount} → ${itemCount})`);
+        // Silent - no logging needed for item count changes
       }
     }
 
@@ -199,7 +199,6 @@ export const useKeystrokeJournal = ({ rundownId, state, enabled = true, performa
       if (stored) {
         const journalData = JSON.parse(stored);
         journalRef.current = journalData.entries || [];
-        console.log('📂 Loaded journal:', { entries: journalRef.current.length });
       }
     } catch (error) {
       console.error('❌ Failed to load keystroke journal:', error);

@@ -58,7 +58,6 @@ export const useRundownStorage = () => {
       lastLoadedUserRef.current = user.id;
       lastLoadedTeamRef.current = teamId;
       
-      console.log('Loading rundowns from database for user:', user.id);
       setLoading(true);
 
       try {
@@ -76,7 +75,6 @@ export const useRundownStorage = () => {
         }));
 
         setSavedRundowns(rundowns);
-        console.log('Loaded rundowns from database:', rundowns.length);
       } catch (error) {
         console.error('Error loading rundowns:', error);
         setSavedRundowns([]);

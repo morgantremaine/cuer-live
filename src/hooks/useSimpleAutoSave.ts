@@ -91,7 +91,6 @@ export const useSimpleAutoSave = (
     if (isInitiallyLoaded) {
       // Prevent saves for 3 seconds after initial load to avoid false attribution
       initialLoadCooldownRef.current = Date.now() + 3000;
-      console.log('🔒 Initial load cooldown set - saves blocked for 3 seconds');
     }
   }, [isInitiallyLoaded]);
 
@@ -300,14 +299,11 @@ export const useSimpleAutoSave = (
   const userTypingRef = useRef(false);
   
   const markActiveTyping = useCallback(() => {
-    console.log('⌨️ markActiveTyping called! Function exists:', typeof markActiveTyping);
     const now = Date.now();
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
-    
-    console.log('⌨️ User typing detected - marking active');
     
     // CRITICAL: Set hasUnsavedChangesRef for consistency
     hasUnsavedChangesRef.current = true;
@@ -315,7 +311,6 @@ export const useSimpleAutoSave = (
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
       initialLoadCooldownRef.current = 0;
-      console.log('🔓 Initial load cooldown cleared - user is actively typing');
     }
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
@@ -410,18 +405,10 @@ export const useSimpleAutoSave = (
     const timeSinceEdit = Date.now() - lastEditAtRef.current;
     const typingFlagActive = userTypingRef.current;
     
-    console.log('🔍 isTypingActive check:', {
-      typingFlagActive,
-      timeSinceEdit,
-      typingIdleMs,
-      shouldBeTyping: timeSinceEdit < typingIdleMs
-    });
-    
     // Check the explicit typing flag first
     if (typingFlagActive) {
       // If it's been too long since the last edit, clear the flag
       if (timeSinceEdit > typingIdleMs + 500) {
-        console.log('⌨️ Typing state expired - auto-clearing');
         userTypingRef.current = false;
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
@@ -429,10 +416,8 @@ export const useSimpleAutoSave = (
         }
         return false;
       }
-      console.log('⌨️ User is currently typing - blocking save');
       return true;
     }
-    console.log('⌨️ User not typing - save can proceed');
     return false;
   }, [typingIdleMs]);
 
@@ -476,15 +461,6 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with immediate typing cancellation
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
-    console.log('🔍 DEBUG: AutoSave performSave called', {
-      isFlushSave,
-      isSharedView,
-      rundownId,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      initialLoadCooldownActive: initialLoadCooldownRef.current > Date.now(),
-      isInitiallyLoaded
-    });
-    
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -867,17 +843,7 @@ export const useSimpleAutoSave = (
 
   // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
-    console.log('🧪 TRACE AutoSave(effect) enter - SINGLE CHARACTER TEST', {
-      isInitiallyLoaded,
-      rundownId,
-      hasUnsavedChanges: state.hasUnsavedChanges,
-      suppressUntil: suppressUntilRef?.current,
-      undoActive: undoActiveRef.current,
-      applyingCellBroadcast: applyingCellBroadcastRef?.current,
-      stateLastChanged: state.lastChanged
-    });
     if (!isInitiallyLoaded) {
-      console.log('🛑 AutoSave(effect): blocked - initial load not complete');
       return;
     }
 

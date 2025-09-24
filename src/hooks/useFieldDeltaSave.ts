@@ -525,7 +525,6 @@ export const useFieldDeltaSave = (
   // Initialize saved state reference
   const initializeSavedState = useCallback((state: RundownState) => {
     lastSavedStateRef.current = JSON.parse(JSON.stringify(state));
-    console.log('🎯 Initialized saved state reference');
   }, []);
 
   return {
