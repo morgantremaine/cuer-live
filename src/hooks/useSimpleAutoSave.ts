@@ -307,29 +307,10 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    console.log('⌨️ User typing detected - marking active, scheduling save after typing stops');
+    console.log('⌨️ User typing detected - marking active');
     
-    // CRITICAL: Set hasUnsavedChangesRef to trigger auto-save effect
+    // CRITICAL: Set hasUnsavedChangesRef for consistency
     hasUnsavedChangesRef.current = true;
-    
-    // CRITICAL: Schedule save AFTER typing timeout, ensuring typing flag is cleared first
-    console.log('🚀 Scheduling auto-save after typing timeout');
-    
-    // Clear existing timeouts to prevent multiple saves
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    // Schedule save slightly AFTER the typing timeout clears
-    saveTimeoutRef.current = setTimeout(async () => {
-      console.log('⏱️ AutoSave(markActiveTyping): typing period ended, executing save now');
-      try {
-        await performSaveRef.current();
-        console.log('✅ AutoSave(markActiveTyping): save completed successfully');
-      } catch (error) {
-        console.error('❌ AutoSave(markActiveTyping): save execution failed:', error);
-      }
-    }, typingIdleMs + 100); // Execute AFTER typing timeout + small buffer
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
@@ -935,13 +916,6 @@ export const useSimpleAutoSave = (
         return;
       }
       
-      // IMMEDIATE CANCELLATION: Don't save if user is actively typing
-      const typingResult = isTypingActive();
-      if (typingResult) {
-        console.log('⌨️ AutoSave(effect): skipped - user actively typing');
-        return; // Let markActiveTyping handle scheduling
-      }
-      
       // Record that this save is being initiated while tab is active
       saveInitiatedWhileActiveRef.current = !document.hidden && document.hasFocus();
       
@@ -953,17 +927,11 @@ export const useSimpleAutoSave = (
       const isMultiUserActive = suppressUntilRef?.current && suppressUntilRef.current > Date.now() - 1000;
       
       // Simplified timing - no complex conditional logic
-      const debounceTime = isStructuralChange ? 100 : 1500;
+      const debounceTime = isStructuralChange ? 100 : 800; // Shorter debounce for faster saves
       
       console.log('⏳ AutoSave: scheduling save', { isStructuralChange, debounceTime, hasUnsavedChanges: state.hasUnsavedChanges, isMultiUserActive });
 
       saveTimeoutRef.current = setTimeout(async () => {
-        // Final check - don't save if user started typing while we were waiting
-        if (isTypingActive()) {
-          console.log('⌨️ AutoSave(effect): cancelled at execution - user started typing');
-          return;
-        }
-
         console.log('⏱️ AutoSave: executing save now');
         try {
           await performSaveRef.current();
