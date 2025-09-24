@@ -90,8 +90,18 @@ export const calculateItemsWithTiming = (
   const itemsWithClearedHeaders = clearHeaderNumbers(items);
   
   let currentTime = rundownStartTime;
-  let regularRowCount = 0;
   let cumulativeDurationSeconds = 0; // Track cumulative duration (much simpler!)
+  
+  // Find the highest existing row number to continue from
+  let regularRowCount = 0;
+  itemsWithClearedHeaders.forEach(item => {
+    if (item.type !== 'header' && item.rowNumber && item.rowNumber.trim() !== '') {
+      const num = parseInt(item.rowNumber);
+      if (!isNaN(num)) {
+        regularRowCount = Math.max(regularRowCount, num);
+      }
+    }
+  });
 
   return itemsWithClearedHeaders.map((item, index) => {
     let calculatedStartTime = currentTime;

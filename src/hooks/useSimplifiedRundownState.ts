@@ -1328,9 +1328,7 @@ export const useSimplifiedRundownState = () => {
 
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
-    const rowNumber = calculatedItems[index].calculatedRowNumber;
-    console.log(`🔢 getRowNumber(${index}): "${rowNumber}" for item:`, calculatedItems[index].id);
-    return rowNumber;
+    return calculatedItems[index].calculatedRowNumber;
   }, [calculatedItems]);
 
   const handleRowSelection = useCallback((itemId: string) => {
