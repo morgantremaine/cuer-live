@@ -111,6 +111,75 @@ function createZipFile(files: Record<string, string | Uint8Array>): Uint8Array {
   return result;
 }
 
+// Create a proper minimal 72x72 PNG file
+function createMinimalPNG(r = 128, g = 128, b = 128): Uint8Array {
+  const width = 72;
+  const height = 72;
+  
+  // Create a simple PNG with solid color
+  const header = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]); // PNG signature
+  
+  // IHDR chunk
+  const ihdrData = new Uint8Array(13);
+  const ihdrView = new DataView(ihdrData.buffer);
+  ihdrView.setUint32(0, width, false);
+  ihdrView.setUint32(4, height, false);
+  ihdrData[8] = 8;  // bit depth
+  ihdrData[9] = 2;  // color type (RGB)
+  ihdrData[10] = 0; // compression
+  ihdrData[11] = 0; // filter
+  ihdrData[12] = 0; // interlace
+  
+  // Create IHDR chunk with length and CRC
+  const ihdrChunk = new Uint8Array(4 + 4 + 13 + 4);
+  const ihdrChunkView = new DataView(ihdrChunk.buffer);
+  ihdrChunkView.setUint32(0, 13, false); // length
+  ihdrChunk.set(new TextEncoder().encode('IHDR'), 4);
+  ihdrChunk.set(ihdrData, 8);
+  ihdrChunkView.setUint32(21, crc32(ihdrChunk.slice(4, 21)), false); // CRC
+  
+  // Create minimal IDAT chunk with solid color
+  const pixelData = new Uint8Array(height * (1 + width * 3)); // 1 filter byte per row + RGB data
+  for (let y = 0; y < height; y++) {
+    const rowStart = y * (1 + width * 3);
+    pixelData[rowStart] = 0; // No filter
+    for (let x = 0; x < width; x++) {
+      const pixelStart = rowStart + 1 + x * 3;
+      pixelData[pixelStart] = r;
+      pixelData[pixelStart + 1] = g;
+      pixelData[pixelStart + 2] = b;
+    }
+  }
+  
+  // Simple zlib compression (uncompressed)
+  const zlibData = new Uint8Array(2 + pixelData.length + 4);
+  zlibData[0] = 0x78; // CMF
+  zlibData[1] = 0x01; // FLG
+  zlibData.set(pixelData, 2);
+  // Adler32 checksum (simplified to 0x00000001)
+  zlibData.set([0, 0, 0, 1], 2 + pixelData.length);
+  
+  const idatChunk = new Uint8Array(4 + 4 + zlibData.length + 4);
+  const idatChunkView = new DataView(idatChunk.buffer);
+  idatChunkView.setUint32(0, zlibData.length, false);
+  idatChunk.set(new TextEncoder().encode('IDAT'), 4);
+  idatChunk.set(zlibData, 8);
+  idatChunkView.setUint32(8 + zlibData.length, crc32(idatChunk.slice(4, 8 + zlibData.length)), false);
+  
+  // IEND chunk
+  const iendChunk = new Uint8Array([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130]);
+  
+  // Combine all chunks
+  const png = new Uint8Array(header.length + ihdrChunk.length + idatChunk.length + iendChunk.length);
+  let offset = 0;
+  png.set(header, offset); offset += header.length;
+  png.set(ihdrChunk, offset); offset += ihdrChunk.length;
+  png.set(idatChunk, offset); offset += idatChunk.length;
+  png.set(iendChunk, offset);
+  
+  return png;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -129,132 +198,132 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Simple 72x72 base64 PNG images for icons
-    const playIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const pauseIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const forwardIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const backwardIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const resetIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const statusIcon = 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
-    const pluginIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANESURBVHic7Zu9axRBFMafJwQSC1sLwcJCG1sLG1sLwdZCsLGwsLGwsLBQsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLGwsLBQ';
+    // Create PNG images with different colors
+    const playPng = createMinimalPNG(0, 200, 0);     // Green for play
+    const pausePng = createMinimalPNG(200, 200, 0);  // Yellow for pause  
+    const forwardPng = createMinimalPNG(0, 0, 200);  // Blue for forward
+    const backwardPng = createMinimalPNG(200, 0, 200); // Purple for backward
+    const resetPng = createMinimalPNG(200, 0, 0);    // Red for reset
+    const statusPng = createMinimalPNG(128, 128, 128); // Gray for status
+    const pluginPng = createMinimalPNG(100, 150, 200); // Light blue for plugin
 
     // Plugin files structure
     const pluginFiles = {
       'manifest.json': JSON.stringify({
         "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
-        "Name": "Cuer ShowCaller",
-        "Description": "Control your Cuer rundown showcaller directly from Stream Deck",
-        "Category": "Cuer",
+        "Actions": [
+          {
+            "Icon": "imgs/play",
+            "Name": "Play/Pause",
+            "States": [
+              {
+                "Image": "imgs/play",
+                "TitleAlignment": "bottom",
+                "ShowTitle": true
+              },
+              {
+                "Image": "imgs/pause",
+                "TitleAlignment": "bottom", 
+                "ShowTitle": true
+              }
+            ],
+            "SupportedInMultiActions": true,
+            "Tooltip": "Play or pause the current rundown",
+            "UUID": "com.cuer.showcaller.playpause"
+          },
+          {
+            "Icon": "imgs/forward",
+            "Name": "Forward",
+            "States": [
+              {
+                "Image": "imgs/forward",
+                "TitleAlignment": "bottom",
+                "ShowTitle": true
+              }
+            ],
+            "SupportedInMultiActions": true,
+            "Tooltip": "Go to next segment",
+            "UUID": "com.cuer.showcaller.forward"
+          },
+          {
+            "Icon": "imgs/backward",
+            "Name": "Backward", 
+            "States": [
+              {
+                "Image": "imgs/backward",
+                "TitleAlignment": "bottom",
+                "ShowTitle": true
+              }
+            ],
+            "SupportedInMultiActions": true,
+            "Tooltip": "Go to previous segment",
+            "UUID": "com.cuer.showcaller.backward"
+          },
+          {
+            "Icon": "imgs/reset",
+            "Name": "Reset",
+            "States": [
+              {
+                "Image": "imgs/reset",
+                "TitleAlignment": "bottom",
+                "ShowTitle": true
+              }
+            ],
+            "SupportedInMultiActions": true,
+            "Tooltip": "Reset to beginning",
+            "UUID": "com.cuer.showcaller.reset"
+          },
+          {
+            "Icon": "imgs/status",
+            "Name": "Status Display",
+            "States": [
+              {
+                "Image": "imgs/status",
+                "TitleAlignment": "bottom",
+                "ShowTitle": true
+              }
+            ],
+            "SupportedInMultiActions": false,
+            "Tooltip": "Shows current segment and status",
+            "UUID": "com.cuer.showcaller.status"
+          }
+        ],
         "Author": "Cuer",
-        "Icon": "imgs/pluginIcon",
-        "UUID": "com.cuer.showcaller",
         "CodePath": "bin/plugin.js",
+        "Description": "Control your Cuer rundowns from Stream Deck",
+        "Name": "Cuer Showcaller",
+        "Icon": "imgs/pluginIcon",
         "PropertyInspectorPath": "ui/propertyinspector.html",
+        "UUID": "com.cuer.showcaller",
         "Version": "1.0.0.0",
         "SDKVersion": 2,
         "Nodejs": {
           "Version": "20"
         },
+        "OS": [
+          {
+            "Platform": "mac",
+            "MinimumVersion": "13"
+          },
+          {
+            "Platform": "windows", 
+            "MinimumVersion": "10"
+          }
+        ],
         "Software": {
           "MinimumVersion": "6.6"
-        },
-        "OS": [
-          { "Platform": "mac", "MinimumVersion": "13" },
-          { "Platform": "windows", "MinimumVersion": "10" }
-        ],
-        "Actions": [
-          {
-            "UUID": "com.cuer.showcaller.playpause",
-            "Name": "Play/Pause",
-            "Icon": "imgs/play",
-            "States": [
-              { 
-                "Image": "imgs/play", 
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              },
-              { 
-                "Image": "imgs/pause", 
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              }
-            ],
-            "PropertyInspectorPath": "ui/propertyinspector.html",
-            "SupportedInMultiActions": true,
-            "Tooltip": "Toggle rundown play/pause"
-          },
-          {
-            "UUID": "com.cuer.showcaller.forward",
-            "Name": "Forward",
-            "Icon": "imgs/forward",
-            "States": [
-              {
-                "Image": "imgs/forward",
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              }
-            ],
-            "PropertyInspectorPath": "ui/propertyinspector.html",
-            "SupportedInMultiActions": true,
-            "Tooltip": "Move to next segment"
-          },
-          {
-            "UUID": "com.cuer.showcaller.backward",
-            "Name": "Backward", 
-            "Icon": "imgs/backward",
-            "States": [
-              {
-                "Image": "imgs/backward",
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              }
-            ],
-            "PropertyInspectorPath": "ui/propertyinspector.html",
-            "SupportedInMultiActions": true,
-            "Tooltip": "Move to previous segment"
-          },
-          {
-            "UUID": "com.cuer.showcaller.reset",
-            "Name": "Reset",
-            "Icon": "imgs/reset",
-            "States": [
-              {
-                "Image": "imgs/reset",
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              }
-            ],
-            "PropertyInspectorPath": "ui/propertyinspector.html",
-            "SupportedInMultiActions": true,
-            "Tooltip": "Reset to beginning"
-          },
-          {
-            "UUID": "com.cuer.showcaller.status",
-            "Name": "Status Display",
-            "Icon": "imgs/status",
-            "States": [
-              {
-                "Image": "imgs/status",
-                "ShowTitle": true,
-                "TitleAlignment": "bottom"
-              }
-            ],
-            "PropertyInspectorPath": "ui/propertyinspector.html",
-            "SupportedInMultiActions": false,
-            "Tooltip": "Show current segment status"
-          }
-        ]
+        }
       }, null, 2),
       
-      // Image files - creating actual PNG data
-      'imgs/play.png': atob(playIcon),
-      'imgs/pause.png': atob(pauseIcon),
-      'imgs/forward.png': atob(forwardIcon),
-      'imgs/backward.png': atob(backwardIcon),
-      'imgs/reset.png': atob(resetIcon),
-      'imgs/status.png': atob(statusIcon),
-      'imgs/pluginIcon.png': atob(pluginIcon.replace('data:image/png;base64,', '')),
-      
+      // Image files
+      'imgs/play.png': playPng,
+      'imgs/pause.png': pausePng,
+      'imgs/forward.png': forwardPng,
+      'imgs/backward.png': backwardPng,
+      'imgs/reset.png': resetPng,
+      'imgs/status.png': statusPng,
+      'imgs/pluginIcon.png': pluginPng,
+      'imgs/categoryIcon.png': pluginPng,
       
       'bin/plugin.js': `// Cuer ShowCaller Stream Deck Plugin
 class CuerShowcallerPlugin {
@@ -375,7 +444,6 @@ class CuerShowcallerPlugin {
         try {
             const status = await this.getStatus();
             const title = \`\${status.currentItem?.name || 'No item'}\`;
-            const subtitle = status.isPlaying ? 'Playing' : 'Paused';
             
             this.setTitle(context, title);
             this.setState(context, status.isPlaying ? 1 : 0);
@@ -455,17 +523,17 @@ function connectElgatoStreamDeckSocket(inPort, inPluginUUID, inRegisterEvent, in
     };
 }
 
-// Stream Deck SDK initialization - this will be called by Stream Deck
+// Stream Deck SDK initialization
 if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
-    // This function will be called by Stream Deck with the appropriate parameters
+    // This will be called by Stream Deck with the appropriate parameters
 }`,
-
+      
       'ui/propertyinspector.html': `<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Cuer ShowCaller - Property Inspector</title>
-    <link rel="stylesheet" href="propertyinspector.css">
+    <meta charset="utf-8">
+    <title>Cuer Showcaller Configuration</title>
+    <link rel="stylesheet" href="../css/propertyinspector.css">
 </head>
 <body>
     <div class="sdpi-wrapper">
@@ -495,186 +563,172 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
         </div>
     </div>
     
-    <script src="propertyinspector.js"></script>
+    <script src="../js/propertyinspector.js"></script>
 </body>
 </html>`,
-
-      'ui/propertyinspector.js': `// Property Inspector for Cuer ShowCaller
-class CuerPropertyInspector {
+      
+      'js/propertyinspector.js': `class CuerPropertyInspector {
     constructor() {
         this.websocket = null;
         this.uuid = null;
-        this.actionInfo = null;
         this.apiBaseUrl = 'https://khdiwrkgahsbjszlwnob.supabase.co/functions/v1';
         this.authToken = null;
-        this.currentUser = null;
-        this.selectedRundownId = null;
+        this.user = null;
+        this.rundownId = null;
+        
+        this.initializeElements();
+    }
+
+    initializeElements() {
+        this.loginButton = document.getElementById('loginButton');
+        this.userInfo = document.getElementById('userInfo');
+        this.userEmail = document.getElementById('userEmail');
+        this.logoutButton = document.getElementById('logoutButton');
+        this.rundownSelect = document.getElementById('rundownSelect');
+        this.refreshButton = document.getElementById('refreshButton');
+        this.connectionStatus = document.getElementById('connectionStatus');
+        
+        this.setupElements();
+    }
+
+    setupElements() {
+        this.loginButton?.addEventListener('click', () => this.handleLogin());
+        this.logoutButton?.addEventListener('click', () => this.handleLogout());
+        this.refreshButton?.addEventListener('click', () => this.loadRundowns());
+        this.rundownSelect?.addEventListener('change', (e) => {
+            this.rundownId = e.target.value;
+            this.saveSettings();
+        });
+    }
+
+    handleLogin() {
+        const authUrl = 'https://khdiwrkgahsbjszlwnob.supabase.co/auth/v1/authorize?provider=google';
+        const popup = window.open(authUrl, 'auth', 'width=500,height=600');
+        
+        const checkClosed = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(checkClosed);
+                this.updateConnectionStatus('Login cancelled', 'error');
+            }
+        }, 1000);
+
+        window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'auth_success') {
+                clearInterval(checkClosed);
+                popup.close();
+                this.onAuthSuccess(event.data.session, event.data.user);
+            } else if (event.data.type === 'auth_error') {
+                clearInterval(checkClosed);  
+                popup.close();
+                this.updateConnectionStatus('Login failed', 'error');
+            }
+        });
+    }
+
+    onAuthSuccess(session, user) {
+        this.authToken = session.access_token;
+        this.user = user;
+        
+        this.loginButton.style.display = 'none';
+        this.userInfo.style.display = 'block';
+        this.userEmail.textContent = user.email;
+        
+        this.rundownSelect.disabled = false;
+        this.refreshButton.disabled = false;
+        
+        this.updateConnectionStatus('Connected', 'success');
+        this.saveSettings();
+        this.loadRundowns();
+    }
+
+    handleLogout() {
+        this.authToken = null;
+        this.user = null;
+        this.rundownId = null;
+        
+        this.loginButton.style.display = 'block';
+        this.userInfo.style.display = 'none';
+        this.rundownSelect.disabled = true;
+        this.refreshButton.disabled = true;
+        this.rundownSelect.innerHTML = '<option value="">Login first to see rundowns...</option>';
+        
+        this.updateConnectionStatus('Not connected', 'default');
+        this.saveSettings();
     }
 
     init(websocket, uuid, actionInfo) {
         this.websocket = websocket;
         this.uuid = uuid;
-        this.actionInfo = actionInfo;
         
-        this.initializeElements();
         this.loadSettings();
     }
 
-    initializeElements() {
-        const loginButton = document.getElementById('loginButton');
-        const logoutButton = document.getElementById('logoutButton');
-        const refreshButton = document.getElementById('refreshButton');
-        const rundownSelect = document.getElementById('rundownSelect');
-
-        if (loginButton) {
-            loginButton.addEventListener('click', () => this.handleLogin());
-        }
-        
-        if (logoutButton) {
-            logoutButton.addEventListener('click', () => this.handleLogout());
-        }
-        
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => this.loadRundowns());
-        }
-        
-        if (rundownSelect) {
-            rundownSelect.addEventListener('change', (e) => {
-                this.selectedRundownId = e.target.value;
-                this.saveSettings();
-            });
-        }
+    loadSettings() {
+        // Settings would be loaded from Stream Deck here
+        this.updateConnectionStatus('Ready to connect', 'default');
     }
 
-    handleLogin() {
-        const authUrl = 'https://khdiwrkgahsbjszlwnob.supabase.co/auth/v1/authorize?provider=email';
-        const popup = window.open(authUrl, 'cuer-auth', 'width=500,height=600');
+    saveSettings() {
+        const settings = {
+            apiToken: this.authToken,
+            user: this.user,
+            rundownId: this.rundownId
+        };
         
-        const checkClosed = setInterval(() => {
-            if (popup.closed) {
-                clearInterval(checkClosed);
-                this.updateConnectionStatus('Login cancelled', 'warning');
-            }
-        }, 1000);
-        
-        // Listen for auth success message
-        window.addEventListener('message', (event) => {
-            if (event.data.type === 'CUER_AUTH_SUCCESS') {
-                clearInterval(checkClosed);
-                popup.close();
-                this.onAuthSuccess(event.data.token, event.data.user);
-            }
-        });
-    }
-
-    onAuthSuccess(token, user) {
-        this.authToken = token;
-        this.currentUser = user;
-        
-        document.getElementById('loginButton').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'block';
-        document.getElementById('userEmail').textContent = user.email;
-        document.getElementById('rundownSelect').disabled = false;
-        document.getElementById('refreshButton').disabled = false;
-        
-        this.updateConnectionStatus('Connected', 'success');
-        this.loadRundowns();
-        this.saveSettings();
-    }
-
-    handleLogout() {
-        this.authToken = null;
-        this.currentUser = null;
-        this.selectedRundownId = null;
-        
-        document.getElementById('loginButton').style.display = 'block';
-        document.getElementById('userInfo').style.display = 'none';
-        document.getElementById('rundownSelect').disabled = true;
-        document.getElementById('refreshButton').disabled = true;
-        
-        const rundownSelect = document.getElementById('rundownSelect');
-        rundownSelect.innerHTML = '<option value="">Login first to see rundowns...</option>';
-        
-        this.updateConnectionStatus('Not connected', 'error');
-        this.saveSettings();
+        if (this.websocket) {
+            const json = {
+                event: 'setSettings',
+                context: this.uuid,
+                payload: settings
+            };
+            this.websocket.send(JSON.stringify(json));
+        }
     }
 
     async loadRundowns() {
         if (!this.authToken) return;
         
         try {
-            this.updateConnectionStatus('Loading rundowns...', 'info');
-            
-            const response = await fetch(\`\${this.apiBaseUrl}/get-rundowns\`, {
-                method: 'GET',
+            const response = await fetch(\`\${this.apiBaseUrl}/rundown-api\`, {
+                method: 'POST',
                 headers: {
                     'Authorization': \`Bearer \${this.authToken}\`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ action: 'list' })
             });
             
             if (response.ok) {
-                const rundowns = await response.json();
-                this.populateRundownSelect(rundowns);
-                this.updateConnectionStatus('Rundowns loaded', 'success');
+                const data = await response.json();
+                this.populateRundownSelect(data.rundowns || []);
             } else {
-                throw new Error('Failed to load rundowns');
+                this.updateConnectionStatus('Failed to load rundowns', 'error');
             }
         } catch (error) {
-            console.error('Error loading rundowns:', error);
-            this.updateConnectionStatus('Failed to load rundowns', 'error');
+            console.error('Load rundowns error:', error);
+            this.updateConnectionStatus('Error loading rundowns', 'error');
         }
     }
 
     populateRundownSelect(rundowns) {
-        const select = document.getElementById('rundownSelect');
-        select.innerHTML = '<option value="">Select a rundown...</option>';
+        this.rundownSelect.innerHTML = '<option value="">Select a rundown...</option>';
         
         rundowns.forEach(rundown => {
             const option = document.createElement('option');
             option.value = rundown.id;
-            option.textContent = rundown.name;
-            option.selected = rundown.id === this.selectedRundownId;
-            select.appendChild(option);
+            option.textContent = rundown.title || \`Rundown \${rundown.id}\`;
+            if (rundown.id === this.rundownId) {
+                option.selected = true;
+            }
+            this.rundownSelect.appendChild(option);
         });
     }
 
-    updateConnectionStatus(message, type) {
-        const statusElement = document.getElementById('connectionStatus');
-        if (statusElement) {
-            statusElement.textContent = message;
-            statusElement.className = \`connection-status \${type}\`;
-        }
-    }
-
-    loadSettings() {
-        if (this.actionInfo && this.actionInfo.payload && this.actionInfo.payload.settings) {
-            const settings = this.actionInfo.payload.settings;
-            this.authToken = settings.apiToken;
-            this.currentUser = settings.user;
-            this.selectedRundownId = settings.rundownId;
-            
-            if (this.authToken && this.currentUser) {
-                this.onAuthSuccess(this.authToken, this.currentUser);
-            }
-        }
-    }
-
-    saveSettings() {
-        const settings = {
-            apiToken: this.authToken,
-            user: this.currentUser,
-            rundownId: this.selectedRundownId
-        };
-        
-        if (this.websocket) {
-            const payload = {
-                event: 'setSettings',
-                context: this.uuid,
-                payload: settings
-            };
-            this.websocket.send(JSON.stringify(payload));
-        }
+    updateConnectionStatus(message, type = 'default') {
+        this.connectionStatus.textContent = message;
+        this.connectionStatus.className = \`sdpi-item-value status-\${type}\`;
     }
 }
 
@@ -687,205 +741,107 @@ function connectElgatoStreamDeckSocket(inPort, inPropertyInspectorUUID, inRegist
     websocket.onopen = () => {
         const registerInfo = { event: inRegisterEvent, uuid: inPropertyInspectorUUID };
         websocket.send(JSON.stringify(registerInfo));
-        propertyInspector.init(websocket, inPropertyInspectorUUID, JSON.parse(inActionInfo));
+        propertyInspector.init(websocket, inPropertyInspectorUUID, inActionInfo);
     };
 }`,
-
-      'css/propertyinspector.css': `.sdpi-wrapper {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    padding: 16px;
-    background: var(--c-bg-primary);
-    color: var(--c-fg-primary);
-}
-
-.sdpi-item {
-    margin-bottom: 16px;
-}
-
-.sdpi-item-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--c-fg-secondary);
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.sdpi-item-value {
-    width: 100%;
-    padding: 8px 12px;
-    background: var(--c-bg-secondary);
-    border: 1px solid var(--c-border);
-    border-radius: 4px;
-    color: var(--c-fg-primary);
+      
+      'css/propertyinspector.css': `body {
+    margin: 0;
+    padding: 10px;
+    background: #2D2D30;
+    color: #D4D4D4;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 13px;
 }
 
+.sdpi-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sdpi-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.sdpi-item-label {
+    font-weight: 500;
+    color: #CCCCCC;
+}
+
+.sdpi-item-value {
+    background: #3C3C3C;
+    border: 1px solid #464647;
+    color: #D4D4D4;
+    padding: 6px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.sdpi-item-value:focus {
+    outline: none;
+    border-color: #007ACC;
+}
+
 button.sdpi-item-value {
-    background: var(--c-btn-bg);
-    color: var(--c-btn-fg);
+    background: #0E639C;
+    border: 1px solid #0E639C;
+    color: white;
     cursor: pointer;
-    transition: background-color 0.2s;
 }
 
 button.sdpi-item-value:hover {
-    background: var(--c-btn-bg-hover);
+    background: #1177BB;
 }
 
 button.sdpi-item-value:disabled {
-    background: var(--c-bg-disabled);
-    color: var(--c-fg-disabled);
+    background: #3C3C3C;
+    border-color: #464647;
+    color: #808080;
     cursor: not-allowed;
 }
 
 select.sdpi-item-value {
-    cursor: pointer;
+    background: #3C3C3C;
+    border: 1px solid #464647;
 }
 
-select.sdpi-item-value:disabled {
-    background: var(--c-bg-disabled);
-    color: var(--c-fg-disabled);
-    cursor: not-allowed;
+.status-success {
+    color: #4EC9B0 !important;
 }
 
-#userInfo {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.status-error {
+    color: #F44747 !important;
 }
 
-#userEmail {
-    font-weight: 500;
-}
-
-#logoutButton {
-    padding: 4px 8px !important;
-    font-size: 11px !important;
-    margin-left: 8px;
-    width: auto !important;
-}
-
-.connection-status {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-weight: 500;
-}
-
-.connection-status.success {
-    background: #2d5a2d;
-    color: #90ee90;
-}
-
-.connection-status.error {
-    background: #5a2d2d;
-    color: #ff9999;
-}
-
-.connection-status.warning {
-    background: #5a4d2d;
-    color: #ffcc99;
-}
-
-.connection-status.info {
-    background: #2d3d5a;
-    color: #99ccff;
-}`,
-      // Remove old image references and clean up
+.status-default {
+    color: #D4D4D4 !important;
+}`
     };
 
-    // Create basic PNG files - proper minimal PNG format
-    function createMinimalPNG(width: number = 72, height: number = 72, r: number = 128, g: number = 128, b: number = 128): Uint8Array {
-      // PNG signature
-      const signature = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-      
-      // IHDR chunk
-      const ihdrData = new Uint8Array(13);
-      const ihdrView = new DataView(ihdrData.buffer);
-      ihdrView.setUint32(0, width, false);   // Width
-      ihdrView.setUint32(4, height, false);  // Height  
-      ihdrView.setUint8(8, 8);               // Bit depth
-      ihdrView.setUint8(9, 2);               // Color type (RGB)
-      ihdrView.setUint8(10, 0);              // Compression
-      ihdrView.setUint8(11, 0);              // Filter
-      ihdrView.setUint8(12, 0);              // Interlace
-      
-      // Simple image data (solid color)
-      const imageDataSize = height * (1 + width * 3); // 1 byte filter + width * 3 RGB
-      const imageData = new Uint8Array(imageDataSize);
-      
-      for (let y = 0; y < height; y++) {
-        const rowStart = y * (1 + width * 3);
-        imageData[rowStart] = 0; // No filter
-        
-        for (let x = 0; x < width; x++) {
-          const pixelStart = rowStart + 1 + x * 3;
-          imageData[pixelStart] = r;     // Red
-          imageData[pixelStart + 1] = g; // Green  
-          imageData[pixelStart + 2] = b; // Blue
-        }
-      }
-      
-      // Create a minimal PNG - just signature + IHDR + solid color indication
-      // For Stream Deck, even a very basic PNG should work
-      const result = new Uint8Array(signature.length + 12 + ihdrData.length + 12);
-      let pos = 0;
-      
-      // PNG signature
-      result.set(signature, pos);
-      pos += signature.length;
-      
-      // IHDR chunk length (4 bytes) + 'IHDR' (4 bytes) + data (13 bytes) + CRC (4 bytes) = 25 bytes total
-      const ihdrChunk = new Uint8Array(8 + ihdrData.length);
-      const ihdrChunkView = new DataView(ihdrChunk.buffer);
-      ihdrChunkView.setUint32(0, ihdrData.length, false); // Chunk length
-      ihdrChunk.set([0x49, 0x48, 0x44, 0x52], 4); // 'IHDR'
-      ihdrChunk.set(ihdrData, 8);
-      
-      result.set(ihdrChunk, pos);  
-      pos += ihdrChunk.length;
-      
-      // Add minimal IEND chunk
-      const iendChunk = new Uint8Array([0, 0, 0, 0, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82]);
-      result.set(iendChunk, pos);
-      
-      return result;
-    }
+    console.log('Creating ZIP file with', Object.keys(pluginFiles).length, 'files');
+    const zipData = createZipFile(pluginFiles);
+    console.log('ZIP file created, size:', zipData.length, 'bytes');
 
-    // Add the image files as proper PNG binary data  
-    pluginFiles['imgs/play.png'] = createMinimalPNG(72, 72, 0, 200, 0);    // Green
-    pluginFiles['imgs/pause.png'] = createMinimalPNG(72, 72, 200, 200, 0); // Yellow  
-    pluginFiles['imgs/forward.png'] = createMinimalPNG(72, 72, 0, 100, 200); // Blue
-    pluginFiles['imgs/backward.png'] = createMinimalPNG(72, 72, 200, 100, 0); // Orange
-    pluginFiles['imgs/reset.png'] = createMinimalPNG(72, 72, 200, 0, 0);   // Red
-    pluginFiles['imgs/status.png'] = createMinimalPNG(72, 72, 100, 100, 100); // Gray
-    pluginFiles['imgs/pluginIcon.png'] = createMinimalPNG(72, 72, 50, 150, 200); // Light Blue
-
-    console.log(`Creating zip with ${Object.keys(pluginFiles).length} files`);
-    
-    // Create the proper zip file
-    const zipContent = createZipFile(pluginFiles);
-    
-    console.log(`Generated ZIP file size: ${zipContent.length} bytes`);
-
-    return new Response(zipContent, {
+    return new Response(zipData, {
+      status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/zip',
         'Content-Disposition': 'attachment; filename="com.cuer.showcaller.streamDeckPlugin"',
-        'Content-Length': zipContent.length.toString(),
+        'Content-Length': zipData.length.toString(),
       },
-      status: 200,
     })
-
   } catch (error) {
-    console.error('Error creating zip file:', error)
-    return new Response(
-      JSON.stringify({ error: 'Failed to create zip file', details: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    )
+    console.error('Error creating plugin:', error)
+    return new Response(JSON.stringify({ 
+      error: 'Failed to create plugin', 
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 })
