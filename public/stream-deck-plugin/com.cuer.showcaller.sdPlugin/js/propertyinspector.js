@@ -29,6 +29,16 @@ class CuerPropertyInspector {
         this.refreshButton = document.getElementById('refreshButton');
         this.connectionStatus = document.getElementById('connectionStatus');
 
+        console.log('🔧 Elements found:', {
+            loginButton: !!this.loginButton,
+            userInfo: !!this.userInfo,
+            userEmail: !!this.userEmail,
+            logoutButton: !!this.logoutButton,
+            rundownSelect: !!this.rundownSelect,
+            refreshButton: !!this.refreshButton,
+            connectionStatus: !!this.connectionStatus
+        });
+
         // Add event listeners
         if (this.loginButton) {
             this.loginButton.addEventListener('click', () => this.handleLogin());
@@ -47,6 +57,13 @@ class CuerPropertyInspector {
 
         if (this.refreshButton) {
             this.refreshButton.addEventListener('click', () => this.loadRundowns());
+        }
+
+        // Check if we have pending auth restoration
+        if (this.pendingAuthRestore && this.authToken && this.currentUser) {
+            console.log('🔄 Restoring pending authentication...');
+            this.onAuthSuccess();
+            this.pendingAuthRestore = false;
         }
 
         console.log('🔧 Property inspector elements initialized');
@@ -158,18 +175,36 @@ class CuerPropertyInspector {
 
     // Load settings from Stream Deck
     loadSettings() {
+        console.log('🔄 Loading settings from Stream Deck...');
+        console.log('📋 ActionInfo:', this.actionInfo);
+        
         if (this.actionInfo && this.actionInfo.payload && this.actionInfo.payload.settings) {
             const settings = this.actionInfo.payload.settings;
+            console.log('⚙️ Found settings:', settings);
             
             if (settings.authToken && settings.user) {
+                console.log('🔑 Restoring authentication...');
                 this.authToken = settings.authToken;
                 this.currentUser = settings.user;
-                this.onAuthSuccess();
+                
+                // Ensure elements are ready before calling onAuthSuccess
+                if (this.loginButton && this.userInfo) {
+                    this.onAuthSuccess();
+                } else {
+                    console.log('⏳ Elements not ready, will restore auth when elements are available');
+                    // Set a flag to restore auth when elements are ready
+                    this.pendingAuthRestore = true;
+                }
+            } else {
+                console.log('❌ No valid auth token or user in settings');
             }
             
             if (settings.rundownId) {
+                console.log('📋 Restoring rundown selection:', settings.rundownId);
                 this.selectedRundownId = settings.rundownId;
             }
+        } else {
+            console.log('❌ No settings found in actionInfo');
         }
     }
 
@@ -180,7 +215,7 @@ class CuerPropertyInspector {
         const settings = {
             authToken: this.authToken || '',
             user: this.currentUser || null,
-            rundownId: this.rundownSelect ? this.rundownSelect.value : ''
+            rundownId: this.rundownSelect ? this.rundownSelect.value : (this.selectedRundownId || '')
         };
 
         const payload = {
@@ -190,7 +225,9 @@ class CuerPropertyInspector {
         };
 
         this.websocket.send(JSON.stringify(payload));
-        console.log('💾 Settings saved:', settings);
+        console.log('💾 Settings saved to Stream Deck:', settings);
+        console.log('💾 Auth token length:', settings.authToken ? settings.authToken.length : 'none');
+    }
     }
 
     // Load rundowns from API
