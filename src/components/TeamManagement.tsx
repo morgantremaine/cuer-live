@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, ShieldCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TransferPreview {
   member_email: string;
@@ -36,6 +43,8 @@ const TeamManagement = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
   const [teamAdminName, setTeamAdminName] = useState<string>('');
+  const [roleChangeConfirm, setRoleChangeConfirm] = useState<{ memberId: string; memberName: string; currentRole: string; newRole: string } | null>(null);
+  const [isChangingRole, setIsChangingRole] = useState(false);
   
   const {
     team,
@@ -47,7 +56,8 @@ const TeamManagement = () => {
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
-    revokeInvitation
+    revokeInvitation,
+    changeTeamMemberRole
   } = useTeam();
   
   const { max_team_members } = useSubscription();
@@ -181,6 +191,42 @@ const TeamManagement = () => {
     setTransferPreview(null);
   };
 
+  const handleRoleChange = (memberId: string, memberName: string, currentRole: string, newRole: string) => {
+    setRoleChangeConfirm({
+      memberId,
+      memberName,
+      currentRole,
+      newRole
+    });
+  };
+
+  const handleConfirmRoleChange = async () => {
+    if (!roleChangeConfirm) return;
+    
+    setIsChangingRole(true);
+    const { error } = await changeTeamMemberRole(roleChangeConfirm.memberId, roleChangeConfirm.newRole);
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Role Updated',
+        description: `${roleChangeConfirm.memberName} is now a ${roleChangeConfirm.newRole}`,
+      });
+    }
+    
+    setIsChangingRole(false);
+    setRoleChangeConfirm(null);
+  };
+
+  const handleCancelRoleChange = () => {
+    setRoleChangeConfirm(null);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -233,7 +279,7 @@ const TeamManagement = () => {
   // Calculate current team usage (members + pending invitations)
   const currentUsage = teamMembers.length + pendingInvitations.length;
   const isAtLimit = currentUsage >= max_team_members;
-  const canInviteMore = userRole === 'admin' && !isAtLimit;
+  const canInviteMore = (userRole === 'admin' || userRole === 'manager') && !isAtLimit;
 
   return (
     <div className="space-y-6">
@@ -250,8 +296,8 @@ const TeamManagement = () => {
         </CardHeader>
       </Card>
 
-      {/* Invite Members (Admin Only) */}
-      {userRole === 'admin' && (
+      {/* Invite Members (Admin & Manager) */}
+      {(userRole === 'admin' || userRole === 'manager') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -309,8 +355,8 @@ const TeamManagement = () => {
         </Card>
       )}
 
-      {/* Pending Invitations (Admin Only) */}
-      {userRole === 'admin' && pendingInvitations.length > 0 && (
+      {/* Pending Invitations (Admin & Manager) */}
+      {(userRole === 'admin' || userRole === 'manager') && pendingInvitations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -381,36 +427,71 @@ const TeamManagement = () => {
                 <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
-                        </span>
-                        {member.role === 'admin' && (
-                          <Crown className="h-4 w-4 text-yellow-500" />
-                        )}
-                      </div>
+                       <div className="flex items-center gap-2">
+                         <span className="font-medium">
+                           {member.profiles?.full_name || member.profiles?.email || 'Unknown User'}
+                         </span>
+                         {member.role === 'admin' && (
+                           <Crown className="h-4 w-4 text-yellow-500" />
+                         )}
+                         {member.role === 'manager' && (
+                           <ShieldCheck className="h-4 w-4 text-blue-500" />
+                         )}
+                       </div>
                       <p className="text-sm text-muted-foreground">
                         {member.profiles?.email}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
-                      {member.role}
-                    </Badge>
-                    {userRole === 'admin' && member.role !== 'admin' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleRemoveMemberClick(
-                          member.id, 
-                          member.profiles?.full_name || member.profiles?.email || 'Unknown User'
-                        )}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                   <div className="flex items-center gap-2">
+                     {userRole === 'admin' && member.role !== 'admin' ? (
+                       <Select
+                         value={member.role}
+                         onValueChange={(newRole) => handleRoleChange(
+                           member.id,
+                           member.profiles?.full_name || member.profiles?.email || 'Unknown User',
+                           member.role,
+                           newRole
+                         )}
+                       >
+                         <SelectTrigger className="w-24 h-8">
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="member">Member</SelectItem>
+                           <SelectItem value="manager">Manager</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     ) : (
+                       <Badge variant={member.role === 'admin' ? 'default' : member.role === 'manager' ? 'outline' : 'secondary'}>
+                         {member.role}
+                       </Badge>
+                     )}
+                     {(userRole === 'admin' || userRole === 'manager') && member.role !== 'admin' && member.role !== 'manager' && (
+                       <Button 
+                         variant="ghost" 
+                         size="sm"
+                         onClick={() => handleRemoveMemberClick(
+                           member.id, 
+                           member.profiles?.full_name || member.profiles?.email || 'Unknown User'
+                         )}
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                     )}
+                     {userRole === 'admin' && member.role === 'manager' && (
+                       <Button 
+                         variant="ghost" 
+                         size="sm"
+                         onClick={() => handleRemoveMemberClick(
+                           member.id, 
+                           member.profiles?.full_name || member.profiles?.email || 'Unknown User'
+                         )}
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                     )}
+                   </div>
                 </div>
               ))}
             </div>
@@ -480,6 +561,46 @@ const TeamManagement = () => {
                 </>
               ) : (
                 'Remove Member & Delete Account'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Role Change Confirmation Dialog */}
+      <AlertDialog open={!!roleChangeConfirm} onOpenChange={(open) => !open && handleCancelRoleChange()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Team Member Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              {roleChangeConfirm && (
+                <>
+                  Are you sure you want to change <strong>{roleChangeConfirm.memberName}</strong>'s role 
+                  from <strong>{roleChangeConfirm.currentRole}</strong> to <strong>{roleChangeConfirm.newRole}</strong>?
+                  {roleChangeConfirm.newRole === 'manager' && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-500">
+                      <p className="text-sm text-blue-700">
+                        <strong>Manager permissions:</strong> Can invite team members, view pending invitations, and remove members.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isChangingRole}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmRoleChange}
+              disabled={isChangingRole}
+            >
+              {isChangingRole ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Updating...
+                </>
+              ) : (
+                'Change Role'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

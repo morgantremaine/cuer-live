@@ -1235,6 +1235,10 @@ export type Database = {
         Args: { target_team_id: string }
         Returns: boolean
       }
+      is_team_admin_or_manager: {
+        Args: { team_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       is_team_admin_safe: {
         Args: { team_uuid: string; user_uuid: string }
         Returns: boolean

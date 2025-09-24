@@ -12,7 +12,7 @@ interface Team {
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'manager' | 'member';
   joined_at: string;
   profiles?: {
     email: string;
@@ -31,7 +31,7 @@ export const useTeam = () => {
   const [team, setTeam] = useState<Team | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
+  const [userRole, setUserRole] = useState<'admin' | 'manager' | 'member' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedUserRef = useRef<string | null>(null);
@@ -448,6 +448,25 @@ export const useTeam = () => {
     }
   };
 
+  const changeTeamMemberRole = async (memberId: string, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // Reload team data to reflect changes
+      await loadTeamData();
+      return { success: true };
+    } catch (error) {
+      return { error: 'Failed to change member role' };
+    }
+  };
+
   const acceptInvitation = async (token: string) => {
     try {
       const { data, error } = await supabase.rpc('accept_team_invitation_safe', {
@@ -532,6 +551,7 @@ export const useTeam = () => {
     revokeInvitation,
     getTransferPreview,
     removeTeamMemberWithTransfer,
+    changeTeamMemberRole,
     acceptInvitation
   };
 };

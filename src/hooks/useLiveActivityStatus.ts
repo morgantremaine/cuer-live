@@ -10,7 +10,7 @@ interface ActivityStatus {
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'member';
+  role: 'admin' | 'manager' | 'member';
   joined_at: string;
   profiles?: {
     email: string;
