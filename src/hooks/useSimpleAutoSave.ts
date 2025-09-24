@@ -307,7 +307,35 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    console.log('⌨️ User typing detected - marking active');
+    console.log('⌨️ User typing detected - marking active, forcing auto-save check');
+    
+    // CRITICAL: Set hasUnsavedChangesRef to trigger auto-save effect
+    hasUnsavedChangesRef.current = true;
+    
+    // CRITICAL: Force auto-save scheduling since state.hasUnsavedChanges may not be updated yet
+    console.log('🚀 Forcing auto-save schedule from markActiveTyping');
+    
+    // Clear existing timeouts to prevent multiple saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Schedule auto-save with debounce 
+    saveTimeoutRef.current = setTimeout(async () => {
+      // Final check - don't save if user started typing while we were waiting
+      if (isTypingActive()) {
+        console.log('⌨️ AutoSave(markActiveTyping): cancelled at execution - user started typing');
+        return;
+      }
+
+      console.log('⏱️ AutoSave(markActiveTyping): executing save now');
+      try {
+        await performSaveRef.current();
+        console.log('✅ AutoSave(markActiveTyping): save completed successfully');
+      } catch (error) {
+        console.error('❌ AutoSave(markActiveTyping): save execution failed:', error);
+      }
+    }, typingIdleMs);
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
@@ -1031,8 +1059,6 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Note: Cell update coordination now handled via React context instead of global variables
-  
-  console.log('🔧 useSimpleAutoSave return - markActiveTyping type:', typeof markActiveTyping);
 
   return {
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
