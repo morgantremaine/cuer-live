@@ -22,9 +22,9 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
     return '';
   }
   
-  // Use the stored rowNumber field instead of recalculating
-  // This ensures consistency after drag operations
-  return currentItem.rowNumber || '';
+  // Use the calculated rowNumber if available (from calculateItemsWithTiming)
+  // Otherwise fall back to stored rowNumber for consistency
+  return (currentItem as any).calculatedRowNumber || currentItem.rowNumber || '';
 };
 
 // Helper function to get cell value for CSV export, similar to SharedRundownTable logic

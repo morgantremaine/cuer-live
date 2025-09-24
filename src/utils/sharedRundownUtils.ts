@@ -23,9 +23,9 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
     return '';
   }
   
-  // Use the stored rowNumber field instead of recalculating
-  // This ensures consistency with the main rundown after drag operations
-  return item.rowNumber || '';
+  // Use the calculated rowNumber if available (from calculateItemsWithTiming)
+  // Otherwise fall back to stored rowNumber for consistency
+  return (item as any).calculatedRowNumber || item.rowNumber || '';
 };
 
 // Helper function to calculate duration-based elapsed time for shared rundowns
