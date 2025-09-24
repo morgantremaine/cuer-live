@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import AppUpdateNotification from "@/components/AppUpdateNotification";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -38,6 +38,21 @@ import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 
+// Login wrapper to handle Stream Deck vs normal login flows
+const LoginWrapper = () => {
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isStreamDeck = searchParams.get('streamdeck') === 'true';
+  
+  // For normal users who are already logged in, redirect immediately
+  if (user && !isStreamDeck) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  // For Stream Deck or non-authenticated users, show login page
+  return <Login />;
+};
+
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
@@ -66,7 +81,7 @@ const AppRoutes = () => {
       <Route path="/home" element={<LandingPage />} />
       
       {/* Public routes */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<LoginWrapper />} />
       <Route path="/demo" element={<Index />} />
       <Route path="/shared/rundown/:id" element={<SharedRundown />} />
       <Route path="/ad-view/:id" element={<ADView />} />
