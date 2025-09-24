@@ -29,7 +29,7 @@ interface DragInfo {
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
-  selectedRowsRef: React.MutableRefObject<Set<string>> | (() => Set<string>), // Accept ref or getter function
+  selectedRows: Set<string>,
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
@@ -48,18 +48,9 @@ export const useDragAndDrop = (
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   
-  // Helper function to get current selectedRows
-  const getSelectedRows = useCallback(() => {
-    if (typeof selectedRowsRef === 'function') {
-      return selectedRowsRef();
-    } else if (selectedRowsRef && 'current' in selectedRowsRef) {
-      return selectedRowsRef.current;
-    }
-    return new Set<string>();
-  }, [selectedRowsRef]);
+  // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastActivityRef = useRef<number>(Date.now());
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -104,42 +95,21 @@ export const useDragAndDrop = (
     }
   }, [activeId, draggedItemIndex, isDraggingMultiple, dropTargetIndex]);
 
-  // Record drag activity to prevent premature timeout
-  const recordDragActivity = useCallback(() => {
-    lastActivityRef.current = Date.now();
-  }, []);
-
   // Auto-cleanup timeout to prevent stuck states
   const setDragTimeout = useCallback(() => {
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 10-second timeout to force reset if drag gets stuck
-    // But check for activity every 2 seconds to extend if user is actively dragging
+    // Set a 3-second timeout to force reset if drag gets stuck
     if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 Setting 10-second drag timeout with activity monitoring');
+      console.log('🎯 Setting 3-second drag timeout');
     }
-    
-    const checkActivity = () => {
-      const timeSinceActivity = Date.now() - lastActivityRef.current;
-      const maxInactivityTime = 8000; // 8 seconds of inactivity before timeout
-      
-      if (timeSinceActivity > maxInactivityTime) {
-        console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 8 seconds of inactivity');
-        resetDragState();
-      } else if (isDragActiveRef.current) {
-        // Still active and user has been active recently, check again in 2 seconds
-        dragTimeoutRef.current = setTimeout(checkActivity, 2000);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🎯 Drag still active, extending timeout. Time since activity:', timeSinceActivity + 'ms');
-        }
-      }
-    };
-    
-    // Start the activity monitoring loop
-    dragTimeoutRef.current = setTimeout(checkActivity, 2000);
-  }, [resetDragState, recordDragActivity]);
+    dragTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 3 seconds');
+      resetDragState();
+    }, 3000);
+  }, [resetDragState]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -219,7 +189,7 @@ export const useDragAndDrop = (
         rowNumber: item?.rowNumber
       });
       console.log('🎯 Total items in rundown:', items.length);
-      console.log('🎯 Selected rows count:', getSelectedRows().size);
+      console.log('🎯 Selected rows count:', selectedRows.size);
     }
     
     if (!item) {
@@ -253,9 +223,9 @@ export const useDragAndDrop = (
         draggedIds = [item.id];
         isHeaderGroup = false;
       }
-    } else if (getSelectedRows().size > 1 && getSelectedRows().has(item.id)) {
+    } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
-      draggedIds = Array.from(getSelectedRows());
+      draggedIds = Array.from(selectedRows);
       if (process.env.NODE_ENV === 'development') {
         console.log('🎯 Dragging multiple selected items:', {
           count: draggedIds.length,
@@ -286,7 +256,6 @@ export const useDragAndDrop = (
       isHeaderGroup,
       originalIndex: activeIndex
     });
-    recordDragActivity(); // Record initial activity
     setDragTimeout();
     isDragActiveRef.current = true;
     
@@ -298,7 +267,7 @@ export const useDragAndDrop = (
         isHeaderGroup
       });
     }
-  }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout, recordDragActivity]);
+  }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
@@ -508,9 +477,6 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    // Record drag activity to prevent timeout during long drags
-    recordDragActivity();
-    
     if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
@@ -545,24 +511,19 @@ export const useDragAndDrop = (
         setDropTargetIndex(insertIndex);
       }
     }
-  }, [draggedItemIndex, dropTargetIndex, items, recordDragActivity]);
+  }, [draggedItemIndex, dropTargetIndex, items]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Record activity even on drag leave to prevent timeout
-    recordDragActivity();
-    
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
     
-    // Use a larger buffer for long-distance drags to prevent premature drop indicator loss
-    const buffer = 20; // Increased from 10 to 20 pixels
+    const buffer = 10;
     if (x < rect.left - buffer || x > rect.right + buffer || 
         y < rect.top - buffer || y > rect.bottom + buffer) {
-      // Only clear drop target if we're really far from the element
       setDropTargetIndex(null);
     }
-  }, [recordDragActivity]);
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
