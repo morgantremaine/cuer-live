@@ -29,6 +29,7 @@ const Login = () => {
   // Handle Stream Deck authentication success
   useEffect(() => {
     if (isStreamDeck && session?.access_token) {
+      console.log('🎛️ Stream Deck: Sending auth success message');
       // Send auth success message to parent window (Stream Deck popup)
       window.opener?.postMessage({
         type: 'CUER_AUTH_SUCCESS',
@@ -39,8 +40,10 @@ const Login = () => {
         }
       }, '*'); // Allow any origin for Stream Deck communication
       
-      // Close the popup
-      window.close();
+      // Close the popup after a short delay
+      setTimeout(() => {
+        window.close();
+      }, 100);
     }
   }, [isStreamDeck, session]);
 
@@ -68,6 +71,7 @@ const Login = () => {
           
           // Send error to Stream Deck if needed
           if (isStreamDeck) {
+            console.log('🎛️ Stream Deck: Sending auth error message');
             window.opener?.postMessage({
               type: 'CUER_AUTH_ERROR',
               error: error.message
@@ -75,11 +79,14 @@ const Login = () => {
           }
         }
       } else {
+        console.log('✅ Sign in successful');
         toast({
           title: 'Success',
           description: 'Signed in successfully!',
         })
-        // Stream Deck success is handled in useEffect above
+        
+        // For Stream Deck, the success handling is done in useEffect above
+        // For normal login, navigation is handled by the auth system
       }
     } catch (err) {
       toast({
