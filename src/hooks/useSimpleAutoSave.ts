@@ -42,6 +42,7 @@ export const useSimpleAutoSave = (
   // Enhanced cooldown management with explicit flags (passed as parameters)
   // Simplified autosave system - reduce complexity with performance optimization
   const lastEditAtRef = useRef<number>(0);
+  const hasUnsavedChangesRef = useRef<boolean>(false);
   
   // Consistent timing for all rundown sizes - no functional differences
   const getOptimizedTimings = useCallback(() => {
@@ -357,12 +358,22 @@ export const useSimpleAutoSave = (
       clearTimeout(typingTimeoutRef.current);
     }
     
-    // Set timeout to automatically clear typing state
+    // Set timeout to automatically clear typing state and schedule save if needed
     typingTimeoutRef.current = setTimeout(() => {
       console.log('⌨️ Typing timeout - clearing typing state');
       userTypingRef.current = false;
       typingTimeoutRef.current = undefined;
-    }, typingIdleMs + 100); // Slightly longer than typingIdleMs to ensure cleanup
+      
+      // If there are still unsaved changes, schedule a save
+      if (hasUnsavedChangesRef.current && !saveInProgressRef.current) {
+        console.log('💾 Typing timeout: scheduling delayed save for remaining changes');
+        setTimeout(() => {
+          if (!saveInProgressRef.current && !userTypingRef.current) {
+            performSave(false, isSharedView);
+          }
+        }, 100);
+      }
+    }, typingIdleMs - 200); // Clear typing state BEFORE the save timeout
     
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
@@ -776,9 +787,12 @@ export const useSimpleAutoSave = (
     performSaveRef.current = performSave;
   }, [performSave]);
 
-  // Track latest flags for unmount flush
+  // Track latest flags for unmount flush and state tracking
   const hasUnsavedRef = useRef(false);
-  useEffect(() => { hasUnsavedRef.current = state.hasUnsavedChanges; }, [state.hasUnsavedChanges]);
+  useEffect(() => { 
+    hasUnsavedRef.current = state.hasUnsavedChanges;
+    hasUnsavedChangesRef.current = state.hasUnsavedChanges;
+  }, [state.hasUnsavedChanges]);
   const isLoadedRef = useRef(!!isInitiallyLoaded);
   useEffect(() => { isLoadedRef.current = !!isInitiallyLoaded; }, [isInitiallyLoaded]);
   const rundownIdRef = useRef(rundownId);
