@@ -273,6 +273,12 @@ const ExpandableScriptCell = ({
               }}
               value={value}
               onChange={(e) => {
+                console.log('📝 ExpandableScriptCell onChange - SINGLE CHAR TEST', { 
+                  value: e.target.value, 
+                  length: e.target.value.length,
+                  lastChar: e.target.value.slice(-1),
+                  fieldType
+                });
                 onUpdateValue(e.target.value);
                 // Trigger resize on content change
                 requestAnimationFrame(() => {
