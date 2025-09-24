@@ -839,7 +839,6 @@ export const useSimplifiedRundownState = () => {
     }
     
     if (isTypingField) {
-      console.log('📝 enhancedUpdateItem: detected typing field update', { id, field, value });
       // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
       
