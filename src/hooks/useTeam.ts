@@ -84,39 +84,23 @@ export const useTeam = () => {
       const pendingToken = localStorage.getItem('pendingInvitationToken');
       
       if (membershipError && pendingToken && pendingToken !== 'undefined') {
-        debugLogger.team('No membership found but have pending token, prioritizing invitation acceptance');
+        debugLogger.team('No membership found but have pending token, skipping team creation');
+        console.log('User has pending invitation token, waiting for invitation processing on JoinTeam page');
         
-        try {
-          const { data: acceptResult, error: acceptError } = await supabase.rpc(
-            'accept_team_invitation_safe',
-            { invitation_token: pendingToken }
-          );
-
-          if (acceptError) {
-            console.error('Error accepting invitation:', acceptError);
-            localStorage.removeItem('pendingInvitationToken');
-            // Continue to team creation logic below
-          } else if (acceptResult?.success) {
-            console.log('Invitation accepted successfully, reloading team data');
-            localStorage.removeItem('pendingInvitationToken');
-            // Reload team data after successful invitation acceptance
-            setTimeout(() => {
-              loadedUserRef.current = null;
-              isLoadingRef.current = false;
-              loadTeamData();
-            }, 1000);
-            return;
-          }
-        } catch (error) {
-          console.error('Error processing invitation:', error);
-          localStorage.removeItem('pendingInvitationToken');
-        }
+        // Don't create a personal team if there's a pending invitation
+        // The invitation should be processed through the JoinTeam page
+        setError(null);
+        setTeam(null);
+        setUserRole(null);
+        setIsLoading(false);
+        isLoadingRef.current = false;
+        return;
       }
 
       if (membershipError) {
         console.error('Error loading team membership:', membershipError);
         
-        // Try to create a personal team if no pending invitation or invitation failed
+        // Only create personal team if no pending invitation token exists
         debugLogger.team('Creating personal team as fallback');
         const { data: newTeamData, error: createError } = await supabase.rpc(
           'get_or_create_user_team',
@@ -450,7 +434,7 @@ export const useTeam = () => {
 
   const acceptInvitation = async (token: string) => {
     try {
-      const { data, error } = await supabase.rpc('accept_team_invitation_safe', {
+      const { data, error } = await supabase.rpc('accept_invitation_secure', {
         invitation_token: token
       });
 
@@ -462,9 +446,13 @@ export const useTeam = () => {
         return { error: data.error };
       }
 
+      // Clear the pending token immediately upon successful acceptance
+      localStorage.removeItem('pendingInvitationToken');
+      
       // Reload team data after successful invitation acceptance
       loadedUserRef.current = null;
-      setTimeout(() => loadTeamData(), 100);
+      isLoadingRef.current = false;
+      setTimeout(() => loadTeamData(), 500);
       return { success: true };
     } catch (error) {
       return { error: 'Failed to accept invitation' };

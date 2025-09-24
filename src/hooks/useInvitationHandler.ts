@@ -42,7 +42,7 @@ export const useInvitationHandler = () => {
       }
 
       const pendingToken = localStorage.getItem('pendingInvitationToken');
-      if (!pendingToken) {
+      if (!pendingToken || pendingToken === 'undefined') {
         console.log('No pending invitation token found');
         processedUserRef.current = user.id; // Mark as processed
         return;
@@ -53,40 +53,39 @@ export const useInvitationHandler = () => {
       processedUserRef.current = user.id;
 
       try {
-        // Check if token is still present - if so, redirect to JoinTeam page for proper handling
-        const stillPending = localStorage.getItem('pendingInvitationToken');
-        if (stillPending && stillPending !== 'undefined') {
-          console.log('Pending invitation detected, redirecting to JoinTeam page for proper handling');
+        // Always redirect to JoinTeam page for proper invitation handling
+        console.log('Pending invitation detected, redirecting to JoinTeam page for proper handling');
+        
+        // Validate token before redirecting
+        try {
+          const { validateInvitationToken } = await import('@/utils/invitationUtils');
+          const isValid = await validateInvitationToken(pendingToken);
           
-          // Validate token before redirecting
-          try {
-            const { validateInvitationToken } = await import('@/utils/invitationUtils');
-            const isValid = await validateInvitationToken(stillPending);
-            
-            if (isValid) {
-              // Redirect to JoinTeam page for proper invitation handling
-              if (!location.pathname.startsWith('/join-team/')) {
-                navigate(`/join-team/${stillPending}`);
-                return;
-              }
-            } else {
-              console.log('Invalid invitation token detected, clearing it');
-              localStorage.removeItem('pendingInvitationToken');
-              
-              toast({
-                title: 'Invitation Expired',
-                description: 'The invitation link has expired. Please request a new invitation.',
-                variant: 'destructive',
-              });
+          if (isValid) {
+            // Redirect to JoinTeam page for proper invitation handling
+            if (!location.pathname.startsWith('/join-team/')) {
+              navigate(`/join-team/${pendingToken}`);
+              return;
             }
-          } catch (error) {
-            console.error('Error validating invitation token:', error);
+          } else {
+            console.log('Invalid invitation token detected, clearing it');
             localStorage.removeItem('pendingInvitationToken');
+            
+            toast({
+              title: 'Invitation Expired',
+              description: 'The invitation link has expired. Please request a new invitation.',
+              variant: 'destructive',
+            });
           }
+        } catch (error) {
+          console.error('Error validating invitation token:', error);
+          localStorage.removeItem('pendingInvitationToken');
         }
         
-        // Load team data normally (no auto-invitation processing here)
-        await loadTeamData();
+        // Only load team data if not redirecting to JoinTeam page
+        if (!location.pathname.startsWith('/join-team/')) {
+          await loadTeamData();
+        }
       } catch (error) {
         console.error('Error processing pending invitation:', error);
         

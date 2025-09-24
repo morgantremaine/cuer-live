@@ -168,7 +168,11 @@ const JoinTeam = () => {
     if (user && invitation && !invitationProcessed && !isProcessing) {
       console.log('User is authenticated and invitation is loaded, processing invitation');
       setInvitationProcessed(true);
-      handleAcceptInvitation();
+      
+      // Add a small delay to ensure useTeam hook doesn't interfere
+      setTimeout(() => {
+        handleAcceptInvitation();
+      }, 200);
     }
   }, [user?.id, invitation?.id, invitationProcessed, isProcessing]); // Use specific IDs to prevent unnecessary re-renders
 
