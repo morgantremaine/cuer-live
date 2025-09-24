@@ -39,7 +39,7 @@ import { calculateTotalRuntime } from '@/utils/rundownCalculations';
 interface TeamMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'manager' | 'member';
+  role: 'admin' | 'member';
   joined_at: string;
   profiles?: {
     email: string;
