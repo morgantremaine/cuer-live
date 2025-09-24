@@ -21,6 +21,7 @@ export const useRundownMemoization = (
   
   // EXTREME MEMORY OPTIMIZATION: Minimal processing for large rundowns
   const memoizedCalculations = useMemo(() => {
+    console.log('🔄 MEMO: Recalculating with', items.length, 'items');
     const itemCount = items.length;
     
     // For large rundowns, use memory-optimized calculations while preserving functionality
@@ -31,6 +32,7 @@ export const useRundownMemoization = (
         let calculatedRowNumber = '';
         if (item.type !== 'header') {
           calculatedRowNumber = item.rowNumber || '';
+          console.log('🔢 MEMO: Item', item.id.slice(-6), 'rowNumber:', `"${calculatedRowNumber}"`);
         }
         
         return {
@@ -106,6 +108,7 @@ export const useRundownMemoization = (
       let calculatedRowNumber = '';
       if (item.type !== 'header') {
         calculatedRowNumber = item.rowNumber || '';
+        console.log('🔢 MEMO SMALL: Item', item.id.slice(-6), 'rowNumber:', `"${calculatedRowNumber}"`);
       }
 
       // Calculate status
