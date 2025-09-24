@@ -111,10 +111,10 @@ function createZipFile(files: Record<string, string | Uint8Array>): Uint8Array {
   return result;
 }
 
-// Create a proper minimal 72x72 PNG file
-function createMinimalPNG(r = 128, g = 128, b = 128): Uint8Array {
-  const width = 72;
-  const height = 72;
+// Create PNG images with specified dimensions
+function createMinimalPNG(r = 128, g = 128, b = 128, size = 72): Uint8Array {
+  const width = size;
+  const height = size;
   
   // Create a simple PNG with solid color
   const header = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]); // PNG signature
@@ -180,6 +180,16 @@ function createMinimalPNG(r = 128, g = 128, b = 128): Uint8Array {
   return png;
 }
 
+// Create action icons (72x72 and 144x144)
+function createActionIconPNG(r = 128, g = 128, b = 128, size = 144): Uint8Array {
+  return createMinimalPNG(r, g, b, size);
+}
+
+// Create plugin icons (256x256 and 512x512)
+function createPluginIconPNG(r = 128, g = 128, b = 128, size = 256): Uint8Array {
+  return createMinimalPNG(r, g, b, size);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -198,14 +208,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Create PNG images with different colors
+    // Create PNG images in required sizes (72x72 and 144x144 @2x)
     const playPng = createMinimalPNG(0, 200, 0);     // Green for play
+    const playPng2x = createActionIconPNG(0, 200, 0, 144);  // 144x144 @2x
     const pausePng = createMinimalPNG(200, 200, 0);  // Yellow for pause  
+    const pausePng2x = createActionIconPNG(200, 200, 0, 144);
     const forwardPng = createMinimalPNG(0, 0, 200);  // Blue for forward
+    const forwardPng2x = createActionIconPNG(0, 0, 200, 144);
     const backwardPng = createMinimalPNG(200, 0, 200); // Purple for backward
+    const backwardPng2x = createActionIconPNG(200, 0, 200, 144);
     const resetPng = createMinimalPNG(200, 0, 0);    // Red for reset
+    const resetPng2x = createActionIconPNG(200, 0, 0, 144);
     const statusPng = createMinimalPNG(128, 128, 128); // Gray for status
-    const pluginPng = createMinimalPNG(100, 150, 200); // Light blue for plugin
+    const statusPng2x = createActionIconPNG(128, 128, 128, 144);
+    const pluginPng = createPluginIconPNG(100, 150, 200, 256); // 256x256 plugin icon
+    const pluginPng2x = createPluginIconPNG(100, 150, 200, 512); // 512x512 @2x plugin icon
 
     // Plugin files structure
     const pluginFiles = {
@@ -295,7 +312,7 @@ serve(async (req) => {
         "Icon": "imgs/pluginIcon",
         "PropertyInspectorPath": "ui/propertyinspector.html",
         "UUID": "com.cuer.showcaller",
-        "Version": "1.0.0.0",
+        "Version": "1.0.0",
         "SDKVersion": 2,
         "Nodejs": {
           "Version": "20"
@@ -311,19 +328,29 @@ serve(async (req) => {
           }
         ],
         "Software": {
-          "MinimumVersion": "6.6"
+          "MinimumVersion": "6.4"
         }
       }, null, 2),
       
-      // Image files
+      // Action images (72x72 and 144x144 @2x required)
       'imgs/play.png': playPng,
+      'imgs/play@2x.png': playPng2x,
       'imgs/pause.png': pausePng,
+      'imgs/pause@2x.png': pausePng2x,
       'imgs/forward.png': forwardPng,
+      'imgs/forward@2x.png': forwardPng2x,
       'imgs/backward.png': backwardPng,
+      'imgs/backward@2x.png': backwardPng2x,
       'imgs/reset.png': resetPng,
+      'imgs/reset@2x.png': resetPng2x,
       'imgs/status.png': statusPng,
+      'imgs/status@2x.png': statusPng2x,
+      
+      // Plugin icons (256x256 and 512x512 @2x required)
       'imgs/pluginIcon.png': pluginPng,
+      'imgs/pluginIcon@2x.png': pluginPng2x,
       'imgs/categoryIcon.png': pluginPng,
+      'imgs/categoryIcon@2x.png': pluginPng2x,
       
       'bin/plugin.js': `// Cuer ShowCaller Stream Deck Plugin
 class CuerShowcallerPlugin {
