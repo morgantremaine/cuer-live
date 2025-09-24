@@ -86,13 +86,14 @@ export const calculateItemsWithTiming = (
   items: RundownItem[],
   rundownStartTime: string
 ): CalculatedRundownItem[] => {
+  console.log('🔄 CALC: calculateItemsWithTiming called with', items.length, 'items');
   // Clear header row numbers
   const itemsWithClearedHeaders = clearHeaderNumbers(items);
   
   let currentTime = rundownStartTime;
   let cumulativeDurationSeconds = 0; // Track cumulative duration (much simpler!)
   
-  // Find the highest existing row number to continue from
+  // Find the highest existing row number to continue from (EXCLUDE headers)
   let regularRowCount = 0;
   itemsWithClearedHeaders.forEach(item => {
     if (item.type !== 'header' && item.rowNumber && item.rowNumber.trim() !== '') {
@@ -145,9 +146,11 @@ export const calculateItemsWithTiming = (
       // Otherwise assign sequential number for new items
       if (item.rowNumber && item.rowNumber.trim() !== '') {
         calculatedRowNumber = item.rowNumber;
+        console.log('🔢 CALC: Item', item.id.slice(-6), 'keeping rowNumber:', `"${calculatedRowNumber}"`);
       } else {
         regularRowCount++;
         calculatedRowNumber = regularRowCount.toString();
+        console.log('🔢 CALC: Item', item.id.slice(-6), 'assigning rowNumber:', calculatedRowNumber, '(was empty)');
       }
       
       // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)

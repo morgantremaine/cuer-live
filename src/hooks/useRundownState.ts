@@ -265,7 +265,7 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
 
   // OPTIMIZED: Lazy calculation of row numbers
   const itemsWithRowNumbers = useMemo(() => {
-    // Find the highest existing row number to continue from
+    // Find the highest existing row number to continue from (EXCLUDE headers)
     let regularRowCount = 0;
     itemsWithCalculatedTimes.forEach(item => {
       if (!isHeaderItem(item) && item.rowNumber && item.rowNumber.trim() !== '') {
