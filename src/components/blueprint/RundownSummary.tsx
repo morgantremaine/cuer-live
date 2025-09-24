@@ -373,7 +373,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                       </tr>
                       
                       {/* Summary Row */}
-                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
+                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-background">
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
