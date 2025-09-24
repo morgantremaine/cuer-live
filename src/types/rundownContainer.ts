@@ -119,7 +119,6 @@ export interface RundownContainerProps {
     modifiers: any[];
     collisionDetection: any;
     activeId: any;
-    dragInfo: any;
     resetDragState: () => void;
   };
 }

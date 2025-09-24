@@ -5,7 +5,6 @@ import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 
 interface OptimizedRundownTableWrapperProps {
-  dragInfo?: any;
   items: RundownItem[];
   visibleColumns: Column[];
   currentTime: Date;
@@ -58,7 +57,6 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   startTime,
   currentSegmentId,
   columnExpandState,
-  dragInfo,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -178,7 +176,6 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
 
   return (
     <RundownTable
-      dragInfo={dragInfo}
       {...restProps}
       items={visibleItems}
       visibleColumns={visibleColumns}

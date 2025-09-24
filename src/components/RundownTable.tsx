@@ -5,7 +5,6 @@ import { RundownItem, isHeaderItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 
 interface RundownTableProps {
-  dragInfo?: any;
   items: any[];
   visibleColumns: Column[];
   currentTime: Date;
@@ -53,7 +52,6 @@ interface RundownTableProps {
 }
 
 const RundownTable = ({
-  dragInfo,
   items,
   visibleColumns,
   currentTime,
@@ -136,11 +134,6 @@ const RundownTable = ({
             const isActuallySelected = isMultiSelected || isSingleSelected;
             const isDragging = draggedItemIndex === index;
             const isCurrentlyPlaying = item.id === currentSegmentId;
-            
-            // Check if this item is part of a header group being dragged
-            const isInDraggedHeaderGroup = dragInfo?.isHeaderGroup && 
-              dragInfo?.draggedIds?.includes(item.id) && 
-              draggedItemIndex !== null;
 
             return (
               <>
@@ -170,7 +163,6 @@ const RundownTable = ({
                   hasClipboardData={hasClipboardData}
                   currentSegmentId={currentSegmentId}
                   isDragging={isDragging}
-                  isInDraggedHeaderGroup={isInDraggedHeaderGroup}
                   isCollapsed={isHeaderCollapsed ? isHeaderCollapsed(item.id) : false}
                   columnExpandState={columnExpandState}
                   onUpdateItem={onUpdateItem}
