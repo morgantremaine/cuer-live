@@ -348,7 +348,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       
       {!isCollapsed && (
         <CardContent className="pt-0">
-          <div className="rounded-lg border border-gray-600 overflow-hidden">
+          <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full">
               <tbody className="bg-background">
                 {sections.map((section, index) => {
@@ -359,21 +359,21 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                   return (
                     <>
                       {/* Header Row - matches rundown styling */}
-                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-750">
+                      <tr key={`header-${sectionKey}`} className="border-b border-border bg-[hsl(var(--header-background))]">
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-white">
-                              {headerName}
-                            </span>
-                            <span className="text-base font-medium text-gray-300 ml-6">
-                              ({section.duration})
-                            </span>
+            <span className="text-lg font-bold text-foreground">
+              {headerName}
+            </span>
+            <span className="text-base font-medium text-muted-foreground ml-6">
+              ({section.duration})
+            </span>
                           </div>
                         </td>
                       </tr>
                       
                       {/* Summary Row */}
-                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
+                      <tr key={`summary-${sectionKey}`} className="border-b border-border bg-background">
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
@@ -385,11 +385,11 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                               {summary.error}
                             </div>
                           ) : summary?.summary ? (
-                            <p className="text-gray-300 text-sm leading-relaxed italic">
+                            <p className="text-foreground text-sm leading-relaxed italic">
                               {summary.summary}
                             </p>
                           ) : (
-                            <div className="text-gray-500 text-sm italic">
+                            <div className="text-muted-foreground text-sm italic">
                               No summary available
                             </div>
                           )}
