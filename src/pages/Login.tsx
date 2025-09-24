@@ -37,7 +37,7 @@ const Login = () => {
           email: session.user?.email,
           id: session.user?.id 
         }
-      }, 'https://127.0.0.1');
+      }, '*'); // Allow any origin for Stream Deck communication
       
       // Close the popup
       window.close();
@@ -71,7 +71,7 @@ const Login = () => {
             window.opener?.postMessage({
               type: 'CUER_AUTH_ERROR',
               error: error.message
-            }, 'https://127.0.0.1');
+            }, '*'); // Allow any origin for Stream Deck communication
           }
         }
       } else {
