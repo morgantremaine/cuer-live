@@ -378,24 +378,43 @@ export const useSimpleAutoSave = (
     // Schedule single save after idle period
     saveTimeoutRef.current = setTimeout(() => {
       debugLogger.autosave('AutoSave: idle timeout reached - triggering save');
+      console.log('💾 Save timeout reached - clearing typing state and saving');
       userTypingRef.current = false; // Clear typing flag before save
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
+      }
       performSave(false, isSharedView);
     }, typingIdleMs);
     
     // Max-delay forced save only if user keeps typing continuously
     maxDelayTimeoutRef.current = setTimeout(() => {
       console.log('⏲️ AutoSave: max delay reached - forcing save');
+      console.log('💾 Max delay reached - clearing typing state and forcing save');
       userTypingRef.current = false; // Clear typing flag before save
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = undefined;
+      }
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
 
-  // Check if user is currently typing with improved logic
+  // Check if user is currently typing with improved logic and debugging
   const isTypingActive = useCallback(() => {
+    const timeSinceEdit = Date.now() - lastEditAtRef.current;
+    const typingFlagActive = userTypingRef.current;
+    
+    console.log('🔍 isTypingActive check:', {
+      typingFlagActive,
+      timeSinceEdit,
+      typingIdleMs,
+      shouldBeTyping: timeSinceEdit < typingIdleMs
+    });
+    
     // Check the explicit typing flag first
-    if (userTypingRef.current) {
-      const timeSinceEdit = Date.now() - lastEditAtRef.current;
+    if (typingFlagActive) {
       // If it's been too long since the last edit, clear the flag
       if (timeSinceEdit > typingIdleMs + 500) {
         console.log('⌨️ Typing state expired - auto-clearing');
@@ -406,8 +425,10 @@ export const useSimpleAutoSave = (
         }
         return false;
       }
+      console.log('⌨️ User is currently typing - blocking save');
       return true;
     }
+    console.log('⌨️ User not typing - save can proceed');
     return false;
   }, [typingIdleMs]);
 
@@ -892,7 +913,8 @@ export const useSimpleAutoSave = (
       }
       
       // IMMEDIATE CANCELLATION: Don't save if user is actively typing
-      if (isTypingActive()) {
+      const typingResult = isTypingActive();
+      if (typingResult) {
         console.log('⌨️ AutoSave(effect): skipped - user actively typing');
         return; // Let markActiveTyping handle scheduling
       }
