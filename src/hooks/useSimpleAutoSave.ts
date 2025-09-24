@@ -307,35 +307,29 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    console.log('⌨️ User typing detected - marking active, forcing auto-save check');
+    console.log('⌨️ User typing detected - marking active, scheduling save after typing stops');
     
     // CRITICAL: Set hasUnsavedChangesRef to trigger auto-save effect
     hasUnsavedChangesRef.current = true;
     
-    // CRITICAL: Force auto-save scheduling since state.hasUnsavedChanges may not be updated yet
-    console.log('🚀 Forcing auto-save schedule from markActiveTyping');
+    // CRITICAL: Schedule save AFTER typing timeout, ensuring typing flag is cleared first
+    console.log('🚀 Scheduling auto-save after typing timeout');
     
     // Clear existing timeouts to prevent multiple saves
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     
-    // Schedule auto-save with debounce 
+    // Schedule save slightly AFTER the typing timeout clears
     saveTimeoutRef.current = setTimeout(async () => {
-      // Final check - don't save if user started typing while we were waiting
-      if (isTypingActive()) {
-        console.log('⌨️ AutoSave(markActiveTyping): cancelled at execution - user started typing');
-        return;
-      }
-
-      console.log('⏱️ AutoSave(markActiveTyping): executing save now');
+      console.log('⏱️ AutoSave(markActiveTyping): typing period ended, executing save now');
       try {
         await performSaveRef.current();
         console.log('✅ AutoSave(markActiveTyping): save completed successfully');
       } catch (error) {
         console.error('❌ AutoSave(markActiveTyping): save execution failed:', error);
       }
-    }, typingIdleMs);
+    }, typingIdleMs + 100); // Execute AFTER typing timeout + small buffer
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
