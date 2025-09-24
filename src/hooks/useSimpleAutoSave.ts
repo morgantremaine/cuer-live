@@ -300,6 +300,7 @@ export const useSimpleAutoSave = (
   const userTypingRef = useRef(false);
   
   const markActiveTyping = useCallback(() => {
+    console.log('⌨️ markActiveTyping called! Function exists:', typeof markActiveTyping);
     const now = Date.now();
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
@@ -1030,6 +1031,8 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Note: Cell update coordination now handled via React context instead of global variables
+  
+  console.log('🔧 useSimpleAutoSave return - markActiveTyping type:', typeof markActiveTyping);
 
   return {
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
