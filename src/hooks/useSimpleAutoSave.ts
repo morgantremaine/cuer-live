@@ -866,13 +866,14 @@ export const useSimpleAutoSave = (
 
   // Simple effect that schedules a save when hasUnsavedChanges becomes true
   useEffect(() => {
-    console.log('🧪 TRACE AutoSave(effect) enter', {
+    console.log('🧪 TRACE AutoSave(effect) enter - SINGLE CHARACTER TEST', {
       isInitiallyLoaded,
       rundownId,
       hasUnsavedChanges: state.hasUnsavedChanges,
       suppressUntil: suppressUntilRef?.current,
       undoActive: undoActiveRef.current,
-      applyingCellBroadcast: applyingCellBroadcastRef?.current
+      applyingCellBroadcast: applyingCellBroadcastRef?.current,
+      stateLastChanged: state.lastChanged
     });
     if (!isInitiallyLoaded) {
       console.log('🛑 AutoSave(effect): blocked - initial load not complete');
