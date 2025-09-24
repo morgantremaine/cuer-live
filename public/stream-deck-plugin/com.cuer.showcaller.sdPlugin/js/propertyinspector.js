@@ -59,11 +59,10 @@ class CuerPropertyInspector {
             this.refreshButton.addEventListener('click', () => this.loadRundowns());
         }
 
-        // Check if we have pending auth restoration
-        if (this.pendingAuthRestore && this.authToken && this.currentUser) {
-            console.log('🔄 Restoring pending authentication...');
-            this.onAuthSuccess();
-            this.pendingAuthRestore = false;
+        // Attempt to restore auth if we have pending restoration
+        if (this.pendingAuthRestore || (this.authToken && this.currentUser)) {
+            console.log('🔧 Elements initialized, attempting auth restoration...');
+            this.attemptAuthRestore();
         }
 
         console.log('🔧 Property inspector elements initialized');
@@ -183,18 +182,12 @@ class CuerPropertyInspector {
             console.log('⚙️ Found settings:', settings);
             
             if (settings.authToken && settings.user) {
-                console.log('🔑 Restoring authentication...');
+                console.log('🔑 Restoring authentication from settings...');
                 this.authToken = settings.authToken;
                 this.currentUser = settings.user;
                 
-                // Ensure elements are ready before calling onAuthSuccess
-                if (this.loginButton && this.userInfo) {
-                    this.onAuthSuccess();
-                } else {
-                    console.log('⏳ Elements not ready, will restore auth when elements are available');
-                    // Set a flag to restore auth when elements are ready
-                    this.pendingAuthRestore = true;
-                }
+                // Try to restore immediately if elements are ready, otherwise defer
+                this.attemptAuthRestore();
             } else {
                 console.log('❌ No valid auth token or user in settings');
             }
@@ -202,9 +195,27 @@ class CuerPropertyInspector {
             if (settings.rundownId) {
                 console.log('📋 Restoring rundown selection:', settings.rundownId);
                 this.selectedRundownId = settings.rundownId;
+                // Update dropdown if it exists
+                if (this.rundownSelect && this.rundownSelect.value !== settings.rundownId) {
+                    this.rundownSelect.value = settings.rundownId;
+                }
             }
         } else {
             console.log('❌ No settings found in actionInfo');
+        }
+    }
+
+    // Helper method to attempt auth restoration
+    attemptAuthRestore() {
+        if (this.authToken && this.currentUser) {
+            if (this.loginButton && this.userInfo) {
+                console.log('✅ Elements ready, restoring authentication now');
+                this.onAuthSuccess();
+                this.pendingAuthRestore = false;
+            } else {
+                console.log('⏳ Elements not ready, marking for pending restoration');
+                this.pendingAuthRestore = true;
+            }
         }
     }
 
@@ -227,7 +238,6 @@ class CuerPropertyInspector {
         this.websocket.send(JSON.stringify(payload));
         console.log('💾 Settings saved to Stream Deck:', settings);
         console.log('💾 Auth token length:', settings.authToken ? settings.authToken.length : 'none');
-    }
     }
 
     // Load rundowns from API
@@ -260,7 +270,15 @@ class CuerPropertyInspector {
             } else {
                 const errorText = await response.text();
                 console.error('❌ Response not OK:', response.status, errorText);
-                this.updateConnectionStatus(`Failed to load rundowns (${response.status}) ❌`, 'error');
+                
+                // Handle authentication errors specifically
+                if (response.status === 401) {
+                    console.log('🔑 Authentication failed, clearing stored auth');
+                    this.handleLogout();
+                    this.updateConnectionStatus('Please login again ❌', 'error');
+                } else {
+                    this.updateConnectionStatus(`Failed to load rundowns (${response.status}) ❌`, 'error');
+                }
             }
         } catch (error) {
             console.error('❌ Failed to load rundowns:', error);

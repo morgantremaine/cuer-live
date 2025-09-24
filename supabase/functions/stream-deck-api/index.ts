@@ -32,7 +32,15 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const path = url.pathname.replace('/functions/v1/stream-deck-api', '') || '/';
+    // Handle both local and deployed URL patterns
+    let path = url.pathname;
+    if (path.startsWith('/functions/v1/stream-deck-api')) {
+      path = path.replace('/functions/v1/stream-deck-api', '');
+    } else if (path.startsWith('/stream-deck-api')) {
+      path = path.replace('/stream-deck-api', '');
+    }
+    path = path || '/';
+    
     console.log('📍 Full URL:', req.url);
     console.log('📍 Pathname:', url.pathname);
     console.log('📍 Extracted path:', path);
