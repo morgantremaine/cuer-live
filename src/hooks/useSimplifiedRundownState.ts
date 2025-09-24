@@ -917,11 +917,13 @@ export const useSimplifiedRundownState = () => {
 
   // Simplified handlers - no special structural change handling needed
   const markStructuralChange = useCallback(() => {
+    console.log('🏗️ markStructuralChange called (currently no-op in simplified state)');
     // No-op - auto-save handles all changes
   }, []);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
+    console.log('🏗️ clearStructuralChange called (currently no-op in simplified state)');
     // No-op - auto-save handles all changes  
   }, []);
 

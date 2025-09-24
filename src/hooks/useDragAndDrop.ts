@@ -66,6 +66,15 @@ export const useDragAndDrop = (
 
   // Centralized state reset function
   const resetDragState = useCallback(() => {
+    console.log('🎯 === RESETTING DRAG STATE ===');
+    console.log('🎯 Previous state:', {
+      activeId,
+      draggedItemIndex,
+      isDraggingMultiple,
+      dropTargetIndex,
+      isDragActive: isDragActiveRef.current
+    });
+    
     setActiveId(null);
     setDragInfo(null);
     setDraggedItemIndex(null);
@@ -78,7 +87,9 @@ export const useDragAndDrop = (
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = undefined;
     }
-  }, []);
+    
+    console.log('🎯 Drag state reset complete');
+  }, [activeId, draggedItemIndex, isDraggingMultiple, dropTargetIndex]);
 
   // Auto-cleanup timeout to prevent stuck states
   const setDragTimeout = useCallback(() => {
@@ -87,7 +98,9 @@ export const useDragAndDrop = (
     }
     
     // Set a 10-second timeout to force reset if drag gets stuck
+    console.log('🎯 Setting 10-second drag timeout');
     dragTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 10 seconds');
       resetDragState();
     }, 10000);
   }, [resetDragState]);
@@ -102,14 +115,23 @@ export const useDragAndDrop = (
   }, []);
 
   const renumberItems = useCallback((items: RundownItem[]) => {
+    console.log('🔢 === RENUMBERING ITEMS ===');
+    console.log('🔢 Before renumbering:', items.map(item => ({
+      id: item.id.slice(-6),
+      type: item.type,
+      name: item.name?.slice(0, 20),
+      rowNumber: item.rowNumber
+    })));
+    
     let headerIndex = 0;
     let regularItemIndex = 1;
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    return items.map(item => {
+    const result = items.map(item => {
       if (item.type === 'header') {
         const newHeaderLetter = letters[headerIndex] || 'A';
         headerIndex++;
+        console.log(`🔢 Header ${item.id.slice(-6)}: ${item.rowNumber} → ${newHeaderLetter}`);
         return {
           ...item,
           rowNumber: newHeaderLetter,
@@ -119,12 +141,22 @@ export const useDragAndDrop = (
         // Renumber regular items sequentially (1, 2, 3, etc.)
         const newRowNumber = regularItemIndex.toString();
         regularItemIndex++;
+        console.log(`🔢 Regular ${item.id.slice(-6)}: ${item.rowNumber} → ${newRowNumber}`);
         return {
           ...item,
           rowNumber: newRowNumber
         };
       }
     });
+    
+    console.log('🔢 After renumbering:', result.map(item => ({
+      id: item.id.slice(-6),
+      type: item.type,
+      name: item.name?.slice(0, 20),
+      rowNumber: item.rowNumber
+    })));
+    
+    return result;
   }, []);
 
   // @dnd-kit drag start handler
@@ -133,7 +165,21 @@ export const useDragAndDrop = (
     const activeIndex = items.findIndex(item => item.id === active.id);
     const item = items[activeIndex];
     
-    if (!item) return;
+    console.log('🎯 === DRAG START ===');
+    console.log('🎯 Dragged item:', {
+      id: active.id,
+      index: activeIndex,
+      type: item?.type,
+      name: item?.name,
+      rowNumber: item?.rowNumber
+    });
+    console.log('🎯 Total items in rundown:', items.length);
+    console.log('🎯 Selected rows count:', selectedRows.size);
+    
+    if (!item) {
+      console.error('🚨 DRAG ERROR: Item not found for id:', active.id);
+      return;
+    }
 
     let draggedIds: string[] = [];
     let isHeaderGroup = false;
@@ -142,11 +188,18 @@ export const useDragAndDrop = (
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
-      console.log('🎯 Dragging collapsed header group:', item.id, 'with', draggedIds.length, 'items:', draggedIds);
+      console.log('🎯 Dragging collapsed header group:', {
+        headerId: item.id,
+        itemCount: draggedIds.length,
+        itemIds: draggedIds
+      });
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection
       draggedIds = Array.from(selectedRows);
-      console.log('🎯 Dragging multiple selected items:', draggedIds.length, 'items');
+      console.log('🎯 Dragging multiple selected items:', {
+        count: draggedIds.length,
+        itemIds: draggedIds
+      });
     } else {
       // Single item
       draggedIds = [item.id];
@@ -169,13 +222,34 @@ export const useDragAndDrop = (
     });
     setDragTimeout();
     isDragActiveRef.current = true;
+    
+    console.log('🎯 Drag state set:', {
+      activeId: active.id,
+      draggedItemIndex: activeIndex,
+      isDraggingMultiple: draggedIds.length > 1,
+      isHeaderGroup
+    });
   }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     
+    console.log('🎯 === DRAG END ===');
+    console.log('🎯 Drag end event:', {
+      activeId: active.id,
+      overId: over?.id,
+      hasDragInfo: !!dragInfo,
+      dropTargetIndex,
+      isDragActive: isDragActiveRef.current
+    });
+    
     if (!over || !dragInfo || active.id === over.id) {
+      console.log('🎯 Drag cancelled or invalid:', {
+        hasOver: !!over,
+        hasDragInfo: !!dragInfo,
+        sameElement: active.id === over.id
+      });
       resetDragState();
       return;
     }
@@ -183,20 +257,36 @@ export const useDragAndDrop = (
     const activeIndex = items.findIndex(item => item.id === active.id);
     let overIndex = items.findIndex(item => item.id === over.id);
     
+    console.log('🎯 Initial indices:', {
+      activeIndex,
+      overIndex,
+      dropTargetIndex,
+      itemsLength: items.length
+    });
+    
     // Use the calculated dropTargetIndex if available (from legacy drag over)
     // This provides more precise drop positioning, especially for headers
     if (dropTargetIndex !== null && dropTargetIndex >= 0 && dropTargetIndex <= items.length) {
+      console.log('🎯 Using precise dropTargetIndex:', dropTargetIndex, 'instead of overIndex:', overIndex);
       overIndex = dropTargetIndex;
     }
     
     if (activeIndex === -1 || overIndex === -1) {
+      console.error('🚨 DRAG ERROR: Invalid indices:', { activeIndex, overIndex });
       resetDragState();
       return;
     }
 
     try {
       const { draggedIds, isHeaderGroup } = dragInfo;
-      console.log('🎯 Processing drop for:', draggedIds.length, 'items, isHeaderGroup:', isHeaderGroup);
+      console.log('🎯 Processing drop:', {
+        draggedCount: draggedIds.length,
+        isHeaderGroup,
+        fromIndex: activeIndex,
+        toIndex: overIndex,
+        draggedIds: draggedIds.slice(0, 5) // Show first 5 IDs
+      });
+      
       let newItems: RundownItem[];
       let hasHeaderMoved = false;
       let actionDescription = '';
@@ -266,19 +356,30 @@ export const useDragAndDrop = (
       }
       
       // Always renumber items after any drag operation to ensure proper sequencing
+      console.log('🔢 Renumbering items after drag operation');
+      const itemsBeforeRenumber = newItems.map(item => ({ id: item.id, rowNumber: item.rowNumber }));
       newItems = renumberItems(newItems);
+      const itemsAfterRenumber = newItems.map(item => ({ id: item.id, rowNumber: item.rowNumber }));
+      console.log('🔢 Row numbers before:', itemsBeforeRenumber.slice(0, 10));
+      console.log('🔢 Row numbers after:', itemsAfterRenumber.slice(0, 10));
       
       if (saveUndoState && columns && title) {
+        console.log('🎯 Saving undo state for action:', actionDescription);
         saveUndoState(items, columns, title, actionDescription);
       }
       
+      console.log('🎯 Setting new items array, length:', newItems.length);
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
       // Broadcast reorder for immediate realtime sync
       if (rundownId && currentUserId) {
         const order = newItems.map(item => item.id);
-        console.log('📡 Broadcasting reorder for rundown:', rundownId, 'order:', order.length, 'items');
+        console.log('📡 Broadcasting reorder:', {
+          rundownId,
+          orderLength: order.length,
+          userId: currentUserId
+        });
         cellBroadcast.broadcastCellUpdate(
           rundownId,
           undefined,
@@ -291,14 +392,23 @@ export const useDragAndDrop = (
       }
       
     } catch (error) {
-      console.warn('@dnd-kit drag and drop error:', error);
+      console.error('🚨 DRAG ERROR: Exception during drag and drop:', error);
+      console.error('🚨 Error details:', {
+        dragInfo,
+        activeIndex,
+        overIndex,
+        itemsLength: items.length
+      });
     } finally {
+      console.log('🎯 Resetting drag state');
       resetDragState();
     }
   }, [items, dragInfo, dropTargetIndex, setItems, saveUndoState, columns, title, renumberItems, resetDragState]);
 
   // Legacy HTML5 drag handlers for compatibility (now just call the @dnd-kit versions)
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    console.log('🎯 Legacy drag start called:', { index, itemsLength: items.length });
+    
     // Prevent text selection from triggering drag
     const target = e.target as HTMLElement;
     const isTextInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
@@ -306,6 +416,7 @@ export const useDragAndDrop = (
     const isContentEditable = target.contentEditable === 'true';
     
     if (isTextInput || hasTextSelection || isContentEditable) {
+      console.log('🎯 Legacy drag prevented:', { isTextInput, hasTextSelection, isContentEditable });
       e.preventDefault();
       e.stopPropagation();
       return;
@@ -314,10 +425,13 @@ export const useDragAndDrop = (
     // Let @dnd-kit handle the actual drag logic
     const item = items[index];
     if (item) {
+      console.log('🎯 Initiating dnd-kit drag for item:', item.id);
       // Simulate @dnd-kit drag start
       handleDndKitDragStart({
         active: { id: item.id, data: { current: {} }, rect: { current: {} } }
       } as DragStartEvent);
+    } else {
+      console.error('🚨 Legacy drag error: Item not found at index:', index);
     }
   }, [items, handleDndKitDragStart]);
 
@@ -348,6 +462,14 @@ export const useDragAndDrop = (
       
       // Only update if different to avoid unnecessary re-renders
       if (insertIndex !== dropTargetIndex) {
+        console.log('🎯 Drag over update:', {
+          targetIndex,
+          targetItemType: targetItem?.type,
+          mouseY,
+          rowMiddle: isTargetHeader ? rect.top + rect.height * 0.4 : rowMiddle,
+          insertIndex,
+          previousDropTarget: dropTargetIndex
+        });
         setDropTargetIndex(insertIndex);
       }
     }
@@ -369,7 +491,10 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('🎯 Legacy drop called:', { dropIndex, draggedItemIndex, isDragActive: isDragActiveRef.current });
+    
     if (!isDragActiveRef.current || draggedItemIndex === null) {
+      console.log('🎯 Legacy drop ignored - no active drag');
       resetDragState();
       return;
     }
@@ -377,14 +502,18 @@ export const useDragAndDrop = (
     // Simulate @dnd-kit drop by finding the target item
     const targetItem = items[dropIndex];
     if (targetItem) {
+      console.log('🎯 Legacy drop simulating dnd-kit drop to:', targetItem.id);
       handleDndKitDragEnd({
         active: { id: items[draggedItemIndex].id },
         over: { id: targetItem.id }
       } as any);
+    } else {
+      console.error('🚨 Legacy drop error: Target item not found at index:', dropIndex);
     }
   }, [draggedItemIndex, items, handleDndKitDragEnd, resetDragState]);
 
   const handleDragEnd = useCallback((e: React.DragEvent) => {
+    console.log('🎯 Legacy drag end called');
     resetDragState();
   }, [resetDragState]);
 

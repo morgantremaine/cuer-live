@@ -49,6 +49,15 @@ export const useRundownInteractionHandlers = (
     items, 
     (newItems: RundownItem[]) => {
       console.log('🔄 Setting items from drag and drop');
+      console.log('🔄 Items being set:', {
+        count: newItems.length,
+        firstFew: newItems.slice(0, 3).map(item => ({
+          id: item.id.slice(-6),
+          type: item.type,
+          rowNumber: item.rowNumber,
+          name: item.name?.slice(0, 15)
+        }))
+      });
       setItems(() => newItems);
       markAsChanged();
     }, 
