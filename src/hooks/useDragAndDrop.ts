@@ -101,14 +101,14 @@ export const useDragAndDrop = (
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 10-second timeout to force reset if drag gets stuck
+    // Set a 45-second timeout to force reset if drag gets stuck
     if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 Setting 10-second drag timeout');
+      console.log('🎯 Setting 45-second drag timeout');
     }
     dragTimeoutRef.current = setTimeout(() => {
-      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 10 seconds');
+      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 45 seconds');
       resetDragState();
-    }, 10000);
+    }, 45000);
   }, [resetDragState]);
 
   // Cleanup on unmount
