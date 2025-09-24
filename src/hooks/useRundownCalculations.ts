@@ -30,15 +30,9 @@ export const useRundownCalculations = (items: RundownItem[]) => {
       return '';
     }
     
-    // For regular items, just count sequentially, ignoring headers
-    let regularRowCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (items[i] && !isHeaderItem(items[i])) {
-        regularRowCount++;
-      }
-    }
-    
-    return regularRowCount.toString();
+    // Use the stored rowNumber field instead of recalculating
+    // This ensures consistency after drag operations
+    return item.rowNumber || '';
   }, [items]);
 
   const calculateTotalRuntime = useCallback(() => {

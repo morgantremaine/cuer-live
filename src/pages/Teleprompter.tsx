@@ -578,15 +578,9 @@ const Teleprompter = () => {
       return '';
     }
     
-    // For regular items, count sequentially ignoring headers
-    let regularItemCount = 0;
-    for (let i = 0; i <= index; i++) {
-      if (rundownData.items[i]?.type !== 'header') {
-        regularItemCount++;
-      }
-    }
-    
-    return regularItemCount.toString();
+    // Use the stored rowNumber field instead of recalculating
+    // This ensures consistency after drag operations
+    return currentItem.rowNumber || '';
   };
 
   // Handle beforeunload to warn about unsaved changes

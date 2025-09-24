@@ -23,15 +23,9 @@ export const getRowNumber = (index: number, items: RundownItem[]) => {
     return '';
   }
   
-  // For regular items, just count sequentially, ignoring headers
-  let regularRowCount = 0;
-  for (let i = 0; i <= index; i++) {
-    if (items[i] && items[i].type !== 'header') {
-      regularRowCount++;
-    }
-  }
-  
-  return regularRowCount.toString();
+  // Use the stored rowNumber field instead of recalculating
+  // This ensures consistency with the main rundown after drag operations
+  return item.rowNumber || '';
 };
 
 // Helper function to calculate duration-based elapsed time for shared rundowns

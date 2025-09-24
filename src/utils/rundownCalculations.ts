@@ -131,9 +131,14 @@ export const calculateItemsWithTiming = (
         calculatedEndTime = currentTime;
       }
 
-      // Sequential numbering for regular items
-      regularRowCount++;
-      calculatedRowNumber = regularRowCount.toString();
+      // Use existing rowNumber if available (preserves drag operation results)
+      // Otherwise assign sequential number for new items
+      if (item.rowNumber) {
+        calculatedRowNumber = item.rowNumber;
+      } else {
+        regularRowCount++;
+        calculatedRowNumber = regularRowCount.toString();
+      }
       
       // Elapsed time INCLUDING this item's duration (where we'll be after this item completes)
       const calculatedElapsedTime = secondsToTimeNoWrap(cumulativeDurationSeconds);

@@ -268,12 +268,19 @@ export const useRundownState = (initialData?: Partial<RundownState>, rundownId?:
     let regularRowCount = 0;
     return itemsWithCalculatedTimes.map((item) => {
       if (isHeaderItem(item)) {
-        return { ...item, rowNumber: '' };
+        return { ...item, rowNumber: item.rowNumber || '' };
       }
-      regularRowCount++;
-      return { ...item, rowNumber: regularRowCount.toString() };
+      
+      // Use existing rowNumber if it exists (preserves drag operation results)
+      // Otherwise assign sequential number for new items
+      if (item.rowNumber) {
+        return { ...item };
+      } else {
+        regularRowCount++;
+        return { ...item, rowNumber: regularRowCount.toString() };
+      }
     });
-  }, [itemsWithCalculatedTimes]); // Only recalculate when timing changes
+  }, [itemsWithCalculatedTimes]);
 
   // OPTIMIZED: Lazy calculation of totals
   const totalRuntime = useMemo(() => {

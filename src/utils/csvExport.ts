@@ -22,15 +22,9 @@ const getRowNumber = (index: number, items: RundownItem[]): string => {
     return '';
   }
   
-  // For regular items, count sequentially ignoring headers (matching main rundown display)
-  let regularItemCount = 0;
-  for (let i = 0; i <= index; i++) {
-    if (items[i] && !isHeaderItem(items[i])) {
-      regularItemCount++;
-    }
-  }
-  
-  return regularItemCount.toString();
+  // Use the stored rowNumber field instead of recalculating
+  // This ensures consistency after drag operations
+  return currentItem.rowNumber || '';
 };
 
 // Helper function to get cell value for CSV export, similar to SharedRundownTable logic
