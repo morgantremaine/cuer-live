@@ -731,24 +731,33 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     async loadRundowns() {
         if (!this.authToken) return;
         
+        console.log('🔄 Loading rundowns from Stream Deck API...');
+        console.log('🌐 API URL:', \`\${this.apiBaseUrl.replace('https://cuer.live', 'https://khdiwrkgahsbjszlwnob.functions.supabase.co/functions/v1')}/stream-deck-api/rundowns\`);
+        
         try {
-            const response = await fetch(\`\${this.apiBaseUrl}/rundown-api\`, {
-                method: 'POST',
+            const apiUrl = \`\${this.apiBaseUrl.replace('https://cuer.live', 'https://khdiwrkgahsbjszlwnob.functions.supabase.co/functions/v1')}/stream-deck-api/rundowns\`;
+            const response = await fetch(apiUrl, {
+                method: 'GET',
                 headers: {
                     'Authorization': \`Bearer \${this.authToken}\`,
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ action: 'list' })
+                }
             });
+            
+            console.log('📡 Response status:', response.status);
             
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Rundowns data:', data);
                 this.populateRundownSelect(data.rundowns || []);
+                this.updateConnectionStatus('Rundowns loaded', 'success');
             } else {
-                this.updateConnectionStatus('Failed to load rundowns', 'error');
+                const errorText = await response.text();
+                console.error('❌ Response not OK:', response.status, errorText);
+                this.updateConnectionStatus(\`Failed to load rundowns (\${response.status})\`, 'error');
             }
         } catch (error) {
-            console.error('Load rundowns error:', error);
+            console.error('❌ Load rundowns error:', error);
             this.updateConnectionStatus('Error loading rundowns', 'error');
         }
     }

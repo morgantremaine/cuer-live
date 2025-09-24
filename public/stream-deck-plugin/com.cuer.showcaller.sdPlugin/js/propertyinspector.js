@@ -196,27 +196,38 @@ class CuerPropertyInspector {
     // Load rundowns from API
     async loadRundowns() {
         if (!this.authToken) {
+            console.log('❌ No auth token available');
             return;
         }
+
+        console.log('🔄 Loading rundowns with token:', this.authToken?.substring(0, 20) + '...');
+        console.log('🌐 API URL:', `${this.apiBase}/rundowns`);
 
         try {
             const response = await fetch(`${this.apiBase}/rundowns`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${this.authToken}`
+                    'Authorization': `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
                 }
             });
 
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
             if (response.ok) {
                 const data = await response.json();
+                console.log('✅ Rundowns data:', data);
                 this.populateRundownSelect(data.rundowns || []);
                 this.updateConnectionStatus('Rundowns loaded ✅', 'success');
             } else {
-                this.updateConnectionStatus('Failed to load rundowns ❌', 'error');
+                const errorText = await response.text();
+                console.error('❌ Response not OK:', response.status, errorText);
+                this.updateConnectionStatus(`Failed to load rundowns (${response.status}) ❌`, 'error');
             }
         } catch (error) {
             console.error('❌ Failed to load rundowns:', error);
-            this.updateConnectionStatus('Failed to load rundowns ❌', 'error');
+            this.updateConnectionStatus('Network error loading rundowns ❌', 'error');
         }
     }
 
