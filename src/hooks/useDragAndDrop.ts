@@ -202,16 +202,26 @@ export const useDragAndDrop = (
     let draggedIds: string[] = [];
     let isHeaderGroup = false;
     
-    // Check if it's a collapsed header group
+    // Check if it's a collapsed header group - ONLY when collapsed
     if (item.type === 'header' && getHeaderGroupItemIds && isHeaderCollapsed && isHeaderCollapsed(item.id)) {
       draggedIds = getHeaderGroupItemIds(item.id);
       isHeaderGroup = draggedIds.length > 1;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🎯 Dragging collapsed header group:', {
-          headerId: item.id,
-          itemCount: draggedIds.length,
-          itemIds: draggedIds
-        });
+      console.log('🎯 HEADER GROUP DRAG - Collapsed header detected:', {
+        headerId: item.id,
+        isCollapsed: isHeaderCollapsed(item.id),
+        itemCount: draggedIds.length,
+        itemIds: draggedIds,
+        firstFewNames: draggedIds.slice(0, 3).map(id => {
+          const foundItem = items.find(i => i.id === id);
+          return foundItem ? foundItem.name || foundItem.type : 'Unknown';
+        })
+      });
+      
+      if (draggedIds.length === 0) {
+        console.warn('🚨 HEADER GROUP ERROR: No items found for collapsed header:', item.id);
+        // Fall back to single item drag
+        draggedIds = [item.id];
+        isHeaderGroup = false;
       }
     } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
       // Multiple selection

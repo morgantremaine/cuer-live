@@ -95,7 +95,19 @@ export const useHeaderCollapse = (items: RundownItem[]) => {
   // Get items that should move together with a header when dragging
   const getHeaderGroupItems = useCallback((headerId: string): RundownItem[] => {
     const group = headerGroups.find(g => g.header.id === headerId);
-    if (!group) return [];
+    if (!group) {
+      console.warn('🚨 Header group not found for header:', headerId);
+      return [];
+    }
+    
+    console.log('🎯 Header group found:', {
+      headerId,
+      headerIndex: group.headerIndex,
+      itemCount: group.items.length,
+      startIndex: group.startIndex,
+      endIndex: group.endIndex,
+      items: group.items.map(item => ({ id: item.id, type: item.type, name: item.name }))
+    });
     
     return [group.header, ...group.items];
   }, [headerGroups]);
