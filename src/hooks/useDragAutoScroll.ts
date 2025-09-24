@@ -24,7 +24,8 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
     if (!scrollContainer) return;
 
     // Throttle scroll updates to avoid performance issues
-    const scrollDelay = Math.max(16, 100 - speed); // 16ms minimum (60fps), faster for higher speed
+    // Increased delay slightly to make scrolling less aggressive during drag
+    const scrollDelay = Math.max(20, 120 - speed); // 20ms minimum (50fps), was 16ms/100-speed
     
     autoScrollIntervalRef.current = setInterval(() => {
       const now = Date.now();
@@ -56,20 +57,23 @@ export const useDragAutoScroll = ({ scrollContainerRef, isActive }: UseDragAutoS
     const rect = scrollContainer.getBoundingClientRect();
     const mouseY = e.clientY;
     
-    // Define scroll zones (top and bottom 80px of the container)
-    const scrollZone = 80;
+    // Define scroll zones (top and bottom 100px of the container for easier triggering)
+    // Increased from 80px to 100px to make it easier to trigger during long drags
+    const scrollZone = 100;
     const topZone = rect.top + scrollZone;
     const bottomZone = rect.bottom - scrollZone;
     
     if (mouseY < topZone && mouseY > rect.top) {
       // Mouse is in top scroll zone
       const distanceFromEdge = topZone - mouseY;
-      const speed = Math.min(100, (distanceFromEdge / scrollZone) * 100);
+      // Reduced max speed to make scrolling more controlled during drag
+      const speed = Math.min(60, (distanceFromEdge / scrollZone) * 60);
       startAutoScroll('up', speed);
     } else if (mouseY > bottomZone && mouseY < rect.bottom) {
       // Mouse is in bottom scroll zone
       const distanceFromEdge = mouseY - bottomZone;
-      const speed = Math.min(100, (distanceFromEdge / scrollZone) * 100);
+      // Reduced max speed to make scrolling more controlled during drag
+      const speed = Math.min(60, (distanceFromEdge / scrollZone) * 60);
       startAutoScroll('down', speed);
     } else {
       // Mouse is not in scroll zones

@@ -51,6 +51,7 @@ export const useDragAndDrop = (
   // Ref to track if we're currently in a drag operation
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastActivityRef = useRef<number>(Date.now());
 
   // Setup @dnd-kit sensors with better activation constraints
   const sensors = useSensors(
@@ -95,21 +96,42 @@ export const useDragAndDrop = (
     }
   }, [activeId, draggedItemIndex, isDraggingMultiple, dropTargetIndex]);
 
+  // Record drag activity to prevent premature timeout
+  const recordDragActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
+
   // Auto-cleanup timeout to prevent stuck states
   const setDragTimeout = useCallback(() => {
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
     }
     
-    // Set a 3-second timeout to force reset if drag gets stuck
+    // Set a 10-second timeout to force reset if drag gets stuck
+    // But check for activity every 2 seconds to extend if user is actively dragging
     if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 Setting 3-second drag timeout');
+      console.log('🎯 Setting 10-second drag timeout with activity monitoring');
     }
-    dragTimeoutRef.current = setTimeout(() => {
-      console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 3 seconds');
-      resetDragState();
-    }, 3000);
-  }, [resetDragState]);
+    
+    const checkActivity = () => {
+      const timeSinceActivity = Date.now() - lastActivityRef.current;
+      const maxInactivityTime = 8000; // 8 seconds of inactivity before timeout
+      
+      if (timeSinceActivity > maxInactivityTime) {
+        console.warn('⚠️ DRAG TIMEOUT: Force resetting stuck drag state after 8 seconds of inactivity');
+        resetDragState();
+      } else if (isDragActiveRef.current) {
+        // Still active and user has been active recently, check again in 2 seconds
+        dragTimeoutRef.current = setTimeout(checkActivity, 2000);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🎯 Drag still active, extending timeout. Time since activity:', timeSinceActivity + 'ms');
+        }
+      }
+    };
+    
+    // Start the activity monitoring loop
+    dragTimeoutRef.current = setTimeout(checkActivity, 2000);
+  }, [resetDragState, recordDragActivity]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -256,6 +278,7 @@ export const useDragAndDrop = (
       isHeaderGroup,
       originalIndex: activeIndex
     });
+    recordDragActivity(); // Record initial activity
     setDragTimeout();
     isDragActiveRef.current = true;
     
@@ -477,6 +500,9 @@ export const useDragAndDrop = (
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
+    // Record drag activity to prevent timeout during long drags
+    recordDragActivity();
+    
     if (targetIndex !== undefined && draggedItemIndex !== null && isDragActiveRef.current) {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const mouseY = e.clientY;
@@ -511,19 +537,24 @@ export const useDragAndDrop = (
         setDropTargetIndex(insertIndex);
       }
     }
-  }, [draggedItemIndex, dropTargetIndex, items]);
+  }, [draggedItemIndex, dropTargetIndex, items, recordDragActivity]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Record activity even on drag leave to prevent timeout
+    recordDragActivity();
+    
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
     
-    const buffer = 10;
+    // Use a larger buffer for long-distance drags to prevent premature drop indicator loss
+    const buffer = 20; // Increased from 10 to 20 pixels
     if (x < rect.left - buffer || x > rect.right + buffer || 
         y < rect.top - buffer || y > rect.bottom + buffer) {
+      // Only clear drop target if we're really far from the element
       setDropTargetIndex(null);
     }
-  }, []);
+  }, [recordDragActivity]);
 
   const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
