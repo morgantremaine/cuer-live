@@ -565,18 +565,19 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Enhanced typing protection with force-save after max delay
+    // Use the single isTypingActive function as source of truth for typing state
+    // This prevents conflicting typing checks
     const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-    const isRecentlyTyping = timeSinceLastEdit < typingIdleMs;
     const hasExceededMaxDelay = timeSinceLastEdit > maxSaveDelay;
     
-    if (isRecentlyTyping && !hasExceededMaxDelay) {
-      debugLogger.autosave('Save deferred: user actively typing');
-      console.log('⌨️ AutoSave: user still typing, waiting for idle period');
+    // Only check typing state if we haven't exceeded max delay
+    if (!hasExceededMaxDelay && isTypingActive()) {
+      debugLogger.autosave('Save deferred: user actively typing (secondary check)');
+      console.log('⌨️ AutoSave: user still typing (secondary check), waiting for idle period');
       return; // Don't reschedule here - markActiveTyping handles it
     }
     
-    if (hasExceededMaxDelay && isRecentlyTyping) {
+    if (hasExceededMaxDelay && isTypingActive()) {
       console.log('⚡ AutoSave: forcing save after max delay despite typing');
     }
     
