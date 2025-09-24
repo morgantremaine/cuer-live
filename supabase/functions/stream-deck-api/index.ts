@@ -32,8 +32,10 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const path = url.pathname.replace('/functions/v1/stream-deck-api', '');
-    console.log('📍 API path:', path);
+    const path = url.pathname.replace('/functions/v1/stream-deck-api', '') || '/';
+    console.log('📍 Full URL:', req.url);
+    console.log('📍 Pathname:', url.pathname);
+    console.log('📍 Extracted path:', path);
 
     // Extract authorization header
     const authHeader = req.headers.get('authorization');
@@ -98,7 +100,31 @@ serve(async (req) => {
       return await handleJump(rundownId, user.id, body.segmentId);
     }
 
-    return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+    console.log('❌ Endpoint not found:', path);
+    console.log('📋 Available endpoints:');
+    console.log('  GET /rundowns');
+    console.log('  GET /status/{rundownId}');
+    console.log('  POST /play/{rundownId}');
+    console.log('  POST /pause/{rundownId}');
+    console.log('  POST /forward/{rundownId}');
+    console.log('  POST /backward/{rundownId}');
+    console.log('  POST /reset/{rundownId}');
+    console.log('  POST /jump/{rundownId}');
+    
+    return new Response(JSON.stringify({ 
+      error: 'Endpoint not found', 
+      path: path,
+      availableEndpoints: [
+        'GET /rundowns',
+        'GET /status/{rundownId}',
+        'POST /play/{rundownId}',
+        'POST /pause/{rundownId}',
+        'POST /forward/{rundownId}',
+        'POST /backward/{rundownId}',
+        'POST /reset/{rundownId}',
+        'POST /jump/{rundownId}'
+      ]
+    }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
