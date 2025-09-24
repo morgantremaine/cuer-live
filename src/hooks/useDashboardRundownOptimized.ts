@@ -39,6 +39,7 @@ export const useDashboardRundownOptimized = ({
     // Find the current rundown to merge with
     const currentRundown = rundownsRef.current.find(r => r.id === updatedData.id);
     if (!currentRundown) {
+      console.log('🎯 Dashboard: Rundown not found for update:', updatedData.id);
       return;
     }
 
@@ -49,6 +50,7 @@ export const useDashboardRundownOptimized = ({
     
     // Only update dashboard if timestamp changed by more than 2 seconds (real change)
     if (timeDifference < 2000) {
+      console.log('🎯 Dashboard: Ignoring realtime update - timestamp too similar (likely view/access action)');
       return;
     }
 
@@ -62,12 +64,26 @@ export const useDashboardRundownOptimized = ({
       ...(updatedData.last_updated_by !== undefined && { last_updated_by: updatedData.last_updated_by })
     };
 
+    console.log('🎯 Dashboard: Processing rundown update:', {
+      id: updatedData.id,
+      title: updatedData.title,
+      itemCount: updatedData.items?.length,
+      updatedBy: updatedData.last_updated_by,
+      timeDifferenceMs: timeDifference
+    });
+
     onRundownUpdate(updatedRundown);
   }, [onRundownUpdate]);
 
   // Set up individual subscriptions for each rundown (more efficient than bulk filter) - with stability checks
   useEffect(() => {
     if (!enabled || !user) {
+      console.log('🎯 Dashboard: Realtime subscription not ready:', { 
+        enabled, 
+        user: !!user, 
+        rundownCount: rundowns.length 
+      });
+      
       // Clean up if disabled
       subscriptionsRef.current.forEach((channel) => {
         supabase.removeChannel(channel);
@@ -95,11 +111,17 @@ export const useDashboardRundownOptimized = ({
       return;
     }
 
+    console.log('🎯 Dashboard: Rundown list changed, updating subscriptions:', {
+      before: [...subscribedRundownIds],
+      after: [...currentRundownIds]
+    });
+
     // Clean up removed rundowns
     subscribedRundownIds.forEach(rundownId => {
       if (!currentRundownIds.has(rundownId)) {
         const channel = subscriptionsRef.current.get(rundownId);
         if (channel) {
+          console.log('🎯 Dashboard: Removing subscription for:', rundownId);
           supabase.removeChannel(channel);
           subscriptionsRef.current.delete(rundownId);
           setConnectedCount(prev => Math.max(0, prev - 1));
@@ -113,6 +135,7 @@ export const useDashboardRundownOptimized = ({
         const rundown = rundowns.find(r => r.id === rundownId);
         if (!rundown) return;
         
+        console.log('🎯 Dashboard: Adding subscription for new rundown:', rundownId);
         const channelName = `dashboard-rundown-${rundown.id}`;
         
         const channel = supabase
@@ -130,8 +153,12 @@ export const useDashboardRundownOptimized = ({
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
               setConnectedCount(prev => prev + 1);
+              console.log('🎯 Dashboard: Connected to rundown:', rundown.id);
             } else if (status === 'CLOSED') {
               setConnectedCount(prev => Math.max(0, prev - 1));
+              console.log('🎯 Dashboard: Disconnected from rundown:', rundown.id);
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('🎯 Dashboard: Connection error for rundown:', rundown.id);
             }
           });
 
@@ -140,6 +167,7 @@ export const useDashboardRundownOptimized = ({
     });
 
     return () => {
+      console.log('🎯 Dashboard: Cleaning up all realtime subscriptions');
       subscriptionsRef.current.forEach((channel) => {
         supabase.removeChannel(channel);
       });

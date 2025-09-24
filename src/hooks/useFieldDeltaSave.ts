@@ -191,6 +191,8 @@ export const useFieldDeltaSave = (
     }
 
     // Perform optimized delta update with OCC
+    console.log('⚡ Performing delta update with OCC:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
+    
     const updateData: any = {};
     
     // Apply global field changes
@@ -426,6 +428,7 @@ export const useFieldDeltaSave = (
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
     trackOwnUpdate(normalizedTimestamp);
     registerRecentSave(rundownId, normalizedTimestamp);
+    console.log('⚡ Delta update completed successfully with tab_id:', getTabId());
 
     return {
       updatedAt: normalizedTimestamp,
@@ -481,14 +484,36 @@ export const useFieldDeltaSave = (
 
   // Main save function using deltas
   const saveDeltaState = useCallback(async (currentState: RundownState): Promise<{ updatedAt: string; docVersion: number }> => {
+    console.log('🔍 DEBUG: Field delta save called', {
+      rundownId,
+      hasCurrentState: !!currentState,
+      hasLastSavedState: !!lastSavedStateRef.current
+    });
+    
     const deltas = extractDeltas(currentState, lastSavedStateRef.current);
     
     if (deltas.length === 0) {
+      console.log('ℹ️ No deltas detected - skipping save');
+      console.log('🔍 DEBUG: Field delta save - no changes to save');
       throw new Error('No changes to save');
     }
     
+    console.log('🔍 DEBUG: Field delta save proceeding with deltas', {
+      deltaCount: deltas.length,
+      deltaTypes: deltas.map(d => d.field)
+    });
+
     const hasFullState = deltas.some(d => d.field === 'fullState');
-    
+    if (hasFullState) {
+      console.warn('🧪 TRACE Delta: fullState save path triggered (likely initial). lastSavedStateRef is null:', !lastSavedStateRef.current);
+    }
+
+    console.log('📊 Detected deltas:', deltas.map(d => ({ 
+      itemId: d.itemId, 
+      field: d.field, 
+      hasValue: d.value !== null && d.value !== undefined 
+    })));
+
     const result = await saveDeltasToDatabase(deltas, currentState);
     
     // Update saved state reference

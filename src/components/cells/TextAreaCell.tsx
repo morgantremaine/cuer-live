@@ -154,11 +154,21 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    console.log('📝 TextAreaCell handleChange - SINGLE CHAR TEST', { 
+      value: e.target.value, 
+      length: e.target.value.length,
+      lastChar: e.target.value.slice(-1)
+    });
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    console.log('📝 TextAreaCell handleInput - SINGLE CHAR TEST', { 
+      value: (e.target as HTMLTextAreaElement).value, 
+      length: (e.target as HTMLTextAreaElement).value.length,
+      lastChar: (e.target as HTMLTextAreaElement).value.slice(-1)
+    });
     onUpdateValue((e.target as HTMLTextAreaElement).value);
   };
 

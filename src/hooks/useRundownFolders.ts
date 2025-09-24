@@ -22,11 +22,16 @@ export const useRundownFolders = (teamId?: string) => {
   const { toast } = useToast();
 
   const fetchFolders = async () => {
+    console.log('🗂️ fetchFolders: Called with', { teamId, userId: !!user, loading });
+    
     if (!teamId || !user) {
+      console.log('🗂️ fetchFolders: Missing teamId or user, setting loading to false', { teamId: !!teamId, user: !!user });
       setLoading(false);
       setFolders([]);
       return;
     }
+    
+    console.log('🗂️ fetchFolders: Loading folders for team:', teamId);
     
     try {
       const { data, error } = await supabase
@@ -40,6 +45,10 @@ export const useRundownFolders = (teamId?: string) => {
         throw error;
       }
       
+      console.log('🗂️ fetchFolders: Successfully loaded folders:', {
+        count: data?.length || 0,
+        folders: data?.map(f => ({ id: f.id, name: f.name })) || []
+      });
       setFolders(data || []);
     } catch (error) {
       console.error('🗂️ fetchFolders: Error fetching folders:', error);
@@ -215,6 +224,7 @@ export const useRundownFolders = (teamId?: string) => {
   };
 
   useEffect(() => {
+    console.log('🗂️ useRundownFolders: teamId or user changed', { teamId: !!teamId, user: !!user });
     fetchFolders();
   }, [teamId, user?.id]);
 

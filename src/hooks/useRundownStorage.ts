@@ -58,6 +58,7 @@ export const useRundownStorage = () => {
       lastLoadedUserRef.current = user.id;
       lastLoadedTeamRef.current = teamId;
       
+      console.log('Loading rundowns from database for user:', user.id);
       setLoading(true);
 
       try {

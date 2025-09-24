@@ -17,6 +17,12 @@ class DebouncedFieldTracker {
     const now = Date.now();
     this.trackedFields.set(fieldKey, now);
 
+    // Throttled logging to prevent console spam
+    if (now - this.lastLogTime > this.LOG_THROTTLE) {
+      console.log(`🛡️ Batch field tracking: ${this.trackedFields.size} fields recently edited`);
+      this.lastLogTime = now;
+    }
+
     // Execute callback immediately if provided
     callback?.(fieldKey);
 
@@ -37,6 +43,7 @@ class DebouncedFieldTracker {
     const fieldCount = this.trackedFields.size;
     
     if (fieldCount > 0) {
+      console.log(`📦 Processing ${fieldCount} field updates in batch`);
       // Clear processed fields
       this.trackedFields.clear();
     }
