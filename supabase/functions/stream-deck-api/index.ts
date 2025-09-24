@@ -115,12 +115,24 @@ serve(async (req) => {
 async function handleGetRundowns(userId: string) {
   console.log('📋 Getting rundowns for user:', userId);
   
-  const { data: rundowns, error } = await supabase
+  // Get user's team IDs first
+  const teamIds = await getUserTeamIds(userId);
+  console.log('👥 User team IDs:', teamIds);
+  
+  let query = supabase
     .from('rundowns')
     .select('id, title, created_at, updated_at')
-    .or(`user_id.eq.${userId},team_id.in.(${await getUserTeamIds(userId)})`)
     .order('updated_at', { ascending: false })
     .limit(20);
+  
+  // Build the OR condition based on whether user has teams
+  if (teamIds) {
+    query = query.or(`user_id.eq.${userId},team_id.in.(${teamIds})`);
+  } else {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data: rundowns, error } = await query;
 
   if (error) {
     console.error('❌ Error fetching rundowns:', error);
@@ -130,6 +142,7 @@ async function handleGetRundowns(userId: string) {
     });
   }
 
+  console.log('✅ Found rundowns:', rundowns?.length || 0);
   return new Response(JSON.stringify({ rundowns }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
