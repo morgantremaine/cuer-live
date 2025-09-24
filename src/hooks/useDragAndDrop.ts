@@ -29,7 +29,7 @@ interface DragInfo {
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
-  selectedRows: Set<string>,
+  selectedRowsRef: React.MutableRefObject<Set<string>> | (() => Set<string>), // Accept ref or getter function
   scrollContainerRef?: React.RefObject<HTMLElement>,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   columns?: any[],
@@ -48,7 +48,15 @@ export const useDragAndDrop = (
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   
-  // Ref to track if we're currently in a drag operation
+  // Helper function to get current selectedRows
+  const getSelectedRows = useCallback(() => {
+    if (typeof selectedRowsRef === 'function') {
+      return selectedRowsRef();
+    } else if (selectedRowsRef && 'current' in selectedRowsRef) {
+      return selectedRowsRef.current;
+    }
+    return new Set<string>();
+  }, [selectedRowsRef]);
   const isDragActiveRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout>();
   const lastActivityRef = useRef<number>(Date.now());
@@ -211,7 +219,7 @@ export const useDragAndDrop = (
         rowNumber: item?.rowNumber
       });
       console.log('🎯 Total items in rundown:', items.length);
-      console.log('🎯 Selected rows count:', selectedRows.size);
+      console.log('🎯 Selected rows count:', getSelectedRows().size);
     }
     
     if (!item) {
@@ -245,9 +253,9 @@ export const useDragAndDrop = (
         draggedIds = [item.id];
         isHeaderGroup = false;
       }
-    } else if (selectedRows.size > 1 && selectedRows.has(item.id)) {
+    } else if (getSelectedRows().size > 1 && getSelectedRows().has(item.id)) {
       // Multiple selection
-      draggedIds = Array.from(selectedRows);
+      draggedIds = Array.from(getSelectedRows());
       if (process.env.NODE_ENV === 'development') {
         console.log('🎯 Dragging multiple selected items:', {
           count: draggedIds.length,
@@ -290,7 +298,7 @@ export const useDragAndDrop = (
         isHeaderGroup
       });
     }
-  }, [items, selectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout]);
+  }, [items, getSelectedRows, getHeaderGroupItemIds, isHeaderCollapsed, setDragTimeout, recordDragActivity]);
 
   // @dnd-kit drag end handler
   const handleDndKitDragEnd = useCallback((event: DragEndEvent) => {
