@@ -598,7 +598,7 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
     constructor() {
         this.websocket = null;
         this.uuid = null;
-        this.apiBaseUrl = 'https://8194d7ef-dbfa-40fb-ac2a-5f6a35bd131a.lovableproject.com';
+        this.apiBaseUrl = 'https://cuer.live';
         this.authToken = null;
         this.user = null;
         this.rundownId = null;
@@ -630,13 +630,13 @@ if (typeof connectElgatoStreamDeckSocket !== 'undefined') {
 
     handleLogin() {
         const popup = window.open(
-            'https://8194d7ef-dbfa-40fb-ac2a-5f6a35bd131a.lovableproject.com/login?streamdeck=true',
+            'https://cuer.live/login?streamdeck=true',
             'cuer-login',
             'width=500,height=600,scrollbars=yes,resizable=yes'
         );
 
         const messageHandler = (event) => {
-            if (event.origin !== 'https://8194d7ef-dbfa-40fb-ac2a-5f6a35bd131a.lovableproject.com') return;
+            if (event.origin !== 'https://cuer.live') return;
             
             if (event.data.type === 'CUER_AUTH_SUCCESS') {
                 this.authToken = event.data.token;
