@@ -359,13 +359,13 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                   return (
                     <>
                       {/* Header Row - matches rundown styling */}
-                      <tr key={`header-${sectionKey}`} className="border-b border-border bg-blue-600 dark:bg-blue-700">
+                      <tr key={`header-${sectionKey}`} className="border-b border-border bg-[hsl(var(--header-background))]">
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-white">
+            <span className="text-lg font-bold text-foreground">
               {headerName}
             </span>
-            <span className="text-base font-medium text-blue-100 ml-6">
+            <span className="text-base font-medium text-muted-foreground ml-6">
               ({section.duration})
             </span>
                           </div>
