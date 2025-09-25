@@ -35,22 +35,22 @@ const Changelog: React.FC = () => {
                 <div className="space-y-3">
                   <div>
                     <p className="text-gray-300 mb-3">
-                      <strong>Intelligent Rundown Analysis:</strong> Introducing AI-powered rundown summaries that provide comprehensive analysis and insights for your broadcast content:
+                      <strong>Intelligent Rundown Summaries:</strong> Introducing AI-powered rundown summaries that provide comprehensive overviews and insights for your broadcast content:
                     </p>
                     <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
-                      <li><strong>Automated Content Analysis:</strong> AI analyzes your entire rundown and generates detailed summaries for each segment</li>
+                      <li><strong>Automated Content Summarization:</strong> AI reads through your entire rundown and generates detailed summaries for each segment</li>
                       <li><strong>Segment Breakdown:</strong> Get comprehensive descriptions of content flow, timing, and key elements for each show segment</li>
-                      <li><strong>Production Insights:</strong> Intelligent analysis of show structure, pacing, and content organization to help optimize your broadcast</li>
-                      <li><strong>Time-Aware Summaries:</strong> Summaries include timing information and segment duration analysis for better show planning</li>
+                      <li><strong>Production Overview:</strong> Clear summaries of show structure, pacing, and content organization to help with broadcast planning</li>
+                      <li><strong>Time-Aware Summaries:</strong> Summaries include timing information and segment duration details for better show planning</li>
                     </ul>
                     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
                       <img 
                         src={aiRundownSummaryImage}
-                        alt="AI Rundown Summary showing detailed segment analysis for a gaming broadcast"
+                        alt="AI Rundown Summary showing detailed segment summaries for a gaming broadcast"
                         className="w-full max-w-2xl mx-auto rounded"
                       />
                       <p className="text-xs text-gray-500 text-center mt-2">
-                        AI-generated rundown summary with detailed segment analysis and timing information
+                        AI-generated rundown summary with detailed segment descriptions and timing information
                       </p>
                     </div>
                   </div>
