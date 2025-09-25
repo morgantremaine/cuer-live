@@ -348,9 +348,9 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       
       {!isCollapsed && (
         <CardContent className="pt-0">
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-gray-600 overflow-hidden">
             <table className="w-full">
-              <tbody className="bg-background">
+              <tbody>
                 {sections.map((section, index) => {
                   const sectionKey = `${section.header.id}_${section.items.length}`;
                   const summary = summaries[sectionKey];
