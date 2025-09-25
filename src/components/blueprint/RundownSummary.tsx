@@ -358,14 +358,14 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
 
                   return (
                     <>
-                      {/* Header Row - using same grey as list items */}
-                      <tr key={`header-${sectionKey}`} className="border-b border-border bg-muted">
+                      {/* Header Row - using lighter grey like rundown button */}
+                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-700">
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-foreground">
+                            <span className="text-lg font-bold text-white">
                               {headerName}
                             </span>
-                            <span className="text-base font-medium text-muted-foreground ml-6">
+                            <span className="text-base font-medium text-gray-300 ml-6">
                               ({section.duration})
                             </span>
                           </div>
@@ -373,23 +373,23 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
                       </tr>
                       
                       {/* Summary Row - using dark blue like normal rows */}
-                      <tr key={`summary-${sectionKey}`} className="border-b border-border bg-background">
+                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-background">
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
-                              <Skeleton className="h-3 w-full bg-muted" />
-                              <Skeleton className="h-3 w-3/4 bg-muted" />
+                              <Skeleton className="h-3 w-full bg-gray-600" />
+                              <Skeleton className="h-3 w-3/4 bg-gray-600" />
                             </div>
                           ) : summary?.error ? (
-                            <div className="text-destructive text-sm italic">
+                            <div className="text-red-400 text-sm italic">
                               {summary.error}
                             </div>
                           ) : summary?.summary ? (
-                            <p className="text-muted-foreground text-sm leading-relaxed italic">
+                            <p className="text-gray-300 text-sm leading-relaxed italic">
                               {summary.summary}
                             </p>
                           ) : (
-                            <div className="text-muted-foreground text-sm italic">
+                            <div className="text-gray-500 text-sm italic">
                               No summary available
                             </div>
                           )}
