@@ -167,17 +167,17 @@ const MainActionButtons = ({
             <Undo className="h-4 w-4" />
             <span>Undo</span>
           </Button>
-          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
-            <Monitor className="h-4 w-4" />
-            <span>Teleprompter</span>
+          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Eye className="h-4 w-4" />
+            <span>Layouts</span>
           </Button>
           <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <FileText className="h-4 w-4" />
             <span>Blueprint</span>
           </Button>
-          <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
-            <Eye className="h-4 w-4" />
-            <span>Layouts</span>
+          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Monitor className="h-4 w-4" />
+            <span>Teleprompter</span>
           </Button>
         </div>
 
@@ -252,17 +252,17 @@ const MainActionButtons = ({
         <Undo className="h-4 w-4" />
         <span>Undo</span>
       </Button>
-      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
-        <Monitor className="h-4 w-4" />
-        <span>Teleprompter</span>
+      <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
+        <Eye className="h-4 w-4" />
+        <span>Layouts</span>
       </Button>
       <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className={buttonClass}>
         <FileText className="h-4 w-4" />
         <span>Blueprint</span>
       </Button>
-      <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
-        <Eye className="h-4 w-4" />
-        <span>Layouts</span>
+      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
+        <Monitor className="h-4 w-4" />
+        <span>Teleprompter</span>
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
