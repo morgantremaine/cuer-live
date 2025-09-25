@@ -288,7 +288,7 @@ const BlueprintContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <DashboardHeader 
         userEmail={user?.email} 
         onSignOut={handleSignOut} 
@@ -311,8 +311,8 @@ const BlueprintContent = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* Always visible buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 mb-6">
+          {/* Always visible buttons with modern styling */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={addNewList}
@@ -320,7 +320,7 @@ const BlueprintContent = () => {
             <Button
               variant="outline"
               onClick={refreshAllLists}
-              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
+              className="bg-card/50 text-foreground border-border/50 hover:bg-accent hover:border-accent/50 backdrop-blur-sm transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh All
@@ -328,10 +328,12 @@ const BlueprintContent = () => {
           </div>
 
           {state.lists.length === 0 ? (
-            <BlueprintEmptyState
-              availableColumns={availableColumns}
-              onAddList={addNewList}
-            />
+            <div className="bg-gradient-to-br from-card/30 to-muted/20 rounded-2xl border border-border/30 backdrop-blur-sm">
+              <BlueprintEmptyState
+                availableColumns={availableColumns}
+                onAddList={addNewList}
+              />
+            </div>
           ) : (
             <BlueprintListsGrid
               lists={state.lists}
@@ -358,7 +360,7 @@ const BlueprintContent = () => {
               <React.Fragment key={componentId}>
                 {/* Insertion line before component */}
                 {insertionIndex === componentIndex && (
-                  <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+                  <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-full mb-6 animate-pulse w-full shadow-lg" />
                 )}
                 {componentMap[componentId as keyof typeof componentMap]}
               </React.Fragment>
@@ -367,7 +369,7 @@ const BlueprintContent = () => {
 
           {/* Final insertion line */}
           {insertionIndex === state.lists.length + state.componentOrder.length && (
-            <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
+            <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-full mb-6 animate-pulse w-full shadow-lg" />
           )}
         </div>
       </div>

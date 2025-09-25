@@ -117,19 +117,19 @@ const BlueprintListCard = ({
 
   return (
     <Card 
-      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 cursor-move ${
-        isDragging ? 'opacity-50 transform rotate-2' : ''
+      className={`h-fit bg-gradient-to-br from-card via-card to-card/90 border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 cursor-move backdrop-blur-sm ${
+        isDragging ? 'opacity-50 transform rotate-2 scale-95' : 'hover:scale-[1.02]'
       }`}
       draggable
       onDragStart={handleDragStart}
       onDragEnter={(e) => onDragEnterContainer?.(e, index)}
       onDragEnd={onDragEnd}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-2">
-          {/* Drag Handle - positioned on the left like other components */}
-          <div className="p-1 rounded flex-shrink-0 mt-1">
-            <GripVertical className="h-4 w-4 text-gray-400" />
+      <CardHeader className="pb-4 bg-gradient-to-r from-accent/5 to-primary/5">
+        <div className="flex items-start gap-3">
+          {/* Drag Handle - enhanced with gradient */}
+          <div className="p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors duration-200 flex-shrink-0 mt-1">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>
           
           {/* List Header - takes up remaining space */}
@@ -148,10 +148,17 @@ const BlueprintListCard = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+      <CardContent className="pt-0">
+        <div className="space-y-1 max-h-96 overflow-y-auto custom-scrollbar">
           {itemsToDisplay.length === 0 ? (
-            <p className="text-gray-500 italic">No items found</p>
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <div className="text-center">
+                <svg className="h-8 w-8 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p className="text-sm italic">No items found</p>
+              </div>
+            </div>
           ) : (
             itemsToDisplay.map((item, itemIndex) => {
               const startTime = getHeaderStartTime(item);
