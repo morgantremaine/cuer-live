@@ -307,11 +307,10 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
   }
 
   return (
-    <Card className="mb-6 bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-slate-600/50 backdrop-blur-sm shadow-lg glow-box">
-      <CardHeader className="py-4 bg-gradient-to-r from-slate-700/30 to-slate-800/30 border-b border-slate-600/50">
+    <Card className="mb-6 bg-gray-800 border-gray-700">
+      <CardHeader className="py-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-            <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full animate-pulse"></div>
+          <CardTitle className="text-lg font-medium text-white">
             AI Rundown Summary
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -319,7 +318,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               variant="ghost"
               size="sm"
               onClick={handlePrint}
-              className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+              className="text-gray-300 hover:text-white"
               title="Print Summary"
             >
               <Printer className="h-4 w-4" />
@@ -329,16 +328,16 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               size="sm"
               onClick={generateAllSummaries}
               disabled={isRefreshing}
-              className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-200 disabled:opacity-50"
+              className="text-gray-300 hover:text-white"
               title="Refresh All Summaries"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleToggleCollapse}
-              className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-200"
+              className="text-gray-300 hover:text-white"
               title={isCollapsed ? "Expand Summary" : "Collapse Summary"}
             >
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -349,79 +348,54 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       
       {!isCollapsed && (
         <CardContent className="pt-0">
-          <div className="rounded-lg border border-slate-600/50 overflow-hidden bg-gradient-to-b from-slate-800/50 to-slate-900/50">
+          <div className="rounded-lg border border-gray-600 overflow-hidden">
             <table className="w-full">
-              <tbody className="bg-transparent">
+              <tbody className="bg-background">
                 {sections.map((section, index) => {
                   const sectionKey = `${section.header.id}_${section.items.length}`;
                   const summary = summaries[sectionKey];
                   const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
 
                   return (
-                    <React.Fragment key={sectionKey}>
-                      {/* Header Row - enhanced styling */}
-                      <tr className="border-b border-slate-600/50 bg-gradient-to-r from-slate-700/40 to-slate-800/40 hover:from-slate-700/60 hover:to-slate-800/60 transition-all duration-200">
-                        <td className="px-6 py-5 align-middle">
+                    <>
+                      {/* Header Row - matches rundown styling */}
+                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-750">
+                        <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-1 h-6 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full"></div>
-                              <span className="text-lg font-bold text-white">
-                                {headerName}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="px-3 py-1 bg-slate-600/50 rounded-full">
-                                <span className="text-sm font-medium text-slate-200">
-                                  {section.duration}
-                                </span>
-                              </div>
-                              {summary?.isLoading && (
-                                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                              )}
-                            </div>
+                            <span className="text-lg font-bold text-white">
+                              {headerName}
+                            </span>
+                            <span className="text-base font-medium text-gray-300 ml-6">
+                              ({section.duration})
+                            </span>
                           </div>
                         </td>
                       </tr>
                       
-                      {/* Summary Row - enhanced styling */}
-                      <tr className="border-b border-slate-600/30 bg-gradient-to-r from-slate-800/30 to-slate-900/30">
-                        <td className="px-6 py-4">
+                      {/* Summary Row */}
+                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
+                        <td className="px-4 py-4">
                           {summary?.isLoading ? (
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                                <span className="text-slate-400 text-sm">Generating summary...</span>
-                              </div>
-                              <div className="space-y-2">
-                                <Skeleton className="h-3 w-full bg-slate-600/50" />
-                                <Skeleton className="h-3 w-3/4 bg-slate-600/50" />
-                              </div>
+                            <div className="space-y-2">
+                              <Skeleton className="h-3 w-full bg-gray-600" />
+                              <Skeleton className="h-3 w-3/4 bg-gray-600" />
                             </div>
                           ) : summary?.error ? (
-                            <div className="flex items-center gap-2 text-red-400 text-sm">
-                              <div className="w-4 h-4 bg-red-400/20 rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                              </div>
-                              <span className="italic">{summary.error}</span>
+                            <div className="text-red-400 text-sm italic">
+                              {summary.error}
                             </div>
                           ) : summary?.summary ? (
-                            <div className="flex gap-3">
-                              <div className="w-1 h-full bg-gradient-to-b from-emerald-400/50 to-transparent rounded-full mt-1 flex-shrink-0"></div>
-                              <p className="text-slate-300 text-sm leading-relaxed italic bg-slate-700/20 rounded-lg p-3 border border-slate-600/30">
-                                {summary.summary}
-                              </p>
-                            </div>
+                            <p className="text-gray-300 text-sm leading-relaxed italic">
+                              {summary.summary}
+                            </p>
                           ) : (
-                            <div className="flex items-center gap-2 text-slate-500 text-sm">
-                              <div className="w-4 h-4 bg-slate-500/20 rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
-                              </div>
-                              <span className="italic">No summary available</span>
+                            <div className="text-gray-500 text-sm italic">
+                              No summary available
                             </div>
                           )}
                         </td>
                       </tr>
-                    </React.Fragment>
+                    </>
                   );
                 })}
               </tbody>

@@ -288,7 +288,7 @@ const BlueprintContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900">
+    <div className="min-h-screen bg-gray-900">
       <DashboardHeader 
         userEmail={user?.email} 
         onSignOut={handleSignOut} 
@@ -311,8 +311,8 @@ const BlueprintContent = () => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* Always visible buttons - enhanced styling */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+          {/* Always visible buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
             <AddListDialog
               availableColumns={availableColumns}
               onAddList={addNewList}
@@ -320,7 +320,7 @@ const BlueprintContent = () => {
             <Button
               variant="outline"
               onClick={refreshAllLists}
-              className="bg-gradient-to-r from-slate-700 to-slate-800 text-white border-slate-600/50 hover:from-slate-600 hover:to-slate-700 hover:border-slate-500/60 transition-all duration-200 shadow-lg"
+              className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600 hover:border-gray-500"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh All
@@ -351,23 +351,23 @@ const BlueprintContent = () => {
             />
           )}
 
-          {/* Render components in the specified order with enhanced insertion lines */}
+          {/* Render components in the specified order with insertion lines */}
           {state.componentOrder.map((componentId, index) => {
             const componentIndex = state.lists.length + index;
             return (
               <React.Fragment key={componentId}>
-                {/* Enhanced insertion line before component */}
+                {/* Insertion line before component */}
                 {insertionIndex === componentIndex && (
-                  <div className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full mb-4 animate-pulse w-full shadow-lg" />
+                  <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
                 )}
                 {componentMap[componentId as keyof typeof componentMap]}
               </React.Fragment>
             );
           })}
 
-          {/* Enhanced final insertion line */}
+          {/* Final insertion line */}
           {insertionIndex === state.lists.length + state.componentOrder.length && (
-            <div className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full mb-4 animate-pulse w-full shadow-lg" />
+            <div className="h-1 bg-gray-400 rounded-full mb-4 animate-pulse w-full" />
           )}
         </div>
       </div>
