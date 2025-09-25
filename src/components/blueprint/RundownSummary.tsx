@@ -307,10 +307,10 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
   }
 
   return (
-    <Card className="mb-6 bg-gray-800 border-gray-700">
+    <Card className="mb-6 bg-card border-border">
       <CardHeader className="py-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium text-white">
+          <CardTitle className="text-lg font-medium text-foreground">
             AI Rundown Summary
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               variant="ghost"
               size="sm"
               onClick={handlePrint}
-              className="text-gray-300 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
               title="Print Summary"
             >
               <Printer className="h-4 w-4" />
@@ -328,7 +328,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               size="sm"
               onClick={generateAllSummaries}
               disabled={isRefreshing}
-              className="text-gray-300 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
               title="Refresh All Summaries"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -337,7 +337,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               variant="ghost"
               size="sm"
               onClick={handleToggleCollapse}
-              className="text-gray-300 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
               title={isCollapsed ? "Expand Summary" : "Collapse Summary"}
             >
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -348,7 +348,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       
       {!isCollapsed && (
         <CardContent className="pt-0">
-          <div className="rounded-lg border border-gray-600 overflow-hidden">
+          <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full">
               <tbody className="bg-background">
                 {sections.map((section, index) => {
@@ -358,38 +358,38 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
 
                   return (
                     <>
-                      {/* Header Row - matches rundown styling */}
-                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-750">
+                      {/* Header Row - using same grey as list items */}
+                      <tr key={`header-${sectionKey}`} className="border-b border-border bg-muted">
                         <td className="px-4 py-6 align-middle">
                           <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-white">
+                            <span className="text-lg font-bold text-foreground">
                               {headerName}
                             </span>
-                            <span className="text-base font-medium text-gray-300 ml-6">
+                            <span className="text-base font-medium text-muted-foreground ml-6">
                               ({section.duration})
                             </span>
                           </div>
                         </td>
                       </tr>
                       
-                      {/* Summary Row */}
-                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
+                      {/* Summary Row - using dark blue like normal rows */}
+                      <tr key={`summary-${sectionKey}`} className="border-b border-border bg-background">
                         <td className="px-4 py-4">
                           {summary?.isLoading ? (
                             <div className="space-y-2">
-                              <Skeleton className="h-3 w-full bg-gray-600" />
-                              <Skeleton className="h-3 w-3/4 bg-gray-600" />
+                              <Skeleton className="h-3 w-full bg-muted" />
+                              <Skeleton className="h-3 w-3/4 bg-muted" />
                             </div>
                           ) : summary?.error ? (
-                            <div className="text-red-400 text-sm italic">
+                            <div className="text-destructive text-sm italic">
                               {summary.error}
                             </div>
                           ) : summary?.summary ? (
-                            <p className="text-gray-300 text-sm leading-relaxed italic">
+                            <p className="text-muted-foreground text-sm leading-relaxed italic">
                               {summary.summary}
                             </p>
                           ) : (
-                            <div className="text-gray-500 text-sm italic">
+                            <div className="text-muted-foreground text-sm italic">
                               No summary available
                             </div>
                           )}
