@@ -195,15 +195,6 @@ export const ToolsMenu: React.FC<ToolsMenuProps> = ({
           </DropdownMenuItem>
           
           
-          <DropdownMenuItem onClick={handleOpenTeleprompter}>
-            <Monitor className="h-4 w-4 mr-2" />
-            Teleprompter
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onClick={handleOpenBlueprint}>
-            <FileText className="h-4 w-4 mr-2" />
-            Blueprint
-          </DropdownMenuItem>
           
           <DropdownMenuItem onClick={handleOpenADView}>
             <Camera className="h-4 w-4 mr-2" />
