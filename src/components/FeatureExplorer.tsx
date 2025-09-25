@@ -223,32 +223,38 @@ export const FeatureExplorer: React.FC = () => {
                 }}
                 className={`
                   relative p-4 sm:p-6 lg:p-8 h-auto flex-1 text-left transition-all duration-500 group
+                  cursor-pointer transform-gpu
                   ${isActive 
-                    ? `bg-gradient-to-br ${stage.color} text-white shadow-2xl scale-105 border-transparent` 
-                    : 'bg-slate-800/30 text-slate-300 hover:bg-slate-700/50 border border-slate-700/50 hover:scale-102'
+                    ? `bg-gradient-to-br ${stage.color} text-white shadow-2xl scale-105 border-transparent shadow-blue-500/30` 
+                    : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/70 border-2 border-slate-600/70 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20 hover:border-slate-500'
                   }
                   rounded-2xl backdrop-blur-sm
+                  active:scale-95 active:shadow-lg
                 `}
               >
                 <div className="flex flex-col items-center text-center space-y-2 sm:space-y-4">
                   <div className={`
-                    p-3 sm:p-4 lg:p-6 rounded-full transition-all duration-300
+                    p-3 sm:p-4 lg:p-6 rounded-full transition-all duration-300 transform-gpu
                     ${isActive 
                       ? 'bg-white/20 shadow-lg' 
-                      : 'bg-slate-700/50 group-hover:bg-slate-600/50'
+                      : 'bg-slate-700/50 group-hover:bg-slate-600/70 group-hover:shadow-md'
                     }
                   `}>
                     <stage.icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" />
                   </div>
                   <div>
                     <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-1 sm:mb-2 leading-tight">{stage.title}</h3>
-                    <p className={`text-xs sm:text-sm leading-relaxed hidden sm:block ${isActive ? 'text-white/90' : 'text-slate-400'}`}>
+                    <p className={`text-xs sm:text-sm leading-relaxed hidden sm:block ${isActive ? 'text-white/90' : 'text-slate-400 group-hover:text-slate-300'}`}>
                       {stage.description}
                     </p>
                   </div>
                 </div>
                 {isActive && (
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                )}
+                {/* Subtle pulse effect on hover for inactive buttons */}
+                {!isActive && (
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 )}
               </Button>
             );
@@ -277,20 +283,29 @@ export const FeatureExplorer: React.FC = () => {
                     onClick={() => setActiveFeature(feature.id)}
                     className={`
                       flex flex-col items-center space-y-2 sm:space-y-3 p-3 sm:p-4 lg:p-6 h-auto text-center transition-all duration-300
+                      cursor-pointer transform-gpu
                       ${isActive 
-                        ? 'bg-slate-700 text-white border-slate-600 shadow-lg scale-105' 
-                        : 'bg-slate-800/30 text-slate-300 border-slate-700/50 hover:bg-slate-700/50 hover:text-white hover:scale-102'
+                        ? 'bg-slate-700 text-white border-slate-600 shadow-lg scale-105 shadow-blue-500/20' 
+                        : 'bg-slate-800/50 text-slate-300 border-slate-600/70 hover:bg-slate-700/70 hover:text-white hover:scale-105 hover:shadow-lg hover:shadow-blue-500/10 hover:border-slate-500'
                       }
-                      rounded-xl
+                      rounded-xl border-2 shadow-md hover:shadow-xl
+                      active:scale-95 active:shadow-sm
                     `}
                   >
                     <div className={`
-                      p-2 sm:p-3 rounded-lg transition-all duration-300
-                      ${isActive ? 'bg-slate-600/50' : 'bg-slate-700/50'}
+                      p-2 sm:p-3 rounded-lg transition-all duration-300 transform-gpu
+                      ${isActive 
+                        ? 'bg-slate-600/50 shadow-inner' 
+                        : 'bg-slate-700/50 group-hover:bg-slate-600/50 group-hover:shadow-md'
+                      }
                     `}>
                       <feature.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-xs sm:text-sm font-medium leading-tight">{feature.title}</span>
+                    <div className={`
+                      w-full h-0.5 rounded-full transition-all duration-300
+                      ${isActive ? 'bg-blue-400' : 'bg-transparent group-hover:bg-blue-400/50'}
+                    `} />
                   </Button>
                 );
               })}
