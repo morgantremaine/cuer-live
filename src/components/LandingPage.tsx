@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Bot, Share2, Monitor, Upload, Eye, Radio, FileText, Zap, Star, ArrowRight, CheckCircle, Linkedin } from 'lucide-react';
+import { Clock, Users, Bot, Share2, Monitor, Upload, Eye, Radio, FileText, Zap, Star, ArrowRight, CheckCircle, Linkedin, Twitter, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -338,7 +338,7 @@ const LandingPage = () => {
       {/* Copyright Footer */}
       <footer className="relative z-10 text-center py-8 border-t border-slate-800/50">
         <div className="text-center text-slate-400 text-sm space-y-4">
-          <div className="flex justify-center">
+          <div className="flex justify-center space-x-6">
             <a
               href="https://www.linkedin.com/company/cuerlive"
               target="_blank"
@@ -347,6 +347,24 @@ const LandingPage = () => {
               aria-label="Follow Cuer Live on LinkedIn"
             >
               <Linkedin className="w-6 h-6" />
+            </a>
+            <a
+              href="https://x.com/cuerlive"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors"
+              aria-label="Follow Cuer Live on X"
+            >
+              <Twitter className="w-6 h-6" />
+            </a>
+            <a
+              href="https://www.instagram.com/cuerlive/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors"
+              aria-label="Follow Cuer Live on Instagram"
+            >
+              <Instagram className="w-6 h-6" />
             </a>
           </div>
           <div className="space-y-2">
