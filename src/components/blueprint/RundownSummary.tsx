@@ -307,7 +307,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
   }
 
   return (
-    <Card className="mb-6 bg-card border-border">
+    <Card className="mb-6 bg-gray-800 border-gray-700">
       <CardHeader className="py-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium text-foreground">
