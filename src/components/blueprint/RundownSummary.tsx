@@ -307,30 +307,18 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
   }
 
   return (
-    <Card className="mb-8 bg-gradient-to-br from-card via-card to-card/80 border-border/50 shadow-xl backdrop-blur-sm">
-      <CardHeader className="py-6 bg-gradient-to-r from-primary/5 to-secondary/5">
+    <Card className="mb-6 bg-gray-800 border-gray-700">
+      <CardHeader className="py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-foreground">
-                AI Rundown Summary
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Intelligent insights for each segment
-              </p>
-            </div>
-          </div>
+          <CardTitle className="text-lg font-medium text-white">
+            AI Rundown Summary
+          </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handlePrint}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
+              className="text-gray-300 hover:text-white"
               title="Print Summary"
             >
               <Printer className="h-4 w-4" />
@@ -340,7 +328,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               size="sm"
               onClick={generateAllSummaries}
               disabled={isRefreshing}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
+              className="text-gray-300 hover:text-white"
               title="Refresh All Summaries"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -349,7 +337,7 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
               variant="ghost"
               size="sm"
               onClick={handleToggleCollapse}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200"
+              className="text-gray-300 hover:text-white"
               title={isCollapsed ? "Expand Summary" : "Collapse Summary"}
             >
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
@@ -359,69 +347,59 @@ const RundownSummary: React.FC<RundownSummaryProps> = ({ rundownItems, rundownTi
       </CardHeader>
       
       {!isCollapsed && (
-        <CardContent className="pt-6">
-          <div className="rounded-xl border border-border/50 overflow-hidden bg-card/50 backdrop-blur-sm">
-            {sections.map((section, index) => {
-              const sectionKey = `${section.header.id}_${section.items.length}`;
-              const summary = summaries[sectionKey];
-              const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
+        <CardContent className="pt-0">
+          <div className="rounded-lg border border-gray-600 overflow-hidden">
+            <table className="w-full">
+              <tbody className="bg-background">
+                {sections.map((section, index) => {
+                  const sectionKey = `${section.header.id}_${section.items.length}`;
+                  const summary = summaries[sectionKey];
+                  const headerName = section.header.notes || section.header.name || section.header.segmentName || 'Unnamed Section';
 
-              return (
-                <div key={sectionKey} className={`${index !== 0 ? 'border-t border-border/30' : ''}`}>
-                  {/* Header Section */}
-                  <div className="px-6 py-4 bg-gradient-to-r from-accent/10 to-accent/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {headerName}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="px-2 py-1 bg-muted/50 rounded-md">
-                              <span className="text-sm font-medium text-muted-foreground">
-                                {section.duration}
-                              </span>
-                            </div>
+                  return (
+                    <>
+                      {/* Header Row - matches rundown styling */}
+                      <tr key={`header-${sectionKey}`} className="border-b border-gray-600 bg-gray-750">
+                        <td className="px-4 py-6 align-middle">
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-white">
+                              {headerName}
+                            </span>
+                            <span className="text-base font-medium text-gray-300 ml-6">
+                              ({section.duration})
+                            </span>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Summary Section */}
-                  <div className="px-6 py-5 bg-card/30">
-                    {summary?.isLoading ? (
-                      <div className="space-y-3">
-                        <Skeleton className="h-4 w-full bg-muted/30" />
-                        <Skeleton className="h-4 w-4/5 bg-muted/30" />
-                        <Skeleton className="h-4 w-3/4 bg-muted/30" />
-                      </div>
-                    ) : summary?.error ? (
-                      <div className="flex items-center gap-2 text-destructive">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                        <span className="text-sm font-medium">{summary.error}</span>
-                      </div>
-                    ) : summary?.summary ? (
-                      <div className="bg-gradient-to-r from-muted/10 to-accent/5 rounded-lg p-4 border border-border/20">
-                        <p className="text-foreground leading-relaxed text-sm">
-                          {summary.summary}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-sm">No summary available</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                        </td>
+                      </tr>
+                      
+                      {/* Summary Row */}
+                      <tr key={`summary-${sectionKey}`} className="border-b border-gray-600 bg-gray-800">
+                        <td className="px-4 py-4">
+                          {summary?.isLoading ? (
+                            <div className="space-y-2">
+                              <Skeleton className="h-3 w-full bg-gray-600" />
+                              <Skeleton className="h-3 w-3/4 bg-gray-600" />
+                            </div>
+                          ) : summary?.error ? (
+                            <div className="text-red-400 text-sm italic">
+                              {summary.error}
+                            </div>
+                          ) : summary?.summary ? (
+                            <p className="text-gray-300 text-sm leading-relaxed italic">
+                              {summary.summary}
+                            </p>
+                          ) : (
+                            <div className="text-gray-500 text-sm italic">
+                              No summary available
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    </>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       )}
