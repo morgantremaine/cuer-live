@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import aiRundownSummaryImage from '@/assets/changelog/ai-rundown-summary-v122.png';
 
 const Changelog: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +23,42 @@ const Changelog: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* Version 1.2.2 */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
+            <div className="flex items-center mb-4">
+              <h2 className="text-2xl font-semibold text-white">Version 1.2.2</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-blue-400 mb-2">🤖 AI Rundown Summary</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-gray-300 mb-3">
+                      <strong>Intelligent Rundown Analysis:</strong> Introducing AI-powered rundown summaries that provide comprehensive analysis and insights for your broadcast content:
+                    </p>
+                    <ul className="text-gray-300 list-disc list-inside space-y-2 mb-3">
+                      <li><strong>Automated Content Analysis:</strong> AI analyzes your entire rundown and generates detailed summaries for each segment</li>
+                      <li><strong>Segment Breakdown:</strong> Get comprehensive descriptions of content flow, timing, and key elements for each show segment</li>
+                      <li><strong>Production Insights:</strong> Intelligent analysis of show structure, pacing, and content organization to help optimize your broadcast</li>
+                      <li><strong>Time-Aware Summaries:</strong> Summaries include timing information and segment duration analysis for better show planning</li>
+                    </ul>
+                    <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-600">
+                      <img 
+                        src={aiRundownSummaryImage}
+                        alt="AI Rundown Summary showing detailed segment analysis for a gaming broadcast"
+                        className="w-full max-w-2xl mx-auto rounded"
+                      />
+                      <p className="text-xs text-gray-500 text-center mt-2">
+                        AI-generated rundown summary with detailed segment analysis and timing information
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.2.1 */}
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 p-6">
             <div className="flex items-center mb-4">
