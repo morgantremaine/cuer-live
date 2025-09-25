@@ -75,6 +75,7 @@ export const useTeam = () => {
           )
         `)
         .eq('user_id', user.id)
+        .order('joined_at', { ascending: false })
         .limit(1)
         .single();
 

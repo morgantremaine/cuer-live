@@ -20,6 +20,7 @@ export const useTeamId = () => {
           .from('team_members')
           .select('team_id')
           .eq('user_id', user.id)
+          .order('joined_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
