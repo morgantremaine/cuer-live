@@ -177,7 +177,7 @@ const MainActionButtons = ({
           </Button>
           <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Monitor className="h-4 w-4" />
-            <span>Teleprompter</span>
+            <span>Prompter</span>
           </Button>
         </div>
 
@@ -262,7 +262,7 @@ const MainActionButtons = ({
       </Button>
       <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
         <Monitor className="h-4 w-4" />
-        <span>Teleprompter</span>
+        <span>Prompter</span>
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />
