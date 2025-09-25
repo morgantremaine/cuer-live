@@ -86,6 +86,20 @@ const workflowStages: WorkflowStage[] = [
           'Version history'
         ],
         icon: FileText
+      },
+      {
+        id: 'ai-rundown-summary',
+        title: 'AI Rundown Summary',
+        description: 'Get intelligent AI-generated summaries of your rundown sections for quick overviews and briefings.',
+        image: '/AI_RUNDOWN_SUMMARY.png',
+        alt: 'AI Rundown Summary Interface',
+        details: [
+          'Automated section summaries',
+          'Intelligent content analysis',
+          'Quick overview generation',
+          'Print-ready briefings'
+        ],
+        icon: Bot
       }
     ]
   },
