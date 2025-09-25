@@ -117,19 +117,19 @@ const BlueprintListCard = ({
 
   return (
     <Card 
-      className={`h-fit bg-gray-800 border-gray-700 transition-all duration-200 cursor-move ${
-        isDragging ? 'opacity-50 transform rotate-2' : ''
+      className={`h-fit bg-gradient-to-br from-slate-800/90 to-slate-900/90 border-slate-600/50 backdrop-blur-sm shadow-lg transition-all duration-300 cursor-move hover:shadow-xl hover:border-slate-500/60 glow-box ${
+        isDragging ? 'opacity-50 transform rotate-2 scale-105 shadow-2xl' : 'hover:transform hover:scale-[1.02]'
       }`}
       draggable
       onDragStart={handleDragStart}
       onDragEnter={(e) => onDragEnterContainer?.(e, index)}
       onDragEnd={onDragEnd}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-2">
-          {/* Drag Handle - positioned on the left like other components */}
-          <div className="p-1 rounded flex-shrink-0 mt-1">
-            <GripVertical className="h-4 w-4 text-gray-400" />
+      <CardHeader className="pb-3 bg-gradient-to-r from-slate-700/30 to-slate-800/30 border-b border-slate-600/50">
+        <div className="flex items-start gap-3">
+          {/* Drag Handle - enhanced styling */}
+          <div className="p-2 rounded-lg bg-slate-700/50 border border-slate-600/50 flex-shrink-0 mt-1 hover:bg-slate-600/50 transition-colors duration-200">
+            <GripVertical className="h-4 w-4 text-slate-300" />
           </div>
           
           {/* List Header - takes up remaining space */}
@@ -148,10 +148,17 @@ const BlueprintListCard = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+      <CardContent className="pt-4">
+        <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-modern">
           {itemsToDisplay.length === 0 ? (
-            <p className="text-gray-500 italic">No items found</p>
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-slate-700/50 rounded-full flex items-center justify-center mb-3 mx-auto">
+                  <div className="w-6 h-6 border-2 border-slate-500 border-dashed rounded-full"></div>
+                </div>
+                <p className="text-slate-500 italic text-sm">No items found</p>
+              </div>
+            </div>
           ) : (
             itemsToDisplay.map((item, itemIndex) => {
               const startTime = getHeaderStartTime(item);
