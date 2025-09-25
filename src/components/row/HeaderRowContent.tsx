@@ -98,18 +98,24 @@ const HeaderRowContent = ({
                 key={column.id}
                 className="align-middle min-h-[115px] relative"
                 style={{ 
-                  width: normalizedWidth,
-                  minWidth: `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
+                  width: cellBackgroundColor ? 'auto' : normalizedWidth,
+                  minWidth: cellBackgroundColor ? `${Math.max(headerName.length + 15, 20)}ch` : `max(${normalizedWidth}, ${Math.max(headerName.length + 10, 15)}ch)`,
                   maxWidth: 'none',
                   backgroundColor: cellBackgroundColor,
                   overflow: 'visible',
-                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))'
+                  borderRight: (isLastColumn || cellBackgroundColor) ? 'none' : '1px solid hsl(var(--border))',
+                  position: cellBackgroundColor ? 'relative' : 'static',
+                  zIndex: cellBackgroundColor ? 1 : 'auto'
                 }}
             >
               <div 
                 className="px-2 py-8 flex items-center"
+                style={{
+                  overflow: 'visible',
+                  whiteSpace: 'nowrap'
+                }}
               >
-                <span className="inline-flex items-center">
+                <span className="inline-flex items-center" style={{ overflow: 'visible' }}>
                   <input
                     ref={(el) => {
                       if (el) {
