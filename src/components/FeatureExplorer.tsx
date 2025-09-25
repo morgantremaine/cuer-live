@@ -185,8 +185,8 @@ const workflowStages: WorkflowStage[] = [
 ];
 
 export const FeatureExplorer: React.FC = () => {
-  const [activeStage, setActiveStage] = useState<string>('broadcasting');
-  const [activeFeature, setActiveFeature] = useState<string>('live-show-control');
+  const [activeStage, setActiveStage] = useState<string>('planning');
+  const [activeFeature, setActiveFeature] = useState<string>('ai-assistant');
 
   // Preload all feature images for faster switching
   useEffect(() => {
