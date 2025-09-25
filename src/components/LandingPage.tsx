@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Bot, Share2, Monitor, Upload, Eye, Radio, FileText, Zap, Star, ArrowRight, CheckCircle } from 'lucide-react';
+import { Clock, Users, Bot, Share2, Monitor, Upload, Eye, Radio, FileText, Zap, Star, ArrowRight, CheckCircle, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -337,19 +337,32 @@ const LandingPage = () => {
 
       {/* Copyright Footer */}
       <footer className="relative z-10 text-center py-8 border-t border-slate-800/50">
-        <div className="text-center text-slate-400 text-sm space-y-2">
-          <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>
-          <p>
-            By using this site, you agree to our{' '}
-            <a href="/terms" className="text-blue-400 hover:text-blue-300 underline">
-              Terms
-            </a>{' '}
-            and{' '}
-            <a href="/privacy" className="text-blue-400 hover:text-blue-300 underline">
-              Privacy Policy
+        <div className="text-center text-slate-400 text-sm space-y-4">
+          <div className="flex justify-center">
+            <a
+              href="https://www.linkedin.com/company/cuerlive"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-blue-400 transition-colors"
+              aria-label="Follow Cuer Live on LinkedIn"
+            >
+              <Linkedin className="w-6 h-6" />
             </a>
-            .
-          </p>
+          </div>
+          <div className="space-y-2">
+            <p>&copy; {new Date().getFullYear()} Cuer Live. All rights reserved.</p>
+            <p>
+              By using this site, you agree to our{' '}
+              <a href="/terms" className="text-blue-400 hover:text-blue-300 underline">
+                Terms
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="text-blue-400 hover:text-blue-300 underline">
+                Privacy Policy
+              </a>
+              .
+            </p>
+          </div>
         </div>
       </footer>
       {/* Background Effects */}
