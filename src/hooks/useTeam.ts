@@ -79,6 +79,8 @@ export const useTeam = () => {
         .limit(1)
         .single();
 
+      console.log('🔍 useTeam - User:', user.id, 'Found team:', membershipData?.teams, 'TeamId:', membershipData?.team_id);
+
       debugLogger.team('Membership query result:', { membershipData, membershipError });
 
       // Check if user has pending invitation FIRST before handling membership errors

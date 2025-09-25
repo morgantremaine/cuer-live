@@ -24,6 +24,8 @@ export const useTeamId = () => {
           .limit(1)
           .maybeSingle();
 
+        console.log('🔍 useTeamId - User:', user.id, 'Found teamId:', data?.team_id);
+
         if (error) {
           console.error('Error fetching team ID:', error);
         } else if (data) {

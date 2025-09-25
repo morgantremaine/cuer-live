@@ -67,6 +67,8 @@ export const useRundownStorage = () => {
           .eq('team_id', teamId)
           .order('updated_at', { ascending: false });
 
+        console.log('🔍 useRundownStorage - Loading rundowns for teamId:', teamId, 'Found:', data?.length, 'rundowns');
+
         if (error) throw error;
 
         const rundowns = (data || []).map(rundown => ({
