@@ -121,15 +121,15 @@ serve(async (req) => {
     const currentTeamSize = (currentMembers?.length || 0) + (pendingInvitations?.length || 0);
     console.log('Current team size (members + pending):', currentTeamSize);
 
-    // Get any team admin's subscription limits (just need one admin's subscription data)
+    // Get the team admin's subscription limits
     const { data: adminData, error: adminError } = await supabase
       .from('team_members')
       .select('user_id')
       .eq('team_id', teamId)
       .eq('role', 'admin')
-      .limit(1);
+      .single();
 
-    if (adminError || !adminData || adminData.length === 0) {
+    if (adminError || !adminData) {
       console.error('Error finding team admin:', adminError);
       return new Response(
         JSON.stringify({ error: 'Failed to find team admin' }),
@@ -140,12 +140,10 @@ serve(async (req) => {
       )
     }
 
-    const adminUserId = adminData[0].user_id;
-
     // Check admin's subscription
     const { data: subscriptionData, error: subscriptionError } = await supabase.rpc(
       'get_user_subscription_access',
-      { user_uuid: adminUserId }
+      { user_uuid: adminData.user_id }
     );
 
     if (subscriptionError) {
