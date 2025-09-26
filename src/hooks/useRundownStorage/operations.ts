@@ -3,13 +3,19 @@ import { RundownItem } from '@/hooks/useRundownItems'
 import { Column } from '@/types/columns'
 import { SavedRundown } from './types'
 import { mapDatabaseToRundown } from './dataMapper'
+import { useBulletproofSave } from '@/hooks/bulletproof/useBulletproofSave'
 
 export class RundownOperations {
+  private bulletproofSave: ReturnType<typeof useBulletproofSave>['bulletproofSave'];
+
   constructor(
     private user: any,
     private saveRundown: (rundown: SavedRundown) => Promise<string>,
-    private setSavedRundowns: React.Dispatch<React.SetStateAction<SavedRundown[]>>
-  ) {}
+    private setSavedRundowns: React.Dispatch<React.SetStateAction<SavedRundown[]>>,
+    bulletproofSave: ReturnType<typeof useBulletproofSave>['bulletproofSave']
+  ) {
+    this.bulletproofSave = bulletproofSave;
+  }
 
   async updateRundown(
     id: string,
@@ -28,20 +34,20 @@ export class RundownOperations {
       throw new Error('User not authenticated');
     }
 
-    try {
-      const updateData = {
-        title,
-        items,
-        archived,
-        columns,
-        timezone,
-        start_time: startTime,
-        icon,
-        undo_history: undoHistory,
-        team_id: teamId,
-        user_id: this.user.id
-      };
+    const updateData = {
+      title,
+      items,
+      archived,
+      columns,
+      timezone,
+      start_time: startTime,
+      icon,
+      undo_history: undoHistory,
+      team_id: teamId,
+      user_id: this.user.id
+    };
 
+    const saveOperation = async () => {
       const { data, error } = await supabase
         .from('rundowns')
         .update({
@@ -53,15 +59,24 @@ export class RundownOperations {
         .single();
 
       if (error) throw error;
+      return data;
+    };
 
-      const updatedRundown = mapDatabaseToRundown(data);
-      
+    const result = await this.bulletproofSave(saveOperation, {
+      rundownId: id,
+      saveType: silent ? 'auto' : 'manual',
+      fallbackKey: `rundown_update_${id}`,
+      enableVerification: !silent
+    });
+
+    if (result.success && result.data) {
+      const updatedRundown = mapDatabaseToRundown(result.data);
       this.setSavedRundowns(prevRundowns => 
         prevRundowns.map(r => r.id === id ? updatedRundown : r)
       );
-    } catch (error) {
-      console.error('Error updating rundown:', error);
-      throw error;
+    } else {
+      console.error('Bulletproof save failed:', result.error);
+      throw new Error(result.error || 'Failed to update rundown');
     }
   }
 
