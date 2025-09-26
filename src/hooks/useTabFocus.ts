@@ -21,9 +21,18 @@ export const useTabFocus = () => {
     try {
       console.log('🔍 Tab Focus: Checking session health...');
       
-      // Quick session validation - if this fails, token is likely expired
-      const { data: { session }, error } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+      const { supabase } = await import('@/integrations/supabase/client');
       
+      // First check if we have any stored session before making API calls
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      // If no session at all, user likely not logged in - skip health check gracefully
+      if (!session && !error) {
+        console.log('🔍 Tab Focus: No active session - skipping health check');
+        return;
+      }
+      
+      // If we have a session or auth error, proceed with validation
       if (error || !session) {
         console.log('⚠️ Tab Focus: Session invalid, attempting refresh...');
         const refreshSuccessful = await attemptAuthRefresh();
@@ -37,7 +46,12 @@ export const useTabFocus = () => {
       } else {
         console.log('✅ Tab Focus: Session healthy');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle 401 errors gracefully during initial load
+      if (error?.status === 401 || error?.code === '401') {
+        console.log('🔍 Tab Focus: 401 during health check - likely initial auth state, will retry on next focus');
+        return;
+      }
       console.warn('⚠️ Tab Focus: Session health check failed:', error);
     }
   };
