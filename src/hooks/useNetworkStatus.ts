@@ -6,6 +6,8 @@ interface NetworkStatus {
   connectionType: 'online' | 'offline' | 'reconnecting';
   reconnectAttempts: number;
   lastOnline: Date | null;
+  offlineSince: Date | null;
+  totalOfflineDuration: number; // milliseconds of total offline time
 }
 
 export const useNetworkStatus = () => {
@@ -14,7 +16,9 @@ export const useNetworkStatus = () => {
     isConnected: navigator.onLine,
     connectionType: navigator.onLine ? 'online' : 'offline',
     reconnectAttempts: 0,
-    lastOnline: navigator.onLine ? new Date() : null
+    lastOnline: navigator.onLine ? new Date() : null,
+    offlineSince: navigator.onLine ? null : new Date(),
+    totalOfflineDuration: 0
   });
 
   const [reconnectTimeout, setReconnectTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -35,17 +39,31 @@ export const useNetworkStatus = () => {
   const handleOnline = useCallback(async () => {
     console.log('📡 Network: online event detected');
     
+    // Calculate offline duration if we were offline
+    const now = new Date();
+    
     // Verify actual connectivity
     const isActuallyOnline = await checkConnection();
     
-    setNetworkStatus(prev => ({
-      ...prev,
-      isOnline: true,
-      isConnected: isActuallyOnline,
-      connectionType: isActuallyOnline ? 'online' : 'reconnecting',
-      lastOnline: new Date(),
-      reconnectAttempts: isActuallyOnline ? 0 : prev.reconnectAttempts
-    }));
+    setNetworkStatus(prev => {
+      const offlineDuration = prev.offlineSince ? now.getTime() - prev.offlineSince.getTime() : 0;
+      const newTotalOfflineDuration = prev.totalOfflineDuration + offlineDuration;
+      
+      if (offlineDuration > 0) {
+        console.log(`📡 Network: Was offline for ${Math.round(offlineDuration / 1000)}s, total: ${Math.round(newTotalOfflineDuration / 1000)}s`);
+      }
+      
+      return {
+        ...prev,
+        isOnline: true,
+        isConnected: isActuallyOnline,
+        connectionType: isActuallyOnline ? 'online' : 'reconnecting',
+        lastOnline: now,
+        offlineSince: isActuallyOnline ? null : prev.offlineSince,
+        totalOfflineDuration: isActuallyOnline ? newTotalOfflineDuration : prev.totalOfflineDuration,
+        reconnectAttempts: isActuallyOnline ? 0 : prev.reconnectAttempts
+      };
+    });
 
     if (!isActuallyOnline) {
       // Start reconnection attempts
@@ -56,11 +74,14 @@ export const useNetworkStatus = () => {
   const handleOffline = useCallback(() => {
     console.log('📡 Network: offline event detected');
     
+    const now = new Date();
+    
     setNetworkStatus(prev => ({
       ...prev,
       isOnline: false,
       isConnected: false,
-      connectionType: 'offline'
+      connectionType: 'offline',
+      offlineSince: prev.offlineSince || now // Only set if not already offline
     }));
 
     if (reconnectTimeout) {
@@ -80,12 +101,25 @@ export const useNetworkStatus = () => {
       const isConnected = await checkConnection();
       
       if (isConnected) {
-        setNetworkStatus(prev => ({
-          ...prev,
-          isConnected: true,
-          connectionType: 'online',
-          reconnectAttempts: 0
-        }));
+        setNetworkStatus(prev => {
+          const now = new Date();
+          const offlineDuration = prev.offlineSince ? now.getTime() - prev.offlineSince.getTime() : 0;
+          const newTotalOfflineDuration = prev.totalOfflineDuration + offlineDuration;
+          
+          if (offlineDuration > 0) {
+            console.log(`📡 Network: Reconnected after ${Math.round(offlineDuration / 1000)}s offline`);
+          }
+          
+          return {
+            ...prev,
+            isConnected: true,
+            connectionType: 'online',
+            reconnectAttempts: 0,
+            offlineSince: null,
+            totalOfflineDuration: newTotalOfflineDuration,
+            lastOnline: now
+          };
+        });
         setReconnectTimeout(null);
       } else {
         // Exponential backoff: 1s, 2s, 4s, 8s, max 30s

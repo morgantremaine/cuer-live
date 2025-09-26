@@ -269,6 +269,7 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
     remoteState: any,
     options: {
       autoResolve?: boolean;
+      extendedOfflineMode?: boolean;
       onConflictsDetected?: (conflicts: FieldConflict[]) => void;
     } = {}
   ): Promise<{ mergedData: any; hadConflicts: boolean; conflictFields: string[] }> => {
@@ -287,7 +288,18 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
         return { mergedData: remoteState, hadConflicts: false, conflictFields: [] };
       }
 
-      console.log(`🔀 Conflict: Resolving ${conflicts.length} conflicts`);
+      console.log(`🔀 Conflict: Resolving ${conflicts.length} conflicts${options.extendedOfflineMode ? ' (extended offline mode)' : ''}`);
+      
+      // In extended offline mode, prioritize local changes more heavily
+      if (options.extendedOfflineMode) {
+        for (const conflict of conflicts) {
+          if (conflict.resolution === 'remote' && conflict.field.includes('items[')) {
+            // In extended offline mode, lean towards keeping local item changes
+            conflict.resolution = 'local';
+            conflict.reason = 'Extended offline mode: prioritizing local changes';
+          }
+        }
+      }
       
       // Notify about conflicts if requested
       options.onConflictsDetected?.(conflicts);

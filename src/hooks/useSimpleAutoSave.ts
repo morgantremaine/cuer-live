@@ -13,6 +13,8 @@ import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { getTabId } from '@/utils/tabUtils';
 import { useTabFocus } from '@/hooks/useTabFocus';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useConflictResolution } from '@/hooks/useConflictResolution';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -31,6 +33,13 @@ export const useSimpleAutoSave = (
   const { toast } = useToast();
   const { shouldBlockAutoSave } = useCellUpdateCoordination();
   const { checkSessionHealth } = useTabFocus();
+  const networkStatus = useNetworkStatus();
+  const conflictResolver = useConflictResolution({ 
+    rundownId: rundownId || '',
+    onResolutionApplied: (mergedData) => {
+      console.log('🔀 AutoSave: Conflict resolution applied during extended offline handling');
+    }
+  });
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -314,6 +323,13 @@ export const useSimpleAutoSave = (
       checkSessionHealth();
     }
     
+    // Extended offline handling - check if user was offline for extended period
+    const EXTENDED_OFFLINE_THRESHOLD = 30 * 60 * 1000; // 30 minutes
+    if (networkStatus.totalOfflineDuration > EXTENDED_OFFLINE_THRESHOLD && networkStatus.isConnected) {
+      console.log(`🔍 AutoSave: Extended offline detected (${Math.round(networkStatus.totalOfflineDuration / 60000)}min) - performing silent freshness check`);
+      performSilentFreshnessCheck();
+    }
+    
     // CRITICAL: Set hasUnsavedChangesRef for consistency
     hasUnsavedChangesRef.current = true;
     
@@ -407,7 +423,7 @@ export const useSimpleAutoSave = (
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving, checkSessionHealth]);
+  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving, checkSessionHealth, networkStatus.totalOfflineDuration, networkStatus.isConnected]);
 
   // Check if user is currently typing with improved logic and debugging
   const isTypingActive = useCallback(() => {
@@ -1021,6 +1037,54 @@ export const useSimpleAutoSave = (
       }
     };
   }, []);
+
+  // Silent freshness check for extended offline scenarios
+  const performSilentFreshnessCheck = useCallback(async () => {
+    if (!rundownId || isSaving) return;
+    
+    try {
+      console.log('🔍 AutoSave: Performing silent freshness check after extended offline...');
+      
+      // Fetch latest rundown data
+      const { data: latestRundown, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', rundownId)
+        .single();
+        
+      if (error || !latestRundown) {
+        console.warn('⚠️ AutoSave: Could not fetch latest rundown for freshness check:', error);
+        return;
+      }
+      
+      // Check for major conflicts (significant differences in structure or content)
+      const currentSignature = createContentSignatureFromState(state);
+      const latestSignature = createContentSignatureFromState(latestRundown);
+      
+      if (currentSignature !== latestSignature) {
+        console.log('🔍 AutoSave: Detected changes during offline period - resolving conflicts');
+        
+        // Use conflict resolution to merge changes intelligently
+        const { mergedData, hadConflicts } = await conflictResolver.resolveConflicts(
+          state, 
+          latestRundown,
+          { autoResolve: true, extendedOfflineMode: true }
+        );
+        
+        if (hadConflicts) {
+          console.log('✅ AutoSave: Successfully resolved conflicts from extended offline period');
+          // Note: The conflict resolver will handle broadcasting and notifications
+        } else {
+          console.log('✅ AutoSave: No conflicts found during extended offline check');
+        }
+      } else {
+        console.log('✅ AutoSave: No changes detected during offline period');
+      }
+      
+    } catch (error) {
+      console.warn('⚠️ AutoSave: Silent freshness check failed:', error);
+    }
+  }, [rundownId, isSaving, state, conflictResolver]);
 
   // Note: Cell update coordination now handled via React context instead of global variables
 
