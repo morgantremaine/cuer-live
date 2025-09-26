@@ -121,13 +121,14 @@ serve(async (req) => {
     const currentTeamSize = (currentMembers?.length || 0) + (pendingInvitations?.length || 0);
     console.log('Current team size (members + pending):', currentTeamSize);
 
-    // Get the team admin's subscription limits
+    // Get the team admin's subscription limits (handle multiple admins)
     const { data: adminData, error: adminError } = await supabase
       .from('team_members')
       .select('user_id')
       .eq('team_id', teamId)
       .eq('role', 'admin')
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (adminError || !adminData) {
       console.error('Error finding team admin:', adminError);
