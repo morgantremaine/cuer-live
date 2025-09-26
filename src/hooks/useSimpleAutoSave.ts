@@ -12,6 +12,7 @@ import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { getTabId } from '@/utils/tabUtils';
+import { useTabFocus } from '@/hooks/useTabFocus';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -29,6 +30,7 @@ export const useSimpleAutoSave = (
   const location = useLocation();
   const { toast } = useToast();
   const { shouldBlockAutoSave } = useCellUpdateCoordination();
+  const { checkSessionHealth } = useTabFocus();
   const lastSavedRef = useRef<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isSaving, setIsSaving] = useState(false);
@@ -305,6 +307,13 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
+    // Check session health if user starts typing after long idle period (potential sleep/wake)
+    const timeSinceLastEdit = now - lastEditAtRef.current;
+    if (timeSinceLastEdit > 300000) { // 5 minutes idle
+      console.log('🔍 AutoSave: Long idle detected - checking session health before typing');
+      checkSessionHealth();
+    }
+    
     // CRITICAL: Set hasUnsavedChangesRef for consistency
     hasUnsavedChangesRef.current = true;
     
@@ -398,7 +407,7 @@ export const useSimpleAutoSave = (
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
+  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving, checkSessionHealth]);
 
   // Check if user is currently typing with improved logic and debugging
   const isTypingActive = useCallback(() => {
