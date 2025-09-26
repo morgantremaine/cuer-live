@@ -130,34 +130,72 @@ export const useConsolidatedRealtimeRundown = ({
     const { localShadowStore } = await import('@/state/localShadows');
     const activeShadows = localShadowStore.getActiveShadows();
     
-    // Check if this update affects any actively edited items (item-level dirty protection)
-    const hasActivelyEditedItems = payload.new?.items && Array.isArray(payload.new.items) && 
-      payload.new.items.some((item: any) => activeShadows.items.has(item.id));
-    
-    if (hasActivelyEditedItems) {
-      console.log('🛡️ Realtime: Queueing update - actively editing items', {
-        activeItems: Array.from(activeShadows.items.keys()),
-        docVersion: incomingDocVersion
+    // Split updates by item - queue conflicting items, process non-conflicting ones immediately
+    if (payload.new?.items && Array.isArray(payload.new.items)) {
+      const conflictingItems: any[] = [];
+      const nonConflictingItems: any[] = [];
+      
+      // Split items based on whether they're actively being edited
+      payload.new.items.forEach((item: any) => {
+        if (activeShadows.items.has(item.id)) {
+          conflictingItems.push(item);
+        } else {
+          nonConflictingItems.push(item);
+        }
       });
       
-      // Queue the update to be processed after active editing stops
-      if (!globalState.itemDirtyQueue) {
-        globalState.itemDirtyQueue = [];
+      // Queue conflicting items if any exist
+      if (conflictingItems.length > 0) {
+        console.log('🛡️ Realtime: Queueing update for actively edited items', {
+          conflictingItems: conflictingItems.map(item => item.id),
+          nonConflictingItems: nonConflictingItems.map(item => item.id),
+          activeItems: Array.from(activeShadows.items.keys()),
+          docVersion: incomingDocVersion
+        });
+        
+        if (!globalState.itemDirtyQueue) {
+          globalState.itemDirtyQueue = [];
+        }
+        
+        globalState.itemDirtyQueue.push({
+          payload: {
+            ...payload,
+            new: {
+              ...payload.new,
+              items: conflictingItems
+            }
+          },
+          timestamp: normalizedTimestamp,
+          docVersion: incomingDocVersion,
+          queuedAt: Date.now()
+        });
+        
+        // Process queued updates after a brief delay (when typing stops)
+        setTimeout(() => {
+          processQueuedUpdates(globalState);
+        }, 2000);
       }
       
-      globalState.itemDirtyQueue.push({
-        payload,
-        timestamp: normalizedTimestamp,
-        docVersion: incomingDocVersion,
-        queuedAt: Date.now()
-      });
-      
-      // Process queued updates after a brief delay (when typing stops)
-      setTimeout(() => {
-        processQueuedUpdates(globalState);
-      }, 2000);
-      
-      return; // Don't process immediately
+      // Process non-conflicting items immediately
+      if (nonConflictingItems.length > 0) {
+        console.log('🛡️ Realtime: Processing non-conflicting items immediately', {
+          nonConflictingItems: nonConflictingItems.map(item => item.id),
+          conflictingCount: conflictingItems.length,
+          docVersion: incomingDocVersion
+        });
+        
+        // Create immediate payload with non-conflicting items
+        payload = {
+          ...payload,
+          new: {
+            ...payload.new,
+            items: nonConflictingItems
+          }
+        };
+        // Continue with normal processing below
+      } else if (conflictingItems.length > 0) {
+        return; // All items were conflicting, queued everything, nothing to process immediately
+      }
     }
 
     // Enhanced gap detection with improved handling
@@ -404,7 +442,7 @@ export const useConsolidatedRealtimeRundown = ({
 
   }, [rundownId, user?.id, isSharedView]);
 
-  // Process queued updates when item editing stops
+  // Process queued updates individually when items are no longer being edited
   const processQueuedUpdates = useCallback(async (globalState: any) => {
     if (!globalState.itemDirtyQueue || globalState.itemDirtyQueue.length === 0) {
       return;
@@ -413,25 +451,73 @@ export const useConsolidatedRealtimeRundown = ({
     const { localShadowStore } = await import('@/state/localShadows');
     const activeShadows = localShadowStore.getActiveShadows();
     
-    // Only process if no items are actively being edited
-    if (activeShadows.items.size === 0) {
-      console.log('🛡️ Processing queued realtime updates', {
-        queueSize: globalState.itemDirtyQueue.length
+    const processableUpdates: any[] = [];
+    const stillBlockedUpdates: any[] = [];
+    
+    // Split queued updates into processable vs still blocked
+    globalState.itemDirtyQueue.forEach((queuedUpdate: any) => {
+      const processableItems: any[] = [];
+      const blockedItems: any[] = [];
+      
+      if (queuedUpdate.payload.new?.items && Array.isArray(queuedUpdate.payload.new.items)) {
+        queuedUpdate.payload.new.items.forEach((item: any) => {
+          if (activeShadows.items.has(item.id)) {
+            blockedItems.push(item);
+          } else {
+            processableItems.push(item);
+          }
+        });
+      }
+      
+      // If we have processable items, create an update for them
+      if (processableItems.length > 0) {
+        processableUpdates.push({
+          ...queuedUpdate,
+          payload: {
+            ...queuedUpdate.payload,
+            new: {
+              ...queuedUpdate.payload.new,
+              items: processableItems
+            }
+          }
+        });
+      }
+      
+      // If we have blocked items, keep them queued
+      if (blockedItems.length > 0) {
+        stillBlockedUpdates.push({
+          ...queuedUpdate,
+          payload: {
+            ...queuedUpdate.payload,
+            new: {
+              ...queuedUpdate.payload.new,
+              items: blockedItems
+            }
+          }
+        });
+      }
+    });
+    
+    // Update queue with still blocked items
+    globalState.itemDirtyQueue = stillBlockedUpdates;
+    
+    if (processableUpdates.length > 0) {
+      console.log('🛡️ Processing partial queued realtime updates', {
+        processableCount: processableUpdates.length,
+        stillBlockedCount: stillBlockedUpdates.length,
+        activeItems: Array.from(activeShadows.items.keys())
       });
       
-      const queuedUpdates = [...globalState.itemDirtyQueue];
-      globalState.itemDirtyQueue = [];
-      
-      // Process each queued update
-      queuedUpdates.forEach((queuedUpdate: any) => {
+      // Process the processable updates
+      processableUpdates.forEach((queuedUpdate: any) => {
         try {
           processRealtimeUpdate(queuedUpdate.payload, globalState);
         } catch (error) {
           console.error('❌ Error processing queued update:', error);
         }
       });
-    } else {
-      console.log('🛡️ Still actively editing - keeping updates queued', {
+    } else if (globalState.itemDirtyQueue.length > 0) {
+      console.log('🛡️ All queued updates still blocked', {
         activeItems: Array.from(activeShadows.items.keys()),
         queueSize: globalState.itemDirtyQueue.length
       });
