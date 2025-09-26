@@ -721,12 +721,29 @@ export const useSimpleAutoSave = (
       }
     } catch (error) {
       console.error('❌ Save error:', error);
-      toast({
-        title: "Save failed",
-        description: "Unable to save changes. Will retry automatically.",
-        variant: "destructive",
-        duration: 3000,
-      });
+      
+      // Auth Token Safety Net - detect and handle auth errors
+      const { handlePotentialAuthError } = await import('@/utils/authErrorHandler');
+      const { shouldRetry, wasAuthError } = await handlePotentialAuthError(error);
+      
+      if (shouldRetry) {
+        // Token was refreshed successfully - retry the save operation once
+        console.log('🔄 Auth Safety Net: Retrying save after token refresh');
+        setTimeout(() => {
+          if (!saveInProgressRef.current) {
+            performSave(false, isSharedView);
+          }
+        }, 500);
+      } else if (!wasAuthError) {
+        // Show generic error only if it wasn't an auth error
+        toast({
+          title: "Save failed",
+          description: "Unable to save changes. Will retry automatically.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+      // If wasAuthError but shouldRetry is false, the auth error toast was already shown
     } finally {
       setIsSaving(false);
       saveInProgressRef.current = false; // Reset save progress flag
