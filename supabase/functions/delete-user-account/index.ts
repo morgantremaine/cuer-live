@@ -187,8 +187,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in delete-user-account function:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
-      JSON.stringify({ error: 'Failed to delete user', details: error.message }),
+      JSON.stringify({ error: 'Failed to delete user', details: errorMessage }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

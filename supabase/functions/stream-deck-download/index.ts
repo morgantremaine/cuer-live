@@ -875,7 +875,7 @@ select.sdpi-item-value {
     const zipData = createZipFile(pluginFiles);
     console.log('ZIP file created, size:', zipData.length, 'bytes');
 
-    return new Response(zipData, {
+    return new Response(new Uint8Array(zipData), {
       status: 200,
       headers: {
         ...corsHeaders,
@@ -886,9 +886,10 @@ select.sdpi-item-value {
     })
   } catch (error) {
     console.error('Error creating plugin:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(JSON.stringify({ 
       error: 'Failed to create plugin', 
-      details: error.message 
+      details: errorMessage 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

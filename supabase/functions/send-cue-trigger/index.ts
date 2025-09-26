@@ -134,11 +134,11 @@ async function sendWebhook(integration: Integration, payload: CuePayload): Promi
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    let errorMessage = error.message;
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       errorMessage = 'Request timeout (30s)';
-    } else if (error.name === 'TypeError') {
+    } else if (error instanceof Error && error.name === 'TypeError') {
       errorMessage = 'Network error - unable to reach endpoint';
     }
     
@@ -229,11 +229,11 @@ async function sendOSC(integration: Integration, payload: CuePayload): Promise<{
     }
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    let errorMessage = error.message;
+    let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       errorMessage = 'OSC request timeout (15s)';
-    } else if (error.name === 'TypeError') {
+    } else if (error instanceof Error && error.name === 'TypeError') {
       errorMessage = 'Unable to reach OSC bridge server';
     }
     
@@ -315,7 +315,7 @@ serve(async (req) => {
       );
     }
 
-    const results = [];
+    const integrationResults: any[] = [];
 
     console.log(`Processing ${integrations?.length || 0} active integrations for team ${teamId}`);
 
@@ -350,7 +350,7 @@ serve(async (req) => {
         
         const errorResult = {
           success: false,
-          error: `Integration processing failed: ${error.message}`,
+          error: `Integration processing failed: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
           responseTime: 0,
         };
         
@@ -368,15 +368,15 @@ serve(async (req) => {
     });
 
     // Wait for all integrations to complete
-    const results = (await Promise.allSettled(integrationPromises))
+    const finalResults = (await Promise.allSettled(integrationPromises))
       .map(result => result.status === 'fulfilled' ? result.value : null)
       .filter(Boolean);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        integrations_sent: results.length,
-        results 
+        integrations_sent: finalResults.length,
+        results: finalResults 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -385,8 +385,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in send-cue-trigger function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

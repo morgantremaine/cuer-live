@@ -53,8 +53,9 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in test-welcome-email function:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
-      JSON.stringify({ error: 'Failed to trigger welcome email', details: error.message }),
+      JSON.stringify({ error: 'Failed to trigger welcome email', details: errorMessage }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
