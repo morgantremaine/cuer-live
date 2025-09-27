@@ -9,7 +9,7 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
-import { useFieldDeltaSave } from './useFieldDeltaSave';
+import { useEnhancedFieldDeltaSave } from './useEnhancedFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { getTabId } from '@/utils/tabUtils';
 
@@ -289,7 +289,7 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Field-level delta saving for collaborative editing (after trackMyUpdate is defined)
-  const { saveDeltaState, initializeSavedState, trackFieldChange } = useFieldDeltaSave(
+  const { saveDeltaState, initializeSavedState, trackFieldChange } = useEnhancedFieldDeltaSave(
     rundownId,
     trackMyUpdate
   );
