@@ -266,9 +266,10 @@ export const useSimpleAutoSave = (
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
       
-      // CRITICAL: Explicitly clear hasUnsavedChanges after priming baseline
-      // This prevents initial save triggers from race conditions
+      // CRITICAL: Clear the hasUnsavedChanges mismatch by calling onSaved immediately
+      // This ensures both autosave baseline and change tracking are synchronized
       setTimeout(() => {
+        console.log('🔄 AutoSave: syncing change tracking with baseline after priming');
         onSavedRef.current?.();
       }, 100);
       
