@@ -266,21 +266,25 @@ export const useSimpleAutoSave = (
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
       
-      // CRITICAL: Clear the hasUnsavedChanges mismatch by calling onSaved immediately
-      // This ensures both autosave baseline and change tracking are synchronized
-      setTimeout(() => {
-        console.log('🔄 AutoSave: syncing change tracking with baseline after priming');
-        onSavedRef.current?.();
-      }, 100);
+      // CRITICAL: Force sync by temporarily clearing hasUnsavedChanges flag
+      // This ensures change tracking and autosave baselines are aligned
+      if (state.hasUnsavedChanges) {
+        console.log('🔄 AutoSave: detected hasUnsavedChanges=true during baseline priming - forcing sync');
+        // Call onSaved to clear hasUnsavedChanges in change tracking
+        setTimeout(() => {
+          onSavedRef.current?.();
+        }, 50);
+      }
       
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
         instanceId: currentInstance,
         baselineLength: currentSignature.length,
-        needsBaseline 
+        needsBaseline,
+        hadUnsavedChanges: state.hasUnsavedChanges
       });
     }
-  }, [isInitiallyLoaded, rundownId, createContentSignature]);
+  }, [isInitiallyLoaded, rundownId, createContentSignature, state.hasUnsavedChanges]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -821,7 +825,9 @@ export const useSimpleAutoSave = (
     
     if (currentSignature === lastSavedRef.current) {
       if (state.hasUnsavedChanges) {
-        console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - marking saved anyway');
+        console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - this indicates change tracking mismatch');
+        console.log('🔍 Debug: Current signature length:', currentSignature.length, 'Last saved length:', lastSavedRef.current.length);
+        console.log('🔍 Debug: Signatures equal:', currentSignature === lastSavedRef.current);
         onSavedRef.current?.();
       }
       return;
