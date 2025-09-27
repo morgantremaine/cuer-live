@@ -86,20 +86,23 @@ export const useSimpleAutoSave = (
   const createContentSignature = useCallback(() => {
     const signature = createContentSignatureFromState(state);
     
-    // Debug signature generation when we have unsaved changes
-    if (state.hasUnsavedChanges && lastSavedRef.current && signature === lastSavedRef.current) {
-      console.warn('🔍 SIGNATURE DEBUG: Generated signature matches saved but hasUnsavedChanges=true', {
+    // Debug signature generation when we have unsaved changes - SPECIAL DEBUG for rundown 7bd94e7b-ecf7-4aba-a233-36fdfbaabf3a
+    if (rundownId === '7bd94e7b-ecf7-4aba-a233-36fdfbaabf3a' && state.hasUnsavedChanges && lastSavedRef.current && signature === lastSavedRef.current) {
+      console.warn('🔍 SHARED LAYOUT DEBUG: Generated signature matches saved but hasUnsavedChanges=true', {
+        rundownId,
         itemCount: state.items?.length || 0,
         titleLength: (state.title || '').length,
         hasUnsavedChanges: state.hasUnsavedChanges,
         sigLength: signature.length,
         lastSavedLength: lastSavedRef.current.length,
-        firstDiff: signature.substring(0, 200) !== lastSavedRef.current.substring(0, 200) ? 'content differs' : 'content identical'
+        firstDiff: signature.substring(0, 200) !== lastSavedRef.current.substring(0, 200) ? 'content differs' : 'content identical',
+        stateKeys: Object.keys(state || {}),
+        columnsInState: !!state.columns
       });
     }
     
     return signature;
-  }, [state]);
+  }, [state, rundownId]);
 
   // Set initial load cooldown to prevent false attribution
   useEffect(() => {
@@ -583,9 +586,12 @@ export const useSimpleAutoSave = (
       return;
     }
     
-  // RELAXED SAVE POLICY: For collaborative editing, be more aggressive about saving
-  // Only skip save if we're certain there are no changes AND no unsaved changes flag
-  if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges && lastSavedRef.current.length > 0) {
+  // SHARED LAYOUT BYPASS: For rundowns with shared layouts, be more aggressive about saving
+  // This prevents signature comparison issues that can occur when layouts conflict
+  const isSharedLayoutRundown = rundownId === '7bd94e7b-ecf7-4aba-a233-36fdfbaabf3a'; // Known problematic rundown with shared layout
+  
+  // RELAXED SAVE POLICY: For collaborative editing and shared layouts, be more aggressive about saving
+  if (!isSharedLayoutRundown && finalSignature === lastSavedRef.current && !state.hasUnsavedChanges && lastSavedRef.current.length > 0) {
     debugLogger.autosave('No changes to save - marking as saved');
     console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
     console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
@@ -593,9 +599,9 @@ export const useSimpleAutoSave = (
     return;
   }
   
-  // For collaborative environments, if there's ANY doubt, save the data
-  if (state.hasUnsavedChanges || lastSavedRef.current.length === 0) {
-    console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
+  // For shared layout rundowns or collaborative environments, if there's ANY doubt, save the data
+  if (isSharedLayoutRundown || state.hasUnsavedChanges || lastSavedRef.current.length === 0) {
+    console.log('💾 AutoSave: Proceeding with save - sharedLayout=' + isSharedLayoutRundown + ', hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
   }
     
     // Mark save in progress and capture what we're saving
