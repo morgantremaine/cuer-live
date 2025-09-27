@@ -545,11 +545,9 @@ export type Database = {
           folder_id: string | null
           icon: string | null
           id: string
-          item_field_updates: Json | null
           items: Json
           last_updated_by: string | null
           logo_url: string | null
-          per_cell_save_enabled: boolean | null
           show_date: string | null
           showcaller_state: Json | null
           start_time: string | null
@@ -571,11 +569,9 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
-          item_field_updates?: Json | null
           items: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          per_cell_save_enabled?: boolean | null
           show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
@@ -597,11 +593,9 @@ export type Database = {
           folder_id?: string | null
           icon?: string | null
           id?: string
-          item_field_updates?: Json | null
           items?: Json
           last_updated_by?: string | null
           logo_url?: string | null
-          per_cell_save_enabled?: boolean | null
           show_date?: string | null
           showcaller_state?: Json | null
           start_time?: string | null
@@ -1167,10 +1161,6 @@ export type Database = {
         Args: { rundown_uuid: string }
         Returns: Json
       }
-      get_rundown_with_field_updates: {
-        Args: { rundown_uuid: string }
-        Returns: Json
-      }
       get_shared_layout_for_public_rundown: {
         Args: { rundown_uuid: string }
         Returns: Json
@@ -1289,10 +1279,6 @@ export type Database = {
         Args: { revision_id: string; target_rundown_id: string }
         Returns: boolean
       }
-      should_use_per_cell_save: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
       update_column_layouts_on_team_column_rename: {
         Args: {
           new_column_name: string
@@ -1300,16 +1286,6 @@ export type Database = {
           team_uuid: string
         }
         Returns: undefined
-      }
-      update_rundown_field_atomic: {
-        Args: {
-          field_name: string
-          field_value: Json
-          item_id: string
-          rundown_uuid: string
-          user_uuid: string
-        }
-        Returns: Json
       }
       update_rundown_presence: {
         Args: { rundown_uuid: string }

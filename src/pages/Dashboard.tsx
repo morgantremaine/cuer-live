@@ -23,7 +23,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import AdminNotificationSender from '@/components/AdminNotificationSender';
-import { PerCellSaveDebugPanel } from '@/components/PerCellSaveDebugPanel';
 import { Plus } from 'lucide-react';
 
 const Dashboard = () => {
@@ -529,8 +528,6 @@ const Dashboard = () => {
         rundownTitle={deleteDialog.title}
         onConfirm={handleConfirmDelete}
       />
-      
-      <PerCellSaveDebugPanel />
     </div>
   );
 };

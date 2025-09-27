@@ -9,7 +9,7 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
-import { useEnhancedFieldDeltaSave } from './useEnhancedFieldDeltaSave';
+import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { getTabId } from '@/utils/tabUtils';
 
@@ -23,8 +23,7 @@ export const useSimpleAutoSave = (
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
   cooldownUntilRef?: React.MutableRefObject<number>,
   applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
-  isSharedView = false,
-  disabled = false
+  isSharedView = false
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -290,7 +289,7 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Field-level delta saving for collaborative editing (after trackMyUpdate is defined)
-  const { saveDeltaState, initializeSavedState, trackFieldChange } = useEnhancedFieldDeltaSave(
+  const { saveDeltaState, initializeSavedState, trackFieldChange } = useFieldDeltaSave(
     rundownId,
     trackMyUpdate
   );
@@ -399,7 +398,7 @@ export const useSimpleAutoSave = (
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving, disabled]);
+  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
 
   // Check if user is currently typing with improved logic and debugging
   const isTypingActive = useCallback(() => {
@@ -462,12 +461,6 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with immediate typing cancellation
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
-    // Skip if disabled
-    if (disabled) {
-      console.log('⏭️ AutoSave: disabled - skipping save');
-      return;
-    }
-
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -789,7 +782,7 @@ export const useSimpleAutoSave = (
         }
       }
     }
-  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, disabled]);
+  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
   // Keep latest performSave reference without retriggering effects
   useEffect(() => {
@@ -1012,7 +1005,6 @@ export const useSimpleAutoSave = (
     markActiveTyping,
     isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
-    trackFieldChange, // Expose for per-cell save integration
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,
     setVerboseLogging: keystrokeJournal.setVerboseLogging,
