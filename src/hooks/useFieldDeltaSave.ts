@@ -393,7 +393,21 @@ export const useFieldDeltaSave = (
 
     // Add metadata
     updateData.updated_at = updateTimestamp;
-    updateData.last_updated_by = (await supabase.auth.getUser()).data.user?.id;
+    
+    // CRITICAL: Ensure user is authenticated before save
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user?.id) {
+      console.error('🚨 AUTHENTICATION ERROR: User not authenticated during save', {
+        userError,
+        hasUser: !!userData.user,
+        userId: userData.user?.id,
+        rundownId
+      });
+      throw new Error('User not authenticated. Please refresh and log in again.');
+    }
+    
+    updateData.last_updated_by = userData.user.id;
+    console.log('🔐 Field delta save authenticated as user:', userData.user.id);
     
     // Add tab_id only if schema supports it (graceful degradation)
     try {
@@ -403,6 +417,7 @@ export const useFieldDeltaSave = (
     }
 
     // OCC: Use expected doc_version in WHERE clause to ensure atomic update
+    console.log('💾 Field delta save: executing update for rundown', rundownId, 'with user', userData.user.id);
     const { data, error } = await supabase
       .from('rundowns')
       .update(updateData)
@@ -412,6 +427,16 @@ export const useFieldDeltaSave = (
       .single();
 
     if (error) {
+      console.error('🚨 Field delta save database error:', {
+        error,
+        errorCode: error.code,
+        errorMessage: error.message,
+        rundownId,
+        userId: userData.user.id,
+        serverDocVersion,
+        updateDataKeys: Object.keys(updateData)
+      });
+      
       // Check if OCC conflict occurred (no rows updated)
       if (error.code === 'PGRST116' || (error.message && error.message.includes('No rows found'))) {
         console.warn('🚨 OCC Conflict: Document was modified by another user during save');
