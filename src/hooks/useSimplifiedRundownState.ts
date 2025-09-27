@@ -186,6 +186,14 @@ export const useSimplifiedRundownState = () => {
   }), [state]);
 
   // ALWAYS call both hooks to avoid conditional hook calls
+  console.log('🔍 SAVE STATE DEBUG:', {
+    isInitialized,
+    rundownId,
+    hasState: !!state,
+    stateHasItems: !!state.items,
+    isPerCellSaveEnabled
+  });
+  
   const autoSaveV2Result = useSimplifiedAutoSaveV2(
     stateForSave, 
     rundownId, 
@@ -212,6 +220,14 @@ export const useSimplifiedRundownState = () => {
   );
 
   // Choose which result to use based on feature flag
+  console.log('🔍 AUTOSAVE DEBUG:', {
+    isPerCellSaveEnabled,
+    usingV2: isPerCellSaveEnabled,
+    v1Disabled: isPerCellSaveEnabled,
+    v2Disabled: !isPerCellSaveEnabled,
+    v1Saving: autoSaveV1Result.isSaving,
+    v2Saving: autoSaveV2Result.isSaving
+  });
   const autoSaveResult = isPerCellSaveEnabled ? autoSaveV2Result : autoSaveV1Result;
   
   // Extract properties with fallbacks for compatibility
