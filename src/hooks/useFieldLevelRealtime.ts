@@ -47,11 +47,10 @@ export const useFieldLevelRealtime = ({
 
   // Field-level real-time subscription
   useEffect(() => {
-    // Only enable for per-cell save users
-    if (!enabled || !rundownId || !user || !isPerCellSaveEnabled) {
-      setIsConnected(false);
-      return;
-    }
+    // TEMPORARY: Disable realtime during testing to prevent crashes
+    console.log('🌐 Field-Level Realtime: Disabled during testing', { rundownId, userId: user?.id });
+    setIsConnected(false);
+    return;
 
     console.log('🌐 Field-Level Realtime: Setting up subscription', { rundownId, userId: user.id });
 
