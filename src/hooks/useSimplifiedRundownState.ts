@@ -158,7 +158,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave, trackFieldChange } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -836,6 +836,11 @@ export const useSimplifiedRundownState = () => {
     // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
     if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
+    
+    // CRITICAL: Track field change for per-cell save system
+    if (trackFieldChange) {
+      trackFieldChange(id, field, value);
     }
     
     if (isTypingField) {
