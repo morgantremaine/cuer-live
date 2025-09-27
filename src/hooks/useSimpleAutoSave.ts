@@ -84,7 +84,21 @@ export const useSimpleAutoSave = (
 
   // Create content signature from current state (backwards compatibility)
   const createContentSignature = useCallback(() => {
-    return createContentSignatureFromState(state);
+    const signature = createContentSignatureFromState(state);
+    
+    // Debug signature generation when we have unsaved changes
+    if (state.hasUnsavedChanges && lastSavedRef.current && signature === lastSavedRef.current) {
+      console.warn('🔍 SIGNATURE DEBUG: Generated signature matches saved but hasUnsavedChanges=true', {
+        itemCount: state.items?.length || 0,
+        titleLength: (state.title || '').length,
+        hasUnsavedChanges: state.hasUnsavedChanges,
+        sigLength: signature.length,
+        lastSavedLength: lastSavedRef.current.length,
+        firstDiff: signature.substring(0, 200) !== lastSavedRef.current.substring(0, 200) ? 'content differs' : 'content identical'
+      });
+    }
+    
+    return signature;
   }, [state]);
 
   // Set initial load cooldown to prevent false attribution
@@ -569,13 +583,24 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    if (finalSignature === lastSavedRef.current) {
-      // Mark as saved since there are no actual content changes
+    // CRITICAL: Only skip save if signatures truly match AND we don't have unsaved changes
+    // This prevents false positive signature matches that could cause data loss
+    if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges) {
+      // Safe to skip - signatures match and no unsaved changes flag
       debugLogger.autosave('No changes to save - marking as saved');
-      console.log('ℹ️ AutoSave: no content changes detected - signatures match');
+      console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
       console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
       onSavedRef.current?.();
       return;
+    }
+    
+    // FORCE SAVE if hasUnsavedChanges is true, regardless of signature comparison
+    if (state.hasUnsavedChanges && finalSignature === lastSavedRef.current) {
+      console.warn('⚠️ AutoSave: FORCING SAVE - hasUnsavedChanges=true despite signature match');
+      console.log('🔍 Debug: This could indicate a signature generation issue');
+      console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
+      console.log('🔍 Debug: Signature content (first 200 chars):', finalSignature.substring(0, 200));
+      console.log('🔍 Debug: Last saved content (first 200 chars):', lastSavedRef.current.substring(0, 200));
     }
     
     // Mark save in progress and capture what we're saving
