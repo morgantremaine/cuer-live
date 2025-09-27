@@ -113,7 +113,7 @@ export const useFieldLevelRealtime = ({
       }
       setIsConnected(false);
     };
-  }, [rundownId, user, enabled, isPerCellSaveEnabled]);
+  }, [rundownId, user?.id, enabled, isPerCellSaveEnabled]);
 
   // Broadcast field update to other users
   const broadcastFieldUpdate = useCallback(async (
@@ -152,7 +152,7 @@ export const useFieldLevelRealtime = ({
     } catch (error) {
       console.error('❌ Field-Level Realtime: Failed to broadcast update', error);
     }
-  }, [user, rundownId]);
+  }, [user?.id, rundownId]);
 
   return {
     isConnected,

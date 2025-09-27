@@ -78,7 +78,7 @@ export const usePerCellSave = (rundownId: string) => {
     } finally {
       savingFieldsRef.current.delete(fieldKey);
     }
-  }, [isPerCellSaveEnabled, user, rundownId]);
+  }, [isPerCellSaveEnabled, user?.id, rundownId]);
 
   const enablePerCellSaveForRundown = useCallback(async () => {
     if (!isPerCellSaveEnabled || !user) {
@@ -104,7 +104,7 @@ export const usePerCellSave = (rundownId: string) => {
       logger.error('Exception enabling per-cell save for rundown', { error, rundownId });
       return false;
     }
-  }, [isPerCellSaveEnabled, user, rundownId]);
+  }, [isPerCellSaveEnabled, user?.id, rundownId]);
 
   return {
     saveField,
