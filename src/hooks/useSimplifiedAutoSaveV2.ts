@@ -62,7 +62,18 @@ export const useSimplifiedAutoSaveV2 = (
 
   // Create content signature from current state
   const createContentSignature = useCallback(() => {
-    return createContentSignatureFromState(state);
+    try {
+      console.log('🔍 AutoSaveV2: createContentSignature called with state:', {
+        hasState: !!state,
+        hasItems: !!state?.items,
+        itemsLength: state?.items?.length,
+        stateKeys: state ? Object.keys(state) : null
+      });
+      return createContentSignatureFromState(state);
+    } catch (error) {
+      console.error('❌ AutoSaveV2: ERROR in createContentSignature:', error);
+      throw error;
+    }
   }, [state]);
 
   // Simplified signature creation - no caching complexity
@@ -70,8 +81,29 @@ export const useSimplifiedAutoSaveV2 = (
     try {
       // Safety check for state
       if (!targetState) {
+        console.log('🚨 AutoSaveV2: targetState is undefined in createContentSignatureFromState');
         logger.warn('AutoSaveV2: targetState is undefined');
         return '';
+      }
+
+      console.log('🔍 AutoSaveV2: Processing targetState:', {
+        hasTargetState: !!targetState,
+        hasItems: !!targetState.items,
+        itemsType: typeof targetState.items,
+        itemsLength: targetState.items?.length,
+        isArray: Array.isArray(targetState.items)
+      });
+
+      if (!targetState.items) {
+        console.log('🚨 AutoSaveV2: targetState.items is undefined/null');
+        return JSON.stringify({
+          items: [],
+          title: targetState.title || '',
+          startTime: targetState.startTime || '',
+          timezone: targetState.timezone || '',
+          showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
+          externalNotes: targetState.externalNotes || ''
+        });
       }
 
       const cleanItems = targetState.items?.map((item: any) => {

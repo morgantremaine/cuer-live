@@ -39,7 +39,7 @@ export const usePerCellSaveFeatureFlag = () => {
         }
 
         // Check if user is in feature flag list
-        const shouldUsePerCellSave = false; // TEMPORARILY DISABLED FOR DEBUGGING
+        const shouldUsePerCellSave = FEATURE_FLAG_EMAILS.includes(userEmail.toLowerCase());
         
         console.log('🧪 PER-CELL SAVE: Feature flag decision', {
           userEmail,
