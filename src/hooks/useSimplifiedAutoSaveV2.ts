@@ -172,7 +172,7 @@ export const useSimplifiedAutoSaveV2 = (
   }, [rundownId]);
 
   useEffect(() => {
-    if (!isInitiallyLoaded) return;
+    if (!isInitiallyLoaded || !state) return;
 
     try {
       // Prime baseline once per rundown when initial load completes
@@ -241,7 +241,7 @@ export const useSimplifiedAutoSaveV2 = (
 
   // Separate effect to initialize saved state after it's available
   useEffect(() => {
-    if (!isInitiallyLoaded || !initializeSavedState) return;
+    if (!isInitiallyLoaded || !initializeSavedState || !state) return;
     
     // Only initialize if we haven't done it for this rundown yet
     if (rundownId === lastPrimedRundownRef.current) {
@@ -278,7 +278,7 @@ export const useSimplifiedAutoSaveV2 = (
       performSave(false, isSharedView);
     }, TYPING_IDLE_MS);
     
-  }, [isSaving]);
+  }, [isSaving, isSharedView]);
 
   // Check if user is currently typing - simplified
   const isTypingActive = useCallback(() => {
