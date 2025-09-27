@@ -306,6 +306,7 @@ export const useSimplifiedAutoSaveV2 = (
     isTypingActive,
     setUndoActive,
     forceSave,
+    triggerImmediateSave: forceSave, // Alias for compatibility
     trackFieldChange,
     setTrackOwnUpdate,
     isSaving,

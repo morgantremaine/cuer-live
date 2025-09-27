@@ -226,7 +226,7 @@ export const useSimplifiedRundownState = () => {
     isTypingActive, 
     trackFieldChange 
   } = autoSaveResult;
-  const triggerImmediateSave = 'triggerImmediateSave' in autoSaveResult ? autoSaveResult.triggerImmediateSave : autoSaveResult.forceSave;
+  const triggerImmediateSave = (autoSaveResult as any).triggerImmediateSave || (autoSaveResult as any).forceSave;
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
