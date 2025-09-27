@@ -417,19 +417,6 @@ export const useFieldDeltaSave = (
         console.warn('🚨 OCC Conflict: Document was modified by another user during save');
         throw new Error('Document was modified by another user. Please refresh and try again.');
       }
-      
-      // Auth Token Safety Net - detect and handle auth errors
-      const { handlePotentialAuthError } = await import('@/utils/authErrorHandler');
-      const { shouldRetry, wasAuthError } = await handlePotentialAuthError(error);
-      
-      if (shouldRetry) {
-        // Token was refreshed successfully - retry the save operation once
-        console.log('🔄 Auth Safety Net: Retrying delta save after token refresh');
-        if (retryCount < 1) { // Limit to one auth retry to prevent loops
-          return await saveDeltasToDatabase(deltas, currentState, retryCount + 1);
-        }
-      }
-      
       throw error;
     }
 
@@ -481,34 +468,6 @@ export const useFieldDeltaSave = (
       .single();
 
     if (error) {
-      // Auth Token Safety Net - detect and handle auth errors in full updates too
-      const { handlePotentialAuthError } = await import('@/utils/authErrorHandler');
-      const { shouldRetry, wasAuthError } = await handlePotentialAuthError(error);
-      
-      if (shouldRetry) {
-        // Token was refreshed successfully - retry the save operation once
-        console.log('🔄 Auth Safety Net: Retrying full update after token refresh');
-        // For full updates, we don't have a retry count parameter, so we call recursively once
-        const { data: retryData, error: retryError } = await supabase
-          .from('rundowns')
-          .update(updateData)
-          .eq('id', rundownId)
-          .select('updated_at, doc_version')
-          .single();
-          
-        if (!retryError && retryData) {
-          const normalizedTimestamp = normalizeTimestamp(retryData.updated_at);
-          trackOwnUpdate(normalizedTimestamp);
-          registerRecentSave(rundownId, normalizedTimestamp);
-          console.log('✅ Auth Safety Net: Full update retry successful');
-          
-          return {
-            updatedAt: normalizedTimestamp,
-            docVersion: retryData.doc_version
-          };
-        }
-      }
-      
       throw error;
     }
 
