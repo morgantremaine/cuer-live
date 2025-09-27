@@ -191,7 +191,7 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     undefined, // Legacy ref no longer needed
-    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
+    isInitialized, // Wait for rundown initialization (column loading no longer blocks autosave)
     blockUntilLocalEditRef,
     cooldownUntilRef,
     applyingCellBroadcastRef // Pass the cell broadcast flag
