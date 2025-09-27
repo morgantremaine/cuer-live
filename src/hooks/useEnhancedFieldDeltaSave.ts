@@ -34,7 +34,10 @@ export const useEnhancedFieldDeltaSave = (
     }
     
     // Track for new system - store for potential batch operations
-    if (!itemId) return;
+    if (!itemId) {
+      logger.warn('🚫 Per-cell tracking skipped - no itemId', { fieldName, value });
+      return;
+    }
     
     const fieldKey = `${itemId}.${fieldName}`;
     trackingRef.current[fieldKey] = {
@@ -44,21 +47,30 @@ export const useEnhancedFieldDeltaSave = (
       timestamp: Date.now()
     };
 
-    logger.debug('Tracking field change for per-cell save', {
+    logger.info('🎯 Per-cell tracking field change', {
       itemId,
       fieldName,
-      fieldKey
+      fieldKey,
+      currentTrackedCount: Object.keys(trackingRef.current).length
     });
   }, [isPerCellSaveEnabled, oldFieldDeltaSave]);
 
   const saveDeltaState = useCallback(async (currentState: any): Promise<{ updatedAt: string; docVersion: number; }> => {
+    logger.info('🔄 saveDeltaState called', {
+      isPerCellSaveEnabled,
+      trackedFieldsCount: Object.keys(trackingRef.current).length,
+      trackedFields: Object.keys(trackingRef.current)
+    });
+
     if (!isPerCellSaveEnabled) {
+      logger.info('📝 Using old field delta save system');
       return oldFieldDeltaSave.saveDeltaState(currentState);
     }
 
     // Check if we have tracked fields to save
     const trackedFieldsCount = Object.keys(trackingRef.current).length;
     if (trackedFieldsCount === 0) {
+      logger.info('📝 No tracked fields, falling back to old system');
       return oldFieldDeltaSave.saveDeltaState(currentState);
     }
 
