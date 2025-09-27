@@ -583,25 +583,20 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // CRITICAL: Only skip save if signatures truly match AND we don't have unsaved changes
-    // This prevents false positive signature matches that could cause data loss
-    if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges) {
-      // Safe to skip - signatures match and no unsaved changes flag
-      debugLogger.autosave('No changes to save - marking as saved');
-      console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
-      console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
-      onSavedRef.current?.();
-      return;
-    }
-    
-    // FORCE SAVE if hasUnsavedChanges is true, regardless of signature comparison
-    if (state.hasUnsavedChanges && finalSignature === lastSavedRef.current) {
-      console.warn('⚠️ AutoSave: FORCING SAVE - hasUnsavedChanges=true despite signature match');
-      console.log('🔍 Debug: This could indicate a signature generation issue');
-      console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
-      console.log('🔍 Debug: Signature content (first 200 chars):', finalSignature.substring(0, 200));
-      console.log('🔍 Debug: Last saved content (first 200 chars):', lastSavedRef.current.substring(0, 200));
-    }
+  // RELAXED SAVE POLICY: For collaborative editing, be more aggressive about saving
+  // Only skip save if we're certain there are no changes AND no unsaved changes flag
+  if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges && lastSavedRef.current.length > 0) {
+    debugLogger.autosave('No changes to save - marking as saved');
+    console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
+    console.log('🔍 Debug: Current signature length:', finalSignature.length, 'Last saved length:', lastSavedRef.current.length);
+    onSavedRef.current?.();
+    return;
+  }
+  
+  // For collaborative environments, if there's ANY doubt, save the data
+  if (state.hasUnsavedChanges || lastSavedRef.current.length === 0) {
+    console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
+  }
     
     // Mark save in progress and capture what we're saving
     setIsSaving(true);
