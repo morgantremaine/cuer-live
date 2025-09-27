@@ -53,7 +53,7 @@ export const useEnhancedFieldDeltaSave = (
       fieldKey,
       currentTrackedCount: Object.keys(trackingRef.current).length
     });
-  }, [isPerCellSaveEnabled, oldFieldDeltaSave]);
+  }, [isPerCellSaveEnabled, oldFieldDeltaSave?.trackFieldChange]);
 
   const saveDeltaState = useCallback(async (currentState: any): Promise<{ updatedAt: string; docVersion: number; }> => {
     logger.info('🔄 saveDeltaState called', {
@@ -147,7 +147,7 @@ export const useEnhancedFieldDeltaSave = (
     };
   }, [
     isPerCellSaveEnabled,
-    oldFieldDeltaSave,
+    oldFieldDeltaSave?.saveDeltaState,
     saveField,
     enablePerCellSaveForRundown,
     broadcastFieldUpdate
@@ -167,7 +167,7 @@ export const useEnhancedFieldDeltaSave = (
     // For new system, clear tracked changes
     trackingRef.current = {};
     logger.debug('Initialized per-cell save state');
-  }, [isPerCellSaveEnabled, oldFieldDeltaSave]);
+  }, [isPerCellSaveEnabled, oldFieldDeltaSave?.initializeSavedState]);
 
   return {
     saveDeltaState,
