@@ -6,6 +6,7 @@ import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { useToast } from '@/hooks/use-toast';
 import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { logger } from '@/utils/logger';
 import { debugLogger } from '@/utils/debugLogger';
 import { useEnhancedFieldDeltaSave } from './useEnhancedFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
@@ -127,11 +128,22 @@ export const useSimplifiedAutoSaveV2 = (
     // Prime baseline once per rundown when initial load completes
     if (rundownId !== lastPrimedRundownRef.current) {
       const sig = createContentSignature();
+      
+      // Safety check to prevent crashes
+      if (!sig) {
+        logger.warn('AutoSaveV2: createContentSignature returned undefined, skipping baseline prime');
+        return;
+      }
+      
       lastSavedRef.current = sig;
       lastPrimedRundownRef.current = rundownId;
       
-      // Initialize field delta system
-      initializeSavedState(state);
+      // Initialize field delta system with safety check
+      if (initializeSavedState) {
+        initializeSavedState(state);
+      } else {
+        logger.warn('AutoSaveV2: initializeSavedState not available yet');
+      }
       
       // Clear bootstrapping flag
       setIsBootstrapping(false);

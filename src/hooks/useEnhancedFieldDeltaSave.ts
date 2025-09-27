@@ -155,7 +155,13 @@ export const useEnhancedFieldDeltaSave = (
 
   const initializeSavedState = useCallback((state: any) => {
     if (!isPerCellSaveEnabled) {
-      return oldFieldDeltaSave.initializeSavedState(state);
+      // Add safety check to prevent crashes
+      if (oldFieldDeltaSave && oldFieldDeltaSave.initializeSavedState) {
+        return oldFieldDeltaSave.initializeSavedState(state);
+      } else {
+        logger.warn('oldFieldDeltaSave.initializeSavedState not available yet');
+        return;
+      }
     }
     
     // For new system, clear tracked changes
