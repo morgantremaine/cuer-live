@@ -165,45 +165,68 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave, trackFieldChange } = useSimpleAutoSave(
-    {
-      ...state,
-      columns: [] // Remove columns from team sync
-    }, 
-    rundownId, 
-    (meta?: { updatedAt?: string; docVersion?: number }) => {
-      actions.markSaved();
-      
-      // Track save time for race condition detection in cell broadcasts
-      lastSaveTimeRef.current = Date.now();
-      
-      // Update our doc version and timestamp tracking
-      if (meta?.docVersion) {
-        setLastSeenDocVersion(meta.docVersion);
-        actions.setDocVersion(meta.docVersion); // CRITICAL: Update state docVersion
-      }
-      if (meta?.updatedAt) {
-        setLastKnownTimestamp(meta.updatedAt);
-      }
-      
-      // Prime lastSavedRef after initial load to prevent false autosave triggers
-      if (isInitialized && !lastSavedPrimedRef.current) {
-        lastSavedPrimedRef.current = true;
-      }
-      
-      // Coordinate with teleprompter saves to prevent conflicts
-      if (teleprompterSync.isTeleprompterSaving) {
-        debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
-      }
-    },
-    pendingStructuralChangeRef,
-    undefined, // Legacy ref no longer needed
-    isInitialized, // Wait for rundown initialization (column loading no longer blocks autosave)
-    blockUntilLocalEditRef,
-    cooldownUntilRef,
-    applyingCellBroadcastRef // Pass the cell broadcast flag
-  );
+  // Auto-save functionality with unified save pipeline - use V2 for per-cell save users
+  const autoSaveResult = isPerCellSaveEnabled 
+    ? useSimplifiedAutoSaveV2(
+        {
+          ...state,
+          columns: [] // Remove columns from team sync
+        }, 
+        rundownId, 
+        (meta?: { updatedAt?: string; docVersion?: number }) => {
+          actions.markSaved();
+          
+          // Track save time for race condition detection in cell broadcasts
+          lastSaveTimeRef.current = Date.now();
+          
+          if (meta?.updatedAt) {
+            setLastKnownTimestamp(meta.updatedAt);
+          }
+          if (meta?.docVersion) {
+            setLastSeenDocVersion(meta.docVersion);
+          }
+        },
+        pendingStructuralChangeRef,
+        undefined, // suppressUntilRef not needed for V2
+        isInitialized // isInitiallyLoaded 
+      )
+    : useSimpleAutoSave(
+        {
+          ...state,
+          columns: [] // Remove columns from team sync
+        }, 
+        rundownId, 
+        (meta?: { updatedAt?: string; docVersion?: number }) => {
+          actions.markSaved();
+          
+          // Track save time for race condition detection in cell broadcasts
+          lastSaveTimeRef.current = Date.now();
+          
+          if (meta?.updatedAt) {
+            setLastKnownTimestamp(meta.updatedAt);
+          }
+          if (meta?.docVersion) {
+            setLastSeenDocVersion(meta.docVersion);
+          }
+        },
+        pendingStructuralChangeRef,
+        undefined, // suppressUntilRef
+        isInitialized, // isInitiallyLoaded
+        blockUntilLocalEditRef,
+        cooldownUntilRef,
+        applyingCellBroadcastRef
+      );
+  
+  // Extract properties with fallbacks for compatibility
+  const { 
+    isSaving, 
+    setUndoActive, 
+    setTrackOwnUpdate, 
+    markActiveTyping, 
+    isTypingActive, 
+    trackFieldChange 
+  } = autoSaveResult;
+  const triggerImmediateSave = 'triggerImmediateSave' in autoSaveResult ? autoSaveResult.triggerImmediateSave : autoSaveResult.forceSave;
 
   // Standalone undo system - unchanged
   const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
