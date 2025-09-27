@@ -248,8 +248,8 @@ export const useSimpleAutoSave = (
 
     // Prime baseline once per rundown when initial load completes
     if (rundownId !== lastPrimedRundownRef.current) {
-      const sig = createContentSignature();
-      lastSavedRef.current = sig;
+      // FIXED: Prime baseline correctly - reset to empty so first real change triggers save
+      lastSavedRef.current = '';
       lastPrimedRundownRef.current = rundownId;
       
       // Initialize field delta system
@@ -266,10 +266,10 @@ export const useSimpleAutoSave = (
       
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
-        length: sig.length 
+        resetBaseline: true 
       });
     }
-  }, [isInitiallyLoaded, rundownId, createContentSignature]);
+  }, [isInitiallyLoaded, rundownId]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
