@@ -2,11 +2,15 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useRundownState } from './useRundownState';
 import { useSimpleAutoSave } from './useSimpleAutoSave';
+import { useSimplifiedAutoSaveV2 } from './useSimplifiedAutoSaveV2';
 import { useStandaloneUndo } from './useStandaloneUndo';
 import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown';
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { usePerCellSaveFeatureFlag } from './usePerCellSaveFeatureFlag';
+import { useFieldLevelRealtime } from './useFieldLevelRealtime';
+import { useOptimizedKeystrokeJournal } from './useOptimizedKeystrokeJournal';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +31,9 @@ export const useSimplifiedRundownState = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
+  
+  // Feature flag for per-cell save system
+  const { isPerCellSaveEnabled } = usePerCellSaveFeatureFlag();
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
   
@@ -71,6 +78,7 @@ export const useSimplifiedRundownState = () => {
   const activeStructuralOperationRef = useRef(false);
   
   // Enhanced cooldown management with explicit flags  
+  // NOTE: For per-cell save users, these refs are NOT used (no blocking logic)
   const blockUntilLocalEditRef = useRef(false);
   const cooldownUntilRef = useRef<number>(0);
   
@@ -446,8 +454,13 @@ export const useSimplifiedRundownState = () => {
           JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
         );
          // CRITICAL: Block all autosaves until the user makes a local edit
+       // NOTE: Skip blocking for per-cell save users
+       if (!isPerCellSaveEnabled) {
          debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
          blockUntilLocalEditRef.current = true;
+       } else {
+         console.log('✨ Per-cell save user: Skipping save blocking after teammate update');
+       }
       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading,
@@ -722,10 +735,15 @@ export const useSimplifiedRundownState = () => {
       );
       
       // Set cooldown after applying deferred teammate update
-      if (isStructural) {
-        cooldownUntilRef.current = Date.now() + 1500;
+      // NOTE: Skip cooldowns for per-cell save users
+      if (!isPerCellSaveEnabled) {
+        if (isStructural) {
+          cooldownUntilRef.current = Date.now() + 1500;
+        } else {
+          cooldownUntilRef.current = Date.now() + 800;
+        }
       } else {
-        cooldownUntilRef.current = Date.now() + 800;
+        console.log('✨ Per-cell save user: Skipping cooldown after save');
       }
       
       // Update our known timestamp and doc version
@@ -820,7 +838,8 @@ export const useSimplifiedRundownState = () => {
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
     // Re-enable autosave after local edit if it was blocked due to teammate update
-    if (blockUntilLocalEditRef.current) {
+    // NOTE: Skip for per-cell save users (no blocking)
+    if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
       console.log('✅ AutoSave: local edit detected - re-enabling saves');
       blockUntilLocalEditRef.current = false;
     }
@@ -1292,7 +1311,8 @@ export const useSimplifiedRundownState = () => {
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
-      if (blockUntilLocalEditRef.current) {
+      // NOTE: Skip for per-cell save users (no blocking)
+      if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
@@ -1499,7 +1519,8 @@ export const useSimplifiedRundownState = () => {
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
-      if (blockUntilLocalEditRef.current) {
+      // NOTE: Skip for per-cell save users (no blocking)
+      if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
@@ -1507,7 +1528,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
-      if (blockUntilLocalEditRef.current) {
+      if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
@@ -1522,7 +1543,7 @@ export const useSimplifiedRundownState = () => {
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId]),
     setTimezone: useCallback((newTimezone: string) => {
-      if (blockUntilLocalEditRef.current) {
+      if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
@@ -1537,7 +1558,7 @@ export const useSimplifiedRundownState = () => {
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId]),
     setShowDate: useCallback((newShowDate: Date | null) => {
-      if (blockUntilLocalEditRef.current) {
+      if (blockUntilLocalEditRef.current && !isPerCellSaveEnabled) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }

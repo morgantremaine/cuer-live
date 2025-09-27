@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { usePerCellSave } from './usePerCellSave';
 import { usePerCellSaveFeatureFlag } from './usePerCellSaveFeatureFlag';
+import { useFieldLevelRealtime } from './useFieldLevelRealtime';
 import { logger } from '@/utils/logger';
 
 // Enhanced version that routes to either old system or new per-cell save system
@@ -20,6 +21,12 @@ export const useEnhancedFieldDeltaSave = (
 
   // New system
   const { saveField, enablePerCellSaveForRundown } = usePerCellSave(rundownId);
+  
+  // Field-level real-time for enhanced collaboration
+  const { broadcastFieldUpdate } = useFieldLevelRealtime({
+    rundownId,
+    enabled: isPerCellSaveEnabled
+  });
 
   const trackFieldChange = useCallback((itemId: string | undefined, fieldName: string, value: any) => {
     if (!isPerCellSaveEnabled) {
@@ -70,6 +77,10 @@ export const useEnhancedFieldDeltaSave = (
           const result = await saveField(itemId, fieldName, value);
           if (result.success) {
             logger.debug('Field saved successfully', { fieldKey });
+            
+            // Broadcast field update to other users for real-time collaboration
+            await broadcastFieldUpdate(itemId, fieldName, value, result.version || Date.now());
+            
             delete trackingRef.current[fieldKey];
             return true;
           } else {
@@ -102,7 +113,8 @@ export const useEnhancedFieldDeltaSave = (
     isPerCellSaveEnabled,
     oldFieldDeltaSave,
     saveField,
-    enablePerCellSaveForRundown
+    enablePerCellSaveForRundown,
+    broadcastFieldUpdate
   ]);
 
   const initializeSavedState = useCallback((state: any) => {
