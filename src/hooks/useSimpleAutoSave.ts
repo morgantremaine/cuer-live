@@ -224,6 +224,7 @@ export const useSimpleAutoSave = (
 
   // Stabilized baseline priming - only reset on actual rundown switches, not during init
   const lastPrimedRundownRef = useRef<string | null>(null);
+  const componentInstanceRef = useRef<string>(Math.random().toString(36));
   
   useEffect(() => {
     // Only reset baseline when truly switching between different rundowns
@@ -246,10 +247,17 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     if (!isInitiallyLoaded) return;
 
-    // Prime baseline once per rundown when initial load completes
-    if (rundownId !== lastPrimedRundownRef.current) {
-      // FIXED: Prime baseline correctly - reset to empty so first real change triggers save
-      lastSavedRef.current = '';
+    // Generate new instance ID for each component mount
+    const currentInstance = Math.random().toString(36);
+    componentInstanceRef.current = currentInstance;
+
+    // Prime baseline for new component instances OR different rundowns
+    const needsBaseline = rundownId !== lastPrimedRundownRef.current;
+    
+    if (needsBaseline) {
+      // SAFE FIX: Use actual current signature as baseline instead of empty string
+      const currentSignature = createContentSignature();
+      lastSavedRef.current = currentSignature;
       lastPrimedRundownRef.current = rundownId;
       
       // Initialize field delta system
@@ -266,10 +274,12 @@ export const useSimpleAutoSave = (
       
       console.log('✅ AutoSave: primed baseline for rundown', { 
         rundownId, 
-        resetBaseline: true 
+        instanceId: currentInstance,
+        baselineLength: currentSignature.length,
+        needsBaseline 
       });
     }
-  }, [isInitiallyLoaded, rundownId]);
+  }, [isInitiallyLoaded, rundownId, createContentSignature]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
