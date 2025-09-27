@@ -23,6 +23,14 @@ export const usePerCellSaveFeatureFlag = () => {
         // Get user email from auth.users or profiles
         const userEmail = user.email || user.user_metadata?.email;
         
+        console.log('🧪 PER-CELL SAVE: Checking feature flag for user', {
+          userId: user.id,
+          userEmail,
+          userEmailLower: userEmail?.toLowerCase(),
+          targetEmails: FEATURE_FLAG_EMAILS,
+          userMetadata: user.user_metadata
+        });
+        
         if (!userEmail) {
           logger.warn('No email found for user', { userId: user.id });
           setIsPerCellSaveEnabled(false);
@@ -33,7 +41,7 @@ export const usePerCellSaveFeatureFlag = () => {
         // Check if user is in feature flag list
         const shouldUsePerCellSave = FEATURE_FLAG_EMAILS.includes(userEmail.toLowerCase());
         
-        logger.info('Per-cell save feature flag check', {
+        console.log('🧪 PER-CELL SAVE: Feature flag decision', {
           userEmail,
           shouldUsePerCellSave,
           userId: user.id

@@ -22,11 +22,21 @@ export const useEnhancedFieldDeltaSave = (
   const { saveField, enablePerCellSaveForRundown } = usePerCellSave(rundownId);
 
   const trackFieldChange = useCallback((itemId: string | undefined, fieldName: string, value: any) => {
+    console.log('🧪 PER-CELL SAVE: trackFieldChange called', {
+      itemId,
+      fieldName,
+      isPerCellSaveEnabled,
+      value: typeof value === 'string' ? value.substring(0, 50) + '...' : value
+    });
+    
     if (!isPerCellSaveEnabled) {
       // Route to old system
+      console.log('🧪 PER-CELL SAVE: Routing to old system');
       return oldFieldDeltaSave.trackFieldChange(itemId, fieldName, value);
     }
 
+    console.log('🧪 PER-CELL SAVE: Using new per-cell save system');
+    
     // Track for new system - store for potential batch operations
     if (!itemId) return;
     
@@ -46,9 +56,14 @@ export const useEnhancedFieldDeltaSave = (
   }, [isPerCellSaveEnabled, oldFieldDeltaSave]);
 
   const saveDeltaState = useCallback(async (currentState: any): Promise<{ updatedAt: string; docVersion: number; }> => {
+    console.log('🧪 PER-CELL SAVE: saveDeltaState called', {
+      isPerCellSaveEnabled,
+      trackedFieldsCount: Object.keys(trackingRef.current).length
+    });
+    
     if (!isPerCellSaveEnabled) {
       // Route to old system
-      logger.debug('Using old field delta save system');
+      console.log('🧪 PER-CELL SAVE: Routing to old delta save system');
       return oldFieldDeltaSave.saveDeltaState(currentState);
     }
 
