@@ -3,8 +3,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
-// Feature flag emails - ONLY these users get the new per-cell save system
-const FEATURE_FLAG_EMAILS = ['morgan@cuer.live', 'morgantremaine@me.com'];
+// Feature flag emails - DISABLED FOR ALL USERS due to data loss bug
+const FEATURE_FLAG_EMAILS: string[] = [];
 
 export const usePerCellSaveFeatureFlag = () => {
   const { user } = useAuth();
