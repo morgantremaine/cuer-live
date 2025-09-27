@@ -8,6 +8,7 @@ import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
+import { createUnifiedContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
@@ -154,15 +155,14 @@ export const useSimpleAutoSave = (
     
     // Performance optimization for very large rundowns - use lightweight signature
     if (itemCount > 200) {
-      const lightweightSignature = JSON.stringify({
-        itemCount,
-        itemIds: targetState.items?.map(item => item.id) || [],
+      const lightweightSignature = createLightweightContentSignature({
+        items: targetState.items || [],
         title: targetState.title || '',
-        startTime: targetState.startTime || '',
+        columns: [], // Not available in RundownState, but not needed for lightweight
         timezone: targetState.timezone || '',
-        showDate: targetState.showDate?.toISOString() || null,
-        externalNotes: targetState.externalNotes || '',
-        checksum: targetState.items?.reduce((acc, item) => acc + (item.name?.length || 0) + (item.script?.length || 0), 0) || 0
+        startTime: targetState.startTime || '',
+        showDate: targetState.showDate || null,
+        externalNotes: targetState.externalNotes || ''
       });
       
       // Cache the result
@@ -175,40 +175,14 @@ export const useSimpleAutoSave = (
       return lightweightSignature;
     }
     
-    // Standard signature for smaller rundowns
-    const cleanItems = targetState.items?.map((item: any) => {
-      const cleanItem: any = {
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        duration: item.duration,
-        color: item.color,
-        isFloating: item.isFloating,
-        customFields: item.customFields || {}
-      };
-      
-      // Remove any undefined/null values to ensure clean comparison
-      Object.keys(cleanItem).forEach(key => {
-        if (cleanItem[key] === undefined || cleanItem[key] === null) {
-          cleanItem[key] = '';
-        }
-      });
-      
-      return cleanItem;
-    }) || [];
-
-    const signature = JSON.stringify({
-      items: cleanItems,
+    // Standard signature for smaller rundowns - use unified function
+    const signature = createUnifiedContentSignature({
+      items: targetState.items || [],
       title: targetState.title || '',
-      startTime: targetState.startTime || '',
+      columns: [], // Not available in RundownState, will be empty array
       timezone: targetState.timezone || '',
-      showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
+      startTime: targetState.startTime || '',
+      showDate: targetState.showDate || null,
       externalNotes: targetState.externalNotes || ''
     });
     
@@ -218,7 +192,7 @@ export const useSimpleAutoSave = (
       timestamp: Date.now()
     });
     
-    debugLogger.autosave(`Created full signature with ${cleanItems.length} items`);
+    debugLogger.autosave(`Created full signature with ${itemCount} items`);
     return signature;
   }, []);
 
@@ -266,14 +240,9 @@ export const useSimpleAutoSave = (
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
       
-      // CRITICAL: Force sync by temporarily clearing hasUnsavedChanges flag
-      // This ensures change tracking and autosave baselines are aligned
+      // Log if there's a mismatch for debugging
       if (state.hasUnsavedChanges) {
-        console.log('🔄 AutoSave: detected hasUnsavedChanges=true during baseline priming - forcing sync');
-        // Call onSaved to clear hasUnsavedChanges in change tracking
-        setTimeout(() => {
-          onSavedRef.current?.();
-        }, 50);
+        console.log('🔍 AutoSave: baseline primed with hasUnsavedChanges=true - signatures should now be consistent');
       }
       
       console.log('✅ AutoSave: primed baseline for rundown', { 
@@ -284,7 +253,7 @@ export const useSimpleAutoSave = (
         hadUnsavedChanges: state.hasUnsavedChanges
       });
     }
-  }, [isInitiallyLoaded, rundownId, createContentSignature, state.hasUnsavedChanges]);
+  }, [isInitiallyLoaded, rundownId, createContentSignature]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {

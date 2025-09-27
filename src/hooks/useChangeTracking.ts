@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from '@/types/columns';
 import { useUniversalTimer } from './useUniversalTimer';
+import { createUnifiedContentSignature } from '@/utils/contentSignature';
 
 export const useChangeTracking = (
   items: RundownItem[], 
@@ -35,37 +36,16 @@ export const useChangeTracking = (
       return lastSavedDataRef.current;
     }
 
-    // Create signature with ONLY content fields - NO showcaller data
-    const signature = JSON.stringify({
-      items: (items || []).map(item => ({
-        // Core content fields only
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
-        // EXPLICITLY EXCLUDED: status, elapsedTime, currentSegmentId
-      })),
+    // Use unified signature function for consistency with autosave
+    const signature = createUnifiedContentSignature({
+      items: items || [],
       title: rundownTitle || '',
       columns: columns || [],
       timezone: timezone || '',
       startTime: startTime || ''
     });
     
-    console.log('🔍 Created content signature (showcaller-free), items count:', items?.length || 0);
+    console.log('🔍 Created unified content signature (showcaller-free), items count:', items?.length || 0);
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
