@@ -165,57 +165,50 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  // Auto-save functionality with unified save pipeline - use V2 for per-cell save users
-  const autoSaveResult = isPerCellSaveEnabled 
-    ? useSimplifiedAutoSaveV2(
-        {
-          ...state,
-          columns: [] // Remove columns from team sync
-        }, 
-        rundownId, 
-        (meta?: { updatedAt?: string; docVersion?: number }) => {
-          actions.markSaved();
-          
-          // Track save time for race condition detection in cell broadcasts
-          lastSaveTimeRef.current = Date.now();
-          
-          if (meta?.updatedAt) {
-            setLastKnownTimestamp(meta.updatedAt);
-          }
-          if (meta?.docVersion) {
-            setLastSeenDocVersion(meta.docVersion);
-          }
-        },
-        pendingStructuralChangeRef,
-        undefined, // suppressUntilRef not needed for V2
-        isInitialized // isInitiallyLoaded 
-      )
-    : useSimpleAutoSave(
-        {
-          ...state,
-          columns: [] // Remove columns from team sync
-        }, 
-        rundownId, 
-        (meta?: { updatedAt?: string; docVersion?: number }) => {
-          actions.markSaved();
-          
-          // Track save time for race condition detection in cell broadcasts
-          lastSaveTimeRef.current = Date.now();
-          
-          if (meta?.updatedAt) {
-            setLastKnownTimestamp(meta.updatedAt);
-          }
-          if (meta?.docVersion) {
-            setLastSeenDocVersion(meta.docVersion);
-          }
-        },
-        pendingStructuralChangeRef,
-        undefined, // suppressUntilRef
-        isInitialized, // isInitiallyLoaded
-        blockUntilLocalEditRef,
-        cooldownUntilRef,
-        applyingCellBroadcastRef
-      );
+  // Auto-save functionality with unified save pipeline - ALWAYS call both hooks to follow rules of hooks
+  const onSaveCallback = useCallback((meta?: { updatedAt?: string; docVersion?: number }) => {
+    actions.markSaved();
+    
+    // Track save time for race condition detection in cell broadcasts
+    lastSaveTimeRef.current = Date.now();
+    
+    if (meta?.updatedAt) {
+      setLastKnownTimestamp(meta.updatedAt);
+    }
+    if (meta?.docVersion) {
+      setLastSeenDocVersion(meta.docVersion);
+    }
+  }, [actions]);
+
+  const stateForSave = useMemo(() => ({
+    ...state,
+    columns: [] // Remove columns from team sync
+  }), [state]);
+
+  // ALWAYS call both hooks to avoid conditional hook calls
+  const autoSaveV2Result = useSimplifiedAutoSaveV2(
+    stateForSave, 
+    rundownId, 
+    onSaveCallback,
+    pendingStructuralChangeRef,
+    undefined, // suppressUntilRef not needed for V2
+    isInitialized // isInitiallyLoaded 
+  );
+
+  const autoSaveV1Result = useSimpleAutoSave(
+    stateForSave, 
+    rundownId, 
+    onSaveCallback,
+    pendingStructuralChangeRef,
+    undefined, // suppressUntilRef
+    isInitialized, // isInitiallyLoaded
+    blockUntilLocalEditRef,
+    cooldownUntilRef,
+    applyingCellBroadcastRef
+  );
+
+  // Choose which result to use based on feature flag
+  const autoSaveResult = isPerCellSaveEnabled ? autoSaveV2Result : autoSaveV1Result;
   
   // Extract properties with fallbacks for compatibility
   const { 
