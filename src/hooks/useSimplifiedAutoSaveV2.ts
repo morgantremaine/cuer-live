@@ -67,43 +67,60 @@ export const useSimplifiedAutoSaveV2 = (
 
   // Simplified signature creation - no caching complexity
   const createContentSignatureFromState = useCallback((targetState: RundownState) => {
-    const cleanItems = targetState.items?.map((item: any) => {
-      const cleanItem: any = {
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        duration: item.duration,
-        color: item.color,
-        isFloating: item.isFloating,
-        customFields: item.customFields || {}
-      };
-      
-      // Remove any undefined/null values to ensure clean comparison
-      Object.keys(cleanItem).forEach(key => {
-        if (cleanItem[key] === undefined || cleanItem[key] === null) {
-          cleanItem[key] = '';
+    try {
+      // Safety check for state
+      if (!targetState) {
+        logger.warn('AutoSaveV2: targetState is undefined');
+        return '';
+      }
+
+      const cleanItems = targetState.items?.map((item: any) => {
+        // Safety check for item
+        if (!item) {
+          logger.warn('AutoSaveV2: item is undefined');
+          return {};
         }
+
+        const cleanItem: any = {
+          id: item.id || '',
+          type: item.type || '',
+          name: item.name || '',
+          talent: item.talent || '',
+          script: item.script || '',
+          gfx: item.gfx || '',
+          video: item.video || '',
+          images: item.images || '',
+          notes: item.notes || '',
+          duration: item.duration || '',
+          color: item.color || '',
+          isFloating: item.isFloating || false,
+          customFields: item.customFields || {}
+        };
+        
+        // Remove any undefined/null values to ensure clean comparison
+        Object.keys(cleanItem).forEach(key => {
+          if (cleanItem[key] === undefined || cleanItem[key] === null) {
+            cleanItem[key] = '';
+          }
+        });
+        
+        return cleanItem;
+      }) || [];
+
+      const signature = JSON.stringify({
+        items: cleanItems,
+        title: targetState.title || '',
+        startTime: targetState.startTime || '',
+        timezone: targetState.timezone || '',
+        showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
+        externalNotes: targetState.externalNotes || ''
       });
       
-      return cleanItem;
-    }) || [];
-
-    const signature = JSON.stringify({
-      items: cleanItems,
-      title: targetState.title || '',
-      startTime: targetState.startTime || '',
-      timezone: targetState.timezone || '',
-      showDate: targetState.showDate ? `${targetState.showDate.getFullYear()}-${String(targetState.showDate.getMonth() + 1).padStart(2, '0')}-${String(targetState.showDate.getDate()).padStart(2, '0')}` : null,
-      externalNotes: targetState.externalNotes || ''
-    });
-    
-    return signature;
+      return signature;
+    } catch (error) {
+      logger.error('AutoSaveV2: Error creating content signature', error);
+      return '';
+    }
   }, []);
 
   // Simplified baseline priming
@@ -125,40 +142,46 @@ export const useSimplifiedAutoSaveV2 = (
   useEffect(() => {
     if (!isInitiallyLoaded) return;
 
-    // Prime baseline once per rundown when initial load completes
-    if (rundownId !== lastPrimedRundownRef.current) {
-      const sig = createContentSignature();
-      
-      // Safety check to prevent crashes
-      if (!sig) {
-        logger.warn('AutoSaveV2: createContentSignature returned undefined, skipping baseline prime');
-        return;
+    try {
+      // Prime baseline once per rundown when initial load completes
+      if (rundownId !== lastPrimedRundownRef.current) {
+        console.log('🔄 AutoSaveV2: Starting initialization for rundown', rundownId);
+        
+        const sig = createContentSignature();
+        
+        // Safety check to prevent crashes
+        if (!sig) {
+          logger.warn('AutoSaveV2: createContentSignature returned undefined, skipping baseline prime');
+          return;
+        }
+        
+        if (typeof sig !== 'string') {
+          logger.warn('AutoSaveV2: createContentSignature returned non-string', typeof sig);
+          return;
+        }
+        
+        lastSavedRef.current = sig;
+        lastPrimedRundownRef.current = rundownId;
+        
+        // Clear bootstrapping flag
+        setIsBootstrapping(false);
+        
+        // Clear unsaved changes flag
+        setTimeout(() => {
+          onSavedRef.current?.();
+        }, 100);
+        
+        console.log('✅ AutoSaveV2: primed baseline for rundown', { 
+          rundownId, 
+          length: sig.length 
+        });
       }
-      
-      lastSavedRef.current = sig;
-      lastPrimedRundownRef.current = rundownId;
-      
-      // Initialize field delta system with safety check
-      if (initializeSavedState) {
-        initializeSavedState(state);
-      } else {
-        logger.warn('AutoSaveV2: initializeSavedState not available yet');
-      }
-      
-      // Clear bootstrapping flag
+    } catch (error) {
+      logger.error('AutoSaveV2: Critical error in initialization effect', error);
+      // Try to continue without crashing
       setIsBootstrapping(false);
-      
-      // Clear unsaved changes flag
-      setTimeout(() => {
-        onSavedRef.current?.();
-      }, 100);
-      
-      console.log('✅ AutoSaveV2: primed baseline for rundown', { 
-        rundownId, 
-        length: sig.length 
-      });
     }
-  }, [isInitiallyLoaded, rundownId, createContentSignature]);
+  }, [isInitiallyLoaded, rundownId, createContentSignature, state]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -183,6 +206,21 @@ export const useSimplifiedAutoSaveV2 = (
     rundownId,
     trackMyUpdate
   );
+
+  // Separate effect to initialize saved state after it's available
+  useEffect(() => {
+    if (!isInitiallyLoaded || !initializeSavedState) return;
+    
+    // Only initialize if we haven't done it for this rundown yet
+    if (rundownId === lastPrimedRundownRef.current) {
+      try {
+        initializeSavedState(state);
+        logger.debug('AutoSaveV2: Successfully initialized saved state');
+      } catch (error) {
+        logger.error('AutoSaveV2: Error initializing saved state', error);
+      }
+    }
+  }, [isInitiallyLoaded, rundownId, initializeSavedState, state]);
 
   // ULTRA-SIMPLIFIED typing tracker - no blocking logic
   const markActiveTyping = useCallback(() => {
