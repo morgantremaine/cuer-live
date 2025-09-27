@@ -58,7 +58,8 @@ export const useEnhancedFieldDeltaSave = (
   const saveDeltaState = useCallback(async (currentState: any): Promise<{ updatedAt: string; docVersion: number; }> => {
     console.log('🧪 PER-CELL SAVE: saveDeltaState called', {
       isPerCellSaveEnabled,
-      trackedFieldsCount: Object.keys(trackingRef.current).length
+      trackedFieldsCount: Object.keys(trackingRef.current).length,
+      trackedFields: Object.keys(trackingRef.current)
     });
     
     if (!isPerCellSaveEnabled) {
@@ -67,19 +68,33 @@ export const useEnhancedFieldDeltaSave = (
       return oldFieldDeltaSave.saveDeltaState(currentState);
     }
 
+    // Check if we have tracked fields to save
+    const trackedFieldsCount = Object.keys(trackingRef.current).length;
+    if (trackedFieldsCount === 0) {
+      console.log('🧪 PER-CELL SAVE: No tracked fields to save, falling back to old system');
+      return oldFieldDeltaSave.saveDeltaState(currentState);
+    }
+
     // New per-cell save system
+    console.log('🧪 PER-CELL SAVE: Starting per-cell save process', {
+      trackedFields: Object.keys(trackingRef.current)
+    });
     logger.info('Using new per-cell save system', {
       trackedFields: Object.keys(trackingRef.current).length
     });
 
     // First ensure per-cell save is enabled for this rundown
+    console.log('🧪 PER-CELL SAVE: Enabling per-cell save for rundown');
     await enablePerCellSaveForRundown();
 
     // Save each tracked field individually
+    console.log('🧪 PER-CELL SAVE: Creating save promises for tracked fields');
     const savePromises = Object.entries(trackingRef.current).map(
       async ([fieldKey, { itemId, fieldName, value }]) => {
         try {
+          console.log('🧪 PER-CELL SAVE: Saving field', { fieldKey, itemId, fieldName });
           const result = await saveField(itemId, fieldName, value);
+          console.log('🧪 PER-CELL SAVE: Field save result', { fieldKey, success: result.success, error: result.error });
           if (result.success) {
             logger.debug('Field saved successfully', { fieldKey });
             delete trackingRef.current[fieldKey];
@@ -89,15 +104,23 @@ export const useEnhancedFieldDeltaSave = (
             return false;
           }
         } catch (error) {
+          console.log('🧪 PER-CELL SAVE: Field save exception', { fieldKey, error });
           logger.error('Field save exception', { fieldKey, error });
           return false;
         }
       }
     );
 
+    console.log('🧪 PER-CELL SAVE: Waiting for all save promises to complete');
     const results = await Promise.all(savePromises);
     const successCount = results.filter(Boolean).length;
     const totalCount = results.length;
+
+    console.log('🧪 PER-CELL SAVE: All saves completed', {
+      successCount,
+      totalCount,
+      success: successCount === totalCount
+    });
 
     logger.info('Per-cell save batch complete', {
       successCount,
@@ -106,10 +129,13 @@ export const useEnhancedFieldDeltaSave = (
     });
 
     // Return format expected by the hook consumers
-    return {
+    const result = {
       updatedAt: new Date().toISOString(),
       docVersion: Date.now() // Use timestamp as version for now
     };
+    
+    console.log('🧪 PER-CELL SAVE: Returning result', result);
+    return result;
   }, [
     isPerCellSaveEnabled,
     oldFieldDeltaSave,
