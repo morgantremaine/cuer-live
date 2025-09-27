@@ -192,7 +192,9 @@ export const useSimplifiedRundownState = () => {
     onSaveCallback,
     pendingStructuralChangeRef,
     undefined, // suppressUntilRef not needed for V2
-    isInitialized // isInitiallyLoaded 
+    isInitialized, // isInitiallyLoaded 
+    false, // isSharedView
+    !isPerCellSaveEnabled // disabled - disable V2 when per-cell save is OFF
   );
 
   const autoSaveV1Result = useSimpleAutoSave(
@@ -204,7 +206,9 @@ export const useSimplifiedRundownState = () => {
     isInitialized, // isInitiallyLoaded
     blockUntilLocalEditRef,
     cooldownUntilRef,
-    applyingCellBroadcastRef
+    applyingCellBroadcastRef,
+    false, // isSharedView
+    isPerCellSaveEnabled // disabled - disable V1 when per-cell save is ON
   );
 
   // Choose which result to use based on feature flag

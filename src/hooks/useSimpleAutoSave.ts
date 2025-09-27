@@ -23,7 +23,8 @@ export const useSimpleAutoSave = (
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>,
   cooldownUntilRef?: React.MutableRefObject<number>,
   applyingCellBroadcastRef?: React.MutableRefObject<boolean>,
-  isSharedView = false
+  isSharedView = false,
+  disabled = false
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -398,7 +399,7 @@ export const useSimpleAutoSave = (
       performSave(true, isSharedView);
       maxDelayTimeoutRef.current = null;
     }, maxSaveDelay);
-  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
+  }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving, disabled]);
 
   // Check if user is currently typing with improved logic and debugging
   const isTypingActive = useCallback(() => {
@@ -461,6 +462,12 @@ export const useSimpleAutoSave = (
 
   // Enhanced save function with immediate typing cancellation
   const performSave = useCallback(async (isFlushSave = false, isSharedView = false): Promise<void> => {
+    // Skip if disabled
+    if (disabled) {
+      console.log('⏭️ AutoSave: disabled - skipping save');
+      return;
+    }
+
     // CRITICAL: Gate autosave until initial load is complete
     if (!isInitiallyLoaded) {
       debugLogger.autosave('Save blocked: initial load not complete');
@@ -782,7 +789,7 @@ export const useSimpleAutoSave = (
         }
       }
     }
-  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef, disabled]);
 
   // Keep latest performSave reference without retriggering effects
   useEffect(() => {

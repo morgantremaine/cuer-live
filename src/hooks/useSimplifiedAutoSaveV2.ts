@@ -29,7 +29,8 @@ export const useSimplifiedAutoSaveV2 = (
   pendingStructuralChangeRef?: React.MutableRefObject<boolean>,
   suppressUntilRef?: React.MutableRefObject<number>,
   isInitiallyLoaded?: boolean,
-  isSharedView = false
+  isSharedView = false,
+  disabled = false
 ) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -278,7 +279,7 @@ export const useSimplifiedAutoSaveV2 = (
       performSave(false, isSharedView);
     }, TYPING_IDLE_MS);
     
-  }, [isSaving, isSharedView]);
+  }, [isSaving, isSharedView, disabled]);
 
   // Check if user is currently typing - simplified
   const isTypingActive = useCallback(() => {
@@ -288,6 +289,12 @@ export const useSimplifiedAutoSaveV2 = (
 
   // SIMPLIFIED SAVE LOGIC - No blocking, no complex timing
   const performSave = useCallback(async (forced = false, isSharedViewMode = false) => {
+    // Skip if disabled
+    if (disabled) {
+      console.log('⏭️ AutoSaveV2: disabled - skipping save');
+      return;
+    }
+
     // Skip demo rundown
     if (rundownId === DEMO_RUNDOWN_ID) {
       console.log('⏭️ AutoSaveV2: skipping demo rundown save');
@@ -366,7 +373,7 @@ export const useSimplifiedAutoSaveV2 = (
       saveInProgressRef.current = false;
       setIsSaving(false);
     }
-  }, [rundownId, createContentSignature, saveDeltaState, state, trackMyUpdate, toast]);
+  }, [rundownId, createContentSignature, saveDeltaState, state, trackMyUpdate, toast, disabled]);
 
   // Force save function
   const forceSave = useCallback(() => {
