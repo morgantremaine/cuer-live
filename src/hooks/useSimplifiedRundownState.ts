@@ -1343,12 +1343,10 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
       
-      // For per-cell saves, notify the system that a structural operation completed
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering per-cell save completion');
-        setTimeout(() => {
-          actions.markSaved();
-        }, 100);
+        console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
+        markStructuralChange('delete_row', { deletedIds: [id] });
       }
       
       // Broadcast row removal for immediate realtime sync
@@ -1361,18 +1359,16 @@ export const useSimplifiedRundownState = () => {
           currentUserId
         );
       }
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
       
-      // For per-cell saves, notify the system that a structural operation completed
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering per-cell save completion');
-        setTimeout(() => {
-          actions.markSaved();
-        }, 100);
+        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
+        markStructuralChange('add_row', { items: state.items });
       }
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
@@ -1388,18 +1384,16 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
       
-      // For per-cell saves, notify the system that a structural operation completed
+      // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering per-cell save completion');
-        setTimeout(() => {
-          actions.markSaved();
-        }, 100);
+        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
+        markStructuralChange('add_header', { items: state.items });
       }
       
       if (rundownId && currentUserId) {
@@ -1414,7 +1408,7 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
