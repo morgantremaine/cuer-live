@@ -82,7 +82,7 @@ export const useSimpleAutoSave = (
     onSavedRef.current = onSaved;
   }, [onSaved]);
 
-  // Create content signature from current state (backwards compatibility)
+  // Enhanced content signature creation with system auditing
   const createCurrentContentSignature = useCallback(() => {
     const signature = createContentSignatureFromState(state);
     return signature;
@@ -186,6 +186,7 @@ export const useSimpleAutoSave = (
     }
     
     // Standard signature for smaller rundowns - use content-only function from utils
+  const createCurrentContentSignature = useCallback(() => {
     const signature = createContentSignature({
       items: targetState.items || [],
       title: targetState.title || '',
