@@ -595,27 +595,29 @@ export const useTeam = () => {
         filter: `id=eq.${team.id}`
       }, (payload) => {
         console.log('🔔 Team name updated:', payload.new);
-        console.log('🔔 Previous team state:', team);
         
-        const newTeamState = prev => {
-          const updated = prev ? { 
+        // Use functional update to avoid stale closure
+        setTeam(prev => {
+          if (!prev) return payload.new as Team;
+          
+          const updated = { 
             ...prev, 
             name: payload.new.name,
             updated_at: payload.new.updated_at,
             created_at: payload.new.created_at 
-          } : payload.new as Team;
+          };
+          
+          console.log('🔔 Previous team state:', prev);
           console.log('🔔 New team state:', updated);
+          console.log('🔔 setTeam called - TeamProvider should re-render now');
+          
           return updated;
-        };
+        });
         
-        setTeam(newTeamState);
-        
-        // Also update in allUserTeams
+        // Also update in allUserTeams - use the payload.new.id instead of captured team.id
         setAllUserTeams(prev => prev.map(t => 
-          t.id === team.id ? { ...t, name: payload.new.name } : t
+          t.id === payload.new.id ? { ...t, name: payload.new.name } : t
         ));
-        
-        console.log('🔔 setTeam called - waiting for component re-render');
       })
       .subscribe();
     
