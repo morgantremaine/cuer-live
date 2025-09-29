@@ -585,8 +585,8 @@ export const useSimpleAutoSave = (
       return;
     }
     
-  // RELAXED SAVE POLICY: For collaborative editing, be more aggressive about saving
-  // Only skip save if we're certain there are no changes AND no unsaved changes flag
+  // PRECISE SAVE POLICY: Use signature-based change detection with robust validation
+  // Only skip save if signatures match, no unsaved changes flag, and we have a baseline
   if (finalSignature === lastSavedRef.current && !state.hasUnsavedChanges && lastSavedRef.current.length > 0) {
     debugLogger.autosave('No changes to save - marking as saved');
     console.log('ℹ️ AutoSave: no content changes detected - signatures match and no unsaved changes');
@@ -595,10 +595,8 @@ export const useSimpleAutoSave = (
     return;
   }
   
-  // For collaborative environments, if there's ANY doubt, save the data
-  if (state.hasUnsavedChanges || lastSavedRef.current.length === 0) {
-    console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
-  }
+  // Proceed with save when we have actual changes or it's the first save
+  console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=' + state.hasUnsavedChanges + ', isFirstSave=' + (lastSavedRef.current.length === 0));
     
     // Mark save in progress and capture what we're saving
     setIsSaving(true);
