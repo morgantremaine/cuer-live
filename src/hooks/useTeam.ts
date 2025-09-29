@@ -515,7 +515,8 @@ export const useTeam = () => {
         return { error: error.message };
       }
 
-      // Update the team list in the dropdown - realtime subscription handles main state
+      // Reload team data to reflect the change
+      await loadTeamData();
       await loadAllUserTeams();
       
       return { success: true };
@@ -594,28 +595,10 @@ export const useTeam = () => {
         filter: `id=eq.${team.id}`
       }, (payload) => {
         console.log('🔔 Team name updated:', payload.new);
-        
-        // Use functional update to avoid stale closure
-        setTeam(prev => {
-          if (!prev) return payload.new as Team;
-          
-          const updated = { 
-            ...prev, 
-            name: payload.new.name,
-            updated_at: payload.new.updated_at,
-            created_at: payload.new.created_at 
-          };
-          
-          console.log('🔔 Previous team state:', prev);
-          console.log('🔔 New team state:', updated);
-          console.log('🔔 setTeam called - TeamProvider should re-render now');
-          
-          return updated;
-        });
-        
-        // Also update in allUserTeams - use the payload.new.id instead of captured team.id
+        setTeam(prev => prev ? { ...prev, name: payload.new.name } : null);
+        // Also update in allUserTeams
         setAllUserTeams(prev => prev.map(t => 
-          t.id === payload.new.id ? { ...t, name: payload.new.name } : t
+          t.id === team.id ? { ...t, name: payload.new.name } : t
         ));
       })
       .subscribe();

@@ -7,7 +7,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { TeamProvider } from "@/contexts/TeamContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
 import Index from "./pages/Index";
@@ -221,10 +220,8 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <TeamProvider>
-                <AppUpdateNotification />
-                <AppRoutes />
-              </TeamProvider>
+              <AppUpdateNotification />
+              <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
