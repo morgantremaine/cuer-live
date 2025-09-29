@@ -56,11 +56,17 @@ serve(async (req) => {
       )
     }
 
-    console.log('🧪 Cell-level save:', {
+    console.log('🧪 EDGE FUNCTION: Cell-level save request received:', {
       rundownId,
       fieldUpdateCount: fieldUpdates.length,
-      fields: fieldUpdates.map(u => ({ itemId: u.itemId, field: u.field })),
-      userId: user.id
+      fields: fieldUpdates.map(u => ({ 
+        itemId: u.itemId, 
+        field: u.field, 
+        valueType: typeof u.value,
+        valueLength: typeof u.value === 'string' ? u.value.length : 'N/A'
+      })),
+      userId: user.id,
+      contentSignature
     })
 
     // Get current rundown state with locking for consistency
@@ -78,7 +84,13 @@ serve(async (req) => {
     }
 
     // Check if per-cell save is enabled
+    console.log('🧪 EDGE FUNCTION: Checking per-cell save status:', {
+      per_cell_save_enabled: currentRundown.per_cell_save_enabled,
+      rundownTitle: currentRundown.title
+    });
+    
     if (!currentRundown.per_cell_save_enabled) {
+      console.log('🚨 EDGE FUNCTION: Per-cell save not enabled for rundown');
       return new Response(
         JSON.stringify({ error: 'Per-cell save not enabled for this rundown' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -97,10 +109,26 @@ serve(async (req) => {
     const itemFieldUpdates = currentRundown.item_field_updates || {}
     const updateTimestamp = new Date().toISOString()
 
+    console.log('🧪 EDGE FUNCTION: Processing field updates...');
+    
     for (const update of fieldUpdates) {
+      console.log('🧪 EDGE FUNCTION: Processing update:', {
+        itemId: update.itemId,
+        field: update.field,
+        valueType: typeof update.value,
+        timestamp: update.timestamp
+      });
+      
       if (update.itemId) {
         // Item field update
         const itemIndex = updatedItems.findIndex(item => item.id === update.itemId)
+        console.log('🧪 EDGE FUNCTION: Item field update:', {
+          itemId: update.itemId,
+          itemIndex,
+          field: update.field,
+          found: itemIndex >= 0
+        });
+        
         if (itemIndex >= 0) {
           // Update the item field
           updatedItems[itemIndex] = {
@@ -117,9 +145,15 @@ serve(async (req) => {
             timestamp: updateTimestamp,
             userId: user.id
           }
+          console.log('🧪 EDGE FUNCTION: Item field updated and tracked');
         }
       } else {
         // Global field update
+        console.log('🧪 EDGE FUNCTION: Global field update:', {
+          field: update.field,
+          valueType: typeof update.value
+        });
+        
         switch (update.field) {
           case 'title':
             updatedTitle = update.value
@@ -139,6 +173,8 @@ serve(async (req) => {
         }
       }
     }
+    
+    console.log('🧪 EDGE FUNCTION: All updates processed, preparing database save...');
 
     // Build update data - NO doc_version conflicts!
     const updateData = {
@@ -169,11 +205,13 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ Cell-level save successful:', {
+    console.log('✅ EDGE FUNCTION: Cell-level save successful:', {
       rundownId,
       updatedFields: fieldUpdates.length,
       updatedAt: updatedRundown.updated_at,
-      userId: user.id
+      docVersion: updatedRundown.doc_version,
+      userId: user.id,
+      itemFieldUpdatesCount: Object.keys(itemFieldUpdates).length
     })
 
     return new Response(

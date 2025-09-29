@@ -33,12 +33,22 @@ export const usePerCellSaveCoordination = ({
 
   // Unified field tracking - routes to appropriate system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
+    console.log('🧪 SAVE COORDINATION: trackFieldChange called', {
+      itemId,
+      field,
+      value: typeof value === 'string' ? value.substring(0, 50) : value,
+      isPerCellEnabled,
+      rundownId
+    });
+    
     if (isPerCellEnabled) {
       // Use cell-level save system
+      console.log('🧪 SAVE COORDINATION: Routing to per-cell save system');
       trackCellChange(itemId, field, value);
       debugLogger.autosave(`Per-cell save: tracked ${field} change`);
     } else {
       // Use delta save system
+      console.log('🧪 SAVE COORDINATION: Routing to delta save system');
       trackDeltaFieldChange(itemId, field, value);
       debugLogger.autosave(`Delta save: tracked ${field} change`);
     }
@@ -64,11 +74,20 @@ export const usePerCellSaveCoordination = ({
 
   // Initialize saved state baseline
   const initializeBaseline = useCallback((state: RundownState) => {
+    console.log('🧪 SAVE COORDINATION: Initializing baseline', {
+      isPerCellEnabled,
+      rundownId,
+      itemCount: state.items?.length || 0
+    });
+    
     lastSavedStateRef.current = JSON.parse(JSON.stringify(state));
     
     if (!isPerCellEnabled) {
       // Only initialize delta system if not using per-cell
+      console.log('🧪 SAVE COORDINATION: Initializing delta save system');
       initializeSavedState(state);
+    } else {
+      console.log('🧪 SAVE COORDINATION: Skipping delta initialization for per-cell save');
     }
     
     debugLogger.autosave(`Initialized baseline for ${isPerCellEnabled ? 'per-cell' : 'delta'} save`);

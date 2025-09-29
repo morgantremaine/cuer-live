@@ -31,14 +31,25 @@ export const useCellLevelSave = (
 
     pendingUpdatesRef.current.push(update);
     
+    console.log('🧪 PER-CELL SAVE: Cell change tracked', {
+      rundownId,
+      itemId,
+      field,
+      value: typeof value === 'string' ? value.substring(0, 100) : value,
+      pendingCount: pendingUpdatesRef.current.length,
+      timestamp: update.timestamp
+    });
+    
     debugLogger.autosave(`Cell change tracked: ${field} for item ${itemId || 'global'}`);
 
     // Debounce save - trigger after 500ms of no new changes
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
+      console.log('🧪 PER-CELL SAVE: Clearing previous save timeout');
     }
 
     saveTimeoutRef.current = setTimeout(() => {
+      console.log('🧪 PER-CELL SAVE: Save timeout triggered, calling savePendingUpdates');
       savePendingUpdates();
     }, 500);
   }, [rundownId]);
@@ -46,11 +57,18 @@ export const useCellLevelSave = (
   // Save pending updates to database via edge function
   const savePendingUpdates = useCallback(async () => {
     if (!rundownId || pendingUpdatesRef.current.length === 0) {
+      console.log('🧪 PER-CELL SAVE: No updates to save', { rundownId, pendingCount: pendingUpdatesRef.current.length });
       return;
     }
 
     const updatesToSave = [...pendingUpdatesRef.current];
     pendingUpdatesRef.current = []; // Clear pending updates
+
+    console.log('🧪 PER-CELL SAVE: Starting save operation', {
+      rundownId,
+      updateCount: updatesToSave.length,
+      updates: updatesToSave.map(u => ({ itemId: u.itemId, field: u.field, timestamp: u.timestamp }))
+    });
 
     try {
       debugLogger.autosave(`Saving ${updatesToSave.length} cell-level updates`);
@@ -63,6 +81,8 @@ export const useCellLevelSave = (
         externalNotes: ''
       });
 
+      console.log('🧪 PER-CELL SAVE: Invoking edge function', { contentSignature });
+
       const { data, error } = await supabase.functions.invoke('cell-field-save', {
         body: {
           rundownId,
@@ -72,13 +92,18 @@ export const useCellLevelSave = (
       });
 
       if (error) {
-        console.error('🚨 Cell-level save failed:', error);
+        console.error('🚨 PER-CELL SAVE: Edge function error:', error);
         // Put updates back in queue for retry
         pendingUpdatesRef.current.unshift(...updatesToSave);
         throw error;
       }
 
       if (data?.success) {
+        console.log('✅ PER-CELL SAVE: Save successful', {
+          fieldsUpdated: data.fieldsUpdated,
+          updatedAt: data.updatedAt,
+          docVersion: data.docVersion
+        });
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         trackOwnUpdate(data.updatedAt);
         return {
@@ -86,11 +111,12 @@ export const useCellLevelSave = (
           docVersion: data.docVersion
         };
       } else {
+        console.error('🚨 PER-CELL SAVE: Save failed with data:', data);
         throw new Error(data?.error || 'Unknown save error');
       }
 
     } catch (error) {
-      console.error('🚨 Cell-level save error:', error);
+      console.error('🚨 PER-CELL SAVE: Exception during save:', error);
       throw error;
     }
   }, [rundownId, trackOwnUpdate]);

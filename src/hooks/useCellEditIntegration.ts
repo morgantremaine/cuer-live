@@ -32,12 +32,22 @@ export const useCellEditIntegration = ({
     fieldName: string,
     newValue: any
   ) => {
+    console.log('🧪 CELL EDIT INTEGRATION: handleCellChange called', {
+      itemId,
+      fieldName,
+      newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue,
+      isPerCellEnabled,
+      rundownId
+    });
+    
     if (!isPerCellEnabled) {
       // Fallback to normal change tracking for non-per-cell rundowns
+      console.log('🧪 CELL EDIT INTEGRATION: Per-cell disabled, using normal tracking');
       debugLogger.autosave(`Cell change (non-per-cell): ${fieldName} for item ${itemId || 'global'}`);
       return;
     }
 
+    console.log('🧪 CELL EDIT INTEGRATION: Per-cell enabled, tracking field change');
     // Track the field change in the per-cell system
     trackFieldChange(itemId, fieldName, newValue);
     
