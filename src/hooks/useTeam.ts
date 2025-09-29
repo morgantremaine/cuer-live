@@ -595,7 +595,13 @@ export const useTeam = () => {
         filter: `id=eq.${team.id}`
       }, (payload) => {
         console.log('🔔 Team name updated:', payload.new);
-        setTeam(prev => prev ? { ...prev, name: payload.new.name } : null);
+        // Merge all fields from payload to ensure updated_at and other fields trigger re-render
+        setTeam(prev => prev ? { 
+          ...prev, 
+          name: payload.new.name,
+          updated_at: payload.new.updated_at,
+          created_at: payload.new.created_at 
+        } : payload.new as Team);
         // Also update in allUserTeams
         setAllUserTeams(prev => prev.map(t => 
           t.id === team.id ? { ...t, name: payload.new.name } : t
