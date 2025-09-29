@@ -581,7 +581,8 @@ export const useTeam = () => {
       setIsLoading(true);
       loadTeamData();
     }
-  }, [user?.id, activeTeamId, loadTeamData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, activeTeamId]);
 
   // Realtime subscriptions for team updates and membership changes
   useEffect(() => {
