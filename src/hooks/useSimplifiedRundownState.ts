@@ -10,6 +10,7 @@ import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
+import { useActiveTeam } from './useActiveTeam';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +33,7 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
+  const { activeTeamId } = useActiveTeam();
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1264,15 +1266,8 @@ export const useSimplifiedRundownState = () => {
             throw new Error('User not authenticated');
           }
           
-          const { data: teamData, error: teamError } = await supabase
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', userData.user.id)
-            .limit(1)
-            .single();
-          
-          if (teamError || !teamData) {
-            throw new Error('No team found for user');
+          if (!activeTeamId) {
+            throw new Error('No active team selected');
           }
           
           // Get folder ID from location state if available
@@ -1285,7 +1280,7 @@ export const useSimplifiedRundownState = () => {
               title: 'Untitled Rundown',
               items: createDefaultRundownItems(),
               user_id: userData.user.id,
-              team_id: teamData.team_id,
+              team_id: activeTeamId,
               folder_id: folderId,
               archived: false,
               show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format

@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Column } from '@/types/columns';
+import { Column } from '@/types/columns'
+import { useActiveTeam } from '@/hooks/useActiveTeam'
 
 interface ColumnLayout {
   id: string
@@ -25,6 +26,7 @@ export const useColumnLayoutStorage = () => {
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
+  const { activeTeamId } = useActiveTeam()
 
   const loadLayouts = async () => {
     if (!user) return
@@ -128,14 +130,8 @@ export const useColumnLayoutStorage = () => {
     if (!user) return
 
     try {
-      // Get user's first team for new layouts
-      const { data: teamMemberships } = await supabase
-        .from('team_members')
-        .select('team_id')
-        .eq('user_id', user.id)
-        .limit(1)
-
-      const teamId = teamMemberships?.[0]?.team_id || null
+      // Use the active team from the team switcher
+      const teamId = activeTeamId
 
       // Save only visible columns to preserve exact layout state
       const visibleColumns = columns.filter(col => col.isVisible !== false)
