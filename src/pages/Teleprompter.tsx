@@ -336,7 +336,12 @@ const Teleprompter = () => {
     // Set active shadow to trigger existing typing indicators in main rundown
     localShadowStore.setShadow(itemId, 'script', newScript, true);
     
-    console.log('📝 Teleprompter: Set active shadow for real-time collaboration', itemId);
+    // Also set field protection through focus tracker for additional safety
+    const { globalFocusTracker } = await import('@/utils/focusTracker');
+    const fieldKey = `item_${itemId}-script`;
+    globalFocusTracker.setFieldProtection(fieldKey, 3000);
+    
+    console.log('📝 Teleprompter: Set shadow, focus protection for collaboration', { itemId, fieldKey });
     
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
