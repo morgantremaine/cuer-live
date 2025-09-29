@@ -576,7 +576,7 @@ export const useSimplifiedRundownState = () => {
               // Handle new structural broadcast format
               const operationData = update.value?.operationData;
               const order: string[] = Array.isArray(operationData?.order) ? operationData.order : [];
-              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length });
+              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length, userId: update.userId });
               if (order.length > 0) {
                 const indexMap = new Map(order.map((id, idx) => [id, idx]));
                 const reordered = [...stateRef.current.items].sort((a, b) => {
@@ -585,7 +585,7 @@ export const useSimplifiedRundownState = () => {
                   return ai - bi;
                 });
                 actionsRef.current.loadState({ items: reordered });
-                console.log('✅ Applied structural reorder to', reordered.length, 'items');
+                console.log('🎯 REAL-TIME REORDER: Applied structural reorder from user', update.userId, 'to', reordered.length, 'items');
               }
               break;
             }
