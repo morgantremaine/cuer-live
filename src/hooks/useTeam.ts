@@ -490,6 +490,36 @@ export const useTeam = () => {
     }
   };
 
+  const updateTeamName = async (newName: string) => {
+    if (!team?.id) {
+      return { error: 'No team found' };
+    }
+
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      return { error: 'Team name cannot be empty' };
+    }
+
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .update({ name: trimmedName, updated_at: new Date().toISOString() })
+        .eq('id', team.id);
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // Reload team data to reflect the change
+      await loadTeamData();
+      await loadAllUserTeams();
+      
+      return { success: true };
+    } catch (error) {
+      return { error: 'Failed to update team name' };
+    }
+  };
+
   const acceptInvitation = async (token: string) => {
     try {
       const { data, error } = await supabase.rpc('accept_invitation_secure', {
@@ -577,6 +607,7 @@ export const useTeam = () => {
     getTransferPreview,
     removeTeamMemberWithTransfer,
     acceptInvitation,
+    updateTeamName,
     loadTeamData,
     loadTeamMembers,
     loadPendingInvitations,
