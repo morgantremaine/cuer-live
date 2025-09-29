@@ -332,7 +332,7 @@ const Teleprompter = () => {
     
     // Simulate focus on script field for real-time collaboration visibility
     const { globalFocusTracker } = await import('@/utils/focusTracker');
-    globalFocusTracker.setFieldProtection(`${itemId}-script`, 3000);
+    globalFocusTracker.setFieldProtection(`item_${itemId}-script`, 3000);
     
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
