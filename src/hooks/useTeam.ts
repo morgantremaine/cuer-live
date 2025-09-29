@@ -139,6 +139,9 @@ export const useTeam = () => {
         if (userTeams.length > 0) {
           // Use the most recent team
           targetTeamId = userTeams[0].id;
+          // Update active team to match the fallback selection
+          console.log('🔄 useTeam - No valid active team, using fallback:', targetTeamId);
+          setActiveTeam(targetTeamId);
         } else {
           // User has no team memberships - create a personal team
           console.log('🔍 useTeam - No team found, creating personal team');
@@ -194,7 +197,7 @@ export const useTeam = () => {
       setTeam(teamData);
       setUserRole(role);
       
-      // Set as active team if not already set
+      // Only set as active team if it's different from current
       if (activeTeamId !== targetTeamId) {
         console.log('🔄 useTeam - Setting active team ID:', targetTeamId);
         setActiveTeam(targetTeamId);
@@ -227,7 +230,7 @@ export const useTeam = () => {
   const switchToTeam = useCallback(async (teamId: string) => {
     console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
     
-    if (teamId === activeTeamId) {
+    if (teamId === activeTeamId && teamId === team?.id) {
       console.log('⚠️ useTeam - Already on requested team, skipping switch');
       return;
     }
