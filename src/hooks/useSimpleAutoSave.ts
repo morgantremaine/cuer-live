@@ -300,7 +300,6 @@ export const useSimpleAutoSave = (
   
   const markActiveTyping = useCallback(() => {
     const now = Date.now();
-    console.log('🎯 TYPING DETECTION: markActiveTyping called', { now, userTypingBefore: userTypingRef.current });
     lastEditAtRef.current = now;
     recentKeystrokes.current = now;
     userTypingRef.current = true; // Set user typing flag
@@ -308,7 +307,6 @@ export const useSimpleAutoSave = (
     
     // CRITICAL: Set hasUnsavedChangesRef for consistency
     hasUnsavedChangesRef.current = true;
-    console.log('🎯 TYPING DETECTION: Set typing flags', { userTyping: true, hasUnsavedChanges: true });
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
