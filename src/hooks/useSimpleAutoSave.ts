@@ -292,17 +292,22 @@ export const useSimpleAutoSave = (
   // Check if per-cell save is enabled for this rundown
   const isPerCellEnabled = Boolean((state as any).perCellSaveEnabled);
 
+  // Get current user ID from state for structural operations
+  const currentUserId = (state as any).currentUserId;
+
   // Unified save coordination - switches between per-cell and delta saves
   const {
     trackFieldChange,
     saveState: saveCoordinatedState,
     initializeBaseline,
     hasUnsavedChanges: hasCoordinatedUnsavedChanges,
+    handleStructuralOperation,
     isPerCellEnabled: perCellActive
   } = usePerCellSaveCoordination({
     rundownId,
     trackOwnUpdate: trackMyUpdate,
-    isPerCellEnabled
+    isPerCellEnabled,
+    currentUserId
   });
 
   // Legacy field delta save (fallback when per-cell is disabled)
@@ -1030,6 +1035,8 @@ export const useSimpleAutoSave = (
   // Note: Cell update coordination now handled via React context instead of global variables
 
   return {
+    trackFieldChange,
+    handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
     setUndoActive,
     setTrackOwnUpdate,

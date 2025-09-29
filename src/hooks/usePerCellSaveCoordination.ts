@@ -2,18 +2,22 @@ import { useCallback, useRef } from 'react';
 import { RundownState } from './useRundownState';
 import { useCellLevelSave } from './useCellLevelSave';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
+import { useStructuralSave } from './useStructuralSave';
 import { debugLogger } from '@/utils/debugLogger';
+import { RundownItem } from '@/types/rundown';
 
 interface PerCellSaveOptions {
   rundownId: string | null;
   trackOwnUpdate: (timestamp: string) => void;
   isPerCellEnabled: boolean;
+  currentUserId?: string;
 }
 
 export const usePerCellSaveCoordination = ({
   rundownId,
   trackOwnUpdate,
-  isPerCellEnabled
+  isPerCellEnabled,
+  currentUserId
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
@@ -30,6 +34,13 @@ export const usePerCellSaveCoordination = ({
     initializeSavedState,
     trackFieldChange: trackDeltaFieldChange
   } = useFieldDeltaSave(rundownId, trackOwnUpdate);
+
+  // Structural save system (for per-cell mode)
+  const {
+    queueStructuralOperation,
+    flushPendingOperations: flushStructuralOperations,
+    hasPendingOperations: hasPendingStructuralOperations
+  } = useStructuralSave(rundownId, trackOwnUpdate);
 
   // Unified field tracking - routes to appropriate system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -93,22 +104,97 @@ export const usePerCellSaveCoordination = ({
     debugLogger.autosave(`Initialized baseline for ${isPerCellEnabled ? 'per-cell' : 'delta'} save`);
   }, [isPerCellEnabled, initializeSavedState]);
 
+  // Handle structural operations (add/delete/move rows)
+  const handleStructuralOperation = useCallback((
+    operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
+    operationData: {
+      items?: RundownItem[];
+      order?: string[];
+      deletedIds?: string[];
+      newItems?: RundownItem[];
+      insertIndex?: number;
+    }
+  ) => {
+    console.log('🧪 SAVE COORDINATION: handleStructuralOperation called', {
+      operationType,
+      isPerCellEnabled,
+      currentUserId,
+      rundownId
+    });
+
+    if (isPerCellEnabled && currentUserId) {
+      // Use structural save system for per-cell mode
+      console.log('🧪 SAVE COORDINATION: Routing to structural save system');
+      queueStructuralOperation(operationType, operationData, currentUserId);
+      debugLogger.autosave(`Per-cell structural save: ${operationType}`);
+    } else {
+      // For delta mode, structural operations fall back to full autosave
+      console.log('🧪 SAVE COORDINATION: Structural operation in delta mode - letting autosave handle it');
+      debugLogger.autosave(`Delta mode structural operation: ${operationType} (handled by autosave)`);
+    }
+  }, [isPerCellEnabled, currentUserId, queueStructuralOperation, rundownId]);
+
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {
     if (isPerCellEnabled) {
-      return hasPendingCellUpdates();
+      const cellChanges = hasPendingCellUpdates();
+      const structuralChanges = hasPendingStructuralOperations();
+      console.log('🧪 SAVE COORDINATION: Checking unsaved changes', {
+        cellChanges,
+        structuralChanges,
+        total: cellChanges || structuralChanges
+      });
+      return cellChanges || structuralChanges;
     } else {
       // For delta system, we'd need to check if current state differs from saved
       // This is handled by the calling autosave system
       return false;
     }
-  }, [isPerCellEnabled, hasPendingCellUpdates]);
+  }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations]);
+
+  // Enhanced save function that handles both cell and structural changes
+  const enhancedSaveState = useCallback(async (currentState: RundownState) => {
+    if (isPerCellEnabled) {
+      const hasCellChanges = hasPendingCellUpdates();
+      const hasStructuralChanges = hasPendingStructuralOperations();
+      
+      console.log('🧪 SAVE COORDINATION: Enhanced save state', {
+        hasCellChanges,
+        hasStructuralChanges,
+        totalChanges: hasCellChanges || hasStructuralChanges
+      });
+
+      if (!hasCellChanges && !hasStructuralChanges) {
+        debugLogger.autosave('Per-cell save: no pending changes to flush');
+        throw new Error('No changes to save');
+      }
+
+      // Flush structural operations first (they're more critical)
+      if (hasStructuralChanges) {
+        debugLogger.autosave('Per-cell save: flushing structural operations');
+        await flushStructuralOperations();
+      }
+
+      // Then flush cell updates
+      if (hasCellChanges) {
+        debugLogger.autosave('Per-cell save: flushing cell updates');
+        await flushCellUpdates();
+      }
+
+      return;
+    } else {
+      // Delta save: use existing delta system
+      debugLogger.autosave('Delta save: saving state deltas');
+      return await saveDeltaState(currentState);
+    }
+  }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, saveDeltaState]);
 
   return {
     trackFieldChange,
-    saveState,
+    saveState: enhancedSaveState,
     initializeBaseline,
     hasUnsavedChanges,
+    handleStructuralOperation,
     isPerCellEnabled
   };
 };
