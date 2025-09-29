@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
-import TypingIndicator from './TypingIndicator';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -251,9 +250,6 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative min-w-0">
-        {/* Typing indicator for when someone else is editing this field */}
-        <TypingIndicator fieldKey={`item_${itemId}-${fieldType}`} />
-        
         {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
           <div className="relative">
