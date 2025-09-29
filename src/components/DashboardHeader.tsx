@@ -52,7 +52,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
 
             {/* Team Selector - Prominent Left Position */}
             {team && (
-              <DropdownMenu>
+              <DropdownMenu key={`team-dropdown-${team.id}-${team.name}`}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
