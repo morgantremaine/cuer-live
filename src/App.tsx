@@ -217,16 +217,16 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <TeamProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <TeamProvider>
                 <AppUpdateNotification />
                 <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </TeamProvider>
+              </TeamProvider>
+            </BrowserRouter>
+          </TooltipProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
