@@ -1419,6 +1419,7 @@ export const useSimplifiedRundownState = () => {
       if (state.title !== newTitle) {
         // Track field change for per-cell save system
         if (cellEditIntegration.isPerCellEnabled) {
+          console.log('🧪 SIMPLIFIED STATE: Tracking title change for per-cell save');
           cellEditIntegration.handleCellChange(undefined, 'title', newTitle);
         }
         
@@ -1663,6 +1664,7 @@ export const useSimplifiedRundownState = () => {
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking startTime change for per-cell save');
         cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
       }
       
@@ -1681,6 +1683,7 @@ export const useSimplifiedRundownState = () => {
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking timezone change for per-cell save');
         cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
       }
       
@@ -1699,6 +1702,7 @@ export const useSimplifiedRundownState = () => {
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking showDate change for per-cell save');
         cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
       }
       
