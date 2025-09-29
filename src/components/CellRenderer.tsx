@@ -144,6 +144,7 @@ const CellRenderer = ({
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
         onUpdateValue={(newValue) => {
+          console.log('🎯 CELLRENDERER: ExpandableScriptCell onUpdateValue', { itemId: item.id, columnKey: column.key, newValue });
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
@@ -166,14 +167,17 @@ const CellRenderer = ({
       isDuration={isTimeField}
       fieldKeyForProtection={column.isCustom ? `customFields.${column.key}` : ((column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key)}
       onUpdateValue={(newValue) => {
+        console.log('🎯 CELLRENDERER: TextAreaCell onUpdateValue', { itemId: item.id, columnKey: column.key, isCustom: column.isCustom, newValue });
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
           const field = `customFields.${column.key}`;
+          console.log('🎯 CELLRENDERER: Calling onUpdateItem for custom field', { itemId: item.id, field, newValue });
           onUpdateItem(item.id, field, newValue);
         } else {
           // For segmentName column, always update the 'name' field
           // For name column, also update the 'name' field
           const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
+          console.log('🎯 CELLRENDERER: Calling onUpdateItem for built-in field', { itemId: item.id, field, columnKey: column.key, newValue });
           onUpdateItem(item.id, field, newValue);
         }
       }}
