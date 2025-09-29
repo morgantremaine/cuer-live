@@ -32,7 +32,18 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
   const { trackCellChange, flushPendingUpdates, hasPendingUpdates } = useCellLevelSave(
     rundownId,
     trackOwnUpdate || (() => {}),
-    onSaveEnd,
+    (savedUpdates) => {
+      // Handle save completion with details about what was saved
+      if (savedUpdates && savedUpdates.length > 0) {
+        savedUpdates.forEach(update => {
+          if (update.itemId && update.field === 'script') {
+            console.log('📝 Teleprompter: Per-cell save completed, calling success callback', { itemId: update.itemId });
+            onSaveSuccess?.(update.itemId, update.value);
+          }
+        });
+      }
+      onSaveEnd?.();
+    },
     onSaveStart,
     () => setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }))
   );
@@ -155,28 +166,21 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     }
   }, [executeSave, backupChange, clearBackup, onSaveSuccess]);
 
-  // Debounced save function - calls executeSave to ensure callbacks fire
+  // Simplified save function - just track changes and let per-cell system handle debouncing
   const debouncedSave = useCallback((
     itemId: string, 
     newScript: string, 
     rundownData?: any,
     delay: number = 500
   ) => {
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
     // Backup immediately
     backupChange(itemId, newScript);
     
     setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
 
-    // Set new timeout - call executeSave to ensure callbacks work
-    saveTimeoutRef.current = setTimeout(() => {
-      executeSave(itemId, newScript);
-    }, delay);
-  }, [backupChange, executeSave]);
+    // Track the change immediately - per-cell save system will handle debouncing
+    trackCellChange(itemId, 'script', newScript);
+  }, [backupChange, trackCellChange]);
 
   // Manual save function (for Ctrl+S) - calls executeSave to ensure callbacks work
   const forceSave = useCallback(async (itemId: string, script: string, rundownData?: any) => {

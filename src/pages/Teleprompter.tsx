@@ -342,8 +342,8 @@ const Teleprompter = () => {
       items: updatedItems
     });
 
-    // Use debounced save for persistence (500ms) - no need to pass rundownData anymore
-    debouncedSave(itemId, newScript, undefined, 500);
+    // Use immediate tracking - let per-cell save system handle debouncing
+    debouncedSave(itemId, newScript);
     
     // Clear typing session after delay
     setTimeout(() => {

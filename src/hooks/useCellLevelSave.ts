@@ -14,7 +14,7 @@ interface FieldUpdate {
 export const useCellLevelSave = (
   rundownId: string | null,
   trackOwnUpdate: (timestamp: string) => void,
-  onSaveComplete?: () => void,
+  onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void
 ) => {
@@ -123,10 +123,10 @@ export const useCellLevelSave = (
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         trackOwnUpdate(data.updatedAt);
         
-        // Notify the main system that save completed
+        // Notify the main system that save completed with details
         if (onSaveComplete) {
           console.log('🧪 PER-CELL SAVE: Notifying main system of save completion');
-          onSaveComplete();
+          onSaveComplete(updatesToSave);
         }
         
         return {
