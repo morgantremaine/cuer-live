@@ -587,7 +587,9 @@ export const useTeam = () => {
       return;
     }
     
-    if (!isLoadingRef.current) {
+    const currentKey = `${user.id}-${activeTeamId}`;
+    // Only load if we haven't already loaded for this user/team combination
+    if (!isLoadingRef.current && loadedUserRef.current !== currentKey) {
       setIsLoading(true);
       loadTeamData();
     }
