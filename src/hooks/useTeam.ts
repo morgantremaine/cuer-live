@@ -233,17 +233,22 @@ export const useTeam = () => {
     }
     
     console.log('🔄 useTeam - Setting active team to:', teamId);
+    
+    // Immediately update the active team state
     setActiveTeam(teamId);
     
-    // Reset loading state to trigger reload
-    console.log('🔄 useTeam - Resetting loading state');
+    // Force immediate reload of team data 
+    console.log('🔄 useTeam - Force reloading team data immediately');
+    setIsLoading(true);
     loadedUserRef.current = null;
     isLoadingRef.current = false;
-    setIsLoading(true);
     
-    // Let the useEffect handle the actual loading - don't call loadTeamData here
-    // to avoid race conditions with stale activeTeamId values
-    console.log('🔄 useTeam - Team switch complete, useEffect will handle loading');
+    // Trigger reload after a small delay to ensure state is updated
+    setTimeout(() => {
+      loadTeamData();
+    }, 100);
+    
+    console.log('🔄 useTeam - Team switch initiated');
   }, [setActiveTeam, activeTeamId, team?.id]);
 
   const loadTeamMembers = async (teamId: string) => {
@@ -525,7 +530,7 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes or active team changes
+  // Load team data when user changes (remove activeTeamId dependency to prevent conflicts)
   useEffect(() => {
     console.log('🔄 useTeam main useEffect triggered', { 
       userId: user?.id, 
@@ -534,21 +539,8 @@ export const useTeam = () => {
       loadedUser: loadedUserRef.current 
     });
     
-    // Only load if we don't have a cached result for this user or if active team changed
-    if (user?.id && !isLoadingRef.current) {
-      // Only log initial team loads to reduce noise
-      if (!loadedUserRef.current) {
-        console.log('📊 useTeam - Initial team load for user:', user.id);
-        debugLogger.team('Initial team load for user:', user.id);
-      } else {
-        console.log('🔄 useTeam - Active team changed, reloading data');
-      }
-      setIsLoading(true);
-      setTimeout(() => {
-        console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
-        loadTeamData();
-      }, 100);
-    } else if (!user?.id) {
+    // Only proceed if we have a user
+    if (!user?.id) {
       console.log('❌ useTeam - No user, clearing all team state');
       setTeam(null);
       setAllUserTeams([]);
@@ -559,13 +551,29 @@ export const useTeam = () => {
       setError(null);
       loadedUserRef.current = null;
       isLoadingRef.current = false;
-    } else {
+      return;
+    }
+
+    // Skip if already loading to prevent conflicts
+    if (isLoadingRef.current) {
       console.log('⚠️ useTeam - Skipping load (isLoading or no user):', { 
         hasUser: !!user?.id, 
         isLoading: isLoadingRef.current 
       });
+      return;
     }
-  }, [user?.id, activeTeamId]);
+    
+    // Only load if we don't have a cached result for this user
+    if (!loadedUserRef.current) {
+      console.log('📊 useTeam - Initial team load for user:', user.id);
+      debugLogger.team('Initial team load for user:', user.id);
+      setIsLoading(true);
+      setTimeout(() => {
+        console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
+        loadTeamData();
+      }, 100);
+    }
+  }, [user?.id]); // Remove activeTeamId dependency to prevent conflicts
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
