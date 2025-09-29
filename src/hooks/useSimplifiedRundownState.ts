@@ -7,6 +7,7 @@ import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useCellEditIntegration } from './useCellEditIntegration';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 
 import { globalFocusTracker } from '@/utils/focusTracker';
@@ -658,6 +659,13 @@ export const useSimplifiedRundownState = () => {
     };
   }, [rundownId, currentUserId]);
   
+  // Cell edit integration for per-cell saves (after realtime connection is established)
+  const cellEditIntegration = useCellEditIntegration({
+    rundownId,
+    trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
+    isPerCellEnabled: Boolean(state.perCellSaveEnabled)
+  });
+  
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
   
@@ -902,8 +910,19 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.updateItem(id, { [updateField]: updateValue });
+      
+      // CRITICAL: Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking per-cell field change', {
+          itemId: id,
+          field: updateField,
+          isPerCellEnabled: cellEditIntegration.isPerCellEnabled,
+          rundownId
+        });
+        cellEditIntegration.handleCellChange(id, updateField, updateValue);
+      }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
 
   // Optimized field tracking with debouncing
   const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
