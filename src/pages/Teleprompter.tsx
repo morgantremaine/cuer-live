@@ -221,7 +221,10 @@ const Teleprompter = () => {
       
       // Broadcast the change for real-time collaboration AFTER successful save
       if (user) {
+        console.log('📡 Teleprompter: Broadcasting cell update for real-time collaboration', { itemId, scriptLength: script.length });
         cellBroadcast.broadcastCellUpdate(rundownId!, itemId, 'script', script, user.id);
+      } else {
+        console.log('⚠️ Teleprompter: No user found, skipping cell broadcast');
       }
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,

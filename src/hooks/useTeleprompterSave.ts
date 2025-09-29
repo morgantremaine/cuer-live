@@ -38,6 +38,16 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         savedUpdates.forEach(update => {
           if (update.itemId && update.field === 'script') {
             console.log('📝 Teleprompter: Per-cell save completed, calling success callback', { itemId: update.itemId });
+            
+            // Update save state to show save completed
+            setSaveState(prev => ({
+              ...prev,
+              isSaving: false,
+              lastSaved: new Date(),
+              hasUnsavedChanges: false,
+              saveError: null
+            }));
+            
             onSaveSuccess?.(update.itemId, update.value);
           }
         });
@@ -176,8 +186,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     // Backup immediately
     backupChange(itemId, newScript);
     
-    setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
-
     // Track the change immediately - per-cell save system will handle debouncing
     trackCellChange(itemId, 'script', newScript);
   }, [backupChange, trackCellChange]);
@@ -210,7 +218,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
   return {
     saveState: {
       ...saveState,
-      hasUnsavedChanges: saveState.hasUnsavedChanges || hasPendingUpdates()
+      hasUnsavedChanges: saveState.hasUnsavedChanges && hasPendingUpdates()
     },
     debouncedSave,
     forceSave,
