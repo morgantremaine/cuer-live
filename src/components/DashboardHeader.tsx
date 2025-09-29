@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
 import CuerLogo from '@/components/common/CuerLogo'
-import { useTeam } from '@/hooks/useTeam'
+import { useTeam } from '@/contexts/TeamContext'
 
 interface DashboardHeaderProps {
   userEmail?: string
