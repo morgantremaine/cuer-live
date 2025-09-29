@@ -182,7 +182,6 @@ const AccountManagement = () => {
   return (
     <div className="dark min-h-screen bg-gray-900">
       <DashboardHeader 
-        key={team?.id}
         userEmail={user?.email} 
         onSignOut={handleSignOut}
         showBackButton={true}
