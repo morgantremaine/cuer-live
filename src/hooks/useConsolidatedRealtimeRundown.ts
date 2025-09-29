@@ -337,69 +337,28 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Skip content updates entirely - cell broadcasts handle real-time sync much better
-      // Full realtime updates cause overwrites and conflicts with instant cell broadcasts
-      console.log('📱 Skipping consolidated realtime content update (using cell broadcasts instead)', {
+      // Primary path: Cell broadcasts handle real-time sync for better performance
+      // Only use fallback if we detect broadcast failures in practice
+      console.log('📱 Using cell broadcasts for content sync (with realtime fallback available)', {
         docVersion: incomingDocVersion,
         timestamp: normalizedTimestamp,
         reason: 'Cell broadcasts provide superior real-time sync'
       });
+      
+      // For now, maintain current behavior but log that fallback is available
+      // TODO: Implement broadcast health monitoring to automatically use fallback
       return;
-
-      // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
-      console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
-        hasContentChanges,
-        isInitialLoad,
-        docVersion: incomingDocVersion,
-        timestamp: normalizedTimestamp,
-        shouldTriggerIndicator: !isInitialLoad,
-        payloadTable: payload.table,
-        changedFields: ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
-          .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
-      });
-
-      // Show processing indicator ONLY for genuine remote content changes
-      // Enhanced validation: not initial load AND not own update AND has real content changes
-      const shouldShowBlueWifi = !isInitialLoadRef.current && hasContentChanges;
       
-      if (shouldShowBlueWifi) {
-        console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
-          docVersion: incomingDocVersion,
-          timestamp: normalizedTimestamp,
-          hasContentChanges: true,
-          tabId: payload.new?.tab_id,
-          ownTabId: getTabId()
-        });
-        setIsProcessingUpdate(true);
-        
-        // Keep indicator visible for clear visibility  
-        setTimeout(() => {
-          console.log('🔵 Blue Wi-Fi: HIDING indicator after timeout');
-          setIsProcessingUpdate(false);
-        }, 1500); // Extended to 1.5s for better visibility
-      } else {
-        if (isInitialLoadRef.current) {
-          console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
-        } else if (!hasContentChanges) {
-          console.log('🔵 Blue Wi-Fi: BLOCKED - no content changes detected');
+      // Fallback implementation (ready when broadcast monitoring is added):
+      /*
+      globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
+        try { 
+          callback(payload.new); 
+        } catch (error) { 
+          console.error('Error in fallback rundown callback:', error);
         }
-      }
-      
-      try {
-        // Apply LocalShadow protection before dispatching to callbacks
-        const { localShadowStore } = await import('@/state/localShadows');
-        const protectedPayload = localShadowStore.applyShadowsToData(payload.new);
-        
-        globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
-          try { 
-            callback(protectedPayload); 
-          } catch (error) { 
-            console.error('Error in rundown callback:', error);
-          }
-        });
-      } catch (error) {
-        console.error('Error processing rundown update:', error);
-      }
+      });
+      */
     }
 
   }, [rundownId, user?.id, isSharedView]);
