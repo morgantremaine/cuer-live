@@ -8,6 +8,7 @@ import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 
 import { globalFocusTracker } from '@/utils/focusTracker';
@@ -689,6 +690,14 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
+  // Get save coordination system for structural operations
+  const saveCoordination = usePerCellSaveCoordination({
+    rundownId,
+    trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
+    isPerCellEnabled: perCellEnabled,
+    currentUserId
+  });
+  
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
   
@@ -953,24 +962,37 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Simplified handlers - enhanced for per-cell save coordination
-  const markStructuralChange = useCallback(() => {
+  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
     console.log('🏗️ markStructuralChange called', {
       perCellEnabled: Boolean(state.perCellSaveEnabled),
-      rundownId
+      rundownId,
+      operationType,
+      operationData
     });
     
     // For per-cell save mode, structural operations need immediate save coordination
-    if (state.perCellSaveEnabled) {
-      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering immediate save coordination');
-      // Mark as saved immediately since structural operations in per-cell mode 
-      // are handled by the structural save system
-      setTimeout(() => {
-        console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
-        actions.markSaved();
-      }, 100);
+    if (state.perCellSaveEnabled && cellEditIntegration) {
+      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
+      
+      // If we have operation details, use the per-cell coordination system
+      if (operationType && operationData && saveCoordination && currentUserId) {
+        console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
+          operationType,
+          operationData,
+          currentUserId
+        });
+        saveCoordination.handleStructuralOperation(operationType as any, operationData);
+      } else {
+        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
+        // Fallback - just mark as saved for now
+        setTimeout(() => {
+          console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
+          actions.markSaved();
+        }, 100);
+      }
     }
     // For regular autosave mode, no action needed - autosave handles it
-  }, [state.perCellSaveEnabled, rundownId, actions.markSaved]);
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
