@@ -7,6 +7,7 @@ import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';

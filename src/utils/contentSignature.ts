@@ -61,6 +61,17 @@ export const createContentSignature = (data: ContentSignatureData): string => {
     externalNotes: data.externalNotes || ''
   });
   
+  // Development logging for signature verification
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔐 CONTENT-ONLY SIGNATURE CREATED:', {
+      itemCount: cleanItems.length,
+      title: data.title || '',
+      signatureLength: signature.length,
+      excludedFields: ['columns', 'timezone', 'startTime'],
+      includedFields: ['items', 'title', 'showDate', 'externalNotes']
+    });
+  }
+  
   return signature;
 };
 
@@ -82,7 +93,8 @@ export const createUIPreferencesSignature = (data: ContentSignatureData): string
  * which causes signature mismatches between change tracking and autosave.
  */
 export const createUnifiedContentSignature = (data: ContentSignatureData): string => {
-  console.warn('createUnifiedContentSignature is deprecated. Use createContentSignature for content-only tracking.');
+  console.warn('⚠️ DEPRECATED: createUnifiedContentSignature is deprecated. Use createContentSignature for content-only tracking.');
+  console.trace('Called from:'); // Show call stack
   return createContentSignature(data);
 };
 

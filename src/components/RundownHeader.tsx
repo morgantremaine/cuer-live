@@ -152,6 +152,17 @@ const RundownHeader = ({
     // Check if content has actually changed (ignoring columns)
     const contentChanged = contentOnlySignature !== lastSavedContentSignatureRef.current;
     setHasContentOnlyChanges(contentChanged);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 RUNDOWN HEADER: Content-only change detection', {
+        contentChanged,
+        currentSigLength: contentOnlySignature.length,
+        lastSavedSigLength: lastSavedContentSignatureRef.current.length,
+        itemCount: (items || []).length,
+        title: title || '',
+        excludedFromDetection: ['columns', 'timezone', 'startTime', 'visibleColumns']
+      });
+    }
   }, [contentOnlySignature]);
 
   // Update baseline when main system completes a save

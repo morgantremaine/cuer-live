@@ -52,7 +52,13 @@ export const useChangeTracking = (
       externalNotes: ''
     });
     
-    console.log('🔍 Created content-only signature (showcaller-free), items count:', items?.length || 0);
+    console.log('🔍 CHANGE TRACKING: Created content-only signature', {
+      itemCount: items?.length || 0,
+      titleLength: (rundownTitle || '').length,
+      signatureLength: signature.length,
+      showcallerActive: showcallerActiveRef.current,
+      excludedFromSignature: ['columns', 'timezone', 'startTime', 'showcallerElapsed', 'showcallerSegmentElapsed']
+    });
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
@@ -135,13 +141,26 @@ export const useChangeTracking = (
     
     // Only trigger if signature actually changed AND showcaller is not active
     if (lastSavedDataRef.current !== currentSignature && !showcallerActiveRef.current) {
-      console.log('📝 Content change detected (not showcaller), marking as changed');
-      console.log('📝 Previous signature length:', lastSavedDataRef.current.length);
-      console.log('📝 Current signature length:', currentSignature.length);
-      
+      console.log('📝 CHANGE DETECTED: Content signature changed', {
+        previousLength: lastSavedDataRef.current.length,
+        currentLength: currentSignature.length,
+        itemCount: items?.length || 0,
+        titleChanged: rundownTitle !== 'previous_title_placeholder',
+        showcallerActive: showcallerActiveRef.current,
+        reason: 'Content modification detected'
+      });
       setHasUnsavedChanges(true);
+    } else if (lastSavedDataRef.current === currentSignature) {
+      console.log('✅ NO CHANGE: Signatures match exactly', {
+        signatureLength: currentSignature.length,
+        itemCount: items?.length || 0,
+        showcallerActive: showcallerActiveRef.current
+      });
     } else {
-      console.log('📝 No content change detected (showcaller-aware check)');
+      console.log('🚫 CHANGE BLOCKED: Showcaller active, ignoring changes', {
+        signatureChanged: lastSavedDataRef.current !== currentSignature,
+        showcallerActive: showcallerActiveRef.current
+      });
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignatureCallback, isProcessingRealtimeUpdate]);
 
@@ -165,7 +184,12 @@ export const useChangeTracking = (
     
     lastSavedDataRef.current = savedSignature;
     setHasUnsavedChanges(false);
-    console.log('✅ Marked as saved (showcaller-aware), signature length:', savedSignature.length);
+    console.log('✅ MARKED AS SAVED: Updated baseline signature', {
+      signatureLength: savedSignature.length,
+      itemCount: (savedItems || []).length,
+      title: savedTitle || '',
+      excludedFromSignature: ['columns', 'timezone', 'startTime']
+    });
   }, []);
 
   const markAsChanged = useCallback(() => {

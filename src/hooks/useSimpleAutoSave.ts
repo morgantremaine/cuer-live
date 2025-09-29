@@ -88,15 +88,23 @@ export const useSimpleAutoSave = (
     
     // Debug signature generation when we have unsaved changes
     if (state.hasUnsavedChanges && lastSavedRef.current && signature === lastSavedRef.current) {
-      console.warn('🔍 SIGNATURE DEBUG: Generated signature matches saved but hasUnsavedChanges=true', {
+      console.warn('🔍 AUTOSAVE DEBUG: Signature mismatch detected!', {
+        hasUnsavedChanges: state.hasUnsavedChanges,
+        signaturesMatch: signature === lastSavedRef.current,
         itemCount: state.items?.length || 0,
         titleLength: (state.title || '').length,
-        hasUnsavedChanges: state.hasUnsavedChanges,
-        sigLength: signature.length,
-        lastSavedLength: lastSavedRef.current.length,
-        firstDiff: signature.substring(0, 200) !== lastSavedRef.current.substring(0, 200) ? 'content differs' : 'content identical'
+        currentSigLength: signature.length,
+        lastSavedSigLength: lastSavedRef.current.length,
+        issue: 'Change tracking and autosave signatures should be consistent'
       });
     }
+    
+    console.log('💾 AUTOSAVE: Created current signature', {
+      itemCount: state.items?.length || 0,
+      signatureLength: signature.length,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      matchesLastSaved: signature === lastSavedRef.current
+    });
     
     return signature;
   }, [state]);
@@ -206,7 +214,13 @@ export const useSimpleAutoSave = (
       timestamp: Date.now()
     });
     
-    debugLogger.autosave(`Created full signature with ${itemCount} items`);
+    console.log('💾 AUTOSAVE: Created content signature', {
+      itemCount,
+      signatureLength: signature.length,
+      signatureType: 'standard',
+      excludedFromSignature: ['columns', 'timezone', 'startTime'],
+      cached: false
+    });
     return signature;
   }, []);
 
