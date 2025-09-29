@@ -241,12 +241,9 @@ export const useTeam = () => {
     isLoadingRef.current = false;
     setIsLoading(true);
     
-    // Delay to ensure activeTeamId is updated
-    console.log('🔄 useTeam - Scheduling team data load');
-    setTimeout(() => {
-      console.log('🔄 useTeam - Executing delayed loadTeamData');
-      loadTeamData();
-    }, 100);
+    // Let the useEffect handle the actual loading - don't call loadTeamData here
+    // to avoid race conditions with stale activeTeamId values
+    console.log('🔄 useTeam - Team switch complete, useEffect will handle loading');
   }, [setActiveTeam, activeTeamId, team?.id]);
 
   const loadTeamMembers = async (teamId: string) => {
