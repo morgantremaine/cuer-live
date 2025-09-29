@@ -70,7 +70,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                           ) : (
                             <Users className="h-3.5 w-3.5 text-gray-400" />
                           )}
-                          <span className="font-semibold text-sm">{team.name}</span>
+                          <span key={team.name} className="font-semibold text-sm">{team.name}</span>
                         </div>
                       </div>
                       <ChevronDown className="h-4 w-4 text-gray-400 ml-2" />
