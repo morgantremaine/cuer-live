@@ -55,6 +55,10 @@ export const useSimplifiedRundownState = () => {
   // Track per-cell save enabled state to coordinate saving systems
   const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
   
+  // Track structural operation save state
+  const [isStructuralSaving, setIsStructuralSaving] = useState(false);
+  const [hasStructuralUnsavedChanges, setHasStructuralUnsavedChanges] = useState(false);
+  
   // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
@@ -687,15 +691,35 @@ export const useSimplifiedRundownState = () => {
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();
+    },
+    onSaveStart: () => {
+      console.log('🧪 PER-CELL SAVE: Save started');
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 PER-CELL SAVE: Unsaved changes detected');
     }
   });
   
-  // Get save coordination system for structural operations
+  // Get save coordination system for structural operations - use same callbacks as cell edit integration
   const saveCoordination = usePerCellSaveCoordination({
     rundownId,
     trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
     isPerCellEnabled: perCellEnabled,
-    currentUserId
+    currentUserId,
+    onSaveComplete: () => {
+      console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
+      setIsStructuralSaving(false);
+      setHasStructuralUnsavedChanges(false);
+      actions.markSaved();
+    },
+    onSaveStart: () => {
+      console.log('🧪 STRUCTURAL SAVE: Save started - updating UI state');
+      setIsStructuralSaving(true);
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
+      setHasStructuralUnsavedChanges(true);
+    }
   });
   
   // Get catch-up sync function from realtime connection
@@ -1590,8 +1614,12 @@ export const useSimplifiedRundownState = () => {
     currentTime,
     rundownId,
     isLoading: isLoading || isLoadingColumns,
-    hasUnsavedChanges: perCellEnabled ? cellEditIntegration.hasUnsavedChanges : state.hasUnsavedChanges,
-    isSaving: perCellEnabled ? cellEditIntegration.isPerCellSaving : (isSaving || isSavingColumns),
+    hasUnsavedChanges: perCellEnabled ? 
+      (cellEditIntegration.hasUnsavedChanges || hasStructuralUnsavedChanges) : 
+      state.hasUnsavedChanges,
+    isSaving: perCellEnabled ? 
+      (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
+      (isSaving || isSavingColumns),
     showcallerActivity,
     
     // Realtime connection status
