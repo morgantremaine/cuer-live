@@ -567,31 +567,31 @@ const DashboardRundownGrid = ({
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="default"
+                    size="sm"
+                    onClick={() => onOpen(rundown.id)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
+                  >
+                    <Play className="h-3 w-3 mr-1" />
+                    Open
+                  </Button>
+                  <Button
+                    variant="default"
                     size="sm"
                     onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
-                    className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={(e) => handlePrompterClick(rundown.id, e)}
-                    className="flex-1 border-gray-600 text-green-400 hover:text-green-300 hover:bg-gray-700"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
                     <Monitor className="h-3 w-3 mr-1" />
                     Prompter
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => onOpen(rundown.id)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0"
-                  >
-                    <Play className="h-3 w-3 mr-1" />
-                    Open
                   </Button>
                 </div>
                 
