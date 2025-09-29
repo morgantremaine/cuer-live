@@ -52,8 +52,8 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
 
             {/* Team Selector - Prominent Left Position */}
             {team && (
-              <DropdownMenu key={`dropdown-${team.id}-${team.name}-${userRole}`}>
-                <DropdownMenuTrigger asChild key={`trigger-${team.id}-${team.name}`}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
                     className="bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
@@ -77,13 +77,13 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-72 bg-gray-800 border-gray-700 z-50" key={`content-${team.id}`}>
+                <DropdownMenuContent align="start" className="w-72 bg-gray-800 border-gray-700 z-50">
                   <div className="px-3 py-2 text-sm font-semibold text-gray-300 border-b border-gray-700">
                     Switch Team
                   </div>
                   {allUserTeams.map((userTeam) => (
                     <DropdownMenuItem
-                      key={`${userTeam.id}-${team.id === userTeam.id ? 'active' : 'inactive'}`}
+                      key={userTeam.id}
                       onClick={() => handleTeamSwitch(userTeam.id)}
                       className={`flex items-center justify-between px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
                         team.id === userTeam.id ? 'bg-gray-700/50' : ''
