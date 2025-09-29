@@ -174,20 +174,20 @@ const RundownHeader = ({
     }
   }, [isSaving, hasUnsavedChanges, contentOnlySignature]);
 
-  // Track content-saving transitions to trigger a saved flash
-  const isSavingContent = isSaving && hasContentOnlyChanges;
+  // Track saving transitions to trigger a saved flash using the coordinated save state
   const [shouldShowSavedFlash, setShouldShowSavedFlash] = useState(false);
-  const prevIsSavingContentRef = useRef(false);
+  const prevIsSavingRef = useRef(false);
   React.useEffect(() => {
-    const prev = prevIsSavingContentRef.current;
-    if (prev && !isSavingContent && !hasUnsavedChanges) {
+    const prev = prevIsSavingRef.current;
+    // Trigger flash when save completes (was saving, now not saving, and no unsaved changes)
+    if (prev && !isSaving && !hasUnsavedChanges) {
       setShouldShowSavedFlash(true);
       // Keep the flag true long enough for the indicator to see it and start its own timer
       const timer = setTimeout(() => setShouldShowSavedFlash(false), 100);
       return () => clearTimeout(timer);
     }
-    prevIsSavingContentRef.current = isSavingContent;
-  }, [isSavingContent, hasUnsavedChanges]);
+    prevIsSavingRef.current = isSaving;
+  }, [isSaving, hasUnsavedChanges]);
 
   // Create save state using the proper save state from the hook
   // This includes per-cell save state when per-cell save is enabled
