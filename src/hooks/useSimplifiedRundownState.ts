@@ -1417,6 +1417,11 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       if (state.title !== newTitle) {
+        // Track field change for per-cell save system
+        if (cellEditIntegration.isPerCellEnabled) {
+          cellEditIntegration.handleCellChange(undefined, 'title', newTitle);
+        }
+        
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
@@ -1435,7 +1440,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId])
+    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration])
   };
 
   // Get visible columns from user preferences
@@ -1655,8 +1660,11 @@ export const useSimplifiedRundownState = () => {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1664,14 +1672,17 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setStartTime(newStartTime);
-    }, [actions.setStartTime, rundownId, currentUserId]),
+    }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1679,14 +1690,17 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setTimezone(newTimezone);
-    }, [actions.setTimezone, rundownId, currentUserId]),
+    }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
     setShowDate: useCallback((newShowDate: Date | null) => {
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1694,7 +1708,7 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setShowDate(newShowDate);
-    }, [actions.setShowDate, rundownId, currentUserId]),
+    }, [actions.setShowDate, rundownId, currentUserId, cellEditIntegration]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,
