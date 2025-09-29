@@ -52,63 +52,65 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
 
             {/* Team Selector - Prominent Left Position */}
             {team && (
-              <DropdownMenu key={`team-dropdown-${team.id}-${team.name}`}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-1.5 bg-blue-500/20 rounded-md">
-                        <ArrowLeftRight className="h-4 w-4 text-blue-400" />
-                      </div>
-                      <div className="flex flex-col items-start">
-                        <span className="text-xs text-gray-400 font-normal">Current Team</span>
-                        <div className="flex items-center space-x-2">
-                          {userRole === 'admin' ? (
-                            <Shield className="h-3.5 w-3.5 text-blue-400" />
-                          ) : (
-                            <Users className="h-3.5 w-3.5 text-gray-400" />
-                          )}
-                          <span key={team.name} className="font-semibold text-sm">{team.name}</span>
-                        </div>
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-gray-400 ml-2" />
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-72 bg-gray-800 border-gray-700 z-50">
-                  <div className="px-3 py-2 text-sm font-semibold text-gray-300 border-b border-gray-700">
-                    Switch Team
-                  </div>
-                  {allUserTeams.map((userTeam) => (
-                    <DropdownMenuItem
-                      key={userTeam.id}
-                      onClick={() => handleTeamSwitch(userTeam.id)}
-                      className={`flex items-center justify-between px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
-                        team.id === userTeam.id ? 'bg-gray-700/50' : ''
-                      }`}
+              <div key={`team-selector-${team.id}-${team.name}`}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`p-1.5 rounded-md ${userTeam.role === 'admin' ? 'bg-blue-500/20' : 'bg-gray-600/20'}`}>
-                          {userTeam.role === 'admin' ? (
-                            <Shield className="h-4 w-4 text-blue-400" />
-                          ) : (
-                            <Users className="h-4 w-4 text-gray-400" />
-                          )}
+                        <div className="p-1.5 bg-blue-500/20 rounded-md">
+                          <ArrowLeftRight className="h-4 w-4 text-blue-400" />
                         </div>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{userTeam.name}</span>
-                          <span className="text-xs text-gray-500">{userTeam.role}</span>
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs text-gray-400 font-normal">Current Team</span>
+                          <div className="flex items-center space-x-2">
+                            {userRole === 'admin' ? (
+                              <Shield className="h-3.5 w-3.5 text-blue-400" />
+                            ) : (
+                              <Users className="h-3.5 w-3.5 text-gray-400" />
+                            )}
+                            <span className="font-semibold text-sm">{team.name}</span>
+                          </div>
                         </div>
+                        <ChevronDown className="h-4 w-4 text-gray-400 ml-2" />
                       </div>
-                      {team.id === userTeam.id && (
-                        <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-72 bg-gray-800 border-gray-700 z-50">
+                    <div className="px-3 py-2 text-sm font-semibold text-gray-300 border-b border-gray-700">
+                      Switch Team
+                    </div>
+                    {allUserTeams.map((userTeam) => (
+                      <DropdownMenuItem
+                        key={userTeam.id}
+                        onClick={() => handleTeamSwitch(userTeam.id)}
+                        className={`flex items-center justify-between px-3 py-3 text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
+                          team.id === userTeam.id ? 'bg-gray-700/50' : ''
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-1.5 rounded-md ${userTeam.role === 'admin' ? 'bg-blue-500/20' : 'bg-gray-600/20'}`}>
+                            {userTeam.role === 'admin' ? (
+                              <Shield className="h-4 w-4 text-blue-400" />
+                            ) : (
+                              <Users className="h-4 w-4 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{userTeam.name}</span>
+                            <span className="text-xs text-gray-500">{userTeam.role}</span>
+                          </div>
+                        </div>
+                        {team.id === userTeam.id && (
+                          <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             )}
           </div>
           
