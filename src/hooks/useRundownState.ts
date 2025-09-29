@@ -60,6 +60,11 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
+    console.log('📝 CONTENT CHANGE: Setting hasUnsavedChanges=true', {
+      action: actionType,
+      isContentChange: true,
+      reason: 'Actual content modification detected'
+    });
     debugLogger.autosave('Content change flagged (hasUnsavedChanges=true) via action:', actionType);
     try {
       debugLogger.autosave('Save cause trace');
@@ -136,16 +141,20 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return markChanged({ title: action.payload }, 'SET_TITLE');
 
     case 'SET_START_TIME':
-      return markChanged({ startTime: action.payload }, 'SET_START_TIME');
+      // START_TIME is UI preference, not content - don't mark as changed
+      debugLogger.autosave('SET_START_TIME applied (UI preference) - no content change flagged');
+      return { ...state, startTime: action.payload };
 
     case 'SET_TIMEZONE':
-      return markChanged({ timezone: action.payload }, 'SET_TIMEZONE');
-
+      // TIMEZONE is UI preference, not content - don't mark as changed
+      debugLogger.autosave('SET_TIMEZONE applied (UI preference) - no content change flagged');
+      return { ...state, timezone: action.payload };
+      
     case 'SET_SHOW_DATE':
       return markChanged({ showDate: action.payload }, 'SET_SHOW_DATE');
-      
+
     case 'SET_EXTERNAL_NOTES':
-      return markChanged({ externalNotes: action.payload });
+      return markChanged({ externalNotes: action.payload }, 'SET_EXTERNAL_NOTES');
 
     case 'SET_CURRENT_SEGMENT':
       return { ...state, currentSegmentId: action.payload };
@@ -154,6 +163,10 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, isPlaying: action.payload };
 
     case 'MARK_SAVED':
+      console.log('✅ MARKED AS SAVED: hasUnsavedChanges=false', {
+        previousState: state.hasUnsavedChanges,
+        reason: 'Save operation completed'
+      });
       return { ...state, hasUnsavedChanges: false };
 
     case 'SET_DOC_VERSION':
