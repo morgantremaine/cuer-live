@@ -1,12 +1,14 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useActiveTeam } from './useActiveTeam';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface Team {
   id: string;
   name: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface TeamMember {
@@ -26,9 +28,18 @@ interface PendingInvitation {
   created_at: string;
 }
 
+interface UserTeam {
+  id: string;
+  name: string;
+  role: 'admin' | 'member';
+  joined_at: string;
+}
+
 export const useTeam = () => {
   const { user } = useAuth();
+  const { activeTeamId, setActiveTeam } = useActiveTeam();
   const [team, setTeam] = useState<Team | null>(null);
+  const [allUserTeams, setAllUserTeams] = useState<UserTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
@@ -39,8 +50,54 @@ export const useTeam = () => {
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
 
+  const loadAllUserTeams = useCallback(async () => {
+    if (!user) {
+      setAllUserTeams([]);
+      return [];
+    }
+
+    try {
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('team_members')
+        .select(`
+          team_id,
+          role,
+          joined_at,
+          teams!inner (
+            id,
+            name,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('joined_at', { ascending: false });
+
+      if (membershipError) {
+        console.error('Error fetching all user teams:', membershipError);
+        throw membershipError;
+      }
+
+      const userTeams: UserTeam[] = membershipData?.map(membership => {
+        const teamData = Array.isArray(membership.teams) ? membership.teams[0] : membership.teams;
+        return {
+          id: teamData.id,
+          name: teamData.name,
+          role: membership.role as 'admin' | 'member',
+          joined_at: membership.joined_at
+        };
+      }) || [];
+
+      setAllUserTeams(userTeams);
+      return userTeams;
+    } catch (error) {
+      console.error('Error loading all user teams:', error);
+      return [];
+    }
+  }, [user]);
+
   const loadTeamData = async () => {
-    debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current });
+    debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, activeTeamId });
     
     if (!user?.id || isLoadingRef.current) {
       debugLogger.team('Early exit - no user or already loading', { userId: !!user?.id, isLoading: isLoadingRef.current });
@@ -48,50 +105,26 @@ export const useTeam = () => {
       return;
     }
 
-    // Prevent duplicate loading for the same user
-    if (loadedUserRef.current === user.id) {
-      debugLogger.team('Early exit - already loaded for this user');
-      setIsLoading(false);
-      return;
-    }
-
     debugLogger.team('Starting team data load for user:', user.id);
     isLoadingRef.current = true;
-    loadedUserRef.current = user.id;
 
     try {
       // Add a small delay to ensure auth state is fully established
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Get user's team membership with better error handling
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('team_members')
-        .select(`
-          team_id,
-          role,
-          teams!inner (
-            id,
-            name
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('joined_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Load all user teams first
+      const userTeams = await loadAllUserTeams();
 
-      console.log('🔍 useTeam - User:', user.id, 'Found team:', membershipData?.teams, 'TeamId:', membershipData?.team_id);
+      let targetTeamId = activeTeamId;
 
-      debugLogger.team('Membership query result:', { membershipData, membershipError });
-
-      // Check if user has pending invitation FIRST before handling membership errors
+      // Check if user has pending invitation FIRST
       const pendingToken = localStorage.getItem('pendingInvitationToken');
       
-      if (membershipError && pendingToken && pendingToken !== 'undefined') {
+      if (pendingToken && pendingToken !== 'undefined' && userTeams.length === 0) {
         debugLogger.team('No membership found but have pending token, skipping team creation');
         console.log('User has pending invitation token, waiting for invitation processing on JoinTeam page');
         
         // Don't create a personal team if there's a pending invitation
-        // The invitation should be processed through the JoinTeam page
         setError(null);
         setTeam(null);
         setUserRole(null);
@@ -100,55 +133,16 @@ export const useTeam = () => {
         return;
       }
 
-      if (membershipError) {
-        console.error('Error loading team membership:', membershipError);
-        
-        // Only create personal team if no pending invitation token exists
-        debugLogger.team('Creating personal team as fallback');
-        const { data: newTeamData, error: createError } = await supabase.rpc(
-          'get_or_create_user_team',
-          { user_uuid: user.id }
-        );
-
-        if (createError) {
-          console.error('Error creating team:', createError);
-          setError('Failed to set up team');
-        } else if (newTeamData) {
-          console.log('Personal team created successfully, reloading...');
-          // Retry loading team data
-          setTimeout(() => {
-            loadedUserRef.current = null;
-            isLoadingRef.current = false;
-            loadTeamData();
-          }, 1000);
-          return;
-        }
-        setError('Failed to load team data');
-        setTeam(null);
-        setUserRole(null);
-      } else {
-        if (membershipData?.teams) {
-          const teamData = Array.isArray(membershipData.teams) ? membershipData.teams[0] : membershipData.teams;
-          debugLogger.team('Successfully loaded team data:', { teamId: teamData.id, teamName: teamData.name });
-          setTeam({
-            id: teamData.id,
-            name: teamData.name
-          });
-          setUserRole(membershipData.role);
-          setError(null);
-
-          debugLogger.team('Loading team members for team:', teamData.id);
-          // Load team members for ALL team members (not just admins)
-          await loadTeamMembers(teamData.id);
-          
-          // Load pending invitations only if user is admin
-          if (membershipData.role === 'admin') {
-            debugLogger.team('Loading pending invitations for admin');
-            await loadPendingInvitations(teamData.id);
-          }
+      // If no active team set or active team not in user's teams, determine which team to use
+      if (!targetTeamId || !userTeams.find(t => t.id === targetTeamId)) {
+        if (userTeams.length > 0) {
+          // Use the most recent team
+          targetTeamId = userTeams[0].id;
         } else {
-          console.log('No team found, creating one...');
-          // User has no team, create one
+          // User has no team memberships - create a personal team
+          console.log('🔍 useTeam - No team found, creating personal team');
+          
+          debugLogger.team('Creating personal team as fallback');
           const { data: newTeamData, error: createError } = await supabase.rpc(
             'get_or_create_user_team',
             { user_uuid: user.id }
@@ -156,27 +150,65 @@ export const useTeam = () => {
 
           if (createError) {
             console.error('Error creating team:', createError);
-            setError('Failed to create team');
-            // Set loading to false even on error so UI doesn't hang
+            setError('Failed to set up team');
             setIsLoading(false);
             isLoadingRef.current = false;
+            return;
           } else if (newTeamData) {
-            console.log('Team created, reloading data...');
-            // Reload team data after team creation
+            console.log('Personal team created successfully, reloading...');
+            // Retry loading team data
             setTimeout(() => {
               loadedUserRef.current = null;
               isLoadingRef.current = false;
               loadTeamData();
             }, 1000);
             return;
-          } else {
-            // If team creation returns null/undefined, still mark as complete
-            console.log('Team creation returned null, marking as complete');
-            setError('Team creation failed');
-            setIsLoading(false);
-            isLoadingRef.current = false;
           }
+          setError('Failed to load team data');
+          setTeam(null);
+          setUserRole(null);
+          setIsLoading(false);
+          isLoadingRef.current = false;
+          return;
         }
+      }
+
+      // Load the specific team data
+      const { data: teamData, error: teamError } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('id', targetTeamId)
+        .single();
+
+      if (teamError) {
+        console.error('Error fetching team:', teamError);
+        throw teamError;
+      }
+
+      // Get user's role in this team
+      const targetTeam = userTeams.find(t => t.id === targetTeamId);
+      const role = targetTeam?.role || 'member';
+
+      setTeam(teamData);
+      setUserRole(role);
+      
+      // Set as active team if not already set
+      if (activeTeamId !== targetTeamId) {
+        setActiveTeam(targetTeamId);
+      }
+
+      console.log('🔍 useTeam - Set team:', teamData.id, teamData.name, 'Role:', role);
+      
+      setError(null);
+
+      debugLogger.team('Loading team members for team:', teamData.id);
+      // Load team members for ALL team members (not just admins)
+      await loadTeamMembers(targetTeamId);
+      
+      // Load pending invitations only if user is admin
+      if (role === 'admin') {
+        debugLogger.team('Loading pending invitations for admin');
+        await loadPendingInvitations(targetTeamId);
       }
     } catch (error) {
       console.error('Failed to load team data:', error);
@@ -188,6 +220,17 @@ export const useTeam = () => {
       isLoadingRef.current = false;
     }
   };
+
+  const switchToTeam = useCallback(async (teamId: string) => {
+    console.log('🔍 useTeam - Switching to team:', teamId);
+    setActiveTeam(teamId);
+    // Reset loading state to trigger reload
+    loadedUserRef.current = null;
+    isLoadingRef.current = false;
+    setIsLoading(true);
+    // Delay to ensure activeTeamId is updated
+    setTimeout(() => loadTeamData(), 100);
+  }, [setActiveTeam]);
 
   const loadTeamMembers = async (teamId: string) => {
     // Add debouncing to prevent excessive API calls when switching accounts
@@ -462,10 +505,10 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes, with better handling and debouncing
+  // Load team data when user changes or active team changes
   useEffect(() => {
-    // Only load if we don't have a cached result for this user
-    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
+    // Only load if we don't have a cached result for this user or if active team changed
+    if (user?.id && !isLoadingRef.current) {
       // Only log initial team loads to reduce noise
       if (!loadedUserRef.current) {
         debugLogger.team('Initial team load for user:', user.id);
@@ -474,6 +517,7 @@ export const useTeam = () => {
       setTimeout(() => loadTeamData(), 100);
     } else if (!user?.id) {
       setTeam(null);
+      setAllUserTeams([]);
       setTeamMembers([]);
       setPendingInvitations([]);
       setUserRole(null);
@@ -482,8 +526,7 @@ export const useTeam = () => {
       loadedUserRef.current = null;
       isLoadingRef.current = false;
     }
-    // Remove the else case to reduce console noise
-  }, [user?.id]);
+  }, [user?.id, activeTeamId]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
@@ -498,7 +541,8 @@ export const useTeam = () => {
         // Only reload if we don't have team data and we should have it
         if (user?.id && !team && !isLoadingRef.current) {
           debugLogger.team('Reloading team data after visibility change');
-          loadTeamData();
+          setIsLoading(true);
+          setTimeout(() => loadTeamData(), 100);
         }
       }
     };
@@ -512,17 +556,20 @@ export const useTeam = () => {
 
   return {
     team,
+    allUserTeams,
     teamMembers,
     pendingInvitations,
     userRole,
     isLoading,
-    loading: isLoading, // Alias for backward compatibility
     error,
-    loadTeamData,
     inviteTeamMember,
     revokeInvitation,
     getTransferPreview,
     removeTeamMemberWithTransfer,
-    acceptInvitation
+    acceptInvitation,
+    loadTeamData,
+    loadTeamMembers,
+    loadPendingInvitations,
+    switchToTeam
   };
 };

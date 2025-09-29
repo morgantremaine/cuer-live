@@ -42,7 +42,7 @@ const TeamManagement = () => {
     teamMembers,
     pendingInvitations,
     userRole,
-    loading,
+    isLoading,
     error,
     inviteTeamMember,
     removeTeamMemberWithTransfer,
@@ -181,7 +181,7 @@ const TeamManagement = () => {
     setTransferPreview(null);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="h-32 bg-muted rounded-lg animate-pulse" />
