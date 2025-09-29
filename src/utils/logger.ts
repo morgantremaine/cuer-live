@@ -22,7 +22,8 @@ const config: LoggerConfig = {
     'morgantremaine@gmail.com',
     'morgan@cuer.live', 
     'morgantremaine@me.com',
-    'cuertest@gmail.com'
+    'cuertest@gmail.com',
+    'cuertest2@gmail.com'
   ]
 };
 
