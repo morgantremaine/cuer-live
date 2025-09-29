@@ -12,10 +12,10 @@ interface ContentSignatureData {
 }
 
 /**
- * Creates a unified content signature for change detection and autosave.
- * This ensures both useChangeTracking and useSimpleAutoSave use identical logic.
+ * Creates a content-only signature for change detection and autosave.
+ * This excludes UI preferences like columns, timezone, and startTime.
  */
-export const createUnifiedContentSignature = (data: ContentSignatureData): string => {
+export const createContentSignature = (data: ContentSignatureData): string => {
   // Clean items with consistent field handling
   const cleanItems = (data.items || []).map(item => {
     const cleanItem: any = {
@@ -51,13 +51,10 @@ export const createUnifiedContentSignature = (data: ContentSignatureData): strin
     return cleanItem;
   });
 
-  // Create signature with all relevant fields
+  // Create signature with ONLY content fields (excludes columns, timezone, startTime)
   const signature = JSON.stringify({
     items: cleanItems,
     title: data.title || '',
-    columns: data.columns || [],
-    timezone: data.timezone || '',
-    startTime: data.startTime || '',
     showDate: data.showDate ? 
       `${data.showDate.getFullYear()}-${String(data.showDate.getMonth() + 1).padStart(2, '0')}-${String(data.showDate.getDate()).padStart(2, '0')}` 
       : null,
@@ -68,7 +65,29 @@ export const createUnifiedContentSignature = (data: ContentSignatureData): strin
 };
 
 /**
- * Lightweight signature for performance with large rundowns (200+ items)
+ * Creates a UI preferences signature for tracking column changes, timezone, etc.
+ */
+export const createUIPreferencesSignature = (data: ContentSignatureData): string => {
+  const signature = JSON.stringify({
+    columns: data.columns || [],
+    timezone: data.timezone || '',
+    startTime: data.startTime || ''
+  });
+  
+  return signature;
+};
+
+/**
+ * @deprecated Use createContentSignature instead. This function includes columns
+ * which causes signature mismatches between change tracking and autosave.
+ */
+export const createUnifiedContentSignature = (data: ContentSignatureData): string => {
+  console.warn('createUnifiedContentSignature is deprecated. Use createContentSignature for content-only tracking.');
+  return createContentSignature(data);
+};
+
+/**
+ * Lightweight content-only signature for performance with large rundowns (200+ items)
  */
 export const createLightweightContentSignature = (data: ContentSignatureData): string => {
   const itemCount = data.items?.length || 0;
@@ -82,13 +101,10 @@ export const createLightweightContentSignature = (data: ContentSignatureData): s
     itemCount,
     itemIds: data.items?.map(item => item.id) || [],
     title: data.title || '',
-    startTime: data.startTime || '',
-    timezone: data.timezone || '',
     showDate: data.showDate ? 
       `${data.showDate.getFullYear()}-${String(data.showDate.getMonth() + 1).padStart(2, '0')}-${String(data.showDate.getDate()).padStart(2, '0')}` 
       : null,
     externalNotes: data.externalNotes || '',
-    columnCount: data.columns?.length || 0,
     checksum: contentHash.length > 1000 ? 
       // For very long content, use a simple hash
       contentHash.split('').reduce((acc, char) => ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0) 

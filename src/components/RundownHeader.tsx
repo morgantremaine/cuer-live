@@ -112,29 +112,31 @@ const RundownHeader = ({
 
   // Create a content-only signature to detect non-column changes
   const contentOnlySignature = useMemo(() => {
+    // Use the same structure as the content signature utility
     return JSON.stringify({
-      items: items.map(item => ({
+      items: (items || []).map(item => ({
         id: item.id,
         type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
+        name: item.name || '',
+        talent: item.talent || '',
+        script: item.script || '',
+        gfx: item.gfx || '',
+        video: item.video || '',
+        images: item.images || '',
+        notes: item.notes || '',
+        duration: item.duration || '',
+        startTime: item.startTime || '',
+        endTime: item.endTime || '',
+        color: item.color || '',
+        isFloating: Boolean(item.isFloating),
+        isFloated: Boolean(item.isFloated),
+        customFields: item.customFields || {},
+        segmentName: item.segmentName || '',
+        rowNumber: item.rowNumber || 0
       })),
-      title: title,
-      // Explicitly exclude columns, timezone, startTime for save indicator purposes
+      title: title || '',
+      showDate: null,
+      externalNotes: ''
     });
   }, [items, title]);
 

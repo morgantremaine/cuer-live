@@ -35,7 +35,7 @@ export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoPr
     }
 
     // Create a signature to avoid duplicate saves
-    const currentSignature = JSON.stringify({ items, columns, title });
+    const currentSignature = JSON.stringify({ items, title });
     if (lastStateSignature.current === currentSignature) {
       return;
     }

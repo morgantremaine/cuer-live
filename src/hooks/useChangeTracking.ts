@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from '@/types/columns';
 import { useUniversalTimer } from './useUniversalTimer';
-import { createUnifiedContentSignature } from '@/utils/contentSignature';
+import { createContentSignature } from '@/utils/contentSignature';
 
 export const useChangeTracking = (
   items: RundownItem[], 
@@ -29,23 +29,25 @@ export const useChangeTracking = (
   const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('ChangeTracking');
 
   // Create content signature that COMPLETELY excludes showcaller fields
-  const createContentSignature = useCallback(() => {
+  const createContentSignatureCallback = useCallback(() => {
     // If showcaller is active, don't create new signatures
     if (showcallerActiveRef.current) {
       console.log('🚫 Showcaller active - using cached signature to prevent change detection');
       return lastSavedDataRef.current;
     }
 
-    // Use unified signature function for consistency with autosave
-    const signature = createUnifiedContentSignature({
+    // Use content-only signature function for consistency with autosave
+    const signature = createContentSignature({
       items: items || [],
       title: rundownTitle || '',
-      columns: columns || [],
+      columns: columns || [], // Not used in content signature but kept for interface
       timezone: timezone || '',
-      startTime: startTime || ''
+      startTime: startTime || '',
+      showDate: null,
+      externalNotes: ''
     });
     
-    console.log('🔍 Created unified content signature (showcaller-free), items count:', items?.length || 0);
+    console.log('🔍 Created content-only signature (showcaller-free), items count:', items?.length || 0);
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
@@ -94,7 +96,7 @@ export const useChangeTracking = (
       }
 
       initializationTimeoutRef.current = setManagedTimeout(() => {
-        const currentSignature = createContentSignature();
+        const currentSignature = createContentSignatureCallback();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
         console.log('🔄 Change tracking initialized (showcaller-aware) with signature length:', currentSignature.length);
@@ -106,7 +108,7 @@ export const useChangeTracking = (
         clearTimer(initializationTimeoutRef.current);
       }
     };
-  }, [isInitialized, createContentSignature, setManagedTimeout, clearTimer]);
+  }, [isInitialized, createContentSignatureCallback, setManagedTimeout, clearTimer]);
 
   // Enhanced change detection that completely ignores showcaller operations
   useEffect(() => {
@@ -124,7 +126,7 @@ export const useChangeTracking = (
     }
 
     // Create new signature (will return cached if showcaller active)
-    const currentSignature = createContentSignature();
+    const currentSignature = createContentSignatureCallback();
     
     // Only trigger if signature actually changed AND showcaller is not active
     if (lastSavedDataRef.current !== currentSignature && !showcallerActiveRef.current) {
@@ -136,7 +138,7 @@ export const useChangeTracking = (
     } else {
       console.log('📝 No content change detected (showcaller-aware check)');
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
+  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignatureCallback, isProcessingRealtimeUpdate]);
 
   const markAsSaved = useCallback((
     savedItems: RundownItem[], 
@@ -145,32 +147,15 @@ export const useChangeTracking = (
     savedTimezone?: string, 
     savedStartTime?: string
   ) => {
-    // Create saved signature excluding showcaller fields
-    const savedSignature = JSON.stringify({
-      items: (savedItems || []).map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
-      })),
+    // Create saved signature using content-only function
+    const savedSignature = createContentSignature({
+      items: savedItems || [],
       title: savedTitle || '',
-      columns: savedColumns || [],
+      columns: savedColumns || [], // Not used in content signature but kept for interface
       timezone: savedTimezone || '',
-      startTime: savedStartTime || ''
+      startTime: savedStartTime || '',
+      showDate: null,
+      externalNotes: ''
     });
     
     lastSavedDataRef.current = savedSignature;
@@ -197,31 +182,14 @@ export const useChangeTracking = (
     newTimezone?: string, 
     newStartTime?: string
   ) => {
-    const newSignature = JSON.stringify({
-      items: (newItems || []).map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
-      })),
+    const newSignature = createContentSignature({
+      items: newItems || [],
       title: newTitle || '',
-      columns: newColumns || [],
+      columns: newColumns || [], // Not used in content signature but kept for interface
       timezone: newTimezone || '',
-      startTime: newStartTime || ''
+      startTime: newStartTime || '',
+      showDate: null,
+      externalNotes: ''
     });
     
     lastSavedDataRef.current = newSignature;

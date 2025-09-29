@@ -8,7 +8,7 @@ import { registerRecentSave } from './useRundownResumption';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { detectDataConflict } from '@/utils/conflictDetection';
-import { createUnifiedContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
+import { createContentSignature, createLightweightContentSignature } from '@/utils/contentSignature';
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
@@ -83,7 +83,7 @@ export const useSimpleAutoSave = (
   }, [onSaved]);
 
   // Create content signature from current state (backwards compatibility)
-  const createContentSignature = useCallback(() => {
+  const createCurrentContentSignature = useCallback(() => {
     const signature = createContentSignatureFromState(state);
     
     // Debug signature generation when we have unsaved changes
@@ -189,11 +189,11 @@ export const useSimpleAutoSave = (
       return lightweightSignature;
     }
     
-    // Standard signature for smaller rundowns - use unified function
-    const signature = createUnifiedContentSignature({
+    // Standard signature for smaller rundowns - use content-only function from utils
+    const signature = createContentSignature({
       items: targetState.items || [],
       title: targetState.title || '',
-      columns: [], // Not available in RundownState, will be empty array
+      columns: [], // Not used in content signature
       timezone: targetState.timezone || '',
       startTime: targetState.startTime || '',
       showDate: targetState.showDate || null,
@@ -244,7 +244,7 @@ export const useSimpleAutoSave = (
     
     if (needsBaseline) {
       // SAFE FIX: Use actual current signature as baseline instead of empty string
-      const currentSignature = createContentSignature();
+      const currentSignature = createCurrentContentSignature();
       lastSavedRef.current = currentSignature;
       lastPrimedRundownRef.current = rundownId;
       
@@ -267,7 +267,7 @@ export const useSimpleAutoSave = (
         hadUnsavedChanges: state.hasUnsavedChanges
       });
     }
-  }, [isInitiallyLoaded, rundownId, createContentSignature]);
+  }, [isInitiallyLoaded, rundownId, createCurrentContentSignature]);
 
   // Function to coordinate with undo operations
   const setUndoActive = (active: boolean) => {
@@ -421,7 +421,7 @@ export const useSimpleAutoSave = (
 
   // Micro-resave with consistent behavior across all rundown sizes
   const scheduleMicroResave = useCallback(() => {
-    const currentSignature = createContentSignature();
+    const currentSignature = createCurrentContentSignature();
     
     // Prevent micro-resave if signature hasn't actually changed
     if (currentSignature === lastMicroResaveSignatureRef.current) {
@@ -662,7 +662,7 @@ export const useSimpleAutoSave = (
           console.log('📝 Setting lastSavedRef immediately after NEW rundown save:', finalSignature.length);
           
           // Update lastSavedRef to current state signature after successful save
-          const currentSignatureAfterSave = createContentSignature();
+          const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
           console.log('📝 Setting lastSavedRef to current state after full save:', currentSignatureAfterSave.length);
 
@@ -699,7 +699,7 @@ export const useSimpleAutoSave = (
           }
 
           // Update lastSavedRef to current state signature after successful save
-          const currentSignatureAfterSave = createContentSignature();
+          const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
           console.log('📝 Setting lastSavedRef to current state after delta save:', currentSignatureAfterSave.length);
 
@@ -769,7 +769,7 @@ export const useSimpleAutoSave = (
       // SIMPLIFIED: No follow-up saves - let typing detection handle new saves
       
       // Simplified retry logic - reduce complexity
-      const currentSignature = createContentSignature();
+      const currentSignature = createCurrentContentSignature();
       if (currentSignature !== currentSaveSignatureRef.current && currentSignature !== lastSavedRef.current) {
         const retryCount = (saveQueueRef.current?.retryCount || 0) + 1;
         
@@ -810,7 +810,7 @@ export const useSimpleAutoSave = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    const currentSignature = createContentSignature();
+    const currentSignature = createCurrentContentSignature();
     
     if (currentSignature === lastSavedRef.current) {
       if (state.hasUnsavedChanges) {

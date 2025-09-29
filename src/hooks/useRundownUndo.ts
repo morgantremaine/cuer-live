@@ -91,7 +91,7 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
     }
 
     // Create a signature for the current state to avoid duplicate saves
-    const currentSignature = JSON.stringify({ items, columns, title });
+    const currentSignature = JSON.stringify({ items, title });
     if (lastStateSignature.current === currentSignature) {
       debugLogger.autosave('Skipping duplicate state save for action:', action);
       return;
@@ -114,7 +114,6 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
         const lastState = prev[prev.length - 1];
         const lastSignature = JSON.stringify({ 
           items: lastState.items, 
-          columns: lastState.columns, 
           title: lastState.title 
         });
         if (lastSignature === currentSignature) {
