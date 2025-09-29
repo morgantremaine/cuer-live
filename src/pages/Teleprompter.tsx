@@ -335,8 +335,8 @@ const Teleprompter = () => {
       items: updatedItems
     });
 
-    // Use debounced save for persistence (500ms)
-    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems }, 500);
+    // Use debounced save for persistence (500ms) - no need to pass rundownData anymore
+    debouncedSave(itemId, newScript, undefined, 500);
     
     // Clear typing session after delay
     setTimeout(() => {

@@ -21,6 +21,13 @@ interface UseTeleprompterSaveProps {
 export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
   const { user } = useAuth();
   
+  const [saveState, setSaveState] = useState<SaveState>({
+    isSaving: false,
+    lastSaved: null,
+    hasUnsavedChanges: false,
+    saveError: null
+  });
+
   // Use the same per-cell save system as the main rundown
   const { trackCellChange, flushPendingUpdates, hasPendingUpdates } = useCellLevelSave(
     rundownId,
@@ -29,13 +36,6 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     onSaveStart,
     () => setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }))
   );
-
-  const [saveState, setSaveState] = useState<SaveState>({
-    isSaving: false,
-    lastSaved: null,
-    hasUnsavedChanges: false,
-    saveError: null
-  });
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const localBackupRef = useRef<Map<string, string>>(new Map());
