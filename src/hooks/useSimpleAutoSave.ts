@@ -338,8 +338,11 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    // CRITICAL: Set hasUnsavedChangesRef for consistency
-    hasUnsavedChangesRef.current = true;
+    // CRITICAL: Only set hasUnsavedChanges when per-cell save is NOT enabled
+    // Per-cell save manages its own unsaved state through completion callbacks
+    if (!isPerCellEnabled) {
+      hasUnsavedChangesRef.current = true;
+    }
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {

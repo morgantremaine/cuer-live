@@ -935,20 +935,8 @@ export const useSimplifiedRundownState = () => {
       actions.updateItem(id, { [updateField]: updateValue });
       
       // CRITICAL: Track field change for per-cell save system
-      console.log('🧪 SIMPLIFIED STATE: Cell edit detected', {
-        itemId: id,
-        field: updateField,
-        value: updateValue,
-        perCellEnabled: Boolean(state.perCellSaveEnabled),
-        hasIntegration: !!cellEditIntegration,
-        integrationPerCellEnabled: cellEditIntegration.isPerCellEnabled
-      });
-      
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 SIMPLIFIED STATE: Routing to per-cell system');
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
-      } else {
-        console.log('🧪 SIMPLIFIED STATE: Per-cell NOT enabled - change will use regular autosave');
       }
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
