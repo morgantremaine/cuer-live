@@ -72,15 +72,23 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
       trackCellChange(itemId, 'script', script);
       
       // Immediately flush to ensure save happens now
-      await flushPendingUpdates();
+      const result = await flushPendingUpdates();
       
-      console.log('✅ Teleprompter: Per-cell save completed for item', { itemId });
-      return true;
+      if (result?.updatedAt) {
+        console.log('✅ Teleprompter: Per-cell save completed for item', { itemId });
+        
+        // Call the success callback since per-cell save doesn't do this automatically
+        onSaveSuccess?.(itemId, script);
+        
+        return true;
+      }
+      
+      return false;
     } catch (error) {
       console.error('❌ Teleprompter save execution failed:', error);
       throw error;
     }
-  }, [trackCellChange, flushPendingUpdates]);
+  }, [trackCellChange, flushPendingUpdates, onSaveSuccess]);
 
   // Main save function - now much simpler with per-cell saves
   const saveScript = useCallback(async (
@@ -147,7 +155,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     }
   }, [executeSave, backupChange, clearBackup, onSaveSuccess]);
 
-  // Debounced save function - now just tracks the change for per-cell save
+  // Debounced save function - calls executeSave to ensure callbacks fire
   const debouncedSave = useCallback((
     itemId: string, 
     newScript: string, 
@@ -162,27 +170,23 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     // Backup immediately
     backupChange(itemId, newScript);
     
-    setSaveState(prev => ({ ...prev, hasUnsavedChanges: hasPendingUpdates() }));
+    setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
 
-    // Set new timeout - but now we use the per-cell system which handles debouncing internally
+    // Set new timeout - call executeSave to ensure callbacks work
     saveTimeoutRef.current = setTimeout(() => {
-      // Track the cell change - the per-cell save system will handle the actual save
-      trackCellChange(itemId, 'script', newScript);
+      executeSave(itemId, newScript);
     }, delay);
-  }, [backupChange, trackCellChange, hasPendingUpdates]);
+  }, [backupChange, executeSave]);
 
-  // Manual save function (for Ctrl+S) - flushes pending updates immediately
+  // Manual save function (for Ctrl+S) - calls executeSave to ensure callbacks work
   const forceSave = useCallback(async (itemId: string, script: string, rundownData?: any) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     
-    // Track the change and flush immediately
-    trackCellChange(itemId, 'script', script);
-    await flushPendingUpdates();
-    
-    return true;
-  }, [trackCellChange, flushPendingUpdates]);
+    // Use executeSave to ensure callbacks fire
+    return await executeSave(itemId, script);
+  }, [executeSave]);
 
   // Load backup data on init
   const loadBackup = useCallback(() => {

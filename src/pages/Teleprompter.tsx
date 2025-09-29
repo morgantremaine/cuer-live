@@ -206,6 +206,8 @@ const Teleprompter = () => {
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
     rundownId: rundownId!,
     onSaveSuccess: (itemId, script) => {
+      console.log('📝 Teleprompter: Save success callback - updating local state and broadcasting', { itemId });
+      
       // Update local state immediately on successful save
       if (rundownData) {
         const updatedItems = rundownData.items.map(item =>
@@ -215,6 +217,11 @@ const Teleprompter = () => {
           ...rundownData,
           items: updatedItems
         });
+      }
+      
+      // Broadcast the change for real-time collaboration AFTER successful save
+      if (user) {
+        cellBroadcast.broadcastCellUpdate(rundownId!, itemId, 'script', script, user.id);
       }
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
