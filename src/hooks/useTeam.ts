@@ -495,6 +495,12 @@ export const useTeam = () => {
       // Clear the pending token immediately upon successful acceptance
       localStorage.removeItem('pendingInvitationToken');
       
+      // Set the newly joined team as active if we have the team_id
+      if (data.team_id) {
+        console.log('Setting newly joined team as active:', data.team_id);
+        setActiveTeam(data.team_id);
+      }
+      
       // Reload team data after successful invitation acceptance
       loadedUserRef.current = null;
       isLoadingRef.current = false;
