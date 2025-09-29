@@ -7,6 +7,7 @@ import DashboardFolderBreadcrumb from '@/components/DashboardFolderBreadcrumb';
 import CreateNewButton from '@/components/CreateNewButton';
 import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
 import CSVImportDialog from '@/components/CSVImportDialog';
+import SystemAuditDashboard from '@/components/developer/SystemAuditDashboard';
 import { CSVImportResult } from '@/utils/csvImport';
 import { useInvitationHandler } from '@/hooks/useInvitationHandler';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,7 @@ const Dashboard = () => {
   
   // Real-time rundown state with local updates
   const [liveRundowns, setLiveRundowns] = useState<SavedRundown[]>([]);
+  const [showAuditDashboard, setShowAuditDashboard] = useState(false);
   
   // Update local rundowns when storage changes
   useEffect(() => {
@@ -490,14 +492,24 @@ const Dashboard = () => {
                 <AdminNotificationSender userEmail={user?.email} />
                 {/* Admin only: Delete test user button */}
                 {user?.email === 'morgan@cuer.live' && (
-                  <Button
-                    size="lg"
-                    onClick={() => navigate('/delete-test-user')}
-                    variant="outline"
-                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                  >
-                    Delete Test User
-                  </Button>
+                  <>
+                    <Button
+                      size="lg"
+                      onClick={() => navigate('/delete-test-user')}
+                      variant="outline"
+                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                    >
+                      Delete Test User
+                    </Button>
+                    <Button
+                      size="lg"
+                      onClick={() => setShowAuditDashboard(true)}
+                      variant="outline"
+                      className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                    >
+                      System Audit Dashboard
+                    </Button>
+                  </>
                 )}
               </div>
 
@@ -527,6 +539,12 @@ const Dashboard = () => {
         onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
         rundownTitle={deleteDialog.title}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* System Audit Dashboard - Admin Only */}
+      <SystemAuditDashboard
+        isVisible={showAuditDashboard}
+        onToggle={() => setShowAuditDashboard(!showAuditDashboard)}
       />
     </div>
   );
