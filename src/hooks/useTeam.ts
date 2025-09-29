@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -54,22 +54,6 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
-  const teamRef = useRef<Team | null>(null);
-  const activeTeamIdRef = useRef<string | null>(null);
-  const switchToTeamRef = useRef<((teamId: string) => Promise<void>) | null>(null);
-  const loadAllUserTeamsRef = useRef<(() => Promise<UserTeam[]>) | null>(null);
-  
-  // Keep refs in sync with state
-  useEffect(() => {
-    teamRef.current = team;
-  }, [team]);
-  
-  useEffect(() => {
-    activeTeamIdRef.current = activeTeamId;
-  }, [activeTeamId]);
-
-  // Stable team ID reference to prevent unnecessary subscription recreations
-  const teamId = useMemo(() => team?.id, [team?.id]);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -126,11 +110,6 @@ export const useTeam = () => {
       return [];
     }
   }, [user]);
-  
-  // Keep ref in sync
-  useEffect(() => {
-    loadAllUserTeamsRef.current = loadAllUserTeams;
-  }, [loadAllUserTeams]);
 
   const loadTeamData = useCallback(async () => {
     // Get the current activeTeamId directly to avoid stale closure issues
@@ -259,12 +238,9 @@ export const useTeam = () => {
   }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
-    const currentTeam = teamRef.current;
-    const currentActiveTeamId = activeTeamIdRef.current;
+    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
     
-    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: currentTeam?.id, currentActiveTeamId });
-    
-    if (teamId === currentActiveTeamId && teamId === currentTeam?.id) {
+    if (teamId === activeTeamId && teamId === team?.id) {
       console.log('⚠️ useTeam - Already on requested team, skipping switch');
       return;
     }
@@ -281,12 +257,7 @@ export const useTeam = () => {
     loadTeamData();
     
     console.log('🔄 useTeam - Team switch initiated');
-  }, [setActiveTeam, loadTeamData]);
-  
-  // Keep ref in sync
-  useEffect(() => {
-    switchToTeamRef.current = switchToTeam;
-  }, [switchToTeam]);
+  }, [team?.id, activeTeamId, setActiveTeam, loadTeamData]);
 
   const loadTeamMembers = async (teamId: string) => {
     // Add debouncing to prevent excessive API calls when switching accounts
@@ -631,44 +602,11 @@ export const useTeam = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeTeamId]);
 
-  // Realtime subscriptions for team updates and membership changes
+  // Realtime subscriptions for team membership changes
   useEffect(() => {
     if (!user?.id || !team?.id || isProcessingInvitation) return;
     
     console.log('🔔 Setting up realtime subscriptions for team:', team.id);
-    
-    // Subscribe to team name changes
-    const teamChannel = supabase
-      .channel(`team-${team.id}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'teams',
-        filter: `id=eq.${team.id}`
-      }, (payload) => {
-        console.log('🔔 Team name updated:', payload.new);
-        const newTeamData = payload.new;
-        
-        setTeam(prev => {
-          if (!prev) return null;
-          const updated = { 
-            ...prev, 
-            name: newTeamData.name,
-            updated_at: newTeamData.updated_at 
-          };
-          console.log('📝 Updated team state:', updated);
-          return updated;
-        });
-        
-        setAllUserTeams(prev => {
-          const updated = prev.map(t => 
-            t.id === newTeamData.id ? { ...t, name: newTeamData.name } : t
-          );
-          console.log('📝 Updated allUserTeams:', updated);
-          return updated;
-        });
-      })
-      .subscribe();
     
     // Subscribe to team membership changes
     const memberChannel = supabase
@@ -682,8 +620,7 @@ export const useTeam = () => {
         const deletedMembership = payload.old;
         console.log('🔔 Team membership deleted:', deletedMembership);
         
-        const currentTeam = teamRef.current;
-        if (deletedMembership.team_id === currentTeam?.id) {
+        if (deletedMembership.team_id === team?.id) {
           toast({
             title: 'Removed from Team',
             description: 'You have been removed from this team.',
@@ -691,14 +628,12 @@ export const useTeam = () => {
           });
           
           // Clear this team and switch to another
-          const teams = loadAllUserTeamsRef.current ? await loadAllUserTeamsRef.current() : [];
-          const nextTeam = teams.find(t => t.id !== currentTeam.id);
+          const teams = await loadAllUserTeams();
+          const nextTeam = teams.find(t => t.id !== team.id);
           
           if (nextTeam) {
             console.log('🔄 Switching to next available team:', nextTeam.id);
-            if (switchToTeamRef.current) {
-              switchToTeamRef.current(nextTeam.id);
-            }
+            switchToTeam(nextTeam.id);
           } else {
             // No other teams, clear and redirect
             console.log('🔄 No other teams available, redirecting to dashboard');
@@ -711,10 +646,9 @@ export const useTeam = () => {
     
     return () => {
       console.log('🔔 Cleaning up realtime subscriptions');
-      supabase.removeChannel(teamChannel);
       supabase.removeChannel(memberChannel);
     };
-  }, [user?.id, teamId, isProcessingInvitation, toast, navigate, setActiveTeam]);
+  }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam, loadAllUserTeams, switchToTeam]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
