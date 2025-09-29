@@ -12,6 +12,7 @@ import { createContentSignature, createLightweightContentSignature } from '@/uti
 import { useKeystrokeJournal } from './useKeystrokeJournal';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { getTabId } from '@/utils/tabUtils';
 
 export const useSimpleAutoSave = (
@@ -250,8 +251,8 @@ export const useSimpleAutoSave = (
       lastSavedRef.current = currentSignature;
       lastPrimedRundownRef.current = rundownId;
       
-      // Initialize field delta system
-      initializeSavedState(state);
+      // Initialize save coordination system
+      initializeBaseline(state);
       
       // Clear bootstrapping flag to prevent spinner flicker
       setIsBootstrapping(false);
@@ -288,8 +289,24 @@ export const useSimpleAutoSave = (
     trackOwnUpdateRef.current = tracker;
   }, []);
 
-  // Field-level delta saving for collaborative editing (after trackMyUpdate is defined)
-  const { saveDeltaState, initializeSavedState, trackFieldChange } = useFieldDeltaSave(
+  // Check if per-cell save is enabled for this rundown
+  const isPerCellEnabled = Boolean((state as any).perCellSaveEnabled);
+
+  // Unified save coordination - switches between per-cell and delta saves
+  const {
+    trackFieldChange,
+    saveState: saveCoordinatedState,
+    initializeBaseline,
+    hasUnsavedChanges: hasCoordinatedUnsavedChanges,
+    isPerCellEnabled: perCellActive
+  } = usePerCellSaveCoordination({
+    rundownId,
+    trackOwnUpdate: trackMyUpdate,
+    isPerCellEnabled
+  });
+
+  // Legacy field delta save (fallback when per-cell is disabled)
+  const { saveDeltaState, initializeSavedState } = useFieldDeltaSave(
     rundownId,
     trackMyUpdate
   );
@@ -681,8 +698,8 @@ export const useSimpleAutoSave = (
         });
         
         try {
-          // Use field-level delta save
-          const { updatedAt, docVersion } = await saveDeltaState(saveState);
+          // Use coordinated save system (per-cell or delta)
+          const { updatedAt, docVersion } = await saveCoordinatedState(saveState);
           
           console.log('✅ AutoSave: delta save response', { 
             updatedAt,
@@ -713,13 +730,13 @@ export const useSimpleAutoSave = (
             updatedAt, 
             docVersion 
           });
-        } catch (deltaError: any) {
-          // If delta save fails due to no changes, that's OK
-          if (deltaError?.message === 'No changes to save') {
-            console.log('ℹ️ Delta save: no changes detected');
+        } catch (saveError: any) {
+          // If coordinated save fails due to no changes, that's OK
+          if (saveError?.message === 'No changes to save') {
+            console.log(`ℹ️ ${perCellActive ? 'Per-cell' : 'Delta'} save: no changes detected`);
             onSavedRef.current?.();
           } else {
-            throw deltaError;
+            throw saveError;
           }
         }
       }
