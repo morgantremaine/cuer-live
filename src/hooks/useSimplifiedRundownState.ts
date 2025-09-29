@@ -465,12 +465,9 @@ export const useSimplifiedRundownState = () => {
          // CRITICAL: Block all autosaves until the user makes a local edit
          debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
          blockUntilLocalEditRef.current = true;
-      }
+       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
-    enabled: !isLoading,
-    trackOwnUpdate: (timestamp: string) => {
-      ownUpdateTimestampRef.current = timestamp;
-    }
+    enabled: !isLoading
   });
   
   // Update connection state from realtime hook

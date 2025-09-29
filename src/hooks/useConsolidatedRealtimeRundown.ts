@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -11,7 +12,6 @@ interface UseConsolidatedRealtimeRundownProps {
   onShowcallerUpdate?: (data: any) => void;
   onBlueprintUpdate?: (data: any) => void;
   enabled?: boolean;
-  trackOwnUpdate?: (timestamp: string) => void;
   lastSeenDocVersion?: number;
   isSharedView?: boolean;
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
@@ -25,8 +25,6 @@ const globalSubscriptions = new Map<string, {
     onShowcallerUpdate: Set<(data: any) => void>;
     onBlueprintUpdate: Set<(data: any) => void>;
   };
-  trackOwnUpdate: Set<(timestamp: string) => void>;
-  ownUpdates: Set<string>;
   lastProcessedTimestamp: string | null;
   lastProcessedDocVersion: number;
   isConnected: boolean;
@@ -46,7 +44,6 @@ export const useConsolidatedRealtimeRundown = ({
   onShowcallerUpdate,
   onBlueprintUpdate,
   enabled = true,
-  trackOwnUpdate,
   lastSeenDocVersion = 0,
   isSharedView = false,
   blockUntilLocalEditRef
@@ -70,16 +67,14 @@ export const useConsolidatedRealtimeRundown = ({
   const callbackRefs = useRef({
     onRundownUpdate,
     onShowcallerUpdate,
-    onBlueprintUpdate,
-    trackOwnUpdate
+    onBlueprintUpdate
   });
 
   // Keep refs updated
   callbackRefs.current = {
     onRundownUpdate,
     onShowcallerUpdate,
-    onBlueprintUpdate,
-    trackOwnUpdate
+    onBlueprintUpdate
   };
 
   // Performance-optimized realtime update processing with early size checks
@@ -539,8 +534,6 @@ export const useConsolidatedRealtimeRundown = ({
           onShowcallerUpdate: new Set(),
           onBlueprintUpdate: new Set()
         },
-        trackOwnUpdate: new Set(),
-        ownUpdates: new Set(),
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
@@ -561,32 +554,9 @@ export const useConsolidatedRealtimeRundown = ({
     if (callbackRefs.current.onBlueprintUpdate) {
       globalState.callbacks.onBlueprintUpdate.add(callbackRefs.current.onBlueprintUpdate);
     }
-    if (callbackRefs.current.trackOwnUpdate) {
-      globalState.trackOwnUpdate.add(callbackRefs.current.trackOwnUpdate);
-    }
 
     globalState.refCount++;
     setIsConnected(globalState.isConnected);
-
-    // Create local own update tracker
-    const trackOwnUpdateLocal = (timestamp: string) => {
-      const normalizedTimestamp = normalizeTimestamp(timestamp);
-      globalState!.ownUpdates.add(normalizedTimestamp);
-      
-      // Notify all registered trackers
-      globalState!.trackOwnUpdate.forEach(tracker => {
-        try {
-          tracker(timestamp);
-        } catch (error) {
-          console.error('Error in track own update callback:', error);
-        }
-      });
-
-      // Clean up old updates after 20 seconds
-      setTimeout(() => {
-        globalState!.ownUpdates.delete(normalizedTimestamp);
-      }, 20000);
-    };
 
     return () => {
       const state = globalSubscriptions.get(rundownId);
@@ -601,9 +571,6 @@ export const useConsolidatedRealtimeRundown = ({
       }
       if (callbackRefs.current.onBlueprintUpdate) {
         state.callbacks.onBlueprintUpdate.delete(callbackRefs.current.onBlueprintUpdate);
-      }
-      if (callbackRefs.current.trackOwnUpdate) {
-        state.trackOwnUpdate.delete(callbackRefs.current.trackOwnUpdate);
       }
 
       state.refCount--;
@@ -640,10 +607,14 @@ export const useConsolidatedRealtimeRundown = ({
   }, [rundownId, lastSeenDocVersion]);
 
   // SIMPLIFIED: No longer track timestamps, rely only on tab_id
+  // Legacy compatibility function - now directly uses centralized tracker
   const trackOwnUpdateFunc = useCallback((timestamp: string) => {
-    // Keep for backward compatibility but don't track timestamps
-    console.log('🏷️ Own update timestamp (not tracked):', timestamp);
-  }, []);
+    if (rundownId) {
+      const context = `realtime-${rundownId}`;
+      ownUpdateTracker.track(normalizeTimestamp(timestamp), context);
+      console.log('🏷️ Tracked own update via centralized tracker:', timestamp);
+    }
+  }, [rundownId]);
 
   return {
     isConnected,

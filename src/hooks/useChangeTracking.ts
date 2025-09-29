@@ -38,12 +38,7 @@ export const useChangeTracking = (
 
     // Use content-only signature function for consistency with autosave
     const signature = createContentSignature({
-      items: (items || []).map(item => ({
-        ...item,
-        // Explicitly exclude showcaller fields to prevent false change detection
-        showcallerElapsed: undefined,
-        showcallerSegmentElapsed: undefined
-      })),
+      items: items || [],
       title: rundownTitle || '',
       columns: [], // Not used in content signature
       timezone: '', // Not used in content signature
@@ -56,8 +51,7 @@ export const useChangeTracking = (
       itemCount: items?.length || 0,
       titleLength: (rundownTitle || '').length,
       signatureLength: signature.length,
-      showcallerActive: showcallerActiveRef.current,
-      excludedFromSignature: ['columns', 'timezone', 'startTime', 'showcallerElapsed', 'showcallerSegmentElapsed']
+      excludedFromSignature: ['columns', 'timezone', 'startTime']
     });
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
@@ -68,36 +62,12 @@ export const useChangeTracking = (
     userActivelyTypingRef.current = typing;
   }, []);
 
-  // Enhanced showcaller activity tracking with extended blocking
+  // Showcaller state management (no longer blocks change detection)
+  // Showcaller now uses separate state channel and doesn't affect rundown content signatures
   const setShowcallerUpdate = useCallback((isShowcallerUpdate: boolean) => {
-    console.log('📺 Showcaller update state change:', showcallerActiveRef.current, '->', isShowcallerUpdate);
-    
+    console.log('📺 Showcaller update state:', isShowcallerUpdate);
     showcallerActiveRef.current = isShowcallerUpdate;
-    
-    if (isShowcallerUpdate) {
-      console.log('📺 Showcaller active - completely blocking change detection');
-      
-      // Clear any existing timeout
-      if (showcallerBlockTimeoutRef.current) {
-        clearTimer(showcallerBlockTimeoutRef.current);
-      }
-      
-      // Set extended timeout to ensure showcaller operations complete
-      showcallerBlockTimeoutRef.current = setManagedTimeout(() => {
-        showcallerActiveRef.current = false;
-        console.log('📺 Showcaller timeout expired - change detection can resume');
-      }, 8000); // 8 seconds to handle complex showcaller sequences
-      
-    } else {
-      console.log('📺 Showcaller cleared - change detection can resume');
-      
-      // Clear timeout since showcaller explicitly cleared
-      if (showcallerBlockTimeoutRef.current) {
-        clearTimer(showcallerBlockTimeoutRef.current);
-        showcallerBlockTimeoutRef.current = null;
-      }
-    }
-  }, [setManagedTimeout, clearTimer]);
+  }, []);
 
   // Initialize tracking
   useEffect(() => {
