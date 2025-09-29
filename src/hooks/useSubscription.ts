@@ -211,6 +211,17 @@ export const useSubscription = () => {
 
   // Load subscription data when user or team changes - with strict change detection
   useEffect(() => {
+    // When team changes, immediately set loading state and reset refs
+    if (activeTeamId !== loadedTeamRef.current && loadedTeamRef.current !== null) {
+      console.log('🔄 useSubscription - Team changed, resetting subscription state', {
+        oldTeam: loadedTeamRef.current,
+        newTeam: activeTeamId
+      });
+      setStatus(prev => ({ ...prev, loading: true }));
+      loadedTeamRef.current = null;
+      isLoadingRef.current = false;
+    }
+    
     if (user?.id && (user.id !== loadedUserRef.current || activeTeamId !== loadedTeamRef.current) && !isLoadingRef.current) {
       checkSubscription();
     } else if (!user?.id && loadedUserRef.current) {
@@ -232,7 +243,7 @@ export const useSubscription = () => {
         }
       }, 2000);
     }
-  }, [user?.id]); // Only depend on user.id, not the checkSubscription function
+  }, [user?.id, activeTeamId]); // Include activeTeamId so subscription refreshes on team switch
 
   // Handle page visibility changes to prevent unnecessary subscription checks
   useEffect(() => {
