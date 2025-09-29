@@ -11,36 +11,28 @@ const ACTIVE_TEAM_KEY = 'cuer-active-team';
 export const useActiveTeam = () => {
   const { user } = useAuth();
   
-  // Initialize state synchronously from localStorage if user exists
+  // Initialize synchronously with localStorage value
   const [state, setState] = useState<ActiveTeamState>(() => {
     if (!user?.id) {
       return { activeTeamId: null, loading: true };
     }
-    
     const userKey = `${ACTIVE_TEAM_KEY}-${user.id}`;
     const storedTeamId = localStorage.getItem(userKey);
-    console.log('🔍 useActiveTeam - Initial sync load from localStorage:', { userKey, storedTeamId });
-    
     return {
       activeTeamId: storedTeamId,
       loading: false
     };
   });
 
-  // Handle user changes and listen for storage changes
+  // Handle user changes and storage sync
   useEffect(() => {
-    console.log('🔍 useActiveTeam - useEffect triggered:', { user: user?.id, hasUser: !!user });
-    
-    if (!user) {
-      console.log('❌ useActiveTeam - No user, setting activeTeamId to null');
+    if (!user?.id) {
       setState({ activeTeamId: null, loading: false });
       return;
     }
 
     const userKey = `${ACTIVE_TEAM_KEY}-${user.id}`;
     const storedTeamId = localStorage.getItem(userKey);
-    
-    console.log('🔍 useActiveTeam - Loading from localStorage:', { userKey, storedTeamId });
     
     setState({
       activeTeamId: storedTeamId,

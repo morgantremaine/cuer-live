@@ -96,9 +96,12 @@ export const useTeam = () => {
     }
   }, [user]);
 
-  const loadTeamData = async () => {
-    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, activeTeamId });
-    debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, activeTeamId });
+  const loadTeamData = useCallback(async () => {
+    // Get the current activeTeamId directly to avoid stale closure issues
+    const currentActiveTeamId = activeTeamId;
+    
+    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
+    debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
     
     if (!user?.id || isLoadingRef.current) {
       debugLogger.team('Early exit - no user or already loading', { userId: !!user?.id, isLoading: isLoadingRef.current });
@@ -110,13 +113,10 @@ export const useTeam = () => {
     isLoadingRef.current = true;
 
     try {
-      // Add a small delay to ensure auth state is fully established
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       // Load all user teams first
       const userTeams = await loadAllUserTeams();
 
-      let targetTeamId = activeTeamId;
+      let targetTeamId = currentActiveTeamId;
 
       // Check if user has pending invitation FIRST
       const pendingToken = localStorage.getItem('pendingInvitationToken');
@@ -135,9 +135,8 @@ export const useTeam = () => {
       }
 
       // Use activeTeamId if it's valid for this user, otherwise use first available team
-      if (activeTeamId && userTeams.find(t => t.id === activeTeamId)) {
-        // Use the activeTeamId as-is since it's valid
-        targetTeamId = activeTeamId;
+      if (currentActiveTeamId && userTeams.find(t => t.id === currentActiveTeamId)) {
+        targetTeamId = currentActiveTeamId;
       } else if (userTeams.length > 0) {
         // Use the most recent team as fallback
         targetTeamId = userTeams[0].id;
@@ -198,7 +197,7 @@ export const useTeam = () => {
       setUserRole(role);
       
       // Only set as active team if it's different from current
-      if (activeTeamId !== targetTeamId) {
+      if (currentActiveTeamId !== targetTeamId) {
         console.log('🔄 useTeam - Setting active team ID:', targetTeamId);
         setActiveTeam(targetTeamId);
       }
@@ -207,14 +206,10 @@ export const useTeam = () => {
       
       setError(null);
 
-      debugLogger.team('Loading team members for team:', teamData.id);
-      // Load team members for ALL team members (not just admins)
-      await loadTeamMembers(targetTeamId);
-      
-      // Load pending invitations only if user is admin
+      // Load additional data after setting main team state
+      loadTeamMembers(targetTeamId);
       if (role === 'admin') {
-        debugLogger.team('Loading pending invitations for admin');
-        await loadPendingInvitations(targetTeamId);
+        loadPendingInvitations(targetTeamId);
       }
     } catch (error) {
       console.error('Failed to load team data:', error);
@@ -225,7 +220,7 @@ export const useTeam = () => {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  };
+  }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
     console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
@@ -237,18 +232,14 @@ export const useTeam = () => {
     
     console.log('🔄 useTeam - Setting active team to:', teamId);
     
-    // Update the active team state
+    // Update the active team state and force reload
     setActiveTeam(teamId);
-    
-    // Immediately reload team data
-    console.log('🔄 useTeam - Force reloading team data immediately');
     setIsLoading(true);
     isLoadingRef.current = false;
+    loadedUserRef.current = null; // Force reload
     
-    // Trigger reload
-    setTimeout(() => {
-      loadTeamData();
-    }, 50);
+    // Immediate reload without delay
+    loadTeamData();
     
     console.log('🔄 useTeam - Team switch initiated');
   }, [setActiveTeam, activeTeamId, team?.id]);
@@ -532,50 +523,20 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes or activeTeamId changes
+  // Load team data when user or activeTeamId changes
   useEffect(() => {
-    console.log('🔄 useTeam main useEffect triggered', { 
-      userId: user?.id, 
-      activeTeamId, 
-      isLoading: isLoadingRef.current, 
-      loadedUser: loadedUserRef.current
-    });
-    
-    // Only proceed if we have a user
     if (!user?.id) {
-      console.log('❌ useTeam - No user, clearing all team state');
       setTeam(null);
       setAllUserTeams([]);
-      setTeamMembers([]);
-      setPendingInvitations([]);
-      setUserRole(null);
       setIsLoading(false);
-      setError(null);
-      loadedUserRef.current = null;
-      isLoadingRef.current = false;
-      return;
-    }
-
-    // Skip if already loading to prevent conflicts
-    if (isLoadingRef.current) {
-      console.log('⚠️ useTeam - Skipping load (already loading)');
       return;
     }
     
-    // Only load if we don't have a cached result for this user or activeTeamId changed
-    if (!loadedUserRef.current || loadedUserRef.current !== user.id) {
-      console.log('📊 useTeam - Loading team data for user:', user.id, 'activeTeamId:', activeTeamId);
-      debugLogger.team('Loading team data for user:', user.id);
+    if (!isLoadingRef.current) {
       setIsLoading(true);
-      loadedUserRef.current = user.id;
-      
-      // Small delay to ensure all hooks are synchronized
-      setTimeout(() => {
-        console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
-        loadTeamData();
-      }, 100);
+      loadTeamData();
     }
-  }, [user?.id, activeTeamId]); // Include activeTeamId to react to team changes
+  }, [user?.id, activeTeamId, loadTeamData]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {

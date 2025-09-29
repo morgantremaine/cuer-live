@@ -182,6 +182,7 @@ const AccountManagement = () => {
   return (
     <div className="dark min-h-screen bg-gray-900">
       <DashboardHeader 
+        key={team?.id}
         userEmail={user?.email} 
         onSignOut={handleSignOut}
         showBackButton={true}
@@ -458,7 +459,7 @@ const AccountManagement = () => {
           )}
 
           <TabsContent value="team">
-            <TeamManagement />
+            <TeamManagement key={team?.id} />
           </TabsContent>
         </Tabs>
       </div>

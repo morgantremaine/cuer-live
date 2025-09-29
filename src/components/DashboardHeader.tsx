@@ -54,7 +54,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             {/* Team Selector */}
             {team && (
-              <DropdownMenu>
+              <DropdownMenu key={team.id}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-transparent">
                     <div className="flex items-center space-x-2">
