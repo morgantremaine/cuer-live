@@ -172,9 +172,9 @@ export const useSimpleAutoSave = (
       const lightweightSignature = createLightweightContentSignature({
         items: targetState.items || [],
         title: targetState.title || '',
-        columns: [], // Not available in RundownState, but not needed for lightweight
-        timezone: targetState.timezone || '',
-        startTime: targetState.startTime || '',
+        columns: [], // Not used in lightweight content signature
+        timezone: '', // Not used in lightweight content signature
+        startTime: '', // Not used in lightweight content signature
         showDate: targetState.showDate || null,
         externalNotes: targetState.externalNotes || ''
       });
@@ -194,8 +194,8 @@ export const useSimpleAutoSave = (
       items: targetState.items || [],
       title: targetState.title || '',
       columns: [], // Not used in content signature
-      timezone: targetState.timezone || '',
-      startTime: targetState.startTime || '',
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
       showDate: targetState.showDate || null,
       externalNotes: targetState.externalNotes || ''
     });

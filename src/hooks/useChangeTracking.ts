@@ -38,11 +38,16 @@ export const useChangeTracking = (
 
     // Use content-only signature function for consistency with autosave
     const signature = createContentSignature({
-      items: items || [],
+      items: (items || []).map(item => ({
+        ...item,
+        // Explicitly exclude showcaller fields to prevent false change detection
+        showcallerElapsed: undefined,
+        showcallerSegmentElapsed: undefined
+      })),
       title: rundownTitle || '',
-      columns: columns || [], // Not used in content signature but kept for interface
-      timezone: timezone || '',
-      startTime: startTime || '',
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
       showDate: null,
       externalNotes: ''
     });
@@ -151,9 +156,9 @@ export const useChangeTracking = (
     const savedSignature = createContentSignature({
       items: savedItems || [],
       title: savedTitle || '',
-      columns: savedColumns || [], // Not used in content signature but kept for interface
-      timezone: savedTimezone || '',
-      startTime: savedStartTime || '',
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
       showDate: null,
       externalNotes: ''
     });
@@ -185,9 +190,9 @@ export const useChangeTracking = (
     const newSignature = createContentSignature({
       items: newItems || [],
       title: newTitle || '',
-      columns: newColumns || [], // Not used in content signature but kept for interface
-      timezone: newTimezone || '',
-      startTime: newStartTime || '',
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
       showDate: null,
       externalNotes: ''
     });
