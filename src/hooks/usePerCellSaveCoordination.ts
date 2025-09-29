@@ -63,6 +63,9 @@ export const usePerCellSaveCoordination = ({
       console.log('🧪 SAVE COORDINATION: Routing to per-cell save system');
       trackCellChange(itemId, field, value);
       debugLogger.autosave(`Per-cell save: tracked ${field} change`);
+      
+      // NOTE: Per-cell system will manage hasUnsavedChanges via onSaveComplete callback
+      // The main state system won't set hasUnsavedChanges=true when perCellSaveEnabled=true
     } else {
       // Use delta save system
       console.log('🧪 SAVE COORDINATION: Routing to delta save system');

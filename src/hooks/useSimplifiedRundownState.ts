@@ -51,6 +51,9 @@ export const useSimplifiedRundownState = () => {
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   
+  // Track per-cell save enabled state to coordinate saving systems
+  const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
+  
   // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
@@ -184,6 +187,11 @@ export const useSimplifiedRundownState = () => {
       // Prime lastSavedRef after initial load to prevent false autosave triggers
       if (isInitialized && !lastSavedPrimedRef.current) {
         lastSavedPrimedRef.current = true;
+      }
+      
+      // CRITICAL: When per-cell save is enabled, bypass main autosave hasUnsavedChanges
+      if (isPerCellSaveEnabled) {
+        console.log('🧪 MAIN SAVE: Per-cell save mode - main system marking saved after coordination');
       }
       
       // Coordinate with teleprompter saves to prevent conflicts
@@ -660,10 +668,21 @@ export const useSimplifiedRundownState = () => {
   }, [rundownId, currentUserId]);
   
   // Cell edit integration for per-cell saves (after realtime connection is established)
+  const perCellEnabled = Boolean(state.perCellSaveEnabled);
+  
+  // CRITICAL: Track per-cell enabled state to coordinate with autosave
+  useEffect(() => {
+    console.log('🧪 PER-CELL SAVE: State updated', {
+      perCellSaveEnabled: state.perCellSaveEnabled,
+      rundownId,
+      isEnabled: perCellEnabled
+    });
+  }, [state.perCellSaveEnabled, rundownId, perCellEnabled]);
+  
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
-    isPerCellEnabled: Boolean(state.perCellSaveEnabled),
+    isPerCellEnabled: perCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();

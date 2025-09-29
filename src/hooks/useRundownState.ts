@@ -62,6 +62,22 @@ const initialState: RundownState = {
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
+    // CRITICAL: If per-cell save is enabled, don't set hasUnsavedChanges
+    // Let the per-cell system manage the saved state
+    if (state.perCellSaveEnabled) {
+      console.log('📝 CONTENT CHANGE: Per-cell save active - NOT setting hasUnsavedChanges', {
+        action: actionType,
+        isContentChange: true,
+        reason: 'Per-cell save system will manage saved state'
+      });
+      debugLogger.autosave('Content change detected but per-cell save active - not flagging hasUnsavedChanges via action:', actionType);
+      return {
+        ...state,
+        ...newState,
+        lastChanged: Date.now()
+      };
+    }
+    
     console.log('📝 CONTENT CHANGE: Setting hasUnsavedChanges=true', {
       action: actionType,
       isContentChange: true,
