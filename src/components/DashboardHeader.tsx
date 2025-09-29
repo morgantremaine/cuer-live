@@ -54,8 +54,8 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
           <div className="flex items-center space-x-4">
             {/* Team Selector */}
             {team && (
-              <DropdownMenu key={`${team.id}-${team.name}`}>
-                <DropdownMenuTrigger asChild>
+              <DropdownMenu key={`dropdown-${team.id}-${team.name}-${userRole}`}>
+                <DropdownMenuTrigger asChild key={`trigger-${team.id}-${team.name}`}>
                   <Button variant="ghost" className="text-gray-300 hover:text-gray-100 hover:bg-transparent">
                     <div className="flex items-center space-x-2">
                       {userRole === 'admin' ? (
@@ -68,14 +68,14 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 bg-gray-800 border-gray-700 z-50">
+                <DropdownMenuContent align="end" className="w-64 bg-gray-800 border-gray-700 z-50" key={`content-${team.id}`}>
                   <div className="px-2 py-1.5 text-sm font-medium text-gray-400">
                     Switch Team
                   </div>
                   <DropdownMenuSeparator className="bg-gray-700" />
                   {allUserTeams.map((userTeam) => (
                     <DropdownMenuItem
-                      key={userTeam.id}
+                      key={`${userTeam.id}-${team.id === userTeam.id ? 'active' : 'inactive'}`}
                       onClick={() => handleTeamSwitch(userTeam.id)}
                       className={`flex items-center justify-between text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
                         team.id === userTeam.id ? 'bg-gray-700' : ''
