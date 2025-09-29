@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useAuth } from './useAuth';
+import { createContentSignature } from '@/utils/contentSignature';
+import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
 
 interface ConflictResolutionOptions {
   rundownId: string;
@@ -25,6 +27,7 @@ interface FieldConflict {
 export const useConflictResolution = (options: ConflictResolutionOptions) => {
   const { user } = useAuth();
   const { rundownId, userId = user?.id, onResolutionApplied } = options;
+  const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
   
   const recentLocalEditsRef = useRef<Map<string, { value: any; timestamp: number }>>(new Map());
   const resolutionInProgressRef = useRef(false);
@@ -232,8 +235,37 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
       }
     }
 
+    // Validate signature consistency after conflict resolution
+    const localSignature = createContentSignature({
+      items: localState.items || [],
+      title: localState.title || '',
+      columns: [],
+      timezone: localState.timezone || '',
+      startTime: localState.start_time || '',
+      showDate: localState.show_date ? new Date(localState.show_date) : null,
+      externalNotes: localState.external_notes || ''
+    });
+    
+    const mergedSignature = createContentSignature({
+      items: mergedData.items || [],
+      title: mergedData.title || '',
+      columns: [],
+      timezone: mergedData.timezone || '',
+      startTime: mergedData.start_time || '',
+      showDate: mergedData.show_date ? new Date(mergedData.show_date) : null,
+      externalNotes: mergedData.external_notes || ''
+    });
+    
+    // Validate that conflict resolution maintains signature integrity
+    validateSignatureConsistency(
+      localSignature,
+      mergedSignature,
+      { source: 'conflict-resolution', location: 'pre-merge' },
+      { source: 'conflict-resolution', location: 'post-merge' }
+    );
+
     return { mergedData, appliedResolutions };
-  }, []);
+  }, [validateSignatureConsistency]);
 
   // Broadcast resolved changes to inform other clients
   const broadcastResolution = useCallback((mergedData: any, conflictFields: string[]) => {

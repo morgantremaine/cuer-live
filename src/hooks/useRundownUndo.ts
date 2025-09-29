@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
-
+import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface UndoState {
@@ -90,8 +90,16 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       return;
     }
 
-    // Create a signature for the current state to avoid duplicate saves
-    const currentSignature = JSON.stringify({ items, title });
+  // Create a signature using the unified content signature for consistency
+  const currentSignature = createContentSignature({
+    items,
+    title,
+    columns,
+    timezone: '',
+    startTime: '',
+    showDate: null,
+    externalNotes: ''
+  });
     if (lastStateSignature.current === currentSignature) {
       debugLogger.autosave('Skipping duplicate state save for action:', action);
       return;
@@ -112,9 +120,14 @@ export const useRundownUndo = (props?: UseRundownUndoProps) => {
       // Don't add if the last state is identical
       if (prev.length > 0) {
         const lastState = prev[prev.length - 1];
-        const lastSignature = JSON.stringify({ 
-          items: lastState.items, 
-          title: lastState.title 
+        const lastSignature = createContentSignature({
+          items: lastState.items,
+          title: lastState.title,
+          columns: lastState.columns,
+          timezone: '',
+          startTime: '',
+          showDate: null,
+          externalNotes: ''
         });
         if (lastSignature === currentSignature) {
           console.log('Skipping identical state save');
