@@ -925,6 +925,12 @@ export const useSimpleAutoSave = (
     }
 
     if (state.hasUnsavedChanges) {
+      // CRITICAL: Skip AutoSave if per-cell save is active and handling saves
+      if (isPerCellEnabled) {
+        console.log('🧪 AutoSave: per-cell save is handling saves - skipping main auto-save');
+        return;
+      }
+      
       // CRITICAL: Skip AutoSave if cell broadcast is being applied
       if (applyingCellBroadcastRef?.current) {
         console.log('📱 AutoSave: skipped - cell broadcast being applied');
@@ -987,6 +993,12 @@ export const useSimpleAutoSave = (
   useEffect(() => {
     const handleFlushOnBlur = async () => {
       if (state.hasUnsavedChanges && rundownId && rundownId !== DEMO_RUNDOWN_ID) {
+        // Skip flush if per-cell save is handling it
+        if (isPerCellEnabled) {
+          console.log('🧪 AutoSave: per-cell save handling flush - skipping main auto-save flush');
+          return;
+        }
+        
         console.log('🧯 AutoSave: flushing on tab blur/hidden to preserve keystrokes');
         try {
           await performSave(true, isSharedView); // Pass true to indicate this is a flush save
@@ -1032,6 +1044,12 @@ export const useSimpleAutoSave = (
         typingTimeoutRef.current = undefined;
       }
       if (isLoadedRef.current && hasUnsavedRef.current && rundownIdRef.current !== DEMO_RUNDOWN_ID) {
+        // Skip unmount flush if per-cell save is handling it
+        if (isPerCellEnabled) {
+          console.log('🧪 AutoSave: per-cell save handling unmount flush - skipping main auto-save flush');
+          return;
+        }
+        
         console.log('🧯 AutoSave: flushing pending changes on unmount');
         try {
           // Fire-and-forget flush save that bypasses tab-hidden checks
