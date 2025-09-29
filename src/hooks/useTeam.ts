@@ -219,9 +219,6 @@ export const useTeam = () => {
 
       console.log('🔍 useTeam - Team state updated:', teamData.id, teamData.name, 'Role:', role);
       
-      // Mark this user/team combination as loaded to prevent unnecessary reloads
-      loadedUserRef.current = `${user.id}-${targetTeamId}`;
-      
       setError(null);
 
       // Load additional data after setting main team state
@@ -593,8 +590,14 @@ export const useTeam = () => {
     const currentKey = `${user.id}-${activeTeamId}`;
     // Only load if we haven't already loaded for this user/team combination
     if (!isLoadingRef.current && loadedUserRef.current !== currentKey) {
+      // Set the ref IMMEDIATELY to prevent race conditions
+      loadedUserRef.current = currentKey;
       setIsLoading(true);
-      loadTeamData();
+      
+      // If loading fails, reset the ref so it can be retried
+      loadTeamData().catch(() => {
+        loadedUserRef.current = null;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, activeTeamId]);
