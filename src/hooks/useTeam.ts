@@ -54,6 +54,19 @@ export const useTeam = () => {
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
   const lastMemberLoadRef = useRef<number>(0);
+  const teamRef = useRef<Team | null>(null);
+  const activeTeamIdRef = useRef<string | null>(null);
+  const switchToTeamRef = useRef<((teamId: string) => Promise<void>) | null>(null);
+  const loadAllUserTeamsRef = useRef<(() => Promise<UserTeam[]>) | null>(null);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    teamRef.current = team;
+  }, [team]);
+  
+  useEffect(() => {
+    activeTeamIdRef.current = activeTeamId;
+  }, [activeTeamId]);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -110,6 +123,11 @@ export const useTeam = () => {
       return [];
     }
   }, [user]);
+  
+  // Keep ref in sync
+  useEffect(() => {
+    loadAllUserTeamsRef.current = loadAllUserTeams;
+  }, [loadAllUserTeams]);
 
   const loadTeamData = useCallback(async () => {
     // Get the current activeTeamId directly to avoid stale closure issues
@@ -238,9 +256,12 @@ export const useTeam = () => {
   }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
-    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
+    const currentTeam = teamRef.current;
+    const currentActiveTeamId = activeTeamIdRef.current;
     
-    if (teamId === activeTeamId && teamId === team?.id) {
+    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: currentTeam?.id, currentActiveTeamId });
+    
+    if (teamId === currentActiveTeamId && teamId === currentTeam?.id) {
       console.log('⚠️ useTeam - Already on requested team, skipping switch');
       return;
     }
@@ -257,7 +278,12 @@ export const useTeam = () => {
     loadTeamData();
     
     console.log('🔄 useTeam - Team switch initiated');
-  }, [setActiveTeam, activeTeamId, team?.id]);
+  }, [setActiveTeam, loadTeamData]);
+  
+  // Keep ref in sync
+  useEffect(() => {
+    switchToTeamRef.current = switchToTeam;
+  }, [switchToTeam]);
 
   const loadTeamMembers = async (teamId: string) => {
     // Add debouncing to prevent excessive API calls when switching accounts
@@ -650,7 +676,8 @@ export const useTeam = () => {
         const deletedMembership = payload.old;
         console.log('🔔 Team membership deleted:', deletedMembership);
         
-        if (deletedMembership.team_id === team.id) {
+        const currentTeam = teamRef.current;
+        if (deletedMembership.team_id === currentTeam?.id) {
           toast({
             title: 'Removed from Team',
             description: 'You have been removed from this team.',
@@ -658,12 +685,14 @@ export const useTeam = () => {
           });
           
           // Clear this team and switch to another
-          const teams = await loadAllUserTeams();
-          const nextTeam = teams.find(t => t.id !== team.id);
+          const teams = loadAllUserTeamsRef.current ? await loadAllUserTeamsRef.current() : [];
+          const nextTeam = teams.find(t => t.id !== currentTeam.id);
           
           if (nextTeam) {
             console.log('🔄 Switching to next available team:', nextTeam.id);
-            switchToTeam(nextTeam.id);
+            if (switchToTeamRef.current) {
+              switchToTeamRef.current(nextTeam.id);
+            }
           } else {
             // No other teams, clear and redirect
             console.log('🔄 No other teams available, redirecting to dashboard');
@@ -679,7 +708,7 @@ export const useTeam = () => {
       supabase.removeChannel(teamChannel);
       supabase.removeChannel(memberChannel);
     };
-  }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, switchToTeam, loadAllUserTeams, setActiveTeam]);
+  }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
