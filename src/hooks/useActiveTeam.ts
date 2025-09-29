@@ -15,7 +15,7 @@ export const useActiveTeam = () => {
     loading: true
   });
 
-  // Load active team from localStorage on mount
+  // Load active team from localStorage on mount and listen for changes
   useEffect(() => {
     console.log('🔍 useActiveTeam - useEffect triggered:', { user: user?.id, hasUser: !!user });
     
@@ -34,6 +34,20 @@ export const useActiveTeam = () => {
       activeTeamId: storedTeamId,
       loading: false
     });
+
+    // Listen for storage changes to sync across tabs and instances
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === userKey) {
+        console.log('🔄 useActiveTeam - Storage changed externally:', { newValue: e.newValue });
+        setState(prev => ({ ...prev, activeTeamId: e.newValue }));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [user]);
 
   const setActiveTeam = useCallback((teamId: string | null) => {
@@ -54,8 +68,19 @@ export const useActiveTeam = () => {
       localStorage.removeItem(userKey);
     }
     
-    setState(prev => ({ ...prev, activeTeamId: teamId }));
-    console.log('✅ useActiveTeam - State updated:', { activeTeamId: teamId });
+    // Update state immediately and synchronously
+    setState(prev => {
+      const newState = { ...prev, activeTeamId: teamId };
+      console.log('✅ useActiveTeam - State updated immediately:', { activeTeamId: teamId });
+      return newState;
+    });
+    
+    // Trigger a storage event to sync across all instances
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: userKey,
+      newValue: teamId,
+      oldValue: localStorage.getItem(userKey)
+    }));
   }, [user]);
 
   const clearActiveTeam = useCallback(() => {
