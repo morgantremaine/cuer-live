@@ -841,6 +841,7 @@ export const useSimplifiedRundownState = () => {
     
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
+      console.log('🎯 ENHANCED UPDATE: Calling markActiveTyping for field', field, 'on item', id);
       markActiveTyping();
       
       // CRITICAL FIX: Mark this field as recently edited for cell broadcast protection
