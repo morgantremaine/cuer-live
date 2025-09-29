@@ -35,7 +35,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
     <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-10">
             {showBackButton && onBack && (
               <Button
                 variant="ghost"
@@ -56,7 +56,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
                 <DropdownMenuTrigger asChild key={`trigger-${team.id}-${team.name}`}>
                   <Button 
                     variant="outline" 
-                    className="bg-gray-950 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
+                    className="bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
                   >
                     <div className="flex items-center space-x-3">
                       <div className="p-1.5 bg-blue-500/20 rounded-md">
