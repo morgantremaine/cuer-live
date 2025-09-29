@@ -219,6 +219,9 @@ export const useTeam = () => {
 
       console.log('🔍 useTeam - Team state updated:', teamData.id, teamData.name, 'Role:', role);
       
+      // Mark this user/team combination as loaded to prevent unnecessary reloads
+      loadedUserRef.current = `${user.id}-${targetTeamId}`;
+      
       setError(null);
 
       // Load additional data after setting main team state
