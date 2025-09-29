@@ -330,19 +330,6 @@ const Teleprompter = () => {
     recentlyEditedFieldsRef.current.set(`${itemId}-script`, Date.now());
     typingSessionRef.current = { fieldKey: `${itemId}-script`, startTime: Date.now() };
     
-    // Integrate with existing typing detection system
-    const { localShadowStore } = await import('@/state/localShadows');
-    
-    // Set active shadow to trigger existing typing indicators in main rundown
-    localShadowStore.setShadow(itemId, 'script', newScript, true);
-    
-    // Also set field protection through focus tracker for additional safety
-    const { globalFocusTracker } = await import('@/utils/focusTracker');
-    const fieldKey = `item_${itemId}-script`;
-    globalFocusTracker.setFieldProtection(fieldKey, 3000);
-    
-    console.log('📝 Teleprompter: Set shadow, focus protection for collaboration', { itemId, fieldKey });
-    
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
       cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
