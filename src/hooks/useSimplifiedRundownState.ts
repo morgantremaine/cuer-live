@@ -1511,14 +1511,12 @@ export const useSimplifiedRundownState = () => {
       );
     }
     
-    // For per-cell saves, notify the system that a structural operation completed
+    // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
-      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering per-cell save completion');
-      setTimeout(() => {
-        actions.markSaved();
-      }, 100);
+      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_row', { items: state.items, insertIndex: actualIndex });
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, actions.markSaved]);
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
@@ -1562,14 +1560,12 @@ export const useSimplifiedRundownState = () => {
       );
     }
     
-    // For per-cell saves, notify the system that a structural operation completed
+    // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
-      console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering per-cell save completion');
-      setTimeout(() => {
-        actions.markSaved();
-      }, 100);
+      console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_header', { items: state.items, insertIndex: actualIndex });
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, actions.markSaved]);
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
 
   // Clean up timeouts on unmount
