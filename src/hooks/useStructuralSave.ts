@@ -22,7 +22,10 @@ interface StructuralOperation {
 
 export const useStructuralSave = (
   rundownId: string | null,
-  trackOwnUpdate: (timestamp: string) => void
+  trackOwnUpdate: (timestamp: string) => void,
+  onSaveComplete?: () => void,
+  onSaveStart?: () => void,
+  onUnsavedChanges?: () => void
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -37,6 +40,11 @@ export const useStructuralSave = (
     pendingOperationsRef.current = [];
 
     console.log('🏗️ STRUCTURAL SAVE: Processing', operations.length, 'operations');
+    
+    // Notify UI that save is starting
+    if (onSaveStart) {
+      onSaveStart();
+    }
 
     try {
       // For now, process operations sequentially to maintain order
@@ -66,6 +74,11 @@ export const useStructuralSave = (
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
         }
+      }
+      
+      // Notify UI that save completed successfully
+      if (onSaveComplete) {
+        onSaveComplete();
       }
     } catch (error) {
       console.error('🚨 STRUCTURAL SAVE BATCH ERROR:', error);
@@ -108,6 +121,11 @@ export const useStructuralSave = (
       });
 
       pendingOperationsRef.current.push(operation);
+      
+      // Notify UI of unsaved changes
+      if (onUnsavedChanges) {
+        onUnsavedChanges();
+      }
 
       // Debounce save operations with shorter delay for better coordination
       if (saveTimeoutRef.current) {
