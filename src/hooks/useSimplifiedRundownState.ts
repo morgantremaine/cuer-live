@@ -694,9 +694,11 @@ export const useSimplifiedRundownState = () => {
     },
     onSaveStart: () => {
       console.log('🧪 PER-CELL SAVE: Save started');
+      // The isSaving state will be managed by the per-cell save system itself
     },
     onUnsavedChanges: () => {
       console.log('🧪 PER-CELL SAVE: Unsaved changes detected');
+      // The hasUnsavedChanges will be managed by the per-cell save system itself
     }
   });
   

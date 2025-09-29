@@ -189,13 +189,14 @@ const RundownHeader = ({
     prevIsSavingContentRef.current = isSavingContent;
   }, [isSavingContent, hasUnsavedChanges]);
 
-  // Create save state using our content-only change detection
+  // Create save state using the proper save state from the hook
+  // This includes per-cell save state when per-cell save is enabled
   const saveState = {
-    isSaving: isSavingContent, // Only show saving if content changed
-    hasUnsavedChanges: hasContentOnlyChanges,    // Only show unsaved if content changed
+    isSaving: isSaving, // Use the coordinated save state from the hook
+    hasUnsavedChanges: hasUnsavedChanges, // Use the coordinated unsaved changes from the hook
     lastSaved: null,
     saveError: null,
-    hasContentChanges: hasContentOnlyChanges
+    hasContentChanges: hasUnsavedChanges // Content changes are tracked by the save coordination system
   };
 
   // Get current universal time for display
