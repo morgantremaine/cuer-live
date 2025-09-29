@@ -393,7 +393,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col">
         <DashboardHeader 
-          key={`header-skeleton-${teamId || 'no-team'}`}
+          key={team?.id}
           userEmail={user?.email}
           onSignOut={handleSignOut}
         />
@@ -433,7 +433,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Full-width Header */}
       <DashboardHeader 
-        key={`header-main-${teamId || 'no-team'}`}
+        key={team?.id}
         userEmail={user?.email}
         onSignOut={handleSignOut}
       />
