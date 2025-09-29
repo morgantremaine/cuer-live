@@ -36,11 +36,12 @@ export const useCellLevelSave = (
     
     console.log('🧪 PER-CELL SAVE: Cell change tracked', {
       rundownId,
-      itemId,
+      itemId: itemId || 'GLOBAL',
       field,
       value: typeof value === 'string' ? value.substring(0, 100) : value,
       pendingCount: pendingUpdatesRef.current.length,
-      timestamp: update.timestamp
+      timestamp: update.timestamp,
+      isGlobalField: !itemId
     });
     
     debugLogger.autosave(`Cell change tracked: ${field} for item ${itemId || 'global'}`);
