@@ -134,47 +134,47 @@ export const useTeam = () => {
         return;
       }
 
-      // If no active team set or active team not in user's teams, determine which team to use
-      if (!targetTeamId || !userTeams.find(t => t.id === targetTeamId)) {
-        if (userTeams.length > 0) {
-          // Use the most recent team
-          targetTeamId = userTeams[0].id;
-          // Update active team to match the fallback selection
-          console.log('🔄 useTeam - No valid active team, using fallback:', targetTeamId);
-          setActiveTeam(targetTeamId);
-        } else {
-          // User has no team memberships - create a personal team
-          console.log('🔍 useTeam - No team found, creating personal team');
-          
-          debugLogger.team('Creating personal team as fallback');
-          const { data: newTeamData, error: createError } = await supabase.rpc(
-            'get_or_create_user_team',
-            { user_uuid: user.id }
-          );
+      // Use activeTeamId if it's valid for this user, otherwise use first available team
+      if (activeTeamId && userTeams.find(t => t.id === activeTeamId)) {
+        // Use the activeTeamId as-is since it's valid
+        targetTeamId = activeTeamId;
+      } else if (userTeams.length > 0) {
+        // Use the most recent team as fallback
+        targetTeamId = userTeams[0].id;
+        console.log('🔄 useTeam - Using fallback team:', targetTeamId);
+        setActiveTeam(targetTeamId);
+      } else {
+        // User has no team memberships - create a personal team
+        console.log('🔍 useTeam - No team found, creating personal team');
+        
+        debugLogger.team('Creating personal team as fallback');
+        const { data: newTeamData, error: createError } = await supabase.rpc(
+          'get_or_create_user_team',
+          { user_uuid: user.id }
+        );
 
-          if (createError) {
-            console.error('Error creating team:', createError);
-            setError('Failed to set up team');
-            setIsLoading(false);
-            isLoadingRef.current = false;
-            return;
-          } else if (newTeamData) {
-            console.log('Personal team created successfully, reloading...');
-            // Retry loading team data
-            setTimeout(() => {
-              loadedUserRef.current = null;
-              isLoadingRef.current = false;
-              loadTeamData();
-            }, 1000);
-            return;
-          }
-          setError('Failed to load team data');
-          setTeam(null);
-          setUserRole(null);
+        if (createError) {
+          console.error('Error creating team:', createError);
+          setError('Failed to set up team');
           setIsLoading(false);
           isLoadingRef.current = false;
           return;
+        } else if (newTeamData) {
+          console.log('Personal team created successfully, reloading...');
+          // Retry loading team data
+          setTimeout(() => {
+            loadedUserRef.current = null;
+            isLoadingRef.current = false;
+            loadTeamData();
+          }, 1000);
+          return;
         }
+        setError('Failed to load team data');
+        setTeam(null);
+        setUserRole(null);
+        setIsLoading(false);
+        isLoadingRef.current = false;
+        return;
       }
 
       // Load the specific team data
@@ -533,13 +533,14 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes (remove activeTeamId dependency to prevent conflicts)
+  // Load team data when user changes, but wait for activeTeamId to be properly set
   useEffect(() => {
     console.log('🔄 useTeam main useEffect triggered', { 
       userId: user?.id, 
       activeTeamId, 
       isLoading: isLoadingRef.current, 
-      loadedUser: loadedUserRef.current 
+      loadedUser: loadedUserRef.current,
+      activeTeamLoading: activeTeamId === null ? 'waiting' : 'ready'
     });
     
     // Only proceed if we have a user
@@ -559,24 +560,32 @@ export const useTeam = () => {
 
     // Skip if already loading to prevent conflicts
     if (isLoadingRef.current) {
-      console.log('⚠️ useTeam - Skipping load (isLoading or no user):', { 
+      console.log('⚠️ useTeam - Skipping load (already loading):', { 
         hasUser: !!user?.id, 
         isLoading: isLoadingRef.current 
       });
       return;
     }
     
-    // Only load if we don't have a cached result for this user
-    if (!loadedUserRef.current) {
-      console.log('📊 useTeam - Initial team load for user:', user.id);
-      debugLogger.team('Initial team load for user:', user.id);
+    // Wait for activeTeamId to be properly set from useActiveTeam
+    // Don't proceed if activeTeamId is null, as this indicates useActiveTeam is still loading
+    if (activeTeamId === null) {
+      console.log('⏳ useTeam - Waiting for activeTeamId to be set from useActiveTeam');
+      return;
+    }
+    
+    // Only load if we don't have a cached result for this user or activeTeamId changed
+    if (!loadedUserRef.current || loadedUserRef.current !== user.id) {
+      console.log('📊 useTeam - Loading team data for user:', user.id, 'activeTeamId:', activeTeamId);
+      debugLogger.team('Loading team data for user:', user.id);
       setIsLoading(true);
+      loadedUserRef.current = user.id;
       setTimeout(() => {
         console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
         loadTeamData();
       }, 100);
     }
-  }, [user?.id]); // Remove activeTeamId dependency to prevent conflicts
+  }, [user?.id, activeTeamId]); // Include activeTeamId to react to team changes
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
