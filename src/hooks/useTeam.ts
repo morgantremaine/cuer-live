@@ -515,8 +515,7 @@ export const useTeam = () => {
         return { error: error.message };
       }
 
-      // Reload team data to reflect the change
-      await loadTeamData();
+      // Update the team list in the dropdown - realtime subscription handles main state
       await loadAllUserTeams();
       
       return { success: true };
