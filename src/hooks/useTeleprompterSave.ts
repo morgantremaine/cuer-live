@@ -34,28 +34,33 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     trackOwnUpdate || (() => {}),
     (savedUpdates) => {
       // Handle save completion with details about what was saved
+      console.log('📝 Teleprompter: Save completion callback fired', { savedUpdates: savedUpdates?.length });
+      
       if (savedUpdates && savedUpdates.length > 0) {
         savedUpdates.forEach(update => {
           if (update.itemId && update.field === 'script') {
-            console.log('📝 Teleprompter: Per-cell save completed, calling success callback', { itemId: update.itemId });
-            
-            // Update save state to show save completed
-            setSaveState(prev => ({
-              ...prev,
-              isSaving: false,
-              lastSaved: new Date(),
-              hasUnsavedChanges: false,
-              saveError: null
-            }));
-            
+            console.log('📝 Teleprompter: Processing successful save for script field', { itemId: update.itemId });
             onSaveSuccess?.(update.itemId, update.value);
           }
         });
+        
+        // Clear save state AFTER processing all saves
+        setSaveState(prev => ({
+          ...prev,
+          isSaving: false,
+          lastSaved: new Date(),
+          hasUnsavedChanges: false,
+          saveError: null
+        }));
+        console.log('📝 Teleprompter: Save state cleared - hasUnsavedChanges set to false');
       }
       onSaveEnd?.();
     },
     onSaveStart,
-    () => setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }))
+    () => {
+      console.log('📝 Teleprompter: Unsaved changes detected');
+      setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
+    }
   );
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -218,7 +223,8 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
   return {
     saveState: {
       ...saveState,
-      hasUnsavedChanges: saveState.hasUnsavedChanges && hasPendingUpdates()
+      // Only override hasUnsavedChanges if we actually have pending updates
+      hasUnsavedChanges: saveState.hasUnsavedChanges || hasPendingUpdates()
     },
     debouncedSave,
     forceSave,
