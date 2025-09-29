@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -25,7 +26,8 @@ export const useStructuralSave = (
   trackOwnUpdate: (timestamp: string) => void,
   onSaveComplete?: () => void,
   onSaveStart?: () => void,
-  onUnsavedChanges?: () => void
+  onUnsavedChanges?: () => void,
+  currentUserId?: string
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -71,6 +73,30 @@ export const useStructuralSave = (
           // Track our own update to prevent conflict detection
           if (data.updatedAt) {
             trackOwnUpdate(data.updatedAt);
+          }
+
+          // Broadcast structural change to other users for real-time updates
+          if (rundownId && currentUserId) {
+            const broadcastData = {
+              operationType: operation.operationType,
+              operationData: operation.operationData,
+              docVersion: data.docVersion,
+              timestamp: operation.timestamp
+            };
+            
+            console.log('📡 Broadcasting structural operation:', {
+              operation: operation.operationType,
+              rundownId,
+              userId: currentUserId
+            });
+            
+            cellBroadcast.broadcastCellUpdate(
+              rundownId,
+              undefined,
+              `structural:${operation.operationType}`,
+              broadcastData,
+              currentUserId
+            );
           }
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
