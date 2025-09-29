@@ -62,36 +62,46 @@ export const useTeam = () => {
     }
 
     try {
+      // Step 1: Get team memberships
       const { data: membershipData, error: membershipError } = await supabase
         .from('team_members')
-        .select(`
-          team_id,
-          role,
-          joined_at,
-          teams!inner (
-            id,
-            name,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('team_id, role, joined_at')
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false });
 
       if (membershipError) {
-        console.error('Error fetching all user teams:', membershipError);
+        console.error('Error fetching team memberships:', membershipError);
         throw membershipError;
       }
 
-      const userTeams: UserTeam[] = membershipData?.map(membership => {
-        const teamData = Array.isArray(membership.teams) ? membership.teams[0] : membership.teams;
+      if (!membershipData || membershipData.length === 0) {
+        setAllUserTeams([]);
+        return [];
+      }
+
+      // Step 2: Get fresh team details directly from teams table
+      const teamIds = membershipData.map(m => m.team_id);
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select('id, name, created_at, updated_at')
+        .in('id', teamIds);
+
+      if (teamsError) {
+        console.error('Error fetching team details:', teamsError);
+        throw teamsError;
+      }
+
+      // Step 3: Combine the data
+      const teamsMap = new Map(teamsData?.map(t => [t.id, t]) || []);
+      const userTeams: UserTeam[] = membershipData.map(membership => {
+        const teamData = teamsMap.get(membership.team_id);
         return {
-          id: teamData.id,
-          name: teamData.name,
+          id: membership.team_id,
+          name: teamData?.name || 'Unknown Team',
           role: membership.role as 'admin' | 'member',
           joined_at: membership.joined_at
         };
-      }) || [];
+      });
 
       setAllUserTeams(userTeams);
       return userTeams;
