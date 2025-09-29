@@ -237,19 +237,18 @@ export const useTeam = () => {
     
     console.log('🔄 useTeam - Setting active team to:', teamId);
     
-    // Immediately update the active team state
+    // Update the active team state
     setActiveTeam(teamId);
     
-    // Force immediate reload of team data 
+    // Immediately reload team data
     console.log('🔄 useTeam - Force reloading team data immediately');
     setIsLoading(true);
-    loadedUserRef.current = null;
     isLoadingRef.current = false;
     
-    // Trigger reload after a small delay to ensure state is updated
+    // Trigger reload
     setTimeout(() => {
       loadTeamData();
-    }, 100);
+    }, 50);
     
     console.log('🔄 useTeam - Team switch initiated');
   }, [setActiveTeam, activeTeamId, team?.id]);
@@ -533,14 +532,13 @@ export const useTeam = () => {
     }
   };
 
-  // Load team data when user changes, but wait for activeTeamId to be properly set
+  // Load team data when user changes or activeTeamId changes
   useEffect(() => {
     console.log('🔄 useTeam main useEffect triggered', { 
       userId: user?.id, 
       activeTeamId, 
       isLoading: isLoadingRef.current, 
-      loadedUser: loadedUserRef.current,
-      activeTeamLoading: activeTeamId === null ? 'waiting' : 'ready'
+      loadedUser: loadedUserRef.current
     });
     
     // Only proceed if we have a user
@@ -560,17 +558,7 @@ export const useTeam = () => {
 
     // Skip if already loading to prevent conflicts
     if (isLoadingRef.current) {
-      console.log('⚠️ useTeam - Skipping load (already loading):', { 
-        hasUser: !!user?.id, 
-        isLoading: isLoadingRef.current 
-      });
-      return;
-    }
-    
-    // Wait for activeTeamId to be properly set from useActiveTeam
-    // Don't proceed if activeTeamId is null, as this indicates useActiveTeam is still loading
-    if (activeTeamId === null) {
-      console.log('⏳ useTeam - Waiting for activeTeamId to be set from useActiveTeam');
+      console.log('⚠️ useTeam - Skipping load (already loading)');
       return;
     }
     
@@ -580,6 +568,8 @@ export const useTeam = () => {
       debugLogger.team('Loading team data for user:', user.id);
       setIsLoading(true);
       loadedUserRef.current = user.id;
+      
+      // Small delay to ensure all hooks are synchronized
       setTimeout(() => {
         console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
         loadTeamData();
