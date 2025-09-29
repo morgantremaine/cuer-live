@@ -337,28 +337,33 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Primary path: Cell broadcasts handle real-time sync for better performance
-      // Only use fallback if we detect broadcast failures in practice
-      console.log('📱 Using cell broadcasts for content sync (with realtime fallback available)', {
-        docVersion: incomingDocVersion,
-        timestamp: normalizedTimestamp,
-        reason: 'Cell broadcasts provide superior real-time sync'
-      });
+      // Check broadcast health and use fallback if needed
+      const { cellBroadcast } = await import('@/utils/cellBroadcast');
+      const isBroadcastHealthy = cellBroadcast.isBroadcastHealthy(rundownId);
       
-      // For now, maintain current behavior but log that fallback is available
-      // TODO: Implement broadcast health monitoring to automatically use fallback
-      return;
-      
-      // Fallback implementation (ready when broadcast monitoring is added):
-      /*
-      globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
-        try { 
-          callback(payload.new); 
-        } catch (error) { 
-          console.error('Error in fallback rundown callback:', error);
-        }
-      });
-      */
+      if (isBroadcastHealthy) {
+        console.log('📱 Using cell broadcasts for content sync', {
+          docVersion: incomingDocVersion,
+          timestamp: normalizedTimestamp,
+          reason: 'Broadcast system healthy'
+        });
+        return;
+      } else {
+        // Use database fallback when broadcast health is poor
+        console.log('🔄 Using database fallback due to poor broadcast health', {
+          docVersion: incomingDocVersion,
+          timestamp: normalizedTimestamp,
+          healthMetrics: cellBroadcast.getHealthMetrics(rundownId)
+        });
+        
+        globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
+          try { 
+            callback(payload.new); 
+          } catch (error) { 
+            console.error('Error in fallback rundown callback:', error);
+          }
+        });
+      }
     }
 
   }, [rundownId, user?.id, isSharedView]);
