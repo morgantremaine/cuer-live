@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { debugLogger } from '@/utils/debugLogger';
 
@@ -7,6 +7,8 @@ interface CellEditIntegrationProps {
   trackOwnUpdate: (timestamp: string) => void;
   isPerCellEnabled: boolean;
   onSaveComplete?: () => void;
+  onSaveStart?: () => void;
+  onUnsavedChanges?: () => void;
 }
 
 /**
@@ -17,16 +19,41 @@ export const useCellEditIntegration = ({
   rundownId,
   trackOwnUpdate,
   isPerCellEnabled,
-  onSaveComplete
+  onSaveComplete,
+  onSaveStart,
+  onUnsavedChanges
 }: CellEditIntegrationProps) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const [isPerCellSaving, setIsPerCellSaving] = useState(false);
+  const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
 
   // Get the coordinated save system
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
     trackOwnUpdate,
     isPerCellEnabled,
-    onSaveComplete
+    onSaveComplete: () => {
+      console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
+      setIsPerCellSaving(false);
+      setHasPerCellUnsavedChanges(false);
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
+    },
+    onSaveStart: () => {
+      console.log('🧪 CELL EDIT INTEGRATION: Per-cell save started');
+      setIsPerCellSaving(true);
+      if (onSaveStart) {
+        onSaveStart();
+      }
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 CELL EDIT INTEGRATION: Per-cell unsaved changes detected');
+      setHasPerCellUnsavedChanges(true);
+      if (onUnsavedChanges) {
+        onUnsavedChanges();
+      }
+    }
   });
 
   // Handle cell value changes from editing components
@@ -96,7 +123,8 @@ export const useCellEditIntegration = ({
     handleCellChange,
     handleCellEditStart,
     handleCellEditComplete,
-    hasUnsavedChanges,
-    isPerCellEnabled
+    hasUnsavedChanges: hasPerCellUnsavedChanges,
+    isPerCellEnabled,
+    isPerCellSaving
   };
 };

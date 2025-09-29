@@ -1568,8 +1568,8 @@ export const useSimplifiedRundownState = () => {
     currentTime,
     rundownId,
     isLoading: isLoading || isLoadingColumns,
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving: isSaving || isSavingColumns,
+    hasUnsavedChanges: perCellEnabled ? cellEditIntegration.hasUnsavedChanges : state.hasUnsavedChanges,
+    isSaving: perCellEnabled ? cellEditIntegration.isPerCellSaving : (isSaving || isSavingColumns),
     showcallerActivity,
     
     // Realtime connection status

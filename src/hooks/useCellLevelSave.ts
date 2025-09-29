@@ -14,7 +14,9 @@ interface FieldUpdate {
 export const useCellLevelSave = (
   rundownId: string | null,
   trackOwnUpdate: (timestamp: string) => void,
-  onSaveComplete?: () => void
+  onSaveComplete?: () => void,
+  onSaveStart?: () => void,
+  onUnsavedChanges?: () => void
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -42,6 +44,12 @@ export const useCellLevelSave = (
     });
     
     debugLogger.autosave(`Cell change tracked: ${field} for item ${itemId || 'global'}`);
+
+    // Notify UI that we have unsaved changes (if this is the first change)
+    if (pendingUpdatesRef.current.length === 1 && onUnsavedChanges) {
+      console.log('🧪 PER-CELL SAVE: Notifying UI of unsaved changes');
+      onUnsavedChanges();
+    }
 
     // Debounce save - trigger after 500ms of no new changes
     if (saveTimeoutRef.current) {
@@ -73,6 +81,12 @@ export const useCellLevelSave = (
 
     try {
       debugLogger.autosave(`Saving ${updatesToSave.length} cell-level updates`);
+
+      // Notify UI that save is starting
+      if (onSaveStart) {
+        console.log('🧪 PER-CELL SAVE: Notifying UI that save is starting');
+        onSaveStart();
+      }
 
       // Create content signature for change tracking
       const contentSignature = createContentSignature({

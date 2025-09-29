@@ -13,6 +13,8 @@ interface PerCellSaveOptions {
   isPerCellEnabled: boolean;
   currentUserId?: string;
   onSaveComplete?: () => void; // Add callback for when saves complete
+  onSaveStart?: () => void; // Add callback for when saves start
+  onUnsavedChanges?: () => void; // Add callback for unsaved changes
 }
 
 export const usePerCellSaveCoordination = ({
@@ -20,7 +22,9 @@ export const usePerCellSaveCoordination = ({
   trackOwnUpdate,
   isPerCellEnabled,
   currentUserId,
-  onSaveComplete
+  onSaveComplete,
+  onSaveStart,
+  onUnsavedChanges
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
@@ -32,7 +36,7 @@ export const usePerCellSaveCoordination = ({
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, trackOwnUpdate, onSaveComplete);
+  } = useCellLevelSave(rundownId, trackOwnUpdate, onSaveComplete, onSaveStart, onUnsavedChanges);
 
   // Delta save system (fallback)
   const {
