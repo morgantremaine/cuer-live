@@ -22,37 +22,14 @@ export const useTeamId = () => {
       setTeamId(null);
       setLoading(false);
     } else {
-      // Fallback: fetch team ID from database if no active team is set
-      console.log('🔍 useTeamId - No activeTeamId, fetching from database for user:', user.id);
-      const fetchTeamId = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', user.id)
-            .order('joined_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          console.log('🔍 useTeamId - Database fetch result:', { userId: user.id, teamId: data?.team_id, error });
-
-          if (error) {
-            console.error('Error fetching team ID:', error);
-          } else if (data) {
-            console.log('🔍 useTeamId - Setting teamId from database:', data.team_id);
-            setTeamId(data.team_id);
-          } else {
-            // No team membership found - let useTeam handle team creation
-            console.log('No team membership found for user');
-          }
-        } catch (error) {
-          console.error('Error fetching team ID:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchTeamId();
+      // Only fetch from database if we truly have no active team preference
+      // and this is the initial load (not a temporary null state)
+      console.log('🔍 useTeamId - No activeTeamId, checking if should fetch from database');
+      
+      // Don't override user's team selection with database fallback
+      // Only use database fallback on true initial load
+      setTeamId(null);
+      setLoading(false);
     }
   }, [user, activeTeamId]);
 
