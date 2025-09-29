@@ -290,7 +290,18 @@ export const useSimpleAutoSave = (
   }, []);
 
   // Check if per-cell save is enabled for this rundown
-  const isPerCellEnabled = Boolean((state as any).perCellSaveEnabled);
+  const isPerCellEnabled = Boolean(state.perCellSaveEnabled);
+  
+  // Debug log to confirm per-cell save status
+  useEffect(() => {
+    if (rundownId) {
+      console.log('🧪 PER-CELL SAVE: Auto-save system status', {
+        rundownId,
+        isPerCellEnabled,
+        perCellSaveEnabled: state.perCellSaveEnabled
+      });
+    }
+  }, [rundownId, isPerCellEnabled, state.perCellSaveEnabled]);
 
   // Get current user ID from state for structural operations
   const currentUserId = (state as any).currentUserId;

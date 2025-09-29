@@ -20,6 +20,7 @@ export interface RundownState {
   hasUnsavedChanges: boolean;
   lastChanged: number;
   docVersion?: number; // Add docVersion to track server version for OCC
+  perCellSaveEnabled?: boolean; // Add per-cell save enabled flag
 }
 
 type RundownAction = 
@@ -55,7 +56,8 @@ const initialState: RundownState = {
   isPlaying: false,
   hasUnsavedChanges: false,
   lastChanged: 0,
-  docVersion: 0 // Initialize docVersion
+  docVersion: 0, // Initialize docVersion
+  perCellSaveEnabled: false // Initialize per-cell save as disabled by default
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {

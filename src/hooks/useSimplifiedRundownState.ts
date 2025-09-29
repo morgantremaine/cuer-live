@@ -1008,7 +1008,14 @@ export const useSimplifiedRundownState = () => {
               timezone: data.timezone || 'America/New_York',
               showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
               externalNotes: data.external_notes,
-              docVersion: data.doc_version || 0 // CRITICAL: Include docVersion for OCC
+              docVersion: data.doc_version || 0, // CRITICAL: Include docVersion for OCC
+              perCellSaveEnabled: data.per_cell_save_enabled || false // Include per-cell save setting
+            });
+            
+            console.log('🧪 PER-CELL SAVE: Loaded from database', {
+              rundownId,
+              per_cell_save_enabled: data.per_cell_save_enabled,
+              willUsePerCellSave: data.per_cell_save_enabled || false
             });
           }
         }
