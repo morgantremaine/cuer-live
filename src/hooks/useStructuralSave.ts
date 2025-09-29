@@ -42,6 +42,7 @@ export const useStructuralSave = (
     console.log('🏗️ STRUCTURAL SAVE: Processing', operations.length, 'operations');
     
     // Notify UI that save is starting
+    console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveStart callback');
     if (onSaveStart) {
       onSaveStart();
     }
@@ -77,6 +78,7 @@ export const useStructuralSave = (
       }
       
       // Notify UI that save completed successfully
+      console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveComplete callback');
       if (onSaveComplete) {
         onSaveComplete();
       }
@@ -86,7 +88,7 @@ export const useStructuralSave = (
       pendingOperationsRef.current.unshift(...operations);
       throw error;
     }
-  }, [rundownId, trackOwnUpdate]);
+  }, [rundownId, trackOwnUpdate, onSaveStart, onSaveComplete]);
 
   // Queue a structural operation with coordination
   const queueStructuralOperation = useCallback(
@@ -123,6 +125,7 @@ export const useStructuralSave = (
       pendingOperationsRef.current.push(operation);
       
       // Notify UI of unsaved changes
+      console.log('🏗️ STRUCTURAL SAVE: Triggering onUnsavedChanges callback');
       if (onUnsavedChanges) {
         onUnsavedChanges();
       }
@@ -138,7 +141,7 @@ export const useStructuralSave = (
         });
       }, 100); // Reduced to 100ms for better responsiveness during coordination
     },
-    [rundownId, saveStructuralOperations]
+    [rundownId, saveStructuralOperations, onUnsavedChanges]
   );
 
   // Flush all pending operations immediately
