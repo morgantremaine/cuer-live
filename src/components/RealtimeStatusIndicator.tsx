@@ -18,13 +18,15 @@ const RealtimeStatusIndicator = ({
 }: RealtimeStatusIndicatorProps) => {
   const broadcastHealth = useBroadcastHealthMonitor(rundownId || '', !!rundownId);
   
-  // Show degraded state if using fallback due to poor broadcast health
-  const effectiveConnection = isConnected && broadcastHealth.isHealthy;
+  // Determine connection quality
+  const isHealthy = broadcastHealth.isHealthy;
+  const isDegraded = isConnected && !isHealthy;
   
   return (
     <ConnectionStatusBadge
-      isConnected={effectiveConnection}
+      isConnected={isConnected}
       isProcessing={isProcessingUpdate}
+      isDegraded={isDegraded}
       className={className}
       showLabel={true}
     />
