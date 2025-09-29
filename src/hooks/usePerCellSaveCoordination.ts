@@ -3,6 +3,7 @@ import { RundownState } from './useRundownState';
 import { useCellLevelSave } from './useCellLevelSave';
 import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useStructuralSave } from './useStructuralSave';
+import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { debugLogger } from '@/utils/debugLogger';
 import { RundownItem } from '@/types/rundown';
 
@@ -20,6 +21,9 @@ export const usePerCellSaveCoordination = ({
   currentUserId
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
+
+  // Coordination system for managing concurrent operations
+  const coordination = useCellUpdateCoordination();
 
   // Cell-level save system
   const {
@@ -104,7 +108,7 @@ export const usePerCellSaveCoordination = ({
     debugLogger.autosave(`Initialized baseline for ${isPerCellEnabled ? 'per-cell' : 'delta'} save`);
   }, [isPerCellEnabled, initializeSavedState]);
 
-  // Handle structural operations (add/delete/move rows)
+  // Handle structural operations with enhanced coordination
   const handleStructuralOperation = useCallback((
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
@@ -115,7 +119,7 @@ export const usePerCellSaveCoordination = ({
       insertIndex?: number;
     }
   ) => {
-    console.log('🧪 SAVE COORDINATION: handleStructuralOperation called', {
+    console.log('🧪 SAVE COORDINATION: Coordinated structural operation', {
       operationType,
       isPerCellEnabled,
       currentUserId,
@@ -123,16 +127,24 @@ export const usePerCellSaveCoordination = ({
     });
 
     if (isPerCellEnabled && currentUserId) {
-      // Use structural save system for per-cell mode
-      console.log('🧪 SAVE COORDINATION: Routing to structural save system');
-      queueStructuralOperation(operationType, operationData, currentUserId);
-      debugLogger.autosave(`Per-cell structural save: ${operationType}`);
+      // Use coordination system to manage the structural operation
+      coordination.executeWithStructuralOperation(async () => {
+        const sequenceNumber = coordination.getNextSequenceNumber();
+        
+        console.log('🧪 SAVE COORDINATION: Executing coordinated structural operation', {
+          operationType,
+          sequenceNumber
+        });
+        
+        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
+        debugLogger.autosave(`Coordinated per-cell structural save: ${operationType} (seq: ${sequenceNumber})`);
+      });
     } else {
       // For delta mode, structural operations fall back to full autosave
       console.log('🧪 SAVE COORDINATION: Structural operation in delta mode - letting autosave handle it');
       debugLogger.autosave(`Delta mode structural operation: ${operationType} (handled by autosave)`);
     }
-  }, [isPerCellEnabled, currentUserId, queueStructuralOperation, rundownId]);
+  }, [isPerCellEnabled, currentUserId, queueStructuralOperation, rundownId, coordination]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {
@@ -152,13 +164,13 @@ export const usePerCellSaveCoordination = ({
     }
   }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations]);
 
-  // Enhanced save function that handles both cell and structural changes
+  // Enhanced save function with coordination
   const enhancedSaveState = useCallback(async (currentState: RundownState) => {
     if (isPerCellEnabled) {
       const hasCellChanges = hasPendingCellUpdates();
       const hasStructuralChanges = hasPendingStructuralOperations();
       
-      console.log('🧪 SAVE COORDINATION: Enhanced save state', {
+      console.log('🧪 SAVE COORDINATION: Coordinated enhanced save state', {
         hasCellChanges,
         hasStructuralChanges,
         totalChanges: hasCellChanges || hasStructuralChanges
@@ -169,16 +181,19 @@ export const usePerCellSaveCoordination = ({
         throw new Error('No changes to save');
       }
 
-      // Flush structural operations first (they're more critical)
+      // Use coordination system to ensure proper sequencing
       if (hasStructuralChanges) {
-        debugLogger.autosave('Per-cell save: flushing structural operations');
-        await flushStructuralOperations();
+        await coordination.executeWithStructuralOperation(async () => {
+          debugLogger.autosave('Per-cell save: coordinated flush of structural operations');
+          await flushStructuralOperations();
+        });
       }
 
-      // Then flush cell updates
       if (hasCellChanges) {
-        debugLogger.autosave('Per-cell save: flushing cell updates');
-        await flushCellUpdates();
+        await coordination.executeWithCellUpdate(async () => {
+          debugLogger.autosave('Per-cell save: coordinated flush of cell updates');
+          await flushCellUpdates();
+        });
       }
 
       return;
@@ -187,7 +202,7 @@ export const usePerCellSaveCoordination = ({
       debugLogger.autosave('Delta save: saving state deltas');
       return await saveDeltaState(currentState);
     }
-  }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, saveDeltaState]);
+  }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, saveDeltaState, coordination]);
 
   return {
     trackFieldChange,

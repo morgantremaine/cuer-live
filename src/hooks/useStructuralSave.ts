@@ -9,6 +9,7 @@ interface StructuralOperationData {
   deletedIds?: string[];
   newItems?: RundownItem[];
   insertIndex?: number;
+  sequenceNumber?: number;
 }
 
 interface StructuralOperation {
@@ -74,12 +75,13 @@ export const useStructuralSave = (
     }
   }, [rundownId, trackOwnUpdate]);
 
-  // Queue a structural operation
+  // Queue a structural operation with coordination
   const queueStructuralOperation = useCallback(
     (
       operationType: StructuralOperation['operationType'],
       operationData: StructuralOperationData,
-      userId: string
+      userId: string,
+      sequenceNumber?: number
     ) => {
       if (!rundownId) {
         console.warn('🚨 Cannot queue structural operation: no rundownId');
@@ -89,7 +91,10 @@ export const useStructuralSave = (
       const operation: StructuralOperation = {
         rundownId,
         operationType,
-        operationData,
+        operationData: {
+          ...operationData,
+          sequenceNumber // Add sequence number for ordering
+        },
         userId,
         timestamp: new Date().toISOString()
       };
@@ -98,12 +103,13 @@ export const useStructuralSave = (
         type: operationType,
         rundownId,
         userId,
+        sequenceNumber,
         dataKeys: Object.keys(operationData)
       });
 
       pendingOperationsRef.current.push(operation);
 
-      // Debounce save operations
+      // Debounce save operations with shorter delay for better coordination
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
@@ -112,7 +118,7 @@ export const useStructuralSave = (
         saveStructuralOperations().catch(error => {
           console.error('🚨 STRUCTURAL SAVE ERROR:', error);
         });
-      }, 300); // 300ms debounce for structural operations
+      }, 100); // Reduced to 100ms for better responsiveness during coordination
     },
     [rundownId, saveStructuralOperations]
   );

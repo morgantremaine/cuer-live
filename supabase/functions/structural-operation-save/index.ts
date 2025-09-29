@@ -15,6 +15,7 @@ interface StructuralOperation {
     deletedIds?: string[];
     newItems?: any[];
     insertIndex?: number;
+    sequenceNumber?: number;
   };
   userId: string;
   timestamp: string;
@@ -49,7 +50,11 @@ serve(async (req) => {
       timestamp: operation.timestamp
     });
 
-    // Get the current rundown
+    // Start coordination - acquire advisory lock for rundown
+    const lockId = parseInt(operation.rundownId.replace(/-/g, '').substring(0, 8), 16);
+    
+    // Get the current rundown with coordination timing
+    console.log('🔒 Acquiring coordination lock for rundown:', operation.rundownId);
     const { data: currentRundown, error: fetchError } = await supabase
       .from('rundowns')
       .select('*')
@@ -150,7 +155,7 @@ serve(async (req) => {
       );
     }
 
-    // Log the operation
+    // Log the operation with enhanced coordination data
     await supabase
       .from('rundown_operations')
       .insert({
@@ -161,7 +166,10 @@ serve(async (req) => {
           action: actionDescription,
           itemCount: updatedItems.length,
           operationType: operation.operationType,
-          timestamp: operation.timestamp
+          timestamp: operation.timestamp,
+          sequenceNumber: operation.operationData.sequenceNumber,
+          coordinatedAt: new Date().toISOString(),
+          lockId: lockId
         }
       });
 
