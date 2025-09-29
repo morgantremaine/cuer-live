@@ -22,6 +22,14 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   const navigate = useNavigate()
   const { team, allUserTeams, userRole, switchToTeam } = useTeam()
 
+  // Log every render to track re-renders
+  console.log('🎨 DashboardHeader RENDER:', { 
+    teamId: team?.id, 
+    teamName: team?.name, 
+    teamUpdatedAt: team?.updated_at,
+    timestamp: new Date().toISOString()
+  });
+
   const handleHelpClick = () => {
     window.open('/help', '_blank');
   };
