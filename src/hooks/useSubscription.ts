@@ -38,16 +38,20 @@ export const useSubscription = () => {
 
   const checkSubscription = useCallback(async () => {
     if (!user?.id || isLoadingRef.current) {
+      console.log('🔍 useSubscription - Skipping check:', { userId: user?.id, isLoading: isLoadingRef.current });
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
 
     // Prevent duplicate loading for the same user and team combination
     if (loadedUserRef.current === user.id && loadedTeamRef.current === activeTeamId) {
+      console.log('🔍 useSubscription - Already loaded for this user/team combo:', { userId: user.id, teamId: activeTeamId });
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
 
+    console.log('🔍 useSubscription - Starting check for:', { userId: user.id, teamId: activeTeamId, prevUserId: loadedUserRef.current, prevTeamId: loadedTeamRef.current });
+    
     isLoadingRef.current = true;
     loadedUserRef.current = user.id;
     loadedTeamRef.current = activeTeamId;
@@ -106,6 +110,15 @@ export const useSubscription = () => {
         throw error;
       }
       
+      console.log('✅ useSubscription - Setting status:', {
+        subscribed: data.subscribed || false,
+        subscription_tier: data.subscription_tier,
+        max_team_members: data.max_team_members || 1,
+        access_type: data.access_type === 'none' ? 'free' : (data.access_type || 'free'),
+        user_role: data.user_role,
+        teamId: activeTeamId
+      });
+      
       setStatus({
         subscribed: data.subscribed || false,
         subscription_tier: data.subscription_tier,
@@ -146,7 +159,7 @@ export const useSubscription = () => {
     } finally {
       isLoadingRef.current = false;
     }
-  }, []); // Remove user dependency to prevent recreation
+  }, [user?.id, activeTeamId]); // Include activeTeamId as dependency
 
   const createCheckout = useCallback(async (tier: string, interval: 'monthly' | 'yearly') => {
     if (!user) {
@@ -208,9 +221,19 @@ export const useSubscription = () => {
 
   // Load subscription data when user or team changes - with strict change detection
   useEffect(() => {
+    console.log('🔍 useSubscription - Effect triggered:', { 
+      userId: user?.id, 
+      activeTeamId, 
+      loadedUserId: loadedUserRef.current, 
+      loadedTeamId: loadedTeamRef.current,
+      isLoading: isLoadingRef.current 
+    });
+    
     if (user?.id && (user.id !== loadedUserRef.current || activeTeamId !== loadedTeamRef.current) && !isLoadingRef.current) {
+      console.log('🔍 useSubscription - Calling checkSubscription due to user/team change');
       checkSubscription();
     } else if (!user?.id && loadedUserRef.current) {
+      console.log('🔍 useSubscription - Clearing state due to no user');
       setStatus(prev => ({ ...prev, loading: false }));
       loadedUserRef.current = null;
       loadedTeamRef.current = null;
