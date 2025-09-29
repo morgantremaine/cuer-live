@@ -33,7 +33,7 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
-  const { activeTeamId } = useActiveTeam();
+  const { activeTeamId, loading: activeTeamLoading } = useActiveTeam();
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -1254,8 +1254,9 @@ export const useSimplifiedRundownState = () => {
   // Data freshness is maintained through realtime updates only
 
   useEffect(() => {
-    if (!rundownId && !isInitialized && params.id === 'new') {
-      console.log('🆕 Creating new rundown automatically...');
+    // Wait for activeTeamId to finish loading before creating rundown
+    if (!rundownId && !isInitialized && params.id === 'new' && !activeTeamLoading) {
+      console.log('🆕 Creating new rundown automatically with team:', activeTeamId);
       setIsLoading(true);
       
       const createNewRundown = async () => {
@@ -1267,6 +1268,7 @@ export const useSimplifiedRundownState = () => {
           }
           
           if (!activeTeamId) {
+            console.error('❌ No active team selected when creating rundown');
             throw new Error('No active team selected');
           }
           
@@ -1340,7 +1342,7 @@ export const useSimplifiedRundownState = () => {
       setIsInitialized(true);
       console.log('✅ Initialization complete (new rundown)');
     }
-  }, [rundownId, isInitialized, actions, params.id, location.state, navigate]);
+  }, [rundownId, isInitialized, actions, params.id, location.state, navigate, activeTeamId, activeTeamLoading]);
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
