@@ -33,24 +33,24 @@ export const useIndexHandlers = ({
   const navigate = useNavigate();
 
   const handleRundownStartTimeChange = useCallback((startTime: string) => {
-    console.log('🕐 Start time changed:', startTime);
+    console.log('🕐 INDEX HANDLERS: Start time changed:', startTime);
     setRundownStartTime(startTime);
-    markAsChanged(); // This triggers the same doc_version-protected autosave
-  }, [setRundownStartTime, markAsChanged]);
+    // Don't call markAsChanged - let the state setter handle save coordination
+  }, [setRundownStartTime]);
 
   const handleTimezoneChange = useCallback((timezone: string) => {
-    console.log('🌍 Timezone changed:', timezone);
+    console.log('🌍 INDEX HANDLERS: Timezone changed:', timezone);
     setTimezone(timezone);
-    markAsChanged(); // This triggers the same doc_version-protected autosave
-  }, [setTimezone, markAsChanged]);
+    // Don't call markAsChanged - let the state setter handle save coordination
+  }, [setTimezone]);
 
   const handleShowDateChange = useCallback((showDate: Date | null) => {
-    console.log('📅 Show date changed:', showDate);
+    console.log('📅 INDEX HANDLERS: Show date changed:', showDate);
     if (setShowDate) {
       setShowDate(showDate);
-      markAsChanged(); // This triggers the same doc_version-protected autosave
+      // Don't call markAsChanged - let the state setter handle save coordination
     }
-  }, [setShowDate, markAsChanged]);
+  }, [setShowDate]);
 
   const handleOpenTeleprompter = useCallback(() => {
     if (!rundownId) return;
