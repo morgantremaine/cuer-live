@@ -1194,7 +1194,7 @@ export type Database = {
         Returns: string
       }
       get_user_subscription_access: {
-        Args: { user_uuid: string }
+        Args: { team_uuid?: string; user_uuid: string }
         Returns: Json
       }
       get_user_team_ids: {
