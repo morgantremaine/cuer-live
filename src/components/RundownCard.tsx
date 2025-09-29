@@ -8,12 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText, Monitor } from 'lucide-react'
+import { Calendar, Trash2, Archive, MoreVertical, Copy, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { RundownItem } from '@/hooks/useRundownItems'
-import { useToast } from '@/hooks/use-toast'
-import { useSubscription } from '@/hooks/useSubscription'
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData'
 
 interface SavedRundown {
   id: string
@@ -45,42 +42,10 @@ const RundownCard = ({
   isArchived = false 
 }: RundownCardProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const subscription = useSubscription();
-  
-  const isFreeUser = subscription?.subscription_tier === 'free' || !subscription?.subscribed;
 
   const handleBlueprintClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     navigate(`/rundown/${rundown.id}/blueprint`)
-  }
-
-  const handlePrompterClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    // Block for free tier users
-    if (isFreeUser) {
-      toast({
-        title: "Upgrade Required",
-        description: "Teleprompter is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if this is the demo rundown
-    if (rundown.id === DEMO_RUNDOWN_ID) {
-      toast({
-        title: "Subscribe to unlock full features",
-        description: "Teleprompter mode is available with a subscription. Try the full experience!",
-        variant: "default"
-      });
-      return;
-    }
-
-    // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/rundown/${rundown.id}/teleprompter`;
-    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   }
 
   const handleOpenClick = (e: React.MouseEvent) => {
@@ -243,15 +208,6 @@ const RundownCard = ({
             >
               <FileText className="h-4 w-4 mr-1" />
               Blueprint
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-green-400 hover:text-green-300 hover:bg-gray-700"
-              onClick={handlePrompterClick}
-            >
-              <Monitor className="h-4 w-4 mr-1" />
-              Prompter
             </Button>
             <Button 
               variant="ghost" 

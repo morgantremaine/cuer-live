@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar, Monitor } from 'lucide-react'
+import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SavedRundown } from '@/hooks/useRundownStorage/types'
 import { RundownItem } from '@/hooks/useRundownItems'
@@ -25,9 +25,6 @@ import {
 import { calculateTotalRuntime } from '@/utils/rundownCalculations'
 import { RundownSortingDropdown } from './dashboard/RundownSortingDropdown'
 import { useRundownSorting } from '@/hooks/useRundownSorting'
-import { useToast } from '@/hooks/use-toast'
-import { useSubscription } from '@/hooks/useSubscription'
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData'
 
 interface TeamMember {
   id: string;
@@ -74,10 +71,6 @@ const DashboardRundownGrid = ({
   folderType
 }: DashboardRundownGridProps) => {
   const navigate = useNavigate()
-  const { toast } = useToast()
-  const subscription = useSubscription()
-  
-  const isFreeUser = subscription?.subscription_tier === 'free' || !subscription?.subscribed
   
   // Use sorting hook
   const { sortBy, setSortBy, sortedRundowns } = useRundownSorting(rundowns)
@@ -155,36 +148,13 @@ const DashboardRundownGrid = ({
       segmentCount: headers.length,
       itemCount: contentItems.length,
       totalDuration: calculateTotalDuration(items),
-      firstItems: items.filter(item => item.type === 'header').slice(0, 3).map(item => item.name || 'Untitled header')
+      firstItems: headers.slice(0, 3).map(header => {
+        if (header.name && header.name.trim()) return header.name.trim()
+        if (header.script && header.script.trim()) return header.script.trim().substring(0, 40) + (header.script.trim().length > 40 ? '...' : '')
+        if (header.notes && header.notes.trim()) return header.notes.trim()
+        return 'Untitled Header'
+      })
     }
-  }
-
-  const handlePrompterClick = (rundownId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    // Block for free tier users
-    if (isFreeUser) {
-      toast({
-        title: "Upgrade Required",
-        description: "Teleprompter is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if this is the demo rundown
-    if (rundownId === DEMO_RUNDOWN_ID) {
-      toast({
-        title: "Subscribe to unlock full features",
-        description: "Teleprompter mode is available with a subscription. Try the full experience!",
-        variant: "default"
-      });
-      return;
-    }
-
-    // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/rundown/${rundownId}/teleprompter`;
-    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
   }
 
   const getActivityStatus = (rundown: SavedRundown) => {
@@ -583,15 +553,6 @@ const DashboardRundownGrid = ({
                   >
                     <FileText className="h-3 w-3 mr-1" />
                     Blueprint
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={(e) => handlePrompterClick(rundown.id, e)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
-                  >
-                    <Monitor className="h-3 w-3 mr-1" />
-                    Prompter
                   </Button>
                 </div>
                 

@@ -29,12 +29,8 @@ import {
   Play, 
   FileText, 
   Calendar, 
-  Clock,
-  Monitor 
+  Clock 
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useSubscription } from '@/hooks/useSubscription';
-import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { useLiveActivityStatus } from '@/hooks/useLiveActivityStatus';
@@ -77,10 +73,6 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
   onDragStart
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const subscription = useSubscription();
-  
-  const isFreeUser = subscription?.subscription_tier === 'free' || !subscription?.subscribed;
   
   // Use live activity status that updates every minute
   const activityStatus = useLiveActivityStatus(rundown, currentUserId, teamMembers);
@@ -134,34 +126,6 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
   };
 
   const preview = getRundownPreview(rundown.items || []);
-
-  const handlePrompterClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    // Block for free tier users
-    if (isFreeUser) {
-      toast({
-        title: "Upgrade Required",
-        description: "Teleprompter is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if this is the demo rundown
-    if (rundown.id === DEMO_RUNDOWN_ID) {
-      toast({
-        title: "Subscribe to unlock full features",
-        description: "Teleprompter mode is available with a subscription. Try the full experience!",
-        variant: "default"
-      });
-      return;
-    }
-
-    // Open teleprompter in a new window
-    const teleprompterUrl = `${window.location.origin}/rundown/${rundown.id}/teleprompter`;
-    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
-  };
 
   // Handle drag start for rundown cards
   const handleDragStart = (e: React.DragEvent) => {
@@ -262,24 +226,6 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
           </div>
 
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
-              className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700 text-xs"
-            >
-              <FileText className="h-3 w-3 mr-1" />
-              Blueprint
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handlePrompterClick}
-              className="flex-1 border-gray-600 text-green-400 hover:text-green-300 hover:bg-gray-700 text-xs"
-            >
-              <Monitor className="h-3 w-3 mr-1" />
-              Prompter
-            </Button>
             <Button
               variant="default"
               size="sm"
@@ -429,15 +375,6 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
           >
             <FileText className="h-4 w-4 mr-1" />
             Blueprint
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handlePrompterClick}
-            className="flex-1 border-gray-600 text-green-400 hover:text-green-300 hover:bg-gray-700"
-          >
-            <Monitor className="h-4 w-4 mr-1" />
-            Prompter
           </Button>
           <Button
             variant="default"
