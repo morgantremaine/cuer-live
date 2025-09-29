@@ -85,20 +85,7 @@ export const useSimpleAutoSave = (
   // Create content signature from current state (backwards compatibility)
   const createCurrentContentSignature = useCallback(() => {
     const signature = createContentSignatureFromState(state);
-    
-    // Only warn if signatures don't match when we have unsaved changes
-    // Matching signatures with hasUnsavedChanges=true is normal during save completion
-    if (state.hasUnsavedChanges && lastSavedRef.current && signature !== lastSavedRef.current) {
-      console.warn('🔍 AUTOSAVE DEBUG: True signature mismatch detected!', {
-        hasUnsavedChanges: state.hasUnsavedChanges,
-        signaturesMatch: false,
-        itemCount: state.items?.length || 0,
-        titleLength: (state.title || '').length,
-        currentSigLength: signature.length,
-        lastSavedSigLength: lastSavedRef.current.length,
-        issue: 'Change tracking and autosave signatures are inconsistent - this indicates a real problem'
-      });
-    }
+    return signature;
     
     console.log('💾 AUTOSAVE: Created current signature', {
       itemCount: state.items?.length || 0,
