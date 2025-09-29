@@ -594,11 +594,23 @@ export const useTeam = () => {
         filter: `id=eq.${team.id}`
       }, (payload) => {
         console.log('🔔 Team name updated:', payload.new);
-        setTeam(prev => prev ? { ...prev, name: payload.new.name } : null);
-        // Also update in allUserTeams
-        setAllUserTeams(prev => prev.map(t => 
-          t.id === team.id ? { ...t, name: payload.new.name } : t
-        ));
+        const newTeamName = payload.new.name;
+        const updatedTeamId = payload.new.id;
+        
+        setTeam(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, name: newTeamName };
+          console.log('📝 Updated team state:', updated);
+          return updated;
+        });
+        
+        setAllUserTeams(prev => {
+          const updated = prev.map(t => 
+            t.id === updatedTeamId ? { ...t, name: newTeamName } : t
+          );
+          console.log('📝 Updated allUserTeams:', updated);
+          return updated;
+        });
       })
       .subscribe();
     
