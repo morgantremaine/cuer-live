@@ -828,12 +828,18 @@ export const useSimpleAutoSave = (
     
     if (currentSignature === lastSavedRef.current) {
       if (state.hasUnsavedChanges) {
-        console.log('⚠️ AutoSave: hasUnsavedChanges=true but signatures match - this indicates change tracking mismatch');
-        console.log('🔍 Debug: Current signature length:', currentSignature.length, 'Last saved length:', lastSavedRef.current.length);
-        console.log('🔍 Debug: Signatures equal:', currentSignature === lastSavedRef.current);
-        onSavedRef.current?.();
+        // This is expected during the brief moment after save completion but before MARK_SAVED
+        console.log('ℹ️ AUTOSAVE: Save completed, hasUnsavedChanges will be cleared momentarily', {
+          currentSigLength: currentSignature.length,
+          lastSavedLength: lastSavedRef.current.length,
+          signaturesMatch: true,
+          itemCount: state.items?.length || 0,
+          explanation: 'Normal timing - save completed, waiting for MARK_SAVED action'
+        });
+        // Don't call onSavedRef here - let the normal save completion handle it
+        return;
       }
-      return;
+      console.log('✅ AUTOSAVE: No changes detected, signatures match perfectly');
     }
     
     console.log('🔥 AutoSave: content changed detected', { 
