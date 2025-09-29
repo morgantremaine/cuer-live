@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useActiveTeam } from './useActiveTeam';
+import { useToast } from '@/hooks/use-toast';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface Team {
@@ -38,6 +40,8 @@ interface UserTeam {
 export const useTeam = () => {
   const { user } = useAuth();
   const { activeTeamId, setActiveTeam } = useActiveTeam();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [team, setTeam] = useState<Team | null>(null);
   const [allUserTeams, setAllUserTeams] = useState<UserTeam[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -45,6 +49,7 @@ export const useTeam = () => {
   const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isProcessingInvitation, setIsProcessingInvitation] = useState(false);
   const loadedUserRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
   const lastInvitationLoadRef = useRef<number>(0);
@@ -521,16 +526,19 @@ export const useTeam = () => {
   };
 
   const acceptInvitation = async (token: string) => {
+    setIsProcessingInvitation(true);
     try {
       const { data, error } = await supabase.rpc('accept_invitation_secure', {
         invitation_token: token
       });
 
       if (error) {
+        localStorage.removeItem('pendingInvitationToken');
         return { error: error.message };
       }
 
       if (!data.success) {
+        localStorage.removeItem('pendingInvitationToken');
         return { error: data.error };
       }
 
@@ -549,7 +557,10 @@ export const useTeam = () => {
       setTimeout(() => loadTeamData(), 500);
       return { success: true };
     } catch (error) {
+      localStorage.removeItem('pendingInvitationToken');
       return { error: 'Failed to accept invitation' };
+    } finally {
+      setIsProcessingInvitation(false);
     }
   };
 
@@ -567,6 +578,73 @@ export const useTeam = () => {
       loadTeamData();
     }
   }, [user?.id, activeTeamId, loadTeamData]);
+
+  // Realtime subscriptions for team updates and membership changes
+  useEffect(() => {
+    if (!user?.id || !team?.id || isProcessingInvitation) return;
+    
+    console.log('🔔 Setting up realtime subscriptions for team:', team.id);
+    
+    // Subscribe to team name changes
+    const teamChannel = supabase
+      .channel(`team-${team.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'teams',
+        filter: `id=eq.${team.id}`
+      }, (payload) => {
+        console.log('🔔 Team name updated:', payload.new);
+        setTeam(prev => prev ? { ...prev, name: payload.new.name } : null);
+        // Also update in allUserTeams
+        setAllUserTeams(prev => prev.map(t => 
+          t.id === team.id ? { ...t, name: payload.new.name } : t
+        ));
+      })
+      .subscribe();
+    
+    // Subscribe to team membership changes
+    const memberChannel = supabase
+      .channel(`team-members-${user.id}`)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'team_members',
+        filter: `user_id=eq.${user.id}`
+      }, async (payload) => {
+        const deletedMembership = payload.old;
+        console.log('🔔 Team membership deleted:', deletedMembership);
+        
+        if (deletedMembership.team_id === team.id) {
+          toast({
+            title: 'Removed from Team',
+            description: 'You have been removed from this team.',
+            variant: 'destructive'
+          });
+          
+          // Clear this team and switch to another
+          const teams = await loadAllUserTeams();
+          const nextTeam = teams.find(t => t.id !== team.id);
+          
+          if (nextTeam) {
+            console.log('🔄 Switching to next available team:', nextTeam.id);
+            switchToTeam(nextTeam.id);
+          } else {
+            // No other teams, clear and redirect
+            console.log('🔄 No other teams available, redirecting to dashboard');
+            setActiveTeam(null);
+            navigate('/dashboard');
+          }
+        }
+      })
+      .subscribe();
+    
+    return () => {
+      console.log('🔔 Cleaning up realtime subscriptions');
+      supabase.removeChannel(teamChannel);
+      supabase.removeChannel(memberChannel);
+    };
+  }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, switchToTeam, loadAllUserTeams, setActiveTeam]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
