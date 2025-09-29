@@ -87,6 +87,8 @@ export const useSubscription = () => {
         team_uuid: activeTeamId
       });
       
+      console.log('🔍 useSubscription - RPC result:', { data, error, userId: user.id, teamId: activeTeamId });
+      
       if (error) {
         // Check if it's also an auth error
         if (error.message?.includes('JWT') || error.message?.includes('authentication') || 
