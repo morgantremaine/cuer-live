@@ -515,8 +515,13 @@ export const useTeam = () => {
         return { error: error.message };
       }
 
-      // Reload team list to reflect the change in dropdown
-      await loadAllUserTeams();
+      // Immediately update local state for instant UI feedback
+      setTeam(prev => prev ? { ...prev, name: trimmedName } : null);
+      
+      // Also update in the teams list
+      setAllUserTeams(prev => prev.map(t => 
+        t.id === team.id ? { ...t, name: trimmedName } : t
+      ));
       
       return { success: true };
     } catch (error) {
