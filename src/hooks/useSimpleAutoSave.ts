@@ -717,12 +717,25 @@ export const useSimpleAutoSave = (
         try {
           let updatedAt, docVersion;
           
-          // When per-cell save is active, bypass coordination and let per-cell handle everything
+          // When per-cell save is active, flush per-cell saves and mark as saved
           if (perCellActive) {
-            console.log('🧪 AutoSave: per-cell save is active - skipping coordination save');
-            // Return mock response since per-cell saves are handled independently
-            updatedAt = new Date().toISOString();
-            docVersion = (saveState as any).docVersion || 0;
+            console.log('🧪 AutoSave: per-cell save is active - flushing pending updates');
+            try {
+              // Flush any pending per-cell updates to ensure they're saved
+              const result = await saveCoordinatedState(saveState);
+              updatedAt = result.updatedAt;
+              docVersion = result.docVersion;
+            } catch (error) {
+              // If no changes, that's fine for per-cell saves
+              if (error?.message === 'No changes to save') {
+                console.log('ℹ️ Per-cell save: no pending changes to flush');
+                updatedAt = new Date().toISOString();
+                docVersion = (saveState as any).docVersion || 0;
+              } else {
+                console.error('🚨 AutoSave: per-cell flush failed:', error);
+                throw error;
+              }
+            }
           } else {
             // Use coordinated save system for delta saves only
             const result = await saveCoordinatedState(saveState);
