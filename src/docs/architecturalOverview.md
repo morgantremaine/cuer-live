@@ -145,6 +145,29 @@ executeWithShowcallerOperation()
 - **Conflict resolution**: Automatic merging of compatible changes
 - **Presence tracking**: Users see who's editing what
 
+### Data Consistency Priority Principle
+
+**CRITICAL: Structural operations prioritize database persistence before broadcasting**
+
+This is a conscious architectural decision that prevents race conditions and ensures all users see consistent state:
+
+- **Structural Operations** (row reordering, add/delete): Follow "save-then-broadcast" pattern
+  - Database persistence happens FIRST
+  - Broadcasting happens AFTER successful save
+  - The slight delay (database → broadcast) is intentional and favors reliability over instant feedback
+  - This prevents race conditions when multiple users perform structural changes simultaneously
+
+- **Cell-Level Content Updates**: Use "broadcast-first" pattern  
+  - Real-time broadcasting for immediate feedback
+  - Less likely to cause structural conflicts
+  - Optimized for frequent edits and collaboration
+
+**Why This Matters:**
+- Row reordering with broadcast-first could cause users to see inconsistent ordering
+- Structural changes affect the document schema and must be authoritative
+- Content changes are additive and can be resolved through conflict resolution
+- This is NOT a performance issue to be "fixed" - it's intentional data consistency protection
+
 ### Data Consistency
 - **Version tracking**: Doc version prevents overwrite conflicts
 - **Signature validation**: Ensures data integrity
