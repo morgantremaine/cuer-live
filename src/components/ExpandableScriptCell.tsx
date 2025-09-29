@@ -308,13 +308,6 @@ const ExpandableScriptCell = ({
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
               className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
-              } ${
-                // Add visual indication when someone else is typing this field
-                (() => {
-                  const fieldKey = `item_${itemId}-${fieldType}`;
-                  // This will be updated by the focus tracker system
-                  return '';
-                })()
               }`}
               style={{ 
                 color: showOverlay ? 'transparent' : (textColor || undefined),
