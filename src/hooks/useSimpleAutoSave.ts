@@ -1,11 +1,9 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { useDeltaSave } from '@/hooks/useDeltaSave';
 import { useRundownStorage } from '@/hooks/useRundownStorage';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { RundownItem } from '@/types/rundown';
 import { Column } from '@/types/columns';
 import { toast } from 'sonner';
-import { logContentChange, logStateTransition, logSaveOperation } from '@/utils/systemAudit';
 
 const DEMO_RUNDOWN_ID = 'demo';
 
@@ -111,9 +109,8 @@ export const useSimpleAutoSave = ({
   const performSaveRef = useRef<(isFlushSave?: boolean) => Promise<void>>();
   const onErrorRef = useRef(onError);
   
-  // Storage and delta save hooks
+  // Storage hook
   const { updateRundown } = useRundownStorage();
-  const { performDeltaSave } = useDeltaSave();
   
   // Update refs when props change
   useEffect(() => {
@@ -148,14 +145,6 @@ export const useSimpleAutoSave = ({
           action: 'CONTENT_SIGNATURE_CHANGE',
           isContentChange: true,
           reason: 'Content signature changed - new edits detected'
-        });
-        
-        logContentChange({
-          context: 'content-signature-change',
-          content: currentSignature,
-          undo: JSON.stringify({ items, columns, title }),
-          header: currentSignature.slice(0, 100),
-          lightweight: currentSignature.slice(0, 50)
         });
         
         setHasUnsavedChanges(true);
@@ -267,47 +256,29 @@ export const useSimpleAutoSave = ({
       
       console.log('💾 AutoSave: Proceeding with save - hasUnsavedChanges=true, isFirstSave=false');
       
-      logSaveOperation({
-        context,
-        saveType: 'delta',
-        itemCount: items.length,
-        isFlushSave
-      });
-      
-      // Use delta save for efficiency
-      console.log('⚡ AutoSave: using delta save for rundown', { 
+      // Use simple full save for now
+      console.log('💾 AutoSave: using simple save for rundown', { 
         rundownId: rundownIdRef.current, 
         itemCount: items.length, 
         isFlushSave 
       });
       
-      const deltaResult = await performDeltaSave({
-        rundownId: rundownIdRef.current,
-        items,
-        columns,
+      await updateRundown(
+        rundownIdRef.current,
         title,
-        lastSavedSignature: lastSavedSignatureRef.current
-      });
+        items,
+        false, // silent
+        false, // archived
+        columns
+      );
       
-      if (deltaResult.success) {
-        console.log('✅ AutoSave: delta save response', deltaResult.result);
-        lastSavedSignatureRef.current = currentSignature;
-        setHasUnsavedChanges(false);
-        console.log('✅ MARKED AS SAVED: hasUnsavedChanges=false', {
-          previousState: true,
-          reason: 'Save operation completed'
-        });
-        
-        logStateTransition({
-          from: 'unsaved',
-          to: 'saved',
-          reason: 'Delta save completed successfully',
-          context: context,
-          triggerSource: isFlushSave ? 'flush' : 'auto'
-        });
-      } else {
-        throw new Error(deltaResult.error || 'Delta save failed');
-      }
+      console.log('✅ AutoSave: save completed');
+      lastSavedSignatureRef.current = currentSignature;
+      setHasUnsavedChanges(false);
+      console.log('✅ MARKED AS SAVED: hasUnsavedChanges=false', {
+        previousState: true,
+        reason: 'Save operation completed'
+      });
       
     } catch (error) {
       console.error('❌ AutoSave failed:', error);
@@ -319,7 +290,7 @@ export const useSimpleAutoSave = ({
       setIsSaving(false);
       isFlushingSaveRef.current = false;
     }
-  }, [items, columns, title, currentSignature, performDeltaSave]);
+  }, [items, columns, title, currentSignature, updateRundown]);
 
   // Store the perform save function in ref for cleanup access
   useEffect(() => {
@@ -380,22 +351,8 @@ export const useSimpleAutoSave = ({
     isUndoActiveRef.current = active;
     if (active) {
       console.log('↩️ Undo operation started - blocking autosave');
-      logStateTransition({
-        from: 'normal',
-        to: 'undo-active',
-        reason: 'Undo operation initiated',
-        context: 'undo-coordination',
-        triggerSource: 'user'
-      });
     } else {
       console.log('↩️ Undo operation completed - resuming autosave');
-      logStateTransition({
-        from: 'undo-active', 
-        to: 'normal',
-        reason: 'Undo operation completed',
-        context: 'undo-coordination',
-        triggerSource: 'user'
-      });
     }
   }, []);
 
