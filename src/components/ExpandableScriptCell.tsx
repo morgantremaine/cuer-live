@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { renderScriptWithBrackets, isNullScript } from '@/utils/scriptUtils';
 import { renderTextWithClickableUrls } from '@/utils/urlUtils';
+import TypingIndicator from './TypingIndicator';
 
 interface ExpandableScriptCellProps {
   value: string;
@@ -250,6 +251,9 @@ const ExpandableScriptCell = ({
         )}
       </button>
       <div className="flex-1 relative min-w-0">
+        {/* Typing indicator for when someone else is editing this field */}
+        <TypingIndicator fieldKey={`item_${itemId}-${fieldType}`} />
+        
         {/* When expanded: hybrid approach with functional textarea and styled overlay */}
         {effectiveExpanded && (
           <div className="relative">
@@ -308,6 +312,13 @@ const ExpandableScriptCell = ({
               placeholder={fieldType === 'notes' ? 'Add notes...' : 'Add script...'}
               className={`w-full border-none bg-transparent focus:outline-none rounded px-1 py-1 text-sm resize-none overflow-hidden ${
                 showOverlay ? 'text-transparent caret-transparent' : ''
+              } ${
+                // Add visual indication when someone else is typing this field
+                (() => {
+                  const fieldKey = `item_${itemId}-${fieldType}`;
+                  // This will be updated by the focus tracker system
+                  return '';
+                })()
               }`}
               style={{ 
                 color: showOverlay ? 'transparent' : (textColor || undefined),
