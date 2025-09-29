@@ -958,17 +958,34 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Simplified handlers - no special structural change handling needed
+  // Simplified handlers - enhanced for per-cell save coordination
   const markStructuralChange = useCallback(() => {
-    console.log('🏗️ markStructuralChange called (currently no-op in simplified state)');
-    // No-op - auto-save handles all changes
-  }, []);
+    console.log('🏗️ markStructuralChange called', {
+      perCellEnabled: Boolean(state.perCellSaveEnabled),
+      rundownId
+    });
+    
+    // For per-cell save mode, structural operations need immediate save coordination
+    if (state.perCellSaveEnabled) {
+      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering immediate save coordination');
+      // Mark as saved immediately since structural operations in per-cell mode 
+      // are handled by the structural save system
+      setTimeout(() => {
+        console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
+        actions.markSaved();
+      }, 100);
+    }
+    // For regular autosave mode, no action needed - autosave handles it
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
-    console.log('🏗️ clearStructuralChange called (currently no-op in simplified state)');
-    // No-op - auto-save handles all changes  
-  }, []);
+    console.log('🏗️ clearStructuralChange called', {
+      perCellEnabled: Boolean(state.perCellSaveEnabled)
+    });
+    // For per-cell mode, this is handled by markStructuralChange
+    // For regular autosave mode, no action needed
+  }, [state.perCellSaveEnabled]);
 
   // Update current time every second
   useEffect(() => {
