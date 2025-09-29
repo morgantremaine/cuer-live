@@ -330,6 +330,10 @@ const Teleprompter = () => {
     recentlyEditedFieldsRef.current.set(`${itemId}-script`, Date.now());
     typingSessionRef.current = { fieldKey: `${itemId}-script`, startTime: Date.now() };
     
+    // Simulate focus on script field for real-time collaboration visibility
+    const { globalFocusTracker } = await import('@/utils/focusTracker');
+    globalFocusTracker.setFieldProtection(`${itemId}-script`, 3000);
+    
     // Broadcast script change instantly for real-time collaboration (per-tab using clientId)
     if (rundownId && user?.id) {
       cellBroadcast.broadcastCellUpdate(rundownId, itemId, 'script', newScript, user.id);
