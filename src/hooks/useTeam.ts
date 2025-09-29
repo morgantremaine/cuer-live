@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -67,6 +67,9 @@ export const useTeam = () => {
   useEffect(() => {
     activeTeamIdRef.current = activeTeamId;
   }, [activeTeamId]);
+
+  // Stable team ID reference to prevent unnecessary subscription recreations
+  const teamId = useMemo(() => team?.id, [team?.id]);
 
   const loadAllUserTeams = useCallback(async () => {
     if (!user) {
@@ -644,19 +647,22 @@ export const useTeam = () => {
         filter: `id=eq.${team.id}`
       }, (payload) => {
         console.log('🔔 Team name updated:', payload.new);
-        const newTeamName = payload.new.name;
-        const updatedTeamId = payload.new.id;
+        const newTeamData = payload.new;
         
         setTeam(prev => {
           if (!prev) return null;
-          const updated = { ...prev, name: newTeamName };
+          const updated = { 
+            ...prev, 
+            name: newTeamData.name,
+            updated_at: newTeamData.updated_at 
+          };
           console.log('📝 Updated team state:', updated);
           return updated;
         });
         
         setAllUserTeams(prev => {
           const updated = prev.map(t => 
-            t.id === updatedTeamId ? { ...t, name: newTeamName } : t
+            t.id === newTeamData.id ? { ...t, name: newTeamData.name } : t
           );
           console.log('📝 Updated allUserTeams:', updated);
           return updated;
@@ -708,7 +714,7 @@ export const useTeam = () => {
       supabase.removeChannel(teamChannel);
       supabase.removeChannel(memberChannel);
     };
-  }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam]);
+  }, [user?.id, teamId, isProcessingInvitation, toast, navigate, setActiveTeam]);
 
   // Handle page visibility changes to prevent unnecessary reloads
   useEffect(() => {
