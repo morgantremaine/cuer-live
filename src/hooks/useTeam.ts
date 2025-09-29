@@ -515,8 +515,7 @@ export const useTeam = () => {
         return { error: error.message };
       }
 
-      // Reload team data to reflect the change
-      await loadTeamData();
+      // Reload team list to reflect the change in dropdown
       await loadAllUserTeams();
       
       return { success: true };
