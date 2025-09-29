@@ -40,6 +40,11 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
         savedUpdates.forEach(update => {
           if (update.itemId && update.field === 'script') {
             console.log('📝 Teleprompter: Processing successful save for script field', { itemId: update.itemId });
+            
+            // Clear the local backup for this item since save was successful
+            clearBackup(update.itemId);
+            console.log('🗑️ Teleprompter: Cleared local backup for item', { itemId: update.itemId });
+            
             onSaveSuccess?.(update.itemId, update.value);
           }
         });
