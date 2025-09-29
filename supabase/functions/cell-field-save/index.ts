@@ -165,7 +165,13 @@ serve(async (req) => {
             updatedTimezone = update.value
             break
           case 'showDate':
-            updatedShowDate = update.value ? `${update.value.getFullYear()}-${String(update.value.getMonth() + 1).padStart(2, '0')}-${String(update.value.getDate()).padStart(2, '0')}` : null
+            if (update.value) {
+              // Handle both Date objects and ISO date strings
+              const dateObj = typeof update.value === 'string' ? new Date(update.value) : update.value;
+              updatedShowDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+            } else {
+              updatedShowDate = null;
+            }
             break
           case 'externalNotes':
             updatedExternalNotes = update.value
