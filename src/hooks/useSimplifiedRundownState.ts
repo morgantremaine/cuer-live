@@ -1657,6 +1657,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
+      console.log('🧪 SIMPLIFIED STATE: setStartTime called with:', newStartTime);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
@@ -1676,6 +1677,7 @@ export const useSimplifiedRundownState = () => {
       actions.setStartTime(newStartTime);
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
+      console.log('🧪 SIMPLIFIED STATE: setTimezone called with:', newTimezone);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
@@ -1695,6 +1697,7 @@ export const useSimplifiedRundownState = () => {
       actions.setTimezone(newTimezone);
     }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
     setShowDate: useCallback((newShowDate: Date | null) => {
+      console.log('🧪 SIMPLIFIED STATE: setShowDate called with:', newShowDate);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
