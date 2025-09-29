@@ -691,19 +691,21 @@ export const useSimpleAutoSave = (
           navigate(`/rundown/${newRundown.id}`, { replace: true });
         }
       } else {
-        console.log('⚡ AutoSave: using delta save for rundown', { 
+        console.log(`⚡ AutoSave: using ${perCellActive ? 'per-cell' : 'delta'} save for rundown`, { 
           rundownId, 
           itemCount: saveState.items?.length || 0,
-          isFlushSave 
+          isFlushSave,
+          perCellEnabled: perCellActive
         });
         
         try {
           // Use coordinated save system (per-cell or delta)
           const { updatedAt, docVersion } = await saveCoordinatedState(saveState);
           
-          console.log('✅ AutoSave: delta save response', { 
+          console.log(`✅ AutoSave: ${perCellActive ? 'per-cell' : 'delta'} save response`, { 
             updatedAt,
-            docVersion 
+            docVersion,
+            saveType: perCellActive ? 'per-cell' : 'delta'
           });
 
           // Track the actual timestamp returned by the database
@@ -718,7 +720,7 @@ export const useSimpleAutoSave = (
           // Update lastSavedRef to current state signature after successful save
           const currentSignatureAfterSave = createCurrentContentSignature();
           lastSavedRef.current = currentSignatureAfterSave;
-          console.log('📝 Setting lastSavedRef to current state after delta save:', currentSignatureAfterSave.length);
+          console.log(`📝 Setting lastSavedRef to current state after ${perCellActive ? 'per-cell' : 'delta'} save:`, currentSignatureAfterSave.length);
 
           // SIMPLIFIED: No complex follow-up logic - typing detection handles new saves
           if (currentSignatureAfterSave !== finalSignature) {

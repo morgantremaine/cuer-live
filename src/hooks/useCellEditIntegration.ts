@@ -1,0 +1,89 @@
+import { useCallback, useRef } from 'react';
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { debugLogger } from '@/utils/debugLogger';
+
+interface CellEditIntegrationProps {
+  rundownId: string | null;
+  trackOwnUpdate: (timestamp: string) => void;
+  isPerCellEnabled: boolean;
+}
+
+/**
+ * Integration hook that connects cell editing UI components with the per-cell save system.
+ * This replaces the need for full document saves when individual cells are edited.
+ */
+export const useCellEditIntegration = ({
+  rundownId,
+  trackOwnUpdate,
+  isPerCellEnabled
+}: CellEditIntegrationProps) => {
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Get the coordinated save system
+  const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
+    rundownId,
+    trackOwnUpdate,
+    isPerCellEnabled
+  });
+
+  // Handle cell value changes from editing components
+  const handleCellChange = useCallback((
+    itemId: string | undefined,
+    fieldName: string,
+    newValue: any
+  ) => {
+    if (!isPerCellEnabled) {
+      // Fallback to normal change tracking for non-per-cell rundowns
+      debugLogger.autosave(`Cell change (non-per-cell): ${fieldName} for item ${itemId || 'global'}`);
+      return;
+    }
+
+    // Track the field change in the per-cell system
+    trackFieldChange(itemId, fieldName, newValue);
+    
+    debugLogger.autosave(`Per-cell change tracked: ${fieldName} for item ${itemId || 'global'}`);
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // The save will be handled automatically by the per-cell system's debouncing
+  }, [isPerCellEnabled, trackFieldChange]);
+
+  // Handle when user starts editing a cell (for LocalShadow integration)
+  const handleCellEditStart = useCallback((
+    itemId: string | undefined,
+    fieldName: string,
+    currentValue: any
+  ) => {
+    if (!isPerCellEnabled) return;
+
+    debugLogger.autosave(`Cell edit started: ${fieldName} for item ${itemId || 'global'}`);
+    
+    // The LocalShadow system will be managed by the underlying save coordination
+    // This hook just provides the integration point for UI components
+  }, [isPerCellEnabled]);
+
+  // Handle when user finishes editing a cell
+  const handleCellEditComplete = useCallback((
+    itemId: string | undefined,
+    fieldName: string,
+    finalValue: any
+  ) => {
+    if (!isPerCellEnabled) return;
+
+    debugLogger.autosave(`Cell edit completed: ${fieldName} for item ${itemId || 'global'}`);
+    
+    // Final value change will trigger the coordinated save
+    trackFieldChange(itemId, fieldName, finalValue);
+  }, [isPerCellEnabled, trackFieldChange]);
+
+  return {
+    handleCellChange,
+    handleCellEditStart,
+    handleCellEditComplete,
+    hasUnsavedChanges,
+    isPerCellEnabled
+  };
+};
