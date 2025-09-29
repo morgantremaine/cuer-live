@@ -663,7 +663,11 @@ export const useSimplifiedRundownState = () => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
-    isPerCellEnabled: Boolean(state.perCellSaveEnabled)
+    isPerCellEnabled: Boolean(state.perCellSaveEnabled),
+    onSaveComplete: () => {
+      console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
+      actions.markSaved();
+    }
   });
   
   // Get catch-up sync function from realtime connection

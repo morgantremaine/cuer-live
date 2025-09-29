@@ -6,6 +6,7 @@ interface CellEditIntegrationProps {
   rundownId: string | null;
   trackOwnUpdate: (timestamp: string) => void;
   isPerCellEnabled: boolean;
+  onSaveComplete?: () => void;
 }
 
 /**
@@ -15,7 +16,8 @@ interface CellEditIntegrationProps {
 export const useCellEditIntegration = ({
   rundownId,
   trackOwnUpdate,
-  isPerCellEnabled
+  isPerCellEnabled,
+  onSaveComplete
 }: CellEditIntegrationProps) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -23,7 +25,8 @@ export const useCellEditIntegration = ({
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
     trackOwnUpdate,
-    isPerCellEnabled
+    isPerCellEnabled,
+    onSaveComplete
   });
 
   // Handle cell value changes from editing components

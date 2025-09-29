@@ -13,7 +13,8 @@ interface FieldUpdate {
 
 export const useCellLevelSave = (
   rundownId: string | null,
-  trackOwnUpdate: (timestamp: string) => void
+  trackOwnUpdate: (timestamp: string) => void,
+  onSaveComplete?: () => void
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -106,6 +107,13 @@ export const useCellLevelSave = (
         });
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         trackOwnUpdate(data.updatedAt);
+        
+        // Notify the main system that save completed
+        if (onSaveComplete) {
+          console.log('🧪 PER-CELL SAVE: Notifying main system of save completion');
+          onSaveComplete();
+        }
+        
         return {
           updatedAt: data.updatedAt,
           docVersion: data.docVersion
