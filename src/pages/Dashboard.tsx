@@ -28,7 +28,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, teamMembers, isLoading: teamLoading } = useTeam();
+  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
@@ -396,6 +396,10 @@ const Dashboard = () => {
           key={team?.id}
           userEmail={user?.email}
           onSignOut={handleSignOut}
+          team={team}
+          allUserTeams={allUserTeams}
+          userRole={userRole}
+          switchToTeam={switchToTeam}
         />
         
         <div className="flex flex-1">
@@ -436,6 +440,10 @@ const Dashboard = () => {
         key={team?.id}
         userEmail={user?.email}
         onSignOut={handleSignOut}
+        team={team}
+        allUserTeams={allUserTeams}
+        userRole={userRole}
+        switchToTeam={switchToTeam}
       />
       
       {/* Content area with sidebar and main content */}

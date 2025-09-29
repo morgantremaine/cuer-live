@@ -6,14 +6,14 @@ import { useActiveTeam } from './useActiveTeam';
 import { useToast } from '@/hooks/use-toast';
 import { debugLogger } from '@/utils/debugLogger';
 
-interface Team {
+export interface Team {
   id: string;
   name: string;
   created_at?: string;
   updated_at?: string;
 }
 
-interface TeamMember {
+export interface TeamMember {
   id: string;
   user_id: string;
   role: 'admin' | 'member';
@@ -24,13 +24,13 @@ interface TeamMember {
   };
 }
 
-interface PendingInvitation {
+export interface PendingInvitation {
   id: string;
   email: string;
   created_at: string;
 }
 
-interface UserTeam {
+export interface UserTeam {
   id: string;
   name: string;
   role: 'admin' | 'member';

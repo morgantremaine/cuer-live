@@ -9,18 +9,30 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useNavigate } from 'react-router-dom'
 import CuerLogo from '@/components/common/CuerLogo'
-import { useTeam } from '@/hooks/useTeam'
+import { Team, UserTeam } from '@/hooks/useTeam'
 
 interface DashboardHeaderProps {
   userEmail?: string
   onSignOut: () => void
   showBackButton?: boolean
   onBack?: () => void
+  team?: Team | null
+  allUserTeams?: UserTeam[]
+  userRole?: 'admin' | 'member'
+  switchToTeam?: (teamId: string) => Promise<void>
 }
 
-const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack }: DashboardHeaderProps) => {
+const DashboardHeader = ({ 
+  userEmail, 
+  onSignOut, 
+  showBackButton = false, 
+  onBack,
+  team,
+  allUserTeams = [],
+  userRole,
+  switchToTeam
+}: DashboardHeaderProps) => {
   const navigate = useNavigate()
-  const { team, allUserTeams, userRole, switchToTeam } = useTeam()
 
   const handleHelpClick = () => {
     window.open('/help', '_blank');
@@ -28,7 +40,9 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
 
   const handleTeamSwitch = (teamId: string) => {
     console.log('🔄 DashboardHeader - Team switch requested:', { teamId, currentTeam: team?.id });
-    switchToTeam(teamId);
+    if (switchToTeam) {
+      switchToTeam(teamId);
+    }
   }
 
   return (
