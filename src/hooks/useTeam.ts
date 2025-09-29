@@ -97,6 +97,7 @@ export const useTeam = () => {
   }, [user]);
 
   const loadTeamData = async () => {
+    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, activeTeamId });
     debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, activeTeamId });
     
     if (!user?.id || isLoadingRef.current) {
@@ -189,15 +190,17 @@ export const useTeam = () => {
       const targetTeam = userTeams.find(t => t.id === targetTeamId);
       const role = targetTeam?.role || 'member';
 
+      console.log('✅ useTeam - Setting team state:', { teamId: teamData.id, teamName: teamData.name, role, previousTeam: team?.id });
       setTeam(teamData);
       setUserRole(role);
       
       // Set as active team if not already set
       if (activeTeamId !== targetTeamId) {
+        console.log('🔄 useTeam - Setting active team ID:', targetTeamId);
         setActiveTeam(targetTeamId);
       }
 
-      console.log('🔍 useTeam - Set team:', teamData.id, teamData.name, 'Role:', role);
+      console.log('🔍 useTeam - Team state updated:', teamData.id, teamData.name, 'Role:', role);
       
       setError(null);
 
@@ -222,15 +225,29 @@ export const useTeam = () => {
   };
 
   const switchToTeam = useCallback(async (teamId: string) => {
-    console.log('🔍 useTeam - Switching to team:', teamId);
+    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
+    
+    if (teamId === activeTeamId) {
+      console.log('⚠️ useTeam - Already on requested team, skipping switch');
+      return;
+    }
+    
+    console.log('🔄 useTeam - Setting active team to:', teamId);
     setActiveTeam(teamId);
+    
     // Reset loading state to trigger reload
+    console.log('🔄 useTeam - Resetting loading state');
     loadedUserRef.current = null;
     isLoadingRef.current = false;
     setIsLoading(true);
+    
     // Delay to ensure activeTeamId is updated
-    setTimeout(() => loadTeamData(), 100);
-  }, [setActiveTeam]);
+    console.log('🔄 useTeam - Scheduling team data load');
+    setTimeout(() => {
+      console.log('🔄 useTeam - Executing delayed loadTeamData');
+      loadTeamData();
+    }, 100);
+  }, [setActiveTeam, activeTeamId, team?.id]);
 
   const loadTeamMembers = async (teamId: string) => {
     // Add debouncing to prevent excessive API calls when switching accounts
@@ -513,15 +530,29 @@ export const useTeam = () => {
 
   // Load team data when user changes or active team changes
   useEffect(() => {
+    console.log('🔄 useTeam main useEffect triggered', { 
+      userId: user?.id, 
+      activeTeamId, 
+      isLoading: isLoadingRef.current, 
+      loadedUser: loadedUserRef.current 
+    });
+    
     // Only load if we don't have a cached result for this user or if active team changed
     if (user?.id && !isLoadingRef.current) {
       // Only log initial team loads to reduce noise
       if (!loadedUserRef.current) {
+        console.log('📊 useTeam - Initial team load for user:', user.id);
         debugLogger.team('Initial team load for user:', user.id);
+      } else {
+        console.log('🔄 useTeam - Active team changed, reloading data');
       }
       setIsLoading(true);
-      setTimeout(() => loadTeamData(), 100);
+      setTimeout(() => {
+        console.log('🔄 useTeam - Executing delayed loadTeamData from useEffect');
+        loadTeamData();
+      }, 100);
     } else if (!user?.id) {
+      console.log('❌ useTeam - No user, clearing all team state');
       setTeam(null);
       setAllUserTeams([]);
       setTeamMembers([]);
@@ -531,6 +562,11 @@ export const useTeam = () => {
       setError(null);
       loadedUserRef.current = null;
       isLoadingRef.current = false;
+    } else {
+      console.log('⚠️ useTeam - Skipping load (isLoading or no user):', { 
+        hasUser: !!user?.id, 
+        isLoading: isLoadingRef.current 
+      });
     }
   }, [user?.id, activeTeamId]);
 

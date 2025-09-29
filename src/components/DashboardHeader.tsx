@@ -27,6 +27,7 @@ const DashboardHeader = ({ userEmail, onSignOut, showBackButton = false, onBack 
   };
 
   const handleTeamSwitch = (teamId: string) => {
+    console.log('🔄 DashboardHeader - Team switch requested:', { teamId, currentTeam: team?.id });
     switchToTeam(teamId);
   }
 
