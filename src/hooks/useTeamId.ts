@@ -11,14 +11,19 @@ export const useTeamId = () => {
   const { activeTeamId } = useActiveTeam();
 
   useEffect(() => {
+    console.log('🔍 useTeamId - useEffect triggered:', { activeTeamId, user: user?.id, loading });
+    
     if (activeTeamId) {
+      console.log('🔍 useTeamId - Using activeTeamId from localStorage:', activeTeamId);
       setTeamId(activeTeamId);
       setLoading(false);
     } else if (!user) {
+      console.log('🔍 useTeamId - No user, clearing teamId');
       setTeamId(null);
       setLoading(false);
     } else {
       // Fallback: fetch team ID from database if no active team is set
+      console.log('🔍 useTeamId - No activeTeamId, fetching from database for user:', user.id);
       const fetchTeamId = async () => {
         try {
           const { data, error } = await supabase
@@ -29,11 +34,12 @@ export const useTeamId = () => {
             .limit(1)
             .maybeSingle();
 
-          console.log('🔍 useTeamId - User:', user.id, 'Found teamId:', data?.team_id);
+          console.log('🔍 useTeamId - Database fetch result:', { userId: user.id, teamId: data?.team_id, error });
 
           if (error) {
             console.error('Error fetching team ID:', error);
           } else if (data) {
+            console.log('🔍 useTeamId - Setting teamId from database:', data.team_id);
             setTeamId(data.team_id);
           } else {
             // No team membership found - let useTeam handle team creation
