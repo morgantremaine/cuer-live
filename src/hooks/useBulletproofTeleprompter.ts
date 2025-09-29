@@ -22,10 +22,7 @@ export const useBulletproofTeleprompter = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSaveRef = useRef<string>('');
   const isSavingRef = useRef(false);
-  const { coordinateTeleprompterSave } = useUnifiedSaveCoordination({
-    rundownId,
-    isPerCellEnabled: false // Teleprompter uses regular saves
-  });
+  const { coordinateTeleprompterSave } = useUnifiedSaveCoordination();
   
   // Get mobile-optimized delays
   const delays = getMobileOptimizedDelays();

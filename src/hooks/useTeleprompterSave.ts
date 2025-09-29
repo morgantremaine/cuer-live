@@ -23,10 +23,7 @@ interface UseTeleprompterSaveProps {
 
 export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
   const { user } = useAuth();
-  const { coordinateTeleprompterSave } = useUnifiedSaveCoordination({
-    rundownId,
-    isPerCellEnabled: false // Teleprompter uses regular saves
-  });
+  const { coordinateTeleprompterSave } = useUnifiedSaveCoordination();
   const docVersionManager = useDocVersionManager(rundownId);
   const conflictResolution = useConflictResolution({
     rundownId,
@@ -153,7 +150,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     
     // Use unified coordination for teleprompter saves
     const success = await coordinateTeleprompterSave(
-      async () => { await executeSave(itemId, newScript, rundownData); },
+      () => executeSave(itemId, newScript, rundownData),
       {
         immediate: true, // Teleprompter saves should be immediate
         onComplete: (saveSuccess) => {
