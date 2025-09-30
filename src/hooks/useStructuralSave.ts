@@ -32,6 +32,7 @@ export const useStructuralSave = (
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isUnloadingRef = useRef(false);
+  const lastSaveTimestampRef = useRef<number>(0);
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -113,6 +114,9 @@ export const useStructuralSave = (
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
         }
       }
+      
+      // Track last successful save time to prevent stale flushes
+      lastSaveTimestampRef.current = Date.now();
       
       // Notify UI that save completed successfully
       console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveComplete callback');
@@ -198,6 +202,13 @@ export const useStructuralSave = (
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (pendingOperationsRef.current.length > 0) {
+        // Check if there was a recent save - if so, the debounce timer should handle it
+        const timeSinceLastSave = Date.now() - lastSaveTimestampRef.current;
+        if (timeSinceLastSave < 500) {
+          console.log('⏭️ Skipping beforeunload flush - recent save already completed:', timeSinceLastSave, 'ms ago');
+          return;
+        }
+        
         console.log('🚨 Page unloading with pending operations, flushing...');
         isUnloadingRef.current = true;
         
@@ -220,8 +231,13 @@ export const useStructuralSave = (
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       
-      // Cleanup on unmount - flush any pending operations
+      // Cleanup on unmount - only flush if not recently saved
       if (pendingOperationsRef.current.length > 0 && !isUnloadingRef.current) {
+        const timeSinceLastSave = Date.now() - lastSaveTimestampRef.current;
+        if (timeSinceLastSave < 500) {
+          console.log('⏭️ Skipping unmount flush - recent save already completed:', timeSinceLastSave, 'ms ago');
+          return;
+        }
         console.log('🧹 Component unmounting with pending operations, flushing...');
         saveStructuralOperations();
       }
