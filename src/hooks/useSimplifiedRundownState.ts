@@ -1396,7 +1396,7 @@ export const useSimplifiedRundownState = () => {
         setTimeout(() => {
           // Get the newly added item (last item in the updated state)
           const newItem = state.items[state.items.length - 1];
-          markStructuralChange('add_row', { newItems: [newItem] });
+          markStructuralChange('add_row', { newItems: [newItem], insertIndex: state.items.length - 1 });
         }, 0);
       }
       

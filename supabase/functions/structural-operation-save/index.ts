@@ -84,6 +84,7 @@ serve(async (req) => {
     switch (operation.operationType) {
       case 'add_row':
       case 'add_header':
+        console.log('🏗️ DEBUG: add_row operation data:', JSON.stringify(operation.operationData, null, 2));
         if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
           const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
           updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
