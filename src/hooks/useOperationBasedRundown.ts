@@ -316,6 +316,13 @@ export const useOperationBasedRundown = ({
     isProcessingOperations: operationQueue.isProcessing,
     queueLength: operationQueue.queueLength,
     
+    // Save state for indicators (compatible with RundownSaveIndicator)
+    isSaving: operationQueue.isProcessing,
+    hasUnsavedChanges: operationQueue.queueLength > 0,
+    lastSaved: operationQueue.lastSaved,
+    saveError: operationQueue.saveError,
+    hasContentChanges: true, // Operation-based changes are always content changes
+    
     // Utils
     loadPendingOperations,
     loadInitialState

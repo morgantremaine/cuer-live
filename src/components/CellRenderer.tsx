@@ -144,11 +144,6 @@ const CellRenderer = ({
         columnExpanded={columnExpandState[column.key]}
         fieldType={column.key as 'script' | 'notes'}
         onUpdateValue={(newValue) => {
-          console.log('🔄 CELL RENDERER: onUpdateValue called for ExpandableScriptCell', {
-            itemId: item.id,
-            columnKey: column.key,
-            newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue
-          });
           onUpdateItem(item.id, column.key, newValue);
         }}
         onKeyDown={onKeyDown}
@@ -173,14 +168,12 @@ const CellRenderer = ({
       onUpdateValue={(newValue) => {
         // Handle custom fields vs built-in fields
         if (column.isCustom) {
-          console.log('🔄 CELL RENDERER: Updating custom field', { itemId: item.id, field: `customFields.${column.key}`, newValue });
           const field = `customFields.${column.key}`;
           onUpdateItem(item.id, field, newValue);
         } else {
           // For segmentName column, always update the 'name' field
           // For name column, also update the 'name' field
           const field = (column.key === 'segmentName' || column.key === 'name') ? 'name' : column.key;
-          console.log('🔄 CELL RENDERER: Updating built-in field', { itemId: item.id, columnKey: column.key, field, newValue });
           onUpdateItem(item.id, field, newValue);
         }
       }}

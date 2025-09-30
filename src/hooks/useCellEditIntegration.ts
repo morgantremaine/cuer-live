@@ -150,8 +150,18 @@ export const useCellEditIntegration = ({
     handleCellChange,
     handleCellEditStart,
     handleCellEditComplete,
-    hasUnsavedChanges: hasPerCellUnsavedChanges,
+    // Use operation-based save state when operation mode is active
+    hasUnsavedChanges: operationSystem.isOperationMode ? 
+      operationSystem.hasUnsavedChanges : 
+      hasPerCellUnsavedChanges,
     isPerCellEnabled,
-    isPerCellSaving
+    isPerCellSaving: operationSystem.isOperationMode ? 
+      operationSystem.isSaving : 
+      isPerCellSaving,
+    // Expose operation system state for debugging
+    operationSystemActive: operationSystem.isOperationMode,
+    operationSystemSaving: operationSystem.isSaving,
+    operationSystemUnsaved: operationSystem.hasUnsavedChanges,
+    operationLastSaved: operationSystem.lastSaved
   };
 };

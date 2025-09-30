@@ -28,6 +28,8 @@ export const useOperationQueue = ({
   onOperationFailed
 }: UseOperationQueueOptions) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const queueRef = useRef<Operation[]>([]);
   const processingRef = useRef(false);
 
@@ -121,6 +123,10 @@ export const useOperationQueue = ({
             // Remove from queue
             queueRef.current.shift();
             
+            // Update save state on successful operation
+            setLastSaved(new Date());
+            setSaveError(null);
+            
             // Notify success
             if (onOperationApplied) {
               onOperationApplied(operation);
@@ -130,12 +136,15 @@ export const useOperationQueue = ({
             console.error('❌ OPERATION FAILED:', operation.id, error);
             operation.status = 'failed';
             
+            // Update save error state
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            setSaveError(errorMessage);
+            
             // Remove failed operation from queue
             queueRef.current.shift();
             
             // Notify failure
             if (onOperationFailed) {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
               onOperationFailed(operation, errorMessage);
             }
           }
@@ -220,7 +229,7 @@ export const useOperationQueue = ({
     queueRef.current = queueRef.current.filter(op => op.status !== 'failed');
   }, []);
 
-  return {
+    return {
     // Queue operations
     cellEdit,
     rowInsert,
@@ -237,6 +246,10 @@ export const useOperationQueue = ({
     
     // Status
     isProcessing,
-    queueLength: queueRef.current.length
+    queueLength: queueRef.current.length,
+    
+    // Save state for indicators
+    lastSaved,
+    saveError
   };
 };

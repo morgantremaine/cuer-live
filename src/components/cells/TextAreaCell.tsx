@@ -154,22 +154,11 @@ const TextAreaCell = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    console.log('🔤 TEXT AREA CELL: Change detected', {
-      itemId,
-      cellRefKey,
-      newValue: e.target.value,
-      valueLength: e.target.value.length
-    });
     onUpdateValue(e.target.value);
     // Height will be recalculated by useEffect
   };
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    console.log('🔤 TEXT AREA CELL: Input detected', {
-      itemId,
-      cellRefKey,
-      newValue: (e.target as HTMLTextAreaElement).value
-    });
     onUpdateValue((e.target as HTMLTextAreaElement).value);
   };
 
