@@ -295,6 +295,27 @@ export const useSimpleAutoSave = (
   // Get current user ID from state for structural operations
   const currentUserId = (state as any).currentUserId;
 
+  // Check if user is currently typing with improved logic and debugging
+  const isTypingActive = useCallback(() => {
+    const timeSinceEdit = Date.now() - lastEditAtRef.current;
+    const typingFlagActive = userTypingRef.current;
+    
+    // Check the explicit typing flag first
+    if (typingFlagActive) {
+      // If it's been too long since the last edit, clear the flag
+      if (timeSinceEdit > typingIdleMs + 500) {
+        userTypingRef.current = false;
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = undefined;
+        }
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }, [typingIdleMs]);
+
   // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
   const {
     trackFieldChange,
@@ -306,7 +327,10 @@ export const useSimpleAutoSave = (
   } = usePerCellSaveCoordination({
     rundownId,
     isPerCellEnabled,
-    currentUserId
+    currentUserId,
+    isTypingActive,
+    saveInProgressRef,
+    typingIdleMs
   });
 
   // Legacy field delta save (fallback when per-cell is disabled - no trackOwnUpdate needed)
@@ -421,26 +445,7 @@ export const useSimpleAutoSave = (
     }, maxSaveDelay);
   }, [typingIdleMs, keystrokeJournal, blockUntilLocalEditRef, isSaving]);
 
-  // Check if user is currently typing with improved logic and debugging
-  const isTypingActive = useCallback(() => {
-    const timeSinceEdit = Date.now() - lastEditAtRef.current;
-    const typingFlagActive = userTypingRef.current;
-    
-    // Check the explicit typing flag first
-    if (typingFlagActive) {
-      // If it's been too long since the last edit, clear the flag
-      if (timeSinceEdit > typingIdleMs + 500) {
-        userTypingRef.current = false;
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = undefined;
-        }
-        return false;
-      }
-      return true;
-    }
-    return false;
-  }, [typingIdleMs]);
+  // isTypingActive moved above to fix dependency order
 
   // Micro-resave with consistent behavior across all rundown sizes
   const scheduleMicroResave = useCallback(() => {

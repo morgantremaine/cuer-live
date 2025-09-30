@@ -14,6 +14,9 @@ interface PerCellSaveOptions {
   onSaveComplete?: () => void; // Add callback for when saves complete
   onSaveStart?: () => void; // Add callback for when saves start
   onUnsavedChanges?: () => void; // Add callback for unsaved changes
+  isTypingActive?: () => boolean; // Typing detection from main autosave
+  saveInProgressRef?: React.MutableRefObject<boolean>; // Save state from main autosave
+  typingIdleMs?: number; // Timing configuration from main autosave
 }
 
 export const usePerCellSaveCoordination = ({
@@ -22,19 +25,22 @@ export const usePerCellSaveCoordination = ({
   currentUserId,
   onSaveComplete,
   onSaveStart,
-  onUnsavedChanges
+  onUnsavedChanges,
+  isTypingActive,
+  saveInProgressRef,
+  typingIdleMs
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
 
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
 
-  // Cell-level save system (no trackOwnUpdate needed - uses centralized tracker)
+  // Cell-level save system with typing awareness (no trackOwnUpdate needed - uses centralized tracker)
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges);
+  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, isTypingActive, saveInProgressRef, typingIdleMs);
 
   // Delta save system (fallback - no trackOwnUpdate needed)
   const {

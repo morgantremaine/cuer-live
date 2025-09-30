@@ -16,7 +16,10 @@ export const useCellLevelSave = (
   rundownId: string | null,
   onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
   onSaveStart?: () => void,
-  onUnsavedChanges?: () => void
+  onUnsavedChanges?: () => void,
+  isTypingActive?: () => boolean,
+  saveInProgressRef?: React.MutableRefObject<boolean>,
+  typingIdleMs?: number
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -52,16 +55,37 @@ export const useCellLevelSave = (
       onUnsavedChanges();
     }
 
-    // Debounce save - trigger after 500ms of no new changes
+    // Typing-aware debounced save - respects typing state and save-in-progress
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       console.log('🧪 PER-CELL SAVE: Clearing previous save timeout');
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('🧪 PER-CELL SAVE: Save timeout triggered, calling savePendingUpdates');
-      savePendingUpdates();
-    }, 500);
+    const scheduleTypingAwareSave = () => {
+      const delay = typingIdleMs || 1500; // Use same timing as main autosave
+      
+      saveTimeoutRef.current = setTimeout(() => {
+        console.log('🧪 PER-CELL SAVE: Save timeout triggered, checking typing and save state');
+        
+        // Check if user is still typing or save is in progress
+        if (isTypingActive && isTypingActive()) {
+          console.log('🧪 PER-CELL SAVE: User still typing, rescheduling save');
+          scheduleTypingAwareSave(); // Reschedule
+          return;
+        }
+        
+        if (saveInProgressRef && saveInProgressRef.current) {
+          console.log('🧪 PER-CELL SAVE: Save in progress, rescheduling save');
+          scheduleTypingAwareSave(); // Reschedule
+          return;
+        }
+        
+        console.log('🧪 PER-CELL SAVE: Conditions clear, calling savePendingUpdates');
+        savePendingUpdates();
+      }, delay);
+    };
+
+    scheduleTypingAwareSave();
   }, [rundownId]);
 
   // Save pending updates to database via edge function
