@@ -14,7 +14,6 @@ interface DesktopToolbarProps {
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
-  onOpenTeleprompter: () => void;
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
@@ -49,7 +48,6 @@ const DesktopToolbar = ({
   canUndo,
   lastAction,
   rundownId,
-  onOpenTeleprompter,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -86,7 +84,6 @@ const DesktopToolbar = ({
           canUndo={canUndo}
           lastAction={lastAction}
           rundownId={rundownId}
-          onOpenTeleprompter={onOpenTeleprompter}
           selectedRowId={selectedRowId}
           isMobile={false}
           rundownTitle={rundownTitle}
