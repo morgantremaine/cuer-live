@@ -1,6 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface DocVersionState {
   currentVersion: number;
@@ -27,38 +28,36 @@ export const useDocVersionManager = (rundownId: string | null) => {
     gapDetectionInProgress: false
   });
 
-  const ownUpdatesRef = useRef<Set<string>>(new Set());
   const processingQueueRef = useRef<UpdateMetadata[]>([]);
 
-  // Track our own updates to prevent feedback loops
+  // Track our own updates to prevent feedback loops using centralized tracker
   const trackOwnUpdate = useCallback((timestamp: string, docVersion?: number) => {
     const normalizedTimestamp = normalizeTimestamp(timestamp);
-    ownUpdatesRef.current.add(normalizedTimestamp);
+    const context = rundownId || 'docversion';
+    
+    // Use centralized tracker with 30-second cleanup
+    ownUpdateTracker.track(normalizedTimestamp, context);
     
     if (docVersion !== undefined) {
       stateRef.current.currentVersion = Math.max(stateRef.current.currentVersion, docVersion);
       stateRef.current.lastProcessedTimestamp = normalizedTimestamp;
     }
     
-    // Clean up old tracked updates after 30 seconds
-    setTimeout(() => {
-      ownUpdatesRef.current.delete(normalizedTimestamp);
-    }, 30000);
-    
     console.log('📝 DocVersion: Tracked own update', { timestamp: normalizedTimestamp, docVersion });
-  }, []);
+  }, [rundownId]);
 
-  // Check if an update is from ourselves
+  // Check if an update is from ourselves using centralized tracker
   const isOwnUpdate = useCallback((timestamp: string, userId?: string) => {
     const normalizedTimestamp = normalizeTimestamp(timestamp);
-    const isOwn = ownUpdatesRef.current.has(normalizedTimestamp);
+    const context = rundownId || 'docversion';
+    const isOwn = ownUpdateTracker.isTracked(normalizedTimestamp, context);
     
     if (isOwn) {
       console.log('⏭️ DocVersion: Skipping own update', { timestamp: normalizedTimestamp });
     }
     
     return isOwn;
-  }, []);
+  }, [rundownId]);
 
   // Process incoming updates with proper ordering and gap detection
   const processUpdate = useCallback(async (metadata: UpdateMetadata, onApplyUpdate: (data: any) => void): Promise<boolean> => {

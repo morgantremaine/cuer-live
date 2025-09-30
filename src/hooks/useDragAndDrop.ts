@@ -411,23 +411,52 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Broadcast reorder for immediate realtime sync
-      if (rundownId && currentUserId) {
+      // Handle reorder via structural coordination if available
+      if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('📡 Broadcasting reorder:', {
-          rundownId,
-          orderLength: order.length,
-          userId: currentUserId
-        });
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:reorder',
-          { order },
-          currentUserId
-        );
+        console.log('🏗️ Triggering structural operation for reorder');
+        
+        // Call structural change handler with reorder operation
+        try {
+          // Try to call as structural operation handler
+          (markStructuralChange as any)('reorder', { order });
+        } catch (error) {
+          // Fallback to just marking structural change
+          markStructuralChange();
+          console.log('📡 Broadcasting reorder fallback:', {
+            rundownId,
+            orderLength: order.length,
+            userId: currentUserId
+          });
+          if (rundownId && currentUserId) {
+            cellBroadcast.broadcastCellUpdate(
+              rundownId,
+              undefined,
+              'items:reorder',
+              { order },
+              currentUserId
+            );
+          }
+        }
       } else {
-        console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
+        // Original broadcast fallback
+        if (rundownId && currentUserId) {
+          const order = newItems.map(item => item.id);
+          console.log('📡 Broadcasting reorder:', {
+            rundownId,
+            orderLength: order.length,
+            userId: currentUserId
+          });
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        } else {
+          console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
+        }
       }
       
     } catch (error) {

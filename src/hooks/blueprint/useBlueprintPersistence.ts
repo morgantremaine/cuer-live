@@ -1,7 +1,8 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BlueprintList } from '@/types/blueprint';
+import { useBlueprintSignatureIntegration } from './useBlueprintSignatureIntegration';
 
 interface PartialBlueprintUpdate {
   lists?: BlueprintList[];
@@ -19,6 +20,7 @@ export const useBlueprintPersistence = (
   savedBlueprint: any,
   setSavedBlueprint: (blueprint: any) => void
 ) => {
+  const lastSavedSignatureRef = useRef<string | null>(null);
   // Load blueprint from database - team blueprints only
   const loadBlueprint = useCallback(async () => {
     if (!rundownId) {
@@ -229,6 +231,17 @@ export const useBlueprintPersistence = (
 
       console.log('📋 Blueprint saved successfully:', data.id);
       console.log('📋 SAVE RESULT DEBUG - Saved data verification:', data);
+      
+      // Update saved signature for change tracking
+      const { blueprintSignature } = useBlueprintSignatureIntegration({
+        lists: data.lists || [],
+        showDate: data.show_date || '',
+        notes: data.notes || '',
+        cameraPlots: data.camera_plots || [],
+        componentOrder: data.component_order || []
+      });
+      lastSavedSignatureRef.current = blueprintSignature;
+      
       setSavedBlueprint(data);
     } catch (error) {
       console.error('📋 Error saving blueprint:', error);
@@ -351,6 +364,17 @@ export const useBlueprintPersistence = (
 
       console.log('📋 Partial blueprint save successful:', data.id);
       console.log('📋 PARTIAL SAVE RESULT - Updated fields:', Object.keys(updateData));
+      
+      // Update saved signature for change tracking
+      const { blueprintSignature } = useBlueprintSignatureIntegration({
+        lists: data.lists || [],
+        showDate: data.show_date || '',
+        notes: data.notes || '',
+        cameraPlots: data.camera_plots || [],
+        componentOrder: data.component_order || []
+      });
+      lastSavedSignatureRef.current = blueprintSignature;
+      
       setSavedBlueprint(data);
     } catch (error) {
       console.error('📋 Error in partial save:', error);
@@ -358,9 +382,22 @@ export const useBlueprintPersistence = (
     }
   }, [rundownId, rundownTitle, setSavedBlueprint]);
 
+  // Check if blueprint has unsaved changes
+  const hasBlueprintChanges = useCallback((currentData: {
+    lists: BlueprintList[];
+    showDate: string;
+    notes?: string;
+    cameraPlots?: any[];
+    componentOrder?: string[];
+  }): boolean => {
+    const { hasBlueprintChanges } = useBlueprintSignatureIntegration(currentData);
+    return hasBlueprintChanges(lastSavedSignatureRef.current);
+  }, []);
+
   return {
     loadBlueprint,
     saveBlueprint,
-    savePartialBlueprint
+    savePartialBlueprint,
+    hasBlueprintChanges
   };
 };

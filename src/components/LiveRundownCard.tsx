@@ -29,7 +29,8 @@ import {
   Play, 
   FileText, 
   Calendar, 
-  Clock 
+  Clock,
+  Monitor
 } from 'lucide-react';
 import { SavedRundown } from '@/hooks/useRundownStorage/types';
 import { RundownItem } from '@/hooks/useRundownItems';
@@ -225,15 +226,15 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
             <span>{preview.totalDuration}</span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="space-y-2">
             <Button
               variant="default"
               size="sm"
               onClick={() => onOpen(rundown.id)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
             >
               <Play className="h-3 w-3 mr-1" />
-              Open
+              Open Rundown
             </Button>
           </div>
         </CardContent>
@@ -366,25 +367,37 @@ const LiveRundownCard: React.FC<LiveRundownCardProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
-            className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Blueprint
-          </Button>
+        <div className="space-y-2">
           <Button
             variant="default"
             size="sm"
             onClick={() => onOpen(rundown.id)}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0"
           >
             <Play className="h-4 w-4 mr-1" />
-            Open
+            Open Rundown
           </Button>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
+              className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Blueprint
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open(`/rundown/${rundown.id}/teleprompter`, '_blank')}
+              className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+            >
+              <Monitor className="h-4 w-4 mr-1" />
+              Prompter
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

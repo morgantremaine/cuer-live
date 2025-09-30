@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -11,7 +12,6 @@ interface UseConsolidatedRealtimeRundownProps {
   onShowcallerUpdate?: (data: any) => void;
   onBlueprintUpdate?: (data: any) => void;
   enabled?: boolean;
-  trackOwnUpdate?: (timestamp: string) => void;
   lastSeenDocVersion?: number;
   isSharedView?: boolean;
   blockUntilLocalEditRef?: React.MutableRefObject<boolean>;
@@ -25,8 +25,6 @@ const globalSubscriptions = new Map<string, {
     onShowcallerUpdate: Set<(data: any) => void>;
     onBlueprintUpdate: Set<(data: any) => void>;
   };
-  trackOwnUpdate: Set<(timestamp: string) => void>;
-  ownUpdates: Set<string>;
   lastProcessedTimestamp: string | null;
   lastProcessedDocVersion: number;
   isConnected: boolean;
@@ -46,7 +44,6 @@ export const useConsolidatedRealtimeRundown = ({
   onShowcallerUpdate,
   onBlueprintUpdate,
   enabled = true,
-  trackOwnUpdate,
   lastSeenDocVersion = 0,
   isSharedView = false,
   blockUntilLocalEditRef
@@ -70,16 +67,14 @@ export const useConsolidatedRealtimeRundown = ({
   const callbackRefs = useRef({
     onRundownUpdate,
     onShowcallerUpdate,
-    onBlueprintUpdate,
-    trackOwnUpdate
+    onBlueprintUpdate
   });
 
   // Keep refs updated
   callbackRefs.current = {
     onRundownUpdate,
     onShowcallerUpdate,
-    onBlueprintUpdate,
-    trackOwnUpdate
+    onBlueprintUpdate
   };
 
   // Performance-optimized realtime update processing with early size checks
@@ -337,68 +332,32 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Skip content updates entirely - cell broadcasts handle real-time sync much better
-      // Full realtime updates cause overwrites and conflicts with instant cell broadcasts
-      console.log('📱 Skipping consolidated realtime content update (using cell broadcasts instead)', {
-        docVersion: incomingDocVersion,
-        timestamp: normalizedTimestamp,
-        reason: 'Cell broadcasts provide superior real-time sync'
-      });
-      return;
-
-      // ENHANCED DEBUG: Log all conditions for blue Wi-Fi indicator
-      console.log('🔵 Blue Wi-Fi Debug: Content change detected', {
-        hasContentChanges,
-        isInitialLoad,
-        docVersion: incomingDocVersion,
-        timestamp: normalizedTimestamp,
-        shouldTriggerIndicator: !isInitialLoad,
-        payloadTable: payload.table,
-        changedFields: ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
-          .filter(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]))
-      });
-
-      // Show processing indicator ONLY for genuine remote content changes
-      // Enhanced validation: not initial load AND not own update AND has real content changes
-      const shouldShowBlueWifi = !isInitialLoadRef.current && hasContentChanges;
+      // Check broadcast health and use fallback if needed
+      const { cellBroadcast } = await import('@/utils/cellBroadcast');
+      const isBroadcastHealthy = cellBroadcast.isBroadcastHealthy(rundownId);
       
-      if (shouldShowBlueWifi) {
-        console.log('🔵 Blue Wi-Fi: TRIGGERING indicator for remote content change', {
+      if (isBroadcastHealthy) {
+        console.log('📱 Using cell broadcasts for content sync', {
           docVersion: incomingDocVersion,
           timestamp: normalizedTimestamp,
-          hasContentChanges: true,
-          tabId: payload.new?.tab_id,
-          ownTabId: getTabId()
+          reason: 'Broadcast system healthy'
         });
-        setIsProcessingUpdate(true);
-        
-        // Keep indicator visible for clear visibility  
-        setTimeout(() => {
-          console.log('🔵 Blue Wi-Fi: HIDING indicator after timeout');
-          setIsProcessingUpdate(false);
-        }, 1500); // Extended to 1.5s for better visibility
+        return;
       } else {
-        if (isInitialLoadRef.current) {
-          console.log('🔵 Blue Wi-Fi: BLOCKED - initial load in progress');
-        } else if (!hasContentChanges) {
-          console.log('🔵 Blue Wi-Fi: BLOCKED - no content changes detected');
-        }
-      }
-      
-      try {
-        // Apply LocalShadow protection before dispatching to callbacks
-        const { localShadowStore } = await import('@/state/localShadows');
-        const protectedPayload = localShadowStore.applyShadowsToData(payload.new);
+        // Use database fallback when broadcast health is poor
+        console.log('🔄 Using database fallback due to poor broadcast health', {
+          docVersion: incomingDocVersion,
+          timestamp: normalizedTimestamp,
+          healthMetrics: cellBroadcast.getHealthMetrics(rundownId)
+        });
         
         globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
           try { 
-            callback(protectedPayload); 
+            callback(payload.new); 
           } catch (error) { 
-            console.error('Error in rundown callback:', error);
+            console.error('Error in fallback rundown callback:', error);
           }
         });
-      } catch (error) {
-        console.error('Error processing rundown update:', error);
       }
     }
 
@@ -575,8 +534,6 @@ export const useConsolidatedRealtimeRundown = ({
           onShowcallerUpdate: new Set(),
           onBlueprintUpdate: new Set()
         },
-        trackOwnUpdate: new Set(),
-        ownUpdates: new Set(),
         lastProcessedTimestamp: null,
         lastProcessedDocVersion: lastSeenDocVersion,
         isConnected: false,
@@ -597,32 +554,9 @@ export const useConsolidatedRealtimeRundown = ({
     if (callbackRefs.current.onBlueprintUpdate) {
       globalState.callbacks.onBlueprintUpdate.add(callbackRefs.current.onBlueprintUpdate);
     }
-    if (callbackRefs.current.trackOwnUpdate) {
-      globalState.trackOwnUpdate.add(callbackRefs.current.trackOwnUpdate);
-    }
 
     globalState.refCount++;
     setIsConnected(globalState.isConnected);
-
-    // Create local own update tracker
-    const trackOwnUpdateLocal = (timestamp: string) => {
-      const normalizedTimestamp = normalizeTimestamp(timestamp);
-      globalState!.ownUpdates.add(normalizedTimestamp);
-      
-      // Notify all registered trackers
-      globalState!.trackOwnUpdate.forEach(tracker => {
-        try {
-          tracker(timestamp);
-        } catch (error) {
-          console.error('Error in track own update callback:', error);
-        }
-      });
-
-      // Clean up old updates after 20 seconds
-      setTimeout(() => {
-        globalState!.ownUpdates.delete(normalizedTimestamp);
-      }, 20000);
-    };
 
     return () => {
       const state = globalSubscriptions.get(rundownId);
@@ -637,9 +571,6 @@ export const useConsolidatedRealtimeRundown = ({
       }
       if (callbackRefs.current.onBlueprintUpdate) {
         state.callbacks.onBlueprintUpdate.delete(callbackRefs.current.onBlueprintUpdate);
-      }
-      if (callbackRefs.current.trackOwnUpdate) {
-        state.trackOwnUpdate.delete(callbackRefs.current.trackOwnUpdate);
       }
 
       state.refCount--;
@@ -676,10 +607,14 @@ export const useConsolidatedRealtimeRundown = ({
   }, [rundownId, lastSeenDocVersion]);
 
   // SIMPLIFIED: No longer track timestamps, rely only on tab_id
+  // Legacy compatibility function - now directly uses centralized tracker
   const trackOwnUpdateFunc = useCallback((timestamp: string) => {
-    // Keep for backward compatibility but don't track timestamps
-    console.log('🏷️ Own update timestamp (not tracked):', timestamp);
-  }, []);
+    if (rundownId) {
+      const context = `realtime-${rundownId}`;
+      ownUpdateTracker.track(normalizeTimestamp(timestamp), context);
+      console.log('🏷️ Tracked own update via centralized tracker:', timestamp);
+    }
+  }, [rundownId]);
 
   return {
     isConnected,

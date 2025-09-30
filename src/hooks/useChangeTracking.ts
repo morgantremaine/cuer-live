@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { RundownItem } from './useRundownItems';
 import { Column } from '@/types/columns';
 import { useUniversalTimer } from './useUniversalTimer';
-import { createUnifiedContentSignature } from '@/utils/contentSignature';
+import { createContentSignature } from '@/utils/contentSignature';
 
 export const useChangeTracking = (
   items: RundownItem[], 
@@ -29,23 +29,30 @@ export const useChangeTracking = (
   const { setTimeout: setManagedTimeout, clearTimer } = useUniversalTimer('ChangeTracking');
 
   // Create content signature that COMPLETELY excludes showcaller fields
-  const createContentSignature = useCallback(() => {
+  const createContentSignatureCallback = useCallback(() => {
     // If showcaller is active, don't create new signatures
     if (showcallerActiveRef.current) {
       console.log('🚫 Showcaller active - using cached signature to prevent change detection');
       return lastSavedDataRef.current;
     }
 
-    // Use unified signature function for consistency with autosave
-    const signature = createUnifiedContentSignature({
+    // Use content-only signature function for consistency with autosave
+    const signature = createContentSignature({
       items: items || [],
       title: rundownTitle || '',
-      columns: columns || [],
-      timezone: timezone || '',
-      startTime: startTime || ''
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
+      showDate: null,
+      externalNotes: ''
     });
     
-    console.log('🔍 Created unified content signature (showcaller-free), items count:', items?.length || 0);
+    console.log('🔍 CHANGE TRACKING: Created content-only signature', {
+      itemCount: items?.length || 0,
+      titleLength: (rundownTitle || '').length,
+      signatureLength: signature.length,
+      excludedFromSignature: ['columns', 'timezone', 'startTime']
+    });
     return signature;
   }, [items, rundownTitle, columns, timezone, startTime]);
 
@@ -55,36 +62,12 @@ export const useChangeTracking = (
     userActivelyTypingRef.current = typing;
   }, []);
 
-  // Enhanced showcaller activity tracking with extended blocking
+  // Showcaller state management (no longer blocks change detection)
+  // Showcaller now uses separate state channel and doesn't affect rundown content signatures
   const setShowcallerUpdate = useCallback((isShowcallerUpdate: boolean) => {
-    console.log('📺 Showcaller update state change:', showcallerActiveRef.current, '->', isShowcallerUpdate);
-    
+    console.log('📺 Showcaller update state:', isShowcallerUpdate);
     showcallerActiveRef.current = isShowcallerUpdate;
-    
-    if (isShowcallerUpdate) {
-      console.log('📺 Showcaller active - completely blocking change detection');
-      
-      // Clear any existing timeout
-      if (showcallerBlockTimeoutRef.current) {
-        clearTimer(showcallerBlockTimeoutRef.current);
-      }
-      
-      // Set extended timeout to ensure showcaller operations complete
-      showcallerBlockTimeoutRef.current = setManagedTimeout(() => {
-        showcallerActiveRef.current = false;
-        console.log('📺 Showcaller timeout expired - change detection can resume');
-      }, 8000); // 8 seconds to handle complex showcaller sequences
-      
-    } else {
-      console.log('📺 Showcaller cleared - change detection can resume');
-      
-      // Clear timeout since showcaller explicitly cleared
-      if (showcallerBlockTimeoutRef.current) {
-        clearTimer(showcallerBlockTimeoutRef.current);
-        showcallerBlockTimeoutRef.current = null;
-      }
-    }
-  }, [setManagedTimeout, clearTimer]);
+  }, []);
 
   // Initialize tracking
   useEffect(() => {
@@ -94,7 +77,7 @@ export const useChangeTracking = (
       }
 
       initializationTimeoutRef.current = setManagedTimeout(() => {
-        const currentSignature = createContentSignature();
+        const currentSignature = createContentSignatureCallback();
         lastSavedDataRef.current = currentSignature;
         setIsInitialized(true);
         console.log('🔄 Change tracking initialized (showcaller-aware) with signature length:', currentSignature.length);
@@ -106,7 +89,7 @@ export const useChangeTracking = (
         clearTimer(initializationTimeoutRef.current);
       }
     };
-  }, [isInitialized, createContentSignature, setManagedTimeout, clearTimer]);
+  }, [isInitialized, createContentSignatureCallback, setManagedTimeout, clearTimer]);
 
   // Enhanced change detection that completely ignores showcaller operations
   useEffect(() => {
@@ -124,19 +107,32 @@ export const useChangeTracking = (
     }
 
     // Create new signature (will return cached if showcaller active)
-    const currentSignature = createContentSignature();
+    const currentSignature = createContentSignatureCallback();
     
     // Only trigger if signature actually changed AND showcaller is not active
     if (lastSavedDataRef.current !== currentSignature && !showcallerActiveRef.current) {
-      console.log('📝 Content change detected (not showcaller), marking as changed');
-      console.log('📝 Previous signature length:', lastSavedDataRef.current.length);
-      console.log('📝 Current signature length:', currentSignature.length);
-      
+      console.log('📝 CHANGE DETECTED: Content signature changed', {
+        previousLength: lastSavedDataRef.current.length,
+        currentLength: currentSignature.length,
+        itemCount: items?.length || 0,
+        titleChanged: rundownTitle !== 'previous_title_placeholder',
+        showcallerActive: showcallerActiveRef.current,
+        reason: 'Content modification detected'
+      });
       setHasUnsavedChanges(true);
+    } else if (lastSavedDataRef.current === currentSignature) {
+      console.log('✅ NO CHANGE: Signatures match exactly', {
+        signatureLength: currentSignature.length,
+        itemCount: items?.length || 0,
+        showcallerActive: showcallerActiveRef.current
+      });
     } else {
-      console.log('📝 No content change detected (showcaller-aware check)');
+      console.log('🚫 CHANGE BLOCKED: Showcaller active, ignoring changes', {
+        signatureChanged: lastSavedDataRef.current !== currentSignature,
+        showcallerActive: showcallerActiveRef.current
+      });
     }
-  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignature, isProcessingRealtimeUpdate]);
+  }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignatureCallback, isProcessingRealtimeUpdate]);
 
   const markAsSaved = useCallback((
     savedItems: RundownItem[], 
@@ -145,37 +141,25 @@ export const useChangeTracking = (
     savedTimezone?: string, 
     savedStartTime?: string
   ) => {
-    // Create saved signature excluding showcaller fields
-    const savedSignature = JSON.stringify({
-      items: (savedItems || []).map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
-      })),
+    // Create saved signature using content-only function
+    const savedSignature = createContentSignature({
+      items: savedItems || [],
       title: savedTitle || '',
-      columns: savedColumns || [],
-      timezone: savedTimezone || '',
-      startTime: savedStartTime || ''
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
+      showDate: null,
+      externalNotes: ''
     });
     
     lastSavedDataRef.current = savedSignature;
     setHasUnsavedChanges(false);
-    console.log('✅ Marked as saved (showcaller-aware), signature length:', savedSignature.length);
+    console.log('✅ MARKED AS SAVED: Updated baseline signature', {
+      signatureLength: savedSignature.length,
+      itemCount: (savedItems || []).length,
+      title: savedTitle || '',
+      excludedFromSignature: ['columns', 'timezone', 'startTime']
+    });
   }, []);
 
   const markAsChanged = useCallback(() => {
@@ -197,31 +181,14 @@ export const useChangeTracking = (
     newTimezone?: string, 
     newStartTime?: string
   ) => {
-    const newSignature = JSON.stringify({
-      items: (newItems || []).map(item => ({
-        id: item.id,
-        type: item.type,
-        name: item.name,
-        duration: item.duration,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        talent: item.talent,
-        script: item.script,
-        gfx: item.gfx,
-        video: item.video,
-        images: item.images,
-        notes: item.notes,
-        color: item.color,
-        isFloating: item.isFloating,
-        isFloated: item.isFloated,
-        customFields: item.customFields,
-        segmentName: item.segmentName,
-        rowNumber: item.rowNumber
-      })),
+    const newSignature = createContentSignature({
+      items: newItems || [],
       title: newTitle || '',
-      columns: newColumns || [],
-      timezone: newTimezone || '',
-      startTime: newStartTime || ''
+      columns: [], // Not used in content signature
+      timezone: '', // Not used in content signature
+      startTime: '', // Not used in content signature
+      showDate: null,
+      externalNotes: ''
     });
     
     lastSavedDataRef.current = newSignature;

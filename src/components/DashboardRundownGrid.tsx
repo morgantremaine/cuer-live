@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar } from 'lucide-react'
+import { Trash2, Archive, Users, Plus, RotateCcw, Copy, MoreVertical, Clock, FileText, Play, Calendar, Monitor } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { SavedRundown } from '@/hooks/useRundownStorage/types'
 import { RundownItem } from '@/hooks/useRundownItems'
@@ -377,15 +377,15 @@ const DashboardRundownGrid = ({
                   </div>
 
                   {/* Simple Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
                     <Button
                       variant="default"
                       size="sm"
                       onClick={() => onOpen(rundown.id)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 text-xs"
                     >
                       <Play className="h-3 w-3 mr-1" />
-                      Open
+                      Open Rundown
                     </Button>
                   </div>
                 </CardContent>
@@ -535,25 +535,37 @@ const DashboardRundownGrid = ({
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="space-y-2">
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => onOpen(rundown.id)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
                   >
-                    <Play className="h-3 w-3 mr-1" />
-                    Open
+                    <Play className="h-4 w-4 mr-1" />
+                    Open Rundown
                   </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-0 transition-all hover:scale-105"
-                  >
-                    <FileText className="h-3 w-3 mr-1" />
-                    Blueprint
-                  </Button>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/rundown/${rundown.id}/blueprint`)}
+                      className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Blueprint
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/rundown/${rundown.id}/teleprompter`, '_blank')}
+                      className="flex-1 border-gray-600 text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+                    >
+                      <Monitor className="h-4 w-4 mr-1" />
+                      Prompter
+                    </Button>
+                  </div>
                 </div>
                 
                 {/* Activity Status Label */}

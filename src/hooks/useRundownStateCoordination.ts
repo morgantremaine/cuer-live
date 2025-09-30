@@ -108,6 +108,15 @@ export const useRundownStateCoordination = () => {
       const newItems = arrayMove(currentItems, index, index - 1);
       console.log('🔄 Moving item from', index, 'to', index - 1);
       persistedState.setItems(newItems);
+      
+      // For per-cell saves, mark as saved after the structural operation
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
+      }
     }
   };
 
@@ -118,6 +127,15 @@ export const useRundownStateCoordination = () => {
       const newItems = arrayMove(currentItems, index, index + 1);
       console.log('🔄 Moving item from', index, 'to', index + 1);
       persistedState.setItems(newItems);
+      
+      // For per-cell saves, mark as saved after the structural operation
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
+      }
     }
   };
 

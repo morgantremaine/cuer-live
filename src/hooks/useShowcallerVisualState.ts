@@ -4,6 +4,7 @@ import { RundownItem } from '@/types/rundown';
 import { isFloated } from '@/utils/rundownCalculations';
 import { useShowcallerInitialState } from './useShowcallerInitialState';
 import { useShowcallerPrecisionTiming } from './useShowcallerPrecisionTiming';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 export interface ShowcallerVisualState {
   currentItemStatuses: Map<string, string>; // item id -> status
@@ -39,7 +40,6 @@ export const useShowcallerVisualState = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const lastAdvancementTimeRef = useRef<number>(0);
   const isAdvancingRef = useRef<boolean>(false);
@@ -60,15 +60,12 @@ export const useShowcallerVisualState = ({
     return Math.round(timeToMilliseconds(timeStr) / 1000);
   }, [timeToMilliseconds]);
 
-  // Track our own updates to prevent feedback loops
+  // Track our own updates using centralized tracker
   const trackOwnUpdate = useCallback((timestamp: string) => {
-    ownUpdateTrackingRef.current.add(timestamp);
-    
-    // Clean up old tracked updates after 10 seconds
-    setTimeout(() => {
-      ownUpdateTrackingRef.current.delete(timestamp);
-    }, 10000);
-  }, []);
+    if (rundownId) {
+      ownUpdateTracker.track(timestamp, `showcaller-visual-${rundownId}`);
+    }
+  }, [rundownId]);
 
   // Handle initial state loading with precision timing
   const handleInitialStateLoaded = useCallback((loadedState: any) => {
@@ -98,11 +95,10 @@ export const useShowcallerVisualState = ({
     }
   }, [synchronizeWithExternalState]);
 
-  // Initialize state loading
+  // Initialize state loading (no trackOwnUpdate needed - uses centralized tracker)
   const { hasLoaded } = useShowcallerInitialState({
     rundownId,
-    onStateLoaded: handleInitialStateLoaded,
-    trackOwnUpdate
+    onStateLoaded: handleInitialStateLoaded
   });
 
   // Mark as initialized when either state loads or no state exists
@@ -566,8 +562,8 @@ export const useShowcallerVisualState = ({
 
   // Enhanced apply external visual state with precision synchronization
   const applyExternalVisualState = useCallback((externalState: any, isTiming: boolean = false) => {
-    // Skip if this is our own update
-    if (ownUpdateTrackingRef.current.has(externalState.lastUpdate)) {
+    // Skip if this is our own update using centralized tracker
+    if (rundownId && ownUpdateTracker.isTracked(externalState.lastUpdate, `showcaller-visual-${rundownId}`)) {
       console.log('⏭️ Skipping own showcaller update');
       return;
     }

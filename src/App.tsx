@@ -37,6 +37,7 @@ import EditBlog from "./pages/EditBlog";
 import ArticleManager from "./pages/ArticleManager";
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
+import AdminHealth from "./pages/AdminHealth";
 
 // Login wrapper to handle Stream Deck vs normal login flows
 const LoginWrapper = () => {
@@ -98,6 +99,16 @@ const AppRoutes = () => {
       <Route path="/delete-test-user" element={<DeleteTestUser />} />
       <Route path="/stream-deck-plugin" element={<StreamDeckDownload />} />
       <Route path="/stream-deck-plugin.zip" element={<StreamDeckDownload />} />
+      
+      {/* Admin routes */}
+      <Route 
+        path="/admin/health" 
+        element={
+          <ProtectedRoute requiresSubscription={true}>
+            <AdminHealth />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* Auth callback routes */}
       <Route path="/auth/callback" element={<AuthCallback />} />

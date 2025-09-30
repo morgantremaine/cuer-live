@@ -4,6 +4,9 @@ import { RundownState } from './useRundownState';
 import { useOfflineQueue } from './useOfflineQueue';
 import { useNetworkStatus } from './useNetworkStatus';
 import { detectDataConflict } from '@/utils/conflictDetection';
+import { createContentSignature } from '@/utils/contentSignature';
+import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
+import { useLocalShadowSignatureIntegration } from './useLocalShadowSignatureIntegration';
 
 interface SyncState {
   lastSyncTimestamp: string | null;
@@ -26,6 +29,8 @@ export const useEnhancedDataSync = (
   onStateUpdate: (newState: Partial<RundownState>) => void,
   onConflictResolved?: (mergedData: any) => void
 ) => {
+  const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
+  const { createShadowProtectedSignature, validateShadowSignatureConsistency } = useLocalShadowSignatureIntegration();
   const [syncState, setSyncState] = useState<SyncState>({
     lastSyncTimestamp: null,
     lastKnownDocVersion: 0,
@@ -109,6 +114,27 @@ export const useEnhancedDataSync = (
     }
 
     console.log('🔀 Resolving data conflicts...');
+    
+    // Create signatures for validation
+    const localSignature = createContentSignature({
+      items: localState.items || [],
+      title: localState.title || '',
+      columns: [],
+      timezone: localState.timezone || '',
+      startTime: localState.startTime || '',
+      showDate: localState.showDate || null,
+      externalNotes: localState.externalNotes || ''
+    });
+    
+    const remoteSignature = createContentSignature({
+      items: remoteData.items || [],
+      title: remoteData.title || '',
+      columns: [],
+      timezone: remoteData.timezone || '',
+      startTime: remoteData.start_time || '',
+      showDate: remoteData.show_date ? new Date(remoteData.show_date) : null,
+      externalNotes: remoteData.external_notes || ''
+    });
 
     // Get offline changes to preserve user edits
     const offlineChanges = getOfflineChanges();
@@ -155,6 +181,28 @@ export const useEnhancedDataSync = (
         mergedData.items = [...mergedData.items, ...newLocalItems];
         console.log(`📝 Added ${newLocalItems.length} new local items to merged data`);
       }
+    }
+
+    // Validate merged data signature consistency
+    const mergedSignature = createContentSignature({
+      items: mergedData.items || [],
+      title: mergedData.title || '',
+      columns: [],
+      timezone: mergedData.timezone || '',
+      startTime: mergedData.start_time || '',
+      showDate: mergedData.show_date ? new Date(mergedData.show_date) : null,
+      externalNotes: mergedData.external_notes || ''
+    });
+    
+    // Check LocalShadow integration consistency
+    const shadowConsistency = validateShadowSignatureConsistency(
+      remoteSignature,
+      mergedSignature,
+      'enhanced-data-sync conflict resolution'
+    );
+    
+    if (!shadowConsistency.isConsistent) {
+      console.warn('🚨 LocalShadow signature inconsistency during conflict resolution:', shadowConsistency.explanation);
     }
 
     return {

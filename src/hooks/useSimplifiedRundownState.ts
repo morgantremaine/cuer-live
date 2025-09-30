@@ -7,6 +7,10 @@ import { useConsolidatedRealtimeRundown } from './useConsolidatedRealtimeRundown
 import { useUserColumnPreferences } from './useUserColumnPreferences';
 import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
+import { useCellEditIntegration } from './useCellEditIntegration';
+import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
+import { useActiveTeam } from './useActiveTeam';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +33,7 @@ export const useSimplifiedRundownState = () => {
   const rundownId = params.id === 'new' ? null : (location.pathname === '/demo' ? DEMO_RUNDOWN_ID : params.id) || null;
   
   const { shouldSkipLoading, setCacheLoading } = useRundownStateCache(rundownId);
+  const { activeTeamId, loading: activeTeamLoading } = useActiveTeam();
   
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isInitialized, setIsInitialized] = useState(false);
@@ -48,6 +53,13 @@ export const useSimplifiedRundownState = () => {
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
+  
+  // Track per-cell save enabled state to coordinate saving systems
+  const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
+  
+  // Track structural operation save state
+  const [isStructuralSaving, setIsStructuralSaving] = useState(false);
+  const [hasStructuralUnsavedChanges, setHasStructuralUnsavedChanges] = useState(false);
   
   // Remove broadcast timeouts - no throttling of core functionality
   const lastRemoteUpdateRef = useRef<number>(0);
@@ -157,8 +169,8 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
+  // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
+  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -182,6 +194,11 @@ export const useSimplifiedRundownState = () => {
       // Prime lastSavedRef after initial load to prevent false autosave triggers
       if (isInitialized && !lastSavedPrimedRef.current) {
         lastSavedPrimedRef.current = true;
+      }
+      
+      // CRITICAL: When per-cell save is enabled, bypass main autosave hasUnsavedChanges
+      if (isPerCellSaveEnabled) {
+        console.log('🧪 MAIN SAVE: Per-cell save mode - main system marking saved after coordination');
       }
       
       // Coordinate with teleprompter saves to prevent conflicts
@@ -448,12 +465,9 @@ export const useSimplifiedRundownState = () => {
          // CRITICAL: Block all autosaves until the user makes a local edit
          debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
          blockUntilLocalEditRef.current = true;
-      }
+       }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
-    enabled: !isLoading,
-    trackOwnUpdate: (timestamp: string) => {
-      ownUpdateTimestampRef.current = timestamp;
-    }
+    enabled: !isLoading
   });
   
   // Update connection state from realtime hook
@@ -557,6 +571,43 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
+            case 'structural:reorder': {
+              // Handle new structural broadcast format
+              const operationData = update.value?.operationData;
+              const order: string[] = Array.isArray(operationData?.order) ? operationData.order : [];
+              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length, userId: update.userId });
+              if (order.length > 0) {
+                const indexMap = new Map(order.map((id, idx) => [id, idx]));
+                const reordered = [...stateRef.current.items].sort((a, b) => {
+                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                  return ai - bi;
+                });
+                actionsRef.current.loadState({ items: reordered });
+                console.log('🎯 REAL-TIME REORDER: Applied structural reorder from user', update.userId, 'to', reordered.length, 'items');
+              }
+              break;
+            }
+            case 'structural:add_row': {
+              // Handle structural add row operations
+              const operationData = update.value?.operationData;
+              if (operationData?.newItems?.length > 0) {
+                console.log('📡 Received structural add_row broadcast:', { newItemsCount: operationData.newItems.length });
+                // For add operations, the consolidated realtime system will handle the full refresh
+                console.log('📡 Structural add_row broadcast received - consolidated realtime will handle refresh');
+              }
+              break;
+            }
+            case 'structural:delete_row': {
+              // Handle structural delete row operations
+              const operationData = update.value?.operationData;
+              if (operationData?.deletedIds?.length > 0) {
+                console.log('📡 Received structural delete_row broadcast:', { deletedIdsCount: operationData.deletedIds.length });
+                // For delete operations, the consolidated realtime system will handle the full refresh
+                console.log('📡 Structural delete_row broadcast received - consolidated realtime will handle refresh');
+              }
+              break;
+            }
             case 'items:add': {
               const payload = update.value || {};
               const item = payload.item;
@@ -656,6 +707,56 @@ export const useSimplifiedRundownState = () => {
       unsubscribe();
     };
   }, [rundownId, currentUserId]);
+  
+  // Cell edit integration for per-cell saves (after realtime connection is established)
+  const perCellEnabled = Boolean(state.perCellSaveEnabled);
+  
+  // CRITICAL: Track per-cell enabled state to coordinate with autosave
+  useEffect(() => {
+    console.log('🧪 PER-CELL SAVE: State updated', {
+      perCellSaveEnabled: state.perCellSaveEnabled,
+      rundownId,
+      isEnabled: perCellEnabled
+    });
+  }, [state.perCellSaveEnabled, rundownId, perCellEnabled]);
+  
+  const cellEditIntegration = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: perCellEnabled,
+    onSaveComplete: () => {
+      console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
+      actions.markSaved();
+    },
+    onSaveStart: () => {
+      console.log('🧪 PER-CELL SAVE: Save started');
+      // The isSaving state will be managed by the per-cell save system itself
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 PER-CELL SAVE: Unsaved changes detected');
+      // The hasUnsavedChanges will be managed by the per-cell save system itself
+    }
+  });
+  
+  // Get save coordination system for structural operations - use same callbacks as cell edit integration
+  const saveCoordination = usePerCellSaveCoordination({
+    rundownId,
+    isPerCellEnabled: perCellEnabled,
+    currentUserId,
+    onSaveComplete: () => {
+      console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
+      setIsStructuralSaving(false);
+      setHasStructuralUnsavedChanges(false);
+      actions.markSaved();
+    },
+    onSaveStart: () => {
+      console.log('🧪 STRUCTURAL SAVE: Save started - updating UI state');
+      setIsStructuralSaving(true);
+    },
+    onUnsavedChanges: () => {
+      console.log('🧪 STRUCTURAL SAVE: Unsaved changes - updating UI state');
+      setHasStructuralUnsavedChanges(true);
+    }
+  });
   
   // Get catch-up sync function from realtime connection
   const performCatchupSync = realtimeConnection.performCatchupSync;
@@ -793,14 +894,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
-  // Connect autosave tracking to realtime tracking
-  useEffect(() => {
-    if (realtimeConnection.trackOwnUpdate) {
-      setTrackOwnUpdate((timestamp: string) => {
-        realtimeConnection.trackOwnUpdate(timestamp);
-      });
-    }
-  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
+  // No longer need to connect autosave tracking to realtime - both now use centralized OwnUpdateTracker
 
   // Connect typing state checker to realtime to prevent overwrites during typing
   useEffect(() => {
@@ -901,8 +995,13 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.updateItem(id, { [updateField]: updateValue });
+      
+      // CRITICAL: Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        cellEditIntegration.handleCellChange(id, updateField, updateValue);
+      }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
 
   // Optimized field tracking with debouncing
   const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
@@ -915,17 +1014,47 @@ export const useSimplifiedRundownState = () => {
     });
   }, []);
 
-  // Simplified handlers - no special structural change handling needed
-  const markStructuralChange = useCallback(() => {
-    console.log('🏗️ markStructuralChange called (currently no-op in simplified state)');
-    // No-op - auto-save handles all changes
-  }, []);
+  // Simplified handlers - enhanced for per-cell save coordination
+  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
+    console.log('🏗️ markStructuralChange called', {
+      perCellEnabled: Boolean(state.perCellSaveEnabled),
+      rundownId,
+      operationType,
+      operationData
+    });
+    
+    // For per-cell save mode, structural operations need immediate save coordination
+    if (state.perCellSaveEnabled && cellEditIntegration) {
+      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
+      
+      // If we have operation details, use the per-cell coordination system
+      if (operationType && operationData && saveCoordination && currentUserId) {
+        console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
+          operationType,
+          operationData,
+          currentUserId
+        });
+        saveCoordination.handleStructuralOperation(operationType as any, operationData);
+      } else {
+        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
+        // Fallback - just mark as saved for now
+        setTimeout(() => {
+          console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
+          actions.markSaved();
+        }, 100);
+      }
+    }
+    // For regular autosave mode, no action needed - autosave handles it
+  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
-    console.log('🏗️ clearStructuralChange called (currently no-op in simplified state)');
-    // No-op - auto-save handles all changes  
-  }, []);
+    console.log('🏗️ clearStructuralChange called', {
+      perCellEnabled: Boolean(state.perCellSaveEnabled)
+    });
+    // For per-cell mode, this is handled by markStructuralChange
+    // For regular autosave mode, no action needed
+  }, [state.perCellSaveEnabled]);
 
   // Update current time every second
   useEffect(() => {
@@ -1007,7 +1136,14 @@ export const useSimplifiedRundownState = () => {
               timezone: data.timezone || 'America/New_York',
               showDate: data.show_date ? new Date(data.show_date + 'T00:00:00') : null,
               externalNotes: data.external_notes,
-              docVersion: data.doc_version || 0 // CRITICAL: Include docVersion for OCC
+              docVersion: data.doc_version || 0, // CRITICAL: Include docVersion for OCC
+              perCellSaveEnabled: data.per_cell_save_enabled || false // Include per-cell save setting
+            });
+            
+            console.log('🧪 PER-CELL SAVE: Loaded from database', {
+              rundownId,
+              per_cell_save_enabled: data.per_cell_save_enabled,
+              willUsePerCellSave: data.per_cell_save_enabled || false
             });
           }
         }
@@ -1106,8 +1242,9 @@ export const useSimplifiedRundownState = () => {
   // Data freshness is maintained through realtime updates only
 
   useEffect(() => {
-    if (!rundownId && !isInitialized && params.id === 'new') {
-      console.log('🆕 Creating new rundown automatically...');
+    // Wait for activeTeamId to finish loading before creating rundown
+    if (!rundownId && !isInitialized && params.id === 'new' && !activeTeamLoading) {
+      console.log('🆕 Creating new rundown automatically with team:', activeTeamId);
       setIsLoading(true);
       
       const createNewRundown = async () => {
@@ -1118,15 +1255,9 @@ export const useSimplifiedRundownState = () => {
             throw new Error('User not authenticated');
           }
           
-          const { data: teamData, error: teamError } = await supabase
-            .from('team_members')
-            .select('team_id')
-            .eq('user_id', userData.user.id)
-            .limit(1)
-            .single();
-          
-          if (teamError || !teamData) {
-            throw new Error('No team found for user');
+          if (!activeTeamId) {
+            console.error('❌ No active team selected when creating rundown');
+            throw new Error('No active team selected');
           }
           
           // Get folder ID from location state if available
@@ -1139,7 +1270,7 @@ export const useSimplifiedRundownState = () => {
               title: 'Untitled Rundown',
               items: createDefaultRundownItems(),
               user_id: userData.user.id,
-              team_id: teamData.team_id,
+              team_id: activeTeamId,
               folder_id: folderId,
               archived: false,
               show_date: new Date().toISOString().split('T')[0] // Set current date in YYYY-MM-DD format
@@ -1199,7 +1330,7 @@ export const useSimplifiedRundownState = () => {
       setIsInitialized(true);
       console.log('✅ Initialization complete (new rundown)');
     }
-  }, [rundownId, isInitialized, actions, params.id, location.state, navigate]);
+  }, [rundownId, isInitialized, actions, params.id, location.state, navigate, activeTeamId, activeTeamLoading]);
 
   // Calculate all derived values using pure functions - unchanged
   const calculatedItems = useMemo(() => {
@@ -1236,6 +1367,12 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Delete row');
       actions.deleteItem(id);
       
+      // For per-cell saves, use structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
+        markStructuralChange('delete_row', { deletedIds: [id] });
+      }
+      
       // Broadcast row removal for immediate realtime sync
       if (rundownId && currentUserId) {
         cellBroadcast.broadcastCellUpdate(
@@ -1246,11 +1383,17 @@ export const useSimplifiedRundownState = () => {
           currentUserId
         );
       }
-    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId]),
+    }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
+      
+      // For per-cell saves, use structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
+        markStructuralChange('add_row', { items: state.items });
+      }
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
       if (rundownId && currentUserId) {
@@ -1265,11 +1408,17 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId]),
+    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
+      
+      // For per-cell saves, use structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
+        markStructuralChange('add_header', { items: state.items });
+      }
       
       if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);
@@ -1283,7 +1432,7 @@ export const useSimplifiedRundownState = () => {
           );
         }, 0);
       }
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId]),
+    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       // Re-enable autosave after local edit if previously blocked
@@ -1292,6 +1441,12 @@ export const useSimplifiedRundownState = () => {
         blockUntilLocalEditRef.current = false;
       }
       if (state.title !== newTitle) {
+        // Track field change for per-cell save system
+        if (cellEditIntegration.isPerCellEnabled) {
+          console.log('🧪 SIMPLIFIED STATE: Tracking title change for per-cell save');
+          cellEditIntegration.handleCellChange(undefined, 'title', newTitle);
+        }
+        
         // Simplified: Just set typing session for active protection
         typingSessionRef.current = { fieldKey: 'title', startTime: Date.now() };
         
@@ -1310,7 +1465,7 @@ export const useSimplifiedRundownState = () => {
           }
         }, 5000); // Extended timeout for title editing
       }
-    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId])
+    }, [actions.setTitle, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration])
   };
 
   // Get visible columns from user preferences
@@ -1385,7 +1540,13 @@ export const useSimplifiedRundownState = () => {
         currentUserId
       );
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId]);
+    
+    // For per-cell saves, use structural save coordination
+    if (cellEditIntegration.isPerCellEnabled) {
+      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_row', { items: state.items, insertIndex: actualIndex });
+    }
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
   const addHeaderAtIndex = useCallback((insertIndex: number) => {
@@ -1428,7 +1589,13 @@ export const useSimplifiedRundownState = () => {
         currentUserId
       );
     }
-  }, [state.items, state.title, saveUndoState, actions.setItems]);
+    
+    // For per-cell saves, use structural save coordination
+    if (cellEditIntegration.isPerCellEnabled) {
+      console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_header', { items: state.items, insertIndex: actualIndex });
+    }
+  }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
 
   // Clean up timeouts on unmount
@@ -1467,8 +1634,12 @@ export const useSimplifiedRundownState = () => {
     currentTime,
     rundownId,
     isLoading: isLoading || isLoadingColumns,
-    hasUnsavedChanges: state.hasUnsavedChanges,
-    isSaving: isSaving || isSavingColumns,
+    hasUnsavedChanges: perCellEnabled ? 
+      (cellEditIntegration.hasUnsavedChanges || hasStructuralUnsavedChanges) : 
+      state.hasUnsavedChanges,
+    isSaving: perCellEnabled ? 
+      (cellEditIntegration.isPerCellSaving || isStructuralSaving) : 
+      (isSaving || isSavingColumns),
     showcallerActivity,
     
     // Realtime connection status
@@ -1491,7 +1662,15 @@ export const useSimplifiedRundownState = () => {
       // Auto-save will handle this change - no special handling needed
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
       actions.deleteMultipleItems(itemIds);
-    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState]),
+      
+      // For per-cell saves, notify the system that a structural operation completed
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering per-cell save completion');
+        setTimeout(() => {
+          actions.markSaved();
+        }, 100);
+      }
+    }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, actions.markSaved]),
     addItem: useCallback((item: any, targetIndex?: number) => {
       // Re-enable autosave after local edit if it was blocked due to teammate update
       if (blockUntilLocalEditRef.current) {
@@ -1502,12 +1681,17 @@ export const useSimplifiedRundownState = () => {
     }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
+      console.log('🧪 SIMPLIFIED STATE: setStartTime called with:', newStartTime);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking startTime change for per-cell save');
+        cellEditIntegration.handleCellChange(undefined, 'startTime', newStartTime);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1515,14 +1699,19 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setStartTime(newStartTime);
-    }, [actions.setStartTime, rundownId, currentUserId]),
+    }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
+      console.log('🧪 SIMPLIFIED STATE: setTimezone called with:', newTimezone);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking timezone change for per-cell save');
+        cellEditIntegration.handleCellChange(undefined, 'timezone', newTimezone);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1530,14 +1719,19 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setTimezone(newTimezone);
-    }, [actions.setTimezone, rundownId, currentUserId]),
+    }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
     setShowDate: useCallback((newShowDate: Date | null) => {
+      console.log('🧪 SIMPLIFIED STATE: setShowDate called with:', newShowDate);
       if (blockUntilLocalEditRef.current) {
         console.log('✅ AutoSave: local edit detected - re-enabling saves');
         blockUntilLocalEditRef.current = false;
       }
-      // Simplified: No field tracking needed
-      const now = Date.now();
+      
+      // Track field change for per-cell save system
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 SIMPLIFIED STATE: Tracking showDate change for per-cell save');
+        cellEditIntegration.handleCellChange(undefined, 'showDate', newShowDate);
+      }
       
       // Broadcast rundown-level property change
       if (rundownId && currentUserId) {
@@ -1545,7 +1739,7 @@ export const useSimplifiedRundownState = () => {
       }
       
       actions.setShowDate(newShowDate);
-    }, [actions.setShowDate, rundownId, currentUserId]),
+    }, [actions.setShowDate, rundownId, currentUserId, cellEditIntegration]),
     
     addRow: enhancedActions.addRow,
     addHeader: enhancedActions.addHeader,

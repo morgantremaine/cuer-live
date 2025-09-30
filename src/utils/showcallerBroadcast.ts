@@ -1,5 +1,6 @@
 // Showcaller real-time broadcast system for instant sync
 import { supabase } from '@/integrations/supabase/client';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 export interface ShowcallerBroadcastState {
   rundownId: string;
@@ -17,7 +18,6 @@ export interface ShowcallerBroadcastState {
 class ShowcallerBroadcastManager {
   private channels: Map<string, any> = new Map();
   private callbacks: Map<string, Set<(state: ShowcallerBroadcastState) => void>> = new Map();
-  private ownUpdateTracking: Map<string, Set<string>> = new Map();
   private connectionStatus: Map<string, string> = new Map();
   private isReconnecting: Map<string, boolean> = new Map();
   private reconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
@@ -136,19 +136,9 @@ class ShowcallerBroadcastManager {
   broadcastState(state: ShowcallerBroadcastState): void {
     const channel = this.ensureChannel(state.rundownId);
     
-    // Track own update to prevent echo
+    // Track own update using centralized tracker with consistent 30-second cleanup
     const updateId = `${state.userId}-${state.timestamp}`;
-    const ownUpdates = this.ownUpdateTracking.get(state.rundownId) || new Set();
-    ownUpdates.add(updateId);
-    this.ownUpdateTracking.set(state.rundownId, ownUpdates);
-
-    // Clean up old tracking after delay
-    setTimeout(() => {
-      const updates = this.ownUpdateTracking.get(state.rundownId);
-      if (updates) {
-        updates.delete(updateId);
-      }
-    }, 8000);
+    ownUpdateTracker.track(updateId, `showcaller-${state.rundownId}`);
 
     console.log('📺 Broadcasting showcaller state:', state.action || 'state_update', state);
     
@@ -217,8 +207,10 @@ class ShowcallerBroadcastManager {
       // Prevent recursive cleanup
       this.channels.delete(rundownId);
       this.callbacks.delete(rundownId);
-      this.ownUpdateTracking.delete(rundownId);
       this.connectionStatus.delete(rundownId);
+      
+      // Clean up tracked updates in centralized tracker
+      ownUpdateTracker.clear(`showcaller-${rundownId}`);
       
       // Safe async cleanup
       setTimeout(() => {

@@ -19,9 +19,11 @@ export const useInvitationHandler = () => {
   const processedUserRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Don't run the invitation handler if we're on the JoinTeam page
-    if (location.pathname.startsWith('/join-team/')) {
-      console.log('On JoinTeam page, skipping invitation handler');
+    // Don't run the invitation handler if we're on auth-related pages
+    if (location.pathname.startsWith('/join-team/') || 
+        location.pathname.startsWith('/auth-callback') ||
+        location.pathname.startsWith('/login')) {
+      console.log('On auth-related page, skipping invitation handler');
       return;
     }
 
@@ -43,8 +45,9 @@ export const useInvitationHandler = () => {
 
       const pendingToken = localStorage.getItem('pendingInvitationToken');
       if (!pendingToken || pendingToken === 'undefined') {
-        console.log('No pending invitation token found');
+        console.log('No pending invitation token found, loading team data');
         processedUserRef.current = user.id; // Mark as processed
+        await loadTeamData();
         return;
       }
 
@@ -53,39 +56,27 @@ export const useInvitationHandler = () => {
       processedUserRef.current = user.id;
 
       try {
-        // Always redirect to JoinTeam page for proper invitation handling
-        console.log('Pending invitation detected, redirecting to JoinTeam page for proper handling');
-        
         // Validate token before redirecting
-        try {
-          const { validateInvitationToken } = await import('@/utils/invitationUtils');
-          const isValid = await validateInvitationToken(pendingToken);
-          
-          if (isValid) {
-            // Redirect to JoinTeam page for proper invitation handling
-            if (!location.pathname.startsWith('/join-team/')) {
-              navigate(`/join-team/${pendingToken}`);
-              return;
-            }
-          } else {
-            console.log('Invalid invitation token detected, clearing it');
-            localStorage.removeItem('pendingInvitationToken');
-            
-            toast({
-              title: 'Invitation Expired',
-              description: 'The invitation link has expired. Please request a new invitation.',
-              variant: 'destructive',
-            });
-          }
-        } catch (error) {
-          console.error('Error validating invitation token:', error);
+        const { validateInvitationToken } = await import('@/utils/invitationUtils');
+        const isValid = await validateInvitationToken(pendingToken);
+        
+        if (isValid) {
+          console.log('Valid invitation token found, redirecting to JoinTeam page');
+          navigate(`/join-team/${pendingToken}`);
+          return;
+        } else {
+          console.log('Invalid invitation token detected, clearing it');
           localStorage.removeItem('pendingInvitationToken');
+          
+          toast({
+            title: 'Invitation Expired',
+            description: 'The invitation link has expired. Please request a new invitation.',
+            variant: 'destructive',
+          });
         }
         
-        // Only load team data if not redirecting to JoinTeam page
-        if (!location.pathname.startsWith('/join-team/')) {
-          await loadTeamData();
-        }
+        // Load team data if no valid invitation
+        await loadTeamData();
       } catch (error) {
         console.error('Error processing pending invitation:', error);
         
@@ -97,6 +88,9 @@ export const useInvitationHandler = () => {
           description: 'Failed to process team invitation. Please try again or request a new invitation.',
           variant: 'destructive',
         });
+        
+        // Still load team data
+        await loadTeamData();
       } finally {
         isProcessingRef.current = false;
       }
@@ -107,7 +101,7 @@ export const useInvitationHandler = () => {
     return () => {
       clearTimeout(timer);
     };
-  }, [user, loadTeamData, loadRundowns, toast, navigate, location.pathname]);
+  }, [user, loadTeamData, toast, navigate, location.pathname]);
 
   // Reset processing flag when user changes
   useEffect(() => {

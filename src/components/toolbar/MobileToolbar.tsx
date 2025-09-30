@@ -21,7 +21,6 @@ interface MobileToolbarProps {
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
-  onOpenTeleprompter: () => void;
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
@@ -56,7 +55,6 @@ const MobileToolbar = ({
   canUndo,
   lastAction,
   rundownId,
-  onOpenTeleprompter,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -117,7 +115,6 @@ const MobileToolbar = ({
                   canUndo={canUndo}
                   lastAction={lastAction}
                   rundownId={rundownId}
-                  onOpenTeleprompter={onOpenTeleprompter}
                   selectedRowId={selectedRowId}
                   isMobile={true}
                   rundownTitle={rundownTitle}
