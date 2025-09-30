@@ -15,7 +15,6 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
-import { OperationModeToggle } from '@/components/OperationModeToggle';
 
 
 const RundownIndexContent = () => {
@@ -633,13 +632,6 @@ const RundownIndexContent = () => {
           rundownId={rundownId}
           onClose={() => setShowNotesWindow(false)}
         />
-      )}
-      
-      {/* Operation Mode Toggle */}
-      {rundownId && (
-        <div className="fixed top-4 right-4 z-50">
-          <OperationModeToggle rundownId={rundownId} />
-        </div>
       )}
       
       <CuerChatButton
