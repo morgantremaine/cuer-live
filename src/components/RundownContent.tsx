@@ -2,11 +2,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import OptimizedRundownTableWrapper from './OptimizedRundownTableWrapper';
 import RundownTableHeader from './RundownTableHeader';
+import TextFormattingToolbar from './TextFormattingToolbar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
 import { useRundownAutoscroll } from '@/hooks/useRundownAutoscroll';
 import { useDragAutoScroll } from '@/hooks/useDragAutoScroll';
+import { useTextFormatting } from '@/hooks/useTextFormatting';
 import { getMinimumWidth } from '@/utils/columnSizing';
 
 interface RundownContentProps {
@@ -153,6 +155,9 @@ const RundownContent = React.memo<RundownContentProps>(({
 }) => {
   // Column expand state for script and notes columns
   const [columnExpandState, setColumnExpandState] = useState<{ [columnKey: string]: boolean }>({});
+
+  // Text formatting hook
+  const { selection, applyFormatting, applyColor } = useTextFormatting();
 
   // Toggle column expand state
   const handleToggleColumnExpand = useCallback((columnKey: string) => {
@@ -516,6 +521,17 @@ const RundownContent = React.memo<RundownContentProps>(({
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+      
+      {/* Text Formatting Toolbar */}
+      {selection.show && (
+        <div className="text-formatting-toolbar">
+          <TextFormattingToolbar
+            position={selection.position}
+            onFormat={applyFormatting}
+            onColorSelect={applyColor}
+          />
+        </div>
+      )}
     </div>
   );
 });
