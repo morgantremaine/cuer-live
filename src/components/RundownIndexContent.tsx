@@ -528,7 +528,7 @@ const RundownIndexContent = () => {
         currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
-        totalRuntime={totalRuntime}
+        totalRuntime={totalRuntime || ''}
         showColumnManager={showColumnManager}
         setShowColumnManager={(show: boolean) => {
           if (show) {
@@ -564,10 +564,10 @@ const RundownIndexContent = () => {
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
-        onAddRow={handleAddRow}
-        onAddHeader={handleAddHeader}
+        onAddRow={() => handleAddRow()}
+        onAddHeader={() => handleAddHeader()}
         selectedCount={selectedRows.size}
-        hasClipboardData={hasClipboardData()}
+        hasClipboardData={typeof hasClipboardData === 'function' ? hasClipboardData() : false}
         onCopySelectedRows={handleCopySelectedRows}
         onPasteRows={handlePasteRows}
         onDeleteSelectedRows={handleDeleteSelectedRows}
