@@ -19,7 +19,7 @@ export const useRundownInteractionHandlers = (
   selectColor: (id: string, color: string) => void,
   markAsChanged: () => void,
   setRundownTitle: (title: string) => void,
-  addRowAtIndex: (insertIndex: number) => void,
+  addRowAtIndex: (insertIndex: number, count?: number) => void,
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
   markStructuralChange?: ((operationType: string, operationData: any) => void) | (() => void),

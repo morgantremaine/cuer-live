@@ -84,9 +84,10 @@ export const useRundownStateCoordination = () => {
   };
 
   // Add the missing functions that simplifiedState should provide
-  const addRowAtIndex = (insertIndex: number) => {
+  const addRowAtIndex = (insertIndex: number, count?: number) => {
+    console.log('🟠 useRundownStateCoordination addRowAtIndex called with:', { insertIndex, count });
     if (persistedState.addRowAtIndex) {
-      persistedState.addRowAtIndex(insertIndex);
+      persistedState.addRowAtIndex(insertIndex, count);
     } else {
       persistedState.addRow();
     }

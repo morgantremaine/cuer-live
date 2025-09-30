@@ -1109,35 +1109,42 @@ export const useSimplifiedRundownState = () => {
   }, []);
 
   // Fixed addRowAtIndex that properly inserts at specified index
-  const addRowAtIndex = useCallback((insertIndex: number) => {
-      // Auto-save will handle this change - no special handling needed
-    saveUndoState(state.items, [], state.title, 'Add segment');
+  const addRowAtIndex = useCallback((insertIndex: number, count: number = 1) => {
+    console.log('🔵 addRowAtIndex called with insertIndex:', insertIndex, 'count:', count);
+    // Auto-save will handle this change - no special handling needed
+    saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
     
-    const newItem = {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'regular' as const,
-      rowNumber: '',
-      name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-      startTime: '00:00:00',
-      duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-      endTime: '00:30:00',
-      elapsedTime: '00:00',
-      talent: '',
-      script: '',
-      gfx: '',
-      video: '',
-      images: '',
-      notes: '',
-      color: '',
-      isFloating: false,
-      customFields: {}
-    };
+    // Create multiple items
+    const newItemsToAdd = [];
+    for (let i = 0; i < count; i++) {
+      newItemsToAdd.push({
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'regular' as const,
+        rowNumber: '',
+        name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
+        startTime: '00:00:00',
+        duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
+        endTime: '00:30:00',
+        elapsedTime: '00:00',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: '',
+        isFloating: false,
+        customFields: {}
+      });
+    }
+    console.log('🔵 Created', newItemsToAdd.length, 'new items');
 
     // Use latestItemsRef for rapid operations to avoid stale state
     const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
     const newItems = [...currentItems];
     const actualIndex = Math.min(insertIndex, newItems.length);
-    newItems.splice(actualIndex, 0, newItem);
+    newItems.splice(actualIndex, 0, ...newItemsToAdd);
+    console.log('🔵 Final array length:', newItems.length, 'added at index:', actualIndex);
     
     // Update ref immediately for next rapid operation
     latestItemsRef.current = newItems;
@@ -1150,7 +1157,7 @@ export const useSimplifiedRundownState = () => {
         rundownId,
         undefined,
         'items:add',
-        { item: newItem, index: actualIndex },
+        { items: newItemsToAdd, index: actualIndex },
         currentUserId
       );
     }
@@ -1158,7 +1165,7 @@ export const useSimplifiedRundownState = () => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { items: newItems, insertIndex: actualIndex });
+      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
