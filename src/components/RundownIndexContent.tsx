@@ -6,6 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
+import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -86,6 +87,21 @@ const RundownIndexContent = () => {
 
   // Get team data for column deletion
   const { team } = useTeam();
+
+  // Add cell edit integration for operation system
+  const { handleCellChange } = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: true,
+    onSaveComplete: () => {
+      console.log('✅ Operation system save completed');
+    },
+    onSaveStart: () => {
+      console.log('🚀 Operation system save started');
+    },
+    onUnsavedChanges: () => {
+      console.log('⚠️ Operation system unsaved changes detected');
+    }
+  });
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({
@@ -555,9 +571,14 @@ const RundownIndexContent = () => {
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => selectColor(id, color)}
+        onColorSelect={(id, color) => handleCellChange(id, 'color', color)}
         onDeleteRow={deleteRow}
-        onToggleFloat={toggleFloatRow}
+        onToggleFloat={(id) => {
+          const item = items.find(i => i.id === id);
+          if (item) {
+            handleCellChange(id, 'isFloating', !item.isFloating);
+          }
+        }}
         onRowSelect={handleRowSelection} // Use the proper grid row selection handler
         onDragStart={handleDragStartWrapper}
         onDragOver={handleDragOverWrapper}
