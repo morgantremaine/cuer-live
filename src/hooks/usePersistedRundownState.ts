@@ -20,8 +20,8 @@ const cleanupCache = () => {
   }
 };
 
-export const usePersistedRundownState = () => {
-  const rundownState = useSimplifiedRundownState({ rundownId: null });
+export const usePersistedRundownState = (passedRundownId?: string) => {
+  const rundownState = useSimplifiedRundownState({ rundownId: passedRundownId || null });
   const { rundownId } = rundownState;
   const cacheKey = getCacheKey(rundownId);
   const isRestoringRef = useRef(false);
@@ -54,7 +54,7 @@ export const usePersistedRundownState = () => {
 
   // Cache state periodically and on state changes
   useEffect(() => {
-    if (isRestoringRef.current || !rundownId) return;
+    if (isRestoringRef.current || !passedRundownId) return;
 
     const stateToCache = {
       selectedRowId: rundownState.selectedRowId,
@@ -67,7 +67,7 @@ export const usePersistedRundownState = () => {
   }, [
     rundownState.selectedRowId,
     cacheKey,
-    rundownId
+    passedRundownId
   ]);
 
   // Enhanced state with cache awareness

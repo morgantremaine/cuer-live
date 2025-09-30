@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import '@/utils/timingValidationTest';
 
 
-const RundownIndexContent = () => {
+const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string }) => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
@@ -26,7 +26,7 @@ const RundownIndexContent = () => {
     interactions,
     uiState,
     dragAndDrop
-  } = useRundownStateCoordination();
+  } = useRundownStateCoordination(paramRundownId);
   
   // Extract all needed values from the unified state
   const {

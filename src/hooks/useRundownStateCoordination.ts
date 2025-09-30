@@ -13,7 +13,7 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
-export const useRundownStateCoordination = () => {
+export const useRundownStateCoordination = (rundownId?: string) => {
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
@@ -24,7 +24,7 @@ export const useRundownStateCoordination = () => {
   const interactionsRef = useRef<any>(null);
 
   // Single source of truth for all rundown state (with persistence)
-  const persistedState = usePersistedRundownState();
+  const persistedState = usePersistedRundownState(rundownId);
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
