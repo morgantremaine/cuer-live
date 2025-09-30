@@ -77,11 +77,24 @@ serve(async (req) => {
       );
     }
 
-    let updatedItems = [...(currentRundown.items || [])];
+    // For per-cell mode, use the complete items array if provided (client is source of truth)
+    let updatedItems: any[];
     let actionDescription = '';
+    
+    if (isPerCellEnabled && operation.operationData.items) {
+      console.log('🔄 Per-cell mode: Using complete items array from client', {
+        itemCount: operation.operationData.items.length
+      });
+      updatedItems = [...operation.operationData.items];
+      actionDescription = `${operation.operationType} completed`;
+    } else {
+      console.log('📊 Delta mode: Applying operation to database state');
+      updatedItems = [...(currentRundown.items || [])];
+    }
 
-    // Apply the structural operation
-    switch (operation.operationType) {
+    // Apply the structural operation (only needed for delta mode)
+    if (!isPerCellEnabled || !operation.operationData.items) {
+      switch (operation.operationType) {
       case 'add_row':
       case 'add_header':
         if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
@@ -126,12 +139,13 @@ serve(async (req) => {
         }
         break;
 
-      default:
-        console.warn('🚨 Unknown operation type:', operation.operationType);
-        return new Response(
-          JSON.stringify({ error: 'Unknown operation type' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        default:
+          console.warn('🚨 Unknown operation type:', operation.operationType);
+          return new Response(
+            JSON.stringify({ error: 'Unknown operation type' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+      }
     }
 
     // Check if per-cell save is enabled to bypass doc_version logic
