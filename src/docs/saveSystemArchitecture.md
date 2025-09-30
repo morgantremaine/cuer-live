@@ -220,36 +220,50 @@ User Action → UI State Update → Content State Change → Save Coordination �
 - **Field-level updates**: Only update affected components
 - **Lazy loading**: Load expensive operations on demand
 
-## Common Anti-Patterns to Avoid
+## Best Practices for Working with the Architecture
 
-### ❌ Bypassing Coordination
+### ✅ Using Coordination Layers Properly
 ```typescript
-// DON'T: Direct save calls bypass coordination
-await saveDirectly(data)
-
-// DO: Use coordination layer
+// CORRECT: Use appropriate coordination layer
+const { coordinatedSave } = useUnifiedSaveCoordination()
 await coordinatedSave('manual', saveFunction)
+
+// CORRECT: Route through specialized save mechanisms
+const { saveShowcallerState } = useTeleprompterSave()
+const { saveRundownContent } = useSimpleAutoSave()
 ```
 
-### ❌ Mixing State Concerns
+### ✅ Respecting State Separation
 ```typescript
-// DON'T: Mix UI and content state
-const [items, setItems] = useState() // Content
-const [selectedRow, setSelectedRow] = useState() // UI - should be separate
-
-// DO: Separate state concerns
-const { items } = useRundownContent()
-const { selectedRow } = useRundownUI()
+// CORRECT: Use specialized state hooks for their intended purposes
+const { items } = usePersistedRundownState() // Core content data
+const { isModified } = useChangeTracking() // Content change detection
+const { canUndo } = useRundownUndo() // History management
+const { showcallerState } = useShowcallerStateCoordination() // Playback state
 ```
 
-### ❌ Creating New Layers
+### ✅ Extending Existing Architecture
 ```typescript
-// DON'T: Add new coordination layers
-const myCustomSaveCoordination = () => { /* ... */ }
-
-// DO: Extend existing layers
-const extendedSaveCoordination = useUnifiedSaveCoordination()
+// CORRECT: Enhance existing coordination without bypassing
+const useEnhancedSaveCoordination = () => {
+  const base = useUnifiedSaveCoordination()
+  
+  return {
+    ...base,
+    saveWithValidation: async (type, saveFunction) => {
+      if (await validateOperation()) {
+        return base.coordinatedSave(type, saveFunction)
+      }
+    }
+  }
+}
 ```
+
+### ✅ Maintaining Architecture Integrity
+- **Preserve Layer Boundaries**: Use coordination mechanisms rather than direct calls
+- **Respect Specialization**: Choose the right save mechanism for your operation type
+- **Maintain Separation**: Keep content, UI, playback, and persistence concerns separate
+- **Test Collaboration**: Verify changes work properly in multi-user scenarios
 
 ## Conclusion
 
