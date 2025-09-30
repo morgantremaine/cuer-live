@@ -316,6 +316,19 @@ export const useSimpleAutoSave = (
     return false;
   }, [typingIdleMs]);
 
+  // Create callback functions for per-cell save coordination
+  const handlePerCellSaveStart = useCallback(() => {
+    setIsSaving(true);
+  }, []);
+
+  const handlePerCellSaveComplete = useCallback(() => {
+    setIsSaving(false);
+  }, []);
+
+  const handlePerCellUnsavedChanges = useCallback(() => {
+    hasUnsavedChangesRef.current = true;
+  }, []);
+
   // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
   const {
     trackFieldChange,
@@ -328,6 +341,9 @@ export const useSimpleAutoSave = (
     rundownId,
     isPerCellEnabled,
     currentUserId,
+    onSaveStart: handlePerCellSaveStart,
+    onSaveComplete: handlePerCellSaveComplete,
+    onUnsavedChanges: handlePerCellUnsavedChanges,
     isTypingActive,
     saveInProgressRef,
     typingIdleMs
@@ -347,11 +363,9 @@ export const useSimpleAutoSave = (
     userTypingRef.current = true; // Set user typing flag
     microResaveAttemptsRef.current = 0; // Reset circuit breaker on new typing
     
-    // CRITICAL: Only set hasUnsavedChanges when per-cell save is NOT enabled
-    // Per-cell save manages its own unsaved state through completion callbacks
-    if (!isPerCellEnabled) {
-      hasUnsavedChangesRef.current = true;
-    }
+    // Set hasUnsavedChanges regardless of save mode
+    // Per-cell save will also trigger this via onUnsavedChanges callback
+    hasUnsavedChangesRef.current = true;
     
     // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
     if (initialLoadCooldownRef.current > now) {
@@ -1074,6 +1088,7 @@ export const useSimpleAutoSave = (
     trackFieldChange,
     handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
+    hasUnsavedChanges: hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges, // Combine both sources
     setUndoActive,
     markActiveTyping,
     isTypingActive,
