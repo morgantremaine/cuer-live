@@ -36,12 +36,17 @@ export const useCellEditIntegration = ({
     enabled: true // Always enabled
   });
 
-  console.log('🚀 OPERATION SYSTEM ACTIVE:', {
-    rundownId,
-    userId: user?.id,
-    isOperationMode: operationSystem.isOperationMode,
-    operationSystemEnabled: true
-  });
+  // Only log when operation mode changes, not on every render
+  const prevOperationMode = useRef(operationSystem.isOperationMode);
+  if (prevOperationMode.current !== operationSystem.isOperationMode) {
+    console.log('🚀 OPERATION SYSTEM ACTIVE:', {
+      rundownId,
+      userId: user?.id,
+      isOperationMode: operationSystem.isOperationMode,
+      operationSystemEnabled: true
+    });
+    prevOperationMode.current = operationSystem.isOperationMode;
+  }
 
   // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({

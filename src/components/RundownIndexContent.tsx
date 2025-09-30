@@ -103,13 +103,21 @@ const RundownIndexContent = () => {
     }
   });
 
-  console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
-    rundownId,
-    hasHandleCellChange: !!handleCellChange,
-    itemsCount: items?.length || 0,
-    visibleColumnsCount: visibleColumns?.length || 0,
-    timestamp: new Date().toISOString()
-  });
+  // Only log significant changes, not every render
+  const prevItemsCount = useRef(items?.length || 0);
+  const hasLoggedRender = useRef(false);
+  
+  if (!hasLoggedRender.current || Math.abs((items?.length || 0) - prevItemsCount.current) > 0) {
+    console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
+      rundownId,
+      hasHandleCellChange: !!handleCellChange,
+      itemsCount: items?.length || 0,
+      visibleColumnsCount: visibleColumns?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    prevItemsCount.current = items?.length || 0;
+    hasLoggedRender.current = true;
+  }
 
   // Set up user presence tracking for this rundown
   const { otherUsers, isConnected: presenceConnected } = useUserPresence({

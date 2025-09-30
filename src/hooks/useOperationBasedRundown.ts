@@ -38,12 +38,17 @@ export const useOperationBasedRundown = ({
     isOperationMode: enabled // Set to enabled state immediately
   });
 
-  console.log('🚀 OPERATION-BASED RUNDOWN INITIALIZED:', {
-    rundownId,
-    userId,
-    enabled,
-    isOperationMode: enabled
-  });
+  // Only log once when the hook is first created
+  const hasLoggedInit = useRef(false);
+  if (!hasLoggedInit.current && enabled) {
+    console.log('🚀 OPERATION-BASED RUNDOWN INITIALIZED:', {
+      rundownId,
+      userId,
+      enabled,
+      isOperationMode: enabled
+    });
+    hasLoggedInit.current = true;
+  }
 
   const clientId = useRef(`client_${userId}_${Date.now()}`).current;
   const baseStateRef = useRef<any>(null);
@@ -111,9 +116,16 @@ export const useOperationBasedRundown = ({
     });
   }, []);
 
-  // Load initial rundown state
+  // Track if we've already loaded to prevent re-initialization
+  const hasLoadedRef = useRef(false);
+  const currentRundownIdRef = useRef<string | null>(null);
+
+  // Load initial rundown state - stable implementation
   const loadInitialState = useCallback(async () => {
     if (!rundownId || !enabled) return;
+    
+    // Prevent re-loading the same rundown
+    if (hasLoadedRef.current && currentRundownIdRef.current === rundownId) return;
 
     try {
       console.log('📥 LOADING INITIAL RUNDOWN STATE:', rundownId);
@@ -155,8 +167,28 @@ export const useOperationBasedRundown = ({
         isOperationMode: true
       }));
 
-      // Load any pending operations since last update
-      await loadPendingOperations();
+      // Mark as loaded and track current rundown
+      hasLoadedRef.current = true;
+      currentRundownIdRef.current = rundownId;
+
+      // Load any pending operations since last update (call directly to avoid dependency issues)
+      try {
+        const { data, error } = await supabase.functions.invoke('get-operations', {
+          body: {
+            rundownId,
+            sinceSequence: '0'
+          }
+        });
+
+        if (data?.success && data.operations) {
+          console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
+          data.operations.forEach((operation: any) => {
+            applyOperationToState(operation);
+          });
+        }
+      } catch (opError) {
+        console.error('❌ FAILED TO LOAD PENDING OPERATIONS:', opError);
+      }
 
     } catch (error) {
       console.error('❌ FAILED TO LOAD INITIAL STATE:', error);
@@ -166,7 +198,7 @@ export const useOperationBasedRundown = ({
         isOperationMode: false 
       }));
     }
-  }, [rundownId, enabled]);
+  }, [rundownId, enabled, applyOperationToState]);
 
   // Load pending operations
   const loadPendingOperations = useCallback(async () => {
@@ -198,10 +230,14 @@ export const useOperationBasedRundown = ({
     }
   }, [rundownId, state.lastSequence, state.isOperationMode, applyOperationToState]);
 
-  // Initialize on mount and when enabled changes
+  // Initialize only when rundownId or enabled changes, not on every render
   useEffect(() => {
+    // Reset loading state when rundown changes
+    if (currentRundownIdRef.current !== rundownId) {
+      hasLoadedRef.current = false;
+    }
     loadInitialState();
-  }, [loadInitialState]);
+  }, [rundownId, enabled]); // Use direct dependencies, not the callback
 
   // Operation handlers for UI components
   const handleCellEdit = useCallback((itemId: string, field: string, newValue: any) => {

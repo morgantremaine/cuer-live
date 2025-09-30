@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Operation } from './useOperationQueue';
 
@@ -20,8 +20,20 @@ export const useOperationBroadcast = ({
   onRemoteOperation,
   onOperationApplied
 }: UseOperationBroadcastOptions) => {
+  // Use refs to avoid recreating the callback on every render
+  const onRemoteOperationRef = useRef(onRemoteOperation);
+  const onOperationAppliedRef = useRef(onOperationApplied);
+  
+  // Update refs when callbacks change
+  useEffect(() => {
+    onRemoteOperationRef.current = onRemoteOperation;
+  }, [onRemoteOperation]);
+  
+  useEffect(() => {
+    onOperationAppliedRef.current = onOperationApplied;
+  }, [onOperationApplied]);
 
-  // Handle incoming operation broadcasts
+  // Handle incoming operation broadcasts - memoized with stable dependencies
   const handleOperationBroadcast = useCallback((payload: any) => {
     console.log('📡 RECEIVED BROADCAST:', payload);
 
@@ -41,17 +53,16 @@ export const useOperationBroadcast = ({
         sequence: operation.sequenceNumber
       });
 
-      // Notify about remote operation
-      if (onRemoteOperation) {
-        onRemoteOperation(operation);
+      // Use refs to avoid dependency issues
+      if (onRemoteOperationRef.current) {
+        onRemoteOperationRef.current(operation);
       }
 
-      // Notify about operation applied
-      if (onOperationApplied) {
-        onOperationApplied(operation);
+      if (onOperationAppliedRef.current) {
+        onOperationAppliedRef.current(operation);
       }
     }
-  }, [rundownId, clientId, onRemoteOperation, onOperationApplied]);
+  }, [rundownId, clientId]); // Removed callback dependencies
 
   // Set up realtime subscription
   useEffect(() => {
