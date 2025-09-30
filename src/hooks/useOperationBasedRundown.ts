@@ -35,7 +35,14 @@ export const useOperationBasedRundown = ({
     external_notes: {},
     lastSequence: 0,
     isLoading: true,
-    isOperationMode: false
+    isOperationMode: enabled // Set to enabled state immediately
+  });
+
+  console.log('🚀 OPERATION-BASED RUNDOWN INITIALIZED:', {
+    rundownId,
+    userId,
+    enabled,
+    isOperationMode: enabled
   });
 
   const clientId = useRef(`client_${userId}_${Date.now()}`).current;

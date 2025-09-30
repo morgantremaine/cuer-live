@@ -1,5 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { useOperationBasedRundown } from './useOperationBasedRundown';
+import { useRundownOperationMode } from './useRundownOperationMode';
+import { useAuth } from './useAuth';
 import { debugLogger } from '@/utils/debugLogger';
 
 interface CellEditIntegrationProps {
@@ -24,6 +27,30 @@ export const useCellEditIntegration = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
+  
+  const { user } = useAuth();
+  
+  // Check if operation mode is enabled
+  const { isOperationMode } = useRundownOperationMode({
+    rundownId: rundownId || '',
+    onModeChanged: (enabled) => {
+      console.log('🚀 OPERATION MODE CHANGED:', enabled);
+    }
+  });
+  
+  // Initialize operation-based system
+  const operationSystem = useOperationBasedRundown({
+    rundownId: rundownId || '',
+    userId: user?.id || '',
+    enabled: isOperationMode && isPerCellEnabled
+  });
+
+  console.log('🔄 CELL EDIT INTEGRATION MODE:', {
+    isOperationMode,
+    operationSystemEnabled: operationSystem.isOperationMode,
+    isPerCellEnabled,
+    rundownId
+  });
 
   // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
@@ -64,8 +91,23 @@ export const useCellEditIntegration = ({
       fieldName,
       newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue,
       isPerCellEnabled,
+      isOperationMode,
+      operationSystemEnabled: operationSystem.isOperationMode,
       rundownId
     });
+    
+    // Route through operation system if enabled
+    if (isOperationMode && operationSystem.isOperationMode && itemId) {
+      console.log('🚀 ROUTING THROUGH OPERATION SYSTEM:', {
+        itemId,
+        fieldName,
+        newValue
+      });
+      
+      operationSystem.handleCellEdit(itemId, fieldName, newValue);
+      debugLogger.autosave(`Operation cell edit: ${fieldName} for item ${itemId}`);
+      return;
+    }
     
     if (!isPerCellEnabled) {
       // Fallback to normal change tracking for non-per-cell rundowns
@@ -86,7 +128,7 @@ export const useCellEditIntegration = ({
     }
 
     // The save will be handled automatically by the per-cell system's debouncing
-  }, [isPerCellEnabled, trackFieldChange]);
+  }, [isPerCellEnabled, isOperationMode, operationSystem, trackFieldChange]);
 
   // Handle when user starts editing a cell (for LocalShadow integration)
   const handleCellEditStart = useCallback((

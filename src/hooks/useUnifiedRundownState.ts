@@ -38,6 +38,14 @@ export const useUnifiedRundownState = ({
     enabled: isOperationMode && enableOperationMode
   });
 
+  console.log('🔄 UNIFIED STATE DEBUG:', {
+    isOperationMode,
+    enableOperationMode,
+    operationStateEnabled: operationState.isOperationMode,
+    activeMode,
+    userId: user?.id
+  });
+
   // Legacy rundown state - use a mock for now since the hook signature isn't compatible
   const legacyState = useMemo(() => ({
     state: {
