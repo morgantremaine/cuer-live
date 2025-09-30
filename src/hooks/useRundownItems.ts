@@ -26,6 +26,7 @@ export const useRundownItems = (
   }, [markAsChanged]);
 
   const addRow = useCallback((calculateEndTime: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
+    console.log('🔵 addRow called with count:', count);
     setItems(prevItems => {
       let insertIndex = prevItems.length; // Default to end
 
@@ -49,6 +50,7 @@ export const useRundownItems = (
 
       // Create multiple new items
       const newItemsToAdd: RundownItem[] = [];
+      console.log('🔵 Creating', count, 'new items');
       for (let i = 0; i < count; i++) {
         newItemsToAdd.push({
           id: uuidv4(),
@@ -70,12 +72,15 @@ export const useRundownItems = (
           customFields: {}
         });
       }
+      console.log('🔵 Created newItemsToAdd array with length:', newItemsToAdd.length);
 
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, ...newItemsToAdd);
+      console.log('🔵 Final newItems array length:', newItems.length, 'previous length:', prevItems.length);
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
+        console.log('🔵 Calling handleStructuralOperation with', newItemsToAdd.length, 'new items');
         handleStructuralOperation('add_row', {
           items: newItems, // Pass complete items array for database save
           newItems: newItemsToAdd,

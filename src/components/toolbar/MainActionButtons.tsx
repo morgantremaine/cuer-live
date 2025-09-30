@@ -85,8 +85,12 @@ const MainActionButtons = ({
 
   const handleAddRows = () => {
     const count = parseInt(rowCount, 10);
+    console.log('🟢 handleAddRows called with rowCount:', rowCount, 'parsed count:', count);
     if (count > 0 && count <= 50) {
+      console.log('🟢 Calling onAddRow with count:', count);
       onAddRow(null, count);
+    } else {
+      console.log('🔴 Invalid count:', count);
     }
   };
 

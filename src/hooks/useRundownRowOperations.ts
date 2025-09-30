@@ -27,6 +27,7 @@ export const useRundownRowOperations = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handleAddRow = useCallback((selectedRowId?: string | null, count?: number) => {
+    console.log('🟡 handleAddRow called with count:', count);
     // Pass both single selection and multi-selection information
     addRow(calculateEndTime, selectedRowId, selectedRows.size > 0 ? selectedRows : undefined, count);
   }, [addRow, calculateEndTime, selectedRows]);
