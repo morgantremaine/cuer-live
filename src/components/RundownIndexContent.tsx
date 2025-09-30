@@ -6,7 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
+// Cell edit integration removed - using simplified approach
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -88,20 +88,11 @@ const RundownIndexContent = () => {
   // Get team data for column deletion
   const { team } = useTeam();
 
-  // Add cell edit integration for operation system
-  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
-    rundownId,
-    isPerCellEnabled: true,
-    onSaveComplete: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save completed');
-    },
-    onSaveStart: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save started');
-    },
-    onUnsavedChanges: () => {
-      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
-    }
-  });
+  // SIMPLIFIED: Use core state handlers directly
+  const handleCellChange = (itemId: string, field: string, value: any) => {
+    console.log('🎯 CELL EDIT: Simplified cell change', { itemId, field, value });
+    updateItem(itemId, { [field]: value });
+  };
 
   // Only log significant changes, not every render
   const prevItemsCount = useRef(items?.length || 0);
