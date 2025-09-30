@@ -5,6 +5,9 @@ interface RaceConditionEvent {
   timestamp: number;
   source: string;
   signature?: string;
+  affectedItemIds?: string[];  // Track which items are affected
+  affectedFields?: string[];   // Track which fields are affected
+  operationType?: 'cell' | 'row' | 'structural' | 'showcaller';
 }
 
 interface RaceConditionAnalysis {
@@ -22,17 +25,23 @@ export const useRaceConditionDetector = () => {
   const recentOperationsRef = useRef<RaceConditionEvent[]>([]);
   const activeOperationsRef = useRef<Set<string>>(new Set());
 
-  // Record an operation start
+  // Record an operation start with enhanced metadata
   const recordOperationStart = useCallback((
     operation: string,
     source: string,
-    signature?: string
+    signature?: string,
+    metadata?: {
+      affectedItemIds?: string[];
+      affectedFields?: string[];
+      operationType?: 'cell' | 'row' | 'structural' | 'showcaller';
+    }
   ) => {
     const event: RaceConditionEvent = {
       operation,
       timestamp: Date.now(),
       source,
-      signature
+      signature,
+      ...metadata
     };
 
     recentOperationsRef.current.push(event);
@@ -64,11 +73,16 @@ export const useRaceConditionDetector = () => {
     });
   }, []);
 
-  // Analyze for potential race conditions
+  // Analyze for potential race conditions with enhanced dependency analysis
   const analyzeRaceCondition = useCallback((
     proposedOperation: string,
     proposedSource: string,
-    proposedSignature?: string
+    proposedSignature?: string,
+    proposedMetadata?: {
+      affectedItemIds?: string[];
+      affectedFields?: string[];
+      operationType?: 'cell' | 'row' | 'structural' | 'showcaller';
+    }
   ): RaceConditionAnalysis => {
     const now = Date.now();
     const recentWindow = 2000; // 2 second window for race detection
@@ -78,11 +92,40 @@ export const useRaceConditionDetector = () => {
       op => now - op.timestamp < recentWindow
     );
 
-    // Check for conflicting operations
+    // Check for conflicting operations with dependency analysis
     const conflictingOps = recentOps.filter(op => {
       // Same operation type from different sources
       if (op.operation === proposedOperation && op.source !== proposedSource) {
         return true;
+      }
+      
+      // Cell-level vs structural operation conflicts
+      if (proposedMetadata?.operationType === 'cell' && op.operationType === 'structural') {
+        // Check if structural operation affects the same items
+        const proposedItems = proposedMetadata.affectedItemIds || [];
+        const opItems = op.affectedItemIds || [];
+        const hasOverlap = proposedItems.some(id => opItems.includes(id));
+        if (hasOverlap) {
+          console.log('⚠️ Race detector: Cell edit conflicts with structural operation', {
+            cellItems: proposedItems,
+            structuralItems: opItems
+          });
+          return true;
+        }
+      }
+      
+      // Structural vs cell operation conflicts
+      if (proposedMetadata?.operationType === 'structural' && op.operationType === 'cell') {
+        const proposedItems = proposedMetadata.affectedItemIds || [];
+        const opItems = op.affectedItemIds || [];
+        const hasOverlap = proposedItems.some(id => opItems.includes(id));
+        if (hasOverlap) {
+          console.log('⚠️ Race detector: Structural operation conflicts with active cell edit', {
+            structuralItems: proposedItems,
+            cellItems: opItems
+          });
+          return true;
+        }
       }
       
       // Different operations that could conflict

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useRef, ReactNode, useCallback } from
 
 interface PendingOperation {
   id: string;
-  type: 'cell' | 'structural' | 'showcaller';
+  type: 'cell' | 'structural' | 'showcaller' | 'row';
   priority: number;
   execute: () => Promise<void>;
   timestamp: number;
