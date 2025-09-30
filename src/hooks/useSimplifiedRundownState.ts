@@ -506,10 +506,14 @@ export const useSimplifiedRundownState = () => {
             case 'structural:copy_rows': {
               // Handle structural copy rows operations (paste)
               const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0) {
-                console.log('📡 Received structural copy_rows broadcast:', { newItemsCount: operationData.newItems.length });
-                // For copy operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural copy_rows broadcast received - consolidated realtime will handle refresh');
+              if (operationData?.newItems?.length > 0 && operationData?.items) {
+                console.log('📡 Received structural copy_rows broadcast - applying immediately:', { 
+                  newItemsCount: operationData.newItems.length,
+                  totalItemsCount: operationData.items.length 
+                });
+                
+                // Apply the complete state from the broadcast immediately
+                actionsRef.current.loadState({ items: operationData.items });
               }
               break;
             }
