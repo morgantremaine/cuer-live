@@ -47,7 +47,12 @@ serve(async (req) => {
       rundownId: operation.rundownId,
       operationType: operation.operationType,
       userId: operation.userId,
-      timestamp: operation.timestamp
+      timestamp: operation.timestamp,
+      hasClientItems: !!operation.operationData.items,
+      clientItemCount: operation.operationData.items?.length,
+      hasNewItems: !!operation.operationData.newItems,
+      hasDeletedIds: !!operation.operationData.deletedIds,
+      hasOrder: !!operation.operationData.order
     });
 
     // Start coordination - acquire advisory lock for rundown
@@ -77,66 +82,140 @@ serve(async (req) => {
       );
     }
 
-    let updatedItems = [...(currentRundown.items || [])];
-    let actionDescription = '';
-
-    // Apply the structural operation
-    switch (operation.operationType) {
-      case 'add_row':
-      case 'add_header':
-        if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
-          const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
-          updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
-          actionDescription = `Added ${operation.operationData.newItems.length} item(s)`;
-          console.log(`🏗️ Added ${operation.operationData.newItems.length} items at index ${insertIndex}`);
-        }
-        break;
-
-      case 'delete_row':
-        if (operation.operationData.deletedIds) {
-          const beforeCount = updatedItems.length;
-          updatedItems = updatedItems.filter(item => !operation.operationData.deletedIds!.includes(item.id));
-          const deletedCount = beforeCount - updatedItems.length;
-          actionDescription = `Deleted ${deletedCount} item(s)`;
-          console.log(`🏗️ Deleted ${deletedCount} items`);
-        }
-        break;
-
-      case 'reorder':
-      case 'move_rows':
-        if (operation.operationData.order) {
-          // Reorder items based on the provided order
-          const orderMap = new Map(operation.operationData.order.map((id, index) => [id, index]));
-          updatedItems.sort((a, b) => {
-            const aIndex = orderMap.get(a.id) ?? 999999;
-            const bIndex = orderMap.get(b.id) ?? 999999;
-            return aIndex - bIndex;
-          });
-          actionDescription = 'Reordered items';
-          console.log('🏗️ Reordered items based on provided order');
-        }
-        break;
-
-      case 'copy_rows':
-        if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
-          const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
-          updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
-          actionDescription = `Copied ${operation.operationData.newItems.length} item(s)`;
-          console.log(`🏗️ Copied ${operation.operationData.newItems.length} items at index ${insertIndex}`);
-        }
-        break;
-
-      default:
-        console.warn('🚨 Unknown operation type:', operation.operationType);
-        return new Response(
-          JSON.stringify({ error: 'Unknown operation type' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-    }
-
     // Check if per-cell save is enabled to bypass doc_version logic
     const isPerCellEnabled = currentRundown.per_cell_save_enabled === true;
-    
+    let updatedItems: any[];
+    let actionDescription = '';
+
+    // In per-cell mode, client is source of truth for full state
+    if (isPerCellEnabled && operation.operationData.items) {
+      console.log('🔄 Per-cell mode: Using client items array as source of truth', {
+        clientItemCount: operation.operationData.items.length,
+        databaseItemCount: currentRundown.items?.length || 0
+      });
+      updatedItems = [...operation.operationData.items];
+    } else {
+      // Delta mode: fetch from database and apply incremental changes
+      console.log('📊 Delta mode: Using database state and applying delta', {
+        databaseItemCount: currentRundown.items?.length || 0
+      });
+      updatedItems = [...(currentRundown.items || [])];
+    }
+
+    // Apply the structural operation
+    if (isPerCellEnabled && operation.operationData.items) {
+      // In per-cell mode with client items: already have the complete state
+      // Just need to set the action description for logging
+      switch (operation.operationType) {
+        case 'add_row':
+        case 'add_header':
+          actionDescription = `Added ${operation.operationData.newItems?.length || 0} item(s)`;
+          console.log(`🔄 Per-cell: Client provided complete state after adding items`);
+          break;
+
+        case 'delete_row':
+          actionDescription = `Deleted ${operation.operationData.deletedIds?.length || 0} item(s)`;
+          console.log(`🔄 Per-cell: Client provided complete state after deleting items`);
+          break;
+
+        case 'reorder':
+        case 'move_rows':
+          actionDescription = 'Reordered items';
+          console.log(`🔄 Per-cell: Client provided complete state after reordering`);
+          break;
+
+        case 'copy_rows':
+          actionDescription = `Copied ${operation.operationData.newItems?.length || 0} item(s)`;
+          console.log(`🔄 Per-cell: Client provided complete state after copying`);
+          break;
+
+        default:
+          console.warn('🚨 Unknown operation type:', operation.operationType);
+          return new Response(
+            JSON.stringify({ error: 'Unknown operation type' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+      }
+    } else {
+      // Delta mode: apply incremental changes to database state
+      switch (operation.operationType) {
+        case 'add_row':
+        case 'add_header':
+          if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
+            const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
+            updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
+            actionDescription = `Added ${operation.operationData.newItems.length} item(s)`;
+            console.log(`📊 Delta: Added ${operation.operationData.newItems.length} items at index ${insertIndex}`);
+          }
+          break;
+
+        case 'delete_row':
+          if (operation.operationData.deletedIds) {
+            const beforeCount = updatedItems.length;
+            updatedItems = updatedItems.filter(item => !operation.operationData.deletedIds!.includes(item.id));
+            const deletedCount = beforeCount - updatedItems.length;
+            actionDescription = `Deleted ${deletedCount} item(s)`;
+            console.log(`📊 Delta: Deleted ${deletedCount} items`);
+          }
+          break;
+
+        case 'reorder':
+        case 'move_rows':
+          if (operation.operationData.order) {
+            // Reorder items based on the provided order
+            const orderMap = new Map(operation.operationData.order.map((id, index) => [id, index]));
+            updatedItems.sort((a, b) => {
+              const aIndex = orderMap.get(a.id) ?? 999999;
+              const bIndex = orderMap.get(b.id) ?? 999999;
+              return aIndex - bIndex;
+            });
+            actionDescription = 'Reordered items';
+            console.log('📊 Delta: Reordered items based on provided order');
+          }
+          break;
+
+        case 'copy_rows':
+          if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
+            const insertIndex = Math.max(0, Math.min(operation.operationData.insertIndex, updatedItems.length));
+            updatedItems.splice(insertIndex, 0, ...operation.operationData.newItems);
+            actionDescription = `Copied ${operation.operationData.newItems.length} item(s)`;
+            console.log(`📊 Delta: Copied ${operation.operationData.newItems.length} items at index ${insertIndex}`);
+          }
+          break;
+
+        default:
+          console.warn('🚨 Unknown operation type:', operation.operationType);
+          return new Response(
+            JSON.stringify({ error: 'Unknown operation type' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+      }
+    }
+
+    // Safety validation: ensure we have items to save
+    if (!updatedItems || updatedItems.length === 0) {
+      console.error('❌ Safety check failed: No items to save', {
+        operation: operation.operationType,
+        hadClientItems: !!operation.operationData.items,
+        hadDatabaseItems: !!currentRundown.items
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'No items to save - potential data loss prevented',
+          details: 'The operation would result in an empty rundown'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log item count validation
+    console.log('✅ Item count validation:', {
+      finalItemCount: updatedItems.length,
+      originalDatabaseCount: currentRundown.items?.length || 0,
+      clientProvidedCount: operation.operationData.items?.length,
+      mode: isPerCellEnabled ? 'per-cell' : 'delta'
+    });
+
     // Update the rundown with the new items
     const updateData: any = {
       items: updatedItems,
@@ -190,7 +269,8 @@ serve(async (req) => {
       operationType: operation.operationType,
       itemCount: updatedItems.length,
       docVersion: updatedRundown.doc_version,
-      perCellMode: isPerCellEnabled
+      perCellMode: isPerCellEnabled,
+      usedClientState: isPerCellEnabled && !!operation.operationData.items
     });
 
     return new Response(

@@ -1365,12 +1365,14 @@ export const useSimplifiedRundownState = () => {
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
+      const newItems = state.items.filter(item => item.id !== id);
       actions.deleteItem(id);
       
       // For per-cell saves, use structural save coordination
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
-        markStructuralChange('delete_row', { deletedIds: [id] });
+        // Pass updated items array, not just deleted IDs
+        markStructuralChange('delete_row', { items: newItems, deletedIds: [id] });
       }
       
       // Broadcast row removal for immediate realtime sync
@@ -1389,11 +1391,8 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Add segment');
       helpers.addRow();
       
-      // For per-cell saves, use structural save coordination
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
-        markStructuralChange('add_row', { items: state.items });
-      }
+      // For per-cell saves, structural change will be triggered by helpers
+      // via the handleStructuralOperation prop passed to useRundownItems
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
       if (rundownId && currentUserId) {
@@ -1414,11 +1413,8 @@ export const useSimplifiedRundownState = () => {
       saveUndoState(state.items, [], state.title, 'Add header');
       helpers.addHeader();
       
-      // For per-cell saves, use structural save coordination
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
-        markStructuralChange('add_header', { items: state.items });
-      }
+      // For per-cell saves, structural change will be triggered by helpers
+      // via the handleStructuralOperation prop passed to useRundownItems
       
       if (rundownId && currentUserId) {
         const order = state.items.map(i => i.id);

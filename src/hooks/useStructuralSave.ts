@@ -53,6 +53,14 @@ export const useStructuralSave = (
       // For now, process operations sequentially to maintain order
       // TODO: Optimize with batch processing if needed
       for (const operation of operations) {
+        console.log('🏗️ STRUCTURAL SAVE: Sending to edge function', {
+          operation: operation.operationType,
+          sentItemsCount: operation.operationData.items?.length,
+          sentNewItemsCount: operation.operationData.newItems?.length,
+          sentDeletedIdsCount: operation.operationData.deletedIds?.length,
+          hasOrder: !!operation.operationData.order
+        });
+
         const { data, error } = await supabase.functions.invoke('structural-operation-save', {
           body: operation
         });
