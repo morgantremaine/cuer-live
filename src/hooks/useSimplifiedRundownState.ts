@@ -1021,19 +1021,7 @@ export const useSimplifiedRundownState = () => {
       // For per-cell saves, structural change will be triggered by helpers
       // via the handleStructuralOperation prop passed to useRundownItems
       
-      // Best-effort immediate hint: broadcast new order so other clients can reflect movement
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId
-          );
-        }, 0);
-      }
+      // Broadcasting handled by structural operations - no need for separate reorder broadcast
     }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback(() => {
@@ -1043,18 +1031,7 @@ export const useSimplifiedRundownState = () => {
       // For per-cell saves, structural change will be triggered by helpers
       // via the handleStructuralOperation prop passed to useRundownItems
       
-      if (rundownId && currentUserId) {
-        const order = state.items.map(i => i.id);
-        setTimeout(() => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId
-          );
-        }, 0);
-      }
+      // Broadcasting handled by structural operations - no need for separate reorder broadcast
     }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
