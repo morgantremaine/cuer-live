@@ -28,7 +28,7 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
     dragAndDrop
   } = useRundownStateCoordination(paramRundownId);
   
-  // Extract all needed values from the unified state
+  // Extract all needed values from the unified state - all from coreState
   const {
     currentTime,
     timezone,
@@ -71,16 +71,13 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
     toggleAutoScroll,
-    // Column management functions
     addColumn,
     updateColumnWidth,
     setColumns,
-    // Header collapse functions
     toggleHeaderCollapse,
     isHeaderCollapsed,
     getHeaderGroupItemIds,
     visibleItems,
-    // Move functions for mobile
     moveItemUp,
     moveItemDown
   } = coreState;
