@@ -4,7 +4,6 @@ import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { useOperationCoordinator } from './useOperationCoordinator';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -32,9 +31,6 @@ export const useStructuralSave = (
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  
-  // Operation coordinator for broadcasting intent
-  const operationCoordinator = useOperationCoordinator();
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -154,28 +150,11 @@ export const useStructuralSave = (
         timestamp: new Date().toISOString()
       };
 
-      // Broadcast structural operation intent
-      const affectedItemIds = [
-        ...(operationData.items?.map(item => item.id) || []),
-        ...(operationData.newItems?.map(item => item.id) || []),
-        ...(operationData.deletedIds || [])
-      ];
-      
-      operationCoordinator.broadcastIntent(
-        `structural-${Date.now()}`,
-        operationType,
-        {
-          affectedItemIds,
-          operationType: 'structural'
-        }
-      );
-
       console.log('🏗️ STRUCTURAL SAVE: Queuing operation', {
         type: operationType,
         rundownId,
         userId,
         sequenceNumber,
-        affectedItemIds,
         dataKeys: Object.keys(operationData)
       });
 

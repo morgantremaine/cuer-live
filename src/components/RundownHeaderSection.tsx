@@ -2,7 +2,6 @@
 import React from 'react';
 import RundownHeader from './RundownHeader';
 import RundownToolbar from './RundownToolbar';
-import { OperationCoordinationIndicator } from './coordination/OperationCoordinationIndicator';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownHeaderSectionProps {
@@ -198,11 +197,6 @@ const RundownHeaderSection = ({
         canZoomOut={canZoomOut}
         isDefaultZoom={isDefaultZoom}
       />
-      
-      {/* Operation Coordination Indicator */}
-      <div className="px-4 py-2">
-        <OperationCoordinationIndicator />
-      </div>
     </div>
   );
 };

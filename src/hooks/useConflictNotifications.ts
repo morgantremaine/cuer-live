@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface ConflictNotification {
-  type: 'local-preserved' | 'remote-accepted' | 'merged' | 'queued';
+  type: 'local-preserved' | 'remote-accepted' | 'merged';
   field: string;
   details?: string;
 }
@@ -37,13 +37,6 @@ export const useConflictNotifications = () => {
           duration: 3000
         });
         break;
-
-      case 'queued':
-        toast('Edit queued', {
-          description: `Your edit to "${field}" is queued while another operation completes.`,
-          duration: 2000
-        });
-        break;
     }
   }, []);
 
@@ -61,17 +54,9 @@ export const useConflictNotifications = () => {
     });
   }, []);
 
-  const notifyOperationCoordinated = useCallback((operationType: string) => {
-    toast('Coordinating changes', {
-      description: `${operationType} in progress. Other operations will be queued.`,
-      duration: 2000
-    });
-  }, []);
-
   return {
     notifyConflictResolved,
     notifyMultipleConflicts,
-    notifyRowMoved,
-    notifyOperationCoordinated
+    notifyRowMoved
   };
 };

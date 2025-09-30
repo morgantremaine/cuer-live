@@ -61,13 +61,7 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
   const queueOperation = useCallback((operation: () => Promise<void>) => {
     console.log('⏸️ Conflict: Queueing operation during structural change');
     queuedOperationsRef.current.push(operation);
-    
-    // Notify user that operation is queued
-    notifications.notifyConflictResolved({
-      type: 'queued',
-      field: 'operation'
-    });
-  }, [notifications]);
+  }, []);
 
   // Process queued operations after structural changes complete
   const processQueuedOperations = useCallback(async () => {
