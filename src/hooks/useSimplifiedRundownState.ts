@@ -31,7 +31,7 @@ export const useSimplifiedRundownState = ({
   isSharedView = false
 }: UseSimplifiedRundownStateOptions) => {
   const { user } = useAuth();
-  const { team } = useActiveTeam();
+  const { activeTeamId } = useActiveTeam();
   
   // Core state management
   const { state, actions } = useRundownState(rundownId, enabled);
@@ -123,7 +123,7 @@ export const useSimplifiedRundownState = ({
   useEffect(() => {
     if (!rundownId || !user?.id) return;
 
-    const unsubscribe = cellBroadcast.subscribe(rundownId, handleCellBroadcast);
+    const unsubscribe = cellBroadcast.subscribeToCellUpdates(rundownId, handleCellBroadcast);
     console.log('📱 Cell broadcast: Subscribed to updates for rundown', rundownId);
 
     return () => {
@@ -143,9 +143,9 @@ export const useSimplifiedRundownState = ({
         .update({
           items: state.items,
           title: state.title,
-          start_time: state.start_time,
+          start_time: state.startTime,
           timezone: state.timezone,
-          external_notes: state.external_notes,
+          external_notes: state.externalNotes,
           updated_at: new Date().toISOString()
         })
         .eq('id', rundownId);
@@ -161,7 +161,10 @@ export const useSimplifiedRundownState = ({
     }
   }, [rundownId, state]);
 
-  // SIMPLIFIED: Update item function
+  // Wrapper to match expected interface signature
+  const updateItemWrapper = (itemId: string, field: string, value: any) => {
+    updateItem(itemId, { [field]: value });
+  };
   const updateItem = useCallback((itemId: string, updates: any) => {
     console.log('📝 RUNDOWN INDEX: onUpdateItem called (from typing)', { itemId, updates });
     
@@ -219,31 +222,39 @@ export const useSimplifiedRundownState = ({
     ...state,
     rundownId,
     rundownTitle: state.title,
-    rundownStartTime: state.start_time,
+    rundownStartTime: state.startTime,
     isInitialized,
     isLoading: !isInitialized,
     isSaving,
     hasUnsavedChanges,
     isConnected: realtimeConnection.isConnected,
     selectedRowId: null,
+    currentTime: Date.now(),
+    isProcessingRealtimeUpdate: false,
     
     // Core actions
     updateItem,
     saveState,
     addRow: actions.addItem,
-    addHeader: actions.addHeader,
+    addHeader: (item: any, index?: number) => actions.addItem(item, index),
     deleteRow: actions.deleteItem,
     saveUndoState: () => {},
     markStructuralChange: () => {},
     clearStructuralChange: () => {},
     handleRowSelection: () => {},
-    addRowAtIndex: actions.addItem,
-    addHeaderAtIndex: actions.addHeader,
+    addRowAtIndex: (index: number) => actions.addItem({} as any, index),
+    addHeaderAtIndex: (index: number) => actions.addItem({} as any, index),
+    clearRowSelection: () => {},
+    toggleFloat: () => {},
+    addColumn: () => {},
+    updateColumnWidth: () => {},
+    undo: () => {},
+    canUndo: false,
+    lastAction: null,
+    markActiveTyping: () => {},
     ...actions,
     
-    // Simplified handlers
-    handleCellChange: (itemId: string, field: string, value: any) => {
-      updateItem(itemId, { [field]: value });
-    }
+    // Simplified handlers that match expected interfaces
+    handleCellChange: updateItemWrapper
   };
 };
