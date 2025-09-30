@@ -45,12 +45,11 @@ export const useCellUpdateCoordination = () => {
     }
   }, [setShowcallerOperation]);
 
-  // Simple blocking check
+  // Only block autosave for showcaller operations
+  // Structural operations coordinate with each other but don't block autosave
   const shouldBlockAutoSave = useCallback(() => {
-    return cellUpdateInProgressRef.current || 
-           showcallerOperationRef.current || 
-           structuralOperationRef.current;
-  }, [cellUpdateInProgressRef, showcallerOperationRef, structuralOperationRef]);
+    return showcallerOperationRef.current;
+  }, [showcallerOperationRef]);
 
   // Check if any operation is in progress
   const isAnyOperationInProgress = useCallback(() => {

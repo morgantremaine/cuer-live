@@ -67,7 +67,6 @@ export const useSimpleAutoSave = (
   const microResaveAttemptsRef = useRef(0); // guard against infinite micro-resave loops
   const lastMicroResaveSignatureRef = useRef<string>(''); // prevent duplicate micro-resaves
   const performSaveRef = useRef<any>(null); // late-bound to avoid order issues
-  const initialLoadCooldownRef = useRef<number>(0); // blocks saves right after initial load
   
   // Performance-optimized keystroke journal for reliable content tracking
   const keystrokeJournal = useKeystrokeJournal({
@@ -98,13 +97,7 @@ export const useSimpleAutoSave = (
     return signature;
   }, [state]);
 
-  // Set initial load cooldown to prevent false attribution
-  useEffect(() => {
-    if (isInitiallyLoaded) {
-      // Prevent saves for 3 seconds after initial load to avoid false attribution
-      initialLoadCooldownRef.current = Date.now() + 3000;
-    }
-  }, [isInitiallyLoaded]);
+  // Initial load cooldown removed - operations handle sync
 
   // Performance-optimized signature cache to avoid repeated JSON.stringify calls
   const signatureCache = useRef<Map<string, { signature: string; timestamp: number }>>(new Map());
@@ -295,26 +288,7 @@ export const useSimpleAutoSave = (
   // Get current user ID from state for structural operations
   const currentUserId = (state as any).currentUserId;
 
-  // Check if user is currently typing with improved logic and debugging
-  const isTypingActive = useCallback(() => {
-    const timeSinceEdit = Date.now() - lastEditAtRef.current;
-    const typingFlagActive = userTypingRef.current;
-    
-    // Check the explicit typing flag first
-    if (typingFlagActive) {
-      // If it's been too long since the last edit, clear the flag
-      if (timeSinceEdit > typingIdleMs + 500) {
-        userTypingRef.current = false;
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = undefined;
-        }
-        return false;
-      }
-      return true;
-    }
-    return false;
-  }, [typingIdleMs]);
+  // Typing tracking removed - per-cell save handles keystroke coordination
 
   // Create callback functions for per-cell save coordination
   const handlePerCellSaveStart = useCallback(() => {
@@ -359,7 +333,6 @@ export const useSimpleAutoSave = (
     onSaveComplete: handlePerCellSaveComplete,
     onUnsavedChanges: handlePerCellUnsavedChanges,
     onChangesSaved: handlePerCellChangesSaved,
-    isTypingActive,
     saveInProgressRef,
     typingIdleMs
   });
@@ -379,10 +352,7 @@ export const useSimpleAutoSave = (
     // Per-cell save will also trigger this via onUnsavedChanges callback
     hasUnsavedChangesRef.current = true;
     
-    // CRITICAL: Clear initial load cooldown on actual typing - user is making real edits
-    if (initialLoadCooldownRef.current > now) {
-      initialLoadCooldownRef.current = 0;
-    }
+    // Initial load cooldown removed - operations handle sync
     
     // CRITICAL: Clear blockUntilLocalEditRef on any typing - highest priority
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
@@ -519,19 +489,7 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // CRITICAL: Prevent saves during initial load period to avoid false attribution
-    if (initialLoadCooldownRef.current > Date.now()) {
-      debugLogger.autosave('Save blocked: initial load cooldown active');
-      console.log('🛑 AutoSave: blocked - initial load cooldown active');
-      return;
-    }
-
-    // IMMEDIATE TYPING CANCELLATION: Stop saving if user is typing
-    if (!isFlushSave && isTypingActive()) {
-      console.log('🛑 AutoSave: cancelled - user is actively typing');
-      // Don't reschedule here - let markActiveTyping handle it
-      return;
-    }
+    // Legacy protections removed - operations handle sync
 
     // CRITICAL: Use coordinated blocking to prevent cross-saving and showcaller conflicts
     if (shouldBlockAutoSave()) {
@@ -545,33 +503,7 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
-    // Only block saves if tab has been hidden/unfocused for extended periods (indicating sleep/inactivity)
-    // OR if no recent activity and wasn't initiated while active
-    const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
-    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
-    const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
-    
-    // Skip tab inactivity checks for shared views since users often view them in background tabs
-    if (!isSharedView) {
-      if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
-        debugLogger.autosave('Save blocked: tab inactive for extended period');
-        console.log('🛑 AutoSave: blocked - tab inactive for extended period');
-        return;
-      }
-      
-      if (hasRecentKeystrokes && isTabCurrentlyInactive) {
-        console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
-      }
-    }
-    
-    if (isFlushSave && isTabCurrentlyInactive) {
-      console.log('🧯 AutoSave: flush save proceeding despite tab inactive - preserving keystrokes');
-    }
-    
-    if (!isFlushSave && isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
-      console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
-    }
+    // Stale tab protection removed - tabs now maintain full connectivity
 
     // CRITICAL: Block if explicitly flagged to wait for local edit
     if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
@@ -593,21 +525,7 @@ export const useSimpleAutoSave = (
       return;
     }
     
-    // Use the single isTypingActive function as source of truth for typing state
-    // This prevents conflicting typing checks
-    const timeSinceLastEdit = Date.now() - lastEditAtRef.current;
-    const hasExceededMaxDelay = timeSinceLastEdit > maxSaveDelay;
-    
-    // Only check typing state if we haven't exceeded max delay
-    if (!hasExceededMaxDelay && isTypingActive()) {
-      debugLogger.autosave('Save deferred: user actively typing (secondary check)');
-      console.log('⌨️ AutoSave: user still typing (secondary check), waiting for idle period');
-      return; // Don't reschedule here - markActiveTyping handles it
-    }
-    
-    if (hasExceededMaxDelay && isTypingActive()) {
-      console.log('⚡ AutoSave: forcing save after max delay despite typing');
-    }
+    // Typing protection removed - per-cell save handles keystroke coordination
     
     // Final check before saving - cancel if save in progress
     if (saveInProgressRef.current || undoActiveRef.current) {
@@ -1083,7 +1001,6 @@ export const useSimpleAutoSave = (
     hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges), // Use reactive state for per-cell
     setUndoActive,
     markActiveTyping,
-    isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay
     // Expose journal functions for debugging
     getJournalStats: keystrokeJournal.getJournalStats,

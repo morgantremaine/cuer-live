@@ -87,18 +87,10 @@ export const useSimplifiedRundownState = () => {
 
 
 
-  // Simplified dropdown protection
-  const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
-  const DROPDOWN_PROTECTION_WINDOW_MS = 800; // Much shorter dropdown protection
+  // Dropdown protection removed - operations handle sync directly
 
   // Track latest items state for rapid structural operations
   const latestItemsRef = useRef<any[]>([]);
-
-  const markDropdownFieldChanged = useCallback((fieldKey: string) => {
-    const now = Date.now();
-    dropdownFieldProtectionRef.current.set(fieldKey, now);
-    // Simplified: no field tracking needed
-  }, []);
 
   // Initialize with default data (WITHOUT columns - they're now user-specific)
   const {
@@ -155,7 +147,7 @@ export const useSimplifiedRundownState = () => {
   }, [actions, state.title, state.startTime, state.timezone]);
 
   // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
-  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
+  const { isSaving, setUndoActive, markActiveTyping, triggerImmediateSave } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync

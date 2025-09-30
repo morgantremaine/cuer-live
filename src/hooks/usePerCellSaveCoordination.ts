@@ -13,7 +13,6 @@ interface PerCellSaveOptions {
   onSaveStart?: () => void; // Add callback for when saves start
   onUnsavedChanges?: () => void; // Add callback for unsaved changes
   onChangesSaved?: () => void; // Add callback for when changes are saved (queue cleared)
-  isTypingActive?: () => boolean; // Typing detection from main autosave
   saveInProgressRef?: React.MutableRefObject<boolean>; // Save state from main autosave
   typingIdleMs?: number; // Timing configuration from main autosave
 }
@@ -25,7 +24,6 @@ export const usePerCellSaveCoordination = ({
   onSaveStart,
   onUnsavedChanges,
   onChangesSaved,
-  isTypingActive,
   saveInProgressRef,
   typingIdleMs
 }: PerCellSaveOptions) => {
@@ -34,12 +32,12 @@ export const usePerCellSaveCoordination = ({
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
 
-  // Cell-level save system with typing awareness
+  // Cell-level save system without typing awareness (operations handle sync)
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, isTypingActive, saveInProgressRef, typingIdleMs);
+  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, undefined, saveInProgressRef, typingIdleMs);
 
   // Structural save system for row operations
   const {

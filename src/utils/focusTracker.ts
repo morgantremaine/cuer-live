@@ -144,23 +144,7 @@ class FocusTracker {
     this.listeners.forEach(callback => callback(fieldKey));
   }
   
-  // Manual field protection API for programmatic usage
-  public setFieldProtection(fieldKey: string, durationMs: number = 5000) {
-    debugLogger.focus('Manual field protection set:', fieldKey);
-    this.setActiveField(fieldKey);
-    
-    setTimeout(() => {
-      if (this.activeField === fieldKey) {
-        this.setActiveField(null);
-      }
-    }, durationMs);
-  }
-  
-  public clearFieldProtection(fieldKey?: string) {
-    if (!fieldKey || this.activeField === fieldKey) {
-      this.setActiveField(null);
-    }
-  }
+  // Manual field protection removed - operations handle sync directly
 
   // Typing buffer API
   public getLatestValue(fieldKey: string): { value: any; timestamp: number } | null {
