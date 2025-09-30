@@ -105,20 +105,11 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Content changes from OTHER users - trigger refresh to ensure sync
-      // Skip if this is the current user's own change
-      if (payload.new?.last_updated_by === user?.id) {
-        console.log('📱 Content change from self - skipping database refresh (using operations)');
-      } else {
-        console.log('📱 Content change from other user - triggering database refresh for reliable sync');
-        globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
-          try { 
-            callback(payload.new); 
-          } catch (error) { 
-            console.error('Error in content update callback:', error);
-          }
-        });
-      }
+      // Content changes are now handled by dedicated broadcast channels:
+      // - Cell edits via cell broadcasts
+      // - Structural changes via structural broadcasts
+      // No database refresh needed - broadcasts provide instant sync
+      console.log('📱 Content change detected - handled by broadcast channels');
     }
   }, [rundownId]);
 
