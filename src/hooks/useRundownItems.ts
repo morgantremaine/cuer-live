@@ -73,6 +73,7 @@ export const useRundownItems = (
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_row', {
+          items: newItems, // Pass complete items array for database save
           newItems: [newItem],
           insertIndex
         });
@@ -131,6 +132,7 @@ export const useRundownItems = (
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('add_header', {
+          items: newItems, // Pass complete items array for database save
           newItems: [newItem],
           insertIndex
         });
@@ -148,6 +150,7 @@ export const useRundownItems = (
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('delete_row', {
+          items: newItems, // Pass complete items array for database save
           deletedIds: [id]
         });
       }
@@ -164,6 +167,7 @@ export const useRundownItems = (
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         handleStructuralOperation('delete_row', {
+          items: newItems, // Pass complete items array for database save
           deletedIds: ids
         });
       }
