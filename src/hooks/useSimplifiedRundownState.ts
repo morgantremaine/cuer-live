@@ -1163,7 +1163,7 @@ export const useSimplifiedRundownState = () => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { items: state.items, insertIndex: actualIndex });
+      markStructuralChange('add_row', { items: newItems, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
@@ -1212,7 +1212,7 @@ export const useSimplifiedRundownState = () => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_header', { items: state.items, insertIndex: actualIndex });
+      markStructuralChange('add_header', { items: newItems, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
