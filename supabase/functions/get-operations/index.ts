@@ -31,9 +31,10 @@ serve(async (req) => {
       throw new Error('Authentication failed');
     }
 
-    const url = new URL(req.url);
-    const rundownId = url.searchParams.get('rundownId');
-    const sinceSequence = url.searchParams.get('sinceSequence') || '0';
+    // Parse request body
+    const body = await req.json();
+    const rundownId = body.rundownId;
+    const sinceSequence = body.sinceSequence || '0';
 
     if (!rundownId) {
       throw new Error('rundownId parameter required');
