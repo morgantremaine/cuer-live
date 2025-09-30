@@ -47,11 +47,10 @@ export const useSimplifiedRundownState = () => {
   // Connection state will come from realtime hook
   const [isConnected, setIsConnected] = useState(false);
 
-  // Enhanced conflict resolution system with validation
+  // Typing tracking for conflict detection
   const typingSessionRef = useRef<{ fieldKey: string; startTime: number } | null>(null);
   const recentCellUpdatesRef = useRef<Map<string, { timestamp: number; value: any; clientId?: string }>>(new Map());
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const recentlyEditedFieldsRef = useRef<Map<string, number>>(new Map());
   const activeFocusFieldRef = useRef<string | null>(null);
   
   // Track per-cell save enabled state to coordinate saving systems
@@ -214,46 +213,6 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // PHASE 2: Enhanced protection with deletion tracking and extended windows
-  const deletionInProgressRef = useRef<Map<string, number>>(new Map()); // fieldKey -> timestamp
-  const lastUserActionRef = useRef<number>(0);
-  const DELETION_PROTECTION_MS = 2000; // 2 seconds for deletions
-  const USER_ACTION_BLOCK_MS = 1000; // 1 second after any user action
-  
-  const getProtectedFields = useCallback(() => {
-    const protectedFields = new Set<string>();
-    const now = Date.now();
-    
-    // Add currently typing field if any
-    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
-      protectedFields.add(typingSessionRef.current.fieldKey);
-    }
-    
-    // PHASE 2: Protect fields with deletions in progress (extended window)
-    deletionInProgressRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp < DELETION_PROTECTION_MS) {
-        protectedFields.add(fieldKey);
-        console.log('🗑️ Protecting deleted field:', fieldKey, `(${now - timestamp}ms ago)`);
-      } else {
-        deletionInProgressRef.current.delete(fieldKey);
-      }
-    });
-    
-    // Clean up old recently edited fields
-    recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp > TYPING_DEBOUNCE_MS) {
-        recentlyEditedFieldsRef.current.delete(fieldKey);
-      }
-    });
-    
-    // PHASE 1: Log protected fields for debug panel
-    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-      (window as any).realtimeDebugLogger.logProtectionActive(Array.from(protectedFields));
-    }
-    
-    return protectedFields;
-  }, [teleprompterSync.isTeleprompterSaving]);
-
   // Simplified realtime connection - operations handle content sync
   const deferredUpdateRef = useRef<any>(null);
   
@@ -268,81 +227,28 @@ export const useSimplifiedRundownState = () => {
         itemCount: updatedRundown.items?.length || 0
       });
       
-      // Block realtime updates for 1 second after any user action
-      const now = Date.now();
-      const timeSinceUserAction = now - lastUserActionRef.current;
-      if (timeSinceUserAction < USER_ACTION_BLOCK_MS) {
-        console.log('🛡️ BLOCKING realtime update - recent user action', {
-          timeSinceAction: timeSinceUserAction,
-          threshold: USER_ACTION_BLOCK_MS
-        });
+      // Apply update directly - operations handle sync
+      const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
+      
+      if (wouldClearItems) {
+        console.warn('🛡️ Prevented malformed update that would clear items');
         return;
       }
       
-      // Log for debug panel
-      if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-        (window as any).realtimeDebugLogger.logRealtimeUpdate({
-          docVersion: updatedRundown.doc_version,
-          itemCount: updatedRundown.items?.length || 0,
-          timeSinceUserAction
-        });
-      }
+      const updateData: any = {};
+      if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
+      if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
+      if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
+      if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
+      if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
+      if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
       
-      // Get protected fields - no field protection needed with operations
-      const protectedFields = new Set<string>(); // No protection needed - operations handle sync
-      
-      if (protectedFields.size > 0) {
-        console.log('🛡️ Protected fields during realtime update:', Array.from(protectedFields));
-        // User is actively editing - keep local changes
-        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
-          const localItem = state.items.find(item => item.id === remoteItem.id);
-          if (!localItem) return remoteItem;
-          
-          // Check if any field is protected for this item
-          const hasProtectedField = Array.from(protectedFields).some(fieldKey => 
-            fieldKey.startsWith(`${remoteItem.id}-`)
-          );
-          
-          // If any field is protected, keep entire local item
-          if (hasProtectedField) {
-            return localItem;
-          }
-          
-          return remoteItem;
-        }) || [];
-        
-        actions.loadState({
-          items: mergedItems,
-          title: protectedFields.has('title') ? state.title : updatedRundown.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
-          showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
-          externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : updatedRundown.external_notes
-        });
-      } else {
-        // No protected fields - apply update directly
-        const wouldClearItems = (!updatedRundown.items || updatedRundown.items.length === 0) && state.items.length > 0;
-        
-        if (wouldClearItems) {
-          console.warn('🛡️ Prevented malformed update that would clear items');
-          return;
-        }
-        
-        const updateData: any = {};
-        if (updatedRundown.hasOwnProperty('items')) updateData.items = updatedRundown.items || [];
-        if (updatedRundown.hasOwnProperty('title')) updateData.title = updatedRundown.title;
-        if (updatedRundown.hasOwnProperty('start_time')) updateData.startTime = updatedRundown.start_time;
-        if (updatedRundown.hasOwnProperty('timezone')) updateData.timezone = updatedRundown.timezone;
-        if (updatedRundown.hasOwnProperty('show_date')) updateData.showDate = updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null;
-        if (updatedRundown.hasOwnProperty('external_notes')) updateData.externalNotes = updatedRundown.external_notes;
-        
-        if (Object.keys(updateData).length > 0) {
-          actions.loadState(updateData);
-        }
+      if (Object.keys(updateData).length > 0) {
+        actions.loadState(updateData);
       }
       
       lastRemoteUpdateRef.current = Date.now();
-    }, [state, actions, lastUserActionRef]),
+    }, [state, actions]),
     enabled: !isLoading
   });
   
@@ -658,62 +564,16 @@ export const useSimplifiedRundownState = () => {
         setLastSeenDocVersion(deferredUpdate.doc_version);
       }
       
-      // Get currently protected fields for granular merging
-      const protectedFields = getProtectedFields();
-      
-      // Apply granular merge if we have protected fields
-      if (protectedFields.size > 0) {
-        
-        // Create merged items by protecting local edits
-        const mergedItems = deferredUpdate.items?.map((remoteItem: any) => {
-          const localItem = state.items.find(item => item.id === remoteItem.id);
-          if (!localItem) return remoteItem; // New item from remote
-          
-          const merged = { ...remoteItem };
-          
-          // Protect specific fields that are currently being edited
-          protectedFields.forEach(fieldKey => {
-            if (fieldKey.startsWith(remoteItem.id + '-')) {
-              const field = fieldKey.substring(remoteItem.id.length + 1);
-              if (field.startsWith('customFields.')) {
-                const customFieldKey = field.replace('customFields.', '');
-                // Ensure customFields object exists
-                merged.customFields = merged.customFields || {};
-                localItem.customFields = localItem.customFields || {};
-                // Field-by-field protection for deferred updates too
-                merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields[customFieldKey];
-                console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (deferred)`);
-              } else if (localItem.hasOwnProperty(field)) {
-                merged[field] = localItem[field]; // Keep local value
-                console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (deferred)`);
-              }
-            }
-          });
-          
-          return merged;
-        }) || [];
-        
-        // Apply merged update
-        actions.loadState({
-          items: mergedItems,
-          title: protectedFields.has('title') ? state.title : deferredUpdate.title,
-          startTime: protectedFields.has('startTime') ? state.startTime : deferredUpdate.start_time,
-          timezone: protectedFields.has('timezone') ? state.timezone : deferredUpdate.timezone,
-          showDate: protectedFields.has('showDate') ? state.showDate : (deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null)
-        });
-        
-      } else {
-        // No protected fields - apply update normally
-        actions.loadState({
-          items: deferredUpdate.items || [],
-          title: deferredUpdate.title,
-          startTime: deferredUpdate.start_time,
-          timezone: deferredUpdate.timezone,
-          showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
-        });
-      }
+      // Apply update directly - operations handle sync
+      actions.loadState({
+        items: deferredUpdate.items || [],
+        title: deferredUpdate.title,
+        startTime: deferredUpdate.start_time,
+        timezone: deferredUpdate.timezone,
+        showDate: deferredUpdate.show_date ? new Date(deferredUpdate.show_date + 'T00:00:00') : null
+      });
     }
-  }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
+  }, [isSaving, actions, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
   // Realtime connection is simplified - operations handle content sync
   // No need for typing/unsaved checkers with operation-based system
@@ -739,9 +599,6 @@ export const useSimplifiedRundownState = () => {
     if (isTypingField) {
       // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
-      
-      // CRITICAL FIX: Mark this field as recently edited for cell broadcast protection
-      markFieldAsRecentlyEdited(sessionKey);
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
         saveUndoState(state.items, [], state.title, `Edit ${field}`);
@@ -800,55 +657,12 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: updateValue });
       
-      // PHASE 2: Track field changes after update
-      const fieldKey = `${id}-${updateField}`;
-      markFieldAsRecentlyEdited(fieldKey, updateValue);
-      
-      // CRITICAL: Track field change for per-cell save system
+      // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
       }
     }
   }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
-
-  // Optimized field tracking with debouncing
-  const markFieldAsRecentlyEdited = useCallback((fieldKey: string, value?: any) => {
-    const now = Date.now();
-    recentlyEditedFieldsRef.current.set(fieldKey, now);
-    
-    // PHASE 2: Track user action timestamp
-    lastUserActionRef.current = now;
-    
-    // PHASE 2: Track deletions with extended protection
-    if (value === '' || value === null || value === undefined) {
-      deletionInProgressRef.current.set(fieldKey, now);
-      console.log('🗑️ Deletion detected:', fieldKey);
-      
-      // Notify debug panel
-      if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-        (window as any).realtimeDebugLogger.setDeletionInProgress(fieldKey);
-      }
-      
-      // Clear deletion flag after extended protection window
-      setTimeout(() => {
-        deletionInProgressRef.current.delete(fieldKey);
-        if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-          (window as any).realtimeDebugLogger.setDeletionInProgress(null);
-        }
-      }, DELETION_PROTECTION_MS);
-    }
-    
-    // PHASE 1: Log to debug panel
-    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
-      const [itemId, field] = fieldKey.split('-');
-      (window as any).realtimeDebugLogger.logLocalEdit(itemId, field, value);
-    }
-    
-    // Use debounced tracker to reduce logging overhead
-    import('@/utils/debouncedFieldTracker').then(({ debouncedFieldTracker }) => {
-      debouncedFieldTracker.trackField(fieldKey);
-    });
-  }, []);
 
   // Simplified handlers - enhanced for per-cell save coordination
   const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
@@ -1021,48 +835,7 @@ export const useSimplifiedRundownState = () => {
       setLastSeenDocVersion(latestData.doc_version);
     }
     
-    // Get currently protected fields to preserve local edits
-    const protectedFields = getProtectedFields();
-    
-    // If there are protected fields (typing/focused/recently edited), do a granular merge
-    if (protectedFields.size > 0) {
-      const mergedItems = (latestData.items || []).map((remoteItem: any) => {
-        const localItem = state.items.find(item => item.id === remoteItem.id);
-        if (!localItem) return remoteItem;
-        const merged = { ...remoteItem };
-        protectedFields.forEach(fieldKey => {
-          if (fieldKey.startsWith(remoteItem.id + '-')) {
-            const field = fieldKey.substring(remoteItem.id.length + 1);
-            if (field.startsWith('customFields.')) {
-              const customFieldKey = field.replace('customFields.', '');
-              // Ensure customFields object exists
-              merged.customFields = merged.customFields || {};
-              localItem.customFields = localItem.customFields || {};
-              // Field-by-field protection for refresh updates too
-              merged.customFields[customFieldKey] = localItem.customFields[customFieldKey] ?? merged.customFields?.[customFieldKey];
-              console.log(`🛡️ Protected custom field ${customFieldKey} for item ${remoteItem.id} (refresh)`);
-            } else if (Object.prototype.hasOwnProperty.call(localItem, field)) {
-              (merged as any)[field] = (localItem as any)[field];
-              console.log(`🛡️ Protected field ${field} for item ${remoteItem.id} (refresh)`);
-            }
-          }
-        });
-        return merged;
-      });
-      
-      actions.loadState({
-        items: mergedItems,
-        title: protectedFields.has('title') ? state.title : latestData.title,
-        startTime: protectedFields.has('startTime') ? state.startTime : latestData.start_time,
-        timezone: protectedFields.has('timezone') ? state.timezone : latestData.timezone,
-        showDate: protectedFields.has('showDate') ? state.showDate : (latestData.show_date ? new Date(latestData.show_date + 'T00:00:00') : null),
-        externalNotes: protectedFields.has('externalNotes') ? state.externalNotes : latestData.external_notes,
-        docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
-      });
-      return;
-    }
-    
-    // No protected fields - safe to apply latest data
+    // Apply latest data - operations handle sync
     actions.loadState({
       items: latestData.items || [],
       title: latestData.title,
@@ -1072,7 +845,7 @@ export const useSimplifiedRundownState = () => {
       externalNotes: latestData.external_notes,
       docVersion: latestData.doc_version || 0 // CRITICAL: Include docVersion for OCC
     });
-  }, [actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
+  }, [actions, state.items, state.title, state.startTime, state.timezone, state.showDate, state.externalNotes]);
 
   // Simplified: No tab-based refresh needed with single sessions
   // Data freshness is maintained through realtime updates only
