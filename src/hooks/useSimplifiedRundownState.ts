@@ -91,6 +91,9 @@ export const useSimplifiedRundownState = () => {
   const dropdownFieldProtectionRef = useRef<Map<string, number>>(new Map());
   const DROPDOWN_PROTECTION_WINDOW_MS = 800; // Much shorter dropdown protection
 
+  // Track latest items state for rapid structural operations
+  const latestItemsRef = useRef<any[]>([]);
+
   const markDropdownFieldChanged = useCallback((fieldKey: string) => {
     const now = Date.now();
     dropdownFieldProtectionRef.current.set(fieldKey, now);
@@ -110,6 +113,11 @@ export const useSimplifiedRundownState = () => {
     timezone: 'America/New_York',
     showDate: null
   }, rundownId || undefined); // Pass rundownId for broadcast functionality
+
+  // Keep latestItemsRef in sync with state.items
+  useEffect(() => {
+    latestItemsRef.current = state.items;
+  }, [state.items]);
 
   // User-specific column preferences (separate from team sync)
   const {
@@ -697,12 +705,19 @@ export const useSimplifiedRundownState = () => {
       
       // If we have operation details, use the per-cell coordination system
       if (operationType && operationData && saveCoordination && currentUserId) {
+        // CRITICAL: Use latestItemsRef to get current state for rapid operations
+        const currentOperationData = {
+          ...operationData,
+          items: latestItemsRef.current // Always use the most current items
+        };
+        
         console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
           operationType,
-          operationData,
-          currentUserId
+          operationData: currentOperationData,
+          currentUserId,
+          itemCount: latestItemsRef.current.length
         });
-        saveCoordination.handleStructuralOperation(operationType as any, operationData);
+        saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
       } else {
         console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
         // Fallback - just mark as saved for now
@@ -992,7 +1007,14 @@ export const useSimplifiedRundownState = () => {
 
     deleteRow: useCallback((id: string) => {
       saveUndoState(state.items, [], state.title, 'Delete row');
-      const newItems = state.items.filter(item => item.id !== id);
+      
+      // Use latestItemsRef for rapid operations to avoid stale state
+      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+      const newItems = currentItems.filter(item => item.id !== id);
+      
+      // Update ref immediately for next rapid operation
+      latestItemsRef.current = newItems;
+      
       actions.deleteItem(id);
       
       // For per-cell saves, use structural save coordination
@@ -1120,9 +1142,14 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
 
-    const newItems = [...state.items];
+    // Use latestItemsRef for rapid operations to avoid stale state
+    const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+    const newItems = [...currentItems];
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newItem);
+    
+    // Update ref immediately for next rapid operation
+    latestItemsRef.current = newItems;
     
     actions.setItems(newItems);
     
@@ -1169,9 +1196,14 @@ export const useSimplifiedRundownState = () => {
       customFields: {}
     };
 
-    const newItems = [...state.items];
+    // Use latestItemsRef for rapid operations to avoid stale state
+    const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+    const newItems = [...currentItems];
     const actualIndex = Math.min(insertIndex, newItems.length);
     newItems.splice(actualIndex, 0, newHeader);
+    
+    // Update ref immediately for next rapid operation
+    latestItemsRef.current = newItems;
     
     actions.setItems(newItems);
     
@@ -1256,7 +1288,14 @@ export const useSimplifiedRundownState = () => {
     toggleFloat: enhancedActions.toggleFloatRow,
     deleteMultipleItems: useCallback((itemIds: string[]) => {
       saveUndoState(state.items, [], state.title, 'Delete multiple items');
-      const newItems = state.items.filter(item => !itemIds.includes(item.id));
+      
+      // Use latestItemsRef for rapid operations to avoid stale state
+      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+      const newItems = currentItems.filter(item => !itemIds.includes(item.id));
+      
+      // Update ref immediately for next rapid operation
+      latestItemsRef.current = newItems;
+      
       actions.deleteMultipleItems(itemIds);
       
       // For per-cell saves, use structural save coordination
