@@ -13,7 +13,7 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
-export const useRundownStateCoordination = (rundownId?: string) => {
+export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
@@ -24,7 +24,7 @@ export const useRundownStateCoordination = (rundownId?: string) => {
   const interactionsRef = useRef<any>(null);
 
   // Single source of truth for all rundown state (with persistence)
-  const persistedState = usePersistedRundownState(rundownId);
+  const persistedState = usePersistedRundownState();
 
   // Add performance optimization layer
   const performanceOptimization = useRundownPerformanceOptimization({
@@ -88,7 +88,7 @@ export const useRundownStateCoordination = (rundownId?: string) => {
     if (persistedState.addRowAtIndex) {
       persistedState.addRowAtIndex(insertIndex);
     } else {
-      persistedState.addRow({} as any);
+      persistedState.addRow();
     }
   };
 
@@ -96,7 +96,7 @@ export const useRundownStateCoordination = (rundownId?: string) => {
     if (persistedState.addHeaderAtIndex) {
       persistedState.addHeaderAtIndex(insertIndex);
     } else {
-      persistedState.addHeader({} as any, 0);
+      persistedState.addHeader();
     }
   };
 
@@ -197,9 +197,9 @@ export const useRundownStateCoordination = (rundownId?: string) => {
         persistedState.setItems(updater);
       }
     },
-    (id: string, field: string, value: any) => persistedState.updateItem(id, { [field]: value }),
-    () => persistedState.addRow({} as any),
-    () => persistedState.addHeader({} as any, 0),
+    persistedState.updateItem,
+    persistedState.addRow,
+    persistedState.addHeader,
     persistedState.deleteRow,
     persistedState.toggleFloat,
     persistedState.deleteMultipleItems,
@@ -210,7 +210,7 @@ export const useRundownStateCoordination = (rundownId?: string) => {
     },
     calculateEndTime,
     (id: string, color: string) => {
-      persistedState.updateItem(id, { color });
+      persistedState.updateItem(id, 'color', color);
     },
     () => {
       // markAsChanged - handled internally by persisted state
@@ -248,7 +248,7 @@ export const useRundownStateCoordination = (rundownId?: string) => {
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
     performanceOptimization.visibleColumns,
-    (id: string, field: string, value: any) => persistedState.updateItem(id, { [field]: value }),
+    persistedState.updateItem,
     persistedState.setColumns,
     persistedState.columns
   );

@@ -95,7 +95,7 @@ const Teleprompter = () => {
   const { isConnected: isRealtimeConnected, trackOwnUpdate } = useConsolidatedRealtimeRundown({
     rundownId: rundownId!,
     enabled: !!rundownId && !!user && !!rundownData,
-    // removed lastSeenDocVersion - simplified approach
+    lastSeenDocVersion,
     onRundownUpdate: (updatedRundown) => {
       // Always accept remote updates to ensure real-time sync
       if (updatedRundown) {

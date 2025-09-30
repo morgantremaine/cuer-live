@@ -51,7 +51,7 @@ export const useRundownPerformanceOptimization = ({
 
   // Calculate visible columns (memoized to prevent unnecessary re-renders)
   const visibleColumns = useMemo(() => {
-    return columns?.filter(col => col.isVisible !== false) || [];
+    return columns.filter(col => col.isVisible !== false);
   }, [columns]);
 
   // Calculate total runtime

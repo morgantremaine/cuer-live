@@ -65,7 +65,7 @@ const RundownWithTabs = () => {
           </TabsList>
           
           <TabsContent value="rundown" className="flex-1 mt-0">
-            <RundownIndexContent rundownId={id} />
+            <RundownIndexContent />
           </TabsContent>
           
           <TabsContent value="blueprint" className="flex-1 mt-0">

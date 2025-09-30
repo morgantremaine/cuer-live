@@ -6,7 +6,7 @@ import { FloatingNotesWindow } from '@/components/FloatingNotesWindow';
 import RundownLoadingSkeleton from '@/components/RundownLoadingSkeleton';
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
-// Cell edit integration removed - using simplified approach
+import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import '@/utils/timingValidationTest';
 
 
-const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string }) => {
+const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
   const {
@@ -26,9 +26,9 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
     interactions,
     uiState,
     dragAndDrop
-  } = useRundownStateCoordination(paramRundownId);
+  } = useRundownStateCoordination();
   
-  // Extract all needed values from the unified state - all from coreState
+  // Extract all needed values from the unified state
   const {
     currentTime,
     timezone,
@@ -71,13 +71,16 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
     toggleAutoScroll,
+    // Column management functions
     addColumn,
     updateColumnWidth,
     setColumns,
+    // Header collapse functions
     toggleHeaderCollapse,
     isHeaderCollapsed,
     getHeaderGroupItemIds,
     visibleItems,
+    // Move functions for mobile
     moveItemUp,
     moveItemDown
   } = coreState;
@@ -85,11 +88,20 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
   // Get team data for column deletion
   const { team } = useTeam();
 
-  // SIMPLIFIED: Use core state handlers directly
-  const handleCellChange = (itemId: string, field: string, value: any) => {
-    console.log('🎯 CELL EDIT: Simplified cell change', { itemId, field, value });
-    updateItem(itemId, { [field]: value });
-  };
+  // Add cell edit integration for operation system
+  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: true,
+    onSaveComplete: () => {
+      console.log('💾 RUNDOWN INDEX: Operation system save completed');
+    },
+    onSaveStart: () => {
+      console.log('💾 RUNDOWN INDEX: Operation system save started');
+    },
+    onUnsavedChanges: () => {
+      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
+    }
+  });
 
   // Only log significant changes, not every render
   const prevItemsCount = useRef(items?.length || 0);
@@ -455,8 +467,8 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
     items,
     selectedRows,
     rundownId,
-    addRow: () => addRow({} as any),
-    addHeader: () => addHeader({} as any),
+    addRow: () => addRow(),
+    addHeader: () => addHeader(),
     calculateEndTime,
     toggleRowSelection,
     setRundownStartTime: setStartTime,
@@ -501,8 +513,8 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
   };
 
   const handleUpdateColumnWidthWrapper = (columnId: string, width: number) => {
-    // Use the updateColumnWidth method from the core state (no-op for now)
-    console.log('Column width update:', columnId, width);
+    // Use the updateColumnWidth method from the core state
+    updateColumnWidth(columnId, `${width}px`);
   };
 
   // Prepare rundown data for Cuer AI
@@ -544,7 +556,7 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
       isProcessingUpdate={isProcessingRealtimeUpdate || false}
     >
       <RundownContainer
-        currentTime={new Date(currentTime)}
+        currentTime={currentTime}
         timezone={timezone}
         onTimezoneChange={handleTimezoneChange}
         totalRuntime={totalRuntime || ''}
@@ -580,7 +592,7 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
           });
           
           // For immediate UI responsiveness, update the legacy system first
-          updateItem(id, { [field]: value });
+          updateItem(id, field, value);
           
           // Then route through operation system for collaboration
           handleCellChange(id, field, value);
@@ -605,7 +617,7 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
           });
           if (item) {
             // For immediate UI responsiveness, update the legacy system first
-            console.log('Toggle float:', id);
+            toggleFloatRow(id);
             // Then route through operation system for collaboration
             handleCellChange(id, 'isFloating', !item.isFloating);
           }
@@ -639,10 +651,10 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
         handleLoadLayout={handleLoadLayoutWrapper}
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving || isSavingPreferences}
-        enhancedSaveState={null}
-        handleKeystroke={() => console.log('Keystroke handled')}
+        hasUnsavedChanges={saveState?.hasUnsavedChanges ?? hasUnsavedChanges}
+        isSaving={saveState?.isSaving ?? (isSaving || isSavingPreferences)}
+        enhancedSaveState={saveState}
+        handleKeystroke={handleKeystroke}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}
@@ -692,9 +704,9 @@ const RundownIndexContent = ({ rundownId: paramRundownId }: { rundownId?: string
         rundownData={rundownData}
         modDeps={{
           items,
-          updateItem: (id: string, field: string, value: any) => updateItem(id, { [field]: value }),
-          addRow: () => addRow({} as any),
-          addHeader: () => addHeader({} as any, 0),
+          updateItem,
+          addRow,
+          addHeader,
           addRowAtIndex: coreState.addRowAtIndex,
           addHeaderAtIndex: coreState.addHeaderAtIndex,
           deleteRow,

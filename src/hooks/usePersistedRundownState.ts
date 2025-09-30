@@ -20,8 +20,8 @@ const cleanupCache = () => {
   }
 };
 
-export const usePersistedRundownState = (passedRundownId?: string) => {
-  const rundownState = useSimplifiedRundownState({ rundownId: passedRundownId || null });
+export const usePersistedRundownState = () => {
+  const rundownState = useSimplifiedRundownState();
   const { rundownId } = rundownState;
   const cacheKey = getCacheKey(rundownId);
   const isRestoringRef = useRef(false);
@@ -40,7 +40,7 @@ export const usePersistedRundownState = (passedRundownId?: string) => {
       
       // Restore critical UI state
       if (cachedState.selectedRowId) {
-        rundownState.handleRowSelection();
+        rundownState.handleRowSelection(cachedState.selectedRowId);
       }
       
       // Mark as restored
@@ -54,7 +54,7 @@ export const usePersistedRundownState = (passedRundownId?: string) => {
 
   // Cache state periodically and on state changes
   useEffect(() => {
-    if (isRestoringRef.current || !passedRundownId) return;
+    if (isRestoringRef.current || !rundownId) return;
 
     const stateToCache = {
       selectedRowId: rundownState.selectedRowId,
@@ -67,7 +67,7 @@ export const usePersistedRundownState = (passedRundownId?: string) => {
   }, [
     rundownState.selectedRowId,
     cacheKey,
-    passedRundownId
+    rundownId
   ]);
 
   // Enhanced state with cache awareness
