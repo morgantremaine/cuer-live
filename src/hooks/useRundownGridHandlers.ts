@@ -169,14 +169,16 @@ export const useRundownGridHandlers = ({
       
       markAsChanged();
       
-      // For per-cell saves, use structural save coordination
-      if (isPerCellEnabled && markStructuralChange && newItems) {
+      // Always trigger structural save coordination if available
+      if (markStructuralChange && newItems) {
         console.log('🧪 STRUCTURAL CHANGE: Paste completed - triggering structural coordination');
         markStructuralChange('copy_rows', { 
           items: newItems, 
           newItems: itemsToPaste, 
           insertIndex 
         });
+      } else {
+        console.log('⚠️ PASTE: No markStructuralChange available, paste will not save to database');
       }
       
       // Broadcast paste operation for immediate realtime sync
