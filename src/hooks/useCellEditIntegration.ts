@@ -48,10 +48,9 @@ export const useCellEditIntegration = ({
     prevOperationMode.current = operationSystem.isOperationMode;
   }
 
-  // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
+  // Get the coordinated save system (per-cell saves are always enabled)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
-    isPerCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
       setIsPerCellSaving(false);

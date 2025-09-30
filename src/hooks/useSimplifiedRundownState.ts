@@ -534,10 +534,9 @@ export const useSimplifiedRundownState = () => {
     }
   });
   
-  // Get save coordination system for structural operations - use same callbacks as cell edit integration
+  // Get save coordination system for structural operations (per-cell saves always enabled)
   const saveCoordination = usePerCellSaveCoordination({
     rundownId,
-    isPerCellEnabled: perCellEnabled,
     currentUserId,
     onSaveComplete: () => {
       console.log('🧪 STRUCTURAL SAVE: Save completed - updating UI state');
