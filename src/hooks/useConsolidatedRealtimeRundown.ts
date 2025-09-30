@@ -105,9 +105,15 @@ export const useConsolidatedRealtimeRundown = ({
         }
       });
     } else if (hasContentChanges) {
-      // Content changes - rely on cell broadcasts and operations
-      console.log('📱 Content change detected - relying on operation system for sync');
-      // Don't call onRundownUpdate - operations will handle this
+      // Content changes - trigger refresh to ensure sync
+      console.log('📱 Content change detected - triggering database refresh for reliable sync');
+      globalState.callbacks.onRundownUpdate.forEach((callback: (d: any) => void) => {
+        try { 
+          callback(payload.new); 
+        } catch (error) { 
+          console.error('Error in content update callback:', error);
+        }
+      });
     }
   }, [rundownId]);
 
