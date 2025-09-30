@@ -1027,25 +1027,136 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
-    addRow: useCallback(() => {
-      saveUndoState(state.items, [], state.title, 'Add segment');
-      helpers.addRow();
+    addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
+      console.log('🟢 enhancedActions.addRow called with count:', count);
+      saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
       
-      // For per-cell saves, structural change will be triggered by helpers
-      // via the handleStructuralOperation prop passed to useRundownItems
+      // Determine insert index based on selection
+      let insertIndex = state.items.length;
+      if (selectedRowId) {
+        const selectedIndex = state.items.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
+      } else if (selectedRows && selectedRows.size > 0) {
+        const selectedIds = Array.from(selectedRows);
+        const indices = selectedIds
+          .map(id => state.items.findIndex(item => item.id === id))
+          .filter(idx => idx !== -1);
+        if (indices.length > 0) {
+          const maxIndex = Math.max(...indices);
+          insertIndex = maxIndex + 1;
+        }
+      }
       
-      // Broadcasting handled by structural operations - no need for separate reorder broadcast
-    }, [helpers.addRow, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+      console.log('🟢 Creating', count, 'new items at insertIndex:', insertIndex);
+      
+      // Create and add multiple items
+      const newItemsToAdd = [];
+      for (let i = 0; i < count; i++) {
+        newItemsToAdd.push({
+          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'segment' as const,
+          rowNumber: '',
+          name: 'New Segment',
+          startTime: '',
+          duration: '00:00:30',
+          endTime: '',
+          elapsedTime: '00:00:00',
+          talent: '',
+          script: '',
+          gfx: '',
+          video: '',
+          images: '',
+          notes: '',
+          color: '#000000',
+          isFloating: false
+        });
+      }
+      
+      // Insert all items at once
+      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+      const newItems = [
+        ...currentItems.slice(0, insertIndex),
+        ...newItemsToAdd,
+        ...currentItems.slice(insertIndex)
+      ];
+      
+      latestItemsRef.current = newItems;
+      actions.setItems(newItems);
+      
+      // Trigger structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
+        markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex });
+      }
+      
+      // Broadcasting handled by structural operations
+    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
-    addHeader: useCallback(() => {
+    addHeader: useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
+      console.log('🟢 enhancedActions.addHeader called');
       saveUndoState(state.items, [], state.title, 'Add header');
-      helpers.addHeader();
       
-      // For per-cell saves, structural change will be triggered by helpers
-      // via the handleStructuralOperation prop passed to useRundownItems
+      // Determine insert index based on selection
+      let insertIndex = state.items.length;
+      if (selectedRowId) {
+        const selectedIndex = state.items.findIndex(item => item.id === selectedRowId);
+        if (selectedIndex !== -1) {
+          insertIndex = selectedIndex + 1;
+        }
+      } else if (selectedRows && selectedRows.size > 0) {
+        const selectedIds = Array.from(selectedRows);
+        const indices = selectedIds
+          .map(id => state.items.findIndex(item => item.id === id))
+          .filter(idx => idx !== -1);
+        if (indices.length > 0) {
+          const maxIndex = Math.max(...indices);
+          insertIndex = maxIndex + 1;
+        }
+      }
       
-      // Broadcasting handled by structural operations - no need for separate reorder broadcast
-    }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
+      console.log('🟢 Creating new header at insertIndex:', insertIndex);
+      
+      // Create the new header item
+      const newHeaderItem = {
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'header' as const,
+        rowNumber: 'A',
+        name: 'New Header',
+        startTime: '',
+        duration: '00:00:00',
+        endTime: '',
+        elapsedTime: '00:00:00',
+        talent: '',
+        script: '',
+        gfx: '',
+        video: '',
+        images: '',
+        notes: '',
+        color: '#000000',
+        isFloating: false
+      };
+      
+      // Insert the header
+      const currentItems = latestItemsRef.current.length > 0 ? latestItemsRef.current : state.items;
+      const newItems = [
+        ...currentItems.slice(0, insertIndex),
+        newHeaderItem,
+        ...currentItems.slice(insertIndex)
+      ];
+      
+      latestItemsRef.current = newItems;
+      actions.setItems(newItems);
+      
+      // Trigger structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
+        markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex });
+      }
+      
+      // Broadcasting handled by structural operations
+    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
       // No blocking needed - operations handle sync
