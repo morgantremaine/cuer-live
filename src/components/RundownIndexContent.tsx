@@ -93,14 +93,22 @@ const RundownIndexContent = () => {
     rundownId,
     isPerCellEnabled: true,
     onSaveComplete: () => {
-      console.log('✅ Operation system save completed');
+      console.log('💾 RUNDOWN INDEX: Operation system save completed');
     },
     onSaveStart: () => {
-      console.log('🚀 Operation system save started');
+      console.log('💾 RUNDOWN INDEX: Operation system save started');
     },
     onUnsavedChanges: () => {
-      console.log('⚠️ Operation system unsaved changes detected');
+      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
     }
+  });
+
+  console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
+    rundownId,
+    hasHandleCellChange: !!handleCellChange,
+    itemsCount: items?.length || 0,
+    visibleColumnsCount: visibleColumns?.length || 0,
+    timestamp: new Date().toISOString()
   });
 
   // Set up user presence tracking for this rundown
@@ -567,14 +575,30 @@ const RundownIndexContent = () => {
         getRowNumber={getRowNumber}
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
-        onUpdateItem={updateItem}
+        onUpdateItem={(id, field, value) => {
+          console.log('📝 RUNDOWN INDEX: onUpdateItem called (from typing)', {
+            id,
+            field,
+            value: typeof value === 'string' ? value.substring(0, 50) : value,
+            source: 'typing'
+          });
+          handleCellChange(id, field, value);
+        }}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
         onToggleColorPicker={handleToggleColorPicker}
-        onColorSelect={(id, color) => handleCellChange(id, 'color', color)}
+        onColorSelect={(id, color) => {
+          console.log('🎨 RUNDOWN INDEX: Color select triggered', { id, color });
+          handleCellChange(id, 'color', color);
+        }}
         onDeleteRow={deleteRow}
         onToggleFloat={(id) => {
           const item = items.find(i => i.id === id);
+          console.log('🎈 RUNDOWN INDEX: Float toggle triggered', { 
+            id, 
+            currentFloating: item?.isFloating, 
+            willBeFloating: !item?.isFloating 
+          });
           if (item) {
             handleCellChange(id, 'isFloating', !item.isFloating);
           }

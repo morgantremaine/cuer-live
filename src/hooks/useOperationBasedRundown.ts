@@ -205,7 +205,19 @@ export const useOperationBasedRundown = ({
 
   // Operation handlers for UI components
   const handleCellEdit = useCallback((itemId: string, field: string, newValue: any) => {
-    if (!state.isOperationMode) return;
+    console.log('🔧 OPERATION BASED RUNDOWN: handleCellEdit called', {
+      itemId,
+      field,
+      newValue,
+      isOperationMode: state.isOperationMode,
+      currentItemsCount: state.items.length,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (!state.isOperationMode) {
+      console.warn('⚠️ OPERATION MODE DISABLED: handleCellEdit ignored');
+      return;
+    }
 
     // Apply optimistically to local state
     const optimisticOperation = {
@@ -213,9 +225,12 @@ export const useOperationBasedRundown = ({
       operationData: { itemId, field, newValue },
       sequenceNumber: state.lastSequence + 1
     };
+    
+    console.log('🎯 APPLYING OPTIMISTIC UPDATE:', optimisticOperation);
     applyOperationToState(optimisticOperation);
 
     // Queue for server
+    console.log('📤 QUEUEING FOR SERVER SYNC');
     operationQueue.cellEdit(itemId, field, newValue);
   }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState]);
 

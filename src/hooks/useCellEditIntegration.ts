@@ -77,12 +77,13 @@ export const useCellEditIntegration = ({
     fieldName: string,
     newValue: any
   ) => {
-    console.log('🚀 OPERATION SYSTEM: handleCellChange called', {
+    console.log('🎯 CELL EDIT INTEGRATION: handleCellChange called', {
       itemId,
       fieldName,
       newValue: typeof newValue === 'string' ? newValue.substring(0, 50) : newValue,
       operationSystemEnabled: operationSystem.isOperationMode,
-      rundownId
+      rundownId,
+      timestamp: new Date().toISOString()
     });
     
     // Always route through operation system
@@ -90,22 +91,25 @@ export const useCellEditIntegration = ({
       console.log('🚀 ROUTING THROUGH OPERATION SYSTEM:', {
         itemId,
         fieldName,
-        newValue
+        newValue,
+        operationSystemActive: true
       });
       
       operationSystem.handleCellEdit(itemId, fieldName, newValue);
       debugLogger.autosave(`Operation cell edit: ${fieldName} for item ${itemId}`);
+      
+      console.log('✅ OPERATION SYSTEM: Cell edit queued successfully');
       return;
     }
     
     // Legacy fallback (should rarely be used now)
     if (!isPerCellEnabled) {
-      console.log('🧪 CELL EDIT INTEGRATION: Per-cell disabled, using normal tracking');
+      console.log('⚠️ CELL EDIT INTEGRATION: Per-cell disabled, using normal tracking');
       debugLogger.autosave(`Cell change (non-per-cell): ${fieldName} for item ${itemId || 'global'}`);
       return;
     }
 
-    console.log('🧪 CELL EDIT INTEGRATION: Per-cell enabled, tracking field change');
+    console.log('🔄 CELL EDIT INTEGRATION: Per-cell enabled, tracking field change');
     trackFieldChange(itemId, fieldName, newValue);
     debugLogger.autosave(`Per-cell change tracked: ${fieldName} for item ${itemId || 'global'}`);
 

@@ -68,16 +68,34 @@ export const useOperationQueue = ({
 
   // Process the operation queue
   const processQueue = useCallback(async () => {
+    console.log('🔄 OPERATION QUEUE: processQueue called', {
+      queueLength: queueRef.current.length,
+      isProcessing: processingRef.current,
+      timestamp: new Date().toISOString()
+    });
+    
     if (processingRef.current || queueRef.current.length === 0) {
+      console.log('⏸️ OPERATION QUEUE: Skipping processing', {
+        alreadyProcessing: processingRef.current,
+        queueEmpty: queueRef.current.length === 0
+      });
       return;
     }
 
     processingRef.current = true;
     setIsProcessing(true);
+    
+    console.log('🚀 OPERATION QUEUE: Starting batch processing');
 
     try {
       while (queueRef.current.length > 0) {
         const operation = queueRef.current[0];
+        
+        console.log('📤 OPERATION QUEUE: Processing operation', {
+          operationId: operation.id,
+          type: operation.operationType,
+          status: operation.status
+        });
         
         if (operation.status === 'pending') {
           console.log('📤 SENDING OPERATION:', operation.id);
@@ -134,6 +152,14 @@ export const useOperationQueue = ({
 
   // Create specific operation types
   const cellEdit = useCallback((itemId: string, field: string, newValue: any, oldValue?: any) => {
+    console.log('🎯 OPERATION QUEUE: cellEdit called', {
+      itemId,
+      field,
+      newValue,
+      oldValue,
+      timestamp: Date.now()
+    });
+    
     return queueOperation('CELL_EDIT', {
       itemId,
       field,
