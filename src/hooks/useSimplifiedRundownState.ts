@@ -512,7 +512,23 @@ export const useSimplifiedRundownState = () => {
         return;
       }
       
-      console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
+      // 🚨 EMERGENCY DATA LOSS PROTECTION - CRITICAL FIX
+      const { emergencyDataLossProtection } = await import('@/utils/emergencyDataLossProtection');
+      const shouldAllow = emergencyDataLossProtection.emergencyCheck(update, currentUserId || 'anonymous');
+      
+      if (!shouldAllow) {
+        console.log('🚨 CRITICAL: BLOCKED CELL BROADCAST TO PREVENT DATA LOSS');
+        return; // STOP HERE - DO NOT APPLY UPDATE
+      }
+        {
+          rundownId,
+          itemId: update.itemId || undefined,
+          field: update.field,
+          value: update.value,
+          userId: update.userId,
+          timestamp: update.timestamp
+      
+      console.log('📱 Applying cell broadcast update (emergency-protected):', update);
       
       // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
       applyingCellBroadcastRef.current = true;
@@ -521,7 +537,28 @@ export const useSimplifiedRundownState = () => {
         // PROTECTION: Register cell broadcast changes in shadow store to prevent full realtime overwrites
         if (update.itemId && update.field) {
           const { localShadowStore } = await import('@/state/localShadows');
-          localShadowStore.setShadow(update.itemId, update.field, update.value, true); // ACTIVE shadow to protect against overwrites
+          localShadowStore.setShadow(update.itemId, update.field, update.value, true);
+          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
+        }
+        
+        // Apply the cell update to the state
+        if (update.itemId) {
+          // Item-level field update
+          setState(prevState => ({
+            ...prevState,
+            items: prevState.items.map(item => 
+              item.id === update.itemId 
+                ? { ...item, [update.field]: update.value }
+                : item
+            )
+          }));
+        } else {
+          // Global rundown property update (title, start_time, etc.)
+          setState(prevState => ({
+            ...prevState,
+            [update.field]: update.value
+          }));
+        }
           console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
           
           // Clear this shadow after a short time to allow future legitimate updates

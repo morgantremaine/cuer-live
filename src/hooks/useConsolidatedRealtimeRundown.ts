@@ -529,14 +529,33 @@ export const useConsolidatedRealtimeRundown = ({
                  return;
                }
                
-               const serverDoc = data.doc_version || 0;
-              if (serverDoc > state.lastProcessedDocVersion) {
-                state.lastProcessedDocVersion = serverDoc;
-                state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
-                state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                  try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
-                });
-              }
+                const serverDoc = data.doc_version || 0;
+               if (serverDoc > state.lastProcessedDocVersion) {
+                 // Use network-safe gap resolution for initial catch-up too
+                 const { networkSafeGapResolver } = await import('@/utils/networkSafeGapResolver');
+                 
+                 const resolutionResult = await networkSafeGapResolver.resolveGap({
+                   currentData: {}, // No current data during initial load
+                   serverData: data,
+                   serverTimestamp: data.updated_at,
+                   serverDocVersion: serverDoc,
+                   currentDocVersion: state.lastProcessedDocVersion,
+                   rundownId: rundownId as string
+                 });
+                 
+                 if (resolutionResult.shouldApply) {
+                   state.lastProcessedDocVersion = serverDoc;
+                   state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+                   const dataToApply = resolutionResult.mergedData || data;
+                   state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                     try { cb(dataToApply); } catch (err) { console.error('Error in network-safe initial callback:', err); }
+                   });
+                   
+                   console.log('✅ Network-safe initial catch-up applied');
+                 } else {
+                   console.log('🛡️ Initial catch-up deferred due to conflicts');
+                 }
+               }
             } else if (error) {
               console.warn('Initial catch-up fetch failed:', error);
             }
@@ -665,13 +684,28 @@ export const useConsolidatedRealtimeRundown = ({
           .eq('id', rundownId)
           .single();
         if (!error && data) {
-          const serverDoc = data.doc_version || 0;
-          if (serverDoc >= state.lastProcessedDocVersion) {
+          // Use network-safe gap resolution for manual catch-up too
+          const { networkSafeGapResolver } = await import('@/utils/networkSafeGapResolver');
+          
+          const resolutionResult = await networkSafeGapResolver.resolveGap({
+            currentData: {}, // Manual sync - apply server state
+            serverData: data,
+            serverTimestamp: data.updated_at,
+            serverDocVersion: data.doc_version || 0,
+            currentDocVersion: state.lastProcessedDocVersion,
+            rundownId: rundownId
+          });
+          
+          if (resolutionResult.shouldApply) {
+            const serverDoc = data.doc_version || 0;
             state.lastProcessedDocVersion = serverDoc;
             state.lastProcessedTimestamp = normalizeTimestamp(data.updated_at);
+            const dataToApply = resolutionResult.mergedData || data;
             state.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-              try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
+              try { cb(dataToApply); } catch (err) { console.error('Error in manual catch-up callback:', err); }
             });
+            
+            console.log('✅ Network-safe manual catch-up applied');
           }
         } else if (error) {
           console.warn('Manual catch-up fetch failed:', error);
