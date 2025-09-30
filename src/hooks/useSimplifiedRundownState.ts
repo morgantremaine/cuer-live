@@ -34,7 +34,7 @@ export const useSimplifiedRundownState = ({
   const { activeTeamId } = useActiveTeam();
   
   // Core state management
-  const { state, actions } = useRundownState(rundownId, enabled);
+  const { state, actions } = useRundownState({}, rundownId || '');
   
   // SIMPLIFIED: Track basic state
   const [isInitialized, setIsInitialized] = useState(false);

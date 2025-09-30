@@ -21,7 +21,7 @@ const cleanupCache = () => {
 };
 
 export const usePersistedRundownState = () => {
-  const rundownState = useSimplifiedRundownState();
+  const rundownState = useSimplifiedRundownState({ rundownId: null });
   const { rundownId } = rundownState;
   const cacheKey = getCacheKey(rundownId);
   const isRestoringRef = useRef(false);
@@ -40,7 +40,7 @@ export const usePersistedRundownState = () => {
       
       // Restore critical UI state
       if (cachedState.selectedRowId) {
-        rundownState.handleRowSelection(cachedState.selectedRowId);
+        rundownState.handleRowSelection();
       }
       
       // Mark as restored

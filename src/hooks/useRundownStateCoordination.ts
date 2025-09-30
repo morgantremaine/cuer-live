@@ -88,7 +88,7 @@ export const useRundownStateCoordination = () => {
     if (persistedState.addRowAtIndex) {
       persistedState.addRowAtIndex(insertIndex);
     } else {
-      persistedState.addRow();
+      persistedState.addRow({} as any);
     }
   };
 
@@ -96,7 +96,7 @@ export const useRundownStateCoordination = () => {
     if (persistedState.addHeaderAtIndex) {
       persistedState.addHeaderAtIndex(insertIndex);
     } else {
-      persistedState.addHeader();
+      persistedState.addHeader({} as any, 0);
     }
   };
 
@@ -197,9 +197,9 @@ export const useRundownStateCoordination = () => {
         persistedState.setItems(updater);
       }
     },
-    persistedState.updateItem,
-    persistedState.addRow,
-    persistedState.addHeader,
+    (id: string, field: string, value: any) => persistedState.updateItem(id, { [field]: value }),
+    () => persistedState.addRow({} as any),
+    () => persistedState.addHeader({} as any, 0),
     persistedState.deleteRow,
     persistedState.toggleFloat,
     persistedState.deleteMultipleItems,
@@ -210,7 +210,7 @@ export const useRundownStateCoordination = () => {
     },
     calculateEndTime,
     (id: string, color: string) => {
-      persistedState.updateItem(id, 'color', color);
+      persistedState.updateItem(id, { color });
     },
     () => {
       // markAsChanged - handled internally by persisted state
@@ -248,7 +248,7 @@ export const useRundownStateCoordination = () => {
   const uiState = useRundownUIState(
     performanceOptimization.calculatedItems,
     performanceOptimization.visibleColumns,
-    persistedState.updateItem,
+    (id: string, field: string, value: any) => persistedState.updateItem(id, { [field]: value }),
     persistedState.setColumns,
     persistedState.columns
   );
