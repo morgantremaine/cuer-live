@@ -55,11 +55,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     items,
     visibleColumns,
     onUndo,
-    onRedo,
     canUndo,
-    canRedo,
     lastAction,
-    nextAction,
     isConnected,
     isProcessingRealtimeUpdate,
     hasActiveTeammates,
@@ -250,11 +247,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         items={items}
         visibleColumns={visibleColumns}
         onUndo={onUndo}
-        onRedo={onRedo}
         canUndo={canUndo}
-        canRedo={canRedo}
         lastAction={lastAction}
-        nextAction={nextAction}
         isConnected={isConnected}
         isProcessingRealtimeUpdate={isProcessingRealtimeUpdate}
         hasActiveTeammates={hasActiveTeammates}

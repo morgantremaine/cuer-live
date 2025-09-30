@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Eye, Undo, Redo, MapPin, Search, FileText } from 'lucide-react';
+import { Plus, Eye, Undo, MapPin, Search, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -18,11 +18,8 @@ interface MainActionButtonsProps {
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
-  onRedo: () => void;
   canUndo: boolean;
-  canRedo: boolean;
   lastAction: string | null;
-  nextAction: string | null;
   rundownId: string | undefined;
   selectedRowId?: string | null;
   isMobile?: boolean;
@@ -49,11 +46,8 @@ const MainActionButtons = ({
   onAddHeader,
   onShowColumnManager,
   onUndo,
-  onRedo,
   canUndo,
-  canRedo,
   lastAction,
-  nextAction,
   rundownId,
   selectedRowId,
   isMobile = false,
@@ -137,17 +131,6 @@ const MainActionButtons = ({
             <Undo className="h-4 w-4" />
             <span>Undo</span>
           </Button>
-          <Button 
-            onClick={onRedo} 
-            variant="outline" 
-            size={buttonSize}
-            disabled={!canRedo}
-            title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
-            className="flex items-center justify-start gap-1.5"
-          >
-            <Redo className="h-4 w-4" />
-            <span>Redo</span>
-          </Button>
           <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Eye className="h-4 w-4" />
             <span>Layouts</span>
@@ -228,17 +211,6 @@ const MainActionButtons = ({
       >
         <Undo className="h-4 w-4" />
         <span>Undo</span>
-      </Button>
-      <Button 
-        onClick={onRedo} 
-        variant="outline" 
-        size={buttonSize}
-        disabled={!canRedo}
-        title={nextAction ? `Redo: ${nextAction}` : 'Nothing to redo'}
-        className={buttonClass}
-      >
-        <Redo className="h-4 w-4" />
-        <span>Redo</span>
       </Button>
       <Button onClick={onShowColumnManager} variant="outline" size={buttonSize} className={buttonClass}>
         <Eye className="h-4 w-4" />
