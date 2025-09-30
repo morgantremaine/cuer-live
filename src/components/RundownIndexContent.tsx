@@ -582,6 +582,11 @@ const RundownIndexContent = () => {
             value: typeof value === 'string' ? value.substring(0, 50) : value,
             source: 'typing'
           });
+          
+          // For immediate UI responsiveness, update the legacy system first
+          updateItem(id, field, value);
+          
+          // Then route through operation system for collaboration
           handleCellChange(id, field, value);
         }}
         onCellClick={handleCellClickWrapper}
