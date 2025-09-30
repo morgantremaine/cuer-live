@@ -185,15 +185,24 @@ export const useConsolidatedRealtimeRundown = ({
              const serverVersion = data.doc_version || 0;
              const serverTimestamp = normalizeTimestamp(data.updated_at);
              
-             // CRITICAL FIX: Check LocalShadow protection before applying gap resolution
+             // CRITICAL FIX: Check LocalShadow protection AND recent user activity
              const { localShadowStore } = await import('@/state/localShadows');
              const activeShadows = localShadowStore.getActiveShadows();
              
-             // If user is actively editing, queue this update instead of applying immediately
-             if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
-               console.log('🛡️ Gap resolution deferred - user actively editing', {
+             // EXTENDED PROTECTION: Check for recent user activity (last 5 seconds)
+             // This prevents gap resolution from overwriting changes even after shadows clear
+             const timeSinceUpdate = Date.now() - globalState.lastProcessedTimestamp 
+               ? new Date(globalState.lastProcessedTimestamp).getTime() 
+               : 0;
+             const recentUserActivity = timeSinceUpdate < 5000;
+             
+             // If user is actively editing OR had recent activity, queue this update
+             if (activeShadows.items.size > 0 || activeShadows.globals.size > 0 || recentUserActivity) {
+               console.log('🛡️ Gap resolution DEFERRED - protecting user changes', {
                  activeItems: activeShadows.items.size,
-                 activeGlobals: activeShadows.globals.size
+                 activeGlobals: activeShadows.globals.size,
+                 recentActivity: recentUserActivity,
+                 timeSinceUpdate
                });
                
                if (!globalState.itemDirtyQueue) {
@@ -207,11 +216,25 @@ export const useConsolidatedRealtimeRundown = ({
                  queuedAt: Date.now()
                });
                
-               // Schedule processing when typing stops
+               // Schedule processing when safe (5 seconds after last activity)
                setTimeout(() => {
-                 processQueuedUpdates(globalState);
-               }, 2000);
+                 const currentTimeSinceUpdate = Date.now() - (globalState.lastProcessedTimestamp 
+                   ? new Date(globalState.lastProcessedTimestamp).getTime() 
+                   : 0);
+                 
+                 // Only process if enough time has passed
+                 if (currentTimeSinceUpdate >= 5000) {
+                   console.log('⏰ Gap resolution: Safe to process queued update now');
+                   processQueuedUpdates(globalState);
+                 } else {
+                   console.log('⏰ Gap resolution: Still too soon, will retry');
+                   // Retry later
+                   setTimeout(() => processQueuedUpdates(globalState), 3000);
+                 }
+               }, 5000);
                
+               globalState.gapDetectionInProgress = false;
+               setIsProcessingUpdate(false);
                return;
              }
              
@@ -220,14 +243,18 @@ export const useConsolidatedRealtimeRundown = ({
               globalState.lastProcessedTimestamp = serverTimestamp;
               globalState.lastProcessedDocVersion = serverVersion;
               
-              // Apply complete server data to resolve gap
+              // CONSERVATIVE MERGE: Apply LocalShadows even during gap resolution
+              const shadowedData = localShadowStore.applyShadowsToData(data);
+              
+              // Apply gap-resolved data with shadow protection
               globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                try { cb(data); } catch (err) { console.error('Error in gap resolution callback:', err); }
+                try { cb(shadowedData); } catch (err) { console.error('Error in gap resolution callback:', err); }
               });
               
-              console.log('✅ Gap resolved with server data:', {
+              console.log('✅ Gap resolved with PROTECTED server data:', {
                 serverVersion,
-                targetVersion: incomingDocVersion
+                targetVersion: incomingDocVersion,
+                shadowsApplied: true
               });
             } else {
               console.warn('⚠️ Server data outdated during gap resolution, continuing with update');
