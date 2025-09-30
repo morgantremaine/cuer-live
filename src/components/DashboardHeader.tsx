@@ -80,7 +80,7 @@ const DashboardHeader = ({
                         <span className="text-xs text-gray-400 font-normal">Current Team</span>
                         <div className="flex items-center space-x-2">
                           {userRole === 'admin' ? (
-                            <Shield className="h-3.5 w-3.5 text-blue-400" />
+                            <Crown className="h-3.5 w-3.5 text-blue-400" />
                           ) : (
                             <Users className="h-3.5 w-3.5 text-gray-400" />
                           )}
@@ -106,7 +106,7 @@ const DashboardHeader = ({
                       <div className="flex items-center space-x-3">
                         <div className={`p-1.5 rounded-md ${userTeam.role === 'admin' ? 'bg-blue-500/20' : 'bg-gray-600/20'}`}>
                           {userTeam.role === 'admin' ? (
-                            <Shield className="h-4 w-4 text-blue-400" />
+                            <Crown className="h-4 w-4 text-blue-400" />
                           ) : (
                             <Users className="h-4 w-4 text-gray-400" />
                           )}
