@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useLoggerAuth } from "@/hooks/useLoggerAuth";
+import { DebugPanelWrapper } from "@/components/debug/DebugPanelWrapper";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -222,6 +223,7 @@ const App = () => (
             <BrowserRouter>
               <AppUpdateNotification />
               <AppRoutes />
+              <DebugPanelWrapper />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>

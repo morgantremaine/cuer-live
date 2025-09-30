@@ -25,6 +25,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
+import { localShadowStore } from '@/state/localShadows';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -239,7 +240,12 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Simplified protected fields - just basic typing protection
+  // PHASE 2: Enhanced protection with deletion tracking and extended windows
+  const deletionInProgressRef = useRef<Map<string, number>>(new Map()); // fieldKey -> timestamp
+  const lastUserActionRef = useRef<number>(0);
+  const DELETION_PROTECTION_MS = 2000; // 2 seconds for deletions
+  const USER_ACTION_BLOCK_MS = 1000; // 1 second after any user action
+  
   const getProtectedFields = useCallback(() => {
     const protectedFields = new Set<string>();
     const now = Date.now();
@@ -249,11 +255,15 @@ export const useSimplifiedRundownState = () => {
       protectedFields.add(typingSessionRef.current.fieldKey);
     }
     
-    // SIMPLIFIED: Only protect fields that are actively being typed in
-    // Don't protect based on recent edits - only active typing
-    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
-      protectedFields.add(typingSessionRef.current.fieldKey);
-    }
+    // PHASE 2: Protect fields with deletions in progress (extended window)
+    deletionInProgressRef.current.forEach((timestamp, fieldKey) => {
+      if (now - timestamp < DELETION_PROTECTION_MS) {
+        protectedFields.add(fieldKey);
+        console.log('🗑️ Protecting deleted field:', fieldKey, `(${now - timestamp}ms ago)`);
+      } else {
+        deletionInProgressRef.current.delete(fieldKey);
+      }
+    });
     
     // Clean up old recently edited fields
     recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
@@ -261,6 +271,11 @@ export const useSimplifiedRundownState = () => {
         recentlyEditedFieldsRef.current.delete(fieldKey);
       }
     });
+    
+    // PHASE 1: Log protected fields for debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      (window as any).realtimeDebugLogger.logProtectionActive(Array.from(protectedFields));
+    }
     
     return protectedFields;
   }, [teleprompterSync.isTeleprompterSaving]);
@@ -330,14 +345,34 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // ALWAYS apply updates - never block them. Google Sheets style.
+      // PHASE 2: Block realtime updates for 1 second after any user action
+      const now = Date.now();
+      const timeSinceUserAction = now - lastUserActionRef.current;
+      if (timeSinceUserAction < USER_ACTION_BLOCK_MS) {
+        console.log('🛡️ BLOCKING realtime update - recent user action', {
+          timeSinceAction: timeSinceUserAction,
+          threshold: USER_ACTION_BLOCK_MS
+        });
+        return; // Block the update completely
+      }
+      
+      // PHASE 1: Log realtime update for debug panel
+      if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+        (window as any).realtimeDebugLogger.logRealtimeUpdate({
+          docVersion: updatedRundown.doc_version,
+          itemCount: updatedRundown.items?.length || 0,
+          timeSinceUserAction
+        });
+      }
+      
       debugLogger.realtime('Processing realtime update immediately:', {
         docVersion: updatedRundown.doc_version,
         hasItems: !!updatedRundown.items,
         itemCount: updatedRundown.items?.length || 0,
         isTyping: isTypingActive(),
         activeField: typingSessionRef.current?.fieldKey,
-        hasRecentCellUpdates
+        hasRecentCellUpdates,
+        timeSinceUserAction
       });
       
       // SIMPLIFIED: Remove complex structural change detection and cooldowns
@@ -349,7 +384,10 @@ export const useSimplifiedRundownState = () => {
         setLastSeenDocVersion(updatedRundown.doc_version);
       }
       
-      // Apply granular merge only if actively typing in a specific field
+      // PHASE 2: Apply LocalShadows BEFORE processing realtime update
+      const shadowedRundown = localShadowStore.applyShadowsToData(updatedRundown);
+      
+      // Apply granular merge with shadow-protected data
       const protectedFields = getProtectedFields();
       
       // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
@@ -367,14 +405,25 @@ export const useSimplifiedRundownState = () => {
       
       if (protectedFields.size > 0) {
         // Create merged items by protecting local edits
-        // Enhanced conflict resolution: merge changes at field level
-        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
+        // PHASE 2: When any field is protected, keep ALL local changes for that item
+        const mergedItems = shadowedRundown.items?.map((remoteItem: any) => {
           const localItem = state.items.find(item => item.id === remoteItem.id);
           if (!localItem) return remoteItem; // New item from remote
           
+          // PHASE 2: Check if ANY field is protected for this item
+          const hasAnyProtectedField = Array.from(protectedFields).some(fieldKey => 
+            fieldKey.startsWith(`${remoteItem.id}-`)
+          );
+          
+          // If any field is protected, keep entire local item (conservative merge)
+          if (hasAnyProtectedField) {
+            console.log('🛡️ Item has protected fields - keeping ALL local changes:', remoteItem.id);
+            return localItem;
+          }
+          
           const merged = { ...remoteItem };
           
-          // Apply operational transformation: merge non-conflicting changes
+          // Otherwise, do field-level merge
           Object.keys(localItem).forEach(key => {
             if (key === 'id') return; // Never change IDs
             
@@ -407,7 +456,7 @@ export const useSimplifiedRundownState = () => {
         // Apply the update with simple field-level protection
         actions.loadState({
           items: mergedItems,
-          title: protectedFields.has('title') ? state.title : updatedRundown.title,
+          title: protectedFields.has('title') ? state.title : shadowedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
           showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
@@ -996,6 +1045,10 @@ export const useSimplifiedRundownState = () => {
       
       actions.updateItem(id, { [updateField]: updateValue });
       
+      // PHASE 2: Track field changes after update
+      const fieldKey = `${id}-${updateField}`;
+      markFieldAsRecentlyEdited(fieldKey, updateValue);
+      
       // CRITICAL: Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
@@ -1004,9 +1057,37 @@ export const useSimplifiedRundownState = () => {
   }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
 
   // Optimized field tracking with debouncing
-  const markFieldAsRecentlyEdited = useCallback((fieldKey: string) => {
+  const markFieldAsRecentlyEdited = useCallback((fieldKey: string, value?: any) => {
     const now = Date.now();
     recentlyEditedFieldsRef.current.set(fieldKey, now);
+    
+    // PHASE 2: Track user action timestamp
+    lastUserActionRef.current = now;
+    
+    // PHASE 2: Track deletions with extended protection
+    if (value === '' || value === null || value === undefined) {
+      deletionInProgressRef.current.set(fieldKey, now);
+      console.log('🗑️ Deletion detected:', fieldKey);
+      
+      // Notify debug panel
+      if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+        (window as any).realtimeDebugLogger.setDeletionInProgress(fieldKey);
+      }
+      
+      // Clear deletion flag after extended protection window
+      setTimeout(() => {
+        deletionInProgressRef.current.delete(fieldKey);
+        if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+          (window as any).realtimeDebugLogger.setDeletionInProgress(null);
+        }
+      }, DELETION_PROTECTION_MS);
+    }
+    
+    // PHASE 1: Log to debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      const [itemId, field] = fieldKey.split('-');
+      (window as any).realtimeDebugLogger.logLocalEdit(itemId, field, value);
+    }
     
     // Use debounced tracker to reduce logging overhead
     import('@/utils/debouncedFieldTracker').then(({ debouncedFieldTracker }) => {

@@ -320,10 +320,20 @@ export const useSimpleAutoSave = (
   // Create callback functions for per-cell save coordination
   const handlePerCellSaveStart = useCallback(() => {
     setIsSaving(true);
+    
+    // PHASE 1: Log to debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      (window as any).realtimeDebugLogger.logSaveStart();
+    }
   }, []);
 
   const handlePerCellSaveComplete = useCallback(() => {
     setIsSaving(false);
+    
+    // PHASE 1: Log to debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      (window as any).realtimeDebugLogger.logSaveComplete();
+    }
   }, []);
 
   const handlePerCellUnsavedChanges = useCallback(() => {

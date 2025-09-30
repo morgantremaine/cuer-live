@@ -43,6 +43,11 @@ class LocalShadowStore {
     this.typingBuffer.set(fieldKey, itemShadow[fieldName]);
     
     console.log('🔒 LocalShadow: Set shadow', { itemId, fieldName, isActive, valueLength: String(value).length });
+    
+    // Integrate with debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      (window as any).realtimeDebugLogger.logShadowSet(itemId, fieldName);
+    }
   }
 
   // Set shadow for global field (title, startTime, etc.)
@@ -277,6 +282,11 @@ class LocalShadowStore {
     this.globalFields.clear();
     this.typingBuffer.clear();
     console.log('🔒 LocalShadow: Cleared all shadows');
+    
+    // Integrate with debug panel
+    if (typeof window !== 'undefined' && (window as any).realtimeDebugLogger) {
+      (window as any).realtimeDebugLogger.logShadowClear();
+    }
   }
 }
 
