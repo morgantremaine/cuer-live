@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
@@ -31,6 +31,7 @@ export const useStructuralSave = (
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const isUnloadingRef = useRef(false);
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -192,6 +193,40 @@ export const useStructuralSave = (
   const hasPendingOperations = useCallback((): boolean => {
     return pendingOperationsRef.current.length > 0;
   }, []);
+
+  // Flush pending operations before page unload to prevent data loss
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingOperationsRef.current.length > 0) {
+        console.log('🚨 Page unloading with pending operations, flushing...');
+        isUnloadingRef.current = true;
+        
+        // Cancel any pending timeout
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        // Flush immediately (synchronous)
+        saveStructuralOperations();
+        
+        // Show browser warning
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      
+      // Cleanup on unmount - flush any pending operations
+      if (pendingOperationsRef.current.length > 0 && !isUnloadingRef.current) {
+        console.log('🧹 Component unmounting with pending operations, flushing...');
+        saveStructuralOperations();
+      }
+    };
+  }, [saveStructuralOperations]);
 
   return {
     queueStructuralOperation,
