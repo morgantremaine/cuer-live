@@ -42,9 +42,10 @@ export const useSimpleAutoSave = (
   const editBaseDocVersionRef = useRef<number>(0);
   
   // Enhanced cooldown management with explicit flags (passed as parameters)
-  // Simplified autosave system - reduce complexity with performance optimization
-  const lastEditAtRef = useRef<number>(0);
-  const hasUnsavedChangesRef = useRef<boolean>(false);
+   // Simplified autosave system - reduce complexity with performance optimization
+   const lastEditAtRef = useRef<number>(0);
+   const hasUnsavedChangesRef = useRef<boolean>(false);
+   const [perCellHasUnsavedChanges, setPerCellHasUnsavedChanges] = useState<boolean>(false);
   
   // Consistent timing for all rundown sizes - no functional differences
   const getOptimizedTimings = useCallback(() => {
@@ -327,10 +328,12 @@ export const useSimpleAutoSave = (
 
   const handlePerCellUnsavedChanges = useCallback(() => {
     hasUnsavedChangesRef.current = true;
+    setPerCellHasUnsavedChanges(true);
   }, []);
 
   const handlePerCellChangesSaved = useCallback(() => {
     hasUnsavedChangesRef.current = false;
+    setPerCellHasUnsavedChanges(false);
   }, []);
 
   // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
@@ -1096,7 +1099,7 @@ export const useSimpleAutoSave = (
     trackFieldChange,
     handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
-    hasUnsavedChanges: hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges, // Combine both sources
+    hasUnsavedChanges: isPerCellEnabled ? perCellHasUnsavedChanges : (hasUnsavedChangesRef.current || hasCoordinatedUnsavedChanges), // Use reactive state for per-cell
     setUndoActive,
     markActiveTyping,
     isTypingActive,
