@@ -87,7 +87,15 @@ export const useOperationQueue = ({
     processingRef.current = true;
     setIsProcessing(true);
     
-    console.log('🚀 OPERATION QUEUE: Starting batch processing');
+    console.log('🚀 OPERATION QUEUE: Starting batch processing', {
+      queueLength: queueRef.current.length,
+      operations: queueRef.current.map(op => ({ 
+        id: op.id.slice(-8), 
+        type: op.operationType, 
+        status: op.status,
+        timestamp: op.timestamp 
+      }))
+    });
 
     try {
       while (queueRef.current.length > 0) {
@@ -100,52 +108,95 @@ export const useOperationQueue = ({
         });
         
         if (operation.status === 'pending') {
-          console.log('📤 SENDING OPERATION:', operation.id);
+          console.log('📤 SENDING OPERATION:', operation.id, {
+            remainingInQueue: queueRef.current.length,
+            operationType: operation.operationType
+          });
           
-          try {
-            operation.status = 'sent';
-            
-            const { data, error } = await supabase.functions.invoke('apply-operation', {
-              body: operation
-            });
+          // Add retry mechanism with timeout
+          let retryCount = 0;
+          const maxRetries = 3;
+          let success = false;
+          
+          while (retryCount < maxRetries && !success) {
+            try {
+              operation.status = 'sent';
+              
+              // Add timeout to the operation (30 seconds)
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Operation timeout after 30 seconds')), 30000)
+              );
+              
+              const operationPromise = supabase.functions.invoke('apply-operation', {
+                body: operation
+              });
+              
+              const result = await Promise.race([operationPromise, timeoutPromise]);
+              const { data, error } = result as any;
 
-            if (error) {
-              throw error;
-            }
+              if (error) {
+                throw error;
+              }
 
-            if (!data?.success) {
-              throw new Error(data?.error || 'Operation failed');
-            }
+              if (!data?.success) {
+                throw new Error(data?.error || 'Operation failed');
+              }
 
-            operation.status = 'acknowledged';
-            console.log('✅ OPERATION ACKNOWLEDGED:', operation.id);
-            
-            // Remove from queue
-            queueRef.current.shift();
-            
-            // Update save state on successful operation
-            setLastSaved(new Date());
-            setSaveError(null);
-            
-            // Notify success
-            if (onOperationApplied) {
-              onOperationApplied(operation);
-            }
+              operation.status = 'acknowledged';
+              console.log('✅ OPERATION ACKNOWLEDGED:', operation.id, {
+                retryCount,
+                sequenceNumber: data.sequenceNumber,
+                docVersion: data.docVersion,
+                remainingInQueue: queueRef.current.length - 1
+              });
+              
+              // Remove from queue
+              queueRef.current.shift();
+              
+              // Update save state on successful operation
+              setLastSaved(new Date());
+              setSaveError(null);
+              success = true;
+              
+              // Notify success
+              if (onOperationApplied) {
+                onOperationApplied(operation);
+              }
 
-          } catch (error) {
-            console.error('❌ OPERATION FAILED:', operation.id, error);
-            operation.status = 'failed';
-            
-            // Update save error state
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            setSaveError(errorMessage);
-            
-            // Remove failed operation from queue
-            queueRef.current.shift();
-            
-            // Notify failure
-            if (onOperationFailed) {
-              onOperationFailed(operation, errorMessage);
+            } catch (error) {
+              retryCount++;
+              console.warn(`⚠️ OPERATION RETRY ${retryCount}/${maxRetries}:`, operation.id, {
+                error: error instanceof Error ? error.message : error,
+                operationType: operation.operationType
+              });
+              
+              if (retryCount >= maxRetries) {
+                console.error('❌ OPERATION FAILED AFTER RETRIES:', operation.id, {
+                  error: error instanceof Error ? error.message : error,
+                  operationType: operation.operationType,
+                  finalRetryCount: retryCount
+                });
+                operation.status = 'failed';
+                
+                // Update save error state
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                setSaveError(errorMessage);
+                
+                // Remove failed operation from queue
+                queueRef.current.shift();
+                
+                // Notify failure
+                if (onOperationFailed) {
+                  onOperationFailed(operation, errorMessage);
+                }
+              } else {
+                // Reset status for retry
+                operation.status = 'pending';
+                // Add exponential backoff: 1s, 2s, 4s
+                const backoffMs = Math.pow(2, retryCount) * 1000;
+                console.log(`⏳ WAITING ${backoffMs}ms before retry ${retryCount + 1}`);
+                await new Promise(resolve => setTimeout(resolve, backoffMs));
+              }
             }
           }
         } else {
