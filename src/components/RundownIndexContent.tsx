@@ -93,7 +93,7 @@ const RundownIndexContent = () => {
   const { team } = useTeam();
 
   // Add cell edit integration for operation system
-  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
+  const { handleCellChange, saveState: cellSaveState, handleKeystroke } = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: true,
     onSaveComplete: () => {
@@ -106,6 +106,13 @@ const RundownIndexContent = () => {
       console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
     }
   });
+
+  // Merge cell save state with structural save state for complete save indicator
+  const saveState = {
+    ...cellSaveState,
+    isSaving: cellSaveState.isSaving || isSaving,
+    hasUnsavedChanges: cellSaveState.hasUnsavedChanges || hasUnsavedChanges
+  };
 
   // Only log significant changes, not every render
   const prevItemsCount = useRef(items?.length || 0);
