@@ -180,20 +180,6 @@ export const useRundownGridHandlers = ({
       } else {
         console.log('⚠️ PASTE: No markStructuralChange available, paste will not save to database');
       }
-      
-      // Broadcast paste operation for immediate realtime sync
-      if (rundownId && currentUserId) {
-        console.log('📡 PASTE: Broadcasting paste operation');
-        import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:paste',
-            { items: itemsToPaste, index: insertIndex },
-            currentUserId
-          );
-        });
-      }
     } else {
       console.log('⚠️ PASTE: No items in clipboard');
     }
