@@ -627,7 +627,7 @@ const RundownIndexContent = () => {
         onDragOver={handleDragOverWrapper}
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
-        onAddRow={() => handleAddRow()}
+        onAddRow={(selectedRowId, count) => handleAddRow(selectedRowId, count)}
         onAddHeader={() => handleAddHeader()}
         selectedCount={selectedRows.size}
         hasClipboardData={typeof hasClipboardData === 'function' ? hasClipboardData() : false}

@@ -7,7 +7,7 @@ interface UseIndexHandlersProps {
   items: RundownItem[];
   selectedRows: Set<string>;
   rundownId?: string;
-  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null) => void;
+  addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>, count?: number) => void;
   addHeader: (selectedRowId?: string | null) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: RundownItem[], headerGroupItemIds?: string[]) => void;
@@ -61,10 +61,11 @@ export const useIndexHandlers = ({
     toggleRowSelection(itemId, index, isShiftClick, isCtrlClick, items, headerGroupItemIds);
   }, [toggleRowSelection, items]);
 
-  const handleAddRow = useCallback(() => {
+  const handleAddRow = useCallback((selectedRowId?: string | null, count?: number) => {
+    console.log('🟠 handleAddRow in useIndexHandlers called with count:', count);
     const selectedRowsArray = Array.from(selectedRows);
-    const selectedRowId = selectedRowsArray.length === 1 ? selectedRowsArray[0] : null;
-    addRow(calculateEndTime, selectedRowId);
+    const resolvedSelectedRowId = selectedRowId ?? (selectedRowsArray.length === 1 ? selectedRowsArray[0] : null);
+    addRow(calculateEndTime, resolvedSelectedRowId, selectedRows, count);
   }, [addRow, calculateEndTime, selectedRows]);
 
   const handleAddHeader = useCallback(() => {
