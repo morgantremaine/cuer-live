@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Eye, Undo, MapPin, Search, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -10,11 +10,12 @@ import { CSVExportData } from '@/utils/csvExport';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { AddRowsDialog } from '@/components/dialogs/AddRowsDialog';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
 interface MainActionButtonsProps {
-  onAddRow: () => void;
+  onAddRow: (selectedRowId?: string | null, count?: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -67,6 +68,7 @@ const MainActionButtons = ({
   onShowFindReplace,
   onShowNotes
 }: MainActionButtonsProps) => {
+  const [showAddRowsDialog, setShowAddRowsDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
@@ -74,10 +76,15 @@ const MainActionButtons = ({
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
+  
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
     }
+  };
+
+  const handleAddRows = (count: number) => {
+    onAddRow(null, count);
   };
 
   const handleOpenBlueprint = () => {
@@ -112,7 +119,7 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+          <Button onClick={() => setShowAddRowsDialog(true)} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Segment</span>
           </Button>
@@ -185,6 +192,12 @@ const MainActionButtons = ({
             </div>
           </div>
         )}
+        
+        <AddRowsDialog
+          open={showAddRowsDialog}
+          onOpenChange={setShowAddRowsDialog}
+          onConfirm={handleAddRows}
+        />
       </div>
     );
   }
@@ -193,7 +206,7 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
+      <Button onClick={() => setShowAddRowsDialog(true)} variant="outline" size={buttonSize} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Segment</span>
       </Button>
@@ -230,6 +243,12 @@ const MainActionButtons = ({
           rundownData={rundownData}
         />
       )}
+      
+      <AddRowsDialog
+        open={showAddRowsDialog}
+        onOpenChange={setShowAddRowsDialog}
+        onConfirm={handleAddRows}
+      />
     </>
   );
 };
