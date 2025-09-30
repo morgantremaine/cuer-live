@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState } from 'react';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { useSaveCoordinationOptimizer } from './useSaveCoordinationOptimizer';
 
 interface SaveOperation {
   id: string;
@@ -22,8 +23,9 @@ interface CoordinationState {
  * Unified coordination system for ALL save operations
  * Prevents conflicts between auto-save, teleprompter, showcaller, and manual saves
  */
-export const useUnifiedSaveCoordination = () => {
+export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled?: boolean }) => {
   const { shouldBlockAutoSave, executeWithCellUpdate, executeWithShowcallerOperation } = useCellUpdateCoordination();
+  const coordinationOptimizer = useSaveCoordinationOptimizer(rundownData);
   
   const stateRef = useRef<CoordinationState>({
     isAnySaving: false,
@@ -156,6 +158,7 @@ export const useUnifiedSaveCoordination = () => {
       priority?: number;
       onComplete?: (success: boolean) => void;
       immediate?: boolean;
+      rundownId?: string;
     } = {}
   ): Promise<boolean> => {
     const {
@@ -165,7 +168,27 @@ export const useUnifiedSaveCoordination = () => {
       immediate = false
     } = options;
 
-    console.log(`🎯 Coordinated save requested (${type}):`, { id, priority, immediate });
+    console.log(`🎯 Coordinated save requested (${type}):`, { 
+      id, 
+      priority, 
+      immediate,
+      strategy: coordinationOptimizer.getCoordinationStrategy() 
+    });
+
+    // Use optimized coordination if rundownId provided
+    if (options.rundownId) {
+      const result = await coordinationOptimizer.coordinateSave(
+        type === 'auto-save' ? 'delta' : 
+        type === 'showcaller' ? 'showcaller' :
+        type === 'teleprompter' ? 'cell' : 'delta',
+        async () => {
+          const saveResult = await saveFunction();
+          return saveResult;
+        },
+        options.rundownId
+      );
+      return result;
+    }
 
     // Wrap save function with appropriate coordination
     const coordinatedExecute = async (): Promise<boolean> => {
@@ -229,7 +252,7 @@ export const useUnifiedSaveCoordination = () => {
 
       return false; // Queued, not executed immediately
     }
-  }, [shouldBlockSave, executeWithCellUpdate, executeWithShowcallerOperation, processQueue]);
+  }, [shouldBlockSave, executeWithCellUpdate, executeWithShowcallerOperation, processQueue, coordinationOptimizer]);
 
   // Specific save coordinators for different types
   const coordinateAutoSave = useCallback(async (
@@ -321,6 +344,10 @@ export const useUnifiedSaveCoordination = () => {
     
     // Queue management
     forceProcessQueue,
-    clearQueue
+    clearQueue,
+    
+    // Optimization metrics
+    getCoordinationMetrics: coordinationOptimizer.getCoordinationMetrics,
+    resetCoordination: coordinationOptimizer.resetCoordination
   };
 };

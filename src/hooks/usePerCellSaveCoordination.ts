@@ -171,13 +171,13 @@ export const usePerCellSaveCoordination = ({
     }
   }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations]);
 
-  // Enhanced save function with coordination
+  // Enhanced save function with coordination (bypasses doc_version in per-cell mode)
   const enhancedSaveState = useCallback(async (currentState: RundownState) => {
     if (isPerCellEnabled) {
       const hasCellChanges = hasPendingCellUpdates();
       const hasStructuralChanges = hasPendingStructuralOperations();
       
-      console.log('🧪 SAVE COORDINATION: Coordinated enhanced save state', {
+      console.log('🧪 SAVE COORDINATION: Per-cell mode - bypassing doc_version logic', {
         hasCellChanges,
         hasStructuralChanges,
         totalChanges: hasCellChanges || hasStructuralChanges
@@ -188,25 +188,25 @@ export const usePerCellSaveCoordination = ({
         throw new Error('No changes to save');
       }
 
-      // Use coordination system to ensure proper sequencing
+      // Use coordination system to ensure proper sequencing (no doc_version conflicts)
       if (hasStructuralChanges) {
         await coordination.executeWithStructuralOperation(async () => {
-          debugLogger.autosave('Per-cell save: coordinated flush of structural operations');
+          debugLogger.autosave('Per-cell save: coordinated flush of structural operations (doc_version bypass)');
           await flushStructuralOperations();
         });
       }
 
       if (hasCellChanges) {
         await coordination.executeWithCellUpdate(async () => {
-          debugLogger.autosave('Per-cell save: coordinated flush of cell updates');
+          debugLogger.autosave('Per-cell save: coordinated flush of cell updates (doc_version bypass)');
           await flushCellUpdates();
         });
       }
 
       return;
     } else {
-      // Delta save: use existing delta system
-      debugLogger.autosave('Delta save: saving state deltas');
+      // Delta save: use existing delta system with full doc_version coordination
+      debugLogger.autosave('Delta save: saving state deltas with doc_version coordination');
       return await saveDeltaState(currentState);
     }
   }, [isPerCellEnabled, hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, saveDeltaState, coordination]);
