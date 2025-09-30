@@ -87,194 +87,101 @@ export const useOperationQueue = ({
     return operation.id;
   }, [rundownId, userId, clientId, generateOperationId]);
 
-  // Process the operation queue with batching
+  // Process the operation queue by sending batched operations
   const processQueue = useCallback(async () => {
-    console.log('🔄 OPERATION QUEUE: processQueue called', {
-      queueLength: queueRef.current.length,
-      isProcessing: processingRef.current,
-      timestamp: new Date().toISOString()
-    });
-    
     if (processingRef.current || queueRef.current.length === 0) {
-      console.log('⏸️ OPERATION QUEUE: Skipping processing', {
-        alreadyProcessing: processingRef.current,
-        queueEmpty: queueRef.current.length === 0
-      });
       return;
     }
 
     processingRef.current = true;
     setIsProcessing(true);
-    
-    console.log('🚀 OPERATION QUEUE: Starting batch processing', {
-      queueLength: queueRef.current.length,
-      operations: queueRef.current.map(op => ({ 
-        id: op.id.slice(-8), 
-        type: op.operationType, 
-        status: op.status,
-        timestamp: op.timestamp 
-      }))
-    });
 
     try {
-      while (queueRef.current.length > 0) {
-        // Get batch of pending operations (up to MAX_BATCH_SIZE)
-        const batch = queueRef.current
-          .filter(op => op.status === 'pending')
-          .slice(0, MAX_BATCH_SIZE);
-        
-        if (batch.length === 0) {
-          // No pending operations, remove non-pending ones
-          queueRef.current = queueRef.current.filter(op => op.status === 'pending');
-          break;
-        }
-        
-        console.log('📦 PROCESSING BATCH:', {
-          batchSize: batch.length,
-          operationIds: batch.map(op => op.id.slice(-8)),
-          remainingInQueue: queueRef.current.length
-        });
-        
-        // Mark all as sent
-        batch.forEach(op => op.status = 'sent');
-        
-        // Send batch in parallel
-        let retryCount = 0;
-        const maxRetries = 3;
-        let success = false;
-        
-        while (retryCount < maxRetries && !success) {
-          try {
-            console.log('📤 SENDING BATCH:', {
-              size: batch.length,
-              attempt: retryCount + 1
-            });
-            
-            // Send all operations in parallel
-            const promises = batch.map(operation =>
-              supabase.functions.invoke('apply-operation', {
-                body: operation
-              }).then(result => ({ operation, result }))
-            );
-            
-            // Wait for all with timeout
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Batch timeout after 30 seconds')), 30000)
-            );
-            
-            const results = await Promise.race([
-              Promise.allSettled(promises),
-              timeoutPromise
-            ]) as PromiseSettledResult<{ operation: Operation; result: any }>[];
-            
-            // Process results
-            const succeeded: Operation[] = [];
-            const failed: { operation: Operation; error: string }[] = [];
-            
-            results.forEach((result, index) => {
-              const operation = batch[index];
-              
-              if (result.status === 'fulfilled') {
-                const { data, error } = result.value.result;
-                
-                if (error || !data?.success) {
-                  const errorMsg = error?.message || data?.error || 'Operation failed';
-                  failed.push({ operation, error: errorMsg });
-                } else {
-                  operation.status = 'acknowledged';
-                  succeeded.push(operation);
-                  console.log('✅ OPERATION APPLIED:', operation.id);
-                  
-                  // Notify success
-                  if (onOperationApplied) {
-                    onOperationApplied(operation);
-                  }
-                }
-              } else {
-                const errorMsg = result.reason?.message || 'Promise rejected';
-                failed.push({ operation, error: errorMsg });
-              }
-            });
-            
-            console.log('📊 BATCH RESULTS:', {
-              succeeded: succeeded.length,
-              failed: failed.length,
-              retryAttempt: retryCount + 1
-            });
-            
-            // Remove succeeded operations from queue
-            succeeded.forEach(op => {
-              const index = queueRef.current.findIndex(q => q.id === op.id);
-              if (index !== -1) queueRef.current.splice(index, 1);
-            });
-            
-            // Handle failures
-            if (failed.length > 0 && retryCount < maxRetries - 1) {
-              // Retry failed operations
-              console.warn(`⚠️ RETRYING ${failed.length} FAILED OPERATIONS (attempt ${retryCount + 2}/${maxRetries})`);
-              failed.forEach(({ operation }) => {
-                operation.status = 'pending';
-              });
-              
-              retryCount++;
-              const backoffMs = Math.pow(2, retryCount) * 1000;
-              await new Promise(resolve => setTimeout(resolve, backoffMs));
-            } else if (failed.length > 0) {
-              // Max retries reached
-              console.error(`❌ ${failed.length} OPERATIONS FAILED AFTER ${maxRetries} RETRIES`);
-              failed.forEach(({ operation, error }) => {
-                operation.status = 'failed';
-                setSaveError(error);
-                
-                // Remove from queue
-                const index = queueRef.current.findIndex(q => q.id === operation.id);
-                if (index !== -1) queueRef.current.splice(index, 1);
-                
-                if (onOperationFailed) {
-                  onOperationFailed(operation, error);
-                }
-              });
-              success = true;
-            } else {
-              // All succeeded
-              success = true;
-              setLastSaved(new Date());
-              setSaveError(null);
-            }
-            
-          } catch (error) {
-            retryCount++;
-            console.error(`❌ BATCH ERROR (attempt ${retryCount}/${maxRetries}):`, error);
-            
-            if (retryCount >= maxRetries) {
-              // Mark all as failed
-              batch.forEach(operation => {
-                operation.status = 'failed';
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                setSaveError(errorMessage);
-                
-                const index = queueRef.current.findIndex(q => q.id === operation.id);
-                if (index !== -1) queueRef.current.splice(index, 1);
-                
-                if (onOperationFailed) {
-                  onOperationFailed(operation, errorMessage);
-                }
-              });
-              success = true;
-            } else {
-              // Reset for retry
-              batch.forEach(op => op.status = 'pending');
-              const backoffMs = Math.pow(2, retryCount) * 1000;
-              await new Promise(resolve => setTimeout(resolve, backoffMs));
-            }
-          }
-        }
+      const authToken = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!authToken) {
+        throw new Error('No auth token available');
       }
+
+      // Get batch of operations to send
+      const batchSize = Math.min(queueRef.current.length, MAX_BATCH_SIZE);
+      const batch = queueRef.current.slice(0, batchSize);
+      
+      console.log('📤 PROCESSING BATCH:', {
+        batchSize: batch.length,
+        totalQueued: queueRef.current.length,
+        rundownId
+      });
+
+      // Update status to 'sent'
+      batch.forEach(op => op.status = 'sent');
+
+      // Send entire batch in a single request
+      const SUPABASE_URL = 'https://khdiwrkgahsbjszlwnob.supabase.co';
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/apply-operation`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              rundownId,
+              operations: batch.map(op => ({
+                rundownId: op.rundownId,
+                operationType: op.operationType,
+                operationData: op.operationData,
+                userId: op.userId,
+                clientId: op.clientId,
+                timestamp: op.timestamp
+              }))
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Batch operation failed');
+        }
+
+        // Mark all operations as acknowledged
+        batch.forEach(operation => {
+          operation.status = 'acknowledged';
+          console.log('✅ OPERATION APPLIED:', operation.id);
+          onOperationApplied?.(operation);
+        });
+
+        // Update last saved
+        setLastSaved(new Date());
+        setSaveError(null);
+
+      } catch (error) {
+        console.error('❌ BATCH FAILED:', error);
+        
+        // Mark all operations in batch as failed
+        batch.forEach(operation => {
+          operation.status = 'failed';
+          onOperationFailed?.(operation, error instanceof Error ? error.message : 'Unknown error');
+        });
+
+        setSaveError('Failed to save changes');
+      }
+
+      // Remove acknowledged operations
+      queueRef.current = queueRef.current.filter(op => op.status !== 'acknowledged');
+
     } finally {
       processingRef.current = false;
       setIsProcessing(false);
+      
+      // Continue processing if there are more items in queue
+      if (queueRef.current.length > 0) {
+        setTimeout(() => processQueue(), 100);
+      }
     }
-  }, [onOperationApplied, onOperationFailed]);
+  }, [rundownId, onOperationApplied, onOperationFailed]);
 
   // Create specific operation types
   const cellEdit = useCallback((itemId: string, field: string, newValue: any, oldValue?: any) => {

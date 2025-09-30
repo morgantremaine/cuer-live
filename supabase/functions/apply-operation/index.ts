@@ -15,6 +15,11 @@ interface OperationData {
   timestamp: number;
 }
 
+interface BatchRequest {
+  rundownId: string;
+  operations: OperationData[];
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -40,21 +45,21 @@ serve(async (req) => {
       throw new Error('Authentication failed');
     }
 
-    const operation: OperationData = await req.json();
+    const batchRequest: BatchRequest = await req.json();
+    const operations = batchRequest.operations;
 
-    console.log('🚀 OPERATION RECEIVED:', {
-      type: operation.operationType,
-      rundownId: operation.rundownId,
-      userId: operation.userId,
-      clientId: operation.clientId,
-      timestamp: operation.timestamp
+    console.log('🚀 BATCH RECEIVED:', {
+      rundownId: batchRequest.rundownId,
+      operationCount: operations.length,
+      firstOp: operations[0]?.operationType,
+      timestamp: Date.now()
     });
 
     // Verify user has access to rundown
     const { data: rundown, error: rundownError } = await supabaseClient
       .from('rundowns')
       .select('*')
-      .eq('id', operation.rundownId)
+      .eq('id', batchRequest.rundownId)
       .single();
 
     if (rundownError || !rundown) {
@@ -74,75 +79,71 @@ serve(async (req) => {
       throw new Error('Operation mode not enabled for this rundown');
     }
 
-    // Get next sequence number
-    const { data: sequenceData, error: sequenceError } = await supabaseClient
-      .rpc('get_next_sequence_number');
+    // Apply all operations in sequence
+    let currentRundown = rundown;
+    const appliedOperations = [];
+    
+    for (const operation of operations) {
+      // Get next sequence number
+      const { data: sequenceData } = await supabaseClient.rpc('get_next_sequence_number');
+      const sequenceNumber = sequenceData;
 
-    if (sequenceError) {
-      throw new Error('Failed to get sequence number');
+      // Apply operation
+      currentRundown = applyOperationToRundown(currentRundown, operation);
+
+      // Log operation
+      const { error: logError } = await supabaseClient
+        .from('rundown_operations')
+        .insert({
+          rundown_id: batchRequest.rundownId,
+          user_id: operation.userId,
+          operation_type: operation.operationType,
+          operation_data: operation.operationData,
+          client_id: operation.clientId,
+          sequence_number: sequenceNumber,
+          applied_at: new Date().toISOString()
+        });
+
+      if (logError) {
+        console.error('Failed to log operation:', logError);
+      }
+
+      appliedOperations.push({
+        ...operation,
+        sequenceNumber,
+        appliedAt: new Date().toISOString()
+      });
     }
 
-    const sequenceNumber = sequenceData;
-
-    // Apply operation to rundown
-    const updatedRundown = await applyOperationToRundown(rundown, operation);
-
-    // Update rundown in database
+    // Single database update with all changes
     const { error: updateError } = await supabaseClient
       .from('rundowns')
       .update({
-        items: updatedRundown.items,
-        title: updatedRundown.title,
-        start_time: updatedRundown.start_time,
-        timezone: updatedRundown.timezone,
-        show_date: updatedRundown.show_date,
-        external_notes: updatedRundown.external_notes,
+        items: currentRundown.items,
+        title: currentRundown.title,
+        start_time: currentRundown.start_time,
+        timezone: currentRundown.timezone,
+        show_date: currentRundown.show_date,
+        external_notes: currentRundown.external_notes,
         updated_at: new Date().toISOString(),
         last_updated_by: userData.user.id
       })
-      .eq('id', operation.rundownId);
+      .eq('id', batchRequest.rundownId);
 
     if (updateError) {
       throw new Error('Failed to update rundown');
     }
 
-    // Log operation
-    const { error: logError } = await supabaseClient
-      .from('rundown_operations')
-      .insert({
-        rundown_id: operation.rundownId,
-        user_id: operation.userId,
-        operation_type: operation.operationType,
-        operation_data: operation.operationData,
-        client_id: operation.clientId,
-        sequence_number: sequenceNumber,
-        applied_at: new Date().toISOString()
-      });
+    console.log('✅ BATCH APPLIED:', {
+      rundownId: batchRequest.rundownId,
+      operationCount: appliedOperations.length
+    });
 
-    if (logError) {
-      console.error('Failed to log operation:', logError);
-      // Don't fail the request, just log the error
-    }
-
-    // Broadcast operation to other clients via realtime
-    const broadcastPayload = {
-      type: 'operation_applied',
-      operation: {
-        ...operation,
-        sequenceNumber,
-        appliedAt: new Date().toISOString()
-      },
-      rundownId: operation.rundownId
-    };
-
-    console.log('📡 BROADCASTING OPERATION:', broadcastPayload.type);
-
-    // Return success response immediately
+    // Return success response
     const response = {
       success: true,
-      sequenceNumber,
-      appliedAt: new Date().toISOString(),
-      operationType: operation.operationType
+      appliedOperations: appliedOperations.length,
+      timestamp: new Date().toISOString()
     };
 
     return new Response(JSON.stringify(response), {
