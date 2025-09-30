@@ -594,6 +594,9 @@ const RundownIndexContent = () => {
         onToggleColorPicker={handleToggleColorPicker}
         onColorSelect={(id, color) => {
           console.log('🎨 RUNDOWN INDEX: Color select triggered', { id, color });
+          // For immediate UI responsiveness, update the legacy system first
+          selectColor(id, color);
+          // Then route through operation system for collaboration
           handleCellChange(id, 'color', color);
         }}
         onDeleteRow={deleteRow}
@@ -605,6 +608,9 @@ const RundownIndexContent = () => {
             willBeFloating: !item?.isFloating 
           });
           if (item) {
+            // For immediate UI responsiveness, update the legacy system first
+            toggleFloatRow(id);
+            // Then route through operation system for collaboration
             handleCellChange(id, 'isFloating', !item.isFloating);
           }
         }}
