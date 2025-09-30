@@ -24,6 +24,7 @@ export const useCellLevelSave = (
 ) => {
   const pendingUpdatesRef = useRef<FieldUpdate[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const localSaveInProgressRef = useRef(false);
 
   // Track individual field changes
   const trackCellChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -76,7 +77,7 @@ export const useCellLevelSave = (
           return;
         }
         
-        if (saveInProgressRef && saveInProgressRef.current) {
+        if (localSaveInProgressRef.current || (saveInProgressRef && saveInProgressRef.current)) {
           console.log('🧪 PER-CELL SAVE: Save in progress, rescheduling save');
           scheduleTypingAwareSave(); // Reschedule
           return;
@@ -97,15 +98,18 @@ export const useCellLevelSave = (
       return;
     }
 
-    const updatesToSave = [...pendingUpdatesRef.current];
-    pendingUpdatesRef.current = []; // Clear pending updates
-    
-    // Notify that changes have been saved (queue cleared)
-    if (onChangesSaved) {
-      console.log('🧪 PER-CELL SAVE: Notifying that changes have been saved');
-      onChangesSaved();
+    if (localSaveInProgressRef.current || (saveInProgressRef && saveInProgressRef.current)) {
+      console.log('🧪 PER-CELL SAVE: Save already in progress, skipping');
+      return;
     }
 
+    localSaveInProgressRef.current = true;
+    if (saveInProgressRef) {
+      saveInProgressRef.current = true;
+    }
+    const updatesToSave = [...pendingUpdatesRef.current];
+    // Don't clear pending updates until save is confirmed successful
+    
     console.log('🧪 PER-CELL SAVE: Starting save operation', {
       rundownId,
       updateCount: updatesToSave.length,
@@ -154,10 +158,19 @@ export const useCellLevelSave = (
         });
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
         
+        // Clear pending updates only after successful save
+        pendingUpdatesRef.current = [];
+        
         // Track own update via centralized tracker with realtime context
         const context = rundownId ? `realtime-${rundownId}` : undefined;
         ownUpdateTracker.track(data.updatedAt, context);
         console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
+        
+        // Notify that changes have been saved after successful save
+        if (onChangesSaved) {
+          console.log('🧪 PER-CELL SAVE: Notifying that changes have been saved');
+          onChangesSaved();
+        }
         
         // Notify the main system that save completed with details
         if (onSaveComplete) {
@@ -176,7 +189,13 @@ export const useCellLevelSave = (
 
     } catch (error) {
       console.error('🚨 PER-CELL SAVE: Exception during save:', error);
+      // Don't restore updates to queue - let them try again with next changes
       throw error;
+    } finally {
+      localSaveInProgressRef.current = false;
+      if (saveInProgressRef) {
+        saveInProgressRef.current = false;
+      }
     }
   }, [rundownId]);
 
