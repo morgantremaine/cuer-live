@@ -65,7 +65,7 @@ export const useTextFormatting = () => {
         formattedText = `*${selectedText}*`;
         break;
       case 'underline':
-        formattedText = `__${selectedText}__`;
+        formattedText = `<u>${selectedText}</u>`;
         break;
       case 'strikethrough':
         formattedText = `~~${selectedText}~~`;

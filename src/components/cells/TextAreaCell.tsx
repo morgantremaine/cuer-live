@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
+import { renderFormattedText } from '@/utils/textFormatting';
 
 interface TextAreaCellProps {
   value: string;
@@ -207,20 +208,30 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   
   // Check if this cell contains URLs and should show clickable links when not focused
   const shouldShowClickableUrls = !isFocused && containsUrls(value);
+  
+  // Check if text has formatting (markdown-like or color tags)
+  const hasFormatting = !isFocused && /(\*\*.*?\*\*|\*.*?\*|<u>.*?<\/u>|~~.*?~~|<color:#[0-9a-fA-F]{6}>.*?<\/color>)/.test(value);
+  
+  // Show formatted overlay when not focused and has formatting
+  const shouldShowFormattedOverlay = hasFormatting && !shouldShowClickableUrls;
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
       {/* Hidden measurement div */}
-      <div
-        ref={measurementRef}
-        className="absolute top-0 left-0 opacity-0 pointer-events-none whitespace-pre-wrap break-words"
-        style={{ 
-          fontSize: isHeaderRow ? '14px' : '14px',
-          fontFamily: 'inherit',
-          lineHeight: '1.3',
-          zIndex: -1
-        }}
-      />
+...
+      
+      {/* Formatted text overlay when not focused and has formatting */}
+      {shouldShowFormattedOverlay && (
+        <div
+          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
+          style={{ 
+            color: textColor || 'inherit',
+            lineHeight: '1.3',
+            textAlign: isDuration ? 'center' : 'left'
+          }}
+          dangerouslySetInnerHTML={{ __html: renderFormattedText(value) }}
+        />
+      )}
       
       {/* Clickable URL overlay when not focused - positioned to allow editing */}
       {shouldShowClickableUrls && (
@@ -258,10 +269,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-field-key={`${itemId}-${resolvedFieldKey}`}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
+        } ${(shouldShowClickableUrls || shouldShowFormattedOverlay) ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
-          color: shouldShowClickableUrls ? 'transparent' : (textColor || 'inherit'),
+          color: (shouldShowClickableUrls || shouldShowFormattedOverlay) ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'

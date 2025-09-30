@@ -34,7 +34,7 @@ const TextFormattingToolbar: React.FC<TextFormattingToolbarProps> = ({
 
   return (
     <div
-      className="fixed bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-1 flex items-center gap-1 z-[9999]"
+      className="text-formatting-toolbar fixed bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-1 flex items-center gap-1 z-[9999]"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
