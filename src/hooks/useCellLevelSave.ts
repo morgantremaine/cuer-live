@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownState } from './useRundownState';
 import { createContentSignature } from '@/utils/contentSignature';
 import { debugLogger } from '@/utils/debugLogger';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface FieldUpdate {
   itemId?: string;
@@ -13,7 +14,6 @@ interface FieldUpdate {
 
 export const useCellLevelSave = (
   rundownId: string | null,
-  trackOwnUpdate: (timestamp: string) => void,
   onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void
@@ -121,7 +121,11 @@ export const useCellLevelSave = (
           docVersion: data.docVersion
         });
         debugLogger.autosave(`Cell-level save successful: ${data.fieldsUpdated} fields`);
-        trackOwnUpdate(data.updatedAt);
+        
+        // Track own update via centralized tracker with realtime context
+        const context = rundownId ? `realtime-${rundownId}` : undefined;
+        ownUpdateTracker.track(data.updatedAt, context);
+        console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
         
         // Notify the main system that save completed with details
         if (onSaveComplete) {
@@ -142,7 +146,7 @@ export const useCellLevelSave = (
       console.error('🚨 PER-CELL SAVE: Exception during save:', error);
       throw error;
     }
-  }, [rundownId, trackOwnUpdate]);
+  }, [rundownId]);
 
   // Force immediate save of all pending updates
   const flushPendingUpdates = useCallback(async () => {

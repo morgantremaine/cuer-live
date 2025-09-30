@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -23,7 +24,6 @@ interface StructuralOperation {
 
 export const useStructuralSave = (
   rundownId: string | null,
-  trackOwnUpdate: (timestamp: string) => void,
   onSaveComplete?: () => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
@@ -70,9 +70,11 @@ export const useStructuralSave = (
             itemCount: data.itemCount
           });
 
-          // Track our own update to prevent conflict detection
+          // Track our own update to prevent conflict detection via centralized tracker
           if (data.updatedAt) {
-            trackOwnUpdate(data.updatedAt);
+            const context = rundownId ? `realtime-${rundownId}` : undefined;
+            ownUpdateTracker.track(data.updatedAt, context);
+            console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
           // Broadcast structural change to other users for real-time updates
@@ -114,7 +116,7 @@ export const useStructuralSave = (
       pendingOperationsRef.current.unshift(...operations);
       throw error;
     }
-  }, [rundownId, trackOwnUpdate, onSaveStart, onSaveComplete]);
+  }, [rundownId, onSaveStart, onSaveComplete, currentUserId]);
 
   // Queue a structural operation with coordination
   const queueStructuralOperation = useCallback(

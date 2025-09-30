@@ -169,8 +169,8 @@ export const useSimplifiedRundownState = () => {
     }
   }, [actions, state.title, state.startTime, state.timezone]);
 
-  // Auto-save functionality with unified save pipeline
-  const { isSaving, setUndoActive, setTrackOwnUpdate, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
+  // Auto-save functionality with unified save pipeline (no setTrackOwnUpdate needed - uses centralized tracker)
+  const { isSaving, setUndoActive, markActiveTyping, isTypingActive, triggerImmediateSave } = useSimpleAutoSave(
     {
       ...state,
       columns: [] // Remove columns from team sync
@@ -722,7 +722,6 @@ export const useSimplifiedRundownState = () => {
   
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
-    trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
     isPerCellEnabled: perCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
@@ -741,7 +740,6 @@ export const useSimplifiedRundownState = () => {
   // Get save coordination system for structural operations - use same callbacks as cell edit integration
   const saveCoordination = usePerCellSaveCoordination({
     rundownId,
-    trackOwnUpdate: realtimeConnection?.trackOwnUpdate || (() => {}),
     isPerCellEnabled: perCellEnabled,
     currentUserId,
     onSaveComplete: () => {
@@ -896,14 +894,7 @@ export const useSimplifiedRundownState = () => {
     }
   }, [isSaving, actions, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]);
 
-  // Connect autosave tracking to realtime tracking
-  useEffect(() => {
-    if (realtimeConnection.trackOwnUpdate) {
-      setTrackOwnUpdate((timestamp: string) => {
-        realtimeConnection.trackOwnUpdate(timestamp);
-      });
-    }
-  }, [realtimeConnection.trackOwnUpdate, setTrackOwnUpdate]);
+  // No longer need to connect autosave tracking to realtime - both now use centralized OwnUpdateTracker
 
   // Connect typing state checker to realtime to prevent overwrites during typing
   useEffect(() => {

@@ -15,10 +15,9 @@ interface UseTeleprompterSaveProps {
   onSaveSuccess?: (itemId: string, script: string) => void;
   onSaveStart?: () => void;
   onSaveEnd?: () => void;
-  trackOwnUpdate?: (timestamp: string) => void;
 }
 
-export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
+export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd }: UseTeleprompterSaveProps) => {
   const { user } = useAuth();
   
   const [saveState, setSaveState] = useState<SaveState>({
@@ -28,10 +27,9 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     saveError: null
   });
 
-  // Use the same per-cell save system as the main rundown
+  // Use the same per-cell save system as the main rundown (no trackOwnUpdate needed - uses centralized tracker)
   const { trackCellChange, flushPendingUpdates, hasPendingUpdates } = useCellLevelSave(
     rundownId,
-    trackOwnUpdate || (() => {}),
     (savedUpdates) => {
       // Handle save completion with details about what was saved
       console.log('📝 Teleprompter: Save completion callback fired', { savedUpdates: savedUpdates?.length });

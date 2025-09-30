@@ -228,9 +228,7 @@ const Teleprompter = () => {
       }
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
-    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd,
-    // CRITICAL: Pass trackOwnUpdate to integrate with real-time system
-    trackOwnUpdate: trackOwnUpdate
+    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd
   });
 
   // Enhanced rundown data loading with doc version tracking

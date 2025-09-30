@@ -95,11 +95,10 @@ export const useShowcallerVisualState = ({
     }
   }, [synchronizeWithExternalState]);
 
-  // Initialize state loading
+  // Initialize state loading (no trackOwnUpdate needed - uses centralized tracker)
   const { hasLoaded } = useShowcallerInitialState({
     rundownId,
-    onStateLoaded: handleInitialStateLoaded,
-    trackOwnUpdate
+    onStateLoaded: handleInitialStateLoaded
   });
 
   // Mark as initialized when either state loads or no state exists

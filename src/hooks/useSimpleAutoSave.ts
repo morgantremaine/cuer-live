@@ -14,6 +14,7 @@ import { useFieldDeltaSave } from './useFieldDeltaSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
 import { getTabId } from '@/utils/tabUtils';
+import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 export const useSimpleAutoSave = (
   state: RundownState,
@@ -36,7 +37,6 @@ export const useSimpleAutoSave = (
   const [isSaving, setIsSaving] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const undoActiveRef = useRef(false);
-  const trackOwnUpdateRef = useRef<((timestamp: string) => void) | null>(null);
   const saveQueueRef = useRef<{ signature: string; retryCount: number } | null>(null);
   const currentSaveSignatureRef = useRef<string>('');
   const editBaseDocVersionRef = useRef<number>(0);
@@ -277,17 +277,6 @@ export const useSimpleAutoSave = (
     undoActiveRef.current = active;
     console.log('🎯 Undo active set to:', active);
   };
-  // Simplified update tracking
-  const trackMyUpdate = useCallback((timestamp: string) => {
-    if (trackOwnUpdateRef.current) {
-      trackOwnUpdateRef.current(timestamp);
-    }
-  }, []);
-
-  // Function to set the own update tracker from realtime hook
-  const setTrackOwnUpdate = useCallback((tracker: (timestamp: string) => void) => {
-    trackOwnUpdateRef.current = tracker;
-  }, []);
 
   // Check if per-cell save is enabled for this rundown
   const isPerCellEnabled = Boolean(state.perCellSaveEnabled);
@@ -306,7 +295,7 @@ export const useSimpleAutoSave = (
   // Get current user ID from state for structural operations
   const currentUserId = (state as any).currentUserId;
 
-  // Unified save coordination - switches between per-cell and delta saves
+  // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
   const {
     trackFieldChange,
     saveState: saveCoordinatedState,
@@ -316,16 +305,12 @@ export const useSimpleAutoSave = (
     isPerCellEnabled: perCellActive
   } = usePerCellSaveCoordination({
     rundownId,
-    trackOwnUpdate: trackMyUpdate,
     isPerCellEnabled,
     currentUserId
   });
 
-  // Legacy field delta save (fallback when per-cell is disabled)
-  const { saveDeltaState, initializeSavedState } = useFieldDeltaSave(
-    rundownId,
-    trackMyUpdate
-  );
+  // Legacy field delta save (fallback when per-cell is disabled - no trackOwnUpdate needed)
+  const { saveDeltaState, initializeSavedState } = useFieldDeltaSave(rundownId);
 
   // Enhanced typing tracker with immediate save cancellation and proper timeout management
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -686,10 +671,11 @@ export const useSimpleAutoSave = (
         if (createError) {
           console.error('❌ Save failed:', createError);
         } else {
-          // Track the actual timestamp returned by the database
+          // Track the actual timestamp returned by the database via centralized tracker
           if (newRundown?.updated_at) {
             const normalizedTimestamp = normalizeTimestamp(newRundown.updated_at);
-            trackMyUpdate(normalizedTimestamp);
+            const context = newRundown.id ? `realtime-${newRundown.id}` : undefined;
+            ownUpdateTracker.track(normalizedTimestamp, context);
             // Register this save to prevent false positives in resumption
             registerRecentSave(newRundown.id, normalizedTimestamp);
           }
@@ -739,10 +725,11 @@ export const useSimpleAutoSave = (
             saveType: perCellActive ? 'per-cell' : 'delta'
           });
 
-          // Track the actual timestamp returned by the database
+          // Track the actual timestamp returned by the database via centralized tracker
           if (updatedAt) {
             const normalizedTs = normalizeTimestamp(updatedAt);
-            trackMyUpdate(normalizedTs);
+            const context = rundownId ? `realtime-${rundownId}` : undefined;
+            ownUpdateTracker.track(normalizedTs, context);
             if (rundownId) {
               registerRecentSave(rundownId, normalizedTs);
             }
@@ -836,7 +823,7 @@ export const useSimpleAutoSave = (
         }
       }
     }
-  }, [rundownId, createContentSignature, navigate, trackMyUpdate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
+  }, [rundownId, createContentSignature, navigate, location.state, toast, state.title, state.items, state.startTime, state.timezone, isSaving, suppressUntilRef]);
 
   // Keep latest performSave reference without retriggering effects
   useEffect(() => {
@@ -1083,7 +1070,6 @@ export const useSimpleAutoSave = (
     handleStructuralOperation,
     isSaving: !isBootstrapping && isSaving, // Don't show spinner during bootstrap
     setUndoActive,
-    setTrackOwnUpdate,
     markActiveTyping,
     isTypingActive,
     triggerImmediateSave: () => performSave(true), // For immediate saves without typing delay

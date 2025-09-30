@@ -9,7 +9,6 @@ import { RundownItem } from '@/types/rundown';
 
 interface PerCellSaveOptions {
   rundownId: string | null;
-  trackOwnUpdate: (timestamp: string) => void;
   isPerCellEnabled: boolean;
   currentUserId?: string;
   onSaveComplete?: () => void; // Add callback for when saves complete
@@ -19,7 +18,6 @@ interface PerCellSaveOptions {
 
 export const usePerCellSaveCoordination = ({
   rundownId,
-  trackOwnUpdate,
   isPerCellEnabled,
   currentUserId,
   onSaveComplete,
@@ -31,26 +29,26 @@ export const usePerCellSaveCoordination = ({
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
 
-  // Cell-level save system
+  // Cell-level save system (no trackOwnUpdate needed - uses centralized tracker)
   const {
     trackCellChange,
     flushPendingUpdates: flushCellUpdates,
     hasPendingUpdates: hasPendingCellUpdates
-  } = useCellLevelSave(rundownId, trackOwnUpdate, onSaveComplete, onSaveStart, onUnsavedChanges);
+  } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges);
 
-  // Delta save system (fallback)
+  // Delta save system (fallback - no trackOwnUpdate needed)
   const {
     saveDeltaState,
     initializeSavedState,
     trackFieldChange: trackDeltaFieldChange
-  } = useFieldDeltaSave(rundownId, trackOwnUpdate);
+  } = useFieldDeltaSave(rundownId);
 
-  // Structural save system (for per-cell mode)
+  // Structural save system (for per-cell mode - no trackOwnUpdate needed)
   const {
     queueStructuralOperation,
     flushPendingOperations: flushStructuralOperations,
     hasPendingOperations: hasPendingStructuralOperations
-  } = useStructuralSave(rundownId, trackOwnUpdate, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId);
+  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId);
 
   // Unified field tracking - routes to appropriate system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {

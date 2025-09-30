@@ -4,7 +4,6 @@ import { debugLogger } from '@/utils/debugLogger';
 
 interface CellEditIntegrationProps {
   rundownId: string | null;
-  trackOwnUpdate: (timestamp: string) => void;
   isPerCellEnabled: boolean;
   onSaveComplete?: () => void;
   onSaveStart?: () => void;
@@ -17,7 +16,6 @@ interface CellEditIntegrationProps {
  */
 export const useCellEditIntegration = ({
   rundownId,
-  trackOwnUpdate,
   isPerCellEnabled,
   onSaveComplete,
   onSaveStart,
@@ -27,10 +25,9 @@ export const useCellEditIntegration = ({
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
   const [hasPerCellUnsavedChanges, setHasPerCellUnsavedChanges] = useState(false);
 
-  // Get the coordinated save system
+  // Get the coordinated save system (no trackOwnUpdate needed - uses centralized tracker)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
-    trackOwnUpdate,
     isPerCellEnabled,
     onSaveComplete: () => {
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
