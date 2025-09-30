@@ -202,7 +202,15 @@ export const useSimplifiedRundownState = ({
 
         if (error) throw error;
         if (data) {
-          actions.loadState(data);
+          // Map database snake_case to camelCase
+          actions.loadState({
+            items: data.items || [],
+            title: data.title || '',
+            startTime: data.start_time || '00:00:00',
+            timezone: data.timezone || 'America/New_York',
+            columns: data.columns || [],
+            externalNotes: data.external_notes
+          });
           setLastKnownTimestamp(data.updated_at);
           setLastSeenDocVersion(data.doc_version || 0);
           setIsInitialized(true);
