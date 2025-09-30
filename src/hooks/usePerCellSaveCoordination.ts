@@ -3,6 +3,7 @@ import { RundownState } from './useRundownState';
 import { useCellLevelSave } from './useCellLevelSave';
 import { useStructuralSave } from './useStructuralSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
+import { useOperationCoordinator } from './useOperationCoordinator';
 import { debugLogger } from '@/utils/debugLogger';
 import { RundownItem } from '@/types/rundown';
 
@@ -31,6 +32,9 @@ export const usePerCellSaveCoordination = ({
 
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
+  
+  // Advanced operation coordinator for race condition prevention
+  const operationCoordinator = useOperationCoordinator();
 
   // Cell-level save system without typing awareness (operations handle sync)
   const {
@@ -81,7 +85,7 @@ export const usePerCellSaveCoordination = ({
     debugLogger.autosave('Initialized baseline for per-cell save');
   }, [rundownId]);
 
-  // Handle structural operations with coordination
+  // Handle structural operations with advanced coordination
   const handleStructuralOperation = useCallback((
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
@@ -99,22 +103,41 @@ export const usePerCellSaveCoordination = ({
     });
 
     if (currentUserId) {
-      // Use coordination system to manage the structural operation
-      coordination.executeWithStructuralOperation(async () => {
-        const sequenceNumber = coordination.getNextSequenceNumber();
-        
-        console.log('🧪 PER-CELL STRUCTURAL: Executing coordinated operation', {
-          operationType,
-          sequenceNumber
-        });
-        
-        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
-        debugLogger.autosave(`Coordinated structural save: ${operationType} (seq: ${sequenceNumber})`);
-      });
+      // Collect affected item IDs for race condition analysis
+      const affectedItemIds = [
+        ...(operationData.items?.map(item => item.id) || []),
+        ...(operationData.newItems?.map(item => item.id) || []),
+        ...(operationData.deletedIds || [])
+      ];
+
+      // Use advanced operation coordinator with metadata
+      operationCoordinator.executeWithCoordination(
+        `structural-${Date.now()}`,
+        operationType,
+        {
+          affectedItemIds,
+          operationType: 'structural'
+        },
+        async () => {
+          // Execute the actual structural operation with basic coordination
+          await coordination.executeWithStructuralOperation(async () => {
+            const sequenceNumber = coordination.getNextSequenceNumber();
+            
+            console.log('🧪 PER-CELL STRUCTURAL: Executing coordinated operation', {
+              operationType,
+              sequenceNumber,
+              affectedItemIds
+            });
+            
+            queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
+            debugLogger.autosave(`Coordinated structural save: ${operationType} (seq: ${sequenceNumber})`);
+          });
+        }
+      );
     } else {
       console.warn('🚨 PER-CELL STRUCTURAL: No user ID - cannot save');
     }
-  }, [currentUserId, queueStructuralOperation, rundownId, coordination]);
+  }, [currentUserId, queueStructuralOperation, rundownId, coordination, operationCoordinator]);
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = useCallback(() => {

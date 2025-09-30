@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { RundownState } from './useRundownState';
 import { RundownItem } from '@/types/rundown';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { useConflictNotifications } from './useConflictNotifications';
 import { useAuth } from './useAuth';
 import { createContentSignature } from '@/utils/contentSignature';
 import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
@@ -32,6 +33,9 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
   const recentLocalEditsRef = useRef<Map<string, { value: any; timestamp: number; itemPosition?: number }>>(new Map());
   const resolutionInProgressRef = useRef(false);
   const queuedOperationsRef = useRef<Array<() => Promise<void>>>([]);
+  
+  // User-facing notifications
+  const notifications = useConflictNotifications();
 
   // Track local edits with timestamps and position awareness
   const trackLocalEdit = useCallback((field: string, value: any, itemPosition?: number) => {
@@ -57,7 +61,13 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
   const queueOperation = useCallback((operation: () => Promise<void>) => {
     console.log('⏸️ Conflict: Queueing operation during structural change');
     queuedOperationsRef.current.push(operation);
-  }, []);
+    
+    // Notify user that operation is queued
+    notifications.notifyConflictResolved({
+      type: 'queued',
+      field: 'operation'
+    });
+  }, [notifications]);
 
   // Process queued operations after structural changes complete
   const processQueuedOperations = useCallback(async () => {
@@ -177,6 +187,13 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
               resolution = 'local';
               reason = `${itemField} edited locally while row was moved - preserving local edit`;
               console.log('🔀 Conflict: Preserving local edit despite row move', { itemId: localItem.id, field: itemField });
+              
+              // Notify user that their edit was preserved despite row movement
+              const item = localItem;
+              notifications.notifyRowMoved(
+                item?.title || item?.name || 'Item',
+                'another user'
+              );
             }
             
             conflicts.push({
@@ -281,8 +298,26 @@ export const useConflictResolution = (options: ConflictResolutionOptions) => {
         
         appliedResolutions.push(`${field}: ${reason}`);
         console.log('🔀 Conflict: Applied local resolution', { field, reason });
+        
+        // Notify user about significant field resolutions
+        if (field.includes('script') || field.includes('title') || field.includes('name')) {
+          notifications.notifyConflictResolved({
+            type: 'local-preserved',
+            field,
+            details: reason
+          });
+        }
       } else {
         console.log('🔀 Conflict: Kept remote value', { field, reason });
+        
+        // Notify user about accepted remote changes for significant fields
+        if (field.includes('script') || field.includes('title') || field.includes('name')) {
+          notifications.notifyConflictResolved({
+            type: 'remote-accepted',
+            field,
+            details: reason
+          });
+        }
       }
     }
 
