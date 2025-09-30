@@ -50,8 +50,9 @@ export const useCellLevelSave = (
     
     debugLogger.autosave(`Cell change tracked: ${field} for item ${itemId || 'global'}`);
 
-    // Notify UI that we have unsaved changes (if this is the first change)
-    if (pendingUpdatesRef.current.length === 1 && onUnsavedChanges) {
+    // Notify UI that we have unsaved changes 
+    // Call this whenever we add changes, not just on the first change
+    if (onUnsavedChanges) {
       console.log('🧪 PER-CELL SAVE: Notifying UI of unsaved changes');
       onUnsavedChanges();
     }
