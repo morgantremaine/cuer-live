@@ -858,8 +858,11 @@ export const useSimpleAutoSave = (
   const hasUnsavedRef = useRef(false);
   useEffect(() => { 
     hasUnsavedRef.current = state.hasUnsavedChanges;
-    hasUnsavedChangesRef.current = state.hasUnsavedChanges;
-  }, [state.hasUnsavedChanges]);
+    // Don't overwrite hasUnsavedChangesRef in per-cell mode - it's managed by callbacks
+    if (!isPerCellEnabled) {
+      hasUnsavedChangesRef.current = state.hasUnsavedChanges;
+    }
+  }, [state.hasUnsavedChanges, isPerCellEnabled]);
   const isLoadedRef = useRef(!!isInitiallyLoaded);
   useEffect(() => { isLoadedRef.current = !!isInitiallyLoaded; }, [isInitiallyLoaded]);
   const rundownIdRef = useRef(rundownId);
