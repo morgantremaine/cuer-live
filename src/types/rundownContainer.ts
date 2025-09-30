@@ -70,9 +70,13 @@ export interface RundownContainerProps {
   onShowDateChange?: (date: Date | null) => void;
   rundownId?: string;
   onOpenTeleprompter: () => void;
-  // Undo functionality
+  // Undo/Redo functionality
   onUndo: () => void;
+  onRedo: () => void;
   canUndo: boolean;
+  canRedo: boolean;
+  lastAction?: string | null;
+  nextAction?: string | null;
   lastAction: string | null;
   
   // Realtime collaboration props

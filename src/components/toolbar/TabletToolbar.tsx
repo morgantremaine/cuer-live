@@ -17,8 +17,11 @@ interface TabletToolbarProps {
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
+  onRedo: () => void;
   canUndo: boolean;
+  canRedo: boolean;
   lastAction: string | null;
+  nextAction: string | null;
   rundownId: string | undefined;
   selectedRowId: string | null;
   isPlaying: boolean;
@@ -51,8 +54,11 @@ const TabletToolbar = ({
   onAddHeader,
   onShowColumnManager,
   onUndo,
+  onRedo,
   canUndo,
+  canRedo,
   lastAction,
+  nextAction,
   rundownId,
   selectedRowId,
   isPlaying,
@@ -103,8 +109,11 @@ const TabletToolbar = ({
                 onAddHeader={onAddHeader}
                 onShowColumnManager={onShowColumnManager}
                 onUndo={onUndo}
+                onRedo={onRedo}
                 canUndo={canUndo}
+                canRedo={canRedo}
                 lastAction={lastAction}
+                nextAction={nextAction}
                 rundownId={rundownId}
                 selectedRowId={selectedRowId}
                 isMobile={true}
