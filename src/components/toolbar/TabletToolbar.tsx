@@ -13,7 +13,7 @@ import ZoomControls from './ZoomControls';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface TabletToolbarProps {
-  onAddRow: () => void;
+  onAddRow: (selectedRowId?: string | null, count?: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;

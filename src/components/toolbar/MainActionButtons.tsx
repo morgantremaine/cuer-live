@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Plus, Eye, Undo, MapPin, Search, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
 import { ToolsMenu } from './ToolsMenu';
@@ -10,7 +11,6 @@ import { CSVExportData } from '@/utils/csvExport';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
-import { AddRowsDialog } from '@/components/dialogs/AddRowsDialog';
 
 import { DEMO_RUNDOWN_ID } from '@/data/demoRundownData';
 
@@ -68,7 +68,7 @@ const MainActionButtons = ({
   onShowFindReplace,
   onShowNotes
 }: MainActionButtonsProps) => {
-  const [showAddRowsDialog, setShowAddRowsDialog] = useState(false);
+  const [rowCount, setRowCount] = useState<string>("1");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
@@ -83,8 +83,18 @@ const MainActionButtons = ({
     }
   };
 
-  const handleAddRows = (count: number) => {
-    onAddRow(null, count);
+  const handleAddRows = () => {
+    const count = parseInt(rowCount, 10);
+    if (count > 0 && count <= 50) {
+      onAddRow(null, count);
+    }
+  };
+
+  const handleRowCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 50)) {
+      setRowCount(value);
+    }
   };
 
   const handleOpenBlueprint = () => {
@@ -119,10 +129,26 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button onClick={() => setShowAddRowsDialog(true)} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span>Add Segment</span>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={handleAddRows}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <Input
+                type="number"
+                min="1"
+                max="50"
+                value={rowCount}
+                onChange={handleRowCountChange}
+                className="w-12 h-6 px-1 text-center"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <span className="ml-1">Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
+            </Button>
+          </div>
           <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Header</span>
@@ -192,12 +218,6 @@ const MainActionButtons = ({
             </div>
           </div>
         )}
-        
-        <AddRowsDialog
-          open={showAddRowsDialog}
-          onOpenChange={setShowAddRowsDialog}
-          onConfirm={handleAddRows}
-        />
       </div>
     );
   }
@@ -206,10 +226,26 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <Button onClick={() => setShowAddRowsDialog(true)} variant="outline" size={buttonSize} className={buttonClass}>
-        <Plus className="h-4 w-4" />
-        <span>Add Segment</span>
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          onClick={handleAddRows}
+          variant="outline"
+          size={buttonSize}
+          className="flex items-center gap-1"
+        >
+          <Plus className="h-4 w-4" />
+          <Input
+            type="number"
+            min="1"
+            max="50"
+            value={rowCount}
+            onChange={handleRowCountChange}
+            className="w-12 h-7 px-1 text-center text-sm"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span>Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
+        </Button>
+      </div>
       <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Header</span>
@@ -243,12 +279,6 @@ const MainActionButtons = ({
           rundownData={rundownData}
         />
       )}
-      
-      <AddRowsDialog
-        open={showAddRowsDialog}
-        onOpenChange={setShowAddRowsDialog}
-        onConfirm={handleAddRows}
-      />
     </>
   );
 };
