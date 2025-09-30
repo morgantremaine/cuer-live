@@ -1390,14 +1390,9 @@ export const useSimplifiedRundownState = () => {
       helpers.addRow();
       
       // For per-cell saves, use structural save coordination
-      // Note: Since helpers.addRow() updates state asynchronously, we defer the structural save
       if (cellEditIntegration.isPerCellEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
-        setTimeout(() => {
-          // Get the newly added item (last item in the updated state)
-          const newItem = state.items[state.items.length - 1];
-          markStructuralChange('add_row', { newItems: [newItem], insertIndex: state.items.length - 1 });
-        }, 0);
+        markStructuralChange('add_row', { items: state.items });
       }
       
       // Best-effort immediate hint: broadcast new order so other clients can reflect movement
@@ -1549,7 +1544,7 @@ export const useSimplifiedRundownState = () => {
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { newItems: [newItems[actualIndex]], insertIndex: actualIndex });
+      markStructuralChange('add_row', { items: state.items, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
