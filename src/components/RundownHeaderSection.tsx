@@ -50,8 +50,11 @@ interface RundownHeaderSectionProps {
   items?: any[];
   visibleColumns?: any[];
   onUndo: () => void;
+  onRedo: () => void;
   canUndo: boolean;
+  canRedo: boolean;
   lastAction: string | null;
+  nextAction: string;
   isConnected?: boolean;
   isProcessingRealtimeUpdate?: boolean;
   rundownData?: CSVExportData;
@@ -109,8 +112,11 @@ const RundownHeaderSection = ({
   items = [],
   visibleColumns = [],
   onUndo,
+  onRedo,
   canUndo,
+  canRedo,
   lastAction,
+  nextAction,
   isConnected,
   isProcessingRealtimeUpdate,
   rundownData,
@@ -179,8 +185,11 @@ const RundownHeaderSection = ({
         rundownId={rundownId}
         onOpenTeleprompter={onOpenTeleprompter}
         onUndo={onUndo}
+        onRedo={onRedo}
         canUndo={canUndo}
+        canRedo={canRedo}
         lastAction={lastAction}
+        nextAction={nextAction}
         rundownTitle={rundownTitle}
         rundownData={rundownData}
         autoScrollEnabled={autoScrollEnabled}

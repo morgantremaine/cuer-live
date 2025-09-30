@@ -188,8 +188,8 @@ export const useSimplifiedRundownState = () => {
     (isInitialized && !isLoadingColumns) // Wait for both rundown AND column initialization
   );
 
-  // Standalone undo system - unchanged
-  const { saveState: saveUndoState, undo, canUndo, lastAction } = useStandaloneUndo({
+  // Standalone undo system - now with redo support
+  const { saveState: saveUndoState, undo, redo, canUndo, canRedo, lastAction, nextAction } = useStandaloneUndo({
     onUndo: (items, _, title) => {
       setUndoActive(true);
       actions.setItems(items);
@@ -201,6 +201,22 @@ export const useSimplifiedRundownState = () => {
         setUndoActive(false);
       }, 100);
     },
+    onRedo: (items, _, title) => {
+      setUndoActive(true);
+      actions.setItems(items);
+      actions.setTitle(title);
+      
+      setTimeout(() => {
+        actions.markSaved();
+        actions.setItems([...items]);
+        setUndoActive(false);
+      }, 100);
+    },
+    getCurrentState: () => ({
+      items: state.items,
+      columns: state.columns,
+      title: state.title
+    }),
     setUndoActive
   });
  
@@ -1499,11 +1515,14 @@ export const useSimplifiedRundownState = () => {
       setColumns(newColumns);
     },
 
-    // Undo functionality - properly expose these including saveUndoState
+    // Undo/Redo functionality - properly expose these including saveUndoState
     saveUndoState,
     undo,
+    redo,
     canUndo,
+    canRedo,
     lastAction,
+    nextAction,
     
     // Teleprompter sync callbacks (exposed globally) + track own update integration
     teleprompterSaveHandlers: {

@@ -24,10 +24,13 @@ interface RundownToolbarProps {
   rundownId: string | undefined;
   // Teleprompter functionality
   onOpenTeleprompter: () => void;
-  // Undo functionality
+  // Undo/Redo functionality
   onUndo: () => void;
+  onRedo: () => void;
   canUndo: boolean;
+  canRedo: boolean;
   lastAction: string | null;
+  nextAction: string | null;
   // Rundown title for sharing
   rundownTitle?: string;
   // Rundown data for CSV export
@@ -64,8 +67,11 @@ const RundownToolbar = ({
   rundownId,
   onOpenTeleprompter,
   onUndo,
+  onRedo,
   canUndo,
+  canRedo,
   lastAction,
+  nextAction,
   rundownTitle,
   rundownData,
   autoScrollEnabled,
@@ -89,8 +95,11 @@ const RundownToolbar = ({
     onAddHeader,
     onShowColumnManager,
     onUndo,
+    onRedo,
     canUndo,
+    canRedo,
     lastAction,
+    nextAction,
     rundownId,
     onOpenTeleprompter,
     selectedRowId,

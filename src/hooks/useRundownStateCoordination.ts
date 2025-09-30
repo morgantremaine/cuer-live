@@ -339,10 +339,13 @@ export const useRundownStateCoordination = () => {
       reset: showcallerCoordination.reset,
       jumpToSegment: showcallerCoordination.jumpToSegment,
       
-      // Undo functionality
+      // Undo/Redo functionality
       undo: persistedState.undo,
+      redo: persistedState.redo,
       canUndo: persistedState.canUndo,
+      canRedo: persistedState.canRedo,
       lastAction: persistedState.lastAction,
+      nextAction: persistedState.nextAction,
       
       // Additional functionality
       calculateEndTime,
