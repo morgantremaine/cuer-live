@@ -179,6 +179,10 @@ export const useFieldDeltaSave = (
       ownUpdateTracker.track(updateTimestamp, trackContext);
     }
 
+    // Split deltas into global and item-level
+    const globalDeltas = deltas.filter(d => !d.itemId);
+    const itemDeltas = deltas.filter(d => d.itemId);
+    
     // Perform optimized delta update
     console.log('⚡ Performing delta update:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
     

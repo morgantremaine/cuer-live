@@ -184,7 +184,7 @@ export const useSimplifiedRundownState = () => {
         debugLogger.autosave('Main rundown saved while teleprompter active - coordinating...');
       }
     },
-    pendingStructuralChangeRef,
+    undefined, // No longer needed - operations handle sync
     undefined, // Legacy ref no longer needed
     (isInitialized && !isLoadingColumns) // Wait for both rundown AND column initialization
   );
@@ -288,16 +288,13 @@ export const useSimplifiedRundownState = () => {
         });
       }
       
-      // Apply LocalShadows to protect active edits
-      const shadowedRundown = localShadowStore.applyShadowsToData(updatedRundown);
-      
-      // Get protected fields
-      const protectedFields = getProtectedFields();
+      // Get protected fields - no field protection needed with operations
+      const protectedFields = new Set<string>(); // No protection needed - operations handle sync
       
       if (protectedFields.size > 0) {
         console.log('🛡️ Protected fields during realtime update:', Array.from(protectedFields));
         // User is actively editing - keep local changes
-        const mergedItems = shadowedRundown.items?.map((remoteItem: any) => {
+        const mergedItems = updatedRundown.items?.map((remoteItem: any) => {
           const localItem = state.items.find(item => item.id === remoteItem.id);
           if (!localItem) return remoteItem;
           
@@ -316,7 +313,7 @@ export const useSimplifiedRundownState = () => {
         
         actions.loadState({
           items: mergedItems,
-          title: protectedFields.has('title') ? state.title : shadowedRundown.title,
+          title: protectedFields.has('title') ? state.title : updatedRundown.title,
           startTime: protectedFields.has('startTime') ? state.startTime : updatedRundown.start_time,
           timezone: protectedFields.has('timezone') ? state.timezone : updatedRundown.timezone,
           showDate: protectedFields.has('showDate') ? state.showDate : (updatedRundown.show_date ? new Date(updatedRundown.show_date + 'T00:00:00') : null),
@@ -382,22 +379,8 @@ export const useSimplifiedRundownState = () => {
       
       console.log('📱 Applying cell broadcast update (simplified - no protection):', update);
       
-      // CRITICAL: Set flag to prevent AutoSave triggering from cell broadcast changes
-      applyingCellBroadcastRef.current = true;
-      
       try {
-        // PROTECTION: Register cell broadcast changes in shadow store to prevent full realtime overwrites
-        if (update.itemId && update.field) {
-          const { localShadowStore } = await import('@/state/localShadows');
-          localShadowStore.setShadow(update.itemId, update.field, update.value, true); // ACTIVE shadow to protect against overwrites
-          console.log('🛡️ Protected cell broadcast change in shadow store:', `${update.itemId}-${update.field}`, 'value:', update.value);
-          
-          // Clear this shadow after a short time to allow future legitimate updates
-          setTimeout(() => {
-            localShadowStore.markInactive(update.itemId, update.field);
-            console.log('🛡️ Cleared cell broadcast protection for:', `${update.itemId}-${update.field}`);
-          }, 2000); // 2 second protection window
-        }
+        // No protection needed - operations handle sync directly
         
         // LAST WRITER WINS: Just apply the change immediately
         // Use loadState to avoid triggering hasUnsavedChanges for remote data
@@ -647,7 +630,7 @@ export const useSimplifiedRundownState = () => {
 
   // Apply deferred updates when save completes
   useEffect(() => {
-    if (!isSaving && !pendingStructuralChangeRef.current && deferredUpdateRef.current) {
+    if (!isSaving && deferredUpdateRef.current) {
       const deferredUpdate = deferredUpdateRef.current;
       deferredUpdateRef.current = null;
       
@@ -665,18 +648,7 @@ export const useSimplifiedRundownState = () => {
         }
       }
       
-      // Detect if this is a structural change for cooldown
-      const isStructural = deferredUpdate.items && state.items && (
-        deferredUpdate.items.length !== state.items.length ||
-        JSON.stringify(deferredUpdate.items.map(i => i.id)) !== JSON.stringify(state.items.map(i => i.id))
-      );
-      
-      // Set cooldown after applying deferred teammate update
-      if (isStructural) {
-        cooldownUntilRef.current = Date.now() + 1500;
-      } else {
-        cooldownUntilRef.current = Date.now() + 800;
-      }
+      // No cooldown needed - operations handle sync
       
       // Update our known timestamp and doc version
       if (deferredUpdate.updated_at) {
@@ -749,11 +721,7 @@ export const useSimplifiedRundownState = () => {
 
   // Enhanced updateItem function with aggressive field-level protection tracking
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // Re-enable autosave after local edit if it was blocked due to teammate update
-    if (blockUntilLocalEditRef.current) {
-      console.log('✅ AutoSave: local edit detected - re-enabling saves');
-      blockUntilLocalEditRef.current = false;
-    }
+    // No blocking needed - operations handle sync
     // Check if this is a typing field or immediate-sync field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
@@ -1299,11 +1267,7 @@ export const useSimplifiedRundownState = () => {
     }, [helpers.addHeader, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
-      // Re-enable autosave after local edit if previously blocked
-      if (blockUntilLocalEditRef.current) {
-        console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        blockUntilLocalEditRef.current = false;
-      }
+      // No blocking needed - operations handle sync
       if (state.title !== newTitle) {
         // Track field change for per-cell save system
         if (cellEditIntegration.isPerCellEnabled) {
@@ -1546,20 +1510,13 @@ export const useSimplifiedRundownState = () => {
       }
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, rundownId, currentUserId]),
     addItem: useCallback((item: any, targetIndex?: number) => {
-      // Re-enable autosave after local edit if it was blocked due to teammate update
-      if (blockUntilLocalEditRef.current) {
-        console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        blockUntilLocalEditRef.current = false;
-      }
+      // No blocking needed - operations handle sync
       actions.addItem(item, targetIndex);
     }, [actions.addItem]),
     setTitle: enhancedActions.setTitle,
     setStartTime: useCallback((newStartTime: string) => {
       console.log('🧪 SIMPLIFIED STATE: setStartTime called with:', newStartTime);
-      if (blockUntilLocalEditRef.current) {
-        console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        blockUntilLocalEditRef.current = false;
-      }
+      // No blocking needed - operations handle sync
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1576,10 +1533,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions.setStartTime, rundownId, currentUserId, cellEditIntegration]),
     setTimezone: useCallback((newTimezone: string) => {
       console.log('🧪 SIMPLIFIED STATE: setTimezone called with:', newTimezone);
-      if (blockUntilLocalEditRef.current) {
-        console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        blockUntilLocalEditRef.current = false;
-      }
+      // No blocking needed - operations handle sync
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
@@ -1596,10 +1550,7 @@ export const useSimplifiedRundownState = () => {
     }, [actions.setTimezone, rundownId, currentUserId, cellEditIntegration]),
     setShowDate: useCallback((newShowDate: Date | null) => {
       console.log('🧪 SIMPLIFIED STATE: setShowDate called with:', newShowDate);
-      if (blockUntilLocalEditRef.current) {
-        console.log('✅ AutoSave: local edit detected - re-enabling saves');
-        blockUntilLocalEditRef.current = false;
-      }
+      // No blocking needed - operations handle sync
       
       // Track field change for per-cell save system
       if (cellEditIntegration.isPerCellEnabled) {
