@@ -31,57 +31,15 @@ export const useRundownBroadcast = ({
   const lastBroadcastRef = useRef<number>(0);
   const broadcastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const lastReceivedRef = useRef<number>(Date.now());
+  const healthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const onLiveUpdateRef = useRef(onLiveUpdate);
 
-  // Create or get channel
+  // Keep callback ref updated
   useEffect(() => {
-    if (!rundownId || !enabled) return;
-
-    const channelName = `rundown-live-${rundownId}`;
-    logger.debug(`Setting up broadcast channel: ${channelName}`, { isSharedView });
-
-    // Create channel for this rundown
-    const channel = supabase.channel(channelName);
-
-    // Initialize user ID
-    getUserId().then(id => {
-      userIdRef.current = id;
-    });
-
-    // Subscribe to broadcast events
-    channel.on('broadcast', { event: 'live_update' }, (payload) => {
-      const data = payload.payload as BroadcastPayload;
-      
-      // Don't process our own broadcasts (unless we're a shared view)
-      if (!isSharedView && data.userId === userIdRef.current) {
-        return;
-      }
-
-      logger.debug('Received live broadcast:', {
-        type: data.type,
-        rundownId: data.rundownId,
-        timestamp: data.timestamp,
-        itemCount: data.items?.length
-      });
-
-      if (onLiveUpdate) {
-        onLiveUpdate(data);
-      }
-    });
-
-    channel.subscribe((status) => {
-      logger.debug(`Broadcast channel status: ${status}`, { channelName });
-    });
-
-    channelRef.current = channel;
-
-    return () => {
-      if (channelRef.current) {
-        logger.debug(`Cleaning up broadcast channel: ${channelName}`);
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [rundownId, enabled, isSharedView, onLiveUpdate]);
+    onLiveUpdateRef.current = onLiveUpdate;
+  }, [onLiveUpdate]);
 
   // Get user ID for broadcast filtering
   const getUserId = useCallback(async () => {
@@ -102,6 +60,99 @@ export const useRundownBroadcast = ({
     }
     return sessionId;
   }, []);
+
+  // Create or get channel with reconnection logic
+  useEffect(() => {
+    if (!rundownId || !enabled) return;
+
+    const channelName = `rundown-live-${rundownId}`;
+    logger.debug(`Setting up broadcast channel: ${channelName}`, { isSharedView });
+
+    const setupChannel = () => {
+      // Create channel for this rundown
+      const channel = supabase.channel(channelName);
+
+      // Initialize user ID
+      getUserId().then(id => {
+        userIdRef.current = id;
+      });
+
+      // Subscribe to broadcast events
+      channel.on('broadcast', { event: 'live_update' }, (payload) => {
+        lastReceivedRef.current = Date.now(); // Update health check
+        reconnectAttemptsRef.current = 0; // Reset reconnect attempts
+        
+        const data = payload.payload as BroadcastPayload;
+        
+        // Don't process our own broadcasts (unless we're a shared view)
+        if (!isSharedView && data.userId === userIdRef.current) {
+          return;
+        }
+
+        logger.debug('Received live broadcast:', {
+          type: data.type,
+          rundownId: data.rundownId,
+          timestamp: data.timestamp,
+          itemCount: data.items?.length
+        });
+
+        if (onLiveUpdateRef.current) {
+          onLiveUpdateRef.current(data);
+        }
+      });
+
+      channel.subscribe((status) => {
+        logger.debug(`Broadcast channel status: ${status}`, { channelName });
+        if (status === 'SUBSCRIBED') {
+          lastReceivedRef.current = Date.now();
+          reconnectAttemptsRef.current = 0;
+        }
+      });
+
+      channelRef.current = channel;
+    };
+
+    setupChannel();
+
+    // Health check: detect stale connections and reconnect
+    healthCheckIntervalRef.current = setInterval(() => {
+      const timeSinceLastReceived = Date.now() - lastReceivedRef.current;
+      const fiveMinutes = 5 * 60 * 1000;
+      
+      if (timeSinceLastReceived > fiveMinutes && reconnectAttemptsRef.current < 3) {
+        console.log('⚠️ Broadcast channel appears stale, reconnecting...', {
+          timeSinceLastReceived: Math.round(timeSinceLastReceived / 1000),
+          attempt: reconnectAttemptsRef.current + 1
+        });
+        
+        reconnectAttemptsRef.current++;
+        
+        // Clean up old channel
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+        
+        // Recreate channel with exponential backoff
+        const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+        setTimeout(() => {
+          setupChannel();
+        }, backoffDelay);
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current);
+        healthCheckIntervalRef.current = null;
+      }
+      if (channelRef.current) {
+        logger.debug(`Cleaning up broadcast channel: ${channelName}`);
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [rundownId, enabled, isSharedView, getUserId]);
 
   // Broadcast live changes (debounced)
   const broadcastLiveUpdate = useCallback(async (

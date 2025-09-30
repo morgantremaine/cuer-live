@@ -55,9 +55,10 @@ class RealtimeWatchdog {
     if (this.isActive) return;
     
     this.isActive = true;
-    console.log('🔍 Realtime watchdog disabled - using persistent connections:', this.config.rundownId);
+    console.log('🔍 Starting realtime watchdog with post-sleep recovery:', this.config.rundownId);
     
-    // Disabled - persistent connections handle reconnection automatically
+    this.setupFocusListeners();
+    this.scheduleCheck();
   }
 
   stop() {
@@ -162,11 +163,15 @@ class RealtimeWatchdog {
   };
 
   private setupFocusListeners() {
-    // Disabled for persistent connections
+    window.addEventListener('focus', this.onFocusResume);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
+    window.addEventListener('online', this.onOnline);
   }
 
   private removeFocusListeners() {
-    // Disabled for persistent connections
+    window.removeEventListener('focus', this.onFocusResume);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    window.removeEventListener('online', this.onOnline);
   }
 }
 

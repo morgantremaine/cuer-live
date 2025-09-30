@@ -38,11 +38,33 @@ export const useConsolidatedRealtimeRundown = ({
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
+  const lastHeartbeatRef = useRef<number>(Date.now());
+  const [connectionQuality, setConnectionQuality] = useState<'good' | 'degraded' | 'poor'>('good');
+
+  // Monitor connection quality
+  useEffect(() => {
+    if (!enabled || !rundownId) return;
+
+    const checkInterval = setInterval(() => {
+      const timeSinceHeartbeat = Date.now() - lastHeartbeatRef.current;
+      
+      if (timeSinceHeartbeat > 5 * 60 * 1000) {
+        setConnectionQuality('poor');
+      } else if (timeSinceHeartbeat > 2 * 60 * 1000) {
+        setConnectionQuality('degraded');
+      } else {
+        setConnectionQuality('good');
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(checkInterval);
+  }, [enabled, rundownId]);
 
   // Set connected immediately when rundown is enabled
   useEffect(() => {
     if (enabled && rundownId) {
       setIsConnected(true);
+      lastHeartbeatRef.current = Date.now();
     } else {
       setIsConnected(false);
     }
@@ -81,6 +103,9 @@ export const useConsolidatedRealtimeRundown = ({
     const hasContentChanges = ['items', 'title', 'start_time', 'timezone', 'external_notes', 'show_date']
       .some(field => JSON.stringify(payload.new?.[field]) !== JSON.stringify(payload.old?.[field]));
 
+    // Update heartbeat on any received update
+    lastHeartbeatRef.current = Date.now();
+    
     console.log('📡 Realtime update:', {
       type: hasBlueprintChanges ? 'blueprint' : hasShowcallerChanges ? 'showcaller' : 'content',
       userId: payload.new?.last_updated_by
@@ -266,6 +291,7 @@ export const useConsolidatedRealtimeRundown = ({
     isConnected,
     isProcessingUpdate,
     trackOwnUpdate,
-    manualCatchUp
+    manualCatchUp,
+    connectionQuality
   };
 };

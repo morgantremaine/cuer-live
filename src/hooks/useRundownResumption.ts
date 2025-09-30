@@ -150,7 +150,7 @@ export const useRundownResumption = ({
     }, 500); // Short debounce to coalesce rapid events
   }, [rundownId, enabled, lastKnownTimestamp, onDataRefresh, toast, updateLastKnownTimestamp, createContentSignature]);
 
-  // Global listener management and event handling
+  // Global listener management and event handling with post-sleep recovery
   useEffect(() => {
     if (!rundownId || !enabled) return;
 
@@ -173,12 +173,36 @@ export const useRundownResumption = ({
     const isFirstListener = manager.listeners.size === 1;
 
     if (isFirstListener) {
+      // Track sleep/wake cycles
+      let lastVisibilityTime = Date.now();
+      let wasHidden = false;
+      
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          lastVisibilityTime = Date.now();
+          wasHidden = true;
+          console.log('💤 Document hidden - tracking for sleep detection');
+        } else if (wasHidden) {
+          const hiddenDuration = Date.now() - lastVisibilityTime;
+          const tenMinutes = 10 * 60 * 1000;
+          
+          if (hiddenDuration > tenMinutes) {
+            console.log('🌅 Detected extended sleep period, forcing data sync...', {
+              hiddenFor: Math.round(hiddenDuration / 1000) + 's'
+            });
+            performCheck('post-sleep-recovery');
+          }
+          wasHidden = false;
+        }
+      };
+      
       // Persistent connection - only handle actual network restoration
       const handleOnline = () => {
         console.log('🌐 Network restored');
         performCheck('online');
       };
 
+      document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('online', handleOnline);
 
       // Initialize watchdog for this rundown if not already done
@@ -197,6 +221,7 @@ export const useRundownResumption = ({
 
       // Store cleanup function in manager
       manager.cleanup = () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('online', handleOnline);
         
         // Clean up watchdog
@@ -218,7 +243,7 @@ export const useRundownResumption = ({
         globalListenerManager.delete(rundownId);
       }
     };
-  }, [rundownId, enabled, performCheck]);
+  }, [rundownId, enabled, performCheck, onDataRefresh, updateLastKnownTimestamp]);
 
   return {
     checkForUpdates: useCallback(() => {
