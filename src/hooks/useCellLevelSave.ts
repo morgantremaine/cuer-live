@@ -17,6 +17,7 @@ export const useCellLevelSave = (
   onSaveComplete?: (savedUpdates?: FieldUpdate[]) => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
+  onChangesSaved?: () => void,
   isTypingActive?: () => boolean,
   saveInProgressRef?: React.MutableRefObject<boolean>,
   typingIdleMs?: number
@@ -97,6 +98,12 @@ export const useCellLevelSave = (
 
     const updatesToSave = [...pendingUpdatesRef.current];
     pendingUpdatesRef.current = []; // Clear pending updates
+    
+    // Notify that changes have been saved (queue cleared)
+    if (onChangesSaved) {
+      console.log('🧪 PER-CELL SAVE: Notifying that changes have been saved');
+      onChangesSaved();
+    }
 
     console.log('🧪 PER-CELL SAVE: Starting save operation', {
       rundownId,

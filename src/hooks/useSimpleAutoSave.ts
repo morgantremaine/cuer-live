@@ -329,6 +329,10 @@ export const useSimpleAutoSave = (
     hasUnsavedChangesRef.current = true;
   }, []);
 
+  const handlePerCellChangesSaved = useCallback(() => {
+    hasUnsavedChangesRef.current = false;
+  }, []);
+
   // Unified save coordination - switches between per-cell and delta saves (no trackOwnUpdate needed)
   const {
     trackFieldChange,
@@ -344,6 +348,7 @@ export const useSimpleAutoSave = (
     onSaveStart: handlePerCellSaveStart,
     onSaveComplete: handlePerCellSaveComplete,
     onUnsavedChanges: handlePerCellUnsavedChanges,
+    onChangesSaved: handlePerCellChangesSaved,
     isTypingActive,
     saveInProgressRef,
     typingIdleMs
