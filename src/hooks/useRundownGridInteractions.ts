@@ -20,13 +20,14 @@ export const useRundownGridInteractions = (
   addRowAtIndex: (insertIndex: number) => void,
   addHeaderAtIndex: (insertIndex: number) => void,
   saveUndoState?: (items: RundownItem[], columns: any[], title: string, action: string) => void,
-  markStructuralChange?: () => void,
+  markStructuralChange?: ((operationType: string, operationData: any) => void) | (() => void),
   columns?: any[],
   title?: string,
   getHeaderGroupItemIds?: (headerId: string) => string[],
   isHeaderCollapsed?: (headerId: string) => boolean,
-  rundownId?: string,
-  currentUserId?: string,
+  rundownId?: string | null,
+  currentUserId?: string | null,
+  isPerCellEnabled?: boolean,
   // Accept drag state from primary drag instance  
   dragState?: {
     draggedItemIndex: number | null;
@@ -93,6 +94,7 @@ export const useRundownGridInteractions = (
     isHeaderCollapsed,
     rundownId,
     currentUserId,
+    isPerCellEnabled,
     dragState // Pass the drag state from primary instance
   );
 

@@ -227,6 +227,7 @@ export const useRundownStateCoordination = () => {
     isHeaderCollapsed,
     persistedState.rundownId,
     userId,
+    false, // isPerCellEnabled - not used in coordination state (uses unified system)
     // Pass drag state from the primary drag instance and use the real selectedRows
     {
       draggedItemIndex: dragAndDrop.draggedItemIndex,

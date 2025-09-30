@@ -25,6 +25,10 @@ interface UseRundownGridHandlersProps {
   setRundownTitle: (title: string) => void;
   addRowAtIndex: (insertIndex: number) => void;
   addHeaderAtIndex: (insertIndex: number) => void;
+  markStructuralChange?: (operationType: string, operationData: any) => void;
+  isPerCellEnabled?: boolean;
+  rundownId?: string | null;
+  currentUserId?: string | null;
 }
 
 export const useRundownGridHandlers = ({
@@ -49,7 +53,11 @@ export const useRundownGridHandlers = ({
   items,
   setRundownTitle,
   addRowAtIndex,
-  addHeaderAtIndex
+  addHeaderAtIndex,
+  markStructuralChange,
+  isPerCellEnabled,
+  rundownId,
+  currentUserId
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -138,6 +146,7 @@ export const useRundownGridHandlers = ({
       }));
       
       let insertIndex: number;
+      let newItems: RundownItem[];
       
       if (targetRowId) {
         // Find the target row and insert after it
@@ -149,14 +158,37 @@ export const useRundownGridHandlers = ({
       }
       
       setItems(prevItems => {
-        const newItems = [...prevItems];
+        newItems = [...prevItems];
         newItems.splice(insertIndex, 0, ...itemsToPaste);
         return newItems;
       });
       
       markAsChanged();
+      
+      // For per-cell saves, use structural save coordination
+      if (isPerCellEnabled && markStructuralChange && newItems) {
+        console.log('🧪 STRUCTURAL CHANGE: Paste completed - triggering structural coordination');
+        markStructuralChange('copy_rows', { 
+          items: newItems, 
+          newItems: itemsToPaste, 
+          insertIndex 
+        });
+      }
+      
+      // Broadcast paste operation for immediate realtime sync
+      if (rundownId && currentUserId) {
+        import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:paste',
+            { items: itemsToPaste, index: insertIndex },
+            currentUserId
+          );
+        });
+      }
     }
-  }, [clipboardItems, items, setItems, markAsChanged]);
+  }, [clipboardItems, items, setItems, markAsChanged, isPerCellEnabled, markStructuralChange, rundownId, currentUserId]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);
