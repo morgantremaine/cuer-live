@@ -58,9 +58,13 @@ export const useCellLevelSave = (
       console.log('🧪 PER-CELL SAVE: Clearing previous save timeout');
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(async () => {
       console.log('🧪 PER-CELL SAVE: Save timeout triggered, calling savePendingUpdates');
-      savePendingUpdates();
+      try {
+        await savePendingUpdates();
+      } catch (error) {
+        console.error('🚨 PER-CELL SAVE: Auto-save failed:', error);
+      }
     }, 500);
   }, [rundownId]);
 
@@ -102,7 +106,7 @@ export const useCellLevelSave = (
       const { data, error } = await supabase.functions.invoke('cell-field-save', {
         body: {
           rundownId,
-          fieldUpdates: updatesToSave,
+          fieldUpdates: updatesToSave,  // Match the edge function interface
           contentSignature
         }
       });
