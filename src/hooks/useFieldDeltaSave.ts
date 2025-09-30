@@ -179,24 +179,8 @@ export const useFieldDeltaSave = (
       ownUpdateTracker.track(updateTimestamp, trackContext);
     }
 
-    // Import LocalShadow for bulletproof field protection
-    const { localShadowStore } = await import('@/state/localShadows');
-
-    // Group deltas by type for efficient batching
-    const globalDeltas = deltas.filter(d => !d.itemId);
-    const itemDeltas = deltas.filter(d => d.itemId);
-    const hasFullUpdate = deltas.some(d => d.field === 'fullState' || d.field === 'fullItem');
-    const hasReorder = deltas.some(d => d.field === 'fullItemsReorder');
-
-    // Only fall back to full updates for actual structural changes, not arbitrary size limits
-    if (hasFullUpdate || hasReorder) {
-      // Fall back to full update only for structural operations that require it
-      console.log('💾 Performing full rundown update (structural changes detected)');
-      return await performFullUpdate(currentState, updateTimestamp);
-    }
-
-    // Perform optimized delta update with OCC
-    console.log('⚡ Performing delta update with OCC:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
+    // Perform optimized delta update
+    console.log('⚡ Performing delta update:', { globalDeltas: globalDeltas.length, itemDeltas: itemDeltas.length });
     
     const updateData: any = {};
     
@@ -238,78 +222,20 @@ export const useFieldDeltaSave = (
     const expectedDocVersion = (currentState as any)?.docVersion || 0;
     
     if (serverDocVersion > expectedDocVersion) {
-      console.warn('🚨 OCC Conflict detected:', { 
+      console.warn('🚨 Conflict detected - applying server state:', { 
         serverVersion: serverDocVersion, 
-        expectedVersion: expectedDocVersion,
-        delta: 'Refreshing local state with LocalShadow protection'
+        expectedVersion: expectedDocVersion
       });
       
-      // BULLETPROOF: Use LocalShadow store for comprehensive protection
-      const activeShadows = localShadowStore.getActiveShadows();
-      const recentFields = localShadowStore.getRecentlyTypedFields(3000);
+      // Apply server state directly - operations handle conflicts
+      const refreshedItems = Array.isArray(latestRow?.items) ? [...latestRow.items] : currentState.items;
+      const refreshedTitle = latestRow?.title || currentState.title;
+      const refreshedStartTime = latestRow?.start_time || currentState.startTime;
+      const refreshedTimezone = latestRow?.timezone || currentState.timezone;
+      const refreshedShowDate = latestRow?.show_date ? new Date(latestRow.show_date + 'T00:00:00') : currentState.showDate;
+      const refreshedExternalNotes = latestRow?.external_notes || currentState.externalNotes;
       
-      console.log('🛡️ OCC Conflict: LocalShadow protection active', {
-        activeItems: activeShadows.items.size,
-        activeGlobals: activeShadows.globals.size,
-        recentFields: recentFields.length
-      });
-      
-      // Create refreshed state starting from server data
-      let refreshedItems = Array.isArray(latestRow?.items) ? [...latestRow.items] : currentState.items;
-      
-      // Apply active shadows to preserve typing
-      if (Array.isArray(refreshedItems) && Array.isArray(currentState.items)) {
-        refreshedItems = refreshedItems.map((serverItem: any) => {
-          const itemShadows = activeShadows.items.get(serverItem.id);
-          if (!itemShadows) return serverItem;
-          
-          let protectedItem = { ...serverItem };
-          
-          // Apply all active shadows for this item
-          Object.entries(itemShadows).forEach(([fieldName, shadow]) => {
-            console.log('🛡️ OCC Conflict: LocalShadow preserving field', { 
-              itemId: serverItem.id, 
-              fieldName, 
-              shadowValue: shadow.value,
-              serverValue: serverItem[fieldName]
-            });
-            protectedItem[fieldName] = shadow.value;
-          });
-          
-          return protectedItem;
-        });
-      }
-      
-      // Apply global shadows
-      let refreshedTitle = latestRow?.title || currentState.title;
-      let refreshedStartTime = latestRow?.start_time || currentState.startTime;
-      let refreshedTimezone = latestRow?.timezone || currentState.timezone;
-      let refreshedShowDate = latestRow?.show_date ? new Date(latestRow.show_date) : currentState.showDate;
-      let refreshedExternalNotes = latestRow?.external_notes || currentState.externalNotes;
-      
-      // Apply global field shadows
-      if (activeShadows.globals.has('title')) {
-        refreshedTitle = activeShadows.globals.get('title')!.value;
-        console.log('🛡️ OCC Conflict: LocalShadow preserving title');
-      }
-      if (activeShadows.globals.has('startTime')) {
-        refreshedStartTime = activeShadows.globals.get('startTime')!.value;
-        console.log('🛡️ OCC Conflict: LocalShadow preserving startTime');
-      }
-      if (activeShadows.globals.has('timezone')) {
-        refreshedTimezone = activeShadows.globals.get('timezone')!.value;
-        console.log('🛡️ OCC Conflict: LocalShadow preserving timezone');
-      }
-      if (activeShadows.globals.has('showDate')) {
-        refreshedShowDate = activeShadows.globals.get('showDate')!.value;
-        console.log('🛡️ OCC Conflict: LocalShadow preserving showDate');
-      }
-      if (activeShadows.globals.has('externalNotes')) {
-        refreshedExternalNotes = activeShadows.globals.get('externalNotes')!.value;
-        console.log('🛡️ OCC Conflict: LocalShadow preserving externalNotes');
-      }
-      
-      // Create updated state with server's version but LocalShadows preserved
+      // Create updated state with server's version
       const refreshedState = {
         ...currentState,
         docVersion: serverDocVersion,
@@ -324,33 +250,26 @@ export const useFieldDeltaSave = (
       // Update the saved state reference to the refreshed server state
       initializeSavedState(refreshedState);
       
-      // Re-extract deltas based on refreshed state
-      const recomputedDeltas = extractDeltas(currentState, refreshedState);
-      
-      // CRITICAL FIX: Don't assume no changes when recomputedDeltas is empty
-      // Some rapid changes (like deletions) might have been lost during state refresh
-      // Always attempt to save the original deltas to prevent data loss
-      const finalDeltas = recomputedDeltas.length > 0 ? recomputedDeltas : deltas;
+      // Apply server state directly
+      const finalDeltas = deltas;
       
       if (finalDeltas.length === 0) {
-        console.log('✅ No conflicts after LocalShadow state refresh - changes already applied');
+        console.log('✅ No conflicts - changes already applied');
         return { updatedAt: latestRow.updated_at, docVersion: serverDocVersion };
       }
       
-      console.log('🔄 Using', finalDeltas === deltas ? 'original deltas' : 'recomputed deltas', 'to prevent data loss');
-      
       // Prevent infinite recursion 
       if (retryCount >= 2) {
-        console.warn('⚠️ Max OCC retry attempts reached, falling back to full update');
+        console.warn('⚠️ Max retry attempts reached, falling back to full update');
         return await performFullUpdate(currentState, updateTimestamp);
       }
       
-      console.log('🔄 Retrying save with LocalShadow-protected state and recomputed deltas');
+      console.log('🔄 Retrying save with refreshed state');
       // Recursively call with refreshed state - but limit recursion
       return await saveDeltasToDatabase(finalDeltas, refreshedState, retryCount + 1);
     }
 
-    console.log('✅ OCC Check passed, merging deltas onto latest server state');
+    console.log('✅ Check passed, merging deltas onto latest server state');
 
     // Start with latest server items
     const baseItems: any[] = Array.isArray(latestRow?.items) ? latestRow.items : [];

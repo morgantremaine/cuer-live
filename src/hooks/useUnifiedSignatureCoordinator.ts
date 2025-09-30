@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { createContentSignature } from '@/utils/contentSignature';
 import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
-import { useLocalShadowSignatureIntegration } from './useLocalShadowSignatureIntegration';
 import { useMultiTabSignatureCoordination } from './useMultiTabSignatureCoordination';
 import { useRaceConditionDetector } from './useRaceConditionDetector';
 import { RundownItem } from '@/types/rundown';
@@ -33,7 +32,6 @@ export const useUnifiedSignatureCoordinator = (
   getCurrentState: () => RundownStateSnapshot
 ) => {
   const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
-  const { createShadowProtectedSignature, wouldShadowsAffectSignature } = useLocalShadowSignatureIntegration();
   const multiTabCoordination = useMultiTabSignatureCoordination(rundownId, getCurrentState);
   const raceDetector = useRaceConditionDetector();
   
@@ -46,20 +44,7 @@ export const useUnifiedSignatureCoordinator = (
   ): string => {
     const state = getCurrentState();
     
-    // Use LocalShadow-protected signature for operations that should preserve user input
-    if (source === 'autosave' || source === 'conflict-resolution') {
-      return createShadowProtectedSignature(
-        state.items,
-        state.title,
-        state.columns,
-        state.timezone,
-        state.startTime,
-        state.showDate,
-        state.externalNotes
-      );
-    }
-    
-    // Use standard signature for other operations
+    // Use standard signature for all operations
     return createContentSignature({
       items: state.items,
       title: state.title,
@@ -69,7 +54,7 @@ export const useUnifiedSignatureCoordinator = (
       showDate: state.showDate,
       externalNotes: state.externalNotes
     });
-  }, [getCurrentState, createShadowProtectedSignature]);
+  }, [getCurrentState]);
 
   // Coordinate signature across all systems before an operation
   const coordinateSignature = useCallback(async (
@@ -137,17 +122,10 @@ export const useUnifiedSignatureCoordinator = (
         };
       }
 
-      // Step 6: Check if LocalShadows would affect the operation
-      const shadowsWouldAffect = wouldShadowsAffectSignature(state.items, state.title);
-      
-      if (shadowsWouldAffect && operation !== 'autosave' && operation !== 'conflict-resolution') {
-        console.warn(`⚠️ LocalShadows active during ${operation} - this may cause data loss`);
-      }
-
-      // Step 7: Update coordination state
+      // Step 6: Update coordination state
       lastCoordinatedSignatureRef.current = currentSignature;
 
-      // Step 8: Broadcast to other tabs
+      // Step 7: Broadcast to other tabs
       const broadcastOperation = operation === 'blueprint' ? 'manual-save' : operation;
       multiTabCoordination.broadcastSignatureUpdate(currentSignature, broadcastOperation);
 
@@ -156,8 +134,7 @@ export const useUnifiedSignatureCoordinator = (
         source,
         signaturePreview: currentSignature.slice(0, 50),
         hadRaceCondition: raceAnalysis.hasRaceCondition,
-        tabConsistent: tabConsistency.isConsistent,
-        shadowsActive: shadowsWouldAffect
+        tabConsistent: tabConsistency.isConsistent
       });
 
       return {
@@ -175,7 +152,6 @@ export const useUnifiedSignatureCoordinator = (
     raceDetector,
     multiTabCoordination,
     validateSignature,
-    wouldShadowsAffectSignature,
     getCurrentState
   ]);
 

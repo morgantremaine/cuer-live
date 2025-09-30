@@ -6,7 +6,6 @@ import { useNetworkStatus } from './useNetworkStatus';
 import { detectDataConflict } from '@/utils/conflictDetection';
 import { createContentSignature } from '@/utils/contentSignature';
 import { useUnifiedSignatureValidation } from './useUnifiedSignatureValidation';
-import { useLocalShadowSignatureIntegration } from './useLocalShadowSignatureIntegration';
 
 interface SyncState {
   lastSyncTimestamp: string | null;
@@ -30,7 +29,6 @@ export const useEnhancedDataSync = (
   onConflictResolved?: (mergedData: any) => void
 ) => {
   const { validateSignature, validateSignatureConsistency } = useUnifiedSignatureValidation();
-  const { createShadowProtectedSignature, validateShadowSignatureConsistency } = useLocalShadowSignatureIntegration();
   const [syncState, setSyncState] = useState<SyncState>({
     lastSyncTimestamp: null,
     lastKnownDocVersion: 0,
@@ -194,16 +192,7 @@ export const useEnhancedDataSync = (
       externalNotes: mergedData.external_notes || ''
     });
     
-    // Check LocalShadow integration consistency
-    const shadowConsistency = validateShadowSignatureConsistency(
-      remoteSignature,
-      mergedSignature,
-      'enhanced-data-sync conflict resolution'
-    );
-    
-    if (!shadowConsistency.isConsistent) {
-      console.warn('🚨 LocalShadow signature inconsistency during conflict resolution:', shadowConsistency.explanation);
-    }
+    console.log('✅ Conflict resolution complete');
 
     return {
       success: true,

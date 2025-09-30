@@ -25,7 +25,6 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
-import { localShadowStore } from '@/state/localShadows';
 
 export const useSimplifiedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -66,26 +65,8 @@ export const useSimplifiedRundownState = () => {
   const lastRemoteUpdateRef = useRef<number>(0);
   const conflictResolutionTimeoutRef = useRef<NodeJS.Timeout>();
   
-  // Track when cell broadcasts are being applied to prevent AutoSave triggers
-  const applyingCellBroadcastRef = useRef(false);
-  // Use proper React context for cell update coordination
-  const { executeWithCellUpdate } = useCellUpdateCoordination();
-  
-  // Simplified: No protection windows needed - last writer wins
-  const TYPING_DEBOUNCE_MS = 500; // Just for typing detection
-  const CONFLICT_RESOLUTION_DELAY = 2000; // Keep for edge cases
-  
-  // Track pending structural changes to prevent overwrite during save
-  const pendingStructuralChangeRef = useRef(false);
-  // Track when to refresh on next focus to prevent infinite loops
-  const shouldRefreshOnFocusRef = useRef(false);
-  
-  // Track active structural operations to block realtime updates
-  const activeStructuralOperationRef = useRef(false);
-  
-  // Enhanced cooldown management with explicit flags  
-  const blockUntilLocalEditRef = useRef(false);
-  const cooldownUntilRef = useRef<number>(0);
+  // Simplified: Just track typing for debounce
+  const TYPING_DEBOUNCE_MS = 500;
   
   // Track if we've primed the autosave after initial load
   const lastSavedPrimedRef = useRef(false);
@@ -93,11 +74,7 @@ export const useSimplifiedRundownState = () => {
   // Track last save time for race condition detection
   const lastSaveTimeRef = useRef<number>(0);
   
-  // =================================================================================
-  // ULTRA-SIMPLE FIELD PROTECTION
-  //
-  // ONLY block cell broadcasts for the exact field being actively typed.
-  // No timers, no complex logic, no multiple protection layers.
+  // Simplified: No protection needed - operations handle sync
   // =================================================================================
   
   // Listen to global focus tracker  
@@ -209,10 +186,7 @@ export const useSimplifiedRundownState = () => {
     },
     pendingStructuralChangeRef,
     undefined, // Legacy ref no longer needed
-    (isInitialized && !isLoadingColumns), // Wait for both rundown AND column initialization
-    blockUntilLocalEditRef,
-    cooldownUntilRef,
-    applyingCellBroadcastRef // Pass the cell broadcast flag
+    (isInitialized && !isLoadingColumns) // Wait for both rundown AND column initialization
   );
 
   // Standalone undo system - unchanged
@@ -286,7 +260,6 @@ export const useSimplifiedRundownState = () => {
   const realtimeConnection = useConsolidatedRealtimeRundown({
     rundownId,
     lastSeenDocVersion,
-    blockUntilLocalEditRef,
     onRundownUpdate: useCallback((updatedRundown) => {
       // OPERATION-BASED SYNC: Content updates handled by operations, not realtime
       // This callback should only receive updates from fallback scenarios
@@ -372,7 +345,7 @@ export const useSimplifiedRundownState = () => {
       }
       
       lastRemoteUpdateRef.current = Date.now();
-    }, [state, actions, getProtectedFields, lastUserActionRef]),
+    }, [state, actions, lastUserActionRef]),
     enabled: !isLoading
   });
   
@@ -608,7 +581,7 @@ export const useSimplifiedRundownState = () => {
           }
       } finally {
         // Reset flag immediately since loadRemoteState won't trigger AutoSave
-        applyingCellBroadcastRef.current = false;
+        // Changes applied
       }
     }, currentUserId);
 
