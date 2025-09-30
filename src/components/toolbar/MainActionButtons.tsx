@@ -162,7 +162,7 @@ const MainActionButtons = ({
                 pattern="[0-9]*"
                 value={rowCount}
                 onChange={handleRowCountChange}
-                className="w-12 h-6 px-1 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-12 h-6 px-1 text-center bg-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 onClick={(e) => e.stopPropagation()}
               />
               <span className="ml-1">Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
@@ -260,7 +260,7 @@ const MainActionButtons = ({
             pattern="[0-9]*"
             value={rowCount}
             onChange={handleRowCountChange}
-            className="w-12 h-7 px-1 text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 h-7 px-1 text-center text-sm bg-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             onClick={(e) => e.stopPropagation()}
           />
           <span>Segment{parseInt(rowCount) !== 1 ? 's' : ''}</span>
