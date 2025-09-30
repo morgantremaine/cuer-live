@@ -22,7 +22,7 @@ export const useTextFormatting = () => {
     // Check if we're in a textarea or input within the rundown
     const isTextArea = activeElement?.tagName === 'TEXTAREA';
     const isInput = activeElement?.tagName === 'INPUT';
-    const isInRundown = activeElement?.closest('.rundown-table') !== null;
+    const isInRundown = activeElement?.closest('[data-rundown-table]') !== null;
     
     if ((isTextArea || isInput) && isInRundown && selectedText && selectedText.length > 0) {
       const range = window.getSelection()?.getRangeAt(0);
@@ -116,7 +116,7 @@ export const useTextFormatting = () => {
     // Handle keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeElement = document.activeElement as HTMLTextAreaElement | HTMLInputElement;
-      const isInRundown = activeElement?.closest('.rundown-table') !== null;
+      const isInRundown = activeElement?.closest('[data-rundown-table]') !== null;
       const hasSelection = window.getSelection()?.toString().length! > 0;
       
       if (isInRundown && hasSelection && (e.ctrlKey || e.metaKey)) {
