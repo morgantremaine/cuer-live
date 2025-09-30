@@ -348,10 +348,17 @@ export const useSimplifiedRundownState = () => {
             case 'structural:add_row': {
               // Handle structural add row operations
               const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0) {
-                console.log('📡 Received structural add_row broadcast:', { newItemsCount: operationData.newItems.length });
-                // For add operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural add_row broadcast received - consolidated realtime will handle refresh');
+              if (operationData?.items?.length > 0) {
+                console.log('📡 Received structural add_row broadcast - applying immediately:', { 
+                  totalItemsCount: operationData.items.length 
+                });
+                
+                // Apply the complete state from the broadcast immediately
+                actionsRef.current.loadState({ items: operationData.items });
+                
+                console.log('✅ Applied add_row broadcast:', {
+                  newCount: operationData.items.length
+                });
               }
               break;
             }
@@ -359,9 +366,20 @@ export const useSimplifiedRundownState = () => {
               // Handle structural delete row operations
               const operationData = update.value?.operationData;
               if (operationData?.deletedIds?.length > 0) {
-                console.log('📡 Received structural delete_row broadcast:', { deletedIdsCount: operationData.deletedIds.length });
-                // For delete operations, the consolidated realtime system will handle the full refresh
-                console.log('📡 Structural delete_row broadcast received - consolidated realtime will handle refresh');
+                console.log('📡 Received structural delete_row broadcast - applying immediately:', { 
+                  deletedIdsCount: operationData.deletedIds.length 
+                });
+                
+                // Apply the deletion by filtering out deleted items
+                const deletedSet = new Set(operationData.deletedIds);
+                const newItems = stateRef.current.items.filter(item => !deletedSet.has(item.id));
+                actionsRef.current.loadState({ items: newItems });
+                
+                console.log('✅ Applied delete_row broadcast:', {
+                  beforeCount: stateRef.current.items.length,
+                  afterCount: newItems.length,
+                  deletedCount: operationData.deletedIds.length
+                });
               }
               break;
             }
