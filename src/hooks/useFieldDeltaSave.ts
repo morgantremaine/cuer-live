@@ -4,7 +4,6 @@ import { RundownState } from './useRundownState';
 import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { registerRecentSave } from './useRundownResumption';
 import { getTabId } from '@/utils/tabUtils';
-import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 // Field delta tracking for granular saves
 interface FieldDelta {
@@ -15,7 +14,8 @@ interface FieldDelta {
 }
 
 export const useFieldDeltaSave = (
-  rundownId: string | null
+  rundownId: string | null,
+  trackOwnUpdate: (timestamp: string) => void
 ) => {
   const pendingDeltasRef = useRef<FieldDelta[]>([]);
   const lastSavedStateRef = useRef<RundownState | null>(null);
@@ -172,12 +172,7 @@ export const useFieldDeltaSave = (
     }
 
     const updateTimestamp = new Date().toISOString();
-    
-    // Track own update via centralized tracker with realtime context
-    {
-      const trackContext = rundownId ? `realtime-${rundownId}` : undefined;
-      ownUpdateTracker.track(updateTimestamp, trackContext);
-    }
+    trackOwnUpdate(updateTimestamp);
 
     // Import LocalShadow for bulletproof field protection
     const { localShadowStore } = await import('@/state/localShadows');
@@ -456,13 +451,7 @@ export const useFieldDeltaSave = (
     }
 
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
-    
-    // Track own update via centralized tracker with realtime context
-    {
-      const trackContext = rundownId ? `realtime-${rundownId}` : undefined;
-      ownUpdateTracker.track(normalizedTimestamp, trackContext);
-    }
-    
+    trackOwnUpdate(normalizedTimestamp);
     registerRecentSave(rundownId, normalizedTimestamp);
     console.log('⚡ Delta update completed successfully with tab_id:', getTabId());
 
@@ -470,7 +459,7 @@ export const useFieldDeltaSave = (
       updatedAt: normalizedTimestamp,
       docVersion: data.doc_version
     };
-  }, [rundownId]);
+  }, [rundownId, trackOwnUpdate]);
 
   // Fallback for full updates
   const performFullUpdate = useCallback(async (currentState: RundownState, updateTimestamp: string) => {
@@ -508,13 +497,7 @@ export const useFieldDeltaSave = (
     }
 
     const normalizedTimestamp = normalizeTimestamp(data.updated_at);
-    
-    // Track own update via centralized tracker with realtime context
-    {
-      const trackContext = rundownId ? `realtime-${rundownId}` : undefined;
-      ownUpdateTracker.track(normalizedTimestamp, trackContext);
-    }
-    
+    trackOwnUpdate(normalizedTimestamp);
     registerRecentSave(rundownId, normalizedTimestamp);
     console.log('💾 Full update completed successfully with tab_id:', getTabId());
 
@@ -522,7 +505,7 @@ export const useFieldDeltaSave = (
       updatedAt: normalizedTimestamp,
       docVersion: data.doc_version
     };
-  }, [rundownId]);
+  }, [rundownId, trackOwnUpdate]);
 
   // Main save function using deltas
   const saveDeltaState = useCallback(async (currentState: RundownState): Promise<{ updatedAt: string; docVersion: number }> => {

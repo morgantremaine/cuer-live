@@ -32,7 +32,7 @@ const AccountManagement = () => {
   const [deletePassword, setDeletePassword] = useState('')
   const { user, signOut, updatePassword, updateProfile } = useAuth()
   const { subscribed, access_type, openCustomerPortal } = useSubscription()
-  const { team, allUserTeams, userRole, switchToTeam } = useTeam()
+  const { team } = useTeam()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -186,10 +186,6 @@ const AccountManagement = () => {
         onSignOut={handleSignOut}
         showBackButton={true}
         onBack={handleBackToDashboard}
-        team={team}
-        allUserTeams={allUserTeams}
-        userRole={userRole}
-        switchToTeam={switchToTeam}
       />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -462,7 +458,7 @@ const AccountManagement = () => {
           )}
 
           <TabsContent value="team">
-            <TeamManagement key={team?.id} />
+            <TeamManagement />
           </TabsContent>
         </Tabs>
       </div>

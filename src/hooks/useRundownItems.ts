@@ -6,13 +6,7 @@ import { RUNDOWN_DEFAULTS } from '@/constants/rundownDefaults';
 
 export type { RundownItem } from '@/types/rundown';
 
-export const useRundownItems = (
-  markAsChanged: () => void,
-  handleStructuralOperation?: (
-    operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
-    operationData: any
-  ) => void
-) => {
+export const useRundownItems = (markAsChanged: () => void) => {
   const [items, setItems] = useState<RundownItem[]>([]);
 
   const updateItem = useCallback((id: string, updates: Partial<RundownItem>) => {
@@ -70,15 +64,6 @@ export const useRundownItems = (
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
-      // Handle via coordination system if available
-      if (handleStructuralOperation) {
-        handleStructuralOperation('add_row', {
-          items: newItems, // Pass complete items array for database save
-          newItems: [newItem],
-          insertIndex
-        });
-      }
-      
       markAsChanged();
       return newItems;
     });
@@ -129,15 +114,6 @@ export const useRundownItems = (
       const newItems = [...prevItems];
       newItems.splice(insertIndex, 0, newItem);
       
-      // Handle via coordination system if available
-      if (handleStructuralOperation) {
-        handleStructuralOperation('add_header', {
-          items: newItems, // Pass complete items array for database save
-          newItems: [newItem],
-          insertIndex
-        });
-      }
-      
       markAsChanged();
       return newItems;
     });
@@ -146,36 +122,18 @@ export const useRundownItems = (
   const deleteRow = useCallback((id: string) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => item.id !== id);
-      
-      // Handle via coordination system if available
-      if (handleStructuralOperation) {
-        handleStructuralOperation('delete_row', {
-          items: newItems, // Pass complete items array for database save
-          deletedIds: [id]
-        });
-      }
-      
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation]);
+  }, [markAsChanged]);
 
   const deleteMultipleRows = useCallback((ids: string[]) => {
     setItems(prevItems => {
       const newItems = prevItems.filter(item => !ids.includes(item.id));
-      
-      // Handle via coordination system if available
-      if (handleStructuralOperation) {
-        handleStructuralOperation('delete_row', {
-          items: newItems, // Pass complete items array for database save
-          deletedIds: ids
-        });
-      }
-      
       markAsChanged();
       return newItems;
     });
-  }, [markAsChanged, handleStructuralOperation]);
+  }, [markAsChanged]);
 
   const addMultipleRows = useCallback((newItems: RundownItem[]) => {
     setItems(prevItems => {

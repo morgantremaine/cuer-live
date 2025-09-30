@@ -206,8 +206,6 @@ const Teleprompter = () => {
   const { saveState, debouncedSave, forceSave, loadBackup } = useTeleprompterSave({
     rundownId: rundownId!,
     onSaveSuccess: (itemId, script) => {
-      console.log('📝 Teleprompter: Save success callback - updating local state and broadcasting', { itemId });
-      
       // Update local state immediately on successful save
       if (rundownData) {
         const updatedItems = rundownData.items.map(item =>
@@ -218,17 +216,11 @@ const Teleprompter = () => {
           items: updatedItems
         });
       }
-      
-      // Broadcast the change for real-time collaboration AFTER successful save
-      if (user) {
-        console.log('📡 Teleprompter: Broadcasting cell update for real-time collaboration', { itemId, scriptLength: script.length });
-        cellBroadcast.broadcastCellUpdate(rundownId!, itemId, 'script', script, user.id);
-      } else {
-        console.log('⚠️ Teleprompter: No user found, skipping cell broadcast');
-      }
     },
     onSaveStart: globalTeleprompterSync.handleTeleprompterSaveStart,
-    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd
+    onSaveEnd: globalTeleprompterSync.handleTeleprompterSaveEnd,
+    // CRITICAL: Pass trackOwnUpdate to integrate with real-time system
+    trackOwnUpdate: trackOwnUpdate
   });
 
   // Enhanced rundown data loading with doc version tracking
@@ -343,8 +335,8 @@ const Teleprompter = () => {
       items: updatedItems
     });
 
-    // Use immediate tracking - let per-cell save system handle debouncing
-    debouncedSave(itemId, newScript);
+    // Use debounced save for persistence (500ms)
+    debouncedSave(itemId, newScript, { ...rundownData, items: updatedItems }, 500);
     
     // Clear typing session after delay
     setTimeout(() => {

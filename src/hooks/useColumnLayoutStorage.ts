@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Column } from '@/types/columns'
-import { useActiveTeam } from '@/hooks/useActiveTeam'
+import { Column } from '@/types/columns';
 
 interface ColumnLayout {
   id: string
@@ -26,19 +25,51 @@ export const useColumnLayoutStorage = () => {
   const [loading, setLoading] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
-  const { activeTeamId } = useActiveTeam()
 
   const loadLayouts = async () => {
-    if (!user || !activeTeamId) return
+    if (!user) return
 
     setLoading(true)
     try {
-      // Load layouts for the active team only (both user's own and team-shared layouts)
-      const { data: layoutsData, error } = await supabase
-        .from('column_layouts')
-        .select('*')
-        .or(`and(user_id.eq.${user.id},team_id.eq.${activeTeamId}),and(team_id.eq.${activeTeamId},user_id.neq.${user.id})`)
-        .order('updated_at', { ascending: false })
+      // Get user's team memberships first
+      const { data: teamMemberships, error: teamError } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+
+      if (teamError) {
+        console.error('Error loading team memberships:', teamError)
+        setLoading(false)
+        return
+      }
+
+      const teamIds = teamMemberships?.map(membership => membership.team_id) || []
+      
+      // Handle case where user has no team memberships yet
+      let layoutsData = null;
+      let error = null;
+      
+      if (teamIds.length > 0) {
+        // Load layouts that user can access (own layouts + team layouts)
+        const { data, error: layoutError } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .or(`user_id.eq.${user.id},team_id.in.(${teamIds.join(',')})`)
+          .order('updated_at', { ascending: false })
+        
+        layoutsData = data;
+        error = layoutError;
+      } else {
+        // Load only user's personal layouts when no team memberships
+        const { data, error: layoutError } = await supabase
+          .from('column_layouts')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+        
+        layoutsData = data;
+        error = layoutError;
+      }
 
       if (error) {
         toast({
@@ -97,8 +128,14 @@ export const useColumnLayoutStorage = () => {
     if (!user) return
 
     try {
-      // Use the active team from the team switcher
-      const teamId = activeTeamId
+      // Get user's first team for new layouts
+      const { data: teamMemberships } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+        .limit(1)
+
+      const teamId = teamMemberships?.[0]?.team_id || null
 
       // Save only visible columns to preserve exact layout state
       const visibleColumns = columns.filter(col => col.isVisible !== false)
@@ -258,10 +295,10 @@ export const useColumnLayoutStorage = () => {
   }
 
   useEffect(() => {
-    if (user && activeTeamId) {
+    if (user) {
       loadLayouts()
     }
-  }, [user, activeTeamId]) // Reload when team changes
+  }, [user])
 
   return {
     savedLayouts,

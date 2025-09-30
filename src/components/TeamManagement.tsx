@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTeam } from '@/hooks/useTeam';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2, Pencil, Check } from 'lucide-react';
+import { Trash2, UserPlus, Crown, User, Users, Mail, X, AlertTriangle, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,22 +36,18 @@ const TeamManagement = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null);
   const [teamAdminName, setTeamAdminName] = useState<string>('');
-  const [isEditingTeamName, setIsEditingTeamName] = useState(false);
-  const [editedTeamName, setEditedTeamName] = useState('');
-  const [isSavingTeamName, setIsSavingTeamName] = useState(false);
   
   const {
     team,
     teamMembers,
     pendingInvitations,
     userRole,
-    isLoading,
+    loading,
     error,
     inviteTeamMember,
     removeTeamMemberWithTransfer,
     getTransferPreview,
-    revokeInvitation,
-    updateTeamName
+    revokeInvitation
   } = useTeam();
   
   const { max_team_members } = useSubscription();
@@ -185,47 +181,7 @@ const TeamManagement = () => {
     setTransferPreview(null);
   };
 
-  const handleEditTeamName = () => {
-    setEditedTeamName(team?.name || '');
-    setIsEditingTeamName(true);
-  };
-
-  const handleSaveTeamName = async () => {
-    if (!editedTeamName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Team name cannot be empty',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSavingTeamName(true);
-    const { error } = await updateTeamName(editedTeamName);
-    
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Team name updated successfully!',
-      });
-      setIsEditingTeamName(false);
-    }
-    
-    setIsSavingTeamName(false);
-  };
-
-  const handleCancelEditTeamName = () => {
-    setIsEditingTeamName(false);
-    setEditedTeamName('');
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-32 bg-muted rounded-lg animate-pulse" />
@@ -272,6 +228,8 @@ const TeamManagement = () => {
     );
   }
 
+  const displayTeamName = teamAdminName ? `${teamAdminName}'s Team` : team.name;
+  
   // Calculate current team usage (members + pending invitations)
   const currentUsage = teamMembers.length + pendingInvitations.length;
   const isAtLimit = currentUsage >= max_team_members;
@@ -282,56 +240,9 @@ const TeamManagement = () => {
       {/* Team Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
+          <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {isEditingTeamName ? (
-              <div className="flex items-center gap-2 flex-1">
-                <Input
-                  value={editedTeamName}
-                  onChange={(e) => setEditedTeamName(e.target.value)}
-                  disabled={isSavingTeamName}
-                  className="max-w-md"
-                  placeholder="Enter team name"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveTeamName();
-                    if (e.key === 'Escape') handleCancelEditTeamName();
-                  }}
-                />
-                <Button 
-                  size="sm" 
-                  onClick={handleSaveTeamName}
-                  disabled={isSavingTeamName}
-                >
-                  {isSavingTeamName ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Check className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={handleCancelEditTeamName}
-                  disabled={isSavingTeamName}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <span>{team.name}</span>
-                {userRole === 'admin' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleEditTeamName}
-                    className="ml-auto"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                )}
-              </>
-            )}
+            {displayTeamName}
           </CardTitle>
           <CardDescription>
             Manage your team members and collaborate on rundowns. You have {userRole} access.

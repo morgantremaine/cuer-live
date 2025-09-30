@@ -1,10 +1,7 @@
 /**
  * LocalShadow Store - Bulletproof protection for active typing
  * Preserves user input during conflict resolution and realtime updates
- * Integrated with unified content signature system for consistency
  */
-
-import { createContentSignature } from '@/utils/contentSignature';
 
 interface ShadowEntry {
   value: any;
@@ -206,7 +203,7 @@ class LocalShadowStore {
     });
   }
 
-  // Apply shadows to data during conflict resolution with signature validation
+  // Apply shadows to data during conflict resolution
   applyShadowsToData(data: any): any {
     const activeShadows = this.getActiveShadows();
     
@@ -238,36 +235,6 @@ class LocalShadowStore {
       });
     }
     
-    // Validate shadow application doesn't break signature consistency
-    if (process.env.NODE_ENV === 'development') {
-      const originalSignature = createContentSignature({
-        items: data.items || [],
-        title: data.title || '',
-        columns: [],
-        timezone: data.timezone || '',
-        startTime: data.start_time || '',
-        showDate: data.show_date ? new Date(data.show_date) : null,
-        externalNotes: data.external_notes || ''
-      });
-      
-      const shadowedSignature = createContentSignature({
-        items: result.items || [],
-        title: result.title || '',
-        columns: [],
-        timezone: result.timezone || '',
-        startTime: result.start_time || '',
-        showDate: result.show_date ? new Date(result.show_date) : null,
-        externalNotes: result.external_notes || ''
-      });
-      
-      const hasActiveShadows = activeShadows.items.size > 0 || activeShadows.globals.size > 0;
-      if (hasActiveShadows && originalSignature === shadowedSignature) {
-        console.warn('🚨 LocalShadow: Active shadows but signature unchanged - shadow application may be broken');
-      } else if (!hasActiveShadows && originalSignature !== shadowedSignature) {
-        console.warn('🚨 LocalShadow: No active shadows but signature changed - unexpected modification');
-      }
-    }
-
     return result;
   }
 

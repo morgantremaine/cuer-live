@@ -20,6 +20,7 @@ interface TabletToolbarProps {
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
+  onOpenTeleprompter: () => void;
   selectedRowId: string | null;
   isPlaying: boolean;
   currentSegmentId: string | null;
@@ -54,6 +55,7 @@ const TabletToolbar = ({
   canUndo,
   lastAction,
   rundownId,
+  onOpenTeleprompter,
   selectedRowId,
   isPlaying,
   currentSegmentId,
@@ -106,6 +108,7 @@ const TabletToolbar = ({
                 canUndo={canUndo}
                 lastAction={lastAction}
                 rundownId={rundownId}
+                onOpenTeleprompter={onOpenTeleprompter}
                 selectedRowId={selectedRowId}
                 isMobile={true}
                 rundownTitle={rundownTitle}

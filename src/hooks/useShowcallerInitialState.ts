@@ -1,15 +1,17 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface UseShowcallerInitialStateProps {
   rundownId: string | null;
   onStateLoaded: (state: any) => void;
+  trackOwnUpdate: (timestamp: string) => void;
 }
 
 export const useShowcallerInitialState = ({
   rundownId,
-  onStateLoaded
+  onStateLoaded,
+  trackOwnUpdate
 }: UseShowcallerInitialStateProps) => {
   const hasLoadedRef = useRef(false);
   const isLoadingRef = useRef(false);
@@ -43,10 +45,9 @@ export const useShowcallerInitialState = ({
       }
 
       if (data?.showcaller_state) {
-        // Mark this as our own tracked update to prevent feedback via centralized tracker
+        // Mark this as our own tracked update to prevent feedback
         if (data.showcaller_state.lastUpdate) {
-          const context = rundownId ? `showcaller-${rundownId}` : undefined;
-          ownUpdateTracker.track(data.showcaller_state.lastUpdate, context);
+          trackOwnUpdate(data.showcaller_state.lastUpdate);
         }
 
         onStateLoaded(data.showcaller_state);
@@ -66,7 +67,7 @@ export const useShowcallerInitialState = ({
     } finally {
       isLoadingRef.current = false;
     }
-  }, [rundownId, onStateLoaded]);
+  }, [rundownId, onStateLoaded, trackOwnUpdate]);
 
   // Reset loading flags when rundownId changes
   useEffect(() => {

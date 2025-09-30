@@ -7,15 +7,13 @@ import AnimatedWifiIcon from './AnimatedWifiIcon';
 interface ConnectionStatusBadgeProps {
   isConnected: boolean;
   isProcessing?: boolean;
-  isDegraded?: boolean; // New prop for degraded connection (poor broadcast health)
   className?: string;
   showLabel?: boolean;
 }
 
 const ConnectionStatusBadge = ({ 
   isConnected, 
-  isProcessing = false,
-  isDegraded = false,
+  isProcessing = false, 
   className,
   showLabel = true 
 }: ConnectionStatusBadgeProps) => {
@@ -26,14 +24,6 @@ const ConnectionStatusBadge = ({
         bgColor: 'bg-blue-500/10',
         label: 'Syncing...',
         title: 'Syncing changes with team'
-      };
-    } else if (isConnected && isDegraded) {
-      return {
-        icon: Wifi,
-        color: 'text-yellow-500',
-        bgColor: 'bg-yellow-500/10',
-        label: 'Poor',
-        title: 'Poor connection - slower sync'
       };
     } else if (isConnected) {
       return {

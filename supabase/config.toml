@@ -1,11 +1,5 @@
 project_id = "khdiwrkgahsbjszlwnob"
 
-[functions.cell-field-save]
-verify_jwt = false
-
-[functions.structural-operation-save]
-verify_jwt = false
-
 [functions.stream-deck-api]
 verify_jwt = false
 

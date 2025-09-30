@@ -112,31 +112,29 @@ const RundownHeader = ({
 
   // Create a content-only signature to detect non-column changes
   const contentOnlySignature = useMemo(() => {
-    // Use the same structure as the content signature utility
     return JSON.stringify({
-      items: (items || []).map(item => ({
+      items: items.map(item => ({
         id: item.id,
         type: item.type,
-        name: item.name || '',
-        talent: item.talent || '',
-        script: item.script || '',
-        gfx: item.gfx || '',
-        video: item.video || '',
-        images: item.images || '',
-        notes: item.notes || '',
-        duration: item.duration || '',
-        startTime: item.startTime || '',
-        endTime: item.endTime || '',
-        color: item.color || '',
-        isFloating: Boolean(item.isFloating),
-        isFloated: Boolean(item.isFloated),
-        customFields: item.customFields || {},
-        segmentName: item.segmentName || '',
-        rowNumber: item.rowNumber || 0
+        name: item.name,
+        duration: item.duration,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        talent: item.talent,
+        script: item.script,
+        gfx: item.gfx,
+        video: item.video,
+        images: item.images,
+        notes: item.notes,
+        color: item.color,
+        isFloating: item.isFloating,
+        isFloated: item.isFloated,
+        customFields: item.customFields,
+        segmentName: item.segmentName,
+        rowNumber: item.rowNumber
       })),
-      title: title || '',
-      showDate: null,
-      externalNotes: ''
+      title: title,
+      // Explicitly exclude columns, timezone, startTime for save indicator purposes
     });
   }, [items, title]);
 
@@ -152,17 +150,6 @@ const RundownHeader = ({
     // Check if content has actually changed (ignoring columns)
     const contentChanged = contentOnlySignature !== lastSavedContentSignatureRef.current;
     setHasContentOnlyChanges(contentChanged);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 RUNDOWN HEADER: Content-only change detection', {
-        contentChanged,
-        currentSigLength: contentOnlySignature.length,
-        lastSavedSigLength: lastSavedContentSignatureRef.current.length,
-        itemCount: (items || []).length,
-        title: title || '',
-        excludedFromDetection: ['columns', 'timezone', 'startTime', 'visibleColumns']
-      });
-    }
   }, [contentOnlySignature]);
 
   // Update baseline when main system completes a save
@@ -174,29 +161,28 @@ const RundownHeader = ({
     }
   }, [isSaving, hasUnsavedChanges, contentOnlySignature]);
 
-  // Track saving transitions to trigger a saved flash using the coordinated save state
+  // Track content-saving transitions to trigger a saved flash
+  const isSavingContent = isSaving && hasContentOnlyChanges;
   const [shouldShowSavedFlash, setShouldShowSavedFlash] = useState(false);
-  const prevIsSavingRef = useRef(false);
+  const prevIsSavingContentRef = useRef(false);
   React.useEffect(() => {
-    const prev = prevIsSavingRef.current;
-    // Trigger flash when save completes (was saving, now not saving, and no unsaved changes)
-    if (prev && !isSaving && !hasUnsavedChanges) {
+    const prev = prevIsSavingContentRef.current;
+    if (prev && !isSavingContent && !hasUnsavedChanges) {
       setShouldShowSavedFlash(true);
       // Keep the flag true long enough for the indicator to see it and start its own timer
       const timer = setTimeout(() => setShouldShowSavedFlash(false), 100);
       return () => clearTimeout(timer);
     }
-    prevIsSavingRef.current = isSaving;
-  }, [isSaving, hasUnsavedChanges]);
+    prevIsSavingContentRef.current = isSavingContent;
+  }, [isSavingContent, hasUnsavedChanges]);
 
-  // Create save state using the proper save state from the hook
-  // This includes per-cell save state when per-cell save is enabled
+  // Create save state using our content-only change detection
   const saveState = {
-    isSaving: isSaving, // Use the coordinated save state from the hook
-    hasUnsavedChanges: hasUnsavedChanges, // Use the coordinated unsaved changes from the hook
+    isSaving: isSavingContent, // Only show saving if content changed
+    hasUnsavedChanges: hasContentOnlyChanges,    // Only show unsaved if content changed
     lastSaved: null,
     saveError: null,
-    hasContentChanges: hasUnsavedChanges // Content changes are tracked by the save coordination system
+    hasContentChanges: hasContentOnlyChanges
   };
 
   // Get current universal time for display

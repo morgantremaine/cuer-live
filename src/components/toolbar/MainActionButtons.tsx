@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Plus, Eye, Undo, MapPin, Search, FileText } from 'lucide-react';
+import { Plus, Eye, Undo, MapPin, Search, Monitor, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ShareRundownMenu } from '@/components/ShareRundownMenu';
@@ -21,6 +21,7 @@ interface MainActionButtonsProps {
   canUndo: boolean;
   lastAction: string | null;
   rundownId: string | undefined;
+  onOpenTeleprompter: () => void;
   selectedRowId?: string | null;
   isMobile?: boolean;
   rundownTitle?: string;
@@ -49,6 +50,7 @@ const MainActionButtons = ({
   canUndo,
   lastAction,
   rundownId,
+  onOpenTeleprompter,
   selectedRowId,
   isMobile = false,
   rundownTitle = 'Untitled Rundown',
@@ -103,6 +105,40 @@ const MainActionButtons = ({
     navigate(`/rundown/${rundownId}/blueprint`);
   };
 
+  const handleOpenTeleprompter = () => {
+    if (!rundownId) {
+      toast({
+        title: "Cannot open teleprompter",
+        description: "Save this rundown first before opening teleprompter.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Block for free tier users
+    if (isFreeUser) {
+      toast({
+        title: "Upgrade Required",
+        description: "Teleprompter is only available to Pro and Premium users. Upgrade your plan in Account Settings to unlock unlimited access.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if this is the demo rundown
+    if (rundownId === DEMO_RUNDOWN_ID) {
+      toast({
+        title: "Subscribe to unlock full features",
+        description: "Teleprompter mode is available with a subscription. Try the full experience!",
+        variant: "default"
+      });
+      return;
+    }
+
+    // Open teleprompter in a new window
+    const teleprompterUrl = `${window.location.origin}/rundown/${rundownId}/teleprompter`;
+    window.open(teleprompterUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const buttonSize = 'sm';
   
@@ -138,6 +174,10 @@ const MainActionButtons = ({
           <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
             <FileText className="h-4 w-4" />
             <span>Blueprint</span>
+          </Button>
+          <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+            <Monitor className="h-4 w-4" />
+            <span>Prompter</span>
           </Button>
         </div>
 
@@ -219,6 +259,10 @@ const MainActionButtons = ({
       <Button onClick={handleOpenBlueprint} variant="outline" size={buttonSize} className={buttonClass}>
         <FileText className="h-4 w-4" />
         <span>Blueprint</span>
+      </Button>
+      <Button onClick={handleOpenTeleprompter} variant="outline" size={buttonSize} className={buttonClass}>
+        <Monitor className="h-4 w-4" />
+        <span>Prompter</span>
       </Button>
       
       <ToolsMenu rundownId={rundownId} size={buttonSize} onShowFindReplace={onShowFindReplace} onShowNotes={onShowNotes} />

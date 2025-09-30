@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShowcallerState } from './useShowcallerState';
-import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
 
 interface UseShowcallerRealtimeProps {
   rundownId: string | null;
@@ -22,6 +21,7 @@ export const useShowcallerRealtime = ({
   const lastProcessedUpdateRef = useRef<string | null>(null);
   const onShowcallerStateReceivedRef = useRef(onShowcallerStateReceived);
   const onShowcallerActivityRef = useRef(onShowcallerActivity);
+  const ownUpdateTrackingRef = useRef<Set<string>>(new Set());
   const activityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -67,8 +67,8 @@ export const useShowcallerRealtime = ({
       return;
     }
 
-    // Skip if this update originated from this user (using centralized tracker)
-    if (showcallerState.lastUpdate && rundownId && ownUpdateTracker.isTracked(showcallerState.lastUpdate, `showcaller-realtime-${rundownId}`)) {
+    // Skip if this update originated from this user
+    if (showcallerState.lastUpdate && ownUpdateTrackingRef.current.has(showcallerState.lastUpdate)) {
       return;
     }
 
@@ -93,15 +93,18 @@ export const useShowcallerRealtime = ({
     
   }, [rundownId, signalActivity]);
 
-  // Function to track our own updates using centralized tracker
+  // Function to track our own updates
   const trackOwnUpdate = useCallback((lastUpdate: string) => {
-    if (rundownId) {
-      ownUpdateTracker.track(lastUpdate, `showcaller-realtime-${rundownId}`);
-    }
+    ownUpdateTrackingRef.current.add(lastUpdate);
     
     // Signal our own activity
     signalActivity();
-  }, [rundownId, signalActivity]);
+    
+    // Clean up old tracked updates after 8 seconds
+    setTimeout(() => {
+      ownUpdateTrackingRef.current.delete(lastUpdate);
+    }, 8000);
+  }, [signalActivity]);
 
   useEffect(() => {
     // Clear any existing subscription

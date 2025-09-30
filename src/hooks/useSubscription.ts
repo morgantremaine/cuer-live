@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { useActiveTeam } from './useActiveTeam';
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -18,7 +17,6 @@ interface SubscriptionStatus {
 
 export const useSubscription = () => {
   const { user } = useAuth();
-  const { activeTeamId } = useActiveTeam();
   const { toast } = useToast();
   const [status, setStatus] = useState<SubscriptionStatus>({
     subscribed: false,
@@ -31,9 +29,8 @@ export const useSubscription = () => {
     error: null,
   });
   
-  // Track which user and team we've loaded data for to prevent duplicate requests
+  // Track which user we've loaded data for to prevent duplicate requests
   const loadedUserRef = useRef<string | null>(null);
-  const loadedTeamRef = useRef<string | null>(null);
   const isLoadingRef = useRef(false);
 
   const checkSubscription = useCallback(async () => {
@@ -42,15 +39,14 @@ export const useSubscription = () => {
       return;
     }
 
-    // Prevent duplicate loading for the same user and team combination
-    if (loadedUserRef.current === user.id && loadedTeamRef.current === activeTeamId) {
+    // Prevent duplicate loading for the same user
+    if (loadedUserRef.current === user.id) {
       setStatus(prev => ({ ...prev, loading: false }));
       return;
     }
 
     isLoadingRef.current = true;
     loadedUserRef.current = user.id;
-    loadedTeamRef.current = activeTeamId;
 
     try {
       setStatus(prev => ({ ...prev, loading: true, error: null }));
@@ -83,11 +79,8 @@ export const useSubscription = () => {
       
       // Then use the database function to check subscription access
       const { data, error } = await supabase.rpc('get_user_subscription_access', {
-        user_uuid: user.id,
-        team_uuid: activeTeamId
+        user_uuid: user.id
       });
-      
-      console.log('🔍 useSubscription - RPC result:', { data, error, userId: user.id, teamId: activeTeamId });
       
       if (error) {
         // Check if it's also an auth error
@@ -149,7 +142,7 @@ export const useSubscription = () => {
     } finally {
       isLoadingRef.current = false;
     }
-  }, [user?.id, activeTeamId]); // Include activeTeamId as dependency
+  }, []); // Remove user dependency to prevent recreation
 
   const createCheckout = useCallback(async (tier: string, interval: 'monthly' | 'yearly') => {
     if (!user) {
@@ -209,25 +202,13 @@ export const useSubscription = () => {
     }
   }, [user, toast]);
 
-  // Load subscription data when user or team changes - with strict change detection
+  // Load subscription data when user changes - with strict change detection
   useEffect(() => {
-    // When team changes, immediately set loading state and reset refs
-    if (activeTeamId !== loadedTeamRef.current && loadedTeamRef.current !== null) {
-      console.log('🔄 useSubscription - Team changed, resetting subscription state', {
-        oldTeam: loadedTeamRef.current,
-        newTeam: activeTeamId
-      });
-      setStatus(prev => ({ ...prev, loading: true }));
-      loadedTeamRef.current = null;
-      isLoadingRef.current = false;
-    }
-    
-    if (user?.id && (user.id !== loadedUserRef.current || activeTeamId !== loadedTeamRef.current) && !isLoadingRef.current) {
+    if (user?.id && user.id !== loadedUserRef.current && !isLoadingRef.current) {
       checkSubscription();
     } else if (!user?.id && loadedUserRef.current) {
       setStatus(prev => ({ ...prev, loading: false }));
       loadedUserRef.current = null;
-      loadedTeamRef.current = null;
       isLoadingRef.current = false;
     }
     
@@ -238,12 +219,11 @@ export const useSubscription = () => {
       setTimeout(() => {
         if (user?.id && !isLoadingRef.current) {
           loadedUserRef.current = null; // Reset to force reload
-          loadedTeamRef.current = null;
           checkSubscription();
         }
       }, 2000);
     }
-  }, [user?.id, activeTeamId]); // Include activeTeamId so subscription refreshes on team switch
+  }, [user?.id]); // Only depend on user.id, not the checkSubscription function
 
   // Handle page visibility changes to prevent unnecessary subscription checks
   useEffect(() => {
@@ -256,7 +236,7 @@ export const useSubscription = () => {
         lastVisibilityCheck = now;
         
         // Only reload if we don't have subscription data and we should have it
-        if (user?.id && !isLoadingRef.current && status.loading && (loadedUserRef.current !== user.id || loadedTeamRef.current !== activeTeamId)) {
+        if (user?.id && !isLoadingRef.current && status.loading && loadedUserRef.current !== user.id) {
           checkSubscription();
         }
       }
@@ -267,7 +247,7 @@ export const useSubscription = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user?.id, activeTeamId, status.loading]);
+  }, [user?.id, status.loading]);
 
   return {
     ...status,

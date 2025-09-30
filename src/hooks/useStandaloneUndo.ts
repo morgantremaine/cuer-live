@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RundownItem } from '@/hooks/useRundownItems';
 import { Column } from '@/types/columns';
-import { createContentSignature } from '@/utils/contentSignature';
+
 import { debugLogger } from '@/utils/debugLogger';
 
 interface UndoState {
@@ -34,16 +34,8 @@ export const useStandaloneUndo = ({ onUndo, setUndoActive }: UseStandaloneUndoPr
       return;
     }
 
-  // Create a signature using the unified content signature for consistency
-  const currentSignature = createContentSignature({
-    items,
-    title,
-    columns,
-    timezone: '',
-    startTime: '',
-    showDate: null,
-    externalNotes: ''
-  });
+    // Create a signature to avoid duplicate saves
+    const currentSignature = JSON.stringify({ items, columns, title });
     if (lastStateSignature.current === currentSignature) {
       return;
     }

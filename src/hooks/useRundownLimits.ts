@@ -13,7 +13,7 @@ interface RundownLimits {
 }
 
 export const useRundownLimits = (rundowns: SavedRundown[]): RundownLimits => {
-  const { subscription_tier, access_type, loading } = useSubscription();
+  const { subscription_tier, access_type } = useSubscription();
 
   return useMemo(() => {
     const activeRundowns = rundowns.filter(r => !r.archived);
@@ -21,20 +21,6 @@ export const useRundownLimits = (rundowns: SavedRundown[]): RundownLimits => {
     const totalCount = rundowns.length;
     const activeCount = activeRundowns.length;
     const archivedCount = archivedRundowns.length;
-
-    // While subscription is loading, conservatively disable new creation
-    // This prevents UI flickering when switching teams
-    if (loading) {
-      return {
-        totalCount,
-        activeCount,
-        archivedCount,
-        isAtLimit: true, // Conservatively disable while loading
-        canCreateNew: false,
-        canImport: false,
-        maxRundowns: 3 // Show free tier limit while loading
-      };
-    }
 
     // Determine if user is on free tier
     const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
@@ -54,5 +40,5 @@ export const useRundownLimits = (rundowns: SavedRundown[]): RundownLimits => {
       canImport,
       maxRundowns
     };
-  }, [rundowns, subscription_tier, access_type, loading]);
+  }, [rundowns, subscription_tier, access_type]);
 };

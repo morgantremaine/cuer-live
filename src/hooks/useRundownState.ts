@@ -20,7 +20,6 @@ export interface RundownState {
   hasUnsavedChanges: boolean;
   lastChanged: number;
   docVersion?: number; // Add docVersion to track server version for OCC
-  perCellSaveEnabled?: boolean; // Add per-cell save enabled flag
 }
 
 type RundownAction = 
@@ -56,33 +55,11 @@ const initialState: RundownState = {
   isPlaying: false,
   hasUnsavedChanges: false,
   lastChanged: 0,
-  docVersion: 0, // Initialize docVersion
-  perCellSaveEnabled: false // Initialize per-cell save as disabled by default
+  docVersion: 0 // Initialize docVersion
 };
 
 function rundownReducer(state: RundownState, action: RundownAction): RundownState {
   const markChanged = (newState: Partial<RundownState>, actionType?: string) => {
-    // CRITICAL: If per-cell save is enabled, don't set hasUnsavedChanges
-    // Let the per-cell system manage the saved state
-    if (state.perCellSaveEnabled) {
-      console.log('📝 CONTENT CHANGE: Per-cell save active - NOT setting hasUnsavedChanges', {
-        action: actionType,
-        isContentChange: true,
-        reason: 'Per-cell save system will manage saved state'
-      });
-      debugLogger.autosave('Content change detected but per-cell save active - not flagging hasUnsavedChanges via action:', actionType);
-      return {
-        ...state,
-        ...newState,
-        lastChanged: Date.now()
-      };
-    }
-    
-    console.log('📝 CONTENT CHANGE: Setting hasUnsavedChanges=true', {
-      action: actionType,
-      isContentChange: true,
-      reason: 'Actual content modification detected'
-    });
     debugLogger.autosave('Content change flagged (hasUnsavedChanges=true) via action:', actionType);
     try {
       debugLogger.autosave('Save cause trace');
@@ -159,20 +136,16 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return markChanged({ title: action.payload }, 'SET_TITLE');
 
     case 'SET_START_TIME':
-      // START_TIME is UI preference, not content - don't mark as changed
-      debugLogger.autosave('SET_START_TIME applied (UI preference) - no content change flagged');
-      return { ...state, startTime: action.payload };
+      return markChanged({ startTime: action.payload }, 'SET_START_TIME');
 
     case 'SET_TIMEZONE':
-      // TIMEZONE is UI preference, not content - don't mark as changed
-      debugLogger.autosave('SET_TIMEZONE applied (UI preference) - no content change flagged');
-      return { ...state, timezone: action.payload };
-      
+      return markChanged({ timezone: action.payload }, 'SET_TIMEZONE');
+
     case 'SET_SHOW_DATE':
       return markChanged({ showDate: action.payload }, 'SET_SHOW_DATE');
-
+      
     case 'SET_EXTERNAL_NOTES':
-      return markChanged({ externalNotes: action.payload }, 'SET_EXTERNAL_NOTES');
+      return markChanged({ externalNotes: action.payload });
 
     case 'SET_CURRENT_SEGMENT':
       return { ...state, currentSegmentId: action.payload };
@@ -181,10 +154,6 @@ function rundownReducer(state: RundownState, action: RundownAction): RundownStat
       return { ...state, isPlaying: action.payload };
 
     case 'MARK_SAVED':
-      console.log('✅ MARKED AS SAVED: hasUnsavedChanges=false', {
-        previousState: state.hasUnsavedChanges,
-        reason: 'Save operation completed'
-      });
       return { ...state, hasUnsavedChanges: false };
 
     case 'SET_DOC_VERSION':

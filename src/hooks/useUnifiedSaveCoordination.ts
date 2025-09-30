@@ -1,6 +1,5 @@
 import { useRef, useCallback, useState } from 'react';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
-import { useSaveCoordinationOptimizer } from './useSaveCoordinationOptimizer';
 
 interface SaveOperation {
   id: string;
@@ -23,9 +22,8 @@ interface CoordinationState {
  * Unified coordination system for ALL save operations
  * Prevents conflicts between auto-save, teleprompter, showcaller, and manual saves
  */
-export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled?: boolean }) => {
+export const useUnifiedSaveCoordination = () => {
   const { shouldBlockAutoSave, executeWithCellUpdate, executeWithShowcallerOperation } = useCellUpdateCoordination();
-  const coordinationOptimizer = useSaveCoordinationOptimizer(rundownData);
   
   const stateRef = useRef<CoordinationState>({
     isAnySaving: false,
@@ -158,7 +156,6 @@ export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled
       priority?: number;
       onComplete?: (success: boolean) => void;
       immediate?: boolean;
-      rundownId?: string;
     } = {}
   ): Promise<boolean> => {
     const {
@@ -168,27 +165,7 @@ export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled
       immediate = false
     } = options;
 
-    console.log(`🎯 Coordinated save requested (${type}):`, { 
-      id, 
-      priority, 
-      immediate,
-      strategy: coordinationOptimizer.getCoordinationStrategy() 
-    });
-
-    // Use optimized coordination if rundownId provided
-    if (options.rundownId) {
-      const result = await coordinationOptimizer.coordinateSave(
-        type === 'auto-save' ? 'delta' : 
-        type === 'showcaller' ? 'showcaller' :
-        type === 'teleprompter' ? 'cell' : 'delta',
-        async () => {
-          const saveResult = await saveFunction();
-          return saveResult;
-        },
-        options.rundownId
-      );
-      return result;
-    }
+    console.log(`🎯 Coordinated save requested (${type}):`, { id, priority, immediate });
 
     // Wrap save function with appropriate coordination
     const coordinatedExecute = async (): Promise<boolean> => {
@@ -252,7 +229,7 @@ export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled
 
       return false; // Queued, not executed immediately
     }
-  }, [shouldBlockSave, executeWithCellUpdate, executeWithShowcallerOperation, processQueue, coordinationOptimizer]);
+  }, [shouldBlockSave, executeWithCellUpdate, executeWithShowcallerOperation, processQueue]);
 
   // Specific save coordinators for different types
   const coordinateAutoSave = useCallback(async (
@@ -344,10 +321,6 @@ export const useUnifiedSaveCoordination = (rundownData?: { per_cell_save_enabled
     
     // Queue management
     forceProcessQueue,
-    clearQueue,
-    
-    // Optimization metrics
-    getCoordinationMetrics: coordinationOptimizer.getCoordinationMetrics,
-    resetCoordination: coordinationOptimizer.resetCoordination
+    clearQueue
   };
 };

@@ -26,14 +26,6 @@ export class CellBroadcastManager {
   private lastProcessedUpdate = new Map<string, string>();
   private userIds = new Map<string, string>(); // Store userId for early filtering
   
-  // Health monitoring
-  private connectionStatus = new Map<string, string>();
-  private broadcastSuccessCount = new Map<string, number>();
-  private broadcastFailureCount = new Map<string, number>();
-  private lastHealthCheck = new Map<string, number>();
-  private healthyThreshold = 0.8; // 80% success rate required
-  private healthCheckInterval = 30000; // 30 seconds
-  
   constructor() {
     debugLogger.realtime('CellBroadcast initialized (simplified for single sessions)');
   }
@@ -96,20 +88,13 @@ export class CellBroadcastManager {
       });
 
     channel.subscribe((status: string) => {
-      this.connectionStatus.set(rundownId, status);
-      
       if (status === 'SUBSCRIBED') {
         this.subscribed.set(rundownId, true);
-        // Reset failure count on successful connection
-        this.broadcastFailureCount.set(rundownId, 0);
         console.log('✅ Cell realtime channel subscribed:', key);
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        // Avoid manual reconnect loops; rely on Supabase auto-reconnect
         this.subscribed.set(rundownId, false);
         console.warn('🔌 Cell realtime channel status (no manual reconnect):', key, status);
-        
-        // Track connection failures for health monitoring
-        const failures = this.broadcastFailureCount.get(rundownId) || 0;
-        this.broadcastFailureCount.set(rundownId, failures + 1);
       } else {
         console.log('ℹ️ Cell realtime channel status:', key, status);
       }
@@ -159,7 +144,7 @@ export class CellBroadcastManager {
     this.reconnectTimeouts.set(rundownId, timeout);
   }
 
-  async broadcastCellUpdate(
+  broadcastCellUpdate(
     rundownId: string, 
     itemId: string | null, 
     field: string, 
@@ -178,26 +163,11 @@ export class CellBroadcastManager {
 
     debugLogger.realtime('Broadcasting cell update (instant):', updatePayload);
 
-    try {
-      await channel.send({
-        type: 'broadcast',
-        event: 'cell_update',
-        payload: updatePayload
-      });
-      
-      // Track successful broadcast
-      this.trackBroadcastSuccess(rundownId);
-    } catch (error) {
-      console.error('❌ Broadcast failed:', error);
-      
-      // Track failure
-      this.trackBroadcastFailure(rundownId);
-      
-      // Retry once after short delay
-      setTimeout(() => {
-        this.retryBroadcast(rundownId, updatePayload);
-      }, 1000);
-    }
+    channel.send({
+      type: 'broadcast',
+      event: 'cell_update',
+      payload: updatePayload
+    });
   }
 
   // Simple echo prevention using userId (single session per user)
@@ -264,87 +234,9 @@ export class CellBroadcastManager {
     }
   }
 
-  // Health monitoring methods
-  private trackBroadcastSuccess(rundownId: string) {
-    const count = this.broadcastSuccessCount.get(rundownId) || 0;
-    this.broadcastSuccessCount.set(rundownId, count + 1);
-  }
-  
-  private trackBroadcastFailure(rundownId: string) {
-    const count = this.broadcastFailureCount.get(rundownId) || 0;
-    this.broadcastFailureCount.set(rundownId, count + 1);
-  }
-  
-  private async retryBroadcast(rundownId: string, payload: any) {
-    try {
-      const channel = this.channels.get(rundownId);
-      if (channel) {
-        await channel.send({
-          type: 'broadcast',
-          event: 'cell_update',
-          payload
-        });
-        console.log('✅ Broadcast retry succeeded');
-        this.trackBroadcastSuccess(rundownId);
-      }
-    } catch (error) {
-      console.error('❌ Broadcast retry failed:', error);
-      this.trackBroadcastFailure(rundownId);
-    }
-  }
-  
-  // Get connection status for health monitoring
-  getConnectionStatus(rundownId: string): string | null {
-    return this.connectionStatus.get(rundownId) || null;
-  }
-  
-  // Check if channel is connected
-  isChannelConnected(rundownId: string): boolean {
-    return this.connectionStatus.get(rundownId) === 'SUBSCRIBED';
-  }
-  
-  // Check broadcast health
-  isBroadcastHealthy(rundownId: string): boolean {
-    const successes = this.broadcastSuccessCount.get(rundownId) || 0;
-    const failures = this.broadcastFailureCount.get(rundownId) || 0;
-    const total = successes + failures;
-    
-    // Consider healthy if no attempts yet or success rate above threshold
-    if (total === 0) return true;
-    
-    const successRate = successes / total;
-    const isConnected = this.isChannelConnected(rundownId);
-    
-    return isConnected && successRate >= this.healthyThreshold;
-  }
-  
-  // Get health metrics for monitoring
-  getHealthMetrics(rundownId: string) {
-    const successes = this.broadcastSuccessCount.get(rundownId) || 0;
-    const failures = this.broadcastFailureCount.get(rundownId) || 0;
-    const total = successes + failures;
-    const successRate = total > 0 ? successes / total : 1;
-    
-    return {
-      successes,
-      failures,
-      total,
-      successRate,
-      isHealthy: this.isBroadcastHealthy(rundownId),
-      isConnected: this.isChannelConnected(rundownId)
-    };
-  }
-
   cleanup(rundownId: string) {
     this.callbacks.delete(rundownId);
-    this.userIds.delete(rundownId);
-    
-    // Clean up health monitoring data
-    this.connectionStatus.delete(rundownId);
-    this.broadcastSuccessCount.delete(rundownId);
-    this.broadcastFailureCount.delete(rundownId);
-    this.lastHealthCheck.delete(rundownId);
-    
+    this.userIds.delete(rundownId); // Clean up userId mapping
     this.cleanupChannel(rundownId);
   }
 }

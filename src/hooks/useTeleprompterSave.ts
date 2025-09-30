@@ -1,7 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { useCellLevelSave } from './useCellLevelSave';
+import { useUnifiedSaveCoordination } from './useUnifiedSaveCoordination';
+import { useDocVersionManager } from './useDocVersionManager';
+import { useConflictResolution } from './useConflictResolution';
 
 interface SaveState {
   isSaving: boolean;
@@ -15,56 +18,27 @@ interface UseTeleprompterSaveProps {
   onSaveSuccess?: (itemId: string, script: string) => void;
   onSaveStart?: () => void;
   onSaveEnd?: () => void;
+  trackOwnUpdate?: (timestamp: string) => void;
 }
 
-export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd }: UseTeleprompterSaveProps) => {
+export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onSaveEnd, trackOwnUpdate }: UseTeleprompterSaveProps) => {
   const { user } = useAuth();
-  
+  const { coordinateTeleprompterSave } = useUnifiedSaveCoordination();
+  const docVersionManager = useDocVersionManager(rundownId);
+  const conflictResolution = useConflictResolution({
+    rundownId,
+    userId: user?.id,
+    onResolutionApplied: (mergedData, conflictFields) => {
+      console.log('🔀 Teleprompter: Conflict resolved', { conflictFields });
+    }
+  });
+
   const [saveState, setSaveState] = useState<SaveState>({
     isSaving: false,
     lastSaved: null,
     hasUnsavedChanges: false,
     saveError: null
   });
-
-  // Use the same per-cell save system as the main rundown (no trackOwnUpdate needed - uses centralized tracker)
-  const { trackCellChange, flushPendingUpdates, hasPendingUpdates } = useCellLevelSave(
-    rundownId,
-    (savedUpdates) => {
-      // Handle save completion with details about what was saved
-      console.log('📝 Teleprompter: Save completion callback fired', { savedUpdates: savedUpdates?.length });
-      
-      if (savedUpdates && savedUpdates.length > 0) {
-        savedUpdates.forEach(update => {
-          if (update.itemId && update.field === 'script') {
-            console.log('📝 Teleprompter: Processing successful save for script field', { itemId: update.itemId });
-            
-            // Clear the local backup for this item since save was successful
-            clearBackup(update.itemId);
-            console.log('🗑️ Teleprompter: Cleared local backup for item', { itemId: update.itemId });
-            
-            onSaveSuccess?.(update.itemId, update.value);
-          }
-        });
-        
-        // Clear save state AFTER processing all saves
-        setSaveState(prev => ({
-          ...prev,
-          isSaving: false,
-          lastSaved: new Date(),
-          hasUnsavedChanges: false,
-          saveError: null
-        }));
-        console.log('📝 Teleprompter: Save state cleared - hasUnsavedChanges set to false');
-      }
-      onSaveEnd?.();
-    },
-    onSaveStart,
-    () => {
-      console.log('📝 Teleprompter: Unsaved changes detected');
-      setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
-    }
-  );
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const localBackupRef = useRef<Map<string, string>>(new Map());
@@ -89,124 +63,174 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
     }
   }, [rundownId]);
 
-  // Simple save function using per-cell save system
+  // Enhanced save function with unified coordination and conflict resolution
   const executeSave = useCallback(async (
     itemId: string, 
-    script: string
+    script: string, 
+    rundownData: any
   ): Promise<boolean> => {
     try {
-      console.log('📝 Teleprompter: Saving script for item', { itemId, scriptLength: script.length });
-      
-      // Use per-cell save system - this will automatically handle conflicts and coordination
-      trackCellChange(itemId, 'script', script);
-      
-      // Immediately flush to ensure save happens now
-      const result = await flushPendingUpdates();
-      
-      if (result?.updatedAt) {
-        console.log('✅ Teleprompter: Per-cell save completed for item', { itemId });
-        
-        // Call the success callback since per-cell save doesn't do this automatically
-        onSaveSuccess?.(itemId, script);
-        
-        return true;
-      }
-      
-      return false;
+      // Track this edit for conflict resolution
+      conflictResolution.trackLocalEdit(`${itemId}-script`, script);
+
+      // Prepare the update data
+      const updatedItems = rundownData.items.map((item: any) =>
+        item.id === itemId ? { ...item, script } : item
+      );
+
+      const updateData = {
+        items: updatedItems,
+        last_updated_by: user?.id || null
+      };
+
+      // Use doc version manager for proper concurrency control
+      const success = await docVersionManager.executeSave(
+        updateData,
+        (result) => {
+          // Track our successful update
+          if (trackOwnUpdate) {
+            trackOwnUpdate(result.updated_at);
+          }
+          console.log('✅ Teleprompter save successful:', { itemId, docVersion: result.doc_version });
+        },
+        async (conflictData) => {
+          // Handle version conflict with smart resolution
+          console.warn('⚠️ Teleprompter version conflict - resolving', { itemId });
+          
+          const resolution = await conflictResolution.resolveConflicts(
+            { items: updatedItems }, // Our local state
+            conflictData, // Server state
+            { autoResolve: true }
+          );
+
+          if (resolution.hadConflicts) {
+            // Retry with merged data
+            console.log('🔄 Teleprompter retrying with conflict resolution');
+            return docVersionManager.executeSave(
+              {
+                items: resolution.mergedData.items,
+                last_updated_by: user?.id || null
+              },
+              (retryResult) => {
+                if (trackOwnUpdate) {
+                  trackOwnUpdate(retryResult.updated_at);
+                }
+                console.log('✅ Teleprompter conflict resolution save successful:', { itemId });
+              }
+            );
+          }
+        }
+      );
+
+      return success;
     } catch (error) {
       console.error('❌ Teleprompter save execution failed:', error);
       throw error;
     }
-  }, [trackCellChange, flushPendingUpdates, onSaveSuccess]);
+  }, [rundownId, user?.id, conflictResolution, docVersionManager, trackOwnUpdate]);
 
-  // Main save function - now much simpler with per-cell saves
+  // Main coordinated save function
   const saveScript = useCallback(async (
     itemId: string, 
     newScript: string, 
-    rundownData?: any
+    rundownData: any
   ): Promise<boolean> => {
-    try {
-      // Backup the change immediately
-      backupChange(itemId, newScript);
-      
-      setSaveState(prev => ({ 
-        ...prev, 
-        isSaving: true, 
-        hasUnsavedChanges: true,
-        saveError: null 
-      }));
-      
-      // Execute the save using per-cell system
-      const success = await executeSave(itemId, newScript);
-      
-      if (success) {
-        // Clear backup and update state
-        clearBackup(itemId);
-        retryCountRef.current.delete(itemId);
-        
-        setSaveState(prev => ({
-          ...prev,
-          isSaving: false,
-          lastSaved: new Date(),
-          hasUnsavedChanges: false,
-          saveError: null
-        }));
-        
-        // Call success callback
-        onSaveSuccess?.(itemId, newScript);
-      } else {
-        // Handle save failure
-        setSaveState(prev => ({
-          ...prev,
-          isSaving: false,
-          saveError: 'Save failed - please try again'
-        }));
+    // Backup the change immediately
+    backupChange(itemId, newScript);
+    
+    // Signal save start to parent (for blue Wi-Fi indicator)
+    onSaveStart?.();
+    
+    setSaveState(prev => ({ 
+      ...prev, 
+      isSaving: true, 
+      hasUnsavedChanges: true,
+      saveError: null 
+    }));
+    
+    // Use unified coordination for teleprompter saves
+    const success = await coordinateTeleprompterSave(
+      () => executeSave(itemId, newScript, rundownData),
+      {
+        immediate: true, // Teleprompter saves should be immediate
+        onComplete: (saveSuccess) => {
+          console.log('📝 Teleprompter save completed:', { itemId, saveSuccess });
+          
+          if (saveSuccess) {
+            // Clear backup and update state
+            clearBackup(itemId);
+            retryCountRef.current.delete(itemId);
+            
+            setSaveState(prev => ({
+              ...prev,
+              isSaving: false,
+              lastSaved: new Date(),
+              hasUnsavedChanges: false,
+              saveError: null
+            }));
 
-        // Show error toast with retry option
-        toast.error('Save failed - please try again', {
-          duration: 5000,
-          action: {
-            label: 'Retry',
-            onClick: () => saveScript(itemId, newScript)
+            // Signal save end to parent
+            onSaveEnd?.();
+            
+            // Call success callback
+            onSaveSuccess?.(itemId, newScript);
+          } else {
+            // Handle save failure
+            setSaveState(prev => ({
+              ...prev,
+              isSaving: false,
+              saveError: 'Save failed - please try again'
+            }));
+
+            // Signal save end to parent (even on error)
+            onSaveEnd?.();
+
+            // Show error toast with retry option
+            toast.error('Save failed - please try again', {
+              duration: 5000,
+              action: {
+                label: 'Retry',
+                onClick: () => saveScript(itemId, newScript, rundownData)
+              }
+            });
           }
-        });
+        }
       }
-      
-      return success;
-    } catch (error) {
-      console.error('❌ Teleprompter saveScript failed:', error);
-      setSaveState(prev => ({
-        ...prev,
-        isSaving: false,
-        saveError: 'Save failed - please try again'
-      }));
-      return false;
-    }
-  }, [executeSave, backupChange, clearBackup, onSaveSuccess]);
+    );
 
-  // Simplified save function - just track changes and let per-cell system handle debouncing
+    return success;
+  }, [coordinateTeleprompterSave, executeSave, backupChange, clearBackup, onSaveSuccess, onSaveStart, onSaveEnd]);
+
+  // Debounced save function with faster default delay
   const debouncedSave = useCallback((
     itemId: string, 
     newScript: string, 
-    rundownData?: any,
+    rundownData: any,
     delay: number = 500
   ) => {
-    // Backup immediately
-    backupChange(itemId, newScript);
-    
-    // Track the change immediately - per-cell save system will handle debouncing
-    trackCellChange(itemId, 'script', newScript);
-  }, [backupChange, trackCellChange]);
-
-  // Manual save function (for Ctrl+S) - calls executeSave to ensure callbacks work
-  const forceSave = useCallback(async (itemId: string, script: string, rundownData?: any) => {
+    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
+
+    // Backup immediately
+    backupChange(itemId, newScript);
     
-    // Use executeSave to ensure callbacks fire
-    return await executeSave(itemId, script);
-  }, [executeSave]);
+    setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
+
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      saveScript(itemId, newScript, rundownData);
+    }, delay);
+  }, [backupChange, saveScript]);
+
+  // Manual save function (for Ctrl+S)
+  const forceSave = useCallback(async (itemId: string, script: string, rundownData: any) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    return await saveScript(itemId, script, rundownData);
+  }, [saveScript]);
 
   // Load backup data on init
   const loadBackup = useCallback(() => {
@@ -224,11 +248,7 @@ export const useTeleprompterSave = ({ rundownId, onSaveSuccess, onSaveStart, onS
   }, [rundownId]);
 
   return {
-    saveState: {
-      ...saveState,
-      // Only override hasUnsavedChanges if we actually have pending updates
-      hasUnsavedChanges: saveState.hasUnsavedChanges || hasPendingUpdates()
-    },
+    saveState,
     debouncedSave,
     forceSave,
     loadBackup,

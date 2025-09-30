@@ -28,7 +28,7 @@ import { Plus } from 'lucide-react';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { team, allUserTeams, userRole, switchToTeam, teamMembers, isLoading: teamLoading } = useTeam();
+  const { team, teamMembers, isLoading: teamLoading } = useTeam();
   const teamId = team?.id;
   const { savedRundowns, loading, deleteRundown, updateRundown, createRundown, duplicateRundown, loadRundowns } = useRundownStorage();
   const { subscription_tier, access_type } = useSubscription();
@@ -393,13 +393,8 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col">
         <DashboardHeader 
-          key={team?.id}
           userEmail={user?.email}
           onSignOut={handleSignOut}
-          team={team}
-          allUserTeams={allUserTeams}
-          userRole={userRole}
-          switchToTeam={switchToTeam}
         />
         
         <div className="flex flex-1">
@@ -437,13 +432,8 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-900 flex flex-col">
       {/* Full-width Header */}
       <DashboardHeader 
-        key={team?.id}
         userEmail={user?.email}
         onSignOut={handleSignOut}
-        team={team}
-        allUserTeams={allUserTeams}
-        userRole={userRole}
-        switchToTeam={switchToTeam}
       />
       
       {/* Content area with sidebar and main content */}
@@ -498,26 +488,16 @@ const Dashboard = () => {
                   )
                 )}
                 <AdminNotificationSender userEmail={user?.email} />
-                 {/* Admin only: Delete test user button */}
+                {/* Admin only: Delete test user button */}
                 {user?.email === 'morgan@cuer.live' && (
-                  <>
-                    <Button
-                      size="lg"
-                      onClick={() => navigate('/admin/health')}
-                      variant="outline"
-                      className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-                    >
-                      System Health
-                    </Button>
-                    <Button
-                      size="lg"
-                      onClick={() => navigate('/delete-test-user')}
-                      variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                    >
-                      Delete Test User
-                    </Button>
-                  </>
+                  <Button
+                    size="lg"
+                    onClick={() => navigate('/delete-test-user')}
+                    variant="outline"
+                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                  >
+                    Delete Test User
+                  </Button>
                 )}
               </div>
 
