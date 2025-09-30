@@ -155,12 +155,12 @@ export const useConsolidatedRealtimeRundown = ({
       return; // Don't process immediately
     }
 
-    // Enhanced gap detection with improved handling
+    // Enhanced gap detection with network-safe resolution
     const expectedVersion = currentDocVersion + 1;
     const hasSignificantGap = incomingDocVersion && incomingDocVersion > (expectedVersion + 1); // Allow 1 version tolerance
     
     if (hasSignificantGap && !globalState.gapDetectionInProgress) {
-      console.warn('⚠️ Significant version gap detected, performing smart catch-up', {
+      console.warn('⚠️ Significant version gap detected, performing network-safe catch-up', {
         incomingDocVersion,
         expectedVersion,
         gap: incomingDocVersion - expectedVersion,
@@ -185,59 +185,88 @@ export const useConsolidatedRealtimeRundown = ({
              const serverVersion = data.doc_version || 0;
              const serverTimestamp = normalizeTimestamp(data.updated_at);
              
-             // CRITICAL FIX: Check LocalShadow protection before applying gap resolution
-             const { localShadowStore } = await import('@/state/localShadows');
-             const activeShadows = localShadowStore.getActiveShadows();
+             // NETWORK-SAFE GAP RESOLUTION: Use new resolver system
+             const { networkSafeGapResolver } = await import('@/utils/networkSafeGapResolver');
+             const { operationFingerprinter } = await import('@/utils/operationFingerprint');
              
-             // If user is actively editing, queue this update instead of applying immediately
-             if (activeShadows.items.size > 0 || activeShadows.globals.size > 0) {
-               console.log('🛡️ Gap resolution deferred - user actively editing', {
-                 activeItems: activeShadows.items.size,
-                 activeGlobals: activeShadows.globals.size
+             // Get current data to compare against server
+             let currentData = payload.new || {};
+             
+             // Resolve gap with operation-aware logic
+             const resolutionResult = await networkSafeGapResolver.resolveGap({
+               currentData,
+               serverData: data,
+               serverTimestamp,
+               serverDocVersion: serverVersion,
+               currentDocVersion,
+               rundownId: rundownId as string
+             });
+             
+             console.log('🔄 Network-safe gap resolution result:', {
+               shouldApply: resolutionResult.shouldApply,
+               reason: resolutionResult.reason,
+               preservedOps: resolutionResult.preservedOperations.length,
+               appliedChanges: resolutionResult.appliedServerChanges.length,
+               conflicts: resolutionResult.conflictsDetected
+             });
+             
+             if (resolutionResult.shouldApply) {
+               // Update tracking state
+               globalState.lastProcessedTimestamp = serverTimestamp;
+               globalState.lastProcessedDocVersion = serverVersion;
+               
+               // Apply the resolved data (either server data or merged data)
+               const dataToApply = resolutionResult.mergedData || data;
+               globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                 try { 
+                   cb(dataToApply); 
+                 } catch (err) { 
+                   console.error('Error in network-safe gap resolution callback:', err); 
+                 }
                });
                
-               if (!globalState.itemDirtyQueue) {
-                 globalState.itemDirtyQueue = [];
-               }
-               
-               globalState.itemDirtyQueue.push({
-                 payload: { new: data, table: 'rundowns' },
-                 timestamp: serverTimestamp,
-                 docVersion: serverVersion,
-                 queuedAt: Date.now()
+               console.log('✅ Network-safe gap resolution applied:', {
+                 serverVersion,
+                 targetVersion: incomingDocVersion,
+                 preservedOperations: resolutionResult.preservedOperations
                });
+             } else {
+               // Queue for later resolution
+               console.log('📦 Gap resolution deferred, queueing for later processing');
                
-               // Schedule processing when typing stops
-               setTimeout(() => {
-                 processQueuedUpdates(globalState);
-               }, 2000);
-               
-               return;
+               networkSafeGapResolver.queueGapResolution({
+                 currentData,
+                 serverData: data,
+                 serverTimestamp,
+                 serverDocVersion: serverVersion,
+                 currentDocVersion,
+                 rundownId: rundownId as string
+               }, (queuedResult) => {
+                 if (queuedResult.shouldApply) {
+                   globalState.lastProcessedTimestamp = serverTimestamp;
+                   globalState.lastProcessedDocVersion = serverVersion;
+                   
+                   const dataToApply = queuedResult.mergedData || data;
+                   globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
+                     try { 
+                       cb(dataToApply); 
+                     } catch (err) { 
+                       console.error('Error in queued gap resolution callback:', err); 
+                     }
+                   });
+                   
+                   console.log('✅ Queued gap resolution applied:', {
+                     reason: queuedResult.reason,
+                     preservedOperations: queuedResult.preservedOperations
+                   });
+                 }
+               });
              }
-             
-             // Only apply if server data is newer than what we're processing
-             if (serverVersion >= incomingDocVersion) {
-              globalState.lastProcessedTimestamp = serverTimestamp;
-              globalState.lastProcessedDocVersion = serverVersion;
-              
-              // Apply complete server data to resolve gap
-              globalState.callbacks.onRundownUpdate.forEach((cb: (d: any) => void) => {
-                try { cb(data); } catch (err) { console.error('Error in gap resolution callback:', err); }
-              });
-              
-              console.log('✅ Gap resolved with server data:', {
-                serverVersion,
-                targetVersion: incomingDocVersion
-              });
-            } else {
-              console.warn('⚠️ Server data outdated during gap resolution, continuing with update');
-              // Continue with normal processing below
-            }
-          } else {
-            console.error('❌ Gap resolution failed:', error);
-          }
+           } else {
+             console.error('❌ Gap resolution failed:', error);
+           }
         } catch (error) {
-          console.error('❌ Gap resolution error:', error);
+          console.error('❌ Network-safe gap resolution error:', error);
         } finally {
           globalState.gapDetectionInProgress = false;
           // Keep processing indicator active briefly for UI feedback

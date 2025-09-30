@@ -42,6 +42,19 @@ class LocalShadowStore {
     // Also maintain in typing buffer for recent access
     this.typingBuffer.set(fieldKey, itemShadow[fieldName]);
     
+    // Create operation fingerprint for tracking
+    if (isActive) {
+      import('@/utils/operationFingerprint').then(({ operationFingerprinter }) => {
+        operationFingerprinter.createFingerprint(
+          'cell_edit',
+          itemId,
+          value,
+          fieldName,
+          `local_shadow_${now}`
+        );
+      });
+    }
+    
     console.log('🔒 LocalShadow: Set shadow', { itemId, fieldName, isActive, valueLength: String(value).length });
   }
 
@@ -54,6 +67,19 @@ class LocalShadowStore {
       isActive,
       lastTyped: now
     });
+    
+    // Create operation fingerprint for tracking
+    if (isActive) {
+      import('@/utils/operationFingerprint').then(({ operationFingerprinter }) => {
+        operationFingerprinter.createFingerprint(
+          'global_edit',
+          fieldName,
+          value,
+          undefined,
+          `local_shadow_${now}`
+        );
+      });
+    }
     
     console.log('🔒 LocalShadow: Set global shadow', { fieldName, isActive });
   }

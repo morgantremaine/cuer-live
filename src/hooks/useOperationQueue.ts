@@ -60,6 +60,39 @@ export const useOperationQueue = ({
       data: operationData
     });
 
+    // Create operation fingerprint for network-safe gap resolution
+    import('@/utils/operationFingerprint').then(({ operationFingerprinter }) => {
+      try {
+        if (operationType === 'CELL_EDIT' && operationData.itemId && operationData.field) {
+          operationFingerprinter.createFingerprint(
+            'cell_edit',
+            operationData.itemId,
+            operationData.newValue,
+            operationData.field,
+            clientId || 'unknown'
+          );
+        } else if (operationType === 'GLOBAL_EDIT' && operationData.field) {
+          operationFingerprinter.createFingerprint(
+            'global_edit',
+            operationData.field,
+            operationData.newValue,
+            undefined,
+            clientId || 'unknown'
+          );
+        } else if (operationType === 'ROW_DELETE' && operationData.itemId) {
+          operationFingerprinter.createFingerprint(
+            'row_delete',
+            operationData.itemId,
+            null,
+            undefined,
+            clientId || 'unknown'
+          );
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to create operation fingerprint:', error);
+      }
+    });
+
     queueRef.current.push(operation);
     
     // Process queue immediately
