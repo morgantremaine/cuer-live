@@ -89,7 +89,7 @@ const RundownIndexContent = () => {
   const { team } = useTeam();
 
   // Add cell edit integration for operation system
-  const { handleCellChange } = useCellEditIntegration({
+  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: true,
     onSaveComplete: () => {
@@ -651,8 +651,10 @@ const RundownIndexContent = () => {
         handleLoadLayout={handleLoadLayoutWrapper}
         debugColumns={debugColumns}
         resetToDefaults={resetToDefaults}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving || isSavingPreferences}
+        hasUnsavedChanges={saveState?.hasUnsavedChanges ?? hasUnsavedChanges}
+        isSaving={saveState?.isSaving ?? (isSaving || isSavingPreferences)}
+        enhancedSaveState={saveState}
+        handleKeystroke={handleKeystroke}
         rundownTitle={rundownTitle}
         onTitleChange={setTitle}
         rundownStartTime={rundownStartTime}

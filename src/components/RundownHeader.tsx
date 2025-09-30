@@ -27,6 +27,15 @@ interface RundownHeaderProps {
   totalRuntime: string;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  enhancedSaveState?: {
+    isSaving: boolean;
+    hasUnsavedChanges: boolean;
+    lastSaved: Date | null;
+    saveError: string | null;
+    hasContentChanges: boolean;
+    isTyping?: boolean;
+    showSaved?: boolean;
+  };
   title: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;
@@ -58,6 +67,7 @@ const RundownHeader = ({
   totalRuntime,
   hasUnsavedChanges,
   isSaving,
+  enhancedSaveState,
   title,
   onTitleChange,
   rundownStartTime,
@@ -189,14 +199,13 @@ const RundownHeader = ({
     prevIsSavingRef.current = isSaving;
   }, [isSaving, hasUnsavedChanges]);
 
-  // Create save state using the proper save state from the hook
-  // This includes per-cell save state when per-cell save is enabled
-  const saveState = {
-    isSaving: isSaving, // Use the coordinated save state from the hook
-    hasUnsavedChanges: hasUnsavedChanges, // Use the coordinated unsaved changes from the hook
+  // Use enhanced save state if available, otherwise fallback to legacy
+  const saveState = enhancedSaveState || {
+    isSaving: isSaving,
+    hasUnsavedChanges: hasUnsavedChanges,
     lastSaved: null,
     saveError: null,
-    hasContentChanges: hasUnsavedChanges // Content changes are tracked by the save coordination system
+    hasContentChanges: hasUnsavedChanges
   };
 
   // Get current universal time for display

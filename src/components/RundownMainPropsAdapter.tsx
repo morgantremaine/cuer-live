@@ -44,6 +44,8 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
     onReset,
     hasUnsavedChanges,
     isSaving,
+    enhancedSaveState,
+    handleKeystroke,
     rundownTitle,
     onTitleChange,
     rundownStartTime,
@@ -234,8 +236,10 @@ const RundownMainPropsAdapter = ({ props }: RundownMainPropsAdapterProps) => {
         onForward={onForward}
         onBackward={onBackward}
         onReset={onReset}
-        hasUnsavedChanges={hasUnsavedChanges}
-        isSaving={isSaving}
+      hasUnsavedChanges={enhancedSaveState?.hasUnsavedChanges ?? hasUnsavedChanges}
+      isSaving={enhancedSaveState?.isSaving ?? isSaving}
+      enhancedSaveState={enhancedSaveState}
+      handleKeystroke={handleKeystroke}
         rundownTitle={rundownTitle}
         onTitleChange={onTitleChange}
         rundownStartTime={rundownStartTime}

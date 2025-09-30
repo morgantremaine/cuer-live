@@ -163,6 +163,21 @@ export const useCellEditIntegration = ({
     isPerCellSaving: operationSystem.isOperationMode ? 
       operationSystem.isSaving : 
       isPerCellSaving,
+    
+    // Enhanced save state for smart indicators
+    saveState: {
+      isSaving: operationSystem.isOperationMode ? operationSystem.isSaving : isPerCellSaving,
+      hasUnsavedChanges: operationSystem.isOperationMode ? operationSystem.hasUnsavedChanges : hasPerCellUnsavedChanges,
+      lastSaved: operationSystem.lastSaved,
+      saveError: operationSystem.saveError,
+      hasContentChanges: true,
+      isTyping: operationSystem.isTyping,
+      showSaved: operationSystem.showSaved
+    },
+    
+    // Keystroke handler for smart save indicators
+    handleKeystroke: operationSystem.handleKeystroke,
+    
     // Expose operation system state for debugging
     operationSystemActive: operationSystem.isOperationMode,
     operationSystemSaving: operationSystem.isSaving,

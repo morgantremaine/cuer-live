@@ -62,6 +62,16 @@ export interface RundownContainerProps {
   resetToDefaults?: () => void;
   hasUnsavedChanges: boolean;
   isSaving: boolean;
+  enhancedSaveState?: {
+    isSaving: boolean;
+    hasUnsavedChanges: boolean;
+    lastSaved: Date | null;
+    saveError: string | null;
+    hasContentChanges: boolean;
+    isTyping?: boolean;
+    showSaved?: boolean;
+  };
+  handleKeystroke?: () => void;
   rundownTitle: string;
   onTitleChange: (title: string) => void;
   rundownStartTime: string;

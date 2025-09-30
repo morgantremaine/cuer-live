@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useOperationQueue, Operation } from './useOperationQueue';
 import { useOperationBroadcast } from './useOperationBroadcast';
+import { useSmartSaveIndicator } from './useSmartSaveIndicator';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OperationBasedRundownState {
@@ -64,6 +65,16 @@ export const useOperationBasedRundown = ({
     onOperationFailed: (operation, error) => {
       console.error('❌ OPERATION FAILED:', operation.id, error);
       // TODO: Show user notification about failed operation
+    }
+  });
+
+  // Initialize smart save indicator
+  const smartSaveIndicator = useSmartSaveIndicator({
+    operationQueue: {
+      isProcessing: operationQueue.isProcessing,
+      queueLength: operationQueue.queueLength,
+      lastSaved: operationQueue.lastSaved,
+      saveError: operationQueue.saveError
     }
   });
 
@@ -352,12 +363,17 @@ export const useOperationBasedRundown = ({
     isProcessingOperations: operationQueue.isProcessing,
     queueLength: operationQueue.queueLength,
     
-    // Save state for indicators (compatible with RundownSaveIndicator)
-    isSaving: operationQueue.isProcessing,
-    hasUnsavedChanges: operationQueue.queueLength > 0,
-    lastSaved: operationQueue.lastSaved,
-    saveError: operationQueue.saveError,
+    // Enhanced save state for indicators (using smart save indicator)
+    isSaving: smartSaveIndicator.isSaving,
+    hasUnsavedChanges: smartSaveIndicator.hasUnsavedChanges,
+    lastSaved: smartSaveIndicator.lastSaved,
+    saveError: smartSaveIndicator.saveError,
     hasContentChanges: true, // Operation-based changes are always content changes
+    isTyping: smartSaveIndicator.isTyping,
+    showSaved: smartSaveIndicator.showSaved,
+    
+    // Keystroke handler for triggering typing detection
+    handleKeystroke: smartSaveIndicator.handleKeystroke,
     
     // Utils
     loadPendingOperations,
