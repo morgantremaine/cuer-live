@@ -1050,24 +1050,10 @@ export const useSimpleAutoSave = (
       }
     };
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        handleFlushOnBlur();
-      }
-    };
-
-    const handleWindowBlur = () => {
-      handleFlushOnBlur();
-    };
-
-    // Add comprehensive flush triggers
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
+    // Only flush on actual page unload, not visibility/blur
     window.addEventListener('beforeunload', handleFlushOnBlur);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('beforeunload', handleFlushOnBlur);
     };
   }, [state.hasUnsavedChanges, rundownId, performSave]);

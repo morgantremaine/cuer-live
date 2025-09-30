@@ -113,14 +113,9 @@ export const useSharedRundownState = () => {
     }
   }, [rundownId]);
 
-  // Tab visibility detection
+  // Tab always considered visible for persistent connections
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      isTabVisible.current = !document.hidden;
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    isTabVisible.current = true;
   }, []);
 
   // Polling mechanism for content updates

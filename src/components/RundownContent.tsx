@@ -236,30 +236,7 @@ const RundownContent = React.memo<RundownContentProps>(({
     onDragOver(e, index);
   }, [handleDragAutoScroll, onDragOver, isDragging]);
 
-  // Add browser event coordination for drag reliability
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && resetDragState) {
-        console.log('🎯 Tab switched during drag - cancelling drag operation');
-        resetDragState();
-      }
-    };
-
-    const handleWindowBlur = () => {
-      if (resetDragState && (draggedItemIndex !== null || isDragging)) {
-        console.log('🎯 Window lost focus during drag - cancelling drag operation');
-        resetDragState();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-    };
-  }, [resetDragState, draggedItemIndex, isDragging]);
+  // Drag operations persist across tab switches - no cancellation needed
 
   // Calculate total table width to ensure proper sizing
   const totalTableWidth = React.useMemo(() => {

@@ -382,23 +382,7 @@ export const useEnhancedDataSync = (
     }
   }, [isConnected, checkStaleness, syncWithServer, processQueue]);
 
-  // Set up focus and visibility event listeners
-  useEffect(() => {
-    const handleFocus = () => handleFocusCheck();
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        handleFocusCheck();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [handleFocusCheck]);
+  // Persistent connection - no focus-based checks needed
 
   // Record offline changes when not connected
   const trackOfflineChange = useCallback((fieldKey: string, value: any) => {

@@ -173,22 +173,12 @@ export const useRundownResumption = ({
     const isFirstListener = manager.listeners.size === 1;
 
     if (isFirstListener) {
-      const handleVisibilityChange = () => {
-        if (!document.hidden) {
-          performCheck('visibility');
-        }
-      };
-
-      const handleFocus = () => {
-        performCheck('focus');
-      };
-
+      // Persistent connection - only handle actual network restoration
       const handleOnline = () => {
+        console.log('🌐 Network restored');
         performCheck('online');
       };
 
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      window.addEventListener('focus', handleFocus);
       window.addEventListener('online', handleOnline);
 
       // Initialize watchdog for this rundown if not already done
@@ -207,8 +197,6 @@ export const useRundownResumption = ({
 
       // Store cleanup function in manager
       manager.cleanup = () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('focus', handleFocus);
         window.removeEventListener('online', handleOnline);
         
         // Clean up watchdog

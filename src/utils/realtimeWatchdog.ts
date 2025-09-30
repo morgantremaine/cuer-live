@@ -55,11 +55,9 @@ class RealtimeWatchdog {
     if (this.isActive) return;
     
     this.isActive = true;
-    console.log('🔍 Starting realtime watchdog for rundown (DISABLED FOR TYPING PROTECTION):', this.config.rundownId);
+    console.log('🔍 Realtime watchdog disabled - using persistent connections:', this.config.rundownId);
     
-    // Keep disabled to avoid typing interference
-    // this.scheduleCheck();
-    // this.setupFocusListeners();
+    // Disabled - persistent connections handle reconnection automatically
   }
 
   stop() {
@@ -164,15 +162,11 @@ class RealtimeWatchdog {
   };
 
   private setupFocusListeners() {
-    window.addEventListener('focus', this.onFocusResume);
-    document.addEventListener('visibilitychange', this.onVisibilityChange);
-    window.addEventListener('online', this.onOnline);
+    // Disabled for persistent connections
   }
 
   private removeFocusListeners() {
-    window.removeEventListener('focus', this.onFocusResume);
-    document.removeEventListener('visibilitychange', this.onVisibilityChange);
-    window.removeEventListener('online', this.onOnline);
+    // Disabled for persistent connections
   }
 }
 

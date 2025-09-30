@@ -102,31 +102,8 @@ export const useRundownStorage = () => {
   useEffect(() => {
     let lastFocusCheck = 0;
     
-    const handleFocusRefresh = () => {
-      if (document.visibilityState === 'visible' || document.hasFocus()) {
-        const now = Date.now();
-        // Throttle to max once per 10 seconds to avoid excessive API calls
-        if (now - lastFocusCheck < 10000) return;
-        lastFocusCheck = now;
-        
-        // Only refresh if we have user and team data
-        if (user?.id && teamId && savedRundowns.length > 0) {
-          console.log('Dashboard: Silently refreshing rundown data after focus/visibility change');
-          // Silent refresh without clearing loading state or existing data
-          debouncedLoadRundowns();
-        }
-      }
-    };
-
-    // Listen to both visibility change and focus events
-    document.addEventListener('visibilitychange', handleFocusRefresh);
-    window.addEventListener('focus', handleFocusRefresh);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleFocusRefresh);
-      window.removeEventListener('focus', handleFocusRefresh);
-    };
-  }, [user?.id, teamId, savedRundowns.length, debouncedLoadRundowns]);
+    // Persistent data - no focus-based refreshes needed
+  }, [user?.id, teamId]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
