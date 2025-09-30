@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderTextWithClickableUrls, containsUrls } from '@/utils/urlUtils';
-import { renderFormattedText, containsFormatting } from '@/utils/textFormatting';
 
 interface TextAreaCellProps {
   value: string;
@@ -208,9 +207,6 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
   
   // Check if this cell contains URLs and should show clickable links when not focused
   const shouldShowClickableUrls = !isFocused && containsUrls(value);
-  
-  // Check if this cell contains formatting and should show formatted text when not focused
-  const shouldShowFormatting = !isFocused && containsFormatting(value);
 
   return (
     <div className="relative w-full" style={{ backgroundColor, height: calculatedHeight }}>
@@ -240,20 +236,6 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         </div>
       )}
       
-      {/* Formatted text overlay when not focused and contains formatting */}
-      {shouldShowFormatting && !shouldShowClickableUrls && (
-        <div
-          className={`absolute top-0 left-0 w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap pointer-events-none z-10`}
-          style={{ 
-            color: textColor || 'inherit',
-            lineHeight: '1.3',
-            textAlign: isDuration ? 'center' : 'left'
-          }}
-        >
-          {renderFormattedText(value)}
-        </div>
-      )}
-      
       <textarea
         ref={(el) => {
           textareaRef.current = el;
@@ -276,10 +258,10 @@ const resolvedFieldKey = fieldKeyForProtection ?? ((cellRefKey === 'segmentName'
         data-field-key={`${itemId}-${resolvedFieldKey}`}
         className={`w-full h-full px-3 py-2 ${fontSize} ${fontWeight} whitespace-pre-wrap border-0 focus:border-0 focus:outline-none rounded-sm resize-none overflow-hidden ${
           isDuration ? 'font-mono' : ''
-        } ${(shouldShowClickableUrls || shouldShowFormatting) ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
+        } ${shouldShowClickableUrls ? 'text-transparent caret-transparent selection:bg-transparent' : ''}`}
         style={{ 
           backgroundColor: 'transparent',
-          color: (shouldShowClickableUrls || shouldShowFormatting) ? 'transparent' : (textColor || 'inherit'),
+          color: shouldShowClickableUrls ? 'transparent' : (textColor || 'inherit'),
           height: `${calculatedHeight}px`,
           lineHeight: '1.3',
           textAlign: isDuration ? 'center' : 'left'
