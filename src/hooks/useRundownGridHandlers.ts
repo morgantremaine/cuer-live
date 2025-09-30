@@ -137,6 +137,8 @@ export const useRundownGridHandlers = ({
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
+    console.log('🎯 PASTE: handlePasteRows called', { targetRowId, clipboardCount: clipboardItems.length, isPerCellEnabled, hasMarkStructuralChange: !!markStructuralChange });
+    
     if (clipboardItems.length > 0) {
       debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
@@ -156,6 +158,8 @@ export const useRundownGridHandlers = ({
         // Fallback to end if no target specified
         insertIndex = items.length;
       }
+      
+      console.log('🎯 PASTE: Inserting', itemsToPaste.length, 'items at index', insertIndex);
       
       setItems(prevItems => {
         newItems = [...prevItems];
@@ -177,6 +181,7 @@ export const useRundownGridHandlers = ({
       
       // Broadcast paste operation for immediate realtime sync
       if (rundownId && currentUserId) {
+        console.log('📡 PASTE: Broadcasting paste operation');
         import('@/utils/cellBroadcast').then(({ cellBroadcast }) => {
           cellBroadcast.broadcastCellUpdate(
             rundownId,
@@ -187,6 +192,8 @@ export const useRundownGridHandlers = ({
           );
         });
       }
+    } else {
+      console.log('⚠️ PASTE: No items in clipboard');
     }
   }, [clipboardItems, items, setItems, markAsChanged, isPerCellEnabled, markStructuralChange, rundownId, currentUserId]);
 
