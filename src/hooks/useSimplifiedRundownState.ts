@@ -344,73 +344,13 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
-            case 'structural:reorder': {
-              // Handle new structural broadcast format
-              const operationData = update.value?.operationData;
-              const order: string[] = Array.isArray(operationData?.order) ? operationData.order : [];
-              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length, userId: update.userId });
-              if (order.length > 0) {
-                const indexMap = new Map(order.map((id, idx) => [id, idx]));
-                const reordered = [...stateRef.current.items].sort((a, b) => {
-                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
-                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
-                  return ai - bi;
-                });
-                actionsRef.current.loadState({ items: reordered });
-                console.log('🎯 REAL-TIME REORDER: Applied structural reorder from user', update.userId, 'to', reordered.length, 'items');
-              }
-              break;
-            }
-            case 'structural:add_row': {
-              // Handle structural add row operations
-              const operationData = update.value?.operationData;
-              if (operationData?.items?.length > 0) {
-                console.log('📡 Received structural add_row broadcast - applying immediately:', { 
-                  totalItemsCount: operationData.items.length 
-                });
-                
-                // Apply the complete state from the broadcast immediately
-                actionsRef.current.loadState({ items: operationData.items });
-                
-                console.log('✅ Applied add_row broadcast:', {
-                  newCount: operationData.items.length
-                });
-              }
-              break;
-            }
-            case 'structural:delete_row': {
-              // Handle structural delete row operations
-              const operationData = update.value?.operationData;
-              if (operationData?.deletedIds?.length > 0) {
-                console.log('📡 Received structural delete_row broadcast - applying immediately:', { 
-                  deletedIdsCount: operationData.deletedIds.length 
-                });
-                
-                // Apply the deletion by filtering out deleted items
-                const deletedSet = new Set(operationData.deletedIds);
-                const newItems = stateRef.current.items.filter(item => !deletedSet.has(item.id));
-                actionsRef.current.loadState({ items: newItems });
-                
-                console.log('✅ Applied delete_row broadcast:', {
-                  beforeCount: stateRef.current.items.length,
-                  afterCount: newItems.length,
-                  deletedCount: operationData.deletedIds.length
-                });
-              }
-              break;
-            }
+            case 'structural:reorder':
+            case 'structural:add_row':
+            case 'structural:delete_row':
             case 'structural:copy_rows': {
-              // Handle structural copy rows operations (paste)
-              const operationData = update.value?.operationData;
-              if (operationData?.newItems?.length > 0 && operationData?.items) {
-                console.log('📡 Received structural copy_rows broadcast - applying immediately:', { 
-                  newItemsCount: operationData.newItems.length,
-                  totalItemsCount: operationData.items.length 
-                });
-                
-                // Apply the complete state from the broadcast immediately
-                actionsRef.current.loadState({ items: operationData.items });
-              }
+              // DISABLED: Structural operations now handled by operation queue system
+              // These broadcasts would conflict with the operation-based synchronization
+              console.log('⚠️ IGNORING STRUCTURAL BROADCAST (handled by operations):', update.field);
               break;
             }
             case 'items:add': {

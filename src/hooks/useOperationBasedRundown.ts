@@ -90,13 +90,23 @@ export const useOperationBasedRundown = ({
 
   // Apply operation to current state
   const applyOperationToState = useCallback((operation: any) => {
+    // Validate operation has required fields
+    if (!operation.operationType) {
+      console.error('❌ OPERATION MISSING TYPE:', operation);
+      return;
+    }
+    
     console.log('📨 APPLYING OPERATION TO STATE:', {
       type: operation.operationType,
-      id: operation.id,
-      currentItemCount: state.items.length
+      id: operation.id
     });
     
     setState(currentState => {
+      console.log('📊 Current state before operation:', {
+        itemCount: currentState.items.length,
+        operationType: operation.operationType
+      });
+      
       const newState = { ...currentState };
 
       switch (operation.operationType) {
@@ -188,7 +198,11 @@ export const useOperationBasedRundown = ({
       hasLoadedRef.current = true;
       currentRundownIdRef.current = rundownId;
 
-      // Load any pending operations since last update (call directly to avoid dependency issues)
+      // Mark as initialized BEFORE loading operations
+      hasLoadedRef.current = true;
+      currentRundownIdRef.current = rundownId;
+      
+      // Load any pending operations since last update (NOW state is initialized)
       try {
         const { data, error } = await supabase.functions.invoke('get-operations', {
           body: {
@@ -199,7 +213,14 @@ export const useOperationBasedRundown = ({
 
         if (data?.success && data.operations) {
           console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
+          
+          // Apply operations one at a time to initialized state
           data.operations.forEach((operation: any) => {
+            console.log('🔄 APPLYING LOADED OPERATION:', {
+              type: operation.operationType,
+              id: operation.id,
+              hasType: !!operation.operationType
+            });
             applyOperationToState(operation);
           });
         }

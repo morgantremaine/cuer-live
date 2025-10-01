@@ -88,9 +88,22 @@ serve(async (req) => {
       sinceSequence
     });
 
+    // Transform database records (snake_case) to client format (camelCase)
+    const transformedOperations = (operations || []).map((op: any) => ({
+      id: op.id,
+      operationType: op.operation_type,
+      operationData: op.operation_data,
+      rundownId: op.rundown_id,
+      userId: op.user_id,
+      clientId: op.client_id,
+      sequenceNumber: op.sequence_number,
+      appliedAt: op.applied_at,
+      createdAt: op.created_at
+    }));
+
     return new Response(JSON.stringify({
       success: true,
-      operations: operations || [],
+      operations: transformedOperations,
       latestSequence: operations && operations.length > 0 
         ? operations[operations.length - 1].sequence_number 
         : parseInt(sinceSequence)
