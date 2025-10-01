@@ -421,17 +421,19 @@ export const useDragAndDrop = (
       // Handle reorder via structural coordination system
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder (legacy path)');
+        console.log('🏗️ Triggering structural operation for reorder with userId:', currentUserId);
         
-        // Call structural change handler with reorder operation
+        // Call structural change handler with reorder operation AND current user ID
         try {
           // Pass complete items array along with order for per-cell save mode
+          // CRITICAL: Pass currentUserId as third parameter to ensure it's available
           (markStructuralChange as any)('reorder', { 
             items: newItems,  // CRITICAL: Include complete items array for per-cell mode
             order 
-          });
+          }, currentUserId);
         } catch (error) {
           // Fallback to just marking structural change
+          console.error('🚨 markStructuralChange error:', error);
           markStructuralChange();
           console.log('📡 Broadcasting reorder fallback:', {
             rundownId,

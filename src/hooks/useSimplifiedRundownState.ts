@@ -638,12 +638,17 @@ export const useSimplifiedRundownState = () => {
   }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
 
   // Simplified handlers - enhanced for per-cell save coordination
-  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
+  const markStructuralChange = useCallback((operationType?: string, operationData?: any, overrideUserId?: string | null) => {
+    // Use override user ID if provided, otherwise fall back to internal state
+    const userIdToUse = overrideUserId || currentUserId;
+    
     console.log('🏗️ markStructuralChange called', {
       perCellEnabled: Boolean(state.perCellSaveEnabled),
       rundownId,
       operationType,
-      operationData
+      operationData,
+      userIdToUse,
+      hadOverride: !!overrideUserId
     });
     
     // For per-cell save mode, structural operations need immediate save coordination
@@ -651,7 +656,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
       
       // If we have operation details, use the per-cell coordination system
-      if (operationType && operationData && saveCoordination && currentUserId) {
+      if (operationType && operationData && saveCoordination && userIdToUse) {
         // CRITICAL: Use latestItemsRef to get current state for rapid operations
         const currentOperationData = {
           ...operationData,
@@ -661,12 +666,17 @@ export const useSimplifiedRundownState = () => {
         console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
           operationType,
           operationData: currentOperationData,
-          currentUserId,
+          userIdToUse,
           itemCount: latestItemsRef.current.length
         });
         saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
       } else {
-        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
+        console.log('🏗️ STRUCTURAL: Missing required parameters', {
+          hasOperationType: !!operationType,
+          hasOperationData: !!operationData,
+          hasSaveCoordination: !!saveCoordination,
+          hasUserId: !!userIdToUse
+        });
         // Fallback - just mark as saved for now
         setTimeout(() => {
           console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
