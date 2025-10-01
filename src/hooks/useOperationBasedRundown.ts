@@ -618,7 +618,8 @@ function applyRowMove(items: any[], operationData: any): any[] {
       toIndex, 
       fromIndex,
       hasOperationData: !!operationData,
-      operationDataKeys: Object.keys(operationData)
+      operationDataKeys: Object.keys(operationData),
+      fullOperationData: operationData // Show the actual data structure
     });
     return items;
   }
