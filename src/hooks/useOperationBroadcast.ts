@@ -77,8 +77,7 @@ export const useOperationBroadcast = ({
       if (onOperationAppliedRef.current) {
         onOperationAppliedRef.current(remoteOp);
       }
-    },
-    enabled: true
+    }
   });
 
   // Handle incoming operation broadcasts - memoized with stable dependencies

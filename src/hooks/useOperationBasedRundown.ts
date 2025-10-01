@@ -153,8 +153,7 @@ export const useOperationBasedRundown = ({
       // Refresh from database after structural change
       console.log('🔄 OT SYSTEM: Refreshing state after remote structural change');
       refreshFromDatabase();
-    },
-    enabled: enabled
+    }
   });
 
   // Apply operation to current state

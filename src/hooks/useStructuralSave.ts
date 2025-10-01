@@ -48,8 +48,7 @@ export const useStructuralSave = (
   const { broadcastOperation, isConnected } = useUnifiedRealtimeBroadcast({
     rundownId: rundownId || '',
     clientId: clientIdRef.current,
-    userId: currentUserId || '',
-    enabled: !!rundownId && !!currentUserId
+    userId: currentUserId // Can be undefined during initialization
   });
 
   console.log('🏗️ STRUCTURAL SAVE: Unified broadcast status:', {

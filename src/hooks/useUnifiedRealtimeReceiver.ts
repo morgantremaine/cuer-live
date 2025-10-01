@@ -13,12 +13,11 @@ import { useUnifiedRealtimeBroadcast, UnifiedOperationPayload } from './useUnifi
 interface UseUnifiedRealtimeReceiverOptions {
   rundownId: string;
   clientId: string;
-  userId: string;
+  userId: string | undefined;
   onCellEdit?: (operation: UnifiedOperationPayload) => void;
   onStructuralChange?: (operation: UnifiedOperationPayload) => void;
   onMetadataUpdate?: (operation: UnifiedOperationPayload) => void;
   onShowcallerUpdate?: (operation: UnifiedOperationPayload) => void;
-  enabled?: boolean;
 }
 
 export const useUnifiedRealtimeReceiver = ({
@@ -28,8 +27,7 @@ export const useUnifiedRealtimeReceiver = ({
   onCellEdit,
   onStructuralChange,
   onMetadataUpdate,
-  onShowcallerUpdate,
-  enabled = true
+  onShowcallerUpdate
 }: UseUnifiedRealtimeReceiverOptions) => {
   
   // Route operations to appropriate handlers
@@ -82,8 +80,7 @@ export const useUnifiedRealtimeReceiver = ({
     rundownId,
     clientId,
     userId,
-    onOperationReceived: handleOperation,
-    enabled
+    onOperationReceived: handleOperation
   });
 
   return {

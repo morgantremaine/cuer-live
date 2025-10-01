@@ -36,17 +36,15 @@ export interface UnifiedOperationPayload {
 interface UseUnifiedRealtimeBroadcastOptions {
   rundownId: string;
   clientId: string;
-  userId: string;
+  userId: string | undefined; // Allow undefined during initialization
   onOperationReceived?: (operation: UnifiedOperationPayload) => void;
-  enabled?: boolean;
 }
 
 export const useUnifiedRealtimeBroadcast = ({
   rundownId,
   clientId,
   userId,
-  onOperationReceived,
-  enabled = true
+  onOperationReceived
 }: UseUnifiedRealtimeBroadcastOptions) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const onOperationReceivedRef = useRef(onOperationReceived);
@@ -56,14 +54,34 @@ export const useUnifiedRealtimeBroadcast = ({
     onOperationReceivedRef.current = onOperationReceived;
   }, [onOperationReceived]);
 
-  // Set up unified broadcast channel
+  // Set up unified broadcast channel - dynamically handles userId availability
   useEffect(() => {
-    if (!enabled || !rundownId) {
-      console.log('🔌 UNIFIED BROADCAST: Not setting up channel', { enabled, rundownId });
+    // Only require rundownId - userId can be undefined initially
+    if (!rundownId) {
+      console.log('🔌 UNIFIED BROADCAST: No rundownId, skipping setup');
+      return;
+    }
+
+    // If userId is not available yet, wait for it
+    if (!userId) {
+      console.log('🔌 UNIFIED BROADCAST: Waiting for userId', { rundownId, clientId });
+      // Clean up any existing channel
+      if (channelRef.current) {
+        console.log('🔌 UNIFIED BROADCAST: Cleaning up channel while waiting for userId');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       return;
     }
 
     console.log('🔌 UNIFIED BROADCAST: Setting up channel', { rundownId, clientId, userId });
+
+    // Clean up existing channel before creating new one
+    if (channelRef.current) {
+      console.log('🔌 UNIFIED BROADCAST: Cleaning up existing channel before recreating');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     // Single channel for ALL operations
     const channel = supabase.channel(`rundown-unified-${rundownId}`)
@@ -93,7 +111,7 @@ export const useUnifiedRealtimeBroadcast = ({
         }
       })
       .subscribe((status) => {
-        console.log('📡 UNIFIED BROADCAST STATUS:', status);
+        console.log('📡 UNIFIED BROADCAST STATUS:', status, { rundownId, userId });
       });
 
     channelRef.current = channel;
@@ -105,7 +123,7 @@ export const useUnifiedRealtimeBroadcast = ({
         channelRef.current = null;
       }
     };
-  }, [rundownId, clientId, userId, enabled]);
+  }, [rundownId, clientId, userId]);
 
   // Broadcast an operation to all clients
   const broadcastOperation = useCallback(async (operation: UnifiedOperationPayload) => {
