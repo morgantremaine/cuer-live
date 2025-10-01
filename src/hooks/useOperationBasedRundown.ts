@@ -189,11 +189,6 @@ export const useOperationBasedRundown = ({
       return;
     }
     
-    console.log('📨 APPLYING OPERATION TO STATE:', {
-      type: operation.operationType,
-      id: operation.id
-    });
-    
     setState(currentState => {
       const newState = { ...currentState };
 
@@ -211,6 +206,12 @@ export const useOperationBasedRundown = ({
           break;
         
         case 'ROW_MOVE':
+          // Check if this is a bulk reorder operation (has 'order' array)
+          if (operation.operationData?.order && Array.isArray(operation.operationData.order)) {
+            console.log('🔄 Skipping bulk reorder operation (already coordinated):', operation.id);
+            // Skip bulk reorders - they were already applied via coordination
+            break;
+          }
           newState.items = applyRowMove(currentState.items, operation.operationData);
           break;
         
@@ -324,11 +325,6 @@ export const useOperationBasedRundown = ({
               ...operation,
               operationType: normalizeOperationType(operation.operationType)
             };
-            console.log('🔄 APPLYING LOADED OPERATION:', {
-              type: normalizedOp.operationType,
-              id: normalizedOp.id,
-              hasType: !!normalizedOp.operationType
-            });
             applyOperationToState(normalizedOp);
           });
         }
