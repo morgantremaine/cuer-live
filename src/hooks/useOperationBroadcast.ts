@@ -64,24 +64,72 @@ export const useOperationBroadcast = ({
     }
   }, [rundownId, clientId]); // Removed callback dependencies
 
-  // Set up realtime subscription
+  // Set up realtime subscription for database inserts
   useEffect(() => {
     if (!rundownId) return;
 
-    console.log('🔌 SETTING UP OPERATION BROADCAST SUBSCRIPTION:', rundownId);
+    console.log('🔌 SETTING UP OPERATION DATABASE SUBSCRIPTION:', rundownId);
 
     const channel = supabase
-      .channel(`rundown-operations-${rundownId}`)
-      .on('broadcast', { event: 'operation' }, handleOperationBroadcast)
+      .channel(`rundown-operations-db-${rundownId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'rundown_operations',
+          filter: `rundown_id=eq.${rundownId}`
+        },
+        (payload) => {
+          console.log('📡 RECEIVED DATABASE INSERT:', payload);
+          
+          const newOperation = payload.new;
+          
+          // Ignore operations from our own client
+          if (newOperation.client_id === clientId) {
+            console.log('🔄 IGNORING OWN OPERATION');
+            return;
+          }
+
+          console.log('🎯 APPLYING REMOTE OPERATION FROM DB:', {
+            id: newOperation.id,
+            type: newOperation.operation_type,
+            sequence: newOperation.sequence_number
+          });
+
+          // Convert DB record to operation format
+          const operation: RemoteOperation = {
+            id: newOperation.id,
+            rundownId: newOperation.rundown_id,
+            operationType: newOperation.operation_type,
+            operationData: newOperation.operation_data,
+            userId: newOperation.user_id,
+            clientId: newOperation.client_id,
+            timestamp: new Date(newOperation.created_at).getTime(),
+            sequenceNumber: newOperation.sequence_number,
+            appliedAt: newOperation.applied_at,
+            status: 'acknowledged'
+          };
+
+          // Use refs to avoid dependency issues
+          if (onRemoteOperationRef.current) {
+            onRemoteOperationRef.current(operation);
+          }
+
+          if (onOperationAppliedRef.current) {
+            onOperationAppliedRef.current(operation);
+          }
+        }
+      )
       .subscribe((status) => {
-        console.log('📡 OPERATION BROADCAST STATUS:', status);
+        console.log('📡 OPERATION DATABASE STATUS:', status);
       });
 
     return () => {
-      console.log('🔌 CLEANING UP OPERATION BROADCAST SUBSCRIPTION');
+      console.log('🔌 CLEANING UP OPERATION DATABASE SUBSCRIPTION');
       supabase.removeChannel(channel);
     };
-  }, [rundownId, handleOperationBroadcast]);
+  }, [rundownId, clientId]);
 
   // Broadcast an operation
   const broadcastOperation = useCallback(async (operation: RemoteOperation) => {

@@ -139,31 +139,6 @@ serve(async (req) => {
       operationCount: appliedOperations.length
     });
 
-    // Broadcast operations to other clients via realtime
-    try {
-      for (const operation of appliedOperations) {
-        const broadcastPayload = {
-          type: 'operation_applied',
-          operation,
-          rundownId: batchRequest.rundownId
-        };
-        
-        console.log('📡 BROADCASTING OPERATION:', operation.operationType);
-        
-        // Use Supabase Realtime to broadcast
-        await supabaseClient.channel(`rundown-operations-${batchRequest.rundownId}`)
-          .send({
-            type: 'broadcast',
-            event: 'operation',
-            payload: broadcastPayload
-          });
-      }
-      console.log('✅ BROADCASTS SENT');
-    } catch (broadcastError) {
-      // Don't fail the request if broadcast fails, just log it
-      console.error('⚠️ BROADCAST ERROR:', broadcastError);
-    }
-
     // Return success response
     const response = {
       success: true,
