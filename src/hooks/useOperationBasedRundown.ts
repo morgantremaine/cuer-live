@@ -619,7 +619,7 @@ function applyRowMove(items: any[], operationData: any): any[] {
       fromIndex,
       hasOperationData: !!operationData,
       operationDataKeys: Object.keys(operationData),
-      fullOperationData: operationData // Show the actual data structure
+      operationDataJSON: JSON.stringify(operationData, null, 2)
     });
     return items;
   }
