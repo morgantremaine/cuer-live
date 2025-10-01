@@ -34,22 +34,27 @@ export const useOperationBroadcast = ({
   }, [onOperationApplied]);
 
   // Handle incoming operation broadcasts - memoized with stable dependencies
-  const handleOperationBroadcast = useCallback((payload: any) => {
-    console.log('📡 RECEIVED BROADCAST:', payload);
+  const handleOperationBroadcast = useCallback((message: any) => {
+    console.log('📡 RAW BROADCAST MESSAGE:', message);
+    
+    // Supabase wraps the payload in a message object
+    const payload = message.payload || message;
+    
     console.log('🔍 BROADCAST DEBUG:', {
-      payloadType: payload.type,
+      hasPayload: !!message.payload,
+      payloadType: payload?.type,
       expectedType: 'operation_applied',
-      payloadRundownId: payload.rundownId,
+      payloadRundownId: payload?.rundownId,
       expectedRundownId: rundownId,
-      typeMatch: payload.type === 'operation_applied',
-      rundownMatch: payload.rundownId === rundownId,
-      hasOperation: !!payload.operation,
-      operationClientId: payload.operation?.clientId,
+      typeMatch: payload?.type === 'operation_applied',
+      rundownMatch: payload?.rundownId === rundownId,
+      hasOperation: !!payload?.operation,
+      operationClientId: payload?.operation?.clientId,
       currentClientId: clientId,
-      willIgnore: payload.operation?.clientId === clientId
+      willIgnore: payload?.operation?.clientId === clientId
     });
 
-    if (payload.type === 'operation_applied' && payload.rundownId === rundownId) {
+    if (payload?.type === 'operation_applied' && payload?.rundownId === rundownId) {
       const operation = payload.operation as RemoteOperation;
       
       console.log('✅ BROADCAST PASSED INITIAL CHECKS');
@@ -83,7 +88,10 @@ export const useOperationBroadcast = ({
         onOperationAppliedRef.current(operation);
       }
     } else {
-      console.log('❌ BROADCAST FAILED CHECKS - NOT PROCESSING');
+      console.log('❌ BROADCAST FAILED CHECKS - NOT PROCESSING', {
+        hasType: !!payload?.type,
+        hasRundownId: !!payload?.rundownId
+      });
     }
   }, [rundownId, clientId]); // Removed callback dependencies
 
