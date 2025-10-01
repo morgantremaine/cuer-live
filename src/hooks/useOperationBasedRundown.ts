@@ -603,11 +603,23 @@ function applyRowMove(items: any[], operationData: any): any[] {
     return [];
   }
 
-  const { toIndex, itemId } = operationData;
+  // Handle both new format (itemId, toIndex) and legacy format (fromIndex, toIndex)
+  let { toIndex, itemId, fromIndex } = operationData;
+  
+  // If itemId is missing but fromIndex exists, try to get itemId from items array
+  if (itemId === undefined && fromIndex !== undefined) {
+    itemId = items[fromIndex]?.id;
+  }
   
   // Validate required fields
   if (itemId === undefined || toIndex === undefined) {
-    console.warn('⚠️ ROW_MOVE: Missing required fields', { itemId, toIndex, operationData });
+    console.error('❌ ROW_MOVE: Missing required fields', { 
+      itemId, 
+      toIndex, 
+      fromIndex,
+      hasOperationData: !!operationData,
+      operationDataKeys: Object.keys(operationData)
+    });
     return items;
   }
 
