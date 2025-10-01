@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Operation } from './useOperationQueue';
+import { useUnifiedRealtimeBroadcast, UnifiedOperationPayload, OperationType } from './useUnifiedRealtimeBroadcast';
 
 interface RemoteOperation extends Operation {
   sequenceNumber: number;
@@ -20,11 +21,9 @@ export const useOperationBroadcast = ({
   onRemoteOperation,
   onOperationApplied
 }: UseOperationBroadcastOptions) => {
-  // Use refs to avoid recreating the callback on every render
   const onRemoteOperationRef = useRef(onRemoteOperation);
   const onOperationAppliedRef = useRef(onOperationApplied);
   
-  // Update refs when callbacks change
   useEffect(() => {
     onRemoteOperationRef.current = onRemoteOperation;
   }, [onRemoteOperation]);
@@ -32,6 +31,55 @@ export const useOperationBroadcast = ({
   useEffect(() => {
     onOperationAppliedRef.current = onOperationApplied;
   }, [onOperationApplied]);
+
+  // Use unified broadcast system for cell edit operations
+  const { broadcastOperation: unifiedBroadcast } = useUnifiedRealtimeBroadcast({
+    rundownId,
+    clientId,
+    userId: clientId, // Temp - will be replaced with actual userId
+    onOperationReceived: (operation: UnifiedOperationPayload) => {
+      // Only process OT operations (cell edits, row operations)
+      if (!['CELL_EDIT', 'ROW_INSERT', 'ROW_DELETE', 'ROW_MOVE', 'ROW_COPY'].includes(operation.type)) {
+        return;
+      }
+
+      // Convert unified payload back to RemoteOperation format for compatibility
+      const operationTypeMap: Record<string, Operation['operationType']> = {
+        'CELL_EDIT': 'CELL_EDIT',
+        'ROW_INSERT': 'ROW_INSERT',
+        'ROW_DELETE': 'ROW_DELETE',
+        'ROW_MOVE': 'ROW_MOVE',
+        'ROW_COPY': 'ROW_COPY'
+      };
+
+      const remoteOp: RemoteOperation = {
+        id: `${operation.clientId}-${operation.timestamp}`,
+        rundownId: operation.rundownId,
+        operationType: operationTypeMap[operation.type] || 'CELL_EDIT',
+        operationData: operation.data,
+        userId: operation.userId,
+        clientId: operation.clientId,
+        timestamp: operation.timestamp,
+        sequenceNumber: operation.sequenceNumber || 0,
+        appliedAt: new Date().toISOString(),
+        status: 'acknowledged'
+      };
+
+      console.log('🎯 OT SYSTEM: Applying remote operation from unified broadcast', {
+        type: remoteOp.operationType,
+        fromClient: remoteOp.clientId
+      });
+
+      if (onRemoteOperationRef.current) {
+        onRemoteOperationRef.current(remoteOp);
+      }
+
+      if (onOperationAppliedRef.current) {
+        onOperationAppliedRef.current(remoteOp);
+      }
+    },
+    enabled: true
+  });
 
   // Handle incoming operation broadcasts - memoized with stable dependencies
   const handleOperationBroadcast = useCallback((payload: any) => {
@@ -161,30 +209,39 @@ export const useOperationBroadcast = ({
     };
   }, [rundownId, clientId]);
 
-  // Broadcast an operation
+  // Broadcast an operation via unified system
   const broadcastOperation = useCallback(async (operation: RemoteOperation) => {
     if (!rundownId) return;
 
-    console.log('📤 BROADCASTING OPERATION:', operation.id);
+    console.log('📤 OT SYSTEM: Broadcasting via unified system:', operation.id);
 
     try {
-      const channel = supabase.channel(`rundown-operations-${rundownId}`);
-      
-      await channel.send({
-        type: 'broadcast',
-        event: 'operation',
-        payload: {
-          type: 'operation_applied',
-          operation,
-          rundownId
-        }
-      });
+      // Map operation types to unified types
+      const typeMap: Record<string, OperationType> = {
+        'CELL_EDIT': 'CELL_EDIT',
+        'ROW_INSERT': 'ROW_INSERT',
+        'ROW_DELETE': 'ROW_DELETE',
+        'ROW_MOVE': 'ROW_MOVE',
+        'ROW_COPY': 'ROW_COPY',
+        'GLOBAL_EDIT': 'CELL_EDIT' // Treat global edits as cell edits
+      };
 
-      console.log('✅ OPERATION BROADCAST SENT:', operation.id);
+      const unifiedPayload: UnifiedOperationPayload = {
+        type: typeMap[operation.operationType] || 'CELL_EDIT',
+        rundownId: operation.rundownId,
+        clientId: operation.clientId,
+        userId: operation.userId,
+        timestamp: operation.timestamp,
+        sequenceNumber: operation.sequenceNumber,
+        data: operation.operationData
+      };
+
+      await unifiedBroadcast(unifiedPayload);
+      console.log('✅ OT SYSTEM: Operation broadcast via unified system');
     } catch (error) {
-      console.error('❌ BROADCAST ERROR:', error);
+      console.error('❌ OT SYSTEM: Broadcast error:', error);
     }
-  }, [rundownId]);
+  }, [rundownId, unifiedBroadcast]);
 
   return {
     broadcastOperation

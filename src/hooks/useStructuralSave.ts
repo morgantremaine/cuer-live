@@ -2,8 +2,9 @@ import { useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
-import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { useUnifiedRealtimeBroadcast, UnifiedOperationPayload, OperationType } from './useUnifiedRealtimeBroadcast';
+import { v4 as uuidv4 } from 'uuid';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -33,6 +34,15 @@ export const useStructuralSave = (
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isUnloadingRef = useRef(false);
   const lastSaveTimestampRef = useRef<number>(0);
+  const clientIdRef = useRef(uuidv4());
+
+  // Use unified broadcast system for structural operations
+  const { broadcastOperation } = useUnifiedRealtimeBroadcast({
+    rundownId: rundownId || '',
+    clientId: clientIdRef.current,
+    userId: currentUserId || '',
+    enabled: !!rundownId && !!currentUserId
+  });
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -87,28 +97,37 @@ export const useStructuralSave = (
             console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
-          // Broadcast structural change to other users for real-time updates
+          // Broadcast via unified system for real-time updates
           if (rundownId && currentUserId) {
-            const broadcastData = {
-              operationType: operation.operationType,
-              operationData: operation.operationData,
-              docVersion: data.docVersion,
-              timestamp: operation.timestamp
+            const operationTypeMap: Record<string, OperationType> = {
+              'add_row': 'ROW_INSERT',
+              'delete_row': 'ROW_DELETE',
+              'move_rows': 'ROW_MOVE',
+              'copy_rows': 'ROW_COPY',
+              'reorder': 'ROW_MOVE',
+              'add_header': 'ROW_INSERT'
+            };
+
+            const unifiedPayload: UnifiedOperationPayload = {
+              type: operationTypeMap[operation.operationType] || 'ROW_INSERT',
+              rundownId,
+              clientId: clientIdRef.current,
+              userId: currentUserId,
+              timestamp: Date.now(),
+              sequenceNumber: data.docVersion,
+              data: {
+                operationType: operation.operationType,
+                operationData: operation.operationData,
+                docVersion: data.docVersion
+              }
             };
             
-            console.log('📡 Broadcasting structural operation:', {
-              operation: operation.operationType,
-              rundownId,
-              userId: currentUserId
+            console.log('📡 STRUCTURAL: Broadcasting via unified system', {
+              type: unifiedPayload.type,
+              operation: operation.operationType
             });
             
-            cellBroadcast.broadcastCellUpdate(
-              rundownId,
-              undefined,
-              `structural:${operation.operationType}`,
-              broadcastData,
-              currentUserId
-            );
+            await broadcastOperation(unifiedPayload);
           }
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
