@@ -247,22 +247,59 @@ serve(async (req) => {
       );
     }
 
-    // Log the operation with enhanced coordination data
+    // Prepare normalized operation data for the operation log
+    // This ensures that when operations are loaded, they have the proper structure
+    let normalizedOperationData: any = {
+      action: actionDescription,
+      itemCount: updatedItems.length,
+      operationType: operation.operationType,
+      timestamp: operation.timestamp,
+      sequenceNumber: operation.operationData.sequenceNumber,
+      coordinatedAt: new Date().toISOString(),
+      lockId: lockId
+    };
+
+    // Add the actual operation-specific data needed for replay
+    switch (operation.operationType) {
+      case 'delete_row':
+        if (operation.operationData.deletedIds && operation.operationData.deletedIds.length > 0) {
+          // For single delete, store as itemId (matches ROW_DELETE format)
+          normalizedOperationData.itemId = operation.operationData.deletedIds[0];
+          normalizedOperationData.deletedIds = operation.operationData.deletedIds;
+        }
+        break;
+      
+      case 'add_row':
+      case 'add_header':
+        if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
+          normalizedOperationData.newItem = operation.operationData.newItems[0];
+          normalizedOperationData.insertIndex = operation.operationData.insertIndex;
+        }
+        break;
+      
+      case 'reorder':
+      case 'move_rows':
+        if (operation.operationData.order) {
+          normalizedOperationData.order = operation.operationData.order;
+        }
+        break;
+      
+      case 'copy_rows':
+        if (operation.operationData.newItems && operation.operationData.insertIndex !== undefined) {
+          normalizedOperationData.newItem = operation.operationData.newItems[0];
+          normalizedOperationData.insertIndex = operation.operationData.insertIndex;
+        }
+        break;
+    }
+
+    // Log the operation with complete data for replay
     await supabase
       .from('rundown_operations')
       .insert({
         rundown_id: operation.rundownId,
         user_id: operation.userId,
         operation_type: `structural_${operation.operationType}`,
-        operation_data: {
-          action: actionDescription,
-          itemCount: updatedItems.length,
-          operationType: operation.operationType,
-          timestamp: operation.timestamp,
-          sequenceNumber: operation.operationData.sequenceNumber,
-          coordinatedAt: new Date().toISOString(),
-          lockId: lockId
-        }
+        operation_data: normalizedOperationData
       });
 
     console.log('✅ Structural operation completed successfully:', {
