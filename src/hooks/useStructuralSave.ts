@@ -21,6 +21,7 @@ interface StructuralOperation {
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
+  clientId: string; // Track client ID for broadcast
 }
 
 export const useStructuralSave = (
@@ -110,17 +111,21 @@ export const useStructuralSave = (
             console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
-          // Debug: Check broadcast prerequisites
+          // CRITICAL: Use operation.userId (from when operation was queued) for broadcast
+          // This ensures we have the userId even if currentUserId prop changes
+          const broadcastUserId = operation.userId;
+          const broadcastClientId = operation.clientId;
+
           console.log('🔍 STRUCTURAL: Checking broadcast prerequisites', {
             hasRundownId: !!rundownId,
-            hasCurrentUserId: !!currentUserId,
-            rundownId,
-            currentUserId,
-            willBroadcast: !!(rundownId && currentUserId)
+            hasBroadcastUserId: !!broadcastUserId,
+            broadcastUserId,
+            broadcastClientId,
+            willBroadcast: !!(rundownId && broadcastUserId)
           });
 
           // Broadcast via unified system for real-time updates
-          if (rundownId && currentUserId) {
+          if (rundownId && broadcastUserId) {
             const operationTypeMap: Record<string, OperationType> = {
               'add_row': 'ROW_INSERT',
               'delete_row': 'ROW_DELETE',
@@ -133,8 +138,8 @@ export const useStructuralSave = (
             const unifiedPayload: UnifiedOperationPayload = {
               type: operationTypeMap[operation.operationType] || 'ROW_INSERT',
               rundownId,
-              clientId: clientIdRef.current,
-              userId: currentUserId,
+              clientId: broadcastClientId,
+              userId: broadcastUserId,
               timestamp: Date.now(),
               sequenceNumber: data.docVersion,
               data: {
@@ -147,8 +152,8 @@ export const useStructuralSave = (
             console.log('📡 STRUCTURAL: Broadcasting via unified system', {
               type: unifiedPayload.type,
               operation: operation.operationType,
-              clientId: clientIdRef.current,
-              userId: currentUserId,
+              clientId: broadcastClientId,
+              userId: broadcastUserId,
               isConnected
             });
             
@@ -158,9 +163,19 @@ export const useStructuralSave = (
             } catch (broadcastError) {
               console.error('❌ STRUCTURAL: Broadcast failed:', broadcastError);
             }
+          } else {
+            console.error('❌ STRUCTURAL: Cannot broadcast - missing prerequisites', {
+              hasRundownId: !!rundownId,
+              hasBroadcastUserId: !!broadcastUserId
+            });
           }
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
+        } else {
+          console.error('❌ STRUCTURAL SAVE: Edge function did not return success', {
+            data,
+            operation: operation.operationType
+          });
         }
       }
       
@@ -201,7 +216,8 @@ export const useStructuralSave = (
           sequenceNumber // Add sequence number for ordering
         },
         userId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        clientId: clientIdRef.current // Capture client ID at queue time
       };
 
       console.log('🏗️ STRUCTURAL SAVE: Queuing operation', {
