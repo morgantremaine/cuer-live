@@ -1,56 +1,94 @@
 /**
- * Enhanced per-cell save system with signature integration
+ * Hybrid Save System: OT Operations + Direct Metadata Saves
  * 
- * This system eliminates doc_version conflicts by:
- * 1. Saving individual cell changes directly to database via edge function
- * 2. Using content signatures for change detection (not doc_version)
- * 3. Coordinating with LocalShadow for conflict resolution
- * 4. Maintaining real-time synchronization without version mismatches
+ * This system eliminates doc_version conflicts and optimizes saves by operation type:
+ * 
+ * OT OPERATIONS (High Conflict Risk):
+ * - All content edits (cell fields)
+ * - All structural operations (row add/delete/move/copy/reorder/float/color)
+ * - Uses Operational Transformation for robust conflict resolution
+ * - Queued and processed through apply-operation edge function
+ * 
+ * DIRECT SAVES (Low Conflict Risk):
+ * - Metadata (title, start time, date, timezone)
+ * - Preferences (column layouts, saved layouts)
+ * - Playback state (showcaller/teleprompter)
+ * - Direct database updates via useSimpleAutoSave
  * 
  * Benefits:
- * - Zero data loss during concurrent editing
- * - Perfect real-time synchronization
- * - Eliminates doc_version conflicts between broadcasts and saves
- * - Maintains typing protection via LocalShadow
+ * - Zero data loss during concurrent editing (OT)
+ * - Perfect real-time synchronization (OT)
+ * - Fast metadata updates (Direct)
+ * - Right tool for each job (Hybrid)
+ * - Eliminates doc_version conflicts completely
  * - Scales efficiently for large teams
  */
 
-export const PER_CELL_SAVE_SYSTEM_DOCS = {
+export const HYBRID_SAVE_SYSTEM_DOCS = {
   overview: `
-The per-cell save system replaces traditional full-document autosaves with 
-individual field-level database updates. This eliminates the core issue of 
-doc_version conflicts between real-time broadcasts and autosave operations.
+The hybrid save system uses different strategies optimized by conflict risk:
+- OT Operations for high-conflict content and structural changes
+- Direct Saves for low-conflict metadata and preferences
+
+This eliminates doc_version conflicts while providing optimal performance.
+`,
+
+  otOperations: `
+HANDLED BY OT SYSTEM (useOperationBasedRundown):
+✓ Cell content edits (script, talent, duration, etc.)
+✓ Row reordering (drag & drop)
+✓ Row copy/paste operations
+✓ Row deletion
+✓ Adding rows/headers
+✓ Row floating/unfloating
+✓ Row coloring
+
+Process: Operation Queue → apply-operation edge function → Real-time broadcast
+Benefits: Robust conflict resolution, operation history, atomic updates
+`,
+
+  directSaves: `
+HANDLED BY DIRECT SAVES (useSimpleAutoSave):
+✓ Rundown metadata (title, start time, date, timezone)
+✓ Column preferences and saved layouts
+✓ Showcaller/teleprompter state
+✓ UI preferences
+
+Process: Direct database update → Broadcast change notification
+Benefits: Fast saves, low latency, no OT overhead for simple fields
 `,
 
   architecture: `
-1. Cell-level Edge Function (cell-field-save)
-   - Receives individual field updates
-   - Applies changes directly to database
-   - No doc_version conflicts
-   - Tracks changes in item_field_updates JSONB column
+1. OT System (apply-operation edge function)
+   - Receives queued operations
+   - Applies with conflict resolution
+   - Broadcasts to connected clients
+   - Tracks operation sequence
 
-2. Coordination System (usePerCellSaveCoordination)
-   - Routes between per-cell and delta saves based on rundown settings
-   - Integrates with signature system for change detection
-   - Maintains backward compatibility
+2. Direct Save System (useSimpleAutoSave)
+   - Debounced auto-save for metadata
+   - Direct Supabase updates
+   - Change detection via signatures
+   - Broadcast notifications
 
 3. Integration Layer (useCellEditIntegration)
-   - Connects UI components to save system
-   - Handles cell edit lifecycle
-   - Provides typing protection
+   - Routes operations to correct system
+   - Provides unified API to UI
+   - Handles operation lifecycle
 `,
 
   enablement: `
-Per-cell save is enabled per-rundown via the per_cell_save_enabled boolean field.
-Currently enabled for test users (morgan@cuer.live, morgantremaine@me.com).
+Per-cell architecture is enabled for all rundowns (per_cell_save_enabled: true).
+All operations automatically route to the appropriate save system based on type.
 `,
 
   benefits: `
 - Eliminates doc_version conflicts completely
-- Perfect real-time synchronization
-- Zero data loss during concurrent editing
-- Maintains LocalShadow conflict protection
+- Optimizes performance by operation type
+- Perfect real-time synchronization for content
+- Fast metadata updates without OT overhead
+- Clear rules for when to use each system
 - Scales to unlimited concurrent users
-- Preserves all existing functionality
+- Maintains simplicity where appropriate
 `
 };

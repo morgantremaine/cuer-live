@@ -33,69 +33,116 @@ The rundown save system implements a per-cell save architecture designed for rea
 - Handle user feedback
 - Coordinate with state management
 
-## Save Strategy: Per-Cell Architecture
+## Save Strategy: Hybrid Architecture
 
-### Current System (100% of Production)
-**All rundowns use per-cell save:** Field-level updates with no doc_version conflicts
+The system uses a **hybrid save approach** optimized by operation type and conflict risk:
 
-**Benefits**:
-- ✅ Instant user feedback
-- ✅ Granular conflict resolution
-- ✅ Efficient bandwidth usage
-- ✅ Real-time collaboration support
-- ✅ No version conflicts
+### OT-Based Operations (High Conflict Risk)
 
-**Process Flow**:
+All content and structural operations flow through the Operational Transformation system:
+
+1. **Content Operations**: Cell edits (script, talent, duration, etc.)
+2. **Structural Operations**: 
+   - Row reordering (drag & drop)
+   - Row copy/paste
+   - Row deletion
+   - Adding rows/headers
+   - Row floating/unfloating
+   - Row coloring
+
+**Benefits:**
+- Robust conflict resolution via OT
+- Operation history and replay
+- Real-time synchronization
+- Atomic operations with rollback
+
+**Process Flow:**
 ```
-User Edit → Field Tracking → Edge Function → Database Update → Real-time Broadcast
+User Action
+  ↓
+Local State Update (Optimistic)
+  ↓
+Queue Operation in OT System
+  ↓
+Broadcast to Other Users (Real-time)
+  ↓
+Save to Database (via apply-operation edge function)
+  ↓
+Confirmation & Sync
 ```
 
-### Cell-Level Saves
-**When Used**: Individual field edits in items
-**Implementation**: `useCellLevelSave` hook
-**Process**:
-1. Track field change in memory
-2. Debounce typing (800ms idle)
-3. Batch multiple field updates
-4. Send to `cell-field-save` edge function
-5. Update item_field_updates JSONB column
+### Direct Metadata Saves (Low Conflict Risk)
 
-### Structural Saves
-**When Used**: Row operations (add, delete, move, reorder)
-**Implementation**: `useStructuralSave` hook
-**Process**:
-1. Queue structural operation
-2. Use coordination to prevent conflicts
-3. Send to `structural-operation-save` edge function
-4. Apply changes atomically
-5. Broadcast to other clients
+Simple metadata fields use direct database updates:
 
-## Dual System Architecture
+1. **Metadata**: Title, start time, date, timezone
+2. **Preferences**: Column layouts, saved layouts
+3. **Playback State**: Showcaller/teleprompter state
 
-### Operation-Based System
-**File**: `src/hooks/useOperationBasedRundown.ts`
-**Purpose**: Core collaborative editing with Operational Transformation
-**Use Cases**:
-- Real-time multi-user editing
-- Conflict resolution
-- Operation history
-- Complex state synchronization
+**Benefits:**
+- Faster saves (no OT overhead)
+- Simpler implementation
+- Lower latency
+- Appropriate for fields with minimal conflict risk
 
-### Simplified State System
-**File**: `src/hooks/useSimplifiedRundownState.ts`
-**Purpose**: Simple features without OT complexity
-**Use Cases**:
+**Process Flow:**
+```
+User Edit
+  ↓
+Local State Update
+  ↓
+Debounced Auto-Save (if applicable)
+  ↓
+Direct Database Update
+  ↓
+Broadcast Change Notification
+```
+
+## Hybrid System Architecture
+
+The codebase uses different strategies based on conflict risk and coordination needs:
+
+### OT System for Content & Structure (`useOperationBasedRundown`)
+
+**Purpose**: All operations requiring robust conflict resolution
+
+**Handles**:
+- Cell content edits
+- Row reordering (drag & drop)
+- Row copy/paste operations
+- Row deletion
+- Adding rows/headers  
+- Row floating/unfloating
+- Row coloring
+
+**Features**:
+- Operational Transformation (OT) for conflict resolution
+- Operation queue with sequencing
+- Real-time broadcasting of operations
+- Operation history and replay capability
+- Atomic operations with rollback
+
+**When to Use**: Any operation that modifies rundown content or structure
+
+### Direct Saves for Metadata (`useSimpleAutoSave`)
+
+**Purpose**: Fast updates for low-conflict fields
+
+**Handles**:
+- Rundown metadata (title, start time, date, timezone)
+- Column preferences and layouts
 - Showcaller/teleprompter state
-- Column preferences
-- UI state management
-- Simple data updates
+- UI state and visual preferences
 
-### Why Two Systems?
+**Features**:
+- Direct database updates
+- Debounced auto-save
+- Change detection via signatures
+- Broadcast notifications
 
-1. **Complexity Management**: Not all features need OT
-2. **Performance**: Simple features run faster without OT overhead
-3. **Maintenance**: Easier to debug and modify
-4. **Flexibility**: Choose appropriate tool for each feature
+**When to Use**: Fields with minimal conflict risk that don't require OT coordination
+
+**Design Rationale**: This hybrid approach optimizes for both robustness (OT for high-risk operations) and performance (direct saves for low-risk fields), providing the best balance for different operation types.
 
 ## Signature System
 
@@ -223,53 +270,51 @@ User Action → State Update → Change Detection → Save Coordination → Data
 
 ## Best Practices
 
-### ✅ Using Per-Cell Saves
-```typescript
-// Track field changes
-trackFieldChange(itemId, field, value)
+### When to Use OT Operations
 
-// System handles coordination automatically
-// No need to manage doc_version
-```
+✅ **Use for:**
+- All content edits (cell fields)
+- All structural operations (rows, reordering)
+- Any operation users might conflict on
+- Operations needing history/replay
 
-### ✅ Structural Operations
-```typescript
-// Use coordination for row operations
-handleStructuralOperation('add_row', { items, insertIndex })
+**Implementation**: Route through `handleCellEdit`, `handleRowInsert`, `handleRowDelete`, `handleRowMove`, `handleRowCopy` in the OT system.
 
-// System ensures atomic execution
-// Prevents conflicts automatically
-```
+### When to Use Direct Saves
 
-### ✅ Choosing the Right System
-- **Operation-based**: Complex collaborative editing
-- **Simplified state**: Simple features, UI preferences
-- **Per-cell saves**: All field updates
-- **Structural saves**: All row operations
+✅ **Use for:**
+- Metadata (title, start time, date, timezone)
+- User preferences (column layouts)
+- Playback state (showcaller)
+- Low-conflict UI state
+
+**Implementation**: Use `markAsChanged()` and let `useSimpleAutoSave` handle the direct database update.
+
+### Migration Checklist
+
+When adding new features, ask:
+
+1. **Can multiple users conflict on this?** → Use OT
+2. **Does it modify rundown content/structure?** → Use OT
+3. **Is it simple metadata or preferences?** → Use direct saves
+4. **Does it need operation history?** → Use OT
+
+**Default Rule**: When in doubt, use OT for content/structure operations and direct saves for metadata/preferences.
 
 ## Architecture Benefits
 
-### Eliminates Version Conflicts
-- No doc_version checking needed
-- Field-level updates avoid conflicts
-- Structural coordination prevents races
-
-### Enables Real-Time Collaboration
-- Instant updates across clients
-- Granular conflict resolution
-- Efficient synchronization
-
-### Maintainable Codebase
-- Clear separation of concerns
-- Appropriate complexity for each feature
-- Well-defined coordination patterns
+1. **Optimized by Risk**: High-conflict operations use OT, low-conflict uses direct saves
+2. **No Version Conflicts**: Per-cell architecture eliminates doc_version conflicts  
+3. **Real-Time Collaboration**: OT system provides robust multi-user editing
+4. **Fast Metadata Updates**: Direct saves provide instant feedback for simple changes
+5. **Maintainable**: Clear rules for when to use each system
+6. **Performant**: Right tool for each job - not over-engineering simple operations
 
 ## Conclusion
 
-This architecture successfully implements Google Sheets-like collaborative editing with:
-- **Per-cell saves** for conflict-free updates
-- **Dual system design** balancing complexity
-- **Real-time synchronization** for collaboration
-- **Clear coordination** preventing data loss
-
-The ongoing refinements to handle edge cases are normal for enterprise-grade collaborative systems.
+This hybrid architecture successfully balances robustness and performance by:
+- Using OT for content and structural operations (high conflict risk)
+- Using direct saves for metadata and preferences (low conflict risk)  
+- Maintaining clear boundaries based on operation characteristics
+- Eliminating version conflicts through per-cell architecture
+- Providing a solid foundation for real-time collaborative editing without unnecessary overhead

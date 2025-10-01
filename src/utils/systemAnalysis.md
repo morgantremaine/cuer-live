@@ -8,15 +8,27 @@
 - **Purpose**: Core collaborative editing with Operational Transformation (OT)
 - **Use Cases**: Real-time multi-user editing, conflict resolution, synchronization
 - **Features**: Operation queue, conflict detection, real-time broadcasting
-- **Scope**: Main rundown content and structure
+- **Scope**: All content and structural operations:
+  - Cell content edits
+  - Row reordering (drag & drop)
+  - Row copy/paste operations
+  - Row deletion
+  - Adding rows/headers
+  - Row floating/unfloating
+  - Row coloring
 
 #### Simplified State System (`useSimplifiedRundownState`)
 - **Purpose**: Simpler features that don't require full OT complexity
-- **Use Cases**: Showcaller/teleprompter, column preferences, UI state
-- **Features**: Direct state updates, basic persistence
-- **Scope**: Supplementary features and UI preferences
+- **Use Cases**: Metadata, showcaller/teleprompter, column preferences, UI state
+- **Features**: Direct database updates, basic persistence
+- **Scope**: Low-conflict metadata and preferences:
+  - Rundown metadata (title, start time, date, timezone)
+  - Showcaller/teleprompter state
+  - Column preferences
+  - Saved layouts
+  - UI state and visual preferences
 
-**Design Rationale**: Separating complex collaborative editing from simpler state management reduces overhead and improves maintainability.
+**Design Rationale**: High-conflict operations requiring coordination use OT for robust conflict resolution. Low-conflict metadata and preferences use simpler direct updates for better performance.
 
 ### 2. **Per-Cell Save System**
 
@@ -30,10 +42,10 @@
   - Perfect real-time synchronization
 
 #### Save Coordination (`usePerCellSaveCoordination`)
-- **Cell-Level Saves**: Individual field updates for content changes
-- **Structural Saves**: Row operations (add, delete, move, reorder)
-- **Coordination**: Queue management and operation sequencing
-- **No Doc Version**: Bypasses traditional version checking
+- **OT Operations**: All structural and content operations route through the OT system
+- **Direct Metadata Updates**: Title, start time, date, timezone use direct database updates
+- **Coordination**: Operation queue management via OT system
+- **No Doc Version**: Per-cell architecture bypasses traditional version checking
 
 ### 3. **Signature System for Change Detection**
 
@@ -88,17 +100,32 @@ const SAVE_ARCHITECTURE = {
 
 **Operation-based vs Simplified state:**
 ```typescript
-// Clear separation of concerns
+// Clear separation by conflict risk and coordination needs
 const SYSTEM_ARCHITECTURE = {
   operationBased: {
-    scope: "Core collaborative editing",
+    scope: "All content and structural operations",
     complexity: "High (OT required)",
+    operations: [
+      "Cell edits",
+      "Row reordering", 
+      "Row copy/paste",
+      "Row deletion",
+      "Adding rows/headers",
+      "Row floating/coloring"
+    ],
     features: ["Real-time sync", "Conflict resolution", "Operation history"]
   },
   simplifiedState: {
-    scope: "Supplementary features",
+    scope: "Low-conflict metadata and preferences",
     complexity: "Low (direct updates)",
-    features: ["Showcaller", "Column prefs", "UI state"]
+    operations: [
+      "Title updates",
+      "Start time/date/timezone",
+      "Column preferences",
+      "Saved layouts",
+      "Showcaller state"
+    ],
+    features: ["Direct DB updates", "Simple persistence", "Fast saves"]
   }
 };
 ```
@@ -121,16 +148,18 @@ const SYSTEM_ARCHITECTURE = {
 
 ### Production Configuration:
 - **All Rundowns**: Using per-cell save system (49/49 = 100%)
-- **Operation Mode**: Available for core collaborative editing
-- **Delta Saves**: REMOVED (legacy system no longer in use)
-- **Architecture**: Dual system (operation-based + simplified state)
+- **OT System**: Handles all content/structural operations
+- **Direct Updates**: Metadata changes use simple direct saves
+- **Structural-Operation-Save**: DEPRECATED (all operations now use OT)
+- **Architecture**: Dual system (OT for content + direct saves for metadata)
 
 ### Key Files:
-- `src/hooks/useOperationBasedRundown.ts` - OT collaborative editing
-- `src/hooks/useSimplifiedRundownState.ts` - Simple feature state
-- `src/hooks/usePerCellSaveCoordination.ts` - Save coordination
-- `src/hooks/useCellLevelSave.ts` - Field-level saves
-- `src/hooks/useStructuralSave.ts` - Row operations
+- `src/hooks/useOperationBasedRundown.ts` - OT system for all content/structural operations
+- `src/hooks/useOperationQueue.ts` - Operation queuing and batching
+- `src/hooks/useOperationBroadcast.ts` - Real-time operation broadcasting
+- `src/hooks/useCellEditIntegration.ts` - Integration layer connecting UI to OT
+- `supabase/functions/apply-operation/index.ts` - Server-side operation processing
+- `src/hooks/useSimpleAutoSave.ts` - Direct saves for metadata changes
 
 ## 🎯 System Health
 
@@ -148,9 +177,10 @@ const SYSTEM_ARCHITECTURE = {
 ## 📝 Conclusion
 
 The current architecture successfully implements a sophisticated collaborative editing system with:
-- **Per-cell saves** for conflict-free updates
-- **Dual system design** balancing complexity and simplicity
-- **Real-time synchronization** for multi-user editing
-- **Clear separation** between collaborative and simple features
+- **OT-based operations** for all content and structural changes
+- **Direct metadata saves** for low-conflict fields (title, time, etc.)
+- **Per-cell architecture** eliminating doc_version conflicts
+- **Real-time synchronization** with conflict resolution
+- **Clear separation** by conflict risk rather than feature type
 
-The ongoing work to address edge cases (rapid operations, state consistency) is normal for enterprise-grade collaborative systems and indicates healthy system evolution.
+This hybrid approach optimizes for both robust collaboration (OT) and performance (direct updates), providing the best of both worlds for different operation types.
