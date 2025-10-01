@@ -445,9 +445,11 @@ export const useOperationBasedRundown = ({
 
 // Helper functions (same as in apply-operation edge function)
 function applyCellEdit(items: any[], operationData: any): any[] {
+  if (!Array.isArray(items)) return [];
+  
   const { itemId, field, newValue } = operationData;
   
-  return items.map(item => {
+  return items.filter(item => item).map(item => {
     if (item.id === itemId) {
       return { ...item, [field]: newValue };
     }
@@ -456,22 +458,27 @@ function applyCellEdit(items: any[], operationData: any): any[] {
 }
 
 function applyRowInsert(items: any[], operationData: any): any[] {
+  if (!Array.isArray(items)) return [];
+  
   const { insertIndex, newItem } = operationData;
-  const newItems = [...items];
+  const cleanItems = items.filter(item => item);
+  const newItems = [...cleanItems];
   newItems.splice(insertIndex, 0, newItem);
   return newItems;
 }
 
 function applyRowDelete(items: any[], operationData: any): any[] {
+  if (!Array.isArray(items)) return [];
+  
   const { itemId } = operationData;
   
   console.log('🗑️ ROW_DELETE: Before deletion', {
     itemId,
     totalItems: items.length,
-    itemExists: items.some(item => item.id === itemId)
+    itemExists: items.some(item => item && item.id === itemId)
   });
   
-  const newItems = items.filter(item => item.id !== itemId);
+  const newItems = items.filter(item => item && item.id !== itemId);
   
   console.log('✅ ROW_DELETE APPLIED:', {
     itemId,
@@ -490,6 +497,11 @@ function applyRowMove(items: any[], operationData: any): any[] {
     return items;
   }
 
+  if (!Array.isArray(items)) {
+    console.warn('⚠️ ROW_MOVE: Invalid items - not an array', items);
+    return [];
+  }
+
   const { toIndex, itemId } = operationData;
   
   // Validate required fields
@@ -498,25 +510,28 @@ function applyRowMove(items: any[], operationData: any): any[] {
     return items;
   }
 
-  if (!Array.isArray(items) || items.length === 0) {
-    console.warn('⚠️ ROW_MOVE: Invalid items array', items);
+  // Clean the items array first
+  const cleanItems = items.filter(item => item);
+  
+  if (cleanItems.length === 0) {
+    console.warn('⚠️ ROW_MOVE: Empty items array after cleaning');
     return items;
   }
   
   // Find item by ID for robustness
-  const currentIndex = items.findIndex(item => item && item.id === itemId);
+  const currentIndex = cleanItems.findIndex(item => item.id === itemId);
   
   if (currentIndex === -1) {
     console.warn('⚠️ ROW_MOVE: Item not found:', itemId);
-    return items;
+    return cleanItems;
   }
   
   // If already at target position, no change needed
   if (currentIndex === toIndex) {
-    return items;
+    return cleanItems;
   }
   
-  const newItems = [...items];
+  const newItems = [...cleanItems];
   const [movedItem] = newItems.splice(currentIndex, 1);
   newItems.splice(toIndex, 0, movedItem);
   
@@ -530,8 +545,11 @@ function applyRowMove(items: any[], operationData: any): any[] {
 }
 
 function applyRowCopy(items: any[], operationData: any): any[] {
+  if (!Array.isArray(items)) return [];
+  
   const { sourceItemId, newItem, insertIndex } = operationData;
-  const newItems = [...items];
+  const cleanItems = items.filter(item => item);
+  const newItems = [...cleanItems];
   newItems.splice(insertIndex, 0, newItem);
   return newItems;
 }
