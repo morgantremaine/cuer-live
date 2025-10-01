@@ -181,6 +181,14 @@ export const useCellEditIntegration = ({
     operationSystemActive: operationSystem.isOperationMode,
     operationSystemSaving: operationSystem.isSaving,
     operationSystemUnsaved: operationSystem.hasUnsavedChanges,
-    operationLastSaved: operationSystem.lastSaved
+    operationLastSaved: operationSystem.lastSaved,
+    
+    // CRITICAL: Expose structural operation handlers for drag-and-drop coordination
+    // This ensures drag-and-drop operations flow through the OT system for perfect coordination
+    operationHandlers: operationSystem.isOperationMode ? {
+      handleRowMove: operationSystem.handleRowMove,
+      handleRowInsert: operationSystem.handleRowInsert,
+      handleRowDelete: operationSystem.handleRowDelete
+    } : undefined
   };
 };

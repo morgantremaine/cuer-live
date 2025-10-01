@@ -22,12 +22,16 @@ import '@/utils/timingValidationTest';
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
+  // Get operation handlers first (they'll be defined after cell edit integration below)
+  // This is a forward reference that will be resolved when operationHandlers is defined
+  let operationHandlersRef: any = undefined;
+  
   const {
     coreState,
     interactions,
     uiState,
     dragAndDrop
-  } = useRundownStateCoordination();
+  } = useRundownStateCoordination(operationHandlersRef);
   
   // Extract all needed values from the unified state
   const {
@@ -93,7 +97,12 @@ const RundownIndexContent = () => {
   const { team } = useTeam();
 
   // Add cell edit integration for operation system
-  const { handleCellChange, saveState: cellSaveState, handleKeystroke } = useCellEditIntegration({
+  const { 
+    handleCellChange, 
+    saveState: cellSaveState, 
+    handleKeystroke,
+    operationHandlers // Get structural operation handlers for drag-and-drop coordination
+  } = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: true,
     onSaveComplete: () => {
@@ -106,6 +115,19 @@ const RundownIndexContent = () => {
       console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
     }
   });
+  
+  // Set the operation handlers reference for coordination state
+  operationHandlersRef = operationHandlers;
+  
+  // Log when OT handlers are connected to drag-and-drop
+  if (operationHandlers && process.env.NODE_ENV === 'development') {
+    console.log('🔗 DRAG-AND-DROP CONNECTED TO OT SYSTEM:', {
+      hasHandleRowMove: !!operationHandlers.handleRowMove,
+      hasHandleRowInsert: !!operationHandlers.handleRowInsert,
+      hasHandleRowDelete: !!operationHandlers.handleRowDelete,
+      rundownId
+    });
+  }
 
   // Merge cell save state with structural save state for complete save indicator
   const saveState = {

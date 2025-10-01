@@ -26,6 +26,12 @@ interface DragInfo {
   originalIndex: number;
 }
 
+interface OperationHandlers {
+  handleRowMove: (fromIndex: number, toIndex: number) => void;
+  handleRowInsert?: (insertIndex: number, newItem: any) => void;
+  handleRowDelete?: (itemId: string) => void;
+}
+
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
@@ -38,7 +44,8 @@ export const useDragAndDrop = (
   isHeaderCollapsed?: (headerId: string) => boolean,
   markStructuralChange?: () => void,
   rundownId?: string | null,
-  currentUserId?: string | null
+  currentUserId?: string | null,
+  operationHandlers?: OperationHandlers // NEW: OT system handlers for structural operations
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -411,10 +418,28 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Handle reorder via structural coordination if available
+      // CRITICAL: Route through OT system if available for perfect coordination
+      if (operationHandlers?.handleRowMove) {
+        console.log('🚀 ROUTING DRAG-AND-DROP THROUGH OT SYSTEM:', {
+          fromIndex: activeIndex,
+          toIndex: overIndex,
+          itemsCount: newItems.length
+        });
+        
+        // Calculate the actual move in terms of the final positions
+        // The OT system needs the "from" and "to" indices based on the new order
+        const movedItemId = items[activeIndex].id;
+        const newPosition = newItems.findIndex(item => item.id === movedItemId);
+        
+        operationHandlers.handleRowMove(activeIndex, newPosition);
+        console.log('✅ OT SYSTEM: Row move operation queued successfully');
+        return; // Exit early - OT system handles everything
+      }
+      
+      // Legacy path: Handle reorder via structural coordination if available
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder');
+        console.log('🏗️ Triggering structural operation for reorder (legacy path)');
         
         // Call structural change handler with reorder operation
         try {

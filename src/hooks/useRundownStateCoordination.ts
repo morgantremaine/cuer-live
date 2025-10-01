@@ -13,7 +13,11 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
-export const useRundownStateCoordination = () => {
+export const useRundownStateCoordination = (operationHandlers?: {
+  handleRowMove: (fromIndex: number, toIndex: number) => void;
+  handleRowInsert?: (insertIndex: number, newItem: any) => void;
+  handleRowDelete?: (itemId: string) => void;
+}) => {
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
@@ -161,7 +165,8 @@ export const useRundownStateCoordination = () => {
     isHeaderCollapsed,
     persistedState.markStructuralChange,
     persistedState.rundownId, // Pass rundownId for broadcasts
-    userId // Pass userId for broadcasts
+    userId, // Pass userId for broadcasts
+    operationHandlers // CRITICAL: Pass OT system handlers for coordinated structural operations
   );
 
   // UI interactions that depend on the core state (NO showcaller interference)
