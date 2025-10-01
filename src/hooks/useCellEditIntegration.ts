@@ -51,6 +51,7 @@ export const useCellEditIntegration = ({
   // Get the coordinated save system (per-cell saves are always enabled)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
+    currentUserId: user?.id, // ✅ CRITICAL: Pass userId for broadcasts to work
     onSaveComplete: () => {
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
       setIsPerCellSaving(false);
