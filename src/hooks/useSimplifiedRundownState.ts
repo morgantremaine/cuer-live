@@ -1290,21 +1290,19 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast add at index for immediate realtime sync
+    // Always trigger structural save coordination - markStructuralChange handles the logic internally
+    console.log('🔵 ADD ROW AT INDEX: Calling markStructuralChange');
+    markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex }, currentUserId);
+    
+    // Broadcast row addition for immediate realtime sync (like delete does)
     if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
-        'items:add',
-        { items: newItemsToAdd, index: actualIndex },
+        'structural:add_row',
+        { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex },
         currentUserId
       );
-    }
-    
-    // For per-cell saves, use structural save coordination
-    if (cellEditIntegration.isPerCellEnabled) {
-      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
@@ -1344,21 +1342,19 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast header add at index for immediate realtime sync
+    // Always trigger structural save coordination - markStructuralChange handles the logic internally
+    console.log('🔵 ADD HEADER AT INDEX: Calling markStructuralChange');
+    markStructuralChange('add_header', { items: newItems, newItems: [newHeader], insertIndex: actualIndex }, currentUserId);
+    
+    // Broadcast header addition for immediate realtime sync (like delete does)
     if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(
         rundownId,
         undefined,
-        'items:add',
-        { item: newHeader, index: actualIndex },
+        'structural:add_header',
+        { items: newItems, newItems: [newHeader], insertIndex: actualIndex },
         currentUserId
       );
-    }
-    
-    // For per-cell saves, use structural save coordination
-    if (cellEditIntegration.isPerCellEnabled) {
-      console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
-      markStructuralChange('add_header', { items: newItems, insertIndex: actualIndex });
     }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
