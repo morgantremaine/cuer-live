@@ -1057,20 +1057,24 @@ export const useSimplifiedRundownState = () => {
     }
   }, [rundownId, isInitialized, actions, params.id, location.state, navigate, activeTeamId, activeTeamLoading]);
 
-  // Calculate all derived values using pure functions - unchanged
+  // Calculate all derived values using pure functions - use operation-based items when enabled
   const calculatedItems = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) {
+    // Use operation-based items when operation mode is enabled, otherwise use state.items
+    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
+    
+    if (!sourceItems || !Array.isArray(sourceItems)) {
       return [];
     }
     
-    const calculated = calculateItemsWithTiming(state.items, state.startTime);
+    const calculated = calculateItemsWithTiming(sourceItems, state.startTime);
     return calculated;
-  }, [state.items, state.startTime]);
+  }, [isOperationModeEnabled, operationBasedRundown.items, state.items, state.startTime]);
 
   const totalRuntime = useMemo(() => {
-    if (!state.items || !Array.isArray(state.items)) return '00:00:00';
-    return calculateTotalRuntime(state.items);
-  }, [state.items]);
+    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
+    if (!sourceItems || !Array.isArray(sourceItems)) return '00:00:00';
+    return calculateTotalRuntime(sourceItems);
+  }, [isOperationModeEnabled, operationBasedRundown.items, state.items]);
 
   // Enhanced actions with undo state saving (content only)
   const enhancedActions = {
@@ -1280,9 +1284,10 @@ export const useSimplifiedRundownState = () => {
   }, [columns]);
 
   const getHeaderDuration = useCallback((index: number) => {
-    if (index === -1 || !state.items || index >= state.items.length) return '00:00:00';
-    return calculateHeaderDuration(state.items, index);
-  }, [state.items]);
+    const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
+    if (index === -1 || !sourceItems || index >= sourceItems.length) return '00:00:00';
+    return calculateHeaderDuration(sourceItems, index);
+  }, [isOperationModeEnabled, operationBasedRundown.items, state.items]);
 
   const getRowNumber = useCallback((index: number) => {
     if (index < 0 || index >= calculatedItems.length) return '';
@@ -1457,7 +1462,8 @@ export const useSimplifiedRundownState = () => {
     totalRuntime,
     getRowNumber,
     getHeaderDuration: (id: string) => {
-      const itemIndex = state.items.findIndex(item => item.id === id);
+      const sourceItems = isOperationModeEnabled ? operationBasedRundown.items : state.items;
+      const itemIndex = sourceItems.findIndex(item => item.id === id);
       return getHeaderDuration(itemIndex);
     },
     
