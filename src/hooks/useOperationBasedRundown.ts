@@ -222,7 +222,27 @@ export const useOperationBasedRundown = ({
 
         if (data?.success && data.operations) {
           console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
-          data.operations.forEach((operation: any) => {
+          
+          // Filter and validate operations before applying
+          const validOperations = data.operations.filter((op: any) => {
+            const isValid = op.operationType && op.operationData;
+            if (!isValid) {
+              console.warn('⚠️ SKIPPING INVALID OPERATION:', {
+                id: op.id,
+                hasOperationType: !!op.operationType,
+                hasOperationData: !!op.operationData
+              });
+            }
+            return isValid;
+          });
+
+          console.log('✅ APPLYING VALID OPERATIONS:', {
+            total: data.operations.length,
+            valid: validOperations.length,
+            invalid: data.operations.length - validOperations.length
+          });
+
+          validOperations.forEach((operation: any) => {
             applyOperationToState(operation);
           });
         }
@@ -260,8 +280,27 @@ export const useOperationBasedRundown = ({
       const operations = data.operations || [];
       console.log('📥 LOADED PENDING OPERATIONS:', operations.length);
 
+      // Filter and validate operations before applying
+      const validOperations = operations.filter((op: any) => {
+        const isValid = op.operationType && op.operationData;
+        if (!isValid) {
+          console.warn('⚠️ SKIPPING INVALID OPERATION:', {
+            id: op.id,
+            hasOperationType: !!op.operationType,
+            hasOperationData: !!op.operationData
+          });
+        }
+        return isValid;
+      });
+
+      console.log('✅ APPLYING VALID OPERATIONS:', {
+        total: operations.length,
+        valid: validOperations.length,
+        invalid: operations.length - validOperations.length
+      });
+
       // Apply operations in sequence order
-      operations.forEach((operation: any) => {
+      validOperations.forEach((operation: any) => {
         applyOperationToState(operation);
       });
 

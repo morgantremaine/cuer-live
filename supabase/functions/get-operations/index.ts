@@ -83,16 +83,29 @@ serve(async (req) => {
       throw new Error('Failed to fetch operations');
     }
 
+    // Transform operations to match expected format (operation_type -> operationType)
+    const transformedOperations = (operations || []).map(op => ({
+      id: op.id,
+      operationType: op.operation_type, // Map database column to expected format
+      operationData: op.operation_data,
+      userId: op.user_id,
+      clientId: op.client_id,
+      timestamp: op.created_at,
+      sequenceNumber: op.sequence_number,
+      appliedAt: op.applied_at
+    }));
+
     console.log('📤 RETURNING OPERATIONS:', {
-      count: operations?.length || 0,
-      sinceSequence
+      count: transformedOperations.length,
+      sinceSequence,
+      sample: transformedOperations[0] // Log first operation for debugging
     });
 
     return new Response(JSON.stringify({
       success: true,
-      operations: operations || [],
-      latestSequence: operations && operations.length > 0 
-        ? operations[operations.length - 1].sequence_number 
+      operations: transformedOperations,
+      latestSequence: transformedOperations.length > 0 
+        ? transformedOperations[transformedOperations.length - 1].sequenceNumber 
         : parseInt(sinceSequence)
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

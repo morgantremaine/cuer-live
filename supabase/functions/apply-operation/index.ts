@@ -35,6 +35,7 @@ serve(async (req) => {
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('❌ AUTH ERROR: No authorization header');
       throw new Error('No authorization header');
     }
 
@@ -43,8 +44,17 @@ serve(async (req) => {
     );
 
     if (userError || !userData.user) {
+      console.error('❌ AUTH ERROR:', {
+        error: userError?.message,
+        hasUser: !!userData?.user
+      });
       throw new Error('Authentication failed');
     }
+
+    console.log('✅ USER AUTHENTICATED:', {
+      userId: userData.user.id,
+      email: userData.user.email
+    });
 
     const batchRequest: BatchRequest = await req.json();
     const operations = batchRequest.operations;
@@ -64,14 +74,40 @@ serve(async (req) => {
       .single();
 
     if (rundownError || !rundown) {
+      console.error('❌ RUNDOWN ERROR:', {
+        error: rundownError?.message,
+        rundownId: batchRequest.rundownId
+      });
       throw new Error('Rundown not found');
     }
 
+    console.log('📋 RUNDOWN LOADED:', {
+      rundownId: batchRequest.rundownId,
+      ownerId: rundown.user_id,
+      teamId: rundown.team_id,
+      operationModeEnabled: rundown.operation_mode_enabled
+    });
+
     // Check access permissions
-    const hasAccess = rundown.user_id === userData.user.id || 
-      (rundown.team_id && await checkTeamAccess(supabaseClient, userData.user.id, rundown.team_id));
+    const isOwner = rundown.user_id === userData.user.id;
+    const isTeamMember = rundown.team_id && await checkTeamAccess(supabaseClient, userData.user.id, rundown.team_id);
+    const hasAccess = isOwner || isTeamMember;
+
+    console.log('🔐 ACCESS CHECK:', {
+      userId: userData.user.id,
+      rundownOwnerId: rundown.user_id,
+      rundownTeamId: rundown.team_id,
+      isOwner,
+      isTeamMember,
+      hasAccess
+    });
 
     if (!hasAccess) {
+      console.error('❌ ACCESS DENIED:', {
+        userId: userData.user.id,
+        rundownId: batchRequest.rundownId,
+        reason: !isOwner ? 'Not owner' : 'Not team member'
+      });
       throw new Error('Access denied');
     }
 
