@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useOperationQueue, Operation } from './useOperationQueue';
 import { useOperationBroadcast } from './useOperationBroadcast';
 import { useSmartSaveIndicator } from './useSmartSaveIndicator';
-import { useUnifiedRealtimeReceiver } from './useUnifiedRealtimeReceiver';
-import { UnifiedOperationPayload } from './useUnifiedRealtimeBroadcast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OperationBasedRundownState {
@@ -80,115 +78,18 @@ export const useOperationBasedRundown = ({
     }
   });
 
-  // Refresh state from database (for coordination with structural operations)
-  const refreshFromDatabase = useCallback(async () => {
-    console.log('🔄 OT SYSTEM: Refreshing state from database');
-    
-    try {
-      const { data: rundownData, error } = await supabase
-        .from('rundowns')
-        .select('*')
-        .eq('id', rundownId)
-        .single();
-
-      if (error) {
-        console.error('❌ OT SYSTEM: Failed to refresh from database:', error);
-        return;
-      }
-
-      if (rundownData) {
-        console.log('✅ OT SYSTEM: State refreshed from database', {
-          itemCount: rundownData.items?.length || 0,
-          docVersion: rundownData.doc_version
-        });
-        
-        setState(prev => ({
-          ...prev,
-          items: rundownData.items || [],
-          title: rundownData.title,
-          lastSequence: rundownData.doc_version,
-          isLoading: false
-        }));
-      }
-    } catch (error) {
-      console.error('❌ OT SYSTEM: Error refreshing from database:', error);
-    }
-  }, [rundownId]);
-
-  // Set up operation broadcasting (for cell edits via OT)
+  // Set up operation broadcasting
   const { broadcastOperation } = useOperationBroadcast({
     rundownId,
     clientId,
     onRemoteOperation: (operation) => {
-      console.log('🎯 OT SYSTEM: Applying remote cell edit:', operation.id);
+      console.log('🎯 APPLYING REMOTE OPERATION:', operation.id);
       applyOperationToState(operation);
-    }
-  });
-
-  // Set up unified realtime receiver for ALL operation types
-  const { isConnected: isUnifiedConnected } = useUnifiedRealtimeReceiver({
-    rundownId,
-    clientId,
-    userId,
-    onCellEdit: (operation: UnifiedOperationPayload) => {
-      console.log('📝 UNIFIED RECEIVER: Cell edit from', operation.clientId);
-      // Convert to operation format and apply
-      const op = {
-        id: `${operation.clientId}-${operation.timestamp}`,
-        operationType: 'CELL_EDIT' as const,
-        operationData: operation.data,
-        clientId: operation.clientId,
-        userId: operation.userId,
-        timestamp: operation.timestamp,
-        sequenceNumber: operation.sequenceNumber
-      };
-      applyOperationToState(op);
-    },
-    onStructuralChange: (operation: UnifiedOperationPayload) => {
-      console.log('🏗️ UNIFIED RECEIVER: Structural change from', operation.clientId, {
-        type: operation.type,
-        data: operation.data
-      });
-      
-      // Apply structural change through OT system (no database refresh)
-      console.log('🔄 OT SYSTEM: Applying structural change via OT', {
-        operationType: operation.type,
-        hasData: !!operation.data
-      });
-      
-      // Convert unified payload to operation format
-      const op = {
-        id: `${operation.clientId}-${operation.timestamp}`,
-        operationType: operation.type, // Already mapped to OT type (ROW_INSERT, etc.)
-        operationData: operation.data?.operationData || operation.data,
-        clientId: operation.clientId,
-        userId: operation.userId,
-        timestamp: operation.timestamp,
-        sequenceNumber: operation.sequenceNumber
-      };
-      
-      applyOperationToState(op);
     }
   });
 
   // Apply operation to current state
   const applyOperationToState = useCallback((operation: any) => {
-    // Validate operation has required fields
-    if (!operation?.operationType) {
-      console.error('❌ OPERATION MISSING TYPE:', operation);
-      return;
-    }
-
-    // Validate operationData exists
-    if (!operation.operationData) {
-      console.error('❌ OPERATION MISSING DATA:', {
-        type: operation.operationType,
-        id: operation.id,
-        operation
-      });
-      return;
-    }
-    
     setState(currentState => {
       const newState = { ...currentState };
 
@@ -206,12 +107,6 @@ export const useOperationBasedRundown = ({
           break;
         
         case 'ROW_MOVE':
-          // Check if this is a bulk reorder operation (has 'order' array)
-          if (operation.operationData?.order && Array.isArray(operation.operationData.order)) {
-            console.log('🔄 Skipping bulk reorder operation (already coordinated):', operation.id);
-            // Skip bulk reorders - they were already applied via coordination
-            break;
-          }
           newState.items = applyRowMove(currentState.items, operation.operationData);
           break;
         
@@ -222,9 +117,6 @@ export const useOperationBasedRundown = ({
         case 'GLOBAL_EDIT':
           Object.assign(newState, operation.operationData);
           break;
-        
-        default:
-          console.warn('⚠️ Unknown operation type:', operation.operationType);
       }
 
       if (operation.sequenceNumber) {
@@ -290,11 +182,7 @@ export const useOperationBasedRundown = ({
       hasLoadedRef.current = true;
       currentRundownIdRef.current = rundownId;
 
-      // Mark as initialized BEFORE loading operations
-      hasLoadedRef.current = true;
-      currentRundownIdRef.current = rundownId;
-      
-      // Load any pending operations since last update (NOW state is initialized)
+      // Load any pending operations since last update (call directly to avoid dependency issues)
       try {
         const { data, error } = await supabase.functions.invoke('get-operations', {
           body: {
@@ -305,27 +193,8 @@ export const useOperationBasedRundown = ({
 
         if (data?.success && data.operations) {
           console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
-          
-          // Normalize operation type from database format to OT format
-          const normalizeOperationType = (dbType: string): string => {
-            const typeMap: Record<string, string> = {
-              'structural_add_row': 'ROW_INSERT',
-              'structural_delete_row': 'ROW_DELETE',
-              'structural_move_rows': 'ROW_MOVE',
-              'structural_copy_rows': 'ROW_COPY',
-              'structural_reorder': 'ROW_MOVE',
-              'structural_add_header': 'ROW_INSERT'
-            };
-            return typeMap[dbType] || dbType;
-          };
-          
-          // Apply operations one at a time to initialized state
           data.operations.forEach((operation: any) => {
-            const normalizedOp = {
-              ...operation,
-              operationType: normalizeOperationType(operation.operationType)
-            };
-            applyOperationToState(normalizedOp);
+            applyOperationToState(operation);
           });
         }
       } catch (opError) {
@@ -449,45 +318,19 @@ export const useOperationBasedRundown = ({
     if (!state.isOperationMode || fromIndex === toIndex) return;
 
     const itemId = state.items[fromIndex]?.id;
-    if (!itemId) {
-      console.error('Cannot move row: item not found at index', fromIndex);
-      return;
-    }
+    if (!itemId) return;
 
-    const optimisticOperation: Operation = {
-      id: `temp_${Date.now()}`,
-      operationType: 'ROW_MOVE',
-      operationData: { fromIndex, toIndex, itemId }, // Include itemId for robust application
-      rundownId,
-      userId,
-      clientId,
-      timestamp: Date.now(),
-      status: 'pending'
+    // Apply optimistically
+    const optimisticOperation = {
+      operationType: 'ROW_MOVE' as const,
+      operationData: { fromIndex, toIndex, itemId },
+      sequenceNumber: state.lastSequence + 1
     };
     applyOperationToState(optimisticOperation);
 
     // Queue for server
     operationQueue.rowMove(fromIndex, toIndex, itemId);
   }, [state.isOperationMode, state.lastSequence, state.items, operationQueue, applyOperationToState]);
-
-  const handleRowCopy = useCallback((sourceItemId: string, newItem: any, insertIndex: number) => {
-    if (!state.isOperationMode) return;
-
-    const optimisticOperation: Operation = {
-      id: `temp_${Date.now()}`,
-      operationType: 'ROW_COPY',
-      operationData: { sourceItemId, newItem, insertIndex },
-      rundownId,
-      userId,
-      clientId,
-      timestamp: Date.now(),
-      status: 'pending'
-    };
-    applyOperationToState(optimisticOperation);
-
-    // Queue for server
-    operationQueue.rowCopy(sourceItemId, newItem, insertIndex);
-  }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState, rundownId, userId, clientId]);
 
   const handleGlobalEdit = useCallback((field: string, newValue: any) => {
     if (!state.isOperationMode) return;
@@ -514,7 +357,6 @@ export const useOperationBasedRundown = ({
     handleRowInsert,
     handleRowDelete,
     handleRowMove,
-    handleRowCopy,
     handleGlobalEdit,
     
     // Queue status
@@ -535,18 +377,15 @@ export const useOperationBasedRundown = ({
     
     // Utils
     loadPendingOperations,
-    loadInitialState,
-    refreshFromDatabase // NEW: For structural operation coordination
+    loadInitialState
   };
 };
 
 // Helper functions (same as in apply-operation edge function)
 function applyCellEdit(items: any[], operationData: any): any[] {
-  if (!Array.isArray(items)) return [];
-  
   const { itemId, field, newValue } = operationData;
   
-  return items.filter(item => item).map(item => {
+  return items.map(item => {
     if (item.id === itemId) {
       return { ...item, [field]: newValue };
     }
@@ -555,111 +394,28 @@ function applyCellEdit(items: any[], operationData: any): any[] {
 }
 
 function applyRowInsert(items: any[], operationData: any): any[] {
-  if (!Array.isArray(items)) return [];
-  
   const { insertIndex, newItem } = operationData;
-  const cleanItems = items.filter(item => item);
-  const newItems = [...cleanItems];
+  const newItems = [...items];
   newItems.splice(insertIndex, 0, newItem);
   return newItems;
 }
 
 function applyRowDelete(items: any[], operationData: any): any[] {
-  if (!Array.isArray(items)) return [];
-  
   const { itemId } = operationData;
-  
-  console.log('🗑️ ROW_DELETE: Before deletion', {
-    itemId,
-    totalItems: items.length,
-    itemExists: items.some(item => item && item.id === itemId)
-  });
-  
-  const newItems = items.filter(item => item && item.id !== itemId);
-  
-  console.log('✅ ROW_DELETE APPLIED:', {
-    itemId,
-    itemsRemoved: items.length - newItems.length,
-    beforeCount: items.length,
-    afterCount: newItems.length
-  });
-  
-  return newItems;
+  return items.filter(item => item.id !== itemId);
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
-  // Validate operation data
-  if (!operationData || typeof operationData !== 'object') {
-    console.warn('⚠️ ROW_MOVE: Invalid operation data', operationData);
-    return items;
-  }
-
-  if (!Array.isArray(items)) {
-    console.warn('⚠️ ROW_MOVE: Invalid items - not an array', items);
-    return [];
-  }
-
-  // Handle both new format (itemId, toIndex) and legacy format (fromIndex, toIndex)
-  let { toIndex, itemId, fromIndex } = operationData;
-  
-  // If itemId is missing but fromIndex exists, try to get itemId from items array
-  if (itemId === undefined && fromIndex !== undefined) {
-    itemId = items[fromIndex]?.id;
-  }
-  
-  // Validate required fields
-  if (itemId === undefined || toIndex === undefined) {
-    console.error('❌ ROW_MOVE: Missing required fields', { 
-      itemId, 
-      toIndex, 
-      fromIndex,
-      hasOperationData: !!operationData,
-      operationDataKeys: Object.keys(operationData),
-      operationDataJSON: JSON.stringify(operationData, null, 2)
-    });
-    return items;
-  }
-
-  // Clean the items array first
-  const cleanItems = items.filter(item => item);
-  
-  if (cleanItems.length === 0) {
-    console.warn('⚠️ ROW_MOVE: Empty items array after cleaning');
-    return items;
-  }
-  
-  // Find item by ID for robustness
-  const currentIndex = cleanItems.findIndex(item => item.id === itemId);
-  
-  if (currentIndex === -1) {
-    console.warn('⚠️ ROW_MOVE: Item not found:', itemId);
-    return cleanItems;
-  }
-  
-  // If already at target position, no change needed
-  if (currentIndex === toIndex) {
-    return cleanItems;
-  }
-  
-  const newItems = [...cleanItems];
-  const [movedItem] = newItems.splice(currentIndex, 1);
+  const { fromIndex, toIndex } = operationData;
+  const newItems = [...items];
+  const [movedItem] = newItems.splice(fromIndex, 1);
   newItems.splice(toIndex, 0, movedItem);
-  
-  console.log('✅ ROW_MOVE APPLIED:', {
-    itemId,
-    from: currentIndex,
-    to: toIndex
-  });
-  
   return newItems;
 }
 
 function applyRowCopy(items: any[], operationData: any): any[] {
-  if (!Array.isArray(items)) return [];
-  
   const { sourceItemId, newItem, insertIndex } = operationData;
-  const cleanItems = items.filter(item => item);
-  const newItems = [...cleanItems];
+  const newItems = [...items];
   newItems.splice(insertIndex, 0, newItem);
   return newItems;
 }

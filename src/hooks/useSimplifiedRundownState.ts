@@ -344,13 +344,73 @@ export const useSimplifiedRundownState = () => {
               }
               break;
             }
-            case 'structural:reorder':
-            case 'structural:add_row':
-            case 'structural:delete_row':
+            case 'structural:reorder': {
+              // Handle new structural broadcast format
+              const operationData = update.value?.operationData;
+              const order: string[] = Array.isArray(operationData?.order) ? operationData.order : [];
+              console.log('📡 Received structural reorder broadcast:', { orderLength: order.length, userId: update.userId });
+              if (order.length > 0) {
+                const indexMap = new Map(order.map((id, idx) => [id, idx]));
+                const reordered = [...stateRef.current.items].sort((a, b) => {
+                  const ai = indexMap.has(a.id) ? (indexMap.get(a.id) as number) : Number.MAX_SAFE_INTEGER;
+                  const bi = indexMap.has(b.id) ? (indexMap.get(b.id) as number) : Number.MAX_SAFE_INTEGER;
+                  return ai - bi;
+                });
+                actionsRef.current.loadState({ items: reordered });
+                console.log('🎯 REAL-TIME REORDER: Applied structural reorder from user', update.userId, 'to', reordered.length, 'items');
+              }
+              break;
+            }
+            case 'structural:add_row': {
+              // Handle structural add row operations
+              const operationData = update.value?.operationData;
+              if (operationData?.items?.length > 0) {
+                console.log('📡 Received structural add_row broadcast - applying immediately:', { 
+                  totalItemsCount: operationData.items.length 
+                });
+                
+                // Apply the complete state from the broadcast immediately
+                actionsRef.current.loadState({ items: operationData.items });
+                
+                console.log('✅ Applied add_row broadcast:', {
+                  newCount: operationData.items.length
+                });
+              }
+              break;
+            }
+            case 'structural:delete_row': {
+              // Handle structural delete row operations
+              const operationData = update.value?.operationData;
+              if (operationData?.deletedIds?.length > 0) {
+                console.log('📡 Received structural delete_row broadcast - applying immediately:', { 
+                  deletedIdsCount: operationData.deletedIds.length 
+                });
+                
+                // Apply the deletion by filtering out deleted items
+                const deletedSet = new Set(operationData.deletedIds);
+                const newItems = stateRef.current.items.filter(item => !deletedSet.has(item.id));
+                actionsRef.current.loadState({ items: newItems });
+                
+                console.log('✅ Applied delete_row broadcast:', {
+                  beforeCount: stateRef.current.items.length,
+                  afterCount: newItems.length,
+                  deletedCount: operationData.deletedIds.length
+                });
+              }
+              break;
+            }
             case 'structural:copy_rows': {
-              // DISABLED: Structural operations now handled by operation queue system
-              // These broadcasts would conflict with the operation-based synchronization
-              console.log('⚠️ IGNORING STRUCTURAL BROADCAST (handled by operations):', update.field);
+              // Handle structural copy rows operations (paste)
+              const operationData = update.value?.operationData;
+              if (operationData?.newItems?.length > 0 && operationData?.items) {
+                console.log('📡 Received structural copy_rows broadcast - applying immediately:', { 
+                  newItemsCount: operationData.newItems.length,
+                  totalItemsCount: operationData.items.length 
+                });
+                
+                // Apply the complete state from the broadcast immediately
+                actionsRef.current.loadState({ items: operationData.items });
+              }
               break;
             }
             case 'items:add': {
@@ -638,17 +698,12 @@ export const useSimplifiedRundownState = () => {
   }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
 
   // Simplified handlers - enhanced for per-cell save coordination
-  const markStructuralChange = useCallback((operationType?: string, operationData?: any, overrideUserId?: string | null) => {
-    // Use override user ID if provided, otherwise fall back to internal state
-    const userIdToUse = overrideUserId || currentUserId;
-    
+  const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
     console.log('🏗️ markStructuralChange called', {
       perCellEnabled: Boolean(state.perCellSaveEnabled),
       rundownId,
       operationType,
-      operationData,
-      userIdToUse,
-      hadOverride: !!overrideUserId
+      operationData
     });
     
     // For per-cell save mode, structural operations need immediate save coordination
@@ -656,7 +711,7 @@ export const useSimplifiedRundownState = () => {
       console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
       
       // If we have operation details, use the per-cell coordination system
-      if (operationType && operationData && saveCoordination && userIdToUse) {
+      if (operationType && operationData && saveCoordination && currentUserId) {
         // CRITICAL: Use latestItemsRef to get current state for rapid operations
         const currentOperationData = {
           ...operationData,
@@ -666,17 +721,12 @@ export const useSimplifiedRundownState = () => {
         console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
           operationType,
           operationData: currentOperationData,
-          userIdToUse,
+          currentUserId,
           itemCount: latestItemsRef.current.length
         });
         saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
       } else {
-        console.log('🏗️ STRUCTURAL: Missing required parameters', {
-          hasOperationType: !!operationType,
-          hasOperationData: !!operationData,
-          hasSaveCoordination: !!saveCoordination,
-          hasUserId: !!userIdToUse
-        });
+        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
         // Fallback - just mark as saved for now
         setTimeout(() => {
           console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
@@ -752,35 +802,9 @@ export const useSimplifiedRundownState = () => {
           if (error) {
             console.error('Error loading rundown:', error);
           } else if (data) {
-            // Merge item_field_updates with items array
-            let itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
+            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
               ? data.items 
               : createDefaultRundownItems();
-            
-            // Apply field updates from item_field_updates JSONB column
-            if (data.item_field_updates && typeof data.item_field_updates === 'object') {
-              console.log('🧪 PER-CELL LOAD: Merging field updates into items', {
-                rundownId,
-                fieldUpdateCount: Object.keys(data.item_field_updates).length
-              });
-              
-              itemsToLoad = itemsToLoad.map(item => {
-                const fieldUpdates = (data.item_field_updates as Record<string, any>)[item.id];
-                if (fieldUpdates && typeof fieldUpdates === 'object') {
-                  // Merge field updates into item
-                  const mergedItem = { ...item };
-                  for (const [field, updateData] of Object.entries(fieldUpdates)) {
-                    if (updateData && typeof updateData === 'object' && 'value' in updateData) {
-                      mergedItem[field] = (updateData as any).value;
-                    }
-                  }
-                  return mergedItem;
-                }
-                return item;
-              });
-              
-              console.log('✅ PER-CELL LOAD: Field updates merged successfully');
-            }
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
@@ -851,29 +875,9 @@ export const useSimplifiedRundownState = () => {
       setLastSeenDocVersion(latestData.doc_version);
     }
     
-    // Merge item_field_updates with items array
-    let itemsToApply = latestData.items || [];
-    if (latestData.item_field_updates && typeof latestData.item_field_updates === 'object') {
-      console.log('🧪 PER-CELL REFRESH: Merging field updates into items');
-      
-      itemsToApply = itemsToApply.map((item: any) => {
-        const fieldUpdates = (latestData.item_field_updates as Record<string, any>)[item.id];
-        if (fieldUpdates && typeof fieldUpdates === 'object') {
-          const mergedItem = { ...item };
-          for (const [field, updateData] of Object.entries(fieldUpdates)) {
-            if (updateData && typeof updateData === 'object' && 'value' in updateData) {
-              mergedItem[field] = (updateData as any).value;
-            }
-          }
-          return mergedItem;
-        }
-        return item;
-      });
-    }
-    
     // Apply latest data - operations handle sync
     actions.loadState({
-      items: itemsToApply,
+      items: latestData.items || [],
       title: latestData.title,
       startTime: latestData.start_time,
       timezone: latestData.timezone,
@@ -1020,16 +1024,27 @@ export const useSimplifiedRundownState = () => {
       
       actions.deleteItem(id);
       
-      // Trigger structural save coordination - broadcasts via unified system
-      console.log('🟢 DELETE ROW: Calling markStructuralChange (unified broadcast)');
-      markStructuralChange('delete_row', { items: newItems, deletedIds: [id] }, currentUserId);
+      // For per-cell saves, use structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
+        // Pass updated items array, not just deleted IDs
+        markStructuralChange('delete_row', { items: newItems, deletedIds: [id] });
+      }
+      
+      // Broadcast row removal for immediate realtime sync
+      if (rundownId && currentUserId) {
+        cellBroadcast.broadcastCellUpdate(
+          rundownId,
+          undefined,
+          'items:remove',
+          { id },
+          currentUserId
+        );
+      }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
-      console.log('🟢🟢🟢 ADD ROW START - enhancedActions.addRow called with count:', count);
-      console.log('🟢🟢🟢 ADD ROW: Per-cell enabled?', cellEditIntegration.isPerCellEnabled);
-      console.log('🟢🟢🟢 ADD ROW: Has saveCoordination?', !!saveCoordination);
-      console.log('🟢🟢🟢 ADD ROW: Current userId?', currentUserId);
+      console.log('🟢 enhancedActions.addRow called with count:', count);
       saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
       
       // Determine insert index based on selection
@@ -1084,14 +1099,16 @@ export const useSimplifiedRundownState = () => {
       ];
       
       latestItemsRef.current = newItems;
-      console.log('🟢🟢🟢 ADD ROW: About to call actions.setItems with', newItems.length, 'items');
       actions.setItems(newItems);
-      console.log('🟢🟢🟢 ADD ROW: actions.setItems called successfully');
       
-      // Trigger structural save coordination - broadcasts via unified system
-      console.log('🟢 ADD ROW: Calling markStructuralChange (unified broadcast)');
-      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex }, currentUserId);
-    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, currentUserId, rundownId, saveCoordination]),
+      // Trigger structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
+        markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex });
+      }
+      
+      // Broadcasting handled by structural operations
+    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addHeader: useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
       console.log('🟢 enhancedActions.addHeader called');
@@ -1148,9 +1165,13 @@ export const useSimplifiedRundownState = () => {
       latestItemsRef.current = newItems;
       actions.setItems(newItems);
       
-      // Trigger structural save coordination - broadcasts via unified system
-      console.log('🟢 ADD HEADER: Calling markStructuralChange (unified broadcast)');
-      markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex }, currentUserId);
+      // Trigger structural save coordination
+      if (cellEditIntegration.isPerCellEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
+        markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex });
+      }
+      
+      // Broadcasting handled by structural operations
     }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
@@ -1257,9 +1278,22 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Trigger structural save coordination - broadcasts via unified system
-    console.log('🔵 ADD ROW AT INDEX: Calling markStructuralChange (unified broadcast)');
-    markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex }, currentUserId);
+    // Broadcast add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { items: newItemsToAdd, index: actualIndex },
+        currentUserId
+      );
+    }
+    
+    // For per-cell saves, use structural save coordination
+    if (cellEditIntegration.isPerCellEnabled) {
+      console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex });
+    }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
@@ -1298,9 +1332,22 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Trigger structural save coordination - broadcasts via unified system
-    console.log('🔵 ADD HEADER AT INDEX: Calling markStructuralChange (unified broadcast)');
-    markStructuralChange('add_header', { items: newItems, newItems: [newHeader], insertIndex: actualIndex }, currentUserId);
+    // Broadcast header add at index for immediate realtime sync
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(
+        rundownId,
+        undefined,
+        'items:add',
+        { item: newHeader, index: actualIndex },
+        currentUserId
+      );
+    }
+    
+    // For per-cell saves, use structural save coordination
+    if (cellEditIntegration.isPerCellEnabled) {
+      console.log('🧪 STRUCTURAL CHANGE: addHeaderAtIndex completed - triggering structural coordination');
+      markStructuralChange('add_header', { items: newItems, insertIndex: actualIndex });
+    }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
 

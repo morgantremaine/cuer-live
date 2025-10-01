@@ -14,7 +14,6 @@ interface UseRundownClipboardOperationsProps {
   clipboardItems: RundownItem[];
   copyItems: (items: RundownItem[]) => void;
   hasClipboardData: boolean;
-  // operationHandlers removed - all structural operations now go through state methods
 }
 
 // Helper function to update all header segment names based on their position
@@ -44,7 +43,6 @@ export const useRundownClipboardOperations = ({
   clipboardItems,
   copyItems,
   hasClipboardData
-  // operationHandlers removed - all structural operations now go through state methods
 }: UseRundownClipboardOperationsProps) => {
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
@@ -57,49 +55,73 @@ export const useRundownClipboardOperations = ({
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      console.log('🔄 PASTE OPERATION: Using structural save system', { 
-        itemCount: clipboardItems.length, 
-        targetRowId
-      });
+      console.log('Pasting items, targetRowId:', targetRowId);
+      console.log('Current items length:', items.length);
       
       let insertIndex: number;
       
       if (targetRowId) {
+        // Find the target row and insert after it
         const targetIndex = items.findIndex(item => item.id === targetRowId);
-        insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
+        if (targetIndex !== -1) {
+          insertIndex = targetIndex + 1;
+          console.log('Inserting at index:', insertIndex, 'after target row:', targetRowId);
+        } else {
+          // If target not found, insert at the end
+          insertIndex = items.length;
+          console.log('Target row not found, inserting at end:', insertIndex);
+        }
       } else {
+        // Fallback to selected rows logic if no target specified
         const selectedIds = Array.from(selectedRows);
         
         if (selectedIds.length > 0) {
+          // Find the indices of all selected rows
           const selectedIndices = selectedIds
-            .map(id => items.findIndex(item => item.id === id))
+            .map(id => {
+              const index = items.findIndex(item => item.id === id);
+              console.log(`Found item ${id} at index ${index}`);
+              return index;
+            })
             .filter(index => index !== -1);
           
           if (selectedIndices.length > 0) {
+            // Insert after the last selected item
             const highestSelectedIndex = Math.max(...selectedIndices);
             insertIndex = highestSelectedIndex + 1;
+            console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
           } else {
+            // If no valid selection found, insert at the end
             insertIndex = items.length;
+            console.log('No valid selection, inserting at end:', insertIndex);
           }
         } else {
+          // If no selection, insert at the end
           insertIndex = items.length;
+          console.log('No selection, inserting at end:', insertIndex);
         }
       }
 
-      // Route through state method - paste items
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
+      console.log('About to insert', itemsToPaste.length, 'items at index:', insertIndex);
+      
       setItems(prevItems => {
         const newItems = [...prevItems];
+        // Insert at the calculated position
         newItems.splice(insertIndex, 0, ...itemsToPaste);
+        
+        console.log('New items length after insert:', newItems.length);
+        
+        // Update header segment names for all headers in the correct order
         return updateHeaderSegmentNames(newItems);
       });
       
       markAsChanged();
-      
+      // Clear selection after successful paste
       setTimeout(() => clearSelection(), 0);
     }
   }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);

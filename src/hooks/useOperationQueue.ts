@@ -153,30 +153,6 @@ export const useOperationQueue = ({
           onOperationApplied?.(operation);
         });
 
-        // Broadcast operations via P2P channel for instant updates (matches cell edit speed)
-        try {
-          const channel = supabase.channel(`rundown-operations-${rundownId}`);
-          for (const operation of batch) {
-            await channel.send({
-              type: 'broadcast',
-              event: 'operation',
-              payload: {
-                type: 'operation_applied',
-                operation: {
-                  ...operation,
-                  sequenceNumber: Date.now(), // Will be replaced by actual sequence from DB
-                  appliedAt: new Date().toISOString()
-                },
-                rundownId
-              }
-            });
-            console.log('📡 BROADCASTED OPERATION VIA CHANNEL:', operation.id);
-          }
-        } catch (broadcastError) {
-          // Don't fail if broadcast fails - DB realtime is fallback
-          console.warn('⚠️ P2P BROADCAST FAILED (DB realtime will sync):', broadcastError);
-        }
-
         // Update last saved
         setLastSaved(new Date());
         setSaveError(null);

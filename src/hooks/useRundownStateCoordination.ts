@@ -13,8 +13,6 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
-// Structural operations are now handled by the structural save system
-// No need for operation handlers parameter
 export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
@@ -103,7 +101,7 @@ export const useRundownStateCoordination = () => {
     }
   };
 
-  // Add move up/down functions - route through state reorder which uses structural save
+  // Add move up/down functions for mobile context menu
   const moveItemUp = (index: number) => {
     console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
     if (index > 0) {
@@ -112,6 +110,7 @@ export const useRundownStateCoordination = () => {
       console.log('🔄 Moving item from', index, 'to', index - 1);
       persistedState.setItems(newItems);
       
+      // For per-cell saves, mark as saved after the structural operation
       const state = persistedState as any;
       if (state.perCellSaveEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
@@ -130,6 +129,7 @@ export const useRundownStateCoordination = () => {
       console.log('🔄 Moving item from', index, 'to', index + 1);
       persistedState.setItems(newItems);
       
+      // For per-cell saves, mark as saved after the structural operation
       const state = persistedState as any;
       if (state.perCellSaveEnabled) {
         console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
@@ -143,41 +143,26 @@ export const useRundownStateCoordination = () => {
   // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
-  // Setup drag and drop with structural change integration
+  // Setup drag and drop with structural change integration - initialized early
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Update items through persisted state - uses structural save
+      // Update items through persisted state
       persistedState.setItems(items);
       // Clear structural change flag after items are set
       setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
-    () => interactionsRef.current?.selectedRows || new Set<string>(),
-    undefined,
+    () => interactionsRef.current?.selectedRows || new Set<string>(), // Get selectedRows from interactions when available
+    undefined, // scrollContainerRef - placeholder for now
     persistedState.saveUndoState,
     persistedState.columns,
     persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
     persistedState.markStructuralChange,
-    persistedState.rundownId,
-    userId
-    // operationHandlers removed - drag and drop now uses state.setItems which routes through structural save
+    persistedState.rundownId, // Pass rundownId for broadcasts
+    userId // Pass userId for broadcasts
   );
-
-  // Wrapper for deleteRow that routes through proper save system
-  // CRITICAL: Use persistedState.deleteRow which calls handleStructuralOperation for per-cell mode
-  const deleteRowWrapper = (itemId: string) => {
-    console.log('🗑️ Routing deleteRow through structural save system:', itemId);
-    persistedState.deleteRow(itemId);
-  };
-
-  // Wrapper for deleteMultipleItems that routes through proper save system
-  // CRITICAL: Use persistedState.deleteMultipleItems which calls handleStructuralOperation for per-cell mode
-  const deleteMultipleItemsWrapper = (itemIds: string[]) => {
-    console.log('🗑️ Routing deleteMultipleItems through structural save system:', itemIds);
-    persistedState.deleteMultipleItems(itemIds);
-  };
 
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
@@ -216,9 +201,9 @@ export const useRundownStateCoordination = () => {
     persistedState.updateItem,
     persistedState.addRow,
     persistedState.addHeader,
-    deleteRowWrapper, // Use wrapper instead of direct call
+    persistedState.deleteRow,
     persistedState.toggleFloat,
-    deleteMultipleItemsWrapper, // Use wrapper instead of direct call
+    persistedState.deleteMultipleItems,
     addMultipleRows,
     (columnId: string) => {
       const newColumns = persistedState.columns.filter(col => col.id !== columnId);
@@ -256,7 +241,6 @@ export const useRundownStateCoordination = () => {
       handleDragEnd: dragAndDrop.handleDragEnd,
       resetDragState: dragAndDrop.resetDragState
     }
-    // operationHandlers removed - all structural operations now go through state methods
   );
 
   // Store interactions ref for drag and drop access
@@ -329,9 +313,9 @@ export const useRundownStateCoordination = () => {
       
       // Core actions (NO showcaller interference)
       updateItem: persistedState.updateItem,
-      deleteRow: deleteRowWrapper, // Use wrapper to route through operation system
+      deleteRow: persistedState.deleteRow,
       toggleFloatRow: persistedState.toggleFloat,
-      deleteMultipleItems: deleteMultipleItemsWrapper, // Use wrapper to route through operation system
+      deleteMultipleItems: persistedState.deleteMultipleItems,
       addItem: persistedState.addItem,
       setTitle: persistedState.setTitle,
       setStartTime: persistedState.setStartTime,

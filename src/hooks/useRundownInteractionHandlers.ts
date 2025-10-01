@@ -42,7 +42,6 @@ export const useRundownInteractionHandlers = (
     handleDragEnd: (e: React.DragEvent) => void;
     resetDragState: () => void;
   }
-  // operationHandlers removed - all structural operations now go through state methods
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -96,7 +95,6 @@ export const useRundownInteractionHandlers = (
     isPerCellEnabled,
     rundownId,
     currentUserId
-    // operationHandlers removed - all structural operations now go through state methods
   });
 
   return {

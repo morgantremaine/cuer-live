@@ -8,7 +8,6 @@ interface UseRundownRowOperationsProps {
   addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>, count?: number) => void;
   addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
-  // operationHandlers removed - all structural operations now go through state methods
 }
 
 export const useRundownRowOperations = ({
@@ -18,16 +17,10 @@ export const useRundownRowOperations = ({
   addRow,
   addHeader,
   calculateEndTime
-  // operationHandlers removed - all structural operations now go through state methods
 }: UseRundownRowOperationsProps) => {
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
-      console.log('🗑️ DELETE OPERATION: Using structural save system', { 
-        count: selectedIds.length
-      });
-      
-      // Route through state method which calls handleStructuralOperation
       deleteMultipleRows(selectedIds);
       clearSelection();
     }

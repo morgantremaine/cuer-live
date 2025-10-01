@@ -40,7 +40,6 @@ export const useRundownGridInteractions = (
     handleDragEnd: (e: React.DragEvent) => void;
     resetDragState: () => void;
   }
-  // operationHandlers removed - all structural operations now go through state methods
 ) => {
   const {
     selectedRows,
@@ -97,7 +96,6 @@ export const useRundownGridInteractions = (
     currentUserId,
     isPerCellEnabled,
     dragState // Pass the drag state from primary instance
-    // operationHandlers removed - all structural operations now go through state methods
   );
 
   return {

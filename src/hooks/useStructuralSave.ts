@@ -1,10 +1,9 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
+import { cellBroadcast } from '@/utils/cellBroadcast';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { useBroadcast, UnifiedOperationPayload, OperationType } from '@/contexts/BroadcastContext';
-import { v4 as uuidv4 } from 'uuid';
 
 interface StructuralOperationData {
   items?: RundownItem[];
@@ -21,7 +20,6 @@ interface StructuralOperation {
   operationData: StructuralOperationData;
   userId: string;
   timestamp: string;
-  clientId: string; // Track client ID for broadcast
 }
 
 export const useStructuralSave = (
@@ -31,14 +29,8 @@ export const useStructuralSave = (
   onUnsavedChanges?: () => void,
   currentUserId?: string
 ) => {
-  const { broadcast, instanceId } = useBroadcast();
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
-  const isUnloadingRef = useRef(false);
-  const lastSaveTimestampRef = useRef<number>(0);
-  const clientIdRef = useRef(uuidv4());
-
-  // Removed excessive initialization logging
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {
@@ -93,75 +85,33 @@ export const useStructuralSave = (
             console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
-          // CRITICAL: Use operation.userId (from when operation was queued) for broadcast
-          // This ensures we have the userId even if currentUserId prop changes
-          const broadcastUserId = operation.userId;
-          const broadcastClientId = operation.clientId;
-
-          console.log('🔍 STRUCTURAL: Checking broadcast prerequisites', {
-            hasRundownId: !!rundownId,
-            hasBroadcastUserId: !!broadcastUserId,
-            broadcastUserId,
-            broadcastClientId,
-            willBroadcast: !!(rundownId && broadcastUserId)
-          });
-
-          // Broadcast via unified system for real-time updates
-          if (rundownId && broadcastUserId) {
-            const operationTypeMap: Record<string, OperationType> = {
-              'add_row': 'ROW_INSERT',
-              'delete_row': 'ROW_DELETE',
-              'move_rows': 'ROW_MOVE',
-              'copy_rows': 'ROW_COPY',
-              'reorder': 'ROW_MOVE',
-              'add_header': 'ROW_INSERT'
-            };
-
-            const unifiedPayload: UnifiedOperationPayload = {
-              type: operationTypeMap[operation.operationType] || 'ROW_INSERT',
-              rundownId,
-              clientId: broadcastClientId,
-              userId: broadcastUserId,
-              timestamp: Date.now(),
-              sequenceNumber: data.docVersion,
-              data: {
-                operationType: operation.operationType,
-                operationData: operation.operationData,
-                docVersion: data.docVersion
-              }
+          // Broadcast structural change to other users for real-time updates
+          if (rundownId && currentUserId) {
+            const broadcastData = {
+              operationType: operation.operationType,
+              operationData: operation.operationData,
+              docVersion: data.docVersion,
+              timestamp: operation.timestamp
             };
             
-            console.log('📡 STRUCTURAL: Broadcasting via unified system', {
-              type: unifiedPayload.type,
+            console.log('📡 Broadcasting structural operation:', {
               operation: operation.operationType,
-              clientId: broadcastClientId,
-              userId: broadcastUserId
+              rundownId,
+              userId: currentUserId
             });
             
-            try {
-              await broadcast(unifiedPayload);
-              console.log('✅ STRUCTURAL: Broadcast sent successfully');
-            } catch (broadcastError) {
-              console.error('❌ STRUCTURAL: Broadcast failed:', broadcastError);
-            }
-          } else {
-            console.error('❌ STRUCTURAL: Cannot broadcast - missing prerequisites', {
-              hasRundownId: !!rundownId,
-              hasBroadcastUserId: !!broadcastUserId
-            });
+            cellBroadcast.broadcastCellUpdate(
+              rundownId,
+              undefined,
+              `structural:${operation.operationType}`,
+              broadcastData,
+              currentUserId
+            );
           }
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);
-        } else {
-          console.error('❌ STRUCTURAL SAVE: Edge function did not return success', {
-            data,
-            operation: operation.operationType
-          });
         }
       }
-      
-      // Track last successful save time to prevent stale flushes
-      lastSaveTimestampRef.current = Date.now();
       
       // Notify UI that save completed successfully
       console.log('🏗️ STRUCTURAL SAVE: Triggering onSaveComplete callback');
@@ -197,8 +147,7 @@ export const useStructuralSave = (
           sequenceNumber // Add sequence number for ordering
         },
         userId,
-        timestamp: new Date().toISOString(),
-        clientId: clientIdRef.current // Capture client ID at queue time
+        timestamp: new Date().toISOString()
       };
 
       console.log('🏗️ STRUCTURAL SAVE: Queuing operation', {
@@ -243,52 +192,6 @@ export const useStructuralSave = (
   const hasPendingOperations = useCallback((): boolean => {
     return pendingOperationsRef.current.length > 0;
   }, []);
-
-  // Flush pending operations before page unload to prevent data loss
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (pendingOperationsRef.current.length > 0) {
-        // Check if there was a recent save - if so, the debounce timer should handle it
-        const timeSinceLastSave = Date.now() - lastSaveTimestampRef.current;
-        if (timeSinceLastSave < 500) {
-          console.log('⏭️ Skipping beforeunload flush - recent save already completed:', timeSinceLastSave, 'ms ago');
-          return;
-        }
-        
-        console.log('🚨 Page unloading with pending operations, flushing...');
-        isUnloadingRef.current = true;
-        
-        // Cancel any pending timeout
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current);
-        }
-        
-        // Flush immediately (synchronous)
-        saveStructuralOperations();
-        
-        // Show browser warning
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      
-      // Cleanup on unmount - only flush if not recently saved
-      if (pendingOperationsRef.current.length > 0 && !isUnloadingRef.current) {
-        const timeSinceLastSave = Date.now() - lastSaveTimestampRef.current;
-        if (timeSinceLastSave < 500) {
-          console.log('⏭️ Skipping unmount flush - recent save already completed:', timeSinceLastSave, 'ms ago');
-          return;
-        }
-        console.log('🧹 Component unmounting with pending operations, flushing...');
-        saveStructuralOperations();
-      }
-    };
-  }, [saveStructuralOperations]);
 
   return {
     queueStructuralOperation,

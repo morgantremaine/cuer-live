@@ -179,40 +179,8 @@ async function checkTeamAccess(supabaseClient: any, userId: string, teamId: stri
 
 function applyOperationToRundown(rundown: any, operation: OperationData): any {
   const updatedRundown = { ...rundown };
-  
-  // Normalize operation type to handle both formats
-  // Handles: ROW_DELETE, structural_delete_row, delete_row, etc.
-  let normalizedType = operation.operationType.toUpperCase();
-  
-  // Remove common prefixes
-  normalizedType = normalizedType
-    .replace('STRUCTURAL_', '')
-    .replace('_ROW', '')
-    .replace('_ROWS', '');
-  
-  // Map to standard types
-  const typeMap: { [key: string]: string } = {
-    'DELETE': 'ROW_DELETE',
-    'ROWDELETE': 'ROW_DELETE',
-    'ADD': 'ROW_INSERT',
-    'ROWINSERT': 'ROW_INSERT',
-    'MOVE': 'ROW_MOVE',
-    'ROWMOVE': 'ROW_MOVE',
-    'REORDER': 'ROW_MOVE',
-    'COPY': 'ROW_COPY',
-    'ROWCOPY': 'ROW_COPY',
-    'CELLEDIT': 'CELL_EDIT'
-  };
-  
-  const finalType = typeMap[normalizedType] || normalizedType;
-  
-  console.log('🔄 Normalized operation type:', {
-    original: operation.operationType,
-    normalized: normalizedType,
-    final: finalType
-  });
 
-  switch (finalType) {
+  switch (operation.operationType) {
     case 'CELL_EDIT':
       updatedRundown.items = applyCellEdit(rundown.items, operation.operationData);
       break;
@@ -238,11 +206,7 @@ function applyOperationToRundown(rundown: any, operation: OperationData): any {
       break;
     
     default:
-      console.error('❌ Unknown operation type after normalization:', {
-        original: operation.operationType,
-        final: finalType
-      });
-      throw new Error(`Unknown operation type: ${operation.operationType} (normalized to ${finalType})`);
+      throw new Error(`Unknown operation type: ${operation.operationType}`);
   }
 
   return updatedRundown;
@@ -268,51 +232,14 @@ function applyRowInsert(items: any[], operationData: any): any[] {
 
 function applyRowDelete(items: any[], operationData: any): any[] {
   const { itemId } = operationData;
-  
-  console.log('🗑️ EDGE: ROW_DELETE Before', {
-    itemId,
-    totalItems: items.length,
-    itemExists: items.some(item => item.id === itemId)
-  });
-  
-  const newItems = items.filter(item => item.id !== itemId);
-  
-  console.log('✅ EDGE: ROW_DELETE Applied', {
-    itemId,
-    itemsRemoved: items.length - newItems.length,
-    beforeCount: items.length,
-    afterCount: newItems.length
-  });
-  
-  return newItems;
+  return items.filter(item => item.id !== itemId);
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
-  const { toIndex, itemId } = operationData;
-  
-  // Find item by ID for robustness
-  const currentIndex = items.findIndex(item => item.id === itemId);
-  
-  if (currentIndex === -1) {
-    console.warn('⚠️ ROW_MOVE: Item not found:', itemId);
-    return items;
-  }
-  
-  // If already at target position, no change needed
-  if (currentIndex === toIndex) {
-    return items;
-  }
-  
+  const { fromIndex, toIndex } = operationData;
   const newItems = [...items];
-  const [movedItem] = newItems.splice(currentIndex, 1);
+  const [movedItem] = newItems.splice(fromIndex, 1);
   newItems.splice(toIndex, 0, movedItem);
-  
-  console.log('✅ ROW_MOVE APPLIED:', {
-    itemId,
-    from: currentIndex,
-    to: toIndex
-  });
-  
   return newItems;
 }
 

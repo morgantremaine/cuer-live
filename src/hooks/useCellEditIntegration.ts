@@ -51,18 +51,10 @@ export const useCellEditIntegration = ({
   // Get the coordinated save system (per-cell saves are always enabled)
   const { trackFieldChange, hasUnsavedChanges } = usePerCellSaveCoordination({
     rundownId,
-    currentUserId: user?.id, // ✅ CRITICAL: Pass userId for broadcasts to work
     onSaveComplete: () => {
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
-      
-      // Refresh OT system state after structural operations
-      if (operationSystem.isOperationMode && operationSystem.refreshFromDatabase) {
-        console.log('🔄 CELL EDIT INTEGRATION: Refreshing OT state after structural save');
-        operationSystem.refreshFromDatabase();
-      }
-      
       if (onSaveComplete) {
         onSaveComplete();
       }
@@ -190,9 +182,5 @@ export const useCellEditIntegration = ({
     operationSystemSaving: operationSystem.isSaving,
     operationSystemUnsaved: operationSystem.hasUnsavedChanges,
     operationLastSaved: operationSystem.lastSaved
-    
-    // NOTE: Structural operation handlers removed - all structural operations
-    // (delete, insert, move, copy) now go through the structural save system
-    // via handleStructuralOperation in usePerCellSaveCoordination
   };
 };

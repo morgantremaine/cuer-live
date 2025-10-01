@@ -6,14 +6,11 @@ import Blueprint from '@/pages/Blueprint';
 import CameraPlotEditor from '@/pages/CameraPlotEditor';
 import Teleprompter from '@/pages/Teleprompter';
 import { CellUpdateProvider } from '@/contexts/CellUpdateContext';
-import { BroadcastProvider } from '@/contexts/BroadcastContext';
-import { useAuth } from '@/hooks/useAuth';
 
 const RundownWithTabs = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   
   
   // Determine active tab from URL path
@@ -55,41 +52,35 @@ const RundownWithTabs = () => {
     return <div>No rundown ID provided</div>;
   }
 
-  if (!user?.id) {
-    return <div>Loading user data...</div>;
-  }
-
   return (
     <CellUpdateProvider>
-      <BroadcastProvider rundownId={id} userId={user.id}>
-        <div className="min-h-screen">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-            {/* Hidden tabs list - navigation happens through other UI elements */}
-            <TabsList className="hidden">
-              <TabsTrigger value="rundown">Rundown</TabsTrigger>
-              <TabsTrigger value="blueprint">Blueprint</TabsTrigger>
-              <TabsTrigger value="camera-plot-editor">Camera Plot Editor</TabsTrigger>
-              <TabsTrigger value="teleprompter">Teleprompter</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="rundown" className="flex-1 mt-0">
-              <RundownIndexContent />
-            </TabsContent>
-            
-            <TabsContent value="blueprint" className="flex-1 mt-0">
-              <Blueprint />
-            </TabsContent>
-            
-            <TabsContent value="camera-plot-editor" className="flex-1 mt-0">
-              <CameraPlotEditor />
-            </TabsContent>
-            
-            <TabsContent value="teleprompter" className="flex-1 mt-0">
-              <Teleprompter />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </BroadcastProvider>
+      <div className="min-h-screen">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+          {/* Hidden tabs list - navigation happens through other UI elements */}
+          <TabsList className="hidden">
+            <TabsTrigger value="rundown">Rundown</TabsTrigger>
+            <TabsTrigger value="blueprint">Blueprint</TabsTrigger>
+            <TabsTrigger value="camera-plot-editor">Camera Plot Editor</TabsTrigger>
+            <TabsTrigger value="teleprompter">Teleprompter</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="rundown" className="flex-1 mt-0">
+            <RundownIndexContent />
+          </TabsContent>
+          
+          <TabsContent value="blueprint" className="flex-1 mt-0">
+            <Blueprint />
+          </TabsContent>
+          
+          <TabsContent value="camera-plot-editor" className="flex-1 mt-0">
+            <CameraPlotEditor />
+          </TabsContent>
+          
+          <TabsContent value="teleprompter" className="flex-1 mt-0">
+            <Teleprompter />
+          </TabsContent>
+        </Tabs>
+      </div>
     </CellUpdateProvider>
   );
 };

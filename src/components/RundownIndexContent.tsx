@@ -22,33 +22,6 @@ import '@/utils/timingValidationTest';
 const RundownIndexContent = () => {
   const cellRefs = useRef<{ [key: string]: HTMLInputElement | HTMLTextAreaElement }>({});
   
-  // CRITICAL FIX: Get cell edit integration and operation handlers FIRST
-  // This must happen before useRundownStateCoordination so the handlers are available
-  
-  // We need rundownId for cell edit integration, but we'll get it from a simpler source
-  // Extract just what we need for the initial setup
-  const [rundownIdForIntegration, setRundownIdForIntegration] = useState<string | null>(null);
-  
-  // Get save state from cell edit integration
-  const { 
-    handleCellChange, 
-    saveState: cellSaveState, 
-    handleKeystroke
-  } = useCellEditIntegration({
-    rundownId: rundownIdForIntegration,
-    isPerCellEnabled: true,
-    onSaveComplete: () => {
-      console.log('💾 RUNDOWN INDEX: Cell save completed');
-    },
-    onSaveStart: () => {
-      console.log('💾 RUNDOWN INDEX: Cell save started');
-    },
-    onUnsavedChanges: () => {
-      console.log('⚠️ RUNDOWN INDEX: Unsaved changes detected');
-    }
-  });
-  
-  // Get rundown state coordination (no operation handlers needed)
   const {
     coreState,
     interactions,
@@ -118,22 +91,21 @@ const RundownIndexContent = () => {
 
   // Get team data for column deletion
   const { team } = useTeam();
-  
-  // Update rundownIdForIntegration when rundownId is available
-  useEffect(() => {
-    if (rundownId && rundownId !== rundownIdForIntegration) {
-      setRundownIdForIntegration(rundownId);
-    }
-  }, [rundownId, rundownIdForIntegration]);
-  
-  // OT handlers connected - removed verbose logging
 
-  // Merge cell save state with structural save state for complete save indicator
-  const saveState = {
-    ...cellSaveState,
-    isSaving: cellSaveState.isSaving || isSaving,
-    hasUnsavedChanges: cellSaveState.hasUnsavedChanges || hasUnsavedChanges
-  };
+  // Add cell edit integration for operation system
+  const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
+    rundownId,
+    isPerCellEnabled: true,
+    onSaveComplete: () => {
+      console.log('💾 RUNDOWN INDEX: Operation system save completed');
+    },
+    onSaveStart: () => {
+      console.log('💾 RUNDOWN INDEX: Operation system save started');
+    },
+    onUnsavedChanges: () => {
+      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
+    }
+  });
 
   // Only log significant changes, not every render
   const prevItemsCount = useRef(items?.length || 0);

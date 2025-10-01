@@ -3,7 +3,6 @@ import { RundownState } from './useRundownState';
 import { useCellLevelSave } from './useCellLevelSave';
 import { useStructuralSave } from './useStructuralSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
-import { useUnifiedRealtimeBroadcast } from './useUnifiedRealtimeBroadcast';
 import { debugLogger } from '@/utils/debugLogger';
 import { RundownItem } from '@/types/rundown';
 
@@ -29,19 +28,9 @@ export const usePerCellSaveCoordination = ({
   typingIdleMs
 }: PerCellSaveOptions) => {
   const lastSavedStateRef = useRef<RundownState | null>(null);
-  const clientIdRef = useRef(crypto.randomUUID());
 
   // Coordination system for managing concurrent operations
   const coordination = useCellUpdateCoordination();
-
-  // ✅ CENTRALIZED BROADCAST: Single source of truth for all operations
-  const { broadcastOperation, isConnected, instanceId } = useUnifiedRealtimeBroadcast({
-    rundownId: rundownId || '',
-    clientId: clientIdRef.current,
-    userId: currentUserId
-  });
-
-  // Removed excessive initialization logging
 
   // Cell-level save system without typing awareness (operations handle sync)
   const {
@@ -50,7 +39,7 @@ export const usePerCellSaveCoordination = ({
     hasPendingUpdates: hasPendingCellUpdates
   } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, undefined, saveInProgressRef, typingIdleMs);
 
-  // Structural save system for row operations - pass centralized broadcast
+  // Structural save system for row operations
   const {
     queueStructuralOperation,
     flushPendingOperations: flushStructuralOperations,

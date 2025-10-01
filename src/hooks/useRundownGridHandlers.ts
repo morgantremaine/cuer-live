@@ -29,7 +29,6 @@ interface UseRundownGridHandlersProps {
   isPerCellEnabled?: boolean;
   rundownId?: string | null;
   currentUserId?: string | null;
-  // operationHandlers removed - all structural operations now go through state methods
 }
 
 export const useRundownGridHandlers = ({
@@ -59,7 +58,6 @@ export const useRundownGridHandlers = ({
   isPerCellEnabled,
   rundownId,
   currentUserId
-  // operationHandlers removed - all structural operations now go through state methods
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -133,43 +131,36 @@ export const useRundownGridHandlers = ({
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
-      console.log('🗑️ DELETE OPERATION: Using structural save system', {
-        count: selectedIds.length
-      });
-      
-      // Route through state method which calls handleStructuralOperation
       deleteMultipleRows(selectedIds);
       clearSelection();
     }
   }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
-    console.log('🎯 PASTE: Using structural save system', { 
-      targetRowId, 
-      clipboardCount: clipboardItems.length
-    });
+    console.log('🎯 PASTE: handlePasteRows called', { targetRowId, clipboardCount: clipboardItems.length, isPerCellEnabled, hasMarkStructuralChange: !!markStructuralChange });
     
     if (clipboardItems.length > 0) {
       debugLogger.grid('Grid handlers: pasting with targetRowId:', targetRowId);
       
-      let insertIndex: number;
-      
-      if (targetRowId) {
-        const targetIndex = items.findIndex(item => item.id === targetRowId);
-        insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
-      } else {
-        insertIndex = items.length;
-      }
-      
-      console.log('🎯 PASTE: Inserting', clipboardItems.length, 'items at index', insertIndex);
-      
-      // Route through state method - paste items
       const itemsToPaste = clipboardItems.map(item => ({
         ...item,
         id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }));
       
+      let insertIndex: number;
       let newItems: RundownItem[];
+      
+      if (targetRowId) {
+        // Find the target row and insert after it
+        const targetIndex = items.findIndex(item => item.id === targetRowId);
+        insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
+      } else {
+        // Fallback to end if no target specified
+        insertIndex = items.length;
+      }
+      
+      console.log('🎯 PASTE: Inserting', itemsToPaste.length, 'items at index', insertIndex);
+      
       setItems(prevItems => {
         newItems = [...prevItems];
         newItems.splice(insertIndex, 0, ...itemsToPaste);
@@ -178,19 +169,21 @@ export const useRundownGridHandlers = ({
       
       markAsChanged();
       
-      // Trigger structural save coordination if available
-      if (markStructuralChange && newItems!) {
-        console.log('🧪 STRUCTURAL CHANGE: Paste completed');
+      // Always trigger structural save coordination if available
+      if (markStructuralChange && newItems) {
+        console.log('🧪 STRUCTURAL CHANGE: Paste completed - triggering structural coordination');
         markStructuralChange('copy_rows', { 
-          items: newItems!, 
+          items: newItems, 
           newItems: itemsToPaste, 
           insertIndex 
         });
+      } else {
+        console.log('⚠️ PASTE: No markStructuralChange available, paste will not save to database');
       }
-      
-      clearSelection();
+    } else {
+      console.log('⚠️ PASTE: No items in clipboard');
     }
-  }, [clipboardItems, items, setItems, markAsChanged, clearSelection, markStructuralChange]);
+  }, [clipboardItems, items, setItems, markAsChanged, isPerCellEnabled, markStructuralChange, rundownId, currentUserId]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);

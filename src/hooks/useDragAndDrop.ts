@@ -26,12 +26,6 @@ interface DragInfo {
   originalIndex: number;
 }
 
-interface OperationHandlers {
-  handleRowMove: (fromIndex: number, toIndex: number) => void;
-  handleRowInsert?: (insertIndex: number, newItem: any) => void;
-  handleRowDelete?: (itemId: string) => void;
-}
-
 export const useDragAndDrop = (
   items: RundownItem[], 
   setItems: (items: RundownItem[]) => void,
@@ -45,7 +39,6 @@ export const useDragAndDrop = (
   markStructuralChange?: () => void,
   rundownId?: string | null,
   currentUserId?: string | null
-  // operationHandlers removed - all structural operations now go through state methods
 ) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null);
@@ -418,18 +411,55 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Handle reorder via structural coordination system (unified broadcast)
+      // Handle reorder via structural coordination if available
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder (unified broadcast) with userId:', currentUserId);
+        console.log('🏗️ Triggering structural operation for reorder');
         
-        // Call structural change handler with reorder operation AND current user ID
-        (markStructuralChange as any)('reorder', { 
-          items: newItems,
-          order 
-        }, currentUserId);
+        // Call structural change handler with reorder operation
+        try {
+          // Pass complete items array along with order for per-cell save mode
+          (markStructuralChange as any)('reorder', { 
+            items: newItems,  // CRITICAL: Include complete items array for per-cell mode
+            order 
+          });
+        } catch (error) {
+          // Fallback to just marking structural change
+          markStructuralChange();
+          console.log('📡 Broadcasting reorder fallback:', {
+            rundownId,
+            orderLength: order.length,
+            userId: currentUserId
+          });
+          if (rundownId && currentUserId) {
+            cellBroadcast.broadcastCellUpdate(
+              rundownId,
+              undefined,
+              'items:reorder',
+              { order },
+              currentUserId
+            );
+          }
+        }
       } else {
-        console.warn('⚠️ No markStructuralChange handler available for reorder');
+        // Original broadcast fallback
+        if (rundownId && currentUserId) {
+          const order = newItems.map(item => item.id);
+          console.log('📡 Broadcasting reorder:', {
+            rundownId,
+            orderLength: order.length,
+            userId: currentUserId
+          });
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
+        } else {
+          console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
+        }
       }
       
     } catch (error) {
