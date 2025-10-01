@@ -36,9 +36,23 @@ export const useOperationBroadcast = ({
   // Handle incoming operation broadcasts - memoized with stable dependencies
   const handleOperationBroadcast = useCallback((payload: any) => {
     console.log('📡 RECEIVED BROADCAST:', payload);
+    console.log('🔍 BROADCAST DEBUG:', {
+      payloadType: payload.type,
+      expectedType: 'operation_applied',
+      payloadRundownId: payload.rundownId,
+      expectedRundownId: rundownId,
+      typeMatch: payload.type === 'operation_applied',
+      rundownMatch: payload.rundownId === rundownId,
+      hasOperation: !!payload.operation,
+      operationClientId: payload.operation?.clientId,
+      currentClientId: clientId,
+      willIgnore: payload.operation?.clientId === clientId
+    });
 
     if (payload.type === 'operation_applied' && payload.rundownId === rundownId) {
       const operation = payload.operation as RemoteOperation;
+      
+      console.log('✅ BROADCAST PASSED INITIAL CHECKS');
       
       // Ignore operations from our own client
       if (operation.clientId === clientId) {
@@ -53,14 +67,23 @@ export const useOperationBroadcast = ({
         sequence: operation.sequenceNumber
       });
 
+      console.log('🔍 CALLBACK STATUS:', {
+        hasOnRemoteOperation: !!onRemoteOperationRef.current,
+        hasOnOperationApplied: !!onOperationAppliedRef.current
+      });
+
       // Use refs to avoid dependency issues
       if (onRemoteOperationRef.current) {
+        console.log('📞 CALLING onRemoteOperation');
         onRemoteOperationRef.current(operation);
       }
 
       if (onOperationAppliedRef.current) {
+        console.log('📞 CALLING onOperationApplied');
         onOperationAppliedRef.current(operation);
       }
+    } else {
+      console.log('❌ BROADCAST FAILED CHECKS - NOT PROCESSING');
     }
   }, [rundownId, clientId]); // Removed callback dependencies
 
