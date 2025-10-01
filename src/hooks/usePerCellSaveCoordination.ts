@@ -35,7 +35,7 @@ export const usePerCellSaveCoordination = ({
   const coordination = useCellUpdateCoordination();
 
   // ✅ CENTRALIZED BROADCAST: Single source of truth for all operations
-  const { broadcastOperation } = useUnifiedRealtimeBroadcast({
+  const { broadcastOperation, isConnected, instanceId } = useUnifiedRealtimeBroadcast({
     rundownId: rundownId || '',
     clientId: clientIdRef.current,
     userId: currentUserId
@@ -44,7 +44,9 @@ export const usePerCellSaveCoordination = ({
   console.log('🎯 COORDINATION: Unified broadcast initialized', {
     rundownId,
     userId: currentUserId,
-    clientId: clientIdRef.current
+    clientId: clientIdRef.current,
+    instanceId,
+    isConnected
   });
 
   // Cell-level save system without typing awareness (operations handle sync)
