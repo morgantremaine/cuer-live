@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useOperationQueue, Operation } from './useOperationQueue';
 import { useOperationBroadcast } from './useOperationBroadcast';
 import { useSmartSaveIndicator } from './useSmartSaveIndicator';
+import { useUnifiedRealtimeReceiver } from './useUnifiedRealtimeReceiver';
+import { UnifiedOperationPayload } from './useUnifiedRealtimeBroadcast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OperationBasedRundownState {
@@ -78,14 +80,81 @@ export const useOperationBasedRundown = ({
     }
   });
 
-  // Set up operation broadcasting
+  // Refresh state from database (for coordination with structural operations)
+  const refreshFromDatabase = useCallback(async () => {
+    console.log('🔄 OT SYSTEM: Refreshing state from database');
+    
+    try {
+      const { data: rundownData, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', rundownId)
+        .single();
+
+      if (error) {
+        console.error('❌ OT SYSTEM: Failed to refresh from database:', error);
+        return;
+      }
+
+      if (rundownData) {
+        console.log('✅ OT SYSTEM: State refreshed from database', {
+          itemCount: rundownData.items?.length || 0,
+          docVersion: rundownData.doc_version
+        });
+        
+        setState(prev => ({
+          ...prev,
+          items: rundownData.items || [],
+          title: rundownData.title,
+          lastSequence: rundownData.doc_version,
+          isLoading: false
+        }));
+      }
+    } catch (error) {
+      console.error('❌ OT SYSTEM: Error refreshing from database:', error);
+    }
+  }, [rundownId]);
+
+  // Set up operation broadcasting (for cell edits via OT)
   const { broadcastOperation } = useOperationBroadcast({
     rundownId,
     clientId,
     onRemoteOperation: (operation) => {
-      console.log('🎯 APPLYING REMOTE OPERATION:', operation.id);
+      console.log('🎯 OT SYSTEM: Applying remote cell edit:', operation.id);
       applyOperationToState(operation);
     }
+  });
+
+  // Set up unified realtime receiver for ALL operation types
+  const { isConnected: isUnifiedConnected } = useUnifiedRealtimeReceiver({
+    rundownId,
+    clientId,
+    userId,
+    onCellEdit: (operation: UnifiedOperationPayload) => {
+      console.log('📝 UNIFIED RECEIVER: Cell edit from', operation.clientId);
+      // Convert to operation format and apply
+      const op = {
+        id: `${operation.clientId}-${operation.timestamp}`,
+        operationType: 'CELL_EDIT' as const,
+        operationData: operation.data,
+        clientId: operation.clientId,
+        userId: operation.userId,
+        timestamp: operation.timestamp,
+        sequenceNumber: operation.sequenceNumber
+      };
+      applyOperationToState(op);
+    },
+    onStructuralChange: (operation: UnifiedOperationPayload) => {
+      console.log('🏗️ UNIFIED RECEIVER: Structural change from', operation.clientId, {
+        type: operation.type,
+        data: operation.data
+      });
+      
+      // Refresh from database after structural change
+      console.log('🔄 OT SYSTEM: Refreshing state after remote structural change');
+      refreshFromDatabase();
+    },
+    enabled: enabled
   });
 
   // Apply operation to current state
@@ -407,41 +476,6 @@ export const useOperationBasedRundown = ({
     // Queue for server
     operationQueue.globalEdit(field, newValue);
   }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState]);
-
-  // Refresh state from database (for coordination with structural operations)
-  const refreshFromDatabase = useCallback(async () => {
-    console.log('🔄 OT SYSTEM: Refreshing state from database');
-    
-    try {
-      const { data: rundownData, error } = await supabase
-        .from('rundowns')
-        .select('*')
-        .eq('id', rundownId)
-        .single();
-
-      if (error) {
-        console.error('❌ OT SYSTEM: Failed to refresh from database:', error);
-        return;
-      }
-
-      if (rundownData) {
-        console.log('✅ OT SYSTEM: State refreshed from database', {
-          itemCount: rundownData.items?.length || 0,
-          docVersion: rundownData.doc_version
-        });
-        
-        setState(prev => ({
-          ...prev,
-          items: rundownData.items || [],
-          title: rundownData.title,
-          lastSequence: rundownData.doc_version,
-          isLoading: false
-        }));
-      }
-    } catch (error) {
-      console.error('❌ OT SYSTEM: Error refreshing from database:', error);
-    }
-  }, [rundownId]);
 
   return {
     // State
