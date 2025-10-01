@@ -110,6 +110,15 @@ export const useStructuralSave = (
             console.log('🏷️ Tracked own update via centralized tracker:', data.updatedAt);
           }
 
+          // Debug: Check broadcast prerequisites
+          console.log('🔍 STRUCTURAL: Checking broadcast prerequisites', {
+            hasRundownId: !!rundownId,
+            hasCurrentUserId: !!currentUserId,
+            rundownId,
+            currentUserId,
+            willBroadcast: !!(rundownId && currentUserId)
+          });
+
           // Broadcast via unified system for real-time updates
           if (rundownId && currentUserId) {
             const operationTypeMap: Record<string, OperationType> = {
