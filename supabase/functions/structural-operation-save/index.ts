@@ -87,57 +87,36 @@ serve(async (req) => {
     let updatedItems: any[];
     let actionDescription = '';
 
-    // In per-cell mode, client is source of truth for full state
-    if (isPerCellEnabled && operation.operationData.items) {
-      console.log('🔄 Per-cell mode: Using client items array as source of truth', {
+    // Determine if we should use client state or database state
+    // REORDER operations: use client's full array (client knows the new order)
+    // ADD/DELETE operations: use database state + delta (to avoid overwriting concurrent changes)
+    const shouldUseClientState = isPerCellEnabled && 
+                                   operation.operationData.items && 
+                                   operation.operationType === 'reorder';
+    
+    if (shouldUseClientState) {
+      console.log('🔄 Per-cell REORDER: Using client items array as source of truth', {
         clientItemCount: operation.operationData.items.length,
         databaseItemCount: currentRundown.items?.length || 0
       });
-      updatedItems = [...operation.operationData.items];
+      updatedItems = operation.operationData.items;
     } else {
-      // Delta mode: fetch from database and apply incremental changes
-      console.log('📊 Delta mode: Using database state and applying delta', {
-        databaseItemCount: currentRundown.items?.length || 0
+      // Use database state and apply delta (for add/delete) or just use database state (delta mode)
+      console.log('📊 Using database state and applying operation delta', {
+        operationType: operation.operationType,
+        databaseItemCount: currentRundown.items?.length || 0,
+        perCellMode: isPerCellEnabled
       });
       updatedItems = [...(currentRundown.items || [])];
     }
 
     // Apply the structural operation
-    if (isPerCellEnabled && operation.operationData.items) {
-      // In per-cell mode with client items: already have the complete state
-      // Just need to set the action description for logging
-      switch (operation.operationType) {
-        case 'add_row':
-        case 'add_header':
-          actionDescription = `Added ${operation.operationData.newItems?.length || 0} item(s)`;
-          console.log(`🔄 Per-cell: Client provided complete state after adding items`);
-          break;
-
-        case 'delete_row':
-          actionDescription = `Deleted ${operation.operationData.deletedIds?.length || 0} item(s)`;
-          console.log(`🔄 Per-cell: Client provided complete state after deleting items`);
-          break;
-
-        case 'reorder':
-        case 'move_rows':
-          actionDescription = 'Reordered items';
-          console.log(`🔄 Per-cell: Client provided complete state after reordering`);
-          break;
-
-        case 'copy_rows':
-          actionDescription = `Copied ${operation.operationData.newItems?.length || 0} item(s)`;
-          console.log(`🔄 Per-cell: Client provided complete state after copying`);
-          break;
-
-        default:
-          console.warn('🚨 Unknown operation type:', operation.operationType);
-          return new Response(
-            JSON.stringify({ error: 'Unknown operation type' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-      }
+    if (shouldUseClientState) {
+      // Reorder with client state: already have the complete reordered state
+      actionDescription = 'Reordered items';
+      console.log(`🔄 Per-cell REORDER: Using complete client state`);
     } else {
-      // Delta mode: apply incremental changes to database state
+      // Apply delta operations to database state
       switch (operation.operationType) {
         case 'add_row':
         case 'add_header':

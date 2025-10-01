@@ -81,10 +81,12 @@ export const useRundownItems = (
       // Handle via coordination system if available
       if (handleStructuralOperation) {
         console.log('🔵 Calling handleStructuralOperation with', newItemsToAdd.length, 'new items');
+        // CRITICAL: For add_row, only send delta (newItems + insertIndex)
+        // Let edge function apply to fresh database state to avoid overwriting concurrent changes
         handleStructuralOperation('add_row', {
-          items: newItems, // Pass complete items array for database save
           newItems: newItemsToAdd,
           insertIndex
+          // DO NOT send full items array - would overwrite concurrent reorders with stale state
         });
       }
       
@@ -158,9 +160,11 @@ export const useRundownItems = (
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
+        // CRITICAL: For delete_row, only send deletedIds
+        // Let edge function apply to fresh database state to avoid overwriting concurrent changes
         handleStructuralOperation('delete_row', {
-          items: newItems, // Pass complete items array for database save
           deletedIds: [id]
+          // DO NOT send full items array - would overwrite concurrent reorders with stale state
         });
       }
       
@@ -175,9 +179,11 @@ export const useRundownItems = (
       
       // Handle via coordination system if available
       if (handleStructuralOperation) {
+        // CRITICAL: For delete_row, only send deletedIds
+        // Let edge function apply to fresh database state to avoid overwriting concurrent changes
         handleStructuralOperation('delete_row', {
-          items: newItems, // Pass complete items array for database save
           deletedIds: ids
+          // DO NOT send full items array - would overwrite concurrent reorders with stale state
         });
       }
       
