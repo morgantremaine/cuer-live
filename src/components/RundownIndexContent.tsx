@@ -127,17 +127,7 @@ const RundownIndexContent = () => {
     }
   }, [rundownId, rundownIdForIntegration]);
   
-  // Log when OT handlers are connected to drag-and-drop
-  useEffect(() => {
-    if (operationHandlers && rundownId) {
-      console.log('🔗 DRAG-AND-DROP CONNECTED TO OT SYSTEM:', {
-        hasHandleRowMove: !!operationHandlers.handleRowMove,
-        hasHandleRowInsert: !!operationHandlers.handleRowInsert,
-        hasHandleRowDelete: !!operationHandlers.handleRowDelete,
-        rundownId
-      });
-    }
-  }, [operationHandlers, rundownId]);
+  // OT handlers connected - removed verbose logging
 
   // Merge cell save state with structural save state for complete save indicator
   const saveState = {
