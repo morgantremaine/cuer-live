@@ -109,18 +109,24 @@ export const useRundownStateCoordination = (operationHandlers?: {
   const moveItemUp = (index: number) => {
     console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
     if (index > 0) {
-      const currentItems = performanceOptimization.calculatedItems;
-      const newItems = arrayMove(currentItems, index, index - 1);
-      console.log('🔄 Moving item from', index, 'to', index - 1);
-      persistedState.setItems(newItems);
-      
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
+      // Use operation handler if available
+      if (operationHandlers?.handleRowMove) {
+        console.log('📤 Routing moveItemUp through operation queue');
+        operationHandlers.handleRowMove(index, index - 1);
+      } else {
+        // Fallback to legacy system
+        const currentItems = performanceOptimization.calculatedItems;
+        const newItems = arrayMove(currentItems, index, index - 1);
+        console.log('🔄 Moving item from', index, 'to', index - 1);
+        persistedState.setItems(newItems);
+        
+        const state = persistedState as any;
+        if (state.perCellSaveEnabled) {
+          console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
+          setTimeout(() => {
+            state.markSaved();
+          }, 100);
+        }
       }
     }
   };
@@ -129,17 +135,23 @@ export const useRundownStateCoordination = (operationHandlers?: {
     const currentItems = performanceOptimization.calculatedItems;
     console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
     if (index < currentItems.length - 1) {
-      const newItems = arrayMove(currentItems, index, index + 1);
-      console.log('🔄 Moving item from', index, 'to', index + 1);
-      persistedState.setItems(newItems);
-      
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
+      // Use operation handler if available
+      if (operationHandlers?.handleRowMove) {
+        console.log('📤 Routing moveItemDown through operation queue');
+        operationHandlers.handleRowMove(index, index + 1);
+      } else {
+        // Fallback to legacy system
+        const newItems = arrayMove(currentItems, index, index + 1);
+        console.log('🔄 Moving item from', index, 'to', index + 1);
+        persistedState.setItems(newItems);
+        
+        const state = persistedState as any;
+        if (state.perCellSaveEnabled) {
+          console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
+          setTimeout(() => {
+            state.markSaved();
+          }, 100);
+        }
       }
     }
   };
@@ -168,6 +180,28 @@ export const useRundownStateCoordination = (operationHandlers?: {
     userId, // Pass userId for broadcasts
     operationHandlers // CRITICAL: Pass OT system handlers for coordinated structural operations
   );
+
+  // Wrapper for deleteRow that routes through operation system
+  const deleteRowWrapper = (itemId: string) => {
+    if (operationHandlers?.handleRowDelete) {
+      console.log('📤 Routing deleteRow through operation queue:', itemId);
+      operationHandlers.handleRowDelete(itemId);
+    } else {
+      console.log('⚠️ No operation handler - falling back to legacy delete');
+      persistedState.deleteRow(itemId);
+    }
+  };
+
+  // Wrapper for deleteMultipleItems that routes through operation system
+  const deleteMultipleItemsWrapper = (itemIds: string[]) => {
+    if (operationHandlers?.handleRowDelete) {
+      console.log('📤 Routing deleteMultipleItems through operation queue:', itemIds);
+      itemIds.forEach(id => operationHandlers.handleRowDelete!(id));
+    } else {
+      console.log('⚠️ No operation handler - falling back to legacy delete multiple');
+      persistedState.deleteMultipleItems(itemIds);
+    }
+  };
 
   // UI interactions that depend on the core state (NO showcaller interference)
   // Now passing undo-related parameters
@@ -206,9 +240,9 @@ export const useRundownStateCoordination = (operationHandlers?: {
     persistedState.updateItem,
     persistedState.addRow,
     persistedState.addHeader,
-    persistedState.deleteRow,
+    deleteRowWrapper, // Use wrapper instead of direct call
     persistedState.toggleFloat,
-    persistedState.deleteMultipleItems,
+    deleteMultipleItemsWrapper, // Use wrapper instead of direct call
     addMultipleRows,
     (columnId: string) => {
       const newColumns = persistedState.columns.filter(col => col.id !== columnId);
@@ -319,9 +353,9 @@ export const useRundownStateCoordination = (operationHandlers?: {
       
       // Core actions (NO showcaller interference)
       updateItem: persistedState.updateItem,
-      deleteRow: persistedState.deleteRow,
+      deleteRow: deleteRowWrapper, // Use wrapper to route through operation system
       toggleFloatRow: persistedState.toggleFloat,
-      deleteMultipleItems: persistedState.deleteMultipleItems,
+      deleteMultipleItems: deleteMultipleItemsWrapper, // Use wrapper to route through operation system
       addItem: persistedState.addItem,
       setTitle: persistedState.setTitle,
       setStartTime: persistedState.setStartTime,

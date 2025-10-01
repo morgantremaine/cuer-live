@@ -179,8 +179,40 @@ async function checkTeamAccess(supabaseClient: any, userId: string, teamId: stri
 
 function applyOperationToRundown(rundown: any, operation: OperationData): any {
   const updatedRundown = { ...rundown };
+  
+  // Normalize operation type to handle both formats
+  // Handles: ROW_DELETE, structural_delete_row, delete_row, etc.
+  let normalizedType = operation.operationType.toUpperCase();
+  
+  // Remove common prefixes
+  normalizedType = normalizedType
+    .replace('STRUCTURAL_', '')
+    .replace('_ROW', '')
+    .replace('_ROWS', '');
+  
+  // Map to standard types
+  const typeMap: { [key: string]: string } = {
+    'DELETE': 'ROW_DELETE',
+    'ROWDELETE': 'ROW_DELETE',
+    'ADD': 'ROW_INSERT',
+    'ROWINSERT': 'ROW_INSERT',
+    'MOVE': 'ROW_MOVE',
+    'ROWMOVE': 'ROW_MOVE',
+    'REORDER': 'ROW_MOVE',
+    'COPY': 'ROW_COPY',
+    'ROWCOPY': 'ROW_COPY',
+    'CELLEDIT': 'CELL_EDIT'
+  };
+  
+  const finalType = typeMap[normalizedType] || normalizedType;
+  
+  console.log('🔄 Normalized operation type:', {
+    original: operation.operationType,
+    normalized: normalizedType,
+    final: finalType
+  });
 
-  switch (operation.operationType) {
+  switch (finalType) {
     case 'CELL_EDIT':
       updatedRundown.items = applyCellEdit(rundown.items, operation.operationData);
       break;
@@ -206,7 +238,11 @@ function applyOperationToRundown(rundown: any, operation: OperationData): any {
       break;
     
     default:
-      throw new Error(`Unknown operation type: ${operation.operationType}`);
+      console.error('❌ Unknown operation type after normalization:', {
+        original: operation.operationType,
+        final: finalType
+      });
+      throw new Error(`Unknown operation type: ${operation.operationType} (normalized to ${finalType})`);
   }
 
   return updatedRundown;

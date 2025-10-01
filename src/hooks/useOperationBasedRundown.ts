@@ -102,11 +102,6 @@ export const useOperationBasedRundown = ({
     });
     
     setState(currentState => {
-      console.log('📊 Current state before operation:', {
-        itemCount: currentState.items.length,
-        operationType: operation.operationType
-      });
-      
       const newState = { ...currentState };
 
       switch (operation.operationType) {
@@ -124,6 +119,11 @@ export const useOperationBasedRundown = ({
         
         case 'ROW_MOVE':
           newState.items = applyRowMove(currentState.items, operation.operationData);
+          console.log('✅ ROW_MOVE APPLIED:', {
+            itemId: operation.operationData.itemId,
+            from: operation.operationData.fromIndex,
+            to: operation.operationData.toIndex
+          });
           break;
         
         case 'ROW_COPY':
