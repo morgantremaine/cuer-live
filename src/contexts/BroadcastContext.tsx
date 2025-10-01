@@ -58,7 +58,7 @@ export const BroadcastProvider = ({ rundownId, userId, children }: BroadcastProv
   });
 
   useEffect(() => {
-    const channelName = `rundown:${rundownId}`;
+    const channelName = `rundown-operations-${rundownId}`;
     
     console.log('📡 BROADCAST: Creating channel:', channelName);
     
