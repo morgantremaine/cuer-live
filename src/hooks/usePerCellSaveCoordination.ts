@@ -1,7 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { RundownState } from './useRundownState';
 import { useCellLevelSave } from './useCellLevelSave';
-import { useStructuralSave } from './useStructuralSave';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { debugLogger } from '@/utils/debugLogger';
 import { RundownItem } from '@/types/rundown';
@@ -39,12 +38,8 @@ export const usePerCellSaveCoordination = ({
     hasPendingUpdates: hasPendingCellUpdates
   } = useCellLevelSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, onChangesSaved, undefined, saveInProgressRef, typingIdleMs);
 
-  // Structural save system for row operations
-  const {
-    queueStructuralOperation,
-    flushPendingOperations: flushStructuralOperations,
-    hasPendingOperations: hasPendingStructuralOperations
-  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId);
+  // Note: Structural operations now handled by useOperationBasedRundown
+  // This hook only manages cell-level saves
 
   // Field change tracking - routes to per-cell save system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {
@@ -81,7 +76,8 @@ export const usePerCellSaveCoordination = ({
     debugLogger.autosave('Initialized baseline for per-cell save');
   }, [rundownId]);
 
-  // Handle structural operations with advanced coordination
+  // Structural operations are now handled by useOperationBasedRundown
+  // This placeholder maintains API compatibility but does nothing
   const handleStructuralOperation = useCallback(async (
     operationType: 'add_row' | 'delete_row' | 'move_rows' | 'copy_rows' | 'reorder' | 'add_header',
     operationData: {
@@ -92,75 +88,37 @@ export const usePerCellSaveCoordination = ({
       insertIndex?: number;
     }
   ) => {
-    console.log('🧪 PER-CELL STRUCTURAL: Coordinated operation', {
+    // Structural operations now flow through useOperationBasedRundown
+    // This function is kept for backwards compatibility but does nothing
+    console.log('⚠️ Structural operation called on deprecated path - should use OT system', {
       operationType,
-      currentUserId,
       rundownId
     });
+  }, [rundownId]);
 
-    if (currentUserId) {
-      // Execute the structural operation with coordination
-      await coordination.executeWithStructuralOperation(async () => {
-        const sequenceNumber = coordination.getNextSequenceNumber();
-        
-        console.log('🧪 PER-CELL STRUCTURAL: Executing coordinated operation', {
-          operationType,
-          sequenceNumber
-        });
-        
-        queueStructuralOperation(operationType, operationData, currentUserId, sequenceNumber);
-        debugLogger.autosave(`Coordinated structural save: ${operationType} (seq: ${sequenceNumber})`);
-      });
-    } else {
-      console.warn('🚨 PER-CELL STRUCTURAL: No user ID - cannot save');
-    }
-  }, [currentUserId, queueStructuralOperation, rundownId, coordination]);
-
-  // Check if there are unsaved changes
+  // Check if there are unsaved changes (only cell-level now)
   const hasUnsavedChanges = useCallback(() => {
     const cellChanges = hasPendingCellUpdates();
-    const structuralChanges = hasPendingStructuralOperations();
-    console.log('🧪 PER-CELL SAVE: Checking unsaved changes', {
-      cellChanges,
-      structuralChanges,
-      total: cellChanges || structuralChanges
-    });
-    return cellChanges || structuralChanges;
-  }, [hasPendingCellUpdates, hasPendingStructuralOperations]);
+    return cellChanges;
+  }, [hasPendingCellUpdates]);
 
-  // Enhanced save function with coordination (bypasses doc_version)
+  // Enhanced save function for cell-level changes only
   const enhancedSaveState = useCallback(async (currentState: RundownState) => {
     const hasCellChanges = hasPendingCellUpdates();
-    const hasStructuralChanges = hasPendingStructuralOperations();
-    
-    console.log('🧪 PER-CELL SAVE: Enhanced save - bypassing doc_version logic', {
-      hasCellChanges,
-      hasStructuralChanges,
-      totalChanges: hasCellChanges || hasStructuralChanges
-    });
 
-    if (!hasCellChanges && !hasStructuralChanges) {
+    if (!hasCellChanges) {
       debugLogger.autosave('Per-cell save: no pending changes to flush');
       throw new Error('No changes to save');
     }
 
-    // Use coordination system to ensure proper sequencing (no doc_version conflicts)
-    if (hasStructuralChanges) {
-      await coordination.executeWithStructuralOperation(async () => {
-        debugLogger.autosave('Per-cell save: coordinated flush of structural operations');
-        await flushStructuralOperations();
-      });
-    }
-
-    if (hasCellChanges) {
-      await coordination.executeWithCellUpdate(async () => {
-        debugLogger.autosave('Per-cell save: coordinated flush of cell updates');
-        await flushCellUpdates();
-      });
-    }
+    // Flush cell updates with coordination
+    await coordination.executeWithCellUpdate(async () => {
+      debugLogger.autosave('Per-cell save: coordinated flush of cell updates');
+      await flushCellUpdates();
+    });
 
     return;
-  }, [hasPendingCellUpdates, hasPendingStructuralOperations, flushStructuralOperations, flushCellUpdates, coordination]);
+  }, [hasPendingCellUpdates, flushCellUpdates, coordination]);
 
   return {
     trackFieldChange,

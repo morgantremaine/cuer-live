@@ -9,8 +9,10 @@ import { useRundownStateCache } from './useRundownStateCache';
 import { useGlobalTeleprompterSync } from './useGlobalTeleprompterSync';
 import { useCellEditIntegration } from './useCellEditIntegration';
 import { usePerCellSaveCoordination } from './usePerCellSaveCoordination';
+import { useOperationBasedRundown } from './useOperationBasedRundown';
 import { signatureDebugger } from '@/utils/signatureDebugger'; // Enable signature monitoring
 import { useActiveTeam } from './useActiveTeam';
+import { RundownItem } from '@/types/rundown';
 
 import { globalFocusTracker } from '@/utils/focusTracker';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +57,9 @@ export const useSimplifiedRundownState = () => {
   
   // Track per-cell save enabled state to coordinate saving systems
   const [isPerCellSaveEnabled, setIsPerCellSaveEnabled] = useState(false);
+  
+  // Track operation mode state
+  const [isOperationModeEnabled, setIsOperationModeEnabled] = useState(false);
   
   // Track structural operation save state
   const [isStructuralSaving, setIsStructuralSaving] = useState(false);
@@ -277,7 +282,7 @@ export const useSimplifiedRundownState = () => {
   // Clear initial load gate after initialization and implement sync-before-write
   // Initial load gate no longer needed with operation-based sync
 
-  // Get current user ID for cell broadcasts
+  // Get current user ID for cell broadcasts and OT system
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -285,6 +290,13 @@ export const useSimplifiedRundownState = () => {
       setCurrentUserId(user?.id || null);
     });
   }, []);
+
+  // Initialize OT system when operation mode is enabled
+  const operationBasedRundown = useOperationBasedRundown({
+    rundownId: rundownId || '',
+    userId: currentUserId || '',
+    enabled: isOperationModeEnabled && !!rundownId && !!currentUserId
+  });
 
   // Cell-level broadcast system for immediate sync
   useEffect(() => {
@@ -612,25 +624,50 @@ export const useSimplifiedRundownState = () => {
   // No need for typing/unsaved checkers with operation-based system
 
 
-  // Enhanced updateItem function with aggressive field-level protection tracking
+  // Enhanced updateItem function with OT routing and cell broadcasting
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // No blocking needed - operations handle sync
-    // Check if this is a typing field or immediate-sync field
+    // Route to OT system if operation mode is enabled
+    if (isOperationModeEnabled && operationBasedRundown) {
+      console.log('🎯 OT: Routing cell edit to operation system');
+      operationBasedRundown.handleCellEdit(id, field, value);
+      // Update local state optimistically
+      if (field.startsWith('customFields.')) {
+        const customFieldKey = field.replace('customFields.', '');
+        const item = state.items.find(i => i.id === id);
+        if (item) {
+          const currentCustomFields = item.customFields || {};
+          actions.updateItem(id, {
+            customFields: {
+              ...currentCustomFields,
+              [customFieldKey]: value
+            }
+          });
+        }
+      } else {
+        let updateField = field;
+        if (field === 'segmentName') updateField = 'name';
+        let updateValue: any = value;
+        if (field === 'isFloating') {
+          updateValue = value === 'true';
+        }
+        actions.updateItem(id, { [updateField]: updateValue });
+      }
+      return;
+    }
+    
+    // Old path: Check if this is a typing field or immediate-sync field
     const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
                          field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
-    const isImmediateSyncField = field === 'isFloating'; // Fields that need immediate database sync (removed color)
+    const isImmediateSyncField = field === 'isFloating';
     
     const sessionKey = `${id}-${field}`;
     
-    // Simplified: No field tracking needed - last writer wins
-    
-    // Broadcast cell update immediately for Google Sheets-style sync (no throttling - core functionality)
+    // Broadcast cell update immediately for Google Sheets-style sync
     if (rundownId && currentUserId) {
       cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
     }
     
     if (isTypingField) {
-      // CRITICAL: Tell autosave system that user is actively typing
       markActiveTyping();
       
       if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
@@ -649,20 +686,15 @@ export const useSimplifiedRundownState = () => {
         if (typingSessionRef.current?.fieldKey === sessionKey) {
           typingSessionRef.current = null;
         }
-      }, 3000); // Reduced to 3 seconds for faster sync
+      }, 3000);
     } else if (field === 'duration') {
       saveUndoState(state.items, [], state.title, 'Edit duration');
     } else if (isImmediateSyncField) {
-      // For immediate sync fields like isFloating, save undo state and trigger immediate save
       console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
       saveUndoState(state.items, [], state.title, `Toggle ${field}`);
-      // DON'T use markActiveTyping() for floating - that triggers typing delay
-      // Instead, trigger an immediate flush save that bypasses the typing delay mechanism
       triggerImmediateSave();
     } else if (field === 'color') {
-      // Handle color changes separately - save undo state and trigger immediate save
       saveUndoState(state.items, [], state.title, 'Change row color');
-      // Color changes should trigger immediate save without marking as typing
       triggerImmediateSave();
     }
     
@@ -695,47 +727,51 @@ export const useSimplifiedRundownState = () => {
         cellEditIntegration.handleCellChange(id, updateField, updateValue);
       }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration]);
+  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration, isOperationModeEnabled, operationBasedRundown, rundownId, currentUserId, markActiveTyping, triggerImmediateSave]);
 
-  // Simplified handlers - enhanced for per-cell save coordination
+  // Simplified handlers - route to OT system when operation mode is enabled
   const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {
-    console.log('🏗️ markStructuralChange called', {
-      perCellEnabled: Boolean(state.perCellSaveEnabled),
-      rundownId,
-      operationType,
-      operationData
-    });
-    
-    // For per-cell save mode, structural operations need immediate save coordination
-    if (state.perCellSaveEnabled && cellEditIntegration) {
-      console.log('🏗️ STRUCTURAL: Per-cell mode - triggering coordinated structural save');
+    if (isOperationModeEnabled && operationBasedRundown && currentUserId) {
+      console.log('🎯 OT SYSTEM: Routing structural operation', { operationType, operationData });
       
-      // If we have operation details, use the per-cell coordination system
-      if (operationType && operationData && saveCoordination && currentUserId) {
-        // CRITICAL: Use latestItemsRef to get current state for rapid operations
+      // Route to appropriate OT handler
+      switch (operationType) {
+        case 'add_row':
+        case 'add_header':
+          if (operationData?.newItems && operationData?.newItems[0]) {
+            const newItem = operationData.newItems[0];
+            const insertIndex = operationData?.insertIndex ?? state.items.length;
+            operationBasedRundown.handleRowInsert(insertIndex, newItem);
+          }
+          break;
+          
+        case 'delete_row':
+          if (operationData?.deletedIds && operationData.deletedIds[0]) {
+            operationBasedRundown.handleRowDelete(operationData.deletedIds[0]);
+          }
+          break;
+          
+        case 'reorder':
+        case 'move_rows':
+          // Handled by individual row moves
+          console.log('🎯 OT: Reorder handled by individual move operations');
+          break;
+          
+        default:
+          console.warn('🚨 Unknown structural operation:', operationType);
+      }
+    } else if (cellEditIntegration.isPerCellEnabled && saveCoordination) {
+      // Fallback to per-cell coordination (deprecated path)
+      console.log('⚠️ Using deprecated per-cell structural path');
+      if (operationType && operationData && currentUserId) {
         const currentOperationData = {
           ...operationData,
-          items: latestItemsRef.current // Always use the most current items
+          items: latestItemsRef.current
         };
-        
-        console.log('🏗️ STRUCTURAL: Triggering handleStructuralOperation', {
-          operationType,
-          operationData: currentOperationData,
-          currentUserId,
-          itemCount: latestItemsRef.current.length
-        });
         saveCoordination.handleStructuralOperation(operationType as any, currentOperationData);
-      } else {
-        console.log('🏗️ STRUCTURAL: Missing operation details, marking as immediate save');
-        // Fallback - just mark as saved for now
-        setTimeout(() => {
-          console.log('🏗️ STRUCTURAL: Marking saved after per-cell structural operation');
-          actions.markSaved();
-        }, 100);
       }
     }
-    // For regular autosave mode, no action needed - autosave handles it
-  }, [state.perCellSaveEnabled, rundownId, actions.markSaved, cellEditIntegration, saveCoordination, currentUserId]);
+  }, [isOperationModeEnabled, operationBasedRundown, currentUserId, state.items, cellEditIntegration, saveCoordination]);
 
   // Clear structural change flag
   const clearStructuralChange = useCallback(() => {
@@ -816,6 +852,9 @@ export const useSimplifiedRundownState = () => {
             if (data.doc_version) {
               setLastSeenDocVersion(data.doc_version);
             }
+            
+            // Check operation mode status
+            setIsOperationModeEnabled(data.operation_mode_enabled || false);
 
             // Load content only (columns handled by useUserColumnPreferences)
             actions.loadState({
@@ -830,10 +869,15 @@ export const useSimplifiedRundownState = () => {
               perCellSaveEnabled: data.per_cell_save_enabled || false // Include per-cell save setting
             });
             
+            // Check operation mode status
+            setIsOperationModeEnabled(data.operation_mode_enabled || false);
+            
             console.log('🧪 PER-CELL SAVE: Loaded from database', {
               rundownId,
               per_cell_save_enabled: data.per_cell_save_enabled,
-              willUsePerCellSave: data.per_cell_save_enabled || false
+              operation_mode_enabled: data.operation_mode_enabled,
+              willUsePerCellSave: data.per_cell_save_enabled || false,
+              willUseOperationMode: data.operation_mode_enabled || false
             });
           }
         }
