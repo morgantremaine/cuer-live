@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { useUnifiedRealtimeBroadcast, UnifiedOperationPayload, OperationType } from './useUnifiedRealtimeBroadcast';
+import { UnifiedOperationPayload, OperationType } from './useUnifiedRealtimeBroadcast';
 import { v4 as uuidv4 } from 'uuid';
 
 interface StructuralOperationData {
@@ -29,7 +29,8 @@ export const useStructuralSave = (
   onSaveComplete?: () => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
-  currentUserId?: string
+  currentUserId?: string,
+  broadcastOperation?: (operation: UnifiedOperationPayload) => Promise<void> // ✅ Accept broadcast function as parameter
 ) => {
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -41,20 +42,7 @@ export const useStructuralSave = (
     rundownId,
     currentUserId,
     clientId: clientIdRef.current,
-    canBroadcast: !!rundownId && !!currentUserId
-  });
-
-  // Use unified broadcast system for structural operations
-  const { broadcastOperation, isConnected } = useUnifiedRealtimeBroadcast({
-    rundownId: rundownId || '',
-    clientId: clientIdRef.current,
-    userId: currentUserId // Can be undefined during initialization
-  });
-
-  console.log('🏗️ STRUCTURAL SAVE: Unified broadcast status:', {
-    isConnected,
-    rundownId,
-    userId: currentUserId
+    hasBroadcast: !!broadcastOperation
   });
 
   // Debounced save for batching operations
@@ -152,8 +140,7 @@ export const useStructuralSave = (
               type: unifiedPayload.type,
               operation: operation.operationType,
               clientId: broadcastClientId,
-              userId: broadcastUserId,
-              isConnected
+              userId: broadcastUserId
             });
             
             try {
