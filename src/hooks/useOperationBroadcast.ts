@@ -67,11 +67,12 @@ export const useOperationBroadcast = ({
         return;
       }
 
-      console.log('🎯 APPLYING REMOTE OPERATION:', {
+      console.log('🎯 APPLYING REMOTE OPERATION FROM ANOTHER CLIENT:', {
         id: operation.id,
         type: operation.operationType,
         fromClient: operation.clientId,
-        sequence: operation.sequenceNumber
+        sequence: operation.sequenceNumber,
+        timestamp: new Date().toISOString()
       });
 
       console.log('🔍 CALLBACK STATUS:', {
@@ -81,7 +82,7 @@ export const useOperationBroadcast = ({
 
       // Use refs to avoid dependency issues
       if (onRemoteOperationRef.current) {
-        console.log('📞 CALLING onRemoteOperation');
+        console.log('📞 CALLING onRemoteOperation - THIS SHOULD UPDATE STATE');
         onRemoteOperationRef.current(operation);
       }
 

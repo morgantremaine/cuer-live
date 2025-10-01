@@ -14,7 +14,8 @@ export const OperationSystemTest = () => {
   const operationSystem = useOperationBasedRundown({
     rundownId: rundownId || '',
     userId: user?.id || '',
-    enabled: !!rundownId && !!user?.id
+    enabled: !!rundownId && !!user?.id,
+    skipHistoricalOperations: true // TEST MODE: Don't load historical operations
   });
 
   console.log('🧪 TEST PAGE RENDER:', {

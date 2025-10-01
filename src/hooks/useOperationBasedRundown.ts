@@ -20,12 +20,14 @@ interface UseOperationBasedRundownOptions {
   rundownId: string;
   userId: string;
   enabled?: boolean;
+  skipHistoricalOperations?: boolean; // For test mode - don't load historical operations
 }
 
 export const useOperationBasedRundown = ({
   rundownId,
   userId,
-  enabled = false
+  enabled = false,
+  skipHistoricalOperations = false
 }: UseOperationBasedRundownOptions) => {
   const [state, setState] = useState<OperationBasedRundownState>({
     items: [],
@@ -211,43 +213,47 @@ export const useOperationBasedRundown = ({
       hasLoadedRef.current = true;
       currentRundownIdRef.current = rundownId;
 
-      // Load any pending operations since last update (call directly to avoid dependency issues)
-      try {
-        const { data, error } = await supabase.functions.invoke('get-operations', {
-          body: {
-            rundownId,
-            sinceSequence: '0'
-          }
-        });
-
-        if (data?.success && data.operations) {
-          console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
-          
-          // Filter and validate operations before applying
-          const validOperations = data.operations.filter((op: any) => {
-            const isValid = op.operationType && op.operationData;
-            if (!isValid) {
-              console.warn('⚠️ SKIPPING INVALID OPERATION:', {
-                id: op.id,
-                hasOperationType: !!op.operationType,
-                hasOperationData: !!op.operationData
-              });
+      // Load any pending operations since last update (unless in test mode)
+      if (!skipHistoricalOperations) {
+        try {
+          const { data, error } = await supabase.functions.invoke('get-operations', {
+            body: {
+              rundownId,
+              sinceSequence: '0'
             }
-            return isValid;
           });
 
-          console.log('✅ APPLYING VALID OPERATIONS:', {
-            total: data.operations.length,
-            valid: validOperations.length,
-            invalid: data.operations.length - validOperations.length
-          });
+          if (data?.success && data.operations) {
+            console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
+            
+            // Filter and validate operations before applying
+            const validOperations = data.operations.filter((op: any) => {
+              const isValid = op.operationType && op.operationData;
+              if (!isValid) {
+                console.warn('⚠️ SKIPPING INVALID OPERATION:', {
+                  id: op.id,
+                  hasOperationType: !!op.operationType,
+                  hasOperationData: !!op.operationData
+                });
+              }
+              return isValid;
+            });
 
-          validOperations.forEach((operation: any) => {
-            applyOperationToState(operation);
-          });
+            console.log('✅ APPLYING VALID OPERATIONS:', {
+              total: data.operations.length,
+              valid: validOperations.length,
+              invalid: data.operations.length - validOperations.length
+            });
+
+            validOperations.forEach((operation: any) => {
+              applyOperationToState(operation);
+            });
+          }
+        } catch (opError) {
+          console.error('❌ FAILED TO LOAD PENDING OPERATIONS:', opError);
         }
-      } catch (opError) {
-        console.error('❌ FAILED TO LOAD PENDING OPERATIONS:', opError);
+      } else {
+        console.log('🧪 TEST MODE: Skipping historical operation load');
       }
 
     } catch (error) {
