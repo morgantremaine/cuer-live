@@ -90,6 +90,12 @@ export const useOperationBasedRundown = ({
 
   // Apply operation to current state
   const applyOperationToState = useCallback((operation: any) => {
+    console.log('📨 APPLYING OPERATION TO STATE:', {
+      type: operation.operationType,
+      id: operation.id,
+      currentItemCount: state.items.length
+    });
+    
     setState(currentState => {
       const newState = { ...currentState };
 
@@ -429,7 +435,23 @@ function applyRowInsert(items: any[], operationData: any): any[] {
 
 function applyRowDelete(items: any[], operationData: any): any[] {
   const { itemId } = operationData;
-  return items.filter(item => item.id !== itemId);
+  
+  console.log('🗑️ ROW_DELETE: Before deletion', {
+    itemId,
+    totalItems: items.length,
+    itemExists: items.some(item => item.id === itemId)
+  });
+  
+  const newItems = items.filter(item => item.id !== itemId);
+  
+  console.log('✅ ROW_DELETE APPLIED:', {
+    itemId,
+    itemsRemoved: items.length - newItems.length,
+    beforeCount: items.length,
+    afterCount: newItems.length
+  });
+  
+  return newItems;
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {

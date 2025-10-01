@@ -232,7 +232,23 @@ function applyRowInsert(items: any[], operationData: any): any[] {
 
 function applyRowDelete(items: any[], operationData: any): any[] {
   const { itemId } = operationData;
-  return items.filter(item => item.id !== itemId);
+  
+  console.log('🗑️ EDGE: ROW_DELETE Before', {
+    itemId,
+    totalItems: items.length,
+    itemExists: items.some(item => item.id === itemId)
+  });
+  
+  const newItems = items.filter(item => item.id !== itemId);
+  
+  console.log('✅ EDGE: ROW_DELETE Applied', {
+    itemId,
+    itemsRemoved: items.length - newItems.length,
+    beforeCount: items.length,
+    afterCount: newItems.length
+  });
+  
+  return newItems;
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
