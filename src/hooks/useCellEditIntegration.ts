@@ -55,6 +55,13 @@ export const useCellEditIntegration = ({
       console.log('🧪 CELL EDIT INTEGRATION: Per-cell save completed');
       setIsPerCellSaving(false);
       setHasPerCellUnsavedChanges(false);
+      
+      // Refresh OT system state after structural operations
+      if (operationSystem.isOperationMode && operationSystem.refreshFromDatabase) {
+        console.log('🔄 CELL EDIT INTEGRATION: Refreshing OT state after structural save');
+        operationSystem.refreshFromDatabase();
+      }
+      
       if (onSaveComplete) {
         onSaveComplete();
       }

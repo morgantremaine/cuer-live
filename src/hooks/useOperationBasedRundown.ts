@@ -408,6 +408,41 @@ export const useOperationBasedRundown = ({
     operationQueue.globalEdit(field, newValue);
   }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState]);
 
+  // Refresh state from database (for coordination with structural operations)
+  const refreshFromDatabase = useCallback(async () => {
+    console.log('🔄 OT SYSTEM: Refreshing state from database');
+    
+    try {
+      const { data: rundownData, error } = await supabase
+        .from('rundowns')
+        .select('*')
+        .eq('id', rundownId)
+        .single();
+
+      if (error) {
+        console.error('❌ OT SYSTEM: Failed to refresh from database:', error);
+        return;
+      }
+
+      if (rundownData) {
+        console.log('✅ OT SYSTEM: State refreshed from database', {
+          itemCount: rundownData.items?.length || 0,
+          docVersion: rundownData.doc_version
+        });
+        
+        setState(prev => ({
+          ...prev,
+          items: rundownData.items || [],
+          title: rundownData.title,
+          lastSequence: rundownData.doc_version,
+          isLoading: false
+        }));
+      }
+    } catch (error) {
+      console.error('❌ OT SYSTEM: Error refreshing from database:', error);
+    }
+  }, [rundownId]);
+
   return {
     // State
     ...state,
@@ -439,7 +474,8 @@ export const useOperationBasedRundown = ({
     
     // Utils
     loadPendingOperations,
-    loadInitialState
+    loadInitialState,
+    refreshFromDatabase // NEW: For structural operation coordination
   };
 };
 
