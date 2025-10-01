@@ -115,7 +115,7 @@ export const useTeam = () => {
     // Get the current activeTeamId directly to avoid stale closure issues
     const currentActiveTeamId = activeTeamId;
     
-    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
+    // Reduced logging
     debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
     
     if (!user?.id || isLoadingRef.current) {

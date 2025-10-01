@@ -305,14 +305,31 @@ export const useOperationBasedRundown = ({
         if (data?.success && data.operations) {
           console.log('📥 LOADED PENDING OPERATIONS:', data.operations.length);
           
+          // Normalize operation type from database format to OT format
+          const normalizeOperationType = (dbType: string): string => {
+            const typeMap: Record<string, string> = {
+              'structural_add_row': 'ROW_INSERT',
+              'structural_delete_row': 'ROW_DELETE',
+              'structural_move_rows': 'ROW_MOVE',
+              'structural_copy_rows': 'ROW_COPY',
+              'structural_reorder': 'ROW_MOVE',
+              'structural_add_header': 'ROW_INSERT'
+            };
+            return typeMap[dbType] || dbType;
+          };
+          
           // Apply operations one at a time to initialized state
           data.operations.forEach((operation: any) => {
+            const normalizedOp = {
+              ...operation,
+              operationType: normalizeOperationType(operation.operationType)
+            };
             console.log('🔄 APPLYING LOADED OPERATION:', {
-              type: operation.operationType,
-              id: operation.id,
-              hasType: !!operation.operationType
+              type: normalizedOp.operationType,
+              id: normalizedOp.id,
+              hasType: !!normalizedOp.operationType
             });
-            applyOperationToState(operation);
+            applyOperationToState(normalizedOp);
           });
         }
       } catch (opError) {

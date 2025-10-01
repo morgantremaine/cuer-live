@@ -62,22 +62,13 @@ export const useUnifiedRealtimeBroadcast = ({
   useEffect(() => {
     // Only require rundownId - userId can be undefined initially
     if (!rundownId) {
-      console.log('🔌 UNIFIED BROADCAST: No rundownId, skipping setup');
       return;
     }
 
     // If userId is not available yet, wait for it
     if (!userId) {
-      console.log('🔌 UNIFIED BROADCAST: Waiting for userId', { 
-        instanceId: instanceIdRef.current,
-        rundownId, 
-        clientId 
-      });
       // Clean up any existing channel
       if (channelRef.current) {
-        console.log('🔌 UNIFIED BROADCAST: Cleaning up channel while waiting for userId', {
-          instanceId: instanceIdRef.current
-        });
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
         isConnectedRef.current = false;
@@ -85,18 +76,8 @@ export const useUnifiedRealtimeBroadcast = ({
       return;
     }
 
-    console.log('🔌 UNIFIED BROADCAST: Setting up channel', { 
-      instanceId: instanceIdRef.current,
-      rundownId, 
-      clientId, 
-      userId 
-    });
-
     // Clean up existing channel before creating new one
     if (channelRef.current) {
-      console.log('🔌 UNIFIED BROADCAST: Cleaning up existing channel before recreating', {
-        instanceId: instanceIdRef.current
-      });
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
       isConnectedRef.current = false;
@@ -130,36 +111,22 @@ export const useUnifiedRealtimeBroadcast = ({
         }
       })
       .subscribe((status) => {
-        console.log('📡 UNIFIED BROADCAST STATUS:', status, { 
-          instanceId: instanceIdRef.current,
-          rundownId, 
-          userId,
-          channelName: `rundown-unified-${rundownId}`
-        });
-        
-        // Track connection state
+        // Track connection state - reduced logging
         if (status === 'SUBSCRIBED') {
           isConnectedRef.current = true;
-          console.log('✅ UNIFIED BROADCAST: Channel connected and ready', {
+          console.log('✅ UNIFIED BROADCAST: Connected', {
             instanceId: instanceIdRef.current,
             rundownId
           });
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           isConnectedRef.current = false;
-          console.warn('⚠️ UNIFIED BROADCAST: Channel disconnected', {
-            instanceId: instanceIdRef.current,
-            status
-          });
         }
       });
 
     channelRef.current = channel;
 
     return () => {
-      console.log('🔌 UNIFIED BROADCAST: Cleaning up channel', {
-        instanceId: instanceIdRef.current,
-        rundownId
-      });
+      // Cleanup without logging
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -170,29 +137,15 @@ export const useUnifiedRealtimeBroadcast = ({
 
   // Broadcast an operation to all clients
   const broadcastOperation = useCallback(async (operation: UnifiedOperationPayload) => {
-    console.log('📤 UNIFIED BROADCAST: Broadcasting operation attempt', {
-      instanceId: instanceIdRef.current,
-      type: operation.type,
-      rundownId: operation.rundownId,
-      clientId: operation.clientId,
-      sequenceNumber: operation.sequenceNumber,
-      hasChannel: !!channelRef.current,
-      isConnected: isConnectedRef.current
-    });
-
     if (!channelRef.current) {
-      console.error('❌ UNIFIED BROADCAST: Channel not ready - cannot broadcast', {
-        instanceId: instanceIdRef.current,
+      console.error('❌ UNIFIED BROADCAST: No channel', {
         operationType: operation.type
       });
       return;
     }
 
     if (!isConnectedRef.current) {
-      console.warn('⚠️ UNIFIED BROADCAST: Channel not connected yet, attempting anyway', {
-        instanceId: instanceIdRef.current,
-        operationType: operation.type
-      });
+      console.warn('⚠️ UNIFIED BROADCAST: Not connected, attempting anyway');
     }
 
     try {
@@ -201,18 +154,10 @@ export const useUnifiedRealtimeBroadcast = ({
         event: 'operation',
         payload: { operation }
       });
-
-      console.log('✅ UNIFIED BROADCAST: Operation sent successfully', {
-        instanceId: instanceIdRef.current,
-        type: operation.type
-      });
     } catch (error) {
       console.error('❌ UNIFIED BROADCAST ERROR:', {
-        instanceId: instanceIdRef.current,
         error,
-        operationType: operation.type,
-        hasChannel: !!channelRef.current,
-        isConnected: isConnectedRef.current
+        operationType: operation.type
       });
     }
   }, []);
