@@ -64,13 +64,49 @@ export const useOperationBroadcast = ({
     }
   }, [rundownId, clientId]); // Removed callback dependencies
 
-  // Set up realtime subscription for database inserts
+  // Set up DUAL subscription: P2P broadcast (fast) + DB realtime (reliable fallback)
   useEffect(() => {
     if (!rundownId) return;
 
-    console.log('🔌 SETTING UP OPERATION DATABASE SUBSCRIPTION:', rundownId);
+    console.log('🔌 SETTING UP DUAL OPERATION SUBSCRIPTION:', rundownId);
 
-    const channel = supabase
+    // PRIMARY: Fast P2P broadcast channel (like cell edits)
+    const broadcastChannel = supabase
+      .channel(`rundown-operations-${rundownId}`)
+      .on('broadcast', { event: 'operation' }, (payload: any) => {
+        console.log('📡 RECEIVED P2P BROADCAST:', payload);
+
+        if (payload.type === 'operation_applied' && payload.rundownId === rundownId) {
+          const operation = payload.operation as RemoteOperation;
+          
+          // Ignore operations from our own client
+          if (operation.clientId === clientId) {
+            console.log('🔄 IGNORING OWN OPERATION (P2P)');
+            return;
+          }
+
+          console.log('⚡ APPLYING REMOTE OPERATION FROM P2P:', {
+            id: operation.id,
+            type: operation.operationType,
+            fromClient: operation.clientId
+          });
+
+          // Use refs to avoid dependency issues
+          if (onRemoteOperationRef.current) {
+            onRemoteOperationRef.current(operation);
+          }
+
+          if (onOperationAppliedRef.current) {
+            onOperationAppliedRef.current(operation);
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log('📡 P2P BROADCAST STATUS:', status);
+      });
+
+    // FALLBACK: Database realtime for reliability
+    const dbChannel = supabase
       .channel(`rundown-operations-db-${rundownId}`)
       .on(
         'postgres_changes',
@@ -81,21 +117,14 @@ export const useOperationBroadcast = ({
           filter: `rundown_id=eq.${rundownId}`
         },
         (payload) => {
-          console.log('📡 RECEIVED DATABASE INSERT:', payload);
+          console.log('📡 RECEIVED DATABASE INSERT (FALLBACK):', payload);
           
           const newOperation = payload.new;
           
           // Ignore operations from our own client
           if (newOperation.client_id === clientId) {
-            console.log('🔄 IGNORING OWN OPERATION');
             return;
           }
-
-          console.log('🎯 APPLYING REMOTE OPERATION FROM DB:', {
-            id: newOperation.id,
-            type: newOperation.operation_type,
-            sequence: newOperation.sequence_number
-          });
 
           // Convert DB record to operation format
           const operation: RemoteOperation = {
@@ -122,12 +151,13 @@ export const useOperationBroadcast = ({
         }
       )
       .subscribe((status) => {
-        console.log('📡 OPERATION DATABASE STATUS:', status);
+        console.log('📡 DATABASE FALLBACK STATUS:', status);
       });
 
     return () => {
-      console.log('🔌 CLEANING UP OPERATION DATABASE SUBSCRIPTION');
-      supabase.removeChannel(channel);
+      console.log('🔌 CLEANING UP DUAL SUBSCRIPTIONS');
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(dbChannel);
     };
   }, [rundownId, clientId]);
 
