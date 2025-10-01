@@ -13,11 +13,9 @@ import { UnifiedRundownState } from '@/types/interfaces';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
-export const useRundownStateCoordination = (operationHandlers?: {
-  handleRowMove: (fromIndex: number, toIndex: number) => void;
-  handleRowInsert?: (insertIndex: number, newItem: any) => void;
-  handleRowDelete?: (itemId: string) => void;
-}) => {
+// Structural operations are now handled by the structural save system
+// No need for operation handlers parameter
+export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
   const [stableIsConnected, setStableIsConnected] = useState(false);
   // Get user ID from auth
@@ -105,28 +103,21 @@ export const useRundownStateCoordination = (operationHandlers?: {
     }
   };
 
-  // Add move up/down functions for mobile context menu
+  // Add move up/down functions - route through state reorder which uses structural save
   const moveItemUp = (index: number) => {
     console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
     if (index > 0) {
-      // Use operation handler if available
-      if (operationHandlers?.handleRowMove) {
-        console.log('📤 Routing moveItemUp through operation queue');
-        operationHandlers.handleRowMove(index, index - 1);
-      } else {
-        // Fallback to legacy system
-        const currentItems = performanceOptimization.calculatedItems;
-        const newItems = arrayMove(currentItems, index, index - 1);
-        console.log('🔄 Moving item from', index, 'to', index - 1);
-        persistedState.setItems(newItems);
-        
-        const state = persistedState as any;
-        if (state.perCellSaveEnabled) {
-          console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
-          setTimeout(() => {
-            state.markSaved();
-          }, 100);
-        }
+      const currentItems = performanceOptimization.calculatedItems;
+      const newItems = arrayMove(currentItems, index, index - 1);
+      console.log('🔄 Moving item from', index, 'to', index - 1);
+      persistedState.setItems(newItems);
+      
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
       }
     }
   };
@@ -135,23 +126,16 @@ export const useRundownStateCoordination = (operationHandlers?: {
     const currentItems = performanceOptimization.calculatedItems;
     console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
     if (index < currentItems.length - 1) {
-      // Use operation handler if available
-      if (operationHandlers?.handleRowMove) {
-        console.log('📤 Routing moveItemDown through operation queue');
-        operationHandlers.handleRowMove(index, index + 1);
-      } else {
-        // Fallback to legacy system
-        const newItems = arrayMove(currentItems, index, index + 1);
-        console.log('🔄 Moving item from', index, 'to', index + 1);
-        persistedState.setItems(newItems);
-        
-        const state = persistedState as any;
-        if (state.perCellSaveEnabled) {
-          console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
-          setTimeout(() => {
-            state.markSaved();
-          }, 100);
-        }
+      const newItems = arrayMove(currentItems, index, index + 1);
+      console.log('🔄 Moving item from', index, 'to', index + 1);
+      persistedState.setItems(newItems);
+      
+      const state = persistedState as any;
+      if (state.perCellSaveEnabled) {
+        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
+        setTimeout(() => {
+          state.markSaved();
+        }, 100);
       }
     }
   };
@@ -159,26 +143,26 @@ export const useRundownStateCoordination = (operationHandlers?: {
   // Get header collapse functions from useHeaderCollapse
   const { getHeaderGroupItemIds, isHeaderCollapsed, toggleHeaderCollapse, visibleItems } = useHeaderCollapse(performanceOptimization.calculatedItems);
 
-  // Setup drag and drop with structural change integration - initialized early
+  // Setup drag and drop with structural change integration
   const dragAndDrop = useDragAndDrop(
     performanceOptimization.calculatedItems,
     (items) => {
-      // Update items through persisted state
+      // Update items through persisted state - uses structural save
       persistedState.setItems(items);
       // Clear structural change flag after items are set
       setTimeout(() => persistedState.clearStructuralChange(), 50);
     },
-    () => interactionsRef.current?.selectedRows || new Set<string>(), // Get selectedRows from interactions when available
-    undefined, // scrollContainerRef - placeholder for now
+    () => interactionsRef.current?.selectedRows || new Set<string>(),
+    undefined,
     persistedState.saveUndoState,
     persistedState.columns,
     persistedState.rundownTitle,
     getHeaderGroupItemIds,
     isHeaderCollapsed,
     persistedState.markStructuralChange,
-    persistedState.rundownId, // Pass rundownId for broadcasts
-    userId, // Pass userId for broadcasts
-    operationHandlers // CRITICAL: Pass OT system handlers for coordinated structural operations
+    persistedState.rundownId,
+    userId
+    // operationHandlers removed - drag and drop now uses state.setItems which routes through structural save
   );
 
   // Wrapper for deleteRow that routes through proper save system
@@ -271,8 +255,8 @@ export const useRundownStateCoordination = (operationHandlers?: {
       handleDrop: dragAndDrop.handleDrop,
       handleDragEnd: dragAndDrop.handleDragEnd,
       resetDragState: dragAndDrop.resetDragState
-    },
-    operationHandlers // Pass OT handlers
+    }
+    // operationHandlers removed - all structural operations now go through state methods
   );
 
   // Store interactions ref for drag and drop access

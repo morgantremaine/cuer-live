@@ -41,13 +41,8 @@ export const useRundownInteractionHandlers = (
     handleDrop: (e: React.DragEvent, index: number) => void;
     handleDragEnd: (e: React.DragEvent) => void;
     resetDragState: () => void;
-  },
-  // OT system handlers
-  operationHandlers?: {
-    handleRowDelete?: (itemId: string) => void;
-    handleRowInsert?: (insertIndex: number, newItem: any) => void;
-    handleRowCopy?: (sourceItemId: string, newItem: any, insertIndex: number) => void;
   }
+  // operationHandlers removed - all structural operations now go through state methods
 ) => {
   // Multi-row selection
   const { selectedRows, toggleRowSelection, clearSelection } = useMultiRowSelection();
@@ -100,8 +95,8 @@ export const useRundownInteractionHandlers = (
       : undefined,
     isPerCellEnabled,
     rundownId,
-    currentUserId,
-    operationHandlers // Pass OT handlers through
+    currentUserId
+    // operationHandlers removed - all structural operations now go through state methods
   });
 
   return {

@@ -181,15 +181,10 @@ export const useCellEditIntegration = ({
     operationSystemActive: operationSystem.isOperationMode,
     operationSystemSaving: operationSystem.isSaving,
     operationSystemUnsaved: operationSystem.hasUnsavedChanges,
-    operationLastSaved: operationSystem.lastSaved,
+    operationLastSaved: operationSystem.lastSaved
     
-    // CRITICAL: Expose structural operation handlers for drag-and-drop coordination
-    // This ensures drag-and-drop operations flow through the OT system for perfect coordination
-    operationHandlers: operationSystem.isOperationMode ? {
-      handleRowMove: operationSystem.handleRowMove,
-      handleRowInsert: operationSystem.handleRowInsert,
-      handleRowDelete: operationSystem.handleRowDelete,
-      handleRowCopy: operationSystem.handleRowCopy
-    } : undefined
+    // NOTE: Structural operation handlers removed - all structural operations
+    // (delete, insert, move, copy) now go through the structural save system
+    // via handleStructuralOperation in usePerCellSaveCoordination
   };
 };

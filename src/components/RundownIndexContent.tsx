@@ -29,33 +29,32 @@ const RundownIndexContent = () => {
   // Extract just what we need for the initial setup
   const [rundownIdForIntegration, setRundownIdForIntegration] = useState<string | null>(null);
   
-  // Get operation handlers from cell edit integration FIRST
+  // Get save state from cell edit integration
   const { 
     handleCellChange, 
     saveState: cellSaveState, 
-    handleKeystroke,
-    operationHandlers // Get structural operation handlers for drag-and-drop coordination
+    handleKeystroke
   } = useCellEditIntegration({
     rundownId: rundownIdForIntegration,
     isPerCellEnabled: true,
     onSaveComplete: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save completed');
+      console.log('💾 RUNDOWN INDEX: Cell save completed');
     },
     onSaveStart: () => {
-      console.log('💾 RUNDOWN INDEX: Operation system save started');
+      console.log('💾 RUNDOWN INDEX: Cell save started');
     },
     onUnsavedChanges: () => {
-      console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
+      console.log('⚠️ RUNDOWN INDEX: Unsaved changes detected');
     }
   });
   
-  // Now pass operation handlers to coordination state
+  // Get rundown state coordination (no operation handlers needed)
   const {
     coreState,
     interactions,
     uiState,
     dragAndDrop
-  } = useRundownStateCoordination(operationHandlers);
+  } = useRundownStateCoordination();
   
   // Extract all needed values from the unified state
   const {
