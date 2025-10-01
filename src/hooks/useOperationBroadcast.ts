@@ -37,11 +37,13 @@ export const useOperationBroadcast = ({
   const handleOperationBroadcast = useCallback((message: any) => {
     console.log('📡 RAW BROADCAST MESSAGE:', message);
     
-    // Supabase wraps the payload in a message object
-    const payload = message.payload || message;
+    // Supabase wraps the actual payload in message.payload
+    // message = {type: 'broadcast', event: 'operation', payload: {type: 'operation_applied', operation, rundownId}}
+    const payload = message.payload;
     
     console.log('🔍 BROADCAST DEBUG:', {
       hasPayload: !!message.payload,
+      messageType: message.type,
       payloadType: payload?.type,
       expectedType: 'operation_applied',
       payloadRundownId: payload?.rundownId,
