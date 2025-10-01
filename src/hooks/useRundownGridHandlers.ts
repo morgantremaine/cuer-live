@@ -29,12 +29,7 @@ interface UseRundownGridHandlersProps {
   isPerCellEnabled?: boolean;
   rundownId?: string | null;
   currentUserId?: string | null;
-  // OT system handlers
-  operationHandlers?: {
-    handleRowDelete?: (itemId: string) => void;
-    handleRowInsert?: (insertIndex: number, newItem: any) => void;
-    handleRowCopy?: (sourceItemId: string, newItem: any, insertIndex: number) => void;
-  };
+  // operationHandlers removed - all structural operations now go through state methods
 }
 
 export const useRundownGridHandlers = ({
@@ -63,8 +58,8 @@ export const useRundownGridHandlers = ({
   markStructuralChange,
   isPerCellEnabled,
   rundownId,
-  currentUserId,
-  operationHandlers
+  currentUserId
+  // operationHandlers removed - all structural operations now go through state methods
 }: UseRundownGridHandlersProps) => {
 
   const handleUpdateItem = useCallback((id: string, field: string, value: string) => {
@@ -138,27 +133,20 @@ export const useRundownGridHandlers = ({
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
-      console.log('🗑️ DELETE OPERATION:', {
-        count: selectedIds.length,
-        hasOTHandlers: !!operationHandlers?.handleRowDelete
+      console.log('🗑️ DELETE OPERATION: Using structural save system', {
+        count: selectedIds.length
       });
       
-      if (operationHandlers?.handleRowDelete) {
-        console.log('🚀 ROUTING DELETE THROUGH OT SYSTEM');
-        selectedIds.forEach(id => operationHandlers.handleRowDelete!(id));
-      } else {
-        console.log('⚠️ USING LEGACY DELETE SYSTEM');
-        deleteMultipleRows(selectedIds);
-      }
+      // Route through state method which calls handleStructuralOperation
+      deleteMultipleRows(selectedIds);
       clearSelection();
     }
-  }, [selectedRows, deleteMultipleRows, clearSelection, operationHandlers]);
+  }, [selectedRows, deleteMultipleRows, clearSelection]);
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
-    console.log('🎯 PASTE: handlePasteRows called', { 
+    console.log('🎯 PASTE: Using structural save system', { 
       targetRowId, 
-      clipboardCount: clipboardItems.length, 
-      hasOTHandlers: !!operationHandlers?.handleRowCopy 
+      clipboardCount: clipboardItems.length
     });
     
     if (clipboardItems.length > 0) {
@@ -167,57 +155,42 @@ export const useRundownGridHandlers = ({
       let insertIndex: number;
       
       if (targetRowId) {
-        // Find the target row and insert after it
         const targetIndex = items.findIndex(item => item.id === targetRowId);
         insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
       } else {
-        // Fallback to end if no target specified
         insertIndex = items.length;
       }
       
       console.log('🎯 PASTE: Inserting', clipboardItems.length, 'items at index', insertIndex);
       
-      // Use OT system if available
-      if (operationHandlers?.handleRowCopy) {
-        console.log('🚀 ROUTING PASTE THROUGH OT SYSTEM');
-        clipboardItems.forEach((item, index) => {
-          const newItem = {
-            ...item,
-            id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-          };
-          operationHandlers.handleRowCopy!(item.id, newItem, insertIndex + index);
+      // Route through state method - paste items
+      const itemsToPaste = clipboardItems.map(item => ({
+        ...item,
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }));
+      
+      let newItems: RundownItem[];
+      setItems(prevItems => {
+        newItems = [...prevItems];
+        newItems.splice(insertIndex, 0, ...itemsToPaste);
+        return newItems;
+      });
+      
+      markAsChanged();
+      
+      // Trigger structural save coordination if available
+      if (markStructuralChange && newItems!) {
+        console.log('🧪 STRUCTURAL CHANGE: Paste completed');
+        markStructuralChange('copy_rows', { 
+          items: newItems!, 
+          newItems: itemsToPaste, 
+          insertIndex 
         });
-      } else {
-        // Fallback to old system
-        console.log('⚠️ USING LEGACY PASTE SYSTEM');
-        const itemsToPaste = clipboardItems.map(item => ({
-          ...item,
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }));
-        
-        let newItems: RundownItem[];
-        setItems(prevItems => {
-          newItems = [...prevItems];
-          newItems.splice(insertIndex, 0, ...itemsToPaste);
-          return newItems;
-        });
-        
-        markAsChanged();
-        
-        // Always trigger structural save coordination if available
-        if (markStructuralChange && newItems!) {
-          console.log('🧪 STRUCTURAL CHANGE: Paste completed - triggering structural coordination');
-          markStructuralChange('copy_rows', { 
-            items: newItems!, 
-            newItems: itemsToPaste, 
-            insertIndex 
-          });
-        }
       }
       
       clearSelection();
     }
-  }, [clipboardItems, items, setItems, markAsChanged, clearSelection, markStructuralChange, operationHandlers]);
+  }, [clipboardItems, items, setItems, markAsChanged, clearSelection, markStructuralChange]);
 
   const handleDeleteColumnWithCleanup = useCallback((columnId: string) => {
     handleDeleteColumn(columnId);

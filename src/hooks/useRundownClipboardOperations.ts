@@ -14,10 +14,7 @@ interface UseRundownClipboardOperationsProps {
   clipboardItems: RundownItem[];
   copyItems: (items: RundownItem[]) => void;
   hasClipboardData: boolean;
-  // OT system handlers (optional for backwards compatibility)
-  operationHandlers?: {
-    handleRowCopy?: (sourceItemId: string, newItem: any, insertIndex: number) => void;
-  };
+  // operationHandlers removed - all structural operations now go through state methods
 }
 
 // Helper function to update all header segment names based on their position
@@ -46,8 +43,8 @@ export const useRundownClipboardOperations = ({
   markAsChanged,
   clipboardItems,
   copyItems,
-  hasClipboardData,
-  operationHandlers
+  hasClipboardData
+  // operationHandlers removed - all structural operations now go through state methods
 }: UseRundownClipboardOperationsProps) => {
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
@@ -60,24 +57,17 @@ export const useRundownClipboardOperations = ({
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      console.log('🔄 PASTE OPERATION: Starting', { 
+      console.log('🔄 PASTE OPERATION: Using structural save system', { 
         itemCount: clipboardItems.length, 
-        targetRowId,
-        hasOTHandlers: !!operationHandlers?.handleRowCopy 
+        targetRowId
       });
       
       let insertIndex: number;
       
       if (targetRowId) {
-        // Find the target row and insert after it
         const targetIndex = items.findIndex(item => item.id === targetRowId);
-        if (targetIndex !== -1) {
-          insertIndex = targetIndex + 1;
-        } else {
-          insertIndex = items.length;
-        }
+        insertIndex = targetIndex !== -1 ? targetIndex + 1 : items.length;
       } else {
-        // Fallback to selected rows logic if no target specified
         const selectedIds = Array.from(selectedRows);
         
         if (selectedIds.length > 0) {
@@ -96,37 +86,23 @@ export const useRundownClipboardOperations = ({
         }
       }
 
-      // Use OT system if available
-      if (operationHandlers?.handleRowCopy) {
-        console.log('🚀 ROUTING PASTE THROUGH OT SYSTEM');
-        clipboardItems.forEach((item, index) => {
-          const newItem = {
-            ...item,
-            id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-          };
-          operationHandlers.handleRowCopy!(item.id, newItem, insertIndex + index);
-        });
-      } else {
-        // Fallback to old system
-        console.log('⚠️ USING LEGACY PASTE SYSTEM');
-        const itemsToPaste = clipboardItems.map(item => ({
-          ...item,
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }));
-        
-        setItems(prevItems => {
-          const newItems = [...prevItems];
-          newItems.splice(insertIndex, 0, ...itemsToPaste);
-          return updateHeaderSegmentNames(newItems);
-        });
-        
-        markAsChanged();
-      }
+      // Route through state method - paste items
+      const itemsToPaste = clipboardItems.map(item => ({
+        ...item,
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }));
       
-      // Clear selection after successful paste
+      setItems(prevItems => {
+        const newItems = [...prevItems];
+        newItems.splice(insertIndex, 0, ...itemsToPaste);
+        return updateHeaderSegmentNames(newItems);
+      });
+      
+      markAsChanged();
+      
       setTimeout(() => clearSelection(), 0);
     }
-  }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection, operationHandlers]);
+  }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
 
   return {
     handleCopySelectedRows,
