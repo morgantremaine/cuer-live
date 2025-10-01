@@ -97,19 +97,21 @@ serve(async (req) => {
       )
     }
 
-    // Apply field updates to current state
-    const updatedItems = [...(currentRundown.items || [])]
+    // CRITICAL: Per-cell saves should ONLY update individual fields via item_field_updates
+    // They should NEVER overwrite the items array which contains row order
+    // Row order is managed by structural operations only!
+    
     let updatedTitle = currentRundown.title
     let updatedStartTime = currentRundown.start_time
     let updatedTimezone = currentRundown.timezone
     let updatedShowDate = currentRundown.show_date
     let updatedExternalNotes = currentRundown.external_notes
 
-    // Track field updates in the new JSONB column
+    // Track field updates in the new JSONB column (not in items array!)
     const itemFieldUpdates = currentRundown.item_field_updates || {}
     const updateTimestamp = new Date().toISOString()
 
-    console.log('🧪 EDGE FUNCTION: Processing field updates...');
+    console.log('🧪 EDGE FUNCTION: Processing field updates (field-level only, no items array modification)...');
     
     for (const update of fieldUpdates) {
       console.log('🧪 EDGE FUNCTION: Processing update:', {
@@ -120,33 +122,22 @@ serve(async (req) => {
       });
       
       if (update.itemId) {
-        // Item field update
-        const itemIndex = updatedItems.findIndex(item => item.id === update.itemId)
-        console.log('🧪 EDGE FUNCTION: Item field update:', {
+        // Item field update - ONLY update via item_field_updates, NOT items array
+        console.log('🧪 EDGE FUNCTION: Item field update (tracked only, not in items array):', {
           itemId: update.itemId,
-          itemIndex,
-          field: update.field,
-          found: itemIndex >= 0
+          field: update.field
         });
         
-        if (itemIndex >= 0) {
-          // Update the item field
-          updatedItems[itemIndex] = {
-            ...updatedItems[itemIndex],
-            [update.field]: update.value
-          }
-
-          // Track in item_field_updates
-          if (!itemFieldUpdates[update.itemId]) {
-            itemFieldUpdates[update.itemId] = {}
-          }
-          itemFieldUpdates[update.itemId][update.field] = {
-            value: update.value,
-            timestamp: updateTimestamp,
-            userId: user.id
-          }
-          console.log('🧪 EDGE FUNCTION: Item field updated and tracked');
+        // Track in item_field_updates (this will be merged with items on read)
+        if (!itemFieldUpdates[update.itemId]) {
+          itemFieldUpdates[update.itemId] = {}
         }
+        itemFieldUpdates[update.itemId][update.field] = {
+          value: update.value,
+          timestamp: updateTimestamp,
+          userId: user.id
+        }
+        console.log('🧪 EDGE FUNCTION: Item field tracked in item_field_updates');
       } else {
         // Global field update
         console.log('🧪 EDGE FUNCTION: Global field update:', {
@@ -180,11 +171,12 @@ serve(async (req) => {
       }
     }
     
-    console.log('🧪 EDGE FUNCTION: All updates processed, preparing database save...');
+    console.log('🧪 EDGE FUNCTION: All updates processed, preparing database save (NO items array modification)...');
 
-    // Build update data - NO doc_version conflicts!
-    const updateData = {
-      items: updatedItems,
+    // Build update data - CRITICAL: DO NOT include items array!
+    // Per-cell saves update fields via item_field_updates only
+    // Structural operations manage the items array (row order)
+    const updateData: any = {
       title: updatedTitle,
       start_time: updatedStartTime,
       timezone: updatedTimezone,
@@ -194,6 +186,12 @@ serve(async (req) => {
       updated_at: updateTimestamp,
       last_updated_by: user.id
     }
+    
+    console.log('🧪 EDGE FUNCTION: Update data prepared (items array excluded to preserve structural integrity):', {
+      hasTitle: !!updatedTitle,
+      hasItemFieldUpdates: Object.keys(itemFieldUpdates).length > 0,
+      itemsArrayIncluded: false
+    });
 
     // Save without doc_version conflicts
     const { data: updatedRundown, error: updateError } = await supabaseClient

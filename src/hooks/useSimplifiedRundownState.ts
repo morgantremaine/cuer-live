@@ -802,9 +802,35 @@ export const useSimplifiedRundownState = () => {
           if (error) {
             console.error('Error loading rundown:', error);
           } else if (data) {
-            const itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
+            // Merge item_field_updates with items array
+            let itemsToLoad = Array.isArray(data.items) && data.items.length > 0 
               ? data.items 
               : createDefaultRundownItems();
+            
+            // Apply field updates from item_field_updates JSONB column
+            if (data.item_field_updates && typeof data.item_field_updates === 'object') {
+              console.log('🧪 PER-CELL LOAD: Merging field updates into items', {
+                rundownId,
+                fieldUpdateCount: Object.keys(data.item_field_updates).length
+              });
+              
+              itemsToLoad = itemsToLoad.map(item => {
+                const fieldUpdates = (data.item_field_updates as Record<string, any>)[item.id];
+                if (fieldUpdates && typeof fieldUpdates === 'object') {
+                  // Merge field updates into item
+                  const mergedItem = { ...item };
+                  for (const [field, updateData] of Object.entries(fieldUpdates)) {
+                    if (updateData && typeof updateData === 'object' && 'value' in updateData) {
+                      mergedItem[field] = (updateData as any).value;
+                    }
+                  }
+                  return mergedItem;
+                }
+                return item;
+              });
+              
+              console.log('✅ PER-CELL LOAD: Field updates merged successfully');
+            }
 
             // Sync time from server timestamp and store it
             if (data.updated_at) {
@@ -875,9 +901,29 @@ export const useSimplifiedRundownState = () => {
       setLastSeenDocVersion(latestData.doc_version);
     }
     
+    // Merge item_field_updates with items array
+    let itemsToApply = latestData.items || [];
+    if (latestData.item_field_updates && typeof latestData.item_field_updates === 'object') {
+      console.log('🧪 PER-CELL REFRESH: Merging field updates into items');
+      
+      itemsToApply = itemsToApply.map((item: any) => {
+        const fieldUpdates = (latestData.item_field_updates as Record<string, any>)[item.id];
+        if (fieldUpdates && typeof fieldUpdates === 'object') {
+          const mergedItem = { ...item };
+          for (const [field, updateData] of Object.entries(fieldUpdates)) {
+            if (updateData && typeof updateData === 'object' && 'value' in updateData) {
+              mergedItem[field] = (updateData as any).value;
+            }
+          }
+          return mergedItem;
+        }
+        return item;
+      });
+    }
+    
     // Apply latest data - operations handle sync
     actions.loadState({
-      items: latestData.items || [],
+      items: itemsToApply,
       title: latestData.title,
       startTime: latestData.start_time,
       timezone: latestData.timezone,
