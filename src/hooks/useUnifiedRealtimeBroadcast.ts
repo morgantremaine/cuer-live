@@ -51,13 +51,7 @@ export const useUnifiedRealtimeBroadcast = ({
   const isConnectedRef = useRef(false);
   const instanceIdRef = useRef(crypto.randomUUID());
 
-  console.log('🔌 UNIFIED BROADCAST INSTANCE CREATED:', {
-    instanceId: instanceIdRef.current,
-    rundownId,
-    clientId,
-    userId,
-    timestamp: new Date().toISOString()
-  });
+  // Removed excessive initialization logging
 
   // Keep callback ref updated
   useEffect(() => {

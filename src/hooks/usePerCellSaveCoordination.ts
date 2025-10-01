@@ -41,13 +41,7 @@ export const usePerCellSaveCoordination = ({
     userId: currentUserId
   });
 
-  console.log('🎯 COORDINATION: Unified broadcast initialized', {
-    rundownId,
-    userId: currentUserId,
-    clientId: clientIdRef.current,
-    instanceId,
-    isConnected
-  });
+  // Removed excessive initialization logging
 
   // Cell-level save system without typing awareness (operations handle sync)
   const {

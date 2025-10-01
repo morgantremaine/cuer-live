@@ -38,12 +38,7 @@ export const useStructuralSave = (
   const lastSaveTimestampRef = useRef<number>(0);
   const clientIdRef = useRef(uuidv4());
 
-  console.log('🏗️ STRUCTURAL SAVE HOOK INITIALIZED:', {
-    rundownId,
-    currentUserId,
-    clientId: clientIdRef.current,
-    broadcastInstanceId: instanceId
-  });
+  // Removed excessive initialization logging
 
   // Debounced save for batching operations
   const saveStructuralOperations = useCallback(async (): Promise<void> => {

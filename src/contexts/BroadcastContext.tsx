@@ -50,12 +50,7 @@ export const BroadcastProvider = ({ rundownId, userId, children }: BroadcastProv
   const clientId = useRef(uuidv4());
   const isConnectedRef = useRef(false);
 
-  console.log('🔌 BROADCAST PROVIDER CREATED:', {
-    instanceId: instanceId.current,
-    rundownId,
-    userId,
-    clientId: clientId.current
-  });
+  // Removed excessive initialization logging
 
   useEffect(() => {
     const channelName = `rundown-operations-${rundownId}`;
