@@ -36,12 +36,25 @@ export const useStructuralSave = (
   const lastSaveTimestampRef = useRef<number>(0);
   const clientIdRef = useRef(uuidv4());
 
+  console.log('🏗️ STRUCTURAL SAVE HOOK INITIALIZED:', {
+    rundownId,
+    currentUserId,
+    clientId: clientIdRef.current,
+    canBroadcast: !!rundownId && !!currentUserId
+  });
+
   // Use unified broadcast system for structural operations
-  const { broadcastOperation } = useUnifiedRealtimeBroadcast({
+  const { broadcastOperation, isConnected } = useUnifiedRealtimeBroadcast({
     rundownId: rundownId || '',
     clientId: clientIdRef.current,
     userId: currentUserId || '',
     enabled: !!rundownId && !!currentUserId
+  });
+
+  console.log('🏗️ STRUCTURAL SAVE: Unified broadcast status:', {
+    isConnected,
+    rundownId,
+    userId: currentUserId
   });
 
   // Debounced save for batching operations
@@ -124,10 +137,18 @@ export const useStructuralSave = (
             
             console.log('📡 STRUCTURAL: Broadcasting via unified system', {
               type: unifiedPayload.type,
-              operation: operation.operationType
+              operation: operation.operationType,
+              clientId: clientIdRef.current,
+              userId: currentUserId,
+              isConnected
             });
             
-            await broadcastOperation(unifiedPayload);
+            try {
+              await broadcastOperation(unifiedPayload);
+              console.log('✅ STRUCTURAL: Broadcast sent successfully');
+            } catch (broadcastError) {
+              console.error('❌ STRUCTURAL: Broadcast failed:', broadcastError);
+            }
           }
 
           debugLogger.autosave(`Structural save success: ${operation.operationType}`);

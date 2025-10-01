@@ -58,7 +58,10 @@ export const useUnifiedRealtimeBroadcast = ({
 
   // Set up unified broadcast channel
   useEffect(() => {
-    if (!enabled || !rundownId) return;
+    if (!enabled || !rundownId) {
+      console.log('🔌 UNIFIED BROADCAST: Not setting up channel', { enabled, rundownId });
+      return;
+    }
 
     console.log('🔌 UNIFIED BROADCAST: Setting up channel', { rundownId, clientId, userId });
 
