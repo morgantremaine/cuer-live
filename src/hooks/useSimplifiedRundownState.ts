@@ -1040,7 +1040,10 @@ export const useSimplifiedRundownState = () => {
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
-      console.log('🟢 enhancedActions.addRow called with count:', count);
+      console.log('🟢🟢🟢 ADD ROW START - enhancedActions.addRow called with count:', count);
+      console.log('🟢🟢🟢 ADD ROW: Per-cell enabled?', cellEditIntegration.isPerCellEnabled);
+      console.log('🟢🟢🟢 ADD ROW: Has saveCoordination?', !!saveCoordination);
+      console.log('🟢🟢🟢 ADD ROW: Current userId?', currentUserId);
       saveUndoState(state.items, [], state.title, `Add ${count} segment${count > 1 ? 's' : ''}`);
       
       // Determine insert index based on selection
@@ -1095,23 +1098,28 @@ export const useSimplifiedRundownState = () => {
       ];
       
       latestItemsRef.current = newItems;
+      console.log('🟢🟢🟢 ADD ROW: About to call actions.setItems with', newItems.length, 'items');
       actions.setItems(newItems);
+      console.log('🟢🟢🟢 ADD ROW: actions.setItems called successfully');
       
       // Trigger structural save coordination
-      console.log('🟢 STRUCTURAL: addRow checking per-cell mode', {
+      console.log('🟢🟢🟢 ADD ROW: Checking per-cell mode', {
         isPerCellEnabled: cellEditIntegration.isPerCellEnabled,
         hasCurrentUserId: !!currentUserId,
+        hasSaveCoordination: !!saveCoordination,
         rundownId
       });
       if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addRow completed - triggering structural coordination');
+        console.log('🟢🟢🟢 ADD ROW: Per-cell mode IS enabled, calling markStructuralChange');
         markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex }, currentUserId);
+        console.log('🟢🟢🟢 ADD ROW: markStructuralChange called successfully');
       } else {
-        console.warn('⚠️ Per-cell mode is disabled - addRow will not trigger structural save');
+        console.warn('⚠️⚠️⚠️ ADD ROW: Per-cell mode is DISABLED - will NOT trigger structural save');
       }
       
+      console.log('🟢🟢🟢 ADD ROW COMPLETE');
       // Broadcasting handled by structural operations
-    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, currentUserId, rundownId]),
+    }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, currentUserId, rundownId, saveCoordination]),
 
     addHeader: useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
       console.log('🟢 enhancedActions.addHeader called');
