@@ -1020,12 +1020,9 @@ export const useSimplifiedRundownState = () => {
       
       actions.deleteItem(id);
       
-      // For per-cell saves, use structural save coordination
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: deleteRow completed - triggering structural coordination');
-        // Pass updated items array, not just deleted IDs
-        markStructuralChange('delete_row', { items: newItems, deletedIds: [id] });
-      }
+      // Always trigger structural save coordination - markStructuralChange handles the logic internally
+      console.log('🟢 DELETE ROW: Calling markStructuralChange');
+      markStructuralChange('delete_row', { items: newItems, deletedIds: [id] }, currentUserId);
       
       // Broadcast row removal for immediate realtime sync
       if (rundownId && currentUserId) {
@@ -1102,22 +1099,10 @@ export const useSimplifiedRundownState = () => {
       actions.setItems(newItems);
       console.log('🟢🟢🟢 ADD ROW: actions.setItems called successfully');
       
-      // Trigger structural save coordination
-      console.log('🟢🟢🟢 ADD ROW: Checking per-cell mode', {
-        isPerCellEnabled: cellEditIntegration.isPerCellEnabled,
-        hasCurrentUserId: !!currentUserId,
-        hasSaveCoordination: !!saveCoordination,
-        rundownId
-      });
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🟢🟢🟢 ADD ROW: Per-cell mode IS enabled, calling markStructuralChange');
-        markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex }, currentUserId);
-        console.log('🟢🟢🟢 ADD ROW: markStructuralChange called successfully');
-      } else {
-        console.warn('⚠️⚠️⚠️ ADD ROW: Per-cell mode is DISABLED - will NOT trigger structural save');
-      }
+      // Always trigger structural save coordination - markStructuralChange handles the logic internally
+      console.log('🟢 ADD ROW: Calling markStructuralChange');
+      markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex }, currentUserId);
       
-      console.log('🟢🟢🟢 ADD ROW COMPLETE');
       // Broadcasting handled by structural operations
     }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, currentUserId, rundownId, saveCoordination]),
 
@@ -1176,11 +1161,9 @@ export const useSimplifiedRundownState = () => {
       latestItemsRef.current = newItems;
       actions.setItems(newItems);
       
-      // Trigger structural save coordination
-      if (cellEditIntegration.isPerCellEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: addHeader completed - triggering structural coordination');
-        markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex });
-      }
+      // Always trigger structural save coordination - markStructuralChange handles the logic internally
+      console.log('🟢 ADD HEADER: Calling markStructuralChange');
+      markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex }, currentUserId);
       
       // Broadcasting handled by structural operations
     }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
