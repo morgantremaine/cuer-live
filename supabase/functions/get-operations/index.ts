@@ -89,9 +89,10 @@ serve(async (req) => {
     });
 
     // Transform database records (snake_case) to client format (camelCase)
+    // Also normalize operation types to match client expectations
     const transformedOperations = (operations || []).map((op: any) => ({
       id: op.id,
-      operationType: op.operation_type,
+      operationType: normalizeOperationType(op.operation_type),
       operationData: op.operation_data,
       rundownId: op.rundown_id,
       userId: op.user_id,
@@ -126,6 +127,42 @@ serve(async (req) => {
     );
   }
 });
+
+// Normalize operation type to standard format (same as apply-operation)
+function normalizeOperationType(operationType: string): string {
+  // Normalize to uppercase and remove common prefixes
+  let normalized = operationType.toUpperCase()
+    .replace('STRUCTURAL_', '')
+    .replace('_ROW', '')
+    .replace('_ROWS', '');
+  
+  // Map to standard types
+  const typeMap: { [key: string]: string } = {
+    'DELETE': 'ROW_DELETE',
+    'ROWDELETE': 'ROW_DELETE',
+    'ADD': 'ROW_INSERT',
+    'ROWINSERT': 'ROW_INSERT',
+    'INSERT': 'ROW_INSERT',
+    'MOVE': 'ROW_MOVE',
+    'ROWMOVE': 'ROW_MOVE',
+    'REORDER': 'ROW_MOVE',
+    'COPY': 'ROW_COPY',
+    'ROWCOPY': 'ROW_COPY',
+    'CELLEDIT': 'CELL_EDIT',
+    'EDIT': 'CELL_EDIT',
+    'GLOBALEDIT': 'GLOBAL_EDIT'
+  };
+  
+  const result = typeMap[normalized] || operationType;
+  
+  console.log('🔄 Normalized operation type:', {
+    original: operationType,
+    normalized,
+    result
+  });
+  
+  return result;
+}
 
 async function checkTeamAccess(supabaseClient: any, userId: string, teamId: string): Promise<boolean> {
   const { data, error } = await supabaseClient
