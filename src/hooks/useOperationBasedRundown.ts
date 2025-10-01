@@ -326,7 +326,7 @@ export const useOperationBasedRundown = ({
     const optimisticOperation: Operation = {
       id: `temp_${Date.now()}`,
       operationType: 'ROW_MOVE',
-      operationData: { fromIndex, toIndex },
+      operationData: { fromIndex, toIndex, itemId }, // Include itemId for robust application
       rundownId,
       userId,
       clientId,
@@ -433,10 +433,33 @@ function applyRowDelete(items: any[], operationData: any): any[] {
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
-  const { fromIndex, toIndex } = operationData;
+  const { fromIndex, toIndex, itemId } = operationData;
+  
+  // Find item by ID for robustness against concurrent changes
+  const currentIndex = items.findIndex(item => item.id === itemId);
+  
+  if (currentIndex === -1) {
+    console.warn('⚠️ ROW_MOVE: Item not found:', itemId);
+    return items;
+  }
+  
+  // Log if indices have changed (indicates concurrent modifications)
+  if (currentIndex !== fromIndex) {
+    console.log('🔄 ROW_MOVE: Index shifted', {
+      itemId,
+      expectedIndex: fromIndex,
+      actualIndex: currentIndex,
+      targetIndex: toIndex
+    });
+  }
+  
   const newItems = [...items];
-  const [movedItem] = newItems.splice(fromIndex, 1);
-  newItems.splice(toIndex, 0, movedItem);
+  const [movedItem] = newItems.splice(currentIndex, 1);
+  
+  // Adjust target index if needed (when moving item forward, indices shift)
+  const adjustedToIndex = currentIndex < toIndex ? toIndex - 1 : toIndex;
+  newItems.splice(adjustedToIndex, 0, movedItem);
+  
   return newItems;
 }
 
