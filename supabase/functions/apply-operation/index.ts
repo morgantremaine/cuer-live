@@ -236,9 +236,9 @@ function applyRowDelete(items: any[], operationData: any): any[] {
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
-  const { fromIndex, toIndex, itemId } = operationData;
+  const { toIndex, itemId } = operationData;
   
-  // Find item by ID for robustness against concurrent changes
+  // Find item by ID for robustness
   const currentIndex = items.findIndex(item => item.id === itemId);
   
   if (currentIndex === -1) {
@@ -246,22 +246,20 @@ function applyRowMove(items: any[], operationData: any): any[] {
     return items;
   }
   
-  // Log if indices have changed (indicates concurrent modifications)
-  if (currentIndex !== fromIndex) {
-    console.log('🔄 ROW_MOVE: Index shifted', {
-      itemId,
-      expectedIndex: fromIndex,
-      actualIndex: currentIndex,
-      targetIndex: toIndex
-    });
+  // If already at target position, no change needed
+  if (currentIndex === toIndex) {
+    return items;
   }
   
   const newItems = [...items];
   const [movedItem] = newItems.splice(currentIndex, 1);
+  newItems.splice(toIndex, 0, movedItem);
   
-  // Adjust target index if needed (when moving item forward, indices shift)
-  const adjustedToIndex = currentIndex < toIndex ? toIndex - 1 : toIndex;
-  newItems.splice(adjustedToIndex, 0, movedItem);
+  console.log('✅ ROW_MOVE APPLIED:', {
+    itemId,
+    from: currentIndex,
+    to: toIndex
+  });
   
   return newItems;
 }
