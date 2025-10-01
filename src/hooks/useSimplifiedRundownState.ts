@@ -1020,20 +1020,9 @@ export const useSimplifiedRundownState = () => {
       
       actions.deleteItem(id);
       
-      // Always trigger structural save coordination - markStructuralChange handles the logic internally
-      console.log('🟢 DELETE ROW: Calling markStructuralChange');
+      // Trigger structural save coordination - broadcasts via unified system
+      console.log('🟢 DELETE ROW: Calling markStructuralChange (unified broadcast)');
       markStructuralChange('delete_row', { items: newItems, deletedIds: [id] }, currentUserId);
-      
-      // Broadcast row removal for immediate realtime sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:remove',
-          { id },
-          currentUserId
-        );
-      }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
@@ -1099,20 +1088,9 @@ export const useSimplifiedRundownState = () => {
       actions.setItems(newItems);
       console.log('🟢🟢🟢 ADD ROW: actions.setItems called successfully');
       
-      // Always trigger structural save coordination - markStructuralChange handles the logic internally
-      console.log('🟢 ADD ROW: Calling markStructuralChange');
+      // Trigger structural save coordination - broadcasts via unified system
+      console.log('🟢 ADD ROW: Calling markStructuralChange (unified broadcast)');
       markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex }, currentUserId);
-      
-      // Broadcast row addition for immediate realtime sync (like delete does)
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'structural:add_row',
-          { items: newItems, newItems: newItemsToAdd, insertIndex },
-          currentUserId
-        );
-      }
     }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, currentUserId, rundownId, saveCoordination]),
 
     addHeader: useCallback((selectedRowId?: string | null, selectedRows?: Set<string>) => {
@@ -1170,20 +1148,9 @@ export const useSimplifiedRundownState = () => {
       latestItemsRef.current = newItems;
       actions.setItems(newItems);
       
-      // Always trigger structural save coordination - markStructuralChange handles the logic internally
-      console.log('🟢 ADD HEADER: Calling markStructuralChange');
+      // Trigger structural save coordination - broadcasts via unified system
+      console.log('🟢 ADD HEADER: Calling markStructuralChange (unified broadcast)');
       markStructuralChange('add_header', { items: newItems, newItems: [newHeaderItem], insertIndex }, currentUserId);
-      
-      // Broadcast header addition for immediate realtime sync (like delete does)
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'structural:add_header',
-          { items: newItems, newItems: [newHeaderItem], insertIndex },
-          currentUserId
-        );
-      }
     }, [actions.setItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     setTitle: useCallback((newTitle: string) => {
@@ -1290,20 +1257,9 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Always trigger structural save coordination - markStructuralChange handles the logic internally
-    console.log('🔵 ADD ROW AT INDEX: Calling markStructuralChange');
+    // Trigger structural save coordination - broadcasts via unified system
+    console.log('🔵 ADD ROW AT INDEX: Calling markStructuralChange (unified broadcast)');
     markStructuralChange('add_row', { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex }, currentUserId);
-    
-    // Broadcast row addition for immediate realtime sync (like delete does)
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(
-        rundownId,
-        undefined,
-        'structural:add_row',
-        { items: newItems, newItems: newItemsToAdd, insertIndex: actualIndex },
-        currentUserId
-      );
-    }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
   // Fixed addHeaderAtIndex that properly inserts at specified index
@@ -1342,20 +1298,9 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Always trigger structural save coordination - markStructuralChange handles the logic internally
-    console.log('🔵 ADD HEADER AT INDEX: Calling markStructuralChange');
+    // Trigger structural save coordination - broadcasts via unified system
+    console.log('🔵 ADD HEADER AT INDEX: Calling markStructuralChange (unified broadcast)');
     markStructuralChange('add_header', { items: newItems, newItems: [newHeader], insertIndex: actualIndex }, currentUserId);
-    
-    // Broadcast header addition for immediate realtime sync (like delete does)
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(
-        rundownId,
-        undefined,
-        'structural:add_header',
-        { items: newItems, newItems: [newHeader], insertIndex: actualIndex },
-        currentUserId
-      );
-    }
   }, [state.items, state.title, saveUndoState, actions.setItems, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]);
 
 

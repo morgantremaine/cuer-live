@@ -418,39 +418,18 @@ export const useDragAndDrop = (
       setItems(newItems);
       console.log('🏗️ Drag operation completed, items updated');
       
-      // Handle reorder via structural coordination system
+      // Handle reorder via structural coordination system (unified broadcast)
       if (markStructuralChange && typeof markStructuralChange === 'function') {
         const order = newItems.map(item => item.id);
-        console.log('🏗️ Triggering structural operation for reorder with userId:', currentUserId);
+        console.log('🏗️ Triggering structural operation for reorder (unified broadcast) with userId:', currentUserId);
         
         // Call structural change handler with reorder operation AND current user ID
         (markStructuralChange as any)('reorder', { 
           items: newItems,
           order 
         }, currentUserId);
-        
-        // ALWAYS broadcast reorder immediately (like delete does)
-        if (rundownId && currentUserId) {
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId
-          );
-        }
       } else {
-        // Fallback broadcast
-        if (rundownId && currentUserId) {
-          const order = newItems.map(item => item.id);
-          cellBroadcast.broadcastCellUpdate(
-            rundownId,
-            undefined,
-            'items:reorder',
-            { order },
-            currentUserId
-          );
-        }
+        console.warn('⚠️ No markStructuralChange handler available for reorder');
       }
       
     } catch (error) {
