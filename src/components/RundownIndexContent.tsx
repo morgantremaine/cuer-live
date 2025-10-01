@@ -75,19 +75,17 @@ const RundownIndexContent = () => {
     isProcessingRealtimeUpdate,
     autoScrollEnabled,
     toggleAutoScroll,
-    // Column management functions
     addColumn,
     updateColumnWidth,
     setColumns,
-    // Header collapse functions
     toggleHeaderCollapse,
     isHeaderCollapsed,
     getHeaderGroupItemIds,
     visibleItems,
-    // Move functions for mobile
     moveItemUp,
     moveItemDown
   } = coreState;
+
 
   // Get team data for column deletion
   const { team } = useTeam();

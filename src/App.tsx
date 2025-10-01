@@ -36,6 +36,7 @@ import BlogPost from "./pages/BlogPost";
 import CreateBlog from "./pages/CreateBlog";
 import EditBlog from "./pages/EditBlog";
 import ArticleManager from "./pages/ArticleManager";
+import { OperationSystemTest } from '@/pages/OperationSystemTest';
 import DeleteTestUser from "./pages/DeleteTestUser";
 import StreamDeckDownload from "./pages/StreamDeckDownload";
 import AdminHealth from "./pages/AdminHealth";
@@ -78,6 +79,9 @@ const AppRoutes = () => {
         path="/" 
         element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
       />
+      
+      {/* Test route for operation system debugging */}
+      <Route path="/test/operations/:id" element={<OperationSystemTest />} />
       
       {/* Homepage route for authenticated users */}
       <Route path="/home" element={<LandingPage />} />
