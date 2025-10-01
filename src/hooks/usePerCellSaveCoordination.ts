@@ -61,7 +61,7 @@ export const usePerCellSaveCoordination = ({
     queueStructuralOperation,
     flushPendingOperations: flushStructuralOperations,
     hasPendingOperations: hasPendingStructuralOperations
-  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId, broadcastOperation);
+  } = useStructuralSave(rundownId, onSaveComplete, onSaveStart, onUnsavedChanges, currentUserId);
 
   // Field change tracking - routes to per-cell save system
   const trackFieldChange = useCallback((itemId: string | undefined, field: string, value: any) => {

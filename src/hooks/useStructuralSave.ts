@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { debugLogger } from '@/utils/debugLogger';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
-import { UnifiedOperationPayload, OperationType } from './useUnifiedRealtimeBroadcast';
+import { useBroadcast, UnifiedOperationPayload, OperationType } from '@/contexts/BroadcastContext';
 import { v4 as uuidv4 } from 'uuid';
 
 interface StructuralOperationData {
@@ -29,9 +29,9 @@ export const useStructuralSave = (
   onSaveComplete?: () => void,
   onSaveStart?: () => void,
   onUnsavedChanges?: () => void,
-  currentUserId?: string,
-  broadcastOperation?: (operation: UnifiedOperationPayload) => Promise<void> // ✅ Accept broadcast function as parameter
+  currentUserId?: string
 ) => {
+  const { broadcast, instanceId } = useBroadcast();
   const pendingOperationsRef = useRef<StructuralOperation[]>([]);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isUnloadingRef = useRef(false);
@@ -42,7 +42,7 @@ export const useStructuralSave = (
     rundownId,
     currentUserId,
     clientId: clientIdRef.current,
-    hasBroadcast: !!broadcastOperation
+    broadcastInstanceId: instanceId
   });
 
   // Debounced save for batching operations
@@ -144,7 +144,7 @@ export const useStructuralSave = (
             });
             
             try {
-              await broadcastOperation(unifiedPayload);
+              await broadcast(unifiedPayload);
               console.log('✅ STRUCTURAL: Broadcast sent successfully');
             } catch (broadcastError) {
               console.error('❌ STRUCTURAL: Broadcast failed:', broadcastError);
