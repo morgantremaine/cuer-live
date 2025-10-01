@@ -91,8 +91,18 @@ export const useOperationBasedRundown = ({
   // Apply operation to current state
   const applyOperationToState = useCallback((operation: any) => {
     // Validate operation has required fields
-    if (!operation.operationType) {
+    if (!operation?.operationType) {
       console.error('❌ OPERATION MISSING TYPE:', operation);
+      return;
+    }
+
+    // Validate operationData exists
+    if (!operation.operationData) {
+      console.error('❌ OPERATION MISSING DATA:', {
+        type: operation.operationType,
+        id: operation.id,
+        operation
+      });
       return;
     }
     
@@ -119,11 +129,6 @@ export const useOperationBasedRundown = ({
         
         case 'ROW_MOVE':
           newState.items = applyRowMove(currentState.items, operation.operationData);
-          console.log('✅ ROW_MOVE APPLIED:', {
-            itemId: operation.operationData.itemId,
-            from: operation.operationData.fromIndex,
-            to: operation.operationData.toIndex
-          });
           break;
         
         case 'ROW_COPY':
@@ -133,6 +138,9 @@ export const useOperationBasedRundown = ({
         case 'GLOBAL_EDIT':
           Object.assign(newState, operation.operationData);
           break;
+        
+        default:
+          console.warn('⚠️ Unknown operation type:', operation.operationType);
       }
 
       if (operation.sequenceNumber) {
