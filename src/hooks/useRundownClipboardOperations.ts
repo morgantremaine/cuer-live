@@ -14,6 +14,10 @@ interface UseRundownClipboardOperationsProps {
   clipboardItems: RundownItem[];
   copyItems: (items: RundownItem[]) => void;
   hasClipboardData: boolean;
+  // OT system handlers (optional for backwards compatibility)
+  operationHandlers?: {
+    handleRowCopy?: (sourceItemId: string, newItem: any, insertIndex: number) => void;
+  };
 }
 
 // Helper function to update all header segment names based on their position
@@ -42,7 +46,8 @@ export const useRundownClipboardOperations = ({
   markAsChanged,
   clipboardItems,
   copyItems,
-  hasClipboardData
+  hasClipboardData,
+  operationHandlers
 }: UseRundownClipboardOperationsProps) => {
   const handleCopySelectedRows = useCallback(() => {
     const selectedItems = items.filter(item => selectedRows.has(item.id));
@@ -55,8 +60,11 @@ export const useRundownClipboardOperations = ({
 
   const handlePasteRows = useCallback((targetRowId?: string) => {
     if (clipboardItems.length > 0) {
-      console.log('Pasting items, targetRowId:', targetRowId);
-      console.log('Current items length:', items.length);
+      console.log('🔄 PASTE OPERATION: Starting', { 
+        itemCount: clipboardItems.length, 
+        targetRowId,
+        hasOTHandlers: !!operationHandlers?.handleRowCopy 
+      });
       
       let insertIndex: number;
       
@@ -65,66 +73,60 @@ export const useRundownClipboardOperations = ({
         const targetIndex = items.findIndex(item => item.id === targetRowId);
         if (targetIndex !== -1) {
           insertIndex = targetIndex + 1;
-          console.log('Inserting at index:', insertIndex, 'after target row:', targetRowId);
         } else {
-          // If target not found, insert at the end
           insertIndex = items.length;
-          console.log('Target row not found, inserting at end:', insertIndex);
         }
       } else {
         // Fallback to selected rows logic if no target specified
         const selectedIds = Array.from(selectedRows);
         
         if (selectedIds.length > 0) {
-          // Find the indices of all selected rows
           const selectedIndices = selectedIds
-            .map(id => {
-              const index = items.findIndex(item => item.id === id);
-              console.log(`Found item ${id} at index ${index}`);
-              return index;
-            })
+            .map(id => items.findIndex(item => item.id === id))
             .filter(index => index !== -1);
           
           if (selectedIndices.length > 0) {
-            // Insert after the last selected item
             const highestSelectedIndex = Math.max(...selectedIndices);
             insertIndex = highestSelectedIndex + 1;
-            console.log('Inserting at index:', insertIndex, 'after selected index:', highestSelectedIndex);
           } else {
-            // If no valid selection found, insert at the end
             insertIndex = items.length;
-            console.log('No valid selection, inserting at end:', insertIndex);
           }
         } else {
-          // If no selection, insert at the end
           insertIndex = items.length;
-          console.log('No selection, inserting at end:', insertIndex);
         }
       }
 
-      const itemsToPaste = clipboardItems.map(item => ({
-        ...item,
-        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      }));
-      
-      console.log('About to insert', itemsToPaste.length, 'items at index:', insertIndex);
-      
-      setItems(prevItems => {
-        const newItems = [...prevItems];
-        // Insert at the calculated position
-        newItems.splice(insertIndex, 0, ...itemsToPaste);
+      // Use OT system if available
+      if (operationHandlers?.handleRowCopy) {
+        console.log('🚀 ROUTING PASTE THROUGH OT SYSTEM');
+        clipboardItems.forEach((item, index) => {
+          const newItem = {
+            ...item,
+            id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          };
+          operationHandlers.handleRowCopy!(item.id, newItem, insertIndex + index);
+        });
+      } else {
+        // Fallback to old system
+        console.log('⚠️ USING LEGACY PASTE SYSTEM');
+        const itemsToPaste = clipboardItems.map(item => ({
+          ...item,
+          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        }));
         
-        console.log('New items length after insert:', newItems.length);
+        setItems(prevItems => {
+          const newItems = [...prevItems];
+          newItems.splice(insertIndex, 0, ...itemsToPaste);
+          return updateHeaderSegmentNames(newItems);
+        });
         
-        // Update header segment names for all headers in the correct order
-        return updateHeaderSegmentNames(newItems);
-      });
+        markAsChanged();
+      }
       
-      markAsChanged();
       // Clear selection after successful paste
       setTimeout(() => clearSelection(), 0);
     }
-  }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection]);
+  }, [clipboardItems, selectedRows, items, setItems, markAsChanged, clearSelection, operationHandlers]);
 
   return {
     handleCopySelectedRows,

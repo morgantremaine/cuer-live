@@ -245,7 +245,8 @@ export const useRundownStateCoordination = (operationHandlers?: {
       handleDrop: dragAndDrop.handleDrop,
       handleDragEnd: dragAndDrop.handleDragEnd,
       resetDragState: dragAndDrop.resetDragState
-    }
+    },
+    operationHandlers // Pass OT handlers
   );
 
   // Store interactions ref for drag and drop access

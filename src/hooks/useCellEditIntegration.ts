@@ -188,7 +188,8 @@ export const useCellEditIntegration = ({
     operationHandlers: operationSystem.isOperationMode ? {
       handleRowMove: operationSystem.handleRowMove,
       handleRowInsert: operationSystem.handleRowInsert,
-      handleRowDelete: operationSystem.handleRowDelete
+      handleRowDelete: operationSystem.handleRowDelete,
+      handleRowCopy: operationSystem.handleRowCopy
     } : undefined
   };
 };

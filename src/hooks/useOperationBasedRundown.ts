@@ -318,19 +318,45 @@ export const useOperationBasedRundown = ({
     if (!state.isOperationMode || fromIndex === toIndex) return;
 
     const itemId = state.items[fromIndex]?.id;
-    if (!itemId) return;
+    if (!itemId) {
+      console.error('Cannot move row: item not found at index', fromIndex);
+      return;
+    }
 
-    // Apply optimistically
-    const optimisticOperation = {
-      operationType: 'ROW_MOVE' as const,
-      operationData: { fromIndex, toIndex, itemId },
-      sequenceNumber: state.lastSequence + 1
+    const optimisticOperation: Operation = {
+      id: `temp_${Date.now()}`,
+      operationType: 'ROW_MOVE',
+      operationData: { fromIndex, toIndex },
+      rundownId,
+      userId,
+      clientId,
+      timestamp: Date.now(),
+      status: 'pending'
     };
     applyOperationToState(optimisticOperation);
 
     // Queue for server
     operationQueue.rowMove(fromIndex, toIndex, itemId);
   }, [state.isOperationMode, state.lastSequence, state.items, operationQueue, applyOperationToState]);
+
+  const handleRowCopy = useCallback((sourceItemId: string, newItem: any, insertIndex: number) => {
+    if (!state.isOperationMode) return;
+
+    const optimisticOperation: Operation = {
+      id: `temp_${Date.now()}`,
+      operationType: 'ROW_COPY',
+      operationData: { sourceItemId, newItem, insertIndex },
+      rundownId,
+      userId,
+      clientId,
+      timestamp: Date.now(),
+      status: 'pending'
+    };
+    applyOperationToState(optimisticOperation);
+
+    // Queue for server
+    operationQueue.rowCopy(sourceItemId, newItem, insertIndex);
+  }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState, rundownId, userId, clientId]);
 
   const handleGlobalEdit = useCallback((field: string, newValue: any) => {
     if (!state.isOperationMode) return;
@@ -357,6 +383,7 @@ export const useOperationBasedRundown = ({
     handleRowInsert,
     handleRowDelete,
     handleRowMove,
+    handleRowCopy,
     handleGlobalEdit,
     
     // Queue status

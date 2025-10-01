@@ -39,6 +39,12 @@ export const useRundownGridInteractions = (
     handleDrop: (e: React.DragEvent, index: number) => void;
     handleDragEnd: (e: React.DragEvent) => void;
     resetDragState: () => void;
+  },
+  // OT system handlers
+  operationHandlers?: {
+    handleRowDelete?: (itemId: string) => void;
+    handleRowInsert?: (insertIndex: number, newItem: any) => void;
+    handleRowCopy?: (sourceItemId: string, newItem: any, insertIndex: number) => void;
   }
 ) => {
   const {
@@ -95,7 +101,8 @@ export const useRundownGridInteractions = (
     rundownId,
     currentUserId,
     isPerCellEnabled,
-    dragState // Pass the drag state from primary instance
+    dragState, // Pass the drag state from primary instance
+    operationHandlers // Pass OT handlers through
   );
 
   return {

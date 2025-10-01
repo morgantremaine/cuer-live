@@ -8,6 +8,11 @@ interface UseRundownRowOperationsProps {
   addRow: (calculateEndTime: (startTime: string, duration: string) => string, selectedRowId?: string | null, selectedRows?: Set<string>, count?: number) => void;
   addHeader: (selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   calculateEndTime: (startTime: string, duration: string) => string;
+  // OT system handlers (optional for backwards compatibility)
+  operationHandlers?: {
+    handleRowDelete?: (itemId: string) => void;
+    handleRowInsert?: (insertIndex: number, newItem: any) => void;
+  };
 }
 
 export const useRundownRowOperations = ({
@@ -16,15 +21,27 @@ export const useRundownRowOperations = ({
   clearSelection,
   addRow,
   addHeader,
-  calculateEndTime
+  calculateEndTime,
+  operationHandlers
 }: UseRundownRowOperationsProps) => {
   const handleDeleteSelectedRows = useCallback(() => {
     const selectedIds = Array.from(selectedRows);
     if (selectedIds.length > 0) {
-      deleteMultipleRows(selectedIds);
+      console.log('🗑️ DELETE OPERATION:', { 
+        count: selectedIds.length, 
+        hasOTHandlers: !!operationHandlers?.handleRowDelete 
+      });
+      
+      if (operationHandlers?.handleRowDelete) {
+        console.log('🚀 ROUTING DELETE THROUGH OT SYSTEM');
+        selectedIds.forEach(id => operationHandlers.handleRowDelete!(id));
+      } else {
+        console.log('⚠️ USING LEGACY DELETE SYSTEM');
+        deleteMultipleRows(selectedIds);
+      }
       clearSelection();
     }
-  }, [selectedRows, deleteMultipleRows, clearSelection]);
+  }, [selectedRows, deleteMultipleRows, clearSelection, operationHandlers]);
 
   const handleAddRow = useCallback((selectedRowId?: string | null, count?: number) => {
     console.log('🟡 handleAddRow called with count:', count);
