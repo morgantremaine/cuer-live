@@ -295,7 +295,8 @@ export const useSimplifiedRundownState = () => {
   const operationBasedRundown = useOperationBasedRundown({
     rundownId: rundownId || '',
     userId: currentUserId || '',
-    enabled: isOperationModeEnabled && !!rundownId && !!currentUserId
+    enabled: isOperationModeEnabled && !!rundownId && !!currentUserId,
+    skipHistoricalOperations: true // Start fresh - don't load historical operations
   });
 
   // Cell-level broadcast system for immediate sync
@@ -540,6 +541,7 @@ export const useSimplifiedRundownState = () => {
   const cellEditIntegration = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: perCellEnabled,
+    operationSystem: operationBasedRundown, // Pass to prevent duplicate
     onSaveComplete: () => {
       console.log('🧪 PER-CELL SAVE: Save completed - marking main state as saved');
       actions.markSaved();

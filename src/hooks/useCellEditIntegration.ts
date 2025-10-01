@@ -10,6 +10,7 @@ interface CellEditIntegrationProps {
   onSaveComplete?: () => void;
   onSaveStart?: () => void;
   onUnsavedChanges?: () => void;
+  operationSystem?: any; // Receive operation system from parent instead of creating own
 }
 
 /**
@@ -21,7 +22,8 @@ export const useCellEditIntegration = ({
   isPerCellEnabled,
   onSaveComplete,
   onSaveStart,
-  onUnsavedChanges
+  onUnsavedChanges,
+  operationSystem: providedOperationSystem
 }: CellEditIntegrationProps) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const [isPerCellSaving, setIsPerCellSaving] = useState(false);
@@ -29,12 +31,19 @@ export const useCellEditIntegration = ({
   
   const { user } = useAuth();
   
-  // Always use operation mode - no toggle needed
-  const operationSystem = useOperationBasedRundown({
-    rundownId: rundownId || '',
-    userId: user?.id || '',
-    enabled: true // Always enabled
-  });
+  // Use provided operation system (from parent) - DO NOT create a duplicate
+  // This prevents multiple broadcast subscriptions and competing state
+  const operationSystem = providedOperationSystem || {
+    isOperationMode: false,
+    handleCellEdit: () => {},
+    isSaving: false,
+    hasUnsavedChanges: false,
+    lastSaved: null,
+    saveError: null,
+    isTyping: false,
+    showSaved: false,
+    handleKeystroke: () => {}
+  };
 
   // Only log when operation mode changes, not on every render
   const prevOperationMode = useRef(operationSystem.isOperationMode);

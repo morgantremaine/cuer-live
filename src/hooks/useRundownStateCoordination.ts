@@ -31,7 +31,8 @@ export const useRundownStateCoordination = () => {
   const operationSystem = useOperationBasedRundown({
     rundownId: persistedState.rundownId || '',
     userId: userId || '',
-    enabled: true // Always enabled - OT is THE system
+    enabled: true, // Always enabled - OT is THE system
+    skipHistoricalOperations: true // Start fresh - don't load historical operations
   });
 
   // Always use operation system items as the single source of truth
@@ -414,7 +415,10 @@ export const useRundownStateCoordination = () => {
       
       // Move functions for mobile
       moveItemUp,
-      moveItemDown
+      moveItemDown,
+      
+      // Expose operation system for child hooks (prevents duplicate instances)
+      operationSystem
     },
     interactions,
     uiState,

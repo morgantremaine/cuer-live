@@ -94,6 +94,7 @@ const RundownIndexContent = () => {
   const { handleCellChange, saveState, handleKeystroke } = useCellEditIntegration({
     rundownId,
     isPerCellEnabled: true,
+    operationSystem: coreState.operationSystem, // Pass from parent to prevent duplicate
     onSaveComplete: () => {
       console.log('💾 RUNDOWN INDEX: Operation system save completed');
     },
