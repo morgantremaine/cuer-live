@@ -181,26 +181,18 @@ export const useRundownStateCoordination = (operationHandlers?: {
     operationHandlers // CRITICAL: Pass OT system handlers for coordinated structural operations
   );
 
-  // Wrapper for deleteRow that routes through operation system
+  // Wrapper for deleteRow that routes through proper save system
+  // CRITICAL: Use persistedState.deleteRow which calls handleStructuralOperation for per-cell mode
   const deleteRowWrapper = (itemId: string) => {
-    if (operationHandlers?.handleRowDelete) {
-      console.log('📤 Routing deleteRow through operation queue:', itemId);
-      operationHandlers.handleRowDelete(itemId);
-    } else {
-      console.log('⚠️ No operation handler - falling back to legacy delete');
-      persistedState.deleteRow(itemId);
-    }
+    console.log('🗑️ Routing deleteRow through structural save system:', itemId);
+    persistedState.deleteRow(itemId);
   };
 
-  // Wrapper for deleteMultipleItems that routes through operation system
+  // Wrapper for deleteMultipleItems that routes through proper save system
+  // CRITICAL: Use persistedState.deleteMultipleItems which calls handleStructuralOperation for per-cell mode
   const deleteMultipleItemsWrapper = (itemIds: string[]) => {
-    if (operationHandlers?.handleRowDelete) {
-      console.log('📤 Routing deleteMultipleItems through operation queue:', itemIds);
-      itemIds.forEach(id => operationHandlers.handleRowDelete!(id));
-    } else {
-      console.log('⚠️ No operation handler - falling back to legacy delete multiple');
-      persistedState.deleteMultipleItems(itemIds);
-    }
+    console.log('🗑️ Routing deleteMultipleItems through structural save system:', itemIds);
+    persistedState.deleteMultipleItems(itemIds);
   };
 
   // UI interactions that depend on the core state (NO showcaller interference)
