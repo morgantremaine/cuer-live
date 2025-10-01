@@ -129,6 +129,7 @@ export const useOperationQueue = ({
             body: JSON.stringify({
               rundownId,
               operations: batch.map(op => ({
+                id: op.id,
                 rundownId: op.rundownId,
                 operationType: op.operationType,
                 operationData: op.operationData,

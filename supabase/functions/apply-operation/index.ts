@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 interface OperationData {
+  id: string;
   rundownId: string;
   operationType: 'CELL_EDIT' | 'ROW_INSERT' | 'ROW_DELETE' | 'ROW_MOVE' | 'ROW_COPY' | 'GLOBAL_EDIT';
   operationData: any;
