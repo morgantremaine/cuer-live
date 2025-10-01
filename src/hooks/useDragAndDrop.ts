@@ -424,41 +424,13 @@ export const useDragAndDrop = (
         console.log('🏗️ Triggering structural operation for reorder with userId:', currentUserId);
         
         // Call structural change handler with reorder operation AND current user ID
-        try {
-          // Pass complete items array along with order for per-cell save mode
-          // CRITICAL: Pass currentUserId as third parameter to ensure it's available
-          (markStructuralChange as any)('reorder', { 
-            items: newItems,  // CRITICAL: Include complete items array for per-cell mode
-            order 
-          }, currentUserId);
-        } catch (error) {
-          // Fallback to just marking structural change
-          console.error('🚨 markStructuralChange error:', error);
-          markStructuralChange();
-          console.log('📡 Broadcasting reorder fallback:', {
-            rundownId,
-            orderLength: order.length,
-            userId: currentUserId
-          });
-          if (rundownId && currentUserId) {
-            cellBroadcast.broadcastCellUpdate(
-              rundownId,
-              undefined,
-              'items:reorder',
-              { order },
-              currentUserId
-            );
-          }
-        }
-      } else {
-        // Original broadcast fallback
+        (markStructuralChange as any)('reorder', { 
+          items: newItems,
+          order 
+        }, currentUserId);
+        
+        // ALWAYS broadcast reorder immediately (like delete does)
         if (rundownId && currentUserId) {
-          const order = newItems.map(item => item.id);
-          console.log('📡 Broadcasting reorder:', {
-            rundownId,
-            orderLength: order.length,
-            userId: currentUserId
-          });
           cellBroadcast.broadcastCellUpdate(
             rundownId,
             undefined,
@@ -466,8 +438,18 @@ export const useDragAndDrop = (
             { order },
             currentUserId
           );
-        } else {
-          console.warn('⚠️ Missing rundownId or currentUserId for reorder broadcast:', { rundownId, currentUserId });
+        }
+      } else {
+        // Fallback broadcast
+        if (rundownId && currentUserId) {
+          const order = newItems.map(item => item.id);
+          cellBroadcast.broadcastCellUpdate(
+            rundownId,
+            undefined,
+            'items:reorder',
+            { order },
+            currentUserId
+          );
         }
       }
       
