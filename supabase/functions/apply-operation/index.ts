@@ -139,6 +139,27 @@ serve(async (req) => {
       operationCount: appliedOperations.length
     });
 
+    // Broadcast all applied operations for real-time sync
+    try {
+      const channel = supabaseClient.channel(`rundown-operations-${batchRequest.rundownId}`);
+      
+      for (const operation of appliedOperations) {
+        await channel.send({
+          type: 'broadcast',
+          event: 'operation',
+          payload: {
+            type: 'operation_applied',
+            operation,
+            rundownId: batchRequest.rundownId
+          }
+        });
+        console.log('📤 BROADCASTED OPERATION:', operation.operationType);
+      }
+    } catch (broadcastError) {
+      console.error('❌ BROADCAST ERROR:', broadcastError);
+      // Don't fail the whole operation if broadcast fails
+    }
+
     // Return success response
     const response = {
       success: true,

@@ -753,8 +753,40 @@ export const useSimplifiedRundownState = () => {
           
         case 'reorder':
         case 'move_rows':
-          // Handled by individual row moves
-          console.log('🎯 OT: Reorder handled by individual move operations');
+          // Convert reorder to individual ROW_MOVE operations
+          if (operationData?.order && Array.isArray(operationData.order)) {
+            console.log('🎯 OT: Converting reorder to individual move operations', {
+              orderLength: operationData.order.length
+            });
+            
+            // Build index map from the target order
+            const targetOrder = operationData.order;
+            const currentItems = state.items;
+            
+            // Calculate the moves needed to transform current order to target order
+            // We need to move items one at a time from their current position to target position
+            const moves: Array<{from: number, to: number}> = [];
+            const workingOrder = currentItems.map(item => item.id);
+            
+            for (let targetIdx = 0; targetIdx < targetOrder.length; targetIdx++) {
+              const targetId = targetOrder[targetIdx];
+              const currentIdx = workingOrder.indexOf(targetId);
+              
+              if (currentIdx !== targetIdx) {
+                // Move from currentIdx to targetIdx
+                moves.push({ from: currentIdx, to: targetIdx });
+                
+                // Update working order to reflect the move
+                const [movedId] = workingOrder.splice(currentIdx, 1);
+                workingOrder.splice(targetIdx, 0, movedId);
+              }
+            }
+            
+            // Execute each move through the OT system
+            moves.forEach(move => {
+              operationBasedRundown.handleRowMove(move.from, move.to);
+            });
+          }
           break;
           
         default:
@@ -1074,17 +1106,6 @@ export const useSimplifiedRundownState = () => {
         // Pass updated items array, not just deleted IDs
         markStructuralChange('delete_row', { items: newItems, deletedIds: [id] });
       }
-      
-      // Broadcast row removal for immediate realtime sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:remove',
-          { id },
-          currentUserId
-        );
-      }
     }, [actions.deleteItem, state.items, state.title, saveUndoState, rundownId, currentUserId, cellEditIntegration.isPerCellEnabled, markStructuralChange]),
 
     addRow: useCallback((calculateEndTime?: any, selectedRowId?: string | null, selectedRows?: Set<string>, count: number = 1) => {
@@ -1322,17 +1343,6 @@ export const useSimplifiedRundownState = () => {
     
     actions.setItems(newItems);
     
-    // Broadcast add at index for immediate realtime sync
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(
-        rundownId,
-        undefined,
-        'items:add',
-        { items: newItemsToAdd, index: actualIndex },
-        currentUserId
-      );
-    }
-    
     // For per-cell saves, use structural save coordination
     if (cellEditIntegration.isPerCellEnabled) {
       console.log('🧪 STRUCTURAL CHANGE: addRowAtIndex completed - triggering structural coordination');
@@ -1472,17 +1482,6 @@ export const useSimplifiedRundownState = () => {
         console.log('🧪 STRUCTURAL CHANGE: deleteMultipleItems completed - triggering structural coordination');
         // Pass updated items array, not just deleted IDs
         markStructuralChange('delete_row', { items: newItems, deletedIds: itemIds });
-      }
-      
-      // Broadcast row removal for immediate realtime sync
-      if (rundownId && currentUserId) {
-        cellBroadcast.broadcastCellUpdate(
-          rundownId,
-          undefined,
-          'items:remove',
-          { ids: itemIds },
-          currentUserId
-        );
       }
     }, [actions.deleteMultipleItems, state.items, state.title, saveUndoState, cellEditIntegration.isPerCellEnabled, markStructuralChange, rundownId, currentUserId]),
     addItem: useCallback((item: any, targetIndex?: number) => {
