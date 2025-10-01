@@ -55,6 +55,7 @@ export const useOperationBasedRundown = ({
 
   const clientId = useRef(`client_${userId}_${Date.now()}`).current;
   const baseStateRef = useRef<any>(null);
+  const skipHistoricalRef = useRef(skipHistoricalOperations);
 
   // Initialize operation queue
   const operationQueue = useOperationQueue({
@@ -214,7 +215,8 @@ export const useOperationBasedRundown = ({
       currentRundownIdRef.current = rundownId;
 
       // Load any pending operations since last update (unless in test mode)
-      if (!skipHistoricalOperations) {
+      if (!skipHistoricalRef.current) {
+        console.log('📚 LOADING HISTORICAL OPERATIONS (skipHistoricalOperations=false)');
         try {
           const { data, error } = await supabase.functions.invoke('get-operations', {
             body: {

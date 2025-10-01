@@ -25,11 +25,12 @@ export const OperationSystemTest = () => {
   });
 
   const handleAddRow = () => {
+    const timestamp = Date.now();
     const newItem = {
-      id: `test_${Date.now()}`,
+      id: `test_${timestamp}`,
       type: 'regular',
       rowNumber: '',
-      name: `TEST ROW ${Date.now()}`,
+      name: `TEST ROW ${timestamp}`,
       startTime: '',
       duration: '',
       endTime: '',
@@ -45,8 +46,16 @@ export const OperationSystemTest = () => {
       customFields: {}
     };
 
-    console.log('🧪 TEST: Adding row', { newItem });
+    console.log('🧪 TEST: Adding row', {
+      timestamp,
+      clientId: operationSystem.clientId,
+      currentItemCount: operationSystem.items.length,
+      newItem
+    });
+
     operationSystem.handleRowInsert(operationSystem.items.length, newItem);
+    
+    console.log('🧪 TEST: Row insert called, expecting count:', operationSystem.items.length + 1);
   };
 
   const handleDeleteFirst = () => {
@@ -65,7 +74,10 @@ export const OperationSystemTest = () => {
     <div className="p-8 space-y-4">
       <h1 className="text-2xl font-bold">Operation System Test Page</h1>
       
-      <div className="bg-gray-100 p-4 rounded">
+      <div className="bg-gray-100 p-4 rounded space-y-1">
+        <p><strong>Rundown ID:</strong> <span className="text-xs font-mono">{rundownId}</span></p>
+        <p><strong>User ID:</strong> <span className="text-xs font-mono">{user?.id}</span></p>
+        <p><strong>Client ID:</strong> <span className="text-xs font-mono">{operationSystem.clientId}</span></p>
         <p><strong>Operation Mode:</strong> {operationSystem.isOperationMode ? 'YES ✅' : 'NO ❌'}</p>
         <p><strong>Items Count:</strong> {operationSystem.items.length}</p>
         <p><strong>Queue Length:</strong> {operationSystem.queueLength}</p>
@@ -74,7 +86,7 @@ export const OperationSystemTest = () => {
       </div>
 
       <div className="space-x-2">
-        <Button onClick={handleAddRow}>Add Row</Button>
+        <Button onClick={handleAddRow}>Add Row (Test Broadcast)</Button>
         <Button onClick={handleDeleteFirst} variant="destructive">Delete First Row</Button>
       </div>
 
@@ -91,6 +103,14 @@ export const OperationSystemTest = () => {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+        <h3 className="font-bold text-sm mb-2">🔍 Broadcast Debugging</h3>
+        <p className="text-xs mb-1">Watch console for these logs:</p>
+        <p className="text-xs">• Account 1: "🔄 IGNORING OWN OPERATION"</p>
+        <p className="text-xs">• Account 2: "🎯 APPLYING REMOTE OPERATION" + count should increase</p>
+        <p className="text-xs">• Both: "🏓 SENT PING" and "🏓 RECEIVED PING" (channel health check)</p>
       </div>
     </div>
   );

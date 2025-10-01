@@ -35,7 +35,12 @@ export const useOperationBroadcast = ({
 
   // Handle incoming operation broadcasts - memoized with stable dependencies
   const handleOperationBroadcast = useCallback((message: any) => {
-    console.log('📡 RAW BROADCAST MESSAGE:', message);
+    console.log('📡 RAW BROADCAST MESSAGE:', {
+      ...message,
+      timestamp: new Date().toISOString(),
+      clientId,
+      rundownId
+    });
     
     // Supabase wraps the actual payload in message.payload
     // message = {type: 'broadcast', event: 'operation', payload: {type: 'operation_applied', operation, rundownId}}
@@ -102,20 +107,100 @@ export const useOperationBroadcast = ({
   useEffect(() => {
     if (!rundownId) return;
 
-    console.log('🔌 SETTING UP OPERATION BROADCAST SUBSCRIPTION:', rundownId);
+    const channelName = `rundown-operations-${rundownId}`;
+    console.log('🔌 SETTING UP OPERATION BROADCAST SUBSCRIPTION:', {
+      channelName,
+      clientId,
+      rundownId,
+      timestamp: new Date().toISOString()
+    });
 
     const channel = supabase
-      .channel(`rundown-operations-${rundownId}`)
+      .channel(channelName)
       .on('broadcast', { event: 'operation' }, handleOperationBroadcast)
-      .subscribe((status) => {
-        console.log('📡 OPERATION BROADCAST STATUS:', status);
+      .on('broadcast', { event: 'ping' }, (message) => {
+        console.log('🏓 RECEIVED PING:', {
+          from: message.payload?.from,
+          clientId,
+          isOwnPing: message.payload?.from === clientId,
+          timestamp: message.payload?.timestamp
+        });
+        
+        // Reply with pong if not our own ping
+        if (message.payload?.from !== clientId) {
+          console.log('🏓 SENDING PONG in response to ping from:', message.payload?.from);
+          channel.send({
+            type: 'broadcast',
+            event: 'pong',
+            payload: {
+              type: 'pong',
+              from: clientId,
+              replyingTo: message.payload?.from,
+              timestamp: new Date().toISOString()
+            }
+          }).catch(err => console.error('❌ FAILED TO SEND PONG:', err));
+        }
+      })
+      .on('broadcast', { event: 'pong' }, (message) => {
+        console.log('🏓 RECEIVED PONG:', {
+          from: message.payload?.from,
+          replyingTo: message.payload?.replyingTo,
+          isForMe: message.payload?.replyingTo === clientId,
+          timestamp: message.payload?.timestamp
+        });
+      })
+      .subscribe((status, err) => {
+        console.log('📡 OPERATION BROADCAST STATUS:', {
+          status,
+          error: err,
+          channelName,
+          clientId,
+          timestamp: new Date().toISOString()
+        });
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ BROADCAST CHANNEL CONNECTED:', {
+            channelName,
+            clientId,
+            canReceive: true
+          });
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ BROADCAST CHANNEL ERROR:', {
+            channelName,
+            error: err
+          });
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏱️ BROADCAST CHANNEL TIMEOUT:', {
+            channelName
+          });
+        }
       });
 
+    // Send a test ping to verify channel is working
+    setTimeout(() => {
+      channel.send({
+        type: 'broadcast',
+        event: 'ping',
+        payload: {
+          type: 'ping',
+          from: clientId,
+          timestamp: new Date().toISOString()
+        }
+      }).then(() => {
+        console.log('🏓 SENT PING on channel:', channelName);
+      }).catch((err) => {
+        console.error('❌ FAILED TO SEND PING:', err);
+      });
+    }, 2000);
+
     return () => {
-      console.log('🔌 CLEANING UP OPERATION BROADCAST SUBSCRIPTION');
+      console.log('🔌 CLEANING UP OPERATION BROADCAST SUBSCRIPTION:', {
+        channelName,
+        clientId
+      });
       supabase.removeChannel(channel);
     };
-  }, [rundownId, handleOperationBroadcast]);
+  }, [rundownId, handleOperationBroadcast, clientId]);
 
   // Broadcast an operation
   const broadcastOperation = useCallback(async (operation: RemoteOperation) => {
