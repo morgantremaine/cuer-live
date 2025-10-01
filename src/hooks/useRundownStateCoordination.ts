@@ -7,6 +7,7 @@ import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import { useHeaderCollapse } from './useHeaderCollapse';
 import { useAuth } from './useAuth';
 import { useDragAndDrop } from './useDragAndDrop';
+import { useOperationBasedRundown } from './useOperationBasedRundown';
 import { arrayMove } from '@dnd-kit/sortable';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
@@ -26,9 +27,19 @@ export const useRundownStateCoordination = () => {
   // Single source of truth for all rundown state (with persistence)
   const persistedState = usePersistedRundownState();
 
-  // Add performance optimization layer
+  // Initialize operation-based system (THE system - always enabled)
+  const operationSystem = useOperationBasedRundown({
+    rundownId: persistedState.rundownId || '',
+    userId: userId || '',
+    enabled: true // Always enabled - OT is THE system
+  });
+
+  // Use operation-based items when available, otherwise fall back to persisted state during initialization
+  const activeItems = operationSystem.isOperationMode ? operationSystem.items : persistedState.items;
+
+  // Add performance optimization layer - use operation-based items
   const performanceOptimization = useRundownPerformanceOptimization({
-    items: persistedState.items,
+    items: activeItems,
     columns: persistedState.columns,
     startTime: persistedState.rundownStartTime
   });
@@ -72,6 +83,23 @@ export const useRundownStateCoordination = () => {
   });
 
 
+  // Wrapped update handlers that route through operation system
+  const wrappedUpdateItem = (id: string, field: string, value: any) => {
+    if (operationSystem.isOperationMode) {
+      operationSystem.handleCellEdit(id, field, value);
+    } else {
+      persistedState.updateItem(id, field, value);
+    }
+  };
+
+  const wrappedDeleteRow = (id: string) => {
+    if (operationSystem.isOperationMode) {
+      operationSystem.handleRowDelete(id);
+    } else {
+      persistedState.deleteRow(id);
+    }
+  };
+
   // Add the missing addMultipleRows function
   const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
     const itemsToAdd = newItems.map(item => ({
@@ -104,39 +132,25 @@ export const useRundownStateCoordination = () => {
   // Add move up/down functions for mobile context menu
   const moveItemUp = (index: number) => {
     console.log('🔄 Moving item up:', { index, itemsLength: performanceOptimization.calculatedItems.length });
-    if (index > 0) {
+    if (index > 0 && operationSystem.isOperationMode) {
+      console.log('🔄 Moving item from', index, 'to', index - 1);
+      operationSystem.handleRowMove(index, index - 1);
+    } else if (index > 0) {
       const currentItems = performanceOptimization.calculatedItems;
       const newItems = arrayMove(currentItems, index, index - 1);
-      console.log('🔄 Moving item from', index, 'to', index - 1);
       persistedState.setItems(newItems);
-      
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemUp completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
-      }
     }
   };
 
   const moveItemDown = (index: number) => {
     const currentItems = performanceOptimization.calculatedItems;
     console.log('🔄 Moving item down:', { index, itemsLength: currentItems.length });
-    if (index < currentItems.length - 1) {
-      const newItems = arrayMove(currentItems, index, index + 1);
+    if (index < currentItems.length - 1 && operationSystem.isOperationMode) {
       console.log('🔄 Moving item from', index, 'to', index + 1);
+      operationSystem.handleRowMove(index, index + 1);
+    } else if (index < currentItems.length - 1) {
+      const newItems = arrayMove(currentItems, index, index + 1);
       persistedState.setItems(newItems);
-      
-      // For per-cell saves, mark as saved after the structural operation
-      const state = persistedState as any;
-      if (state.perCellSaveEnabled) {
-        console.log('🧪 STRUCTURAL CHANGE: moveItemDown completed - marking as saved');
-        setTimeout(() => {
-          state.markSaved();
-        }, 100);
-      }
     }
   };
 
@@ -198,10 +212,10 @@ export const useRundownStateCoordination = () => {
         persistedState.setItems(updater);
       }
     },
-    persistedState.updateItem,
+    wrappedUpdateItem, // Route through operation system
     persistedState.addRow,
     persistedState.addHeader,
-    persistedState.deleteRow,
+    wrappedDeleteRow, // Route through operation system
     persistedState.toggleFloat,
     persistedState.deleteMultipleItems,
     addMultipleRows,
@@ -211,7 +225,7 @@ export const useRundownStateCoordination = () => {
     },
     calculateEndTime,
     (id: string, color: string) => {
-      persistedState.updateItem(id, 'color', color);
+      wrappedUpdateItem(id, 'color', color); // Route through operation system
     },
     () => {
       // markAsChanged - handled internally by persisted state
@@ -280,10 +294,10 @@ export const useRundownStateCoordination = () => {
       currentTime: persistedState.currentTime,
       rundownId: persistedState.rundownId,
       
-      // State flags (NOW with separated processing states)
-      isLoading: persistedState.isLoading,
-      hasUnsavedChanges: persistedState.hasUnsavedChanges,
-      isSaving: persistedState.isSaving,
+      // State flags - use operation system state when available
+      isLoading: operationSystem.isOperationMode ? operationSystem.isLoading : persistedState.isLoading,
+      hasUnsavedChanges: operationSystem.isOperationMode ? operationSystem.hasUnsavedChanges : persistedState.hasUnsavedChanges,
+      isSaving: operationSystem.isOperationMode ? operationSystem.isSaving : persistedState.isSaving,
       // Use stable connection state to prevent flickering
       isConnected: stableIsConnected,
       isProcessingRealtimeUpdate, // Clean, simple content processing indicator
@@ -311,9 +325,9 @@ export const useRundownStateCoordination = () => {
       getHeaderDuration: performanceOptimization.getHeaderDuration,
       calculateHeaderDuration: performanceOptimization.calculateHeaderDuration,
       
-      // Core actions (NO showcaller interference)
-      updateItem: persistedState.updateItem,
-      deleteRow: persistedState.deleteRow,
+      // Core actions - route through operation system
+      updateItem: wrappedUpdateItem,
+      deleteRow: wrappedDeleteRow,
       toggleFloatRow: persistedState.toggleFloat,
       deleteMultipleItems: persistedState.deleteMultipleItems,
       addItem: persistedState.addItem,
