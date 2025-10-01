@@ -476,10 +476,27 @@ function applyRowDelete(items: any[], operationData: any): any[] {
 }
 
 function applyRowMove(items: any[], operationData: any): any[] {
+  // Validate operation data
+  if (!operationData || typeof operationData !== 'object') {
+    console.warn('⚠️ ROW_MOVE: Invalid operation data', operationData);
+    return items;
+  }
+
   const { toIndex, itemId } = operationData;
   
+  // Validate required fields
+  if (itemId === undefined || toIndex === undefined) {
+    console.warn('⚠️ ROW_MOVE: Missing required fields', { itemId, toIndex, operationData });
+    return items;
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    console.warn('⚠️ ROW_MOVE: Invalid items array', items);
+    return items;
+  }
+  
   // Find item by ID for robustness
-  const currentIndex = items.findIndex(item => item.id === itemId);
+  const currentIndex = items.findIndex(item => item && item.id === itemId);
   
   if (currentIndex === -1) {
     console.warn('⚠️ ROW_MOVE: Item not found:', itemId);
