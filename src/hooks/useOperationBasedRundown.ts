@@ -83,14 +83,31 @@ export const useOperationBasedRundown = ({
     rundownId,
     clientId,
     onRemoteOperation: (operation) => {
-      console.log('🎯 APPLYING REMOTE OPERATION:', operation.id);
+      console.log('🎯 REMOTE OPERATION RECEIVED:', {
+        operationId: operation.id,
+        type: operation.operationType,
+        fromClient: operation.clientId,
+        timestamp: new Date().toISOString()
+      });
       applyOperationToState(operation);
+      console.log('🎯 REMOTE OPERATION APPLIED, waiting for state update...');
     }
   });
 
   // Apply operation to current state
   const applyOperationToState = useCallback((operation: any) => {
+    console.log('🔧 APPLYING OPERATION TO STATE:', {
+      operationType: operation.operationType,
+      operationId: operation.id,
+      timestamp: new Date().toISOString()
+    });
+    
     setState(currentState => {
+      console.log('🔧 STATE BEFORE:', {
+        itemsCount: currentState.items.length,
+        itemsRef: currentState.items
+      });
+      
       const newState = { ...currentState };
 
       switch (operation.operationType) {
@@ -100,6 +117,12 @@ export const useOperationBasedRundown = ({
         
         case 'ROW_INSERT':
           newState.items = applyRowInsert(currentState.items, operation.operationData);
+          console.log('🔧 ROW INSERT RESULT:', {
+            oldCount: currentState.items.length,
+            newCount: newState.items.length,
+            newItemsRef: newState.items,
+            insertIndex: operation.operationData.insertIndex
+          });
           break;
         
         case 'ROW_DELETE':
@@ -122,6 +145,12 @@ export const useOperationBasedRundown = ({
       if (operation.sequenceNumber) {
         newState.lastSequence = Math.max(newState.lastSequence, operation.sequenceNumber);
       }
+
+      console.log('🔧 STATE AFTER:', {
+        itemsCount: newState.items.length,
+        itemsRef: newState.items,
+        changed: currentState.items !== newState.items
+      });
 
       return newState;
     });
@@ -346,6 +375,17 @@ export const useOperationBasedRundown = ({
     // Queue for server
     operationQueue.globalEdit(field, newValue);
   }, [state.isOperationMode, state.lastSequence, operationQueue, applyOperationToState]);
+
+  // Log whenever items change
+  useEffect(() => {
+    console.log('🔧 OPERATION SYSTEM STATE CHANGED:', {
+      itemsCount: state.items.length,
+      isLoading: state.isLoading,
+      isOperationMode: state.isOperationMode,
+      itemsRef: state.items,
+      timestamp: new Date().toISOString()
+    });
+  }, [state.items, state.isLoading, state.isOperationMode]);
 
   return {
     // State
