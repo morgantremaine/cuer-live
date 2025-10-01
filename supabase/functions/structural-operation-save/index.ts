@@ -202,20 +202,42 @@ serve(async (req) => {
       last_updated_by: operation.userId
     };
     
-    // Only increment doc_version for delta save mode
-    if (!isPerCellEnabled) {
-      updateData.doc_version = currentRundown.doc_version + 1;
-      console.log('📊 Delta save mode: incrementing doc_version to', updateData.doc_version);
-    } else {
-      console.log('🔄 Per-cell save mode: bypassing doc_version increment');
-    }
+    // CRITICAL: ALWAYS increment doc_version for structural operations
+    // This provides optimistic locking to prevent race conditions
+    // Per-cell mode only affects FIELD updates, not structural changes
+    updateData.doc_version = currentRundown.doc_version + 1;
+    console.log('🔒 Incrementing doc_version for optimistic locking:', {
+      from: currentRundown.doc_version,
+      to: updateData.doc_version,
+      perCellMode: isPerCellEnabled
+    });
     
+    // Apply optimistic concurrency control - update only if doc_version matches
     const { data: updatedRundown, error: updateError } = await supabase
       .from('rundowns')
       .update(updateData)
       .eq('id', operation.rundownId)
+      .eq('doc_version', currentRundown.doc_version) // CRITICAL: Optimistic lock
       .select()
       .single();
+
+    // Check if update failed due to version mismatch (race condition detected)
+    if (!updatedRundown && !updateError) {
+      console.error('❌ Optimistic lock conflict - concurrent modification detected', {
+        expectedVersion: currentRundown.doc_version,
+        operationType: operation.operationType,
+        userId: operation.userId
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Concurrent modification detected',
+          details: 'Another operation modified the rundown simultaneously. Please retry.',
+          conflict: true,
+          expectedVersion: currentRundown.doc_version
+        }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (updateError) {
       console.error('❌ Error updating rundown:', updateError);
