@@ -150,9 +150,24 @@ export const useOperationBasedRundown = ({
         data: operation.data
       });
       
-      // Refresh from database after structural change
-      console.log('🔄 OT SYSTEM: Refreshing state after remote structural change');
-      refreshFromDatabase();
+      // Apply structural change through OT system (no database refresh)
+      console.log('🔄 OT SYSTEM: Applying structural change via OT', {
+        operationType: operation.type,
+        hasData: !!operation.data
+      });
+      
+      // Convert unified payload to operation format
+      const op = {
+        id: `${operation.clientId}-${operation.timestamp}`,
+        operationType: operation.type, // Already mapped to OT type (ROW_INSERT, etc.)
+        operationData: operation.data?.operationData || operation.data,
+        clientId: operation.clientId,
+        userId: operation.userId,
+        timestamp: operation.timestamp,
+        sequenceNumber: operation.sequenceNumber
+      };
+      
+      applyOperationToState(op);
     }
   });
 
