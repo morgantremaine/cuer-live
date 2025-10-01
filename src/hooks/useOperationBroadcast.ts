@@ -173,11 +173,24 @@ export const useOperationBroadcast = ({
             return;
           }
 
+          // Normalize operation type from database format to OT format
+          const normalizeOperationType = (dbType: string): Operation['operationType'] => {
+            const typeMap: Record<string, Operation['operationType']> = {
+              'structural_add_row': 'ROW_INSERT',
+              'structural_delete_row': 'ROW_DELETE',
+              'structural_move_rows': 'ROW_MOVE',
+              'structural_copy_rows': 'ROW_COPY',
+              'structural_reorder': 'ROW_MOVE',
+              'structural_add_header': 'ROW_INSERT'
+            };
+            return typeMap[dbType] || (dbType as Operation['operationType']);
+          };
+
           // Convert DB record to operation format
           const operation: RemoteOperation = {
             id: newOperation.id,
             rundownId: newOperation.rundown_id,
-            operationType: newOperation.operation_type,
+            operationType: normalizeOperationType(newOperation.operation_type),
             operationData: newOperation.operation_data,
             userId: newOperation.user_id,
             clientId: newOperation.client_id,
