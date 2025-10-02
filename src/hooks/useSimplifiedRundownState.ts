@@ -27,6 +27,7 @@ import { cellBroadcast } from '@/utils/cellBroadcast';
 import { useCellUpdateCoordination } from './useCellUpdateCoordination';
 import { useRealtimeActivityIndicator } from './useRealtimeActivityIndicator';
 import { debugLogger } from '@/utils/debugLogger';
+import { logger } from '@/utils/logger';
 import { isTextField } from '@/utils/fieldClassification';
 
 /**
@@ -634,105 +635,13 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
   // No need for typing/unsaved checkers with operation-based system
 
 
-  // Enhanced updateItem function with OT routing and cell broadcasting
+  // Simplified updateItem - just updates local state
+  // Server sync is handled separately by debounce or direct save
   const enhancedUpdateItem = useCallback((id: string, field: string, value: string) => {
-    // TEXT FIELDS: Always use local state updates only
-    // Server sync is handled by debounce system in RundownIndexContent
-    if (isTextField(field)) {
-      console.log('📝 TEXT FIELD: Local update only (server sync via debounce)', { id, field, value: value?.substring(0, 20) });
-      
-      if (field.startsWith('customFields.')) {
-        const customFieldKey = field.replace('customFields.', '');
-        const item = state.items.find(i => i.id === id);
-        if (item) {
-          const currentCustomFields = item.customFields || {};
-          actions.updateItem(id, {
-            customFields: {
-              ...currentCustomFields,
-              [customFieldKey]: value
-            }
-          });
-        }
-      } else {
-        let updateField = field;
-        if (field === 'segmentName') updateField = 'name';
-        actions.updateItem(id, { [updateField]: value });
-      }
-      return;
-    }
+    logger.debug('📝 UPDATE ITEM: Local state update', { id, field, value: String(value).substring(0, 20), isTextField: isTextField(field) });
     
-    // NON-TEXT FIELDS: Route to OT system if operation mode is enabled
-    if (isOperationModeEnabled && operationBasedRundown) {
-      console.log('🎯 OT: Routing cell edit to operation system');
-      operationBasedRundown.handleCellEdit(id, field, value);
-      // Update local state optimistically
-      if (field.startsWith('customFields.')) {
-        const customFieldKey = field.replace('customFields.', '');
-        const item = state.items.find(i => i.id === id);
-        if (item) {
-          const currentCustomFields = item.customFields || {};
-          actions.updateItem(id, {
-            customFields: {
-              ...currentCustomFields,
-              [customFieldKey]: value
-            }
-          });
-        }
-      } else {
-        let updateField = field;
-        if (field === 'segmentName') updateField = 'name';
-        let updateValue: any = value;
-        if (field === 'isFloating') {
-          updateValue = value === 'true';
-        }
-        actions.updateItem(id, { [updateField]: updateValue });
-      }
-      return;
-    }
-    
-    // Old path: Check if this is a typing field or immediate-sync field
-    const isTypingField = field === 'name' || field === 'script' || field === 'talent' || field === 'notes' || 
-                         field === 'gfx' || field === 'video' || field === 'images' || field.startsWith('customFields.') || field === 'segmentName';
-    const isImmediateSyncField = field === 'isFloating';
-    
-    const sessionKey = `${id}-${field}`;
-    
-    // Broadcast cell update immediately for Google Sheets-style sync
-    if (rundownId && currentUserId) {
-      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
-    }
-    
-    if (isTypingField) {
-      markActiveTyping();
-      
-      if (!typingSessionRef.current || typingSessionRef.current.fieldKey !== sessionKey) {
-        saveUndoState(state.items, [], state.title, `Edit ${field}`);
-        typingSessionRef.current = {
-          fieldKey: sessionKey,
-          startTime: Date.now()
-        };
-      }
-      
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        if (typingSessionRef.current?.fieldKey === sessionKey) {
-          typingSessionRef.current = null;
-        }
-      }, 3000);
-    } else if (field === 'duration') {
-      saveUndoState(state.items, [], state.title, 'Edit duration');
-    } else if (isImmediateSyncField) {
-      console.log('🔄 FloatToggle: triggering immediate save for field:', field, 'id:', id);
-      saveUndoState(state.items, [], state.title, `Toggle ${field}`);
-      triggerImmediateSave();
-    } else if (field === 'color') {
-      saveUndoState(state.items, [], state.title, 'Change row color');
-      triggerImmediateSave();
-    }
-    
+    // All fields: Just update local state immediately
+    // Server sync happens separately via debounce (text fields) or direct save (immediate fields)
     if (field.startsWith('customFields.')) {
       const customFieldKey = field.replace('customFields.', '');
       const item = state.items.find(i => i.id === id);
@@ -748,21 +657,18 @@ export const useSimplifiedRundownState = (skipOperationSystemFlag?: string) => {
     } else {
       let updateField = field;
       if (field === 'segmentName') updateField = 'name';
-      
-      // Handle boolean fields that come as strings from cell broadcasts
       let updateValue: any = value;
       if (field === 'isFloating') {
         updateValue = value === 'true';
       }
-      
       actions.updateItem(id, { [updateField]: updateValue });
-      
-      // Track field change for per-cell save system
-      if (cellEditIntegration.isPerCellEnabled) {
-        cellEditIntegration.handleCellChange(id, updateField, updateValue);
-      }
     }
-  }, [actions.updateItem, state.items, state.title, saveUndoState, cellEditIntegration, isOperationModeEnabled, operationBasedRundown, rundownId, currentUserId, markActiveTyping, triggerImmediateSave]);
+    
+    // Broadcast to other tabs/users via realtime
+    if (rundownId && currentUserId) {
+      cellBroadcast.broadcastCellUpdate(rundownId, id, field, value, currentUserId);
+    }
+  }, [actions, state.items, rundownId, currentUserId, cellBroadcast]);
 
   // Simplified handlers - route to OT system when operation mode is enabled
   const markStructuralChange = useCallback((operationType?: string, operationData?: any) => {

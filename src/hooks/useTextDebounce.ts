@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { logger } from '@/utils/logger';
 
 interface DebouncedOperation {
   itemId: string;
@@ -13,18 +14,20 @@ interface UseTextDebounceOptions {
 }
 
 /**
- * Hook for debouncing text operations to reduce network traffic
- * while maintaining instant local updates
+ * Simplified text debouncing hook
+ * Debounces text field saves to reduce network traffic
+ * No complex batching - just simple timer-based debouncing
  */
 export const useTextDebounce = ({ 
   onFlush, 
-  debounceMs = 300 
+  debounceMs = 800 // Increased to 800ms for better batching
 }: UseTextDebounceOptions) => {
   // Map of pending operations by cell (itemId + field)
   const pendingOpsRef = useRef<Map<string, DebouncedOperation>>(new Map());
 
   /**
    * Debounce a text operation - will flush after user stops typing
+   * Simple timer-based debouncing with no complex batching
    */
   const debounceOperation = useCallback((
     itemId: string,
@@ -37,10 +40,12 @@ export const useTextDebounce = ({
     const existing = pendingOpsRef.current.get(cellKey);
     if (existing) {
       clearTimeout(existing.timeoutId);
+      logger.debug('🔄 TEXT DEBOUNCE: Cancelled previous save', { itemId, field });
     }
 
-    // Schedule new flush
+    // Schedule new flush after user stops typing
     const timeoutId = setTimeout(() => {
+      logger.debug('💾 TEXT DEBOUNCE: Flushing to database', { itemId, field, value: String(value).substring(0, 30) });
       onFlush(itemId, field, value);
       pendingOpsRef.current.delete(cellKey);
     }, debounceMs);

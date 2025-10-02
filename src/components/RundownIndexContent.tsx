@@ -9,6 +9,7 @@ import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
 import { useTextDebounce } from '@/hooks/useTextDebounce';
+import { useDirectSave } from '@/hooks/useDirectSave';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -109,13 +110,40 @@ const RundownIndexContent = () => {
     }
   });
 
-  // Add text debouncing for efficient text operations
+  // Add direct save hook for text fields (no operation queue)
+  const directSave = useDirectSave({
+    rundownId: rundownId || '',
+    onSuccess: () => {
+      console.log('✅ RUNDOWN INDEX: Direct save succeeded');
+    },
+    onError: (error) => {
+      console.error('❌ RUNDOWN INDEX: Direct save failed', error);
+    }
+  });
+
+  // Get user ID from Supabase
+  const [userId, setUserId] = useState<string>('');
+  const [clientId] = useState(`client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    getUserId();
+  }, []);
+
+  // Add text debouncing with DIRECT SAVE (no operation queue)
   const { debounceOperation, flushCell } = useTextDebounce({
     onFlush: (itemId, field, value) => {
-      console.log('⏱️ RUNDOWN INDEX: Flushing debounced text operation', { itemId, field });
-      handleCellChange(itemId, field, value);
+      // Direct database save after debounce (no operation queue)
+      console.log('💾 RUNDOWN INDEX: Direct save after debounce', { itemId, field, value: String(value).substring(0, 30) });
+      
+      if (userId) {
+        directSave.saveCellEdit(itemId, field, value, userId, clientId);
+      }
     },
-    debounceMs: 300 // Wait 300ms after user stops typing
+    debounceMs: 800 // Wait 800ms after user stops typing
   });
 
   // Only log significant changes, not every render
@@ -599,13 +627,14 @@ const RundownIndexContent = () => {
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={(id, field, value) => {
-          // Text fields: Local update (instant) + debounced server sync (300ms)
-          // Non-text fields: Immediate operation for real-time collaboration
+          // SIMPLIFIED ROUTING:
+          // Text fields: Instant local update + 800ms debounced direct save
+          // Non-text fields: Instant local update + immediate direct save
           if (isTextField(field)) {
-            updateItem(id, field, value); // Instant local update
-            debounceOperation(id, field, value); // Debounced server sync (300ms)
+            updateItem(id, field, value); // Local state update (instant)
+            debounceOperation(id, field, value); // Server sync after 800ms of silence
           } else {
-            handleCellChange(id, field, value); // Immediate operation
+            handleCellChange(id, field, value); // Direct save for immediate fields
           }
         }}
         onCellBlur={(itemId, field) => {
