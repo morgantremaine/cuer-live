@@ -605,15 +605,14 @@ const RundownIndexContent = () => {
             isTextField: isTextField(field)
           });
           
-          // For immediate UI responsiveness, update the legacy system first
-          updateItem(id, field, value);
-          
           // Route through appropriate operation system based on field type
+          // The operation system handles both local state updates AND remote sync
           if (isTextField(field)) {
-            // Text fields: debounce operations for efficiency
-            debounceOperation(id, field, value);
+            // Text fields: Apply local update immediately, debounce server sync
+            updateItem(id, field, value); // Instant local update
+            debounceOperation(id, field, value); // Debounced server sync (300ms)
           } else {
-            // Non-text fields: immediate operations for instant collaboration
+            // Non-text fields: Immediate operation for instant collaboration
             handleCellChange(id, field, value);
           }
         }}
