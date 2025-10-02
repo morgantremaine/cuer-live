@@ -49,7 +49,7 @@ const DashboardHeader = ({
     <header className="bg-gray-800 border-b border-gray-700">
       <div className="px-4">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-24">
             {showBackButton && onBack && (
               <Button
                 variant="ghost"
@@ -70,7 +70,7 @@ const DashboardHeader = ({
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="ml-32 bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
+                    className="bg-gray-900 border-gray-600 text-white hover:bg-gray-900/80 hover:border-gray-500 shadow-lg px-4 py-2 h-auto"
                   >
                     <div className="flex items-center space-x-3">
                       <div className="p-1.5 bg-blue-500/20 rounded-md">
