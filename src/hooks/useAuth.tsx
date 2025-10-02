@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   // Initialize auth state
   useEffect(() => {
@@ -45,8 +46,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         authMonitor.onTokenRefreshed(session)
       } else if (event === 'SIGNED_OUT') {
         authMonitor.onSignedOut()
-      } else if (event === 'SIGNED_IN') {
+      } else if (event === 'SIGNED_IN' && !isInitialLoad) {
+        // Only trigger reconnection for actual sign-ins, not initial session recovery
         authMonitor.onSignedIn(session)
+      }
+      
+      // Mark initial load as complete after first auth state change
+      if (isInitialLoad) {
+        setIsInitialLoad(false)
       }
       
       // Only set loading to false after we've processed the auth state change
