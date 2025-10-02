@@ -6,6 +6,12 @@ import { useActiveTeam } from './useActiveTeam';
 import { useToast } from '@/hooks/use-toast';
 import { debugLogger } from '@/utils/debugLogger';
 
+// Global state for team loading coordination across all hook instances
+const globalLoadingStates = new Map<string, boolean>();
+const globalLoadedKeys = new Map<string, boolean>();
+const globalLoadPromises = new Map<string, Promise<void>>();
+const globalRealtimeChannels = new Map<string, any>();
+
 export interface Team {
   id: string;
   name: string;
@@ -112,24 +118,33 @@ export const useTeam = () => {
   }, [user]);
 
   const loadTeamData = useCallback(async () => {
-    // Get the current activeTeamId directly to avoid stale closure issues
     const currentActiveTeamId = activeTeamId;
+    const loadKey = `${user?.id}-${currentActiveTeamId}`;
     
-    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
-    debugLogger.team('loadTeamData called', { userId: user?.id, isLoading: isLoadingRef.current, currentActiveTeamId });
-    
-    if (!user?.id || isLoadingRef.current) {
-      debugLogger.team('Early exit - no user or already loading', { userId: !!user?.id, isLoading: isLoadingRef.current });
+    if (!user?.id) {
       setIsLoading(false);
       return;
     }
 
-    debugLogger.team('Starting team data load for user:', user.id);
+    // Check global loading state - deduplicate concurrent requests
+    if (globalLoadingStates.get(loadKey)) {
+      // Another instance is already loading this exact team
+      const existingPromise = globalLoadPromises.get(loadKey);
+      if (existingPromise) {
+        await existingPromise;
+      }
+      return;
+    }
+
+    console.log('📊 useTeam - loadTeamData called', { userId: user?.id, currentActiveTeamId });
+    globalLoadingStates.set(loadKey, true);
     isLoadingRef.current = true;
 
-    try {
-      // Load all user teams first
-      const userTeams = await loadAllUserTeams();
+    // Create a promise for this load operation
+    const loadPromise = (async () => {
+      try {
+        // Load all user teams first
+        const userTeams = await loadAllUserTeams();
 
       let targetTeamId = currentActiveTeamId;
 
@@ -146,118 +161,122 @@ export const useTeam = () => {
         setUserRole(null);
         setIsLoading(false);
         isLoadingRef.current = false;
+        globalLoadingStates.delete(loadKey);
         return;
       }
 
-      // Use activeTeamId if it's valid for this user, otherwise use first available team
-      if (currentActiveTeamId && userTeams.find(t => t.id === currentActiveTeamId)) {
-        targetTeamId = currentActiveTeamId;
-      } else if (userTeams.length > 0) {
-        // Use the most recent team as fallback
-        targetTeamId = userTeams[0].id;
-        console.log('🔄 useTeam - Using fallback team:', targetTeamId);
-        setActiveTeam(targetTeamId);
-      } else {
-        // User has no team memberships - create a personal team
-        console.log('🔍 useTeam - No team found, creating personal team');
-        
-        debugLogger.team('Creating personal team as fallback');
-        const { data: newTeamData, error: createError } = await supabase.rpc(
-          'get_or_create_user_team',
-          { user_uuid: user.id }
-        );
+        // Use activeTeamId if it's valid for this user, otherwise use first available team
+        if (currentActiveTeamId && userTeams.find(t => t.id === currentActiveTeamId)) {
+          targetTeamId = currentActiveTeamId;
+        } else if (userTeams.length > 0) {
+          // Use the most recent team as fallback
+          targetTeamId = userTeams[0].id;
+          setActiveTeam(targetTeamId);
+        } else {
+          // User has no team memberships - create a personal team
+          const { data: newTeamData, error: createError } = await supabase.rpc(
+            'get_or_create_user_team',
+            { user_uuid: user.id }
+          );
 
-        if (createError) {
-          console.error('Error creating team:', createError);
-          setError('Failed to set up team');
+          if (createError) {
+            console.error('Error creating team:', createError);
+            setError('Failed to set up team');
+            setIsLoading(false);
+            isLoadingRef.current = false;
+            globalLoadingStates.delete(loadKey);
+            return;
+          } else if (newTeamData) {
+            // Retry loading team data
+            setTimeout(() => {
+              globalLoadedKeys.delete(loadKey);
+              globalLoadingStates.delete(loadKey);
+              isLoadingRef.current = false;
+              loadTeamData();
+            }, 1000);
+            return;
+          }
+          setError('Failed to load team data');
+          setTeam(null);
+          setUserRole(null);
           setIsLoading(false);
           isLoadingRef.current = false;
-          return;
-        } else if (newTeamData) {
-          console.log('Personal team created successfully, reloading...');
-          // Retry loading team data
-          setTimeout(() => {
-            loadedUserRef.current = null;
-            isLoadingRef.current = false;
-            loadTeamData();
-          }, 1000);
+          globalLoadingStates.delete(loadKey);
           return;
         }
+
+        // Load the specific team data
+        const { data: teamData, error: teamError } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', targetTeamId)
+          .single();
+
+        if (teamError) {
+          console.error('Error fetching team:', teamError);
+          throw teamError;
+        }
+
+        // Get user's role in this team
+        const targetTeam = userTeams.find(t => t.id === targetTeamId);
+        const role = targetTeam?.role || 'member';
+
+        console.log('✅ useTeam - Setting team state:', { teamId: teamData.id, teamName: teamData.name, role });
+        setTeam(teamData);
+        setUserRole(role);
+        
+        // Only set as active team if it's different from current
+        if (currentActiveTeamId !== targetTeamId) {
+          setActiveTeam(targetTeamId);
+        }
+        
+        setError(null);
+
+        // Load additional data after setting main team state
+        loadTeamMembers(targetTeamId);
+        if (role === 'admin') {
+          loadPendingInvitations(targetTeamId);
+        }
+      } catch (error) {
+        console.error('Failed to load team data:', error);
         setError('Failed to load team data');
         setTeam(null);
         setUserRole(null);
+      } finally {
         setIsLoading(false);
         isLoadingRef.current = false;
-        return;
+        globalLoadingStates.delete(loadKey);
+        globalLoadedKeys.set(loadKey, true);
       }
+    })();
 
-      // Load the specific team data
-      const { data: teamData, error: teamError } = await supabase
-        .from('teams')
-        .select('*')
-        .eq('id', targetTeamId)
-        .single();
-
-      if (teamError) {
-        console.error('Error fetching team:', teamError);
-        throw teamError;
-      }
-
-      // Get user's role in this team
-      const targetTeam = userTeams.find(t => t.id === targetTeamId);
-      const role = targetTeam?.role || 'member';
-
-      console.log('✅ useTeam - Setting team state:', { teamId: teamData.id, teamName: teamData.name, role, previousTeam: team?.id });
-      setTeam(teamData);
-      setUserRole(role);
-      
-      // Only set as active team if it's different from current
-      if (currentActiveTeamId !== targetTeamId) {
-        console.log('🔄 useTeam - Setting active team ID:', targetTeamId);
-        setActiveTeam(targetTeamId);
-      }
-
-      console.log('🔍 useTeam - Team state updated:', teamData.id, teamData.name, 'Role:', role);
-      
-      setError(null);
-
-      // Load additional data after setting main team state
-      loadTeamMembers(targetTeamId);
-      if (role === 'admin') {
-        loadPendingInvitations(targetTeamId);
-      }
-    } catch (error) {
-      console.error('Failed to load team data:', error);
-      setError('Failed to load team data');
-      setTeam(null);
-      setUserRole(null);
-    } finally {
-      setIsLoading(false);
-      isLoadingRef.current = false;
-    }
+    // Store the promise for request deduplication
+    globalLoadPromises.set(loadKey, loadPromise);
+    await loadPromise;
+    globalLoadPromises.delete(loadKey);
   }, [user, activeTeamId, setActiveTeam, loadAllUserTeams]);
 
   const switchToTeam = useCallback(async (teamId: string) => {
-    console.log('🔄 useTeam - switchToTeam called:', { teamId, currentTeam: team?.id, currentActiveTeamId: activeTeamId });
-    
     if (teamId === activeTeamId && teamId === team?.id) {
-      console.log('⚠️ useTeam - Already on requested team, skipping switch');
       return;
     }
     
-    console.log('🔄 useTeam - Setting active team to:', teamId);
+    // Clear global state to force reload
+    const oldLoadKey = `${user?.id}-${activeTeamId}`;
+    const newLoadKey = `${user?.id}-${teamId}`;
+    globalLoadedKeys.delete(oldLoadKey);
+    globalLoadedKeys.delete(newLoadKey);
+    globalLoadingStates.delete(oldLoadKey);
+    globalLoadingStates.delete(newLoadKey);
     
     // Update the active team state and force reload
     setActiveTeam(teamId);
     setIsLoading(true);
     isLoadingRef.current = false;
-    loadedUserRef.current = null; // Force reload
+    loadedUserRef.current = null;
     
-    // Immediate reload without delay
     loadTeamData();
-    
-    console.log('🔄 useTeam - Team switch initiated');
-  }, [team?.id, activeTeamId, setActiveTeam, loadTeamData]);
+  }, [team?.id, activeTeamId, setActiveTeam, loadTeamData, user?.id]);
 
   const loadTeamMembers = async (teamId: string) => {
     // Add debouncing to prevent excessive API calls when switching accounts
@@ -588,15 +607,18 @@ export const useTeam = () => {
     }
     
     const currentKey = `${user.id}-${activeTeamId}`;
-    // Only load if we haven't already loaded for this user/team combination
-    if (!isLoadingRef.current && loadedUserRef.current !== currentKey) {
+    
+    // Check global state - only load if not already loaded/loading
+    if (!globalLoadingStates.get(currentKey) && !globalLoadedKeys.get(currentKey)) {
       // Set the ref IMMEDIATELY to prevent race conditions
       loadedUserRef.current = currentKey;
       setIsLoading(true);
       
-      // If loading fails, reset the ref so it can be retried
+      // If loading fails, clear global state so it can be retried
       loadTeamData().catch(() => {
         loadedUserRef.current = null;
+        globalLoadedKeys.delete(currentKey);
+        globalLoadingStates.delete(currentKey);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -606,11 +628,15 @@ export const useTeam = () => {
   useEffect(() => {
     if (!user?.id || !team?.id || isProcessingInvitation) return;
     
-    console.log('🔔 Setting up realtime subscriptions for team:', team.id);
+    // Use global channel tracking to prevent duplicates
+    const channelKey = `team-members-${user.id}-${team.id}`;
+    if (globalRealtimeChannels.has(channelKey)) {
+      return; // Channel already exists
+    }
     
     // Subscribe to team membership changes
     const memberChannel = supabase
-      .channel(`team-members-${user.id}`)
+      .channel(channelKey)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
@@ -618,7 +644,6 @@ export const useTeam = () => {
         filter: `user_id=eq.${user.id}`
       }, async (payload) => {
         const deletedMembership = payload.old;
-        console.log('🔔 Team membership deleted:', deletedMembership);
         
         if (deletedMembership.team_id === team?.id) {
           toast({
@@ -632,11 +657,8 @@ export const useTeam = () => {
           const nextTeam = teams.find(t => t.id !== team.id);
           
           if (nextTeam) {
-            console.log('🔄 Switching to next available team:', nextTeam.id);
             switchToTeam(nextTeam.id);
           } else {
-            // No other teams, clear and redirect
-            console.log('🔄 No other teams available, redirecting to dashboard');
             setActiveTeam(null);
             navigate('/dashboard');
           }
@@ -644,9 +666,11 @@ export const useTeam = () => {
       })
       .subscribe();
     
+    globalRealtimeChannels.set(channelKey, memberChannel);
+    
     return () => {
-      console.log('🔔 Cleaning up realtime subscriptions');
       supabase.removeChannel(memberChannel);
+      globalRealtimeChannels.delete(channelKey);
     };
   }, [user?.id, team?.id, isProcessingInvitation, toast, navigate, setActiveTeam, loadAllUserTeams, switchToTeam]);
 
