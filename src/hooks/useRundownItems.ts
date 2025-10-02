@@ -173,75 +173,13 @@ export const useRundownItems = (
     });
   }, [markAsChanged, handleStructuralOperation]);
 
-  const addMultipleRows = useCallback((
-    count: number,
-    calculateEndTime: (startTime: string, duration: string) => string,
-    selectedRowId?: string | null,
-    selectedRows?: Set<string>
-  ) => {
+  const addMultipleRows = useCallback((newItems: RundownItem[]) => {
     setItems(prevItems => {
-      // Create new items
-      const newItems: RundownItem[] = [];
-      for (let i = 0; i < count; i++) {
-        newItems.push({
-          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: RUNDOWN_DEFAULTS.DEFAULT_ROW_NAME,
-          type: 'regular',
-          duration: RUNDOWN_DEFAULTS.NEW_ROW_DURATION,
-          startTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
-          endTime: RUNDOWN_DEFAULTS.DEFAULT_START_TIME,
-          elapsedTime: RUNDOWN_DEFAULTS.DEFAULT_ELAPSED_TIME,
-          isFloating: false,
-          talent: '',
-          script: '',
-          notes: '',
-          gfx: '',
-          video: '',
-          images: '',
-          customFields: {},
-          rowNumber: '',
-          color: RUNDOWN_DEFAULTS.DEFAULT_COLOR
-        });
-      }
-
-      // Determine insertion point
-      let insertIndex = prevItems.length;
-
-      if (selectedRows && selectedRows.size > 0) {
-        const lastSelectedIndex = Math.max(
-          ...Array.from(selectedRows).map(id => 
-            prevItems.findIndex(item => item.id === id)
-          ).filter(idx => idx !== -1)
-        );
-        if (lastSelectedIndex !== -1) {
-          insertIndex = lastSelectedIndex + 1;
-        }
-      } else if (selectedRowId) {
-        const selectedIndex = prevItems.findIndex(item => item.id === selectedRowId);
-        if (selectedIndex !== -1) {
-          insertIndex = selectedIndex + 1;
-        }
-      }
-
-      // Insert at the determined position
-      const allItems = [
-        ...prevItems.slice(0, insertIndex),
-        ...newItems,
-        ...prevItems.slice(insertIndex)
-      ];
-
-      // Trigger structural operation if handler exists
-      if (handleStructuralOperation) {
-        handleStructuralOperation('add_row', {
-          newItems,
-          insertIndex
-        });
-      }
-
+      const allItems = [...prevItems, ...newItems];
       markAsChanged();
       return allItems;
     });
-  }, [markAsChanged, handleStructuralOperation]);
+  }, [markAsChanged]);
 
   const toggleFloatRow = useCallback((id: string) => {
     setItems(prevItems => {

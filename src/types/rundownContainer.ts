@@ -37,7 +37,6 @@ export interface RundownContainerProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
   onAddRow: () => void;
-  onAddMultipleRows?: (count: number, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   onAddHeader: () => void;
   selectedCount: number;
   hasClipboardData: boolean;

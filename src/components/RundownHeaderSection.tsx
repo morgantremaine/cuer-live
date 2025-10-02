@@ -10,7 +10,6 @@ interface RundownHeaderSectionProps {
   onTimezoneChange: (timezone: string) => void;
   totalRuntime: string;
   onAddRow: (selectedRowId?: string | null) => void;
-  onAddMultipleRows?: (count: number, selectedRowId?: string | null, selectedRows?: Set<string>) => void;
   onAddHeader: (selectedRowId?: string | null) => void;
   onShowColumnManager: () => void;
   selectedCount: number;
@@ -73,7 +72,6 @@ const RundownHeaderSection = ({
   onTimezoneChange,
   totalRuntime,
   onAddRow,
-  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   selectedCount,
@@ -166,9 +164,6 @@ const RundownHeaderSection = ({
       />
       <RundownToolbar
         onAddRow={() => onAddRow(selectedRowId)}
-        onAddMultipleRows={onAddMultipleRows 
-          ? (count: number) => onAddMultipleRows(count, selectedRowId, undefined)
-          : undefined}
         onAddHeader={() => onAddHeader(selectedRowId)}
         onShowColumnManager={onShowColumnManager}
         selectedRowId={selectedRowId}

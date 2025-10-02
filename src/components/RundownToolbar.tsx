@@ -7,9 +7,8 @@ import DesktopToolbar from './toolbar/DesktopToolbar';
 import { CSVExportData } from '@/utils/csvExport';
 
 interface RundownToolbarProps {
-  onAddRow: (selectedRowId?: string | null) => void;
-  onAddMultipleRows?: (count: number, selectedRowId?: string | null) => void;
-  onAddHeader: (selectedRowId?: string | null) => void;
+  onAddRow: () => void;
+  onAddHeader: () => void;
   onShowColumnManager: () => void;
   // Playback controls
   selectedRowId: string | null;
@@ -55,7 +54,6 @@ interface RundownToolbarProps {
 
 const RundownToolbar = ({
   onAddRow,
-  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   selectedRowId,
@@ -95,9 +93,6 @@ const RundownToolbar = ({
 
   const commonProps = {
     onAddRow,
-    onAddMultipleRows: onAddMultipleRows 
-      ? (count: number) => onAddMultipleRows(count, selectedRowId)
-      : undefined,
     onAddHeader,
     onShowColumnManager,
     onUndo,

@@ -8,7 +8,6 @@ import { CSVExportData } from '@/utils/csvExport';
 
 interface DesktopToolbarProps {
   onAddRow: () => void;
-  onAddMultipleRows?: (count: number) => void;
   onAddHeader: () => void;
   onShowColumnManager: () => void;
   onUndo: () => void;
@@ -46,7 +45,6 @@ interface DesktopToolbarProps {
 
 const DesktopToolbar = ({
   onAddRow,
-  onAddMultipleRows,
   onAddHeader,
   onShowColumnManager,
   onUndo,
@@ -86,7 +84,6 @@ const DesktopToolbar = ({
       <div className="flex space-x-1">
         <MainActionButtons
           onAddRow={onAddRow}
-          onAddMultipleRows={onAddMultipleRows}
           onAddHeader={onAddHeader}
           onShowColumnManager={onShowColumnManager}
           onUndo={onUndo}

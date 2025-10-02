@@ -92,7 +92,6 @@ export interface RundownInteractions {
   clearSelection: () => void;
   toggleRowSelection: (itemId: string, index: number, isShiftClick: boolean, isCtrlClick: boolean, allItems: any[]) => void;
   handleAddRow: () => void;
-  handleAddMultipleRows?: (count: number) => void;
   handleAddHeader: () => void;
 }
 

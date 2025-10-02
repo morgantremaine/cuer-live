@@ -322,8 +322,7 @@ const RundownIndexContent = () => {
     handleDeleteSelectedRows,
     handleRowSelection,
     handleAddRow,
-    handleAddHeader,
-    handleAddMultipleRows
+    handleAddHeader
   } = interactions;
 
   const { 
@@ -581,7 +580,6 @@ const RundownIndexContent = () => {
         onDragLeave={handleDragLeaveWrapper}
         onDrop={handleDropWrapper}
         onAddRow={handleAddRow}
-        onAddMultipleRows={handleAddMultipleRows}
         onAddHeader={handleAddHeader}
         selectedCount={selectedRows.size}
         hasClipboardData={hasClipboardData()}
