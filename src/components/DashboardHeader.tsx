@@ -47,9 +47,9 @@ const DashboardHeader = ({
 
   return (
     <header className="bg-gray-800 border-b border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="px-4">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-32">
+          <div className="flex items-center space-x-6">
             {showBackButton && onBack && (
               <Button
                 variant="ghost"
