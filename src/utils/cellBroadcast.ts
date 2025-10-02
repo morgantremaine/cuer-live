@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getReconnectDelay } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 // Simplified message payload for single sessions
 interface CellUpdate {
@@ -205,6 +206,13 @@ export class CellBroadcastManager {
 
     // Ensure channel is created and subscribed
     this.ensureChannel(rundownId);
+    
+    // Register with reconnection coordinator
+    realtimeReconnectionCoordinator.register(
+      `cell-${rundownId}`,
+      'cell',
+      () => this.forceReconnect(rundownId)
+    );
 
     return () => {
       const set = this.callbacks.get(rundownId);
@@ -212,10 +220,42 @@ export class CellBroadcastManager {
         set.delete(callback);
         if (set.size === 0) {
           this.callbacks.delete(rundownId);
+          // Unregister from coordinator
+          realtimeReconnectionCoordinator.unregister(`cell-${rundownId}`);
           this.cleanupChannel(rundownId);
         }
       }
     };
+  }
+  
+  // Force reconnection (called by RealtimeReconnectionCoordinator)
+  async forceReconnect(rundownId: string): Promise<void> {
+    console.log('📱 🔄 Force reconnect requested for cell channel:', rundownId);
+    
+    // Check auth first
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('📱 ⚠️ Cannot reconnect cell channel - invalid auth session');
+      return;
+    }
+    
+    // Clean up and reconnect immediately
+    const existingChannel = this.channels.get(rundownId);
+    if (existingChannel) {
+      try {
+        supabase.removeChannel(existingChannel);
+      } catch (error) {
+        console.warn('📱 Error removing cell channel during force reconnect:', error);
+      }
+    }
+    
+    this.channels.delete(rundownId);
+    this.subscribed.delete(rundownId);
+    this.reconnectAttempts.set(rundownId, 0); // Reset attempts
+    
+    if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+      this.ensureChannel(rundownId);
+    }
   }
 
   private cleanupChannel(rundownId: string): void {

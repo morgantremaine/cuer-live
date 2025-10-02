@@ -1,6 +1,7 @@
 // Showcaller real-time broadcast system for instant sync
 import { supabase } from '@/integrations/supabase/client';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 export interface ShowcallerBroadcastState {
   rundownId: string;
@@ -85,8 +86,16 @@ class ShowcallerBroadcastManager {
   }
 
   // Reconnect channel after error or close
-  private reconnectChannel(rundownId: string): void {
+  private async reconnectChannel(rundownId: string): Promise<void> {
     this.isReconnecting.set(rundownId, true);
+    
+    // Check auth status before reconnecting
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('📺 ⚠️ Auth session invalid, waiting for token refresh before reconnecting:', rundownId);
+      this.isReconnecting.set(rundownId, false);
+      return; // Coordinator will trigger reconnection after token refresh
+    }
     
     // Calculate exponential backoff delay
     const attempts = this.reconnectAttempts.get(rundownId) || 0;
@@ -131,6 +140,35 @@ class ShowcallerBroadcastManager {
 
     this.reconnectTimeouts.set(rundownId, timeout);
   }
+  
+  // Force reconnection (called by RealtimeReconnectionCoordinator)
+  async forceReconnect(rundownId: string): Promise<void> {
+    console.log('📺 🔄 Force reconnect requested for:', rundownId);
+    
+    // Check auth first
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      console.warn('📺 ⚠️ Cannot reconnect - invalid auth session');
+      return;
+    }
+    
+    // Clean up and reconnect immediately
+    const existingChannel = this.channels.get(rundownId);
+    if (existingChannel) {
+      try {
+        supabase.removeChannel(existingChannel);
+      } catch (error) {
+        console.warn('📺 Error removing channel during force reconnect:', error);
+      }
+    }
+    
+    this.channels.delete(rundownId);
+    this.reconnectAttempts.set(rundownId, 0); // Reset attempts
+    
+    if (this.callbacks.has(rundownId) && this.callbacks.get(rundownId)!.size > 0) {
+      this.ensureChannel(rundownId);
+    }
+  }
 
   // Broadcast showcaller state change
   broadcastState(state: ShowcallerBroadcastState): void {
@@ -157,6 +195,13 @@ class ShowcallerBroadcastManager {
   ): () => void {
     this.ensureChannel(rundownId);
     
+    // Register with reconnection coordinator
+    realtimeReconnectionCoordinator.register(
+      `showcaller-${rundownId}`,
+      'showcaller',
+      () => this.forceReconnect(rundownId)
+    );
+    
     const callbacks = this.callbacks.get(rundownId) || new Set();
     
     // Wrap callback to filter own updates (simplified for single sessions)
@@ -182,6 +227,8 @@ class ShowcallerBroadcastManager {
       if (callbacks) {
         callbacks.delete(wrappedCallback);
         if (callbacks.size === 0) {
+          // Unregister from coordinator
+          realtimeReconnectionCoordinator.unregister(`showcaller-${rundownId}`);
           this.cleanup(rundownId);
         }
       }

@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { clearInvalidTokens } from '@/utils/invitationUtils'
 import { logger } from '@/utils/logger'
+import { authMonitor } from '@/services/AuthMonitor'
 
 interface AuthContextType {
   user: User | null
@@ -38,6 +39,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Set session and user state
       setSession(session)
       setUser(session?.user ?? null)
+      
+      // Notify AuthMonitor of auth state changes for realtime coordination
+      if (event === 'TOKEN_REFRESHED') {
+        authMonitor.onTokenRefreshed(session)
+      } else if (event === 'SIGNED_OUT') {
+        authMonitor.onSignedOut()
+      } else if (event === 'SIGNED_IN') {
+        authMonitor.onSignedIn(session)
+      }
       
       // Only set loading to false after we've processed the auth state change
       // Add a small delay to ensure Supabase has fully processed the session

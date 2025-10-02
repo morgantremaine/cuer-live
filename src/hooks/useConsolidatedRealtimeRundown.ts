@@ -5,6 +5,7 @@ import { normalizeTimestamp } from '@/utils/realtimeUtils';
 import { debugLogger } from '@/utils/debugLogger';
 import { getTabId } from '@/utils/tabUtils';
 import { ownUpdateTracker } from '@/services/OwnUpdateTracker';
+import { realtimeReconnectionCoordinator } from '@/services/RealtimeReconnectionCoordinator';
 
 interface UseConsolidatedRealtimeRundownProps {
   rundownId: string | null;
@@ -358,6 +359,56 @@ export const useConsolidatedRealtimeRundown = ({
       };
 
       globalSubscriptions.set(rundownId, globalState);
+      
+      // Register with reconnection coordinator
+      const forceReconnect = async () => {
+        console.log('📡 🔄 Force reconnect requested for consolidated channel:', rundownId);
+        
+        // Check auth first
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          console.warn('📡 ⚠️ Cannot reconnect - invalid auth session');
+          return;
+        }
+        
+        // Unsubscribe and resubscribe
+        if (globalState?.subscription) {
+          await supabase.removeChannel(globalState.subscription);
+          const newChannel = supabase.channel(`consolidated-realtime-${rundownId}`);
+          
+          // Re-setup listeners (copy from above)
+          newChannel.on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'rundowns'
+          }, (payload) => {
+            const state = globalSubscriptions.get(rundownId);
+            if (state) processRealtimeUpdate(payload, state);
+          });
+          
+          if (!isSharedView) {
+            newChannel.on('postgres_changes', {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'blueprints'
+            }, (payload) => {
+              const state = globalSubscriptions.get(rundownId);
+              if (state) processRealtimeUpdate({ ...payload, table: 'blueprints' }, state);
+            });
+          }
+          
+          await newChannel.subscribe();
+          if (globalState) {
+            globalState.subscription = newChannel;
+          }
+        }
+      };
+      
+      realtimeReconnectionCoordinator.register(
+        `consolidated-${rundownId}`,
+        'consolidated',
+        forceReconnect
+      );
     }
 
     // Register callbacks
@@ -417,6 +468,9 @@ export const useConsolidatedRealtimeRundown = ({
           refCount: state.refCount,
           totalCallbacks
         });
+        
+        // Unregister from reconnection coordinator
+        realtimeReconnectionCoordinator.unregister(`consolidated-${rundownId}`);
         
         // Prevent recursive cleanup
         const subscription = state.subscription;
