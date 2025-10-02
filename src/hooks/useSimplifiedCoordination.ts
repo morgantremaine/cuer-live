@@ -1,12 +1,26 @@
 import { useSimplifiedRundownCoordination } from './useSimplifiedRundownCoordination';
 import { useAuth } from './useAuth';
-import { useState, useCallback } from 'react';
+import { useUserColumnPreferences } from './useUserColumnPreferences';
+import { useState, useCallback, useMemo } from 'react';
 
 export const useSimplifiedCoordination = (rundownId: string) => {
   const { user } = useAuth();
   const userId = user?.id || '';
 
   const coordination = useSimplifiedRundownCoordination({ rundownId });
+  
+  // Get user-specific column preferences
+  const {
+    columns: userColumns,
+    updateColumns: setColumns,
+    isLoading: isLoadingColumns,
+    isSaving: isSavingColumns
+  } = useUserColumnPreferences(rundownId);
+  
+  // Calculate visible columns
+  const visibleColumns = useMemo(() => {
+    return userColumns.filter(col => col.isVisible !== false);
+  }, [userColumns]);
 
   // Additional UI state
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -27,11 +41,11 @@ export const useSimplifiedCoordination = (rundownId: string) => {
       // Data
       items: coordination.items,
       rundownTitle: coordination.title,
-      isLoading: coordination.isLoading,
+      isLoading: coordination.isLoading || isLoadingColumns,
       rundownId,
       
       // Save state for indicators
-      isSaving: coordination.saveState.isSaving,
+      isSaving: coordination.saveState.isSaving || isSavingColumns,
       hasUnsavedChanges: coordination.saveState.hasUnsavedChanges,
       isConnected: true,
       
@@ -48,9 +62,9 @@ export const useSimplifiedCoordination = (rundownId: string) => {
       addRow: coordination.addRow,
       setTitle: coordination.setTitle,
       
-      // Placeholder values for now
-      columns: [],
-      visibleColumns: [],
+      // Column management
+      columns: userColumns,
+      visibleColumns,
       currentTime: new Date(),
       timezone: 'UTC',
       rundownStartTime: '00:00:00',
@@ -82,10 +96,28 @@ export const useSimplifiedCoordination = (rundownId: string) => {
       lastAction: null,
       nextAction: null,
       
-      // Column management (noop for now)
-      addColumn: (_name: string) => {},
-      updateColumnWidth: (_columnId: string, _width: string) => {},
-      setColumns: (_columns: any[]) => {},
+      // Column management
+      addColumn: (name: string) => {
+        const newColumn = {
+          id: `custom_${Date.now()}`,
+          name,
+          key: `custom_${Date.now()}`,
+          width: '150px',
+          isCustom: true,
+          isEditable: true,
+          isVisible: true
+        };
+        const newColumns = [...userColumns];
+        newColumns.splice(1, 0, newColumn);
+        setColumns(newColumns);
+      },
+      updateColumnWidth: (columnId: string, width: string) => {
+        const updated = userColumns.map(col =>
+          col.id === columnId ? { ...col, width } : col
+        );
+        setColumns(updated);
+      },
+      setColumns,
       
       // Other actions
       toggleFloatRow: (_id: string) => {},
