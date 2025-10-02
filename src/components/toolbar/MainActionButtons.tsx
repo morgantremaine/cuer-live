@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Plus, Eye, Undo, Redo, MapPin, Search, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -77,9 +76,36 @@ const MainActionButtons = ({
   const navigate = useNavigate();
   const { subscription_tier, access_type } = useSubscription();
 
+  // Cooldown states for Add buttons
+  const [addRowCooldown, setAddRowCooldown] = useState(false);
+  const [addHeaderCooldown, setAddHeaderCooldown] = useState(false);
+
   // Check if user is on free tier
   const isFreeUser = (subscription_tier === 'Free' || subscription_tier === null) && 
                     (access_type === 'free' || access_type === 'none');
+
+  // Wrapper functions with cooldown logic
+  const handleAddRowWithCooldown = useCallback(() => {
+    if (addRowCooldown) return;
+    
+    setAddRowCooldown(true);
+    onAddRow();
+    
+    setTimeout(() => {
+      setAddRowCooldown(false);
+    }, 500);
+  }, [addRowCooldown, onAddRow]);
+
+  const handleAddHeaderWithCooldown = useCallback(() => {
+    if (addHeaderCooldown) return;
+    
+    setAddHeaderCooldown(true);
+    onAddHeader();
+    
+    setTimeout(() => {
+      setAddHeaderCooldown(false);
+    }, 500);
+  }, [addHeaderCooldown, onAddHeader]);
   const handleToggleAutoScroll = (checked: boolean) => {
     if (onToggleAutoScroll) {
       onToggleAutoScroll();
@@ -118,11 +144,11 @@ const MainActionButtons = ({
       <div className="space-y-3">
         {/* Main action buttons */}
         <div className="grid grid-cols-2 gap-2 w-full">
-          <Button onClick={onAddRow} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+          <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Segment</span>
           </Button>
-          <Button onClick={onAddHeader} variant="outline" size={buttonSize} className="flex items-center justify-start gap-1.5">
+          <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className="flex items-center justify-start gap-1.5">
             <Plus className="h-4 w-4" />
             <span>Add Header</span>
           </Button>
@@ -210,11 +236,11 @@ const MainActionButtons = ({
   const buttonClass = 'flex items-center space-x-1';
   return (
     <>
-      <Button onClick={onAddRow} variant="outline" size={buttonSize} className={buttonClass}>
+      <Button onClick={handleAddRowWithCooldown} variant="outline" size={buttonSize} disabled={addRowCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Segment</span>
       </Button>
-      <Button onClick={onAddHeader} variant="outline" size={buttonSize} className={buttonClass}>
+      <Button onClick={handleAddHeaderWithCooldown} variant="outline" size={buttonSize} disabled={addHeaderCooldown} className={buttonClass}>
         <Plus className="h-4 w-4" />
         <span>Add Header</span>
       </Button>
