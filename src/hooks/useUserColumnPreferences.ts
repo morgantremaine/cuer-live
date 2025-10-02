@@ -78,7 +78,13 @@ export const useUserColumnPreferences = (rundownId: string | null) => {
     // Start from defaults, but hide any defaults NOT present in the user's layout
     const allAvailableColumns: Column[] = defaultColumns.map(dc => {
       const userPref = userColumnMap.get(dc.key);
-      return userPref ? { ...dc, ...userPref } : { ...dc, isVisible: false };
+      return userPref ? {
+        ...dc,
+        ...userPref,
+        // Preserve default properties if not explicitly set in user preferences
+        isCollapsible: userPref.isCollapsible ?? dc.isCollapsible,
+        type: userPref.type ?? dc.type,
+      } : { ...dc, isVisible: false };
     });
     
     // Add ALL team columns to the available set - O(n)
