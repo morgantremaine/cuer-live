@@ -540,40 +540,23 @@ export const useSimpleAutoSave = (
       return;
     }
 
-    // REFINED STALE TAB PROTECTION: Allow saves for second monitor scenarios
-    // Only block saves if tab has been hidden/unfocused for extended periods (indicating sleep/inactivity)
-    // OR if no recent activity and wasn't initiated while active
+    // REFINED: Background monitor support with extended activity window
+    // Extended from 5 seconds to 30 seconds to support second monitor scenarios
     const isTabCurrentlyInactive = document.hidden || !document.hasFocus();
-    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 5000;
-    const hasBeenInactiveForLong = isTabCurrentlyInactive && Date.now() - lastEditAtRef.current > 30000; // 30 seconds
+    const hasRecentKeystrokes = Date.now() - recentKeystrokes.current < 30000; // Extended to 30 seconds
     
-    // Skip tab inactivity checks for shared views since users often view them in background tabs
-    if (!isSharedView) {
-      if (!isFlushSave && hasBeenInactiveForLong && !saveInitiatedWhileActiveRef.current && !hasRecentKeystrokes) {
-        debugLogger.autosave('Save blocked: tab inactive for extended period');
-        console.log('🛑 AutoSave: blocked - tab inactive for extended period');
-        return;
-      }
-      
-      if (hasRecentKeystrokes && isTabCurrentlyInactive) {
-        console.log('✅ AutoSave: allowing save despite hidden tab due to recent keystrokes');
-      }
-    }
-    
-    if (isFlushSave && isTabCurrentlyInactive) {
-      console.log('🧯 AutoSave: flush save proceeding despite tab inactive - preserving keystrokes');
-    }
-    
-    if (!isFlushSave && isTabCurrentlyInactive && saveInitiatedWhileActiveRef.current) {
-      console.log('✅ AutoSave: tab hidden but save was initiated while active - proceeding');
-    }
-
-    // CRITICAL: Block if explicitly flagged to wait for local edit
-    if (blockUntilLocalEditRef && blockUntilLocalEditRef.current) {
-      debugLogger.autosave('Save blocked: waiting for local edit after remote update');
-      console.log('🛑 AutoSave: blocked - waiting for local edit after remote update');
+    // Skip tab inactivity checks for shared views
+    if (!isSharedView && !isFlushSave && isTabCurrentlyInactive && !hasRecentKeystrokes) {
+      debugLogger.autosave('Save blocked: no recent activity in background tab');
+      console.log('🛑 AutoSave: blocked - no recent activity in background tab');
       return;
     }
+    
+    if (hasRecentKeystrokes && isTabCurrentlyInactive) {
+      console.log('✅ AutoSave: allowing save in background tab due to recent activity (30s window)');
+    }
+
+    // REMOVED: blockUntilLocalEditRef blocking - embrace immediate saves
     
     if (cooldownUntilRef && cooldownUntilRef.current > Date.now()) {
       debugLogger.autosave('Save blocked: cooldown period active');

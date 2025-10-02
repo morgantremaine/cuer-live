@@ -29,23 +29,11 @@ export const useShowcallerRealtime = ({
   onShowcallerStateReceivedRef.current = onShowcallerStateReceived;
   onShowcallerActivityRef.current = onShowcallerActivity;
 
-  // Signal showcaller activity
+  // Signal showcaller activity - REMOVED 8-second blocking timeout
   const signalActivity = useCallback(() => {
-    if (onShowcallerActivityRef.current) {
-      onShowcallerActivityRef.current(true);
-      
-      // Clear existing timeout
-      if (activityTimeoutRef.current) {
-        clearTimeout(activityTimeoutRef.current);
-      }
-      
-      // Set timeout to clear activity after 8 seconds
-      activityTimeoutRef.current = setTimeout(() => {
-        if (onShowcallerActivityRef.current) {
-          onShowcallerActivityRef.current(false);
-        }
-      }, 8000);
-    }
+    // Showcaller now operates independently without blocking other systems
+    // No activity timeout - showcaller state changes are immediate and don't block
+    console.log('📡 Showcaller activity (non-blocking)');
   }, []);
 
   // Debounced update handler to prevent rapid-fire processing

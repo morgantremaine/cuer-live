@@ -64,28 +64,11 @@ export class CellBroadcastManager {
           return;
         }
         
-        // Improved deduplication: only prevent exact duplicates within a short time window
+        // REMOVED: Deduplication window - accept all updates immediately
+        // React's rendering optimization handles duplicate renders efficiently
         const fieldKey = `${update.itemId || 'rundown'}-${update.field}`;
-        const updateKey = `${fieldKey}-${JSON.stringify(update.value)}`;
-        const lastKey = this.lastProcessedUpdate.get(fieldKey);
+        debugLogger.realtime('Cell broadcast received (from other user):', { fieldKey, value: update.value });
         
-        // Only deduplicate if the exact same value was sent very recently (within 100ms)
-        // This prevents legitimate rapid changes from being filtered out
-        if (lastKey) {
-          const [lastUpdateKey, lastTimestamp] = lastKey.split('|');
-          const timeDiff = update.timestamp - parseInt(lastTimestamp);
-          
-          if (lastUpdateKey === updateKey && timeDiff < 100) {
-            return; // Skip only very recent duplicates
-          }
-        }
-        
-        this.lastProcessedUpdate.set(fieldKey, `${updateKey}|${update.timestamp}`);
-        
-        // Reduced logging for cell broadcasts - only show unique updates from other users
-        if (lastKey !== updateKey) {
-          debugLogger.realtime('Cell broadcast received (from other user):', update);
-        }
         
         const cbs = this.callbacks.get(rundownId);
         if (cbs && cbs.size > 0) {

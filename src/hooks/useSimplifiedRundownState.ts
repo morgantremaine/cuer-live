@@ -230,31 +230,19 @@ export const useSimplifiedRundownState = () => {
   // Track own updates for realtime filtering
   const ownUpdateTimestampRef = useRef<string | null>(null);
 
-  // Simplified protected fields - just basic typing protection
+  // Simplified protected fields - only protect exact field being typed RIGHT NOW
   const getProtectedFields = useCallback(() => {
     const protectedFields = new Set<string>();
     const now = Date.now();
     
-    // Add currently typing field if any
+    // Only protect the specific field being typed in at this moment
     if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
       protectedFields.add(typingSessionRef.current.fieldKey);
+      console.log('🛡️ Protecting actively typed field:', typingSessionRef.current.fieldKey);
     }
-    
-    // SIMPLIFIED: Only protect fields that are actively being typed in
-    // Don't protect based on recent edits - only active typing
-    if (typingSessionRef.current && now - typingSessionRef.current.startTime < TYPING_DEBOUNCE_MS) {
-      protectedFields.add(typingSessionRef.current.fieldKey);
-    }
-    
-    // Clean up old recently edited fields
-    recentlyEditedFieldsRef.current.forEach((timestamp, fieldKey) => {
-      if (now - timestamp > TYPING_DEBOUNCE_MS) {
-        recentlyEditedFieldsRef.current.delete(fieldKey);
-      }
-    });
     
     return protectedFields;
-  }, [teleprompterSync.isTeleprompterSaving]);
+  }, []);
 
   // Enhanced realtime connection with sync-before-write protection
   const deferredUpdateRef = useRef<any>(null);
@@ -330,17 +318,10 @@ export const useSimplifiedRundownState = () => {
       // Apply granular merge only if actively typing in a specific field
       const protectedFields = getProtectedFields();
       
-      // CRITICAL: Set AutoSave block for teammate updates, but clear immediately if user is actively typing
-      if (blockUntilLocalEditRef) {
-        if (protectedFields.size > 0) {
-          // User is actively typing - don't block AutoSave, they should be able to save their work
-          console.log('🛡️ Protecting actively typed field during realtime update - AutoSave enabled:', Array.from(protectedFields));
-          blockUntilLocalEditRef.current = false;
-        } else {
-          // User not typing - block AutoSave until they make a local edit
-          debugLogger.realtime('Setting blockUntilLocalEditRef = true due to remote content update (no active typing)');
-          blockUntilLocalEditRef.current = true;
-        }
+      // REMOVED: No more AutoSave blocking - embrace immediate saves
+      // Field-level conflict resolution handles conflicts gracefully
+      if (protectedFields.size > 0) {
+        console.log('🛡️ Protecting actively typed field during realtime update:', Array.from(protectedFields));
       }
       
       if (protectedFields.size > 0) {
@@ -428,15 +409,8 @@ export const useSimplifiedRundownState = () => {
           actions.loadState(updateData);
         }
         
-        // Apply extended autosave suppression cooldown after teammate update
-        const hasIncomingItems2 = Array.isArray(updatedRundown.items);
-        const isStructuralChange2 = hasIncomingItems2 && state.items && (
-          (updatedRundown.items?.length ?? 0) !== state.items.length ||
-          JSON.stringify((updatedRundown.items || []).map((i: any) => i.id)) !== JSON.stringify(state.items.map((i: any) => i.id))
-        );
-         // CRITICAL: Block all autosaves until the user makes a local edit
-         debugLogger.autosave('AutoSave: BLOCKING all saves after teammate update - until local edit');
-         blockUntilLocalEditRef.current = true;
+        // REMOVED: blockUntilLocalEditRef blocking - autosave now operates independently
+        debugLogger.autosave('AutoSave: Remote update received - autosave continues normally');
        }
     }, [actions, isSaving, getProtectedFields, state.items, state.title, state.startTime, state.timezone, state.showDate]),
     enabled: !isLoading

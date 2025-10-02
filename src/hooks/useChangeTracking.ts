@@ -91,45 +91,33 @@ export const useChangeTracking = (
     };
   }, [isInitialized, createContentSignatureCallback, setManagedTimeout, clearTimer]);
 
-  // Enhanced change detection that completely ignores showcaller operations
+  // Enhanced change detection - showcaller blocking removed
   useEffect(() => {
-    // Essential blocking conditions including showcaller
+    // Essential blocking conditions (showcaller blocking removed)
     if (!isInitialized || 
         isLoading || 
         isProcessingRealtimeUpdate || 
-        isApplyingRemoteUpdateRef.current ||
-        showcallerActiveRef.current) {
-      
-      if (showcallerActiveRef.current) {
-        console.log('🚫 Change detection blocked - showcaller operation active');
-      }
+        isApplyingRemoteUpdateRef.current) {
       return;
     }
 
-    // Create new signature (will return cached if showcaller active)
+    // Create new signature
     const currentSignature = createContentSignatureCallback();
     
-    // Only trigger if signature actually changed AND showcaller is not active
-    if (lastSavedDataRef.current !== currentSignature && !showcallerActiveRef.current) {
+    // Trigger change detection if signature changed
+    if (lastSavedDataRef.current !== currentSignature) {
       console.log('📝 CHANGE DETECTED: Content signature changed', {
         previousLength: lastSavedDataRef.current.length,
         currentLength: currentSignature.length,
         itemCount: items?.length || 0,
         titleChanged: rundownTitle !== 'previous_title_placeholder',
-        showcallerActive: showcallerActiveRef.current,
         reason: 'Content modification detected'
       });
       setHasUnsavedChanges(true);
     } else if (lastSavedDataRef.current === currentSignature) {
       console.log('✅ NO CHANGE: Signatures match exactly', {
         signatureLength: currentSignature.length,
-        itemCount: items?.length || 0,
-        showcallerActive: showcallerActiveRef.current
-      });
-    } else {
-      console.log('🚫 CHANGE BLOCKED: Showcaller active, ignoring changes', {
-        signatureChanged: lastSavedDataRef.current !== currentSignature,
-        showcallerActive: showcallerActiveRef.current
+        itemCount: items?.length || 0
       });
     }
   }, [items, rundownTitle, columns, timezone, startTime, isInitialized, isLoading, createContentSignatureCallback, isProcessingRealtimeUpdate]);
