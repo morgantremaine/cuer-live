@@ -573,9 +573,8 @@ const TeamManagement = () => {
                   <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
                     <p className="font-semibold text-orange-700 mb-2">You will:</p>
                     <ul className="space-y-1 text-sm">
-                      <li>• Transfer all your data to {teamAdminName || 'the team admin'}</li>
+                      <li>• Lose access to all team rundowns</li>
                       <li>• Keep your account and personal team</li>
-                      <li>• Lose access to team rundowns immediately</li>
                       <li>• Need a new invitation to rejoin</li>
                     </ul>
                   </div>
