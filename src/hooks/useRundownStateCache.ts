@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { rundownStateCache } from '@/services/RundownStateCache';
 
-// Global state cache that persists across component unmounts
-const stateCache = new Map<string, any>();
+// Loading states tracking (separate from main cache)
 const loadingStates = new Map<string, boolean>();
 
 export const useRundownStateCache = (rundownId: string | null) => {
@@ -9,7 +9,7 @@ export const useRundownStateCache = (rundownId: string | null) => {
   const mountTimeRef = useRef(Date.now());
 
   // Check if we have cached state for this rundown
-  const hasCachedState = stateCache.has(cacheKey);
+  const hasCachedState = rundownStateCache.has(cacheKey);
   const isCachedLoading = loadingStates.get(cacheKey) || false;
 
   // Cache state on unmount
@@ -26,7 +26,7 @@ export const useRundownStateCache = (rundownId: string | null) => {
   // Clear cache entry after 5 minutes of inactivity
   useEffect(() => {
     const cleanup = setTimeout(() => {
-      stateCache.delete(cacheKey);
+      rundownStateCache.delete(cacheKey);
       loadingStates.delete(cacheKey);
     }, 5 * 60 * 1000); // 5 minutes
 
@@ -39,7 +39,7 @@ export const useRundownStateCache = (rundownId: string | null) => {
       loadingStates.set(cacheKey, loading);
     },
     clearCache: () => {
-      stateCache.delete(cacheKey);
+      rundownStateCache.delete(cacheKey);
       loadingStates.delete(cacheKey);
     }
   };

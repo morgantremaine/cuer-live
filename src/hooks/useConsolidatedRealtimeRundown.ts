@@ -46,6 +46,7 @@ export const useConsolidatedRealtimeRundown = ({
   const [isProcessingUpdate, setIsProcessingUpdate] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isInitialLoadRef = useRef(true);
+  const initialLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Set connected immediately when rundown is enabled (ready for editing)
   useEffect(() => {
@@ -305,15 +306,34 @@ export const useConsolidatedRealtimeRundown = ({
                   try { cb(data); } catch (err) { console.error('Error in rundown callback:', err); }
                 });
               }
-            } else if (error) {
-              console.warn('Initial catch-up fetch failed:', error);
-            }
-          } finally {
-            // Mark initial load as complete after first successful subscription
-            setTimeout(() => {
+              
+              // FIXED: Clear initial load gate IMMEDIATELY after successful data fetch
               setIsInitialLoad(false);
               isInitialLoadRef.current = false;
-            }, 100);
+              if (initialLoadTimeoutRef.current) {
+                clearTimeout(initialLoadTimeoutRef.current);
+                initialLoadTimeoutRef.current = null;
+              }
+              console.log('🚪 Initial load gate cleared - realtime updates enabled');
+            } else if (error) {
+              console.warn('Initial catch-up fetch failed:', error);
+              // Fallback: Clear gate after timeout if fetch fails
+              initialLoadTimeoutRef.current = setTimeout(() => {
+                setIsInitialLoad(false);
+                isInitialLoadRef.current = false;
+                initialLoadTimeoutRef.current = null;
+                console.log('🚪 Initial load gate cleared (fallback) - realtime updates enabled');
+              }, 2000);
+            }
+          } catch (err) {
+            console.error('Initial catch-up error:', err);
+            // Fallback: Clear gate after timeout on error
+            initialLoadTimeoutRef.current = setTimeout(() => {
+              setIsInitialLoad(false);
+              isInitialLoadRef.current = false;
+              initialLoadTimeoutRef.current = null;
+              console.log('🚪 Initial load gate cleared (error fallback) - realtime updates enabled');
+            }, 2000);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           state.isConnected = false;
@@ -370,10 +390,33 @@ export const useConsolidatedRealtimeRundown = ({
       }
 
       state.refCount--;
+      
+      // FIXED: Validate and auto-correct refCount desync
+      if (state.refCount < 0) {
+        console.error('🚨 CRITICAL: refCount went negative! Auto-correcting...', {
+          rundownId,
+          refCount: state.refCount,
+          callbacks: {
+            onRundownUpdate: state.callbacks.onRundownUpdate.size,
+            onShowcallerUpdate: state.callbacks.onShowcallerUpdate.size,
+            onBlueprintUpdate: state.callbacks.onBlueprintUpdate.size
+          }
+        });
+        state.refCount = 0; // Force correction
+      }
 
-      // Clean up subscription if no more references
-      if (state.refCount <= 0) {
-        console.log('📡 Closing consolidated realtime subscription for', rundownId);
+      // Calculate total callbacks as secondary source of truth
+      const totalCallbacks = 
+        state.callbacks.onRundownUpdate.size + 
+        state.callbacks.onShowcallerUpdate.size + 
+        state.callbacks.onBlueprintUpdate.size;
+
+      // Clean up subscription if no more references AND no active callbacks
+      if (state.refCount <= 0 && totalCallbacks === 0) {
+        console.log('📡 Closing consolidated realtime subscription for', rundownId, {
+          refCount: state.refCount,
+          totalCallbacks
+        });
         
         // Prevent recursive cleanup
         const subscription = state.subscription;
@@ -387,6 +430,20 @@ export const useConsolidatedRealtimeRundown = ({
             console.warn('📡 Error during consolidated cleanup:', error);
           }
         }, 0);
+      } else if (state.refCount <= 0 && totalCallbacks > 0) {
+        // FIXED: Correct refCount if callbacks still exist but refCount is 0
+        console.warn('⚠️ refCount mismatch detected - correcting', {
+          oldRefCount: state.refCount,
+          totalCallbacks,
+          newRefCount: totalCallbacks
+        });
+        state.refCount = totalCallbacks;
+      }
+
+      // Clear initial load timeout on unmount
+      if (initialLoadTimeoutRef.current) {
+        clearTimeout(initialLoadTimeoutRef.current);
+        initialLoadTimeoutRef.current = null;
       }
 
       setIsConnected(false);

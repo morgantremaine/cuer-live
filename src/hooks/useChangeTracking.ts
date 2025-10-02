@@ -69,19 +69,23 @@ export const useChangeTracking = (
     showcallerActiveRef.current = isShowcallerUpdate;
   }, []);
 
-  // Initialize tracking
+  // Initialize tracking immediately to prevent data loss
   useEffect(() => {
     if (!isInitialized) {
+      // FIXED: Set initialized flag IMMEDIATELY to prevent race conditions
+      setIsInitialized(true);
+      
       if (initializationTimeoutRef.current) {
         clearTimer(initializationTimeoutRef.current);
       }
 
+      // Calculate initial signature after a brief delay to ensure data is ready
       initializationTimeoutRef.current = setManagedTimeout(() => {
         const currentSignature = createContentSignatureCallback();
         lastSavedDataRef.current = currentSignature;
-        setIsInitialized(true);
+        setIsLoading(false);
         console.log('🔄 Change tracking initialized (showcaller-aware) with signature length:', currentSignature.length);
-      }, 500);
+      }, 100);
     }
 
     return () => {
@@ -89,7 +93,7 @@ export const useChangeTracking = (
         clearTimer(initializationTimeoutRef.current);
       }
     };
-  }, [isInitialized, createContentSignatureCallback, setManagedTimeout, clearTimer]);
+  }, [isInitialized, setManagedTimeout, clearTimer]); // Removed createContentSignatureCallback to prevent re-initialization
 
   // Enhanced change detection - showcaller blocking removed
   useEffect(() => {

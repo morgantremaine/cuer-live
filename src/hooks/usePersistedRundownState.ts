@@ -1,24 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSimplifiedRundownState } from './useSimplifiedRundownState';
-
-// State cache to persist rundown state across navigation
-const stateCache = new Map<string, any>();
-const connectionCache = new Map<string, any>();
+import { rundownStateCache } from '@/services/RundownStateCache';
 
 // Cache key generation
 const getCacheKey = (rundownId: string | null) => rundownId || 'new';
-
-// Cleanup old cache entries (keep only last 5 rundowns)
-const cleanupCache = () => {
-  if (stateCache.size > 5) {
-    const keys = Array.from(stateCache.keys());
-    const oldKeys = keys.slice(0, keys.length - 5);
-    oldKeys.forEach(key => {
-      stateCache.delete(key);
-      connectionCache.delete(key);
-    });
-  }
-};
 
 export const usePersistedRundownState = () => {
   const rundownState = useSimplifiedRundownState();
@@ -33,7 +18,7 @@ export const usePersistedRundownState = () => {
       return;
     }
 
-    const cachedState = stateCache.get(cacheKey);
+    const cachedState = rundownStateCache.get(cacheKey);
     if (cachedState && !rundownState.isLoading) {
       console.log('🔄 Restoring rundown state from cache for:', cacheKey);
       isRestoringRef.current = true;
@@ -62,8 +47,7 @@ export const usePersistedRundownState = () => {
       // Add other critical UI state here as needed
     };
 
-    stateCache.set(cacheKey, stateToCache);
-    cleanupCache();
+    rundownStateCache.set(cacheKey, stateToCache);
   }, [
     rundownState.selectedRowId,
     cacheKey,
@@ -76,8 +60,7 @@ export const usePersistedRundownState = () => {
     isRestoringFromCache: isRestoringRef.current,
     // Add cache control methods if needed
     clearCache: useCallback(() => {
-      stateCache.delete(cacheKey);
-      connectionCache.delete(cacheKey);
+      rundownStateCache.delete(cacheKey);
     }, [cacheKey])
   };
 };
