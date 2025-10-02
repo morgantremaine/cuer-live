@@ -40,7 +40,12 @@ const ColumnList = ({
     defaultColumns: columns.filter(col => !col.isCustom).length,
     customColumns: columns.filter(col => col.isCustom && !(col as any).isTeamColumn).length,
     teamColumns: columns.filter(col => (col as any).isTeamColumn).length,
-    columnNames: columns.map(col => ({ name: col.name, isTeamColumn: (col as any).isTeamColumn || false }))
+    collapsibleColumns: columns.filter(col => col.isCollapsible).length,
+    columnNames: columns.map(col => ({ 
+      name: col.name, 
+      isTeamColumn: (col as any).isTeamColumn || false,
+      isCollapsible: col.isCollapsible || false
+    }))
   });
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);

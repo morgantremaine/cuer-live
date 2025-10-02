@@ -39,6 +39,7 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
   const visibleColumns = Array.isArray(columns) ? columns.filter(col => col.isVisible !== false) : [];
 
   const handleAddColumn = useCallback((name: string, isCollapsible = false) => {
+    console.log('🔧 handleAddColumn called with:', { name, isCollapsible });
     const newColumn: Column = {
       id: `custom_${Date.now()}`,
       name,
@@ -50,13 +51,14 @@ export const useColumnsManager = (markAsChanged?: () => void) => {
       isCollapsible: isCollapsible,
       type: isCollapsible ? 'textarea' : 'text'
     };
+    console.log('🔧 Created new column:', newColumn);
     
     // Insert the new column right after the segment name column (index 1)
     setColumns(prev => {
       if (!Array.isArray(prev)) return [newColumn];
       const newColumns = [...prev];
       newColumns.splice(1, 0, newColumn);
-      
+      console.log('🔧 Updated columns array, new length:', newColumns.length);
       return newColumns;
     });
     

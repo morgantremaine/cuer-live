@@ -14,6 +14,7 @@ const ColumnEditor = ({ onAddColumn }: ColumnEditorProps) => {
 
   const handleAddColumn = () => {
     if (newColumnName.trim()) {
+      console.log('🎨 ColumnEditor: Adding column with isCollapsible =', isCollapsible);
       onAddColumn(newColumnName.trim(), isCollapsible);
       setNewColumnName('');
       setShowAddColumn(false);
