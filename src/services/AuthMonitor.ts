@@ -69,6 +69,37 @@ class AuthMonitorService {
   }
 
   /**
+   * Check if the current session is valid
+   */
+  async isSessionValid(): Promise<boolean> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        console.log('🔐 AuthMonitor: Session invalid -', error?.message || 'no session');
+        return false;
+      }
+
+      // Check if token is expired
+      const expiresAt = session.expires_at || 0;
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = expiresAt <= now;
+
+      if (isExpired) {
+        console.log('🔐 AuthMonitor: Session expired');
+        return false;
+      }
+
+      console.log('🔐 AuthMonitor: Session valid');
+      return true;
+    } catch (error) {
+      console.error('🔐 AuthMonitor: Error checking session:', error);
+      return false;
+    }
+  }
+
+  /**
    * Check if token was recently refreshed (within last 5 seconds)
    */
   wasRecentlyRefreshed(): boolean {

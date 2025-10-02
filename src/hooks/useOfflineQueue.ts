@@ -285,12 +285,26 @@ export const useOfflineQueue = (rundownId: string | null) => {
     });
   }, [persistChanges]);
 
+  // Get queued operations (useful for debugging/status)
+  const getQueuedOperations = useCallback(() => {
+    return [...queue];
+  }, [queue]);
+
+  // Clear entire queue (useful for cleanup after session expiry)
+  const clearQueue = useCallback(() => {
+    setQueue([]);
+    persistQueue([]);
+    console.log('🗑️ Cleared offline queue');
+  }, [persistQueue]);
+
   return {
     // Queue management
     queueOperation,
     processQueue,
     isProcessing,
     queueLength: queue.length,
+    getQueuedOperations,
+    clearQueue,
     
     // Offline changes
     recordOfflineChange,

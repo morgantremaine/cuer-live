@@ -126,7 +126,26 @@ export const useConsolidatedRealtimeRundown = ({
       
       const state = globalSubscriptions.get(rundownId);
       if (state?.isConnected) {
-        console.log('📶 Supabase connected - performing catch-up sync');
+        console.log('📶 Supabase connected - validating session...');
+        
+        // CRITICAL: Validate session before processing offline data
+        const { authMonitor } = await import('@/services/AuthMonitor');
+        const isSessionValid = await authMonitor.isSessionValid();
+        
+        if (!isSessionValid) {
+          console.warn('🔐 Session expired - cannot process offline queue');
+          toast.error('Session expired. Please log in to sync your changes.', {
+            duration: 10000,
+            action: {
+              label: 'Refresh',
+              onClick: () => window.location.reload()
+            }
+          });
+          setIsConnected(false); // Keep disconnected state to prevent queue processing
+          return;
+        }
+        
+        console.log('📶 Session valid - performing catch-up sync');
         
         // FIRST: Fetch latest data from server (catch-up sync)
         await performCatchupSync();
