@@ -11,6 +11,9 @@ const globalLoadingStates = new Map<string, boolean>();
 const globalLoadedKeys = new Map<string, boolean>();
 const globalLoadPromises = new Map<string, Promise<void>>();
 const globalRealtimeChannels = new Map<string, any>();
+// Global cache for team data and roles to share across hook instances
+const globalTeamCache = new Map<string, Team>();
+const globalRoleCache = new Map<string, 'admin' | 'member'>();
 
 export interface Team {
   id: string;
@@ -240,6 +243,10 @@ export const useTeam = () => {
         setTeam(teamData);
         setUserRole(role);
         
+        // Cache the team data and role for future hook instances
+        globalTeamCache.set(loadKey, teamData);
+        globalRoleCache.set(loadKey, role);
+        
         // Only set as active team if it's different from current
         if (currentActiveTeamId !== targetTeamId) {
           setActiveTeam(targetTeamId);
@@ -293,13 +300,17 @@ export const useTeam = () => {
       return;
     }
     
-    // Clear global state to force reload
+    // Clear global state and cache to force reload
     const oldLoadKey = `${user?.id}-${activeTeamId}`;
     const newLoadKey = `${user?.id}-${teamId}`;
     globalLoadedKeys.delete(oldLoadKey);
     globalLoadedKeys.delete(newLoadKey);
     globalLoadingStates.delete(oldLoadKey);
     globalLoadingStates.delete(newLoadKey);
+    globalTeamCache.delete(oldLoadKey);
+    globalTeamCache.delete(newLoadKey);
+    globalRoleCache.delete(oldLoadKey);
+    globalRoleCache.delete(newLoadKey);
     
     // Update the active team state and force reload
     setActiveTeam(teamId);
@@ -640,8 +651,16 @@ export const useTeam = () => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
-    // If data is already loaded, ensure loading state is false
+    // If data is already loaded, restore from cache and skip loading
     if (globalLoadedKeys.get(currentKey)) {
+      const cachedTeam = globalTeamCache.get(currentKey);
+      const cachedRole = globalRoleCache.get(currentKey);
+      
+      if (cachedTeam && cachedRole) {
+        setTeam(cachedTeam);
+        setUserRole(cachedRole);
+        setError(null);
+      }
       setIsLoading(false);
       return;
     }
