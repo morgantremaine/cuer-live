@@ -640,8 +640,14 @@ export const useTeam = () => {
     
     const currentKey = `${user.id}-${activeTeamId}`;
     
+    // If data is already loaded, ensure loading state is false
+    if (globalLoadedKeys.get(currentKey)) {
+      setIsLoading(false);
+      return;
+    }
+    
     // Check global state - only load if not already loaded/loading
-    if (!globalLoadingStates.get(currentKey) && !globalLoadedKeys.get(currentKey)) {
+    if (!globalLoadingStates.get(currentKey)) {
       // Set the ref IMMEDIATELY to prevent race conditions
       loadedUserRef.current = currentKey;
       setIsLoading(true);

@@ -194,7 +194,11 @@ const AccountManagement = () => {
     setDeletePassword('')
   }
 
-  if (isLoadingTeam) {
+  // Only show loading skeleton if we're truly loading AND don't have team data yet
+  // This prevents skeleton from showing on navigation when team data is already cached
+  const shouldShowLoading = isLoadingTeam && !team;
+
+  if (shouldShowLoading) {
     return (
       <div className="dark min-h-screen bg-gray-900">
         <DashboardHeader 
