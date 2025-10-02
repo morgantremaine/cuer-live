@@ -10,9 +10,11 @@ import { useDragAndDrop } from './useDragAndDrop';
 import { arrayMove } from '@dnd-kit/sortable';
 import { calculateEndTime } from '@/utils/rundownCalculations';
 import { UnifiedRundownState } from '@/types/interfaces';
+import { RundownItem } from '@/types/rundown';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { logger } from '@/utils/logger';
 import { cellBroadcast } from '@/utils/cellBroadcast';
+import { debugLogger } from '@/utils/debugLogger';
 
 export const useRundownStateCoordination = () => {
   // Stable connection state - once connected, stay connected
@@ -73,15 +75,19 @@ export const useRundownStateCoordination = () => {
   });
 
 
-  // Add the missing addMultipleRows function
-  const addMultipleRows = (newItems: any[], calcEndTime: (startTime: string, duration: string) => string) => {
-    const itemsToAdd = newItems.map(item => ({
-      ...item,
-      id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      endTime: item.endTime || calcEndTime(item.startTime || '00:00:00', item.duration || '00:00')
-    }));
-    
-    persistedState.setItems(itemsToAdd);
+  // Add the missing addMultipleRows function  
+  // This is a compatibility stub - the real implementation is in useRundownItems
+  const addMultipleRows = (
+    count: number, 
+    calcEndTime: (startTime: string, duration: string) => string, 
+    selectedRowId?: string | null, 
+    selectedRows?: Set<string>
+  ) => {
+    debugLogger.grid('addMultipleRows stub called in StateCoordination', { count });
+    // Just add rows one at a time for now - the real implementation happens in useRundownItems
+    for (let i = 0; i < count; i++) {
+      persistedState.addRow();
+    }
   };
 
   // Add the missing functions that simplifiedState should provide

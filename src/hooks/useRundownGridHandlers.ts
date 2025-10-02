@@ -240,6 +240,14 @@ export const useRundownGridHandlers = ({
     setRundownTitle(title);
   }, [setRundownTitle]);
 
+  const handleAddMultipleRows = useCallback((count: number) => {
+    debugLogger.grid('Grid handlers addMultipleRows called', { count, selectedRowsSize: selectedRows.size });
+    
+    if (addMultipleRows) {
+      addMultipleRows(count, calculateEndTime, selectedRows.size > 0 ? Array.from(selectedRows)[0] : null, selectedRows);
+    }
+  }, [addMultipleRows, calculateEndTime, selectedRows]);
+
   return {
     handleUpdateItem,
     handleAddRow,
