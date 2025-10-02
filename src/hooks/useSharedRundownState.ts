@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RundownItem } from '@/types/rundown';
 import { logger } from '@/utils/logger';
 import { showcallerBroadcast } from '@/utils/showcallerBroadcast';
-import { timeToSeconds } from '@/utils/rundownCalculations';
+import { timeToSeconds, calculateItemsWithTiming } from '@/utils/rundownCalculations';
 
 export const useSharedRundownState = () => {
   const params = useParams<{ id: string }>();
@@ -78,12 +78,18 @@ export const useSharedRundownState = () => {
         setRundownData(null);
       } else if (data) {
         // Normalize data structure for consistent handling
+        const rawItems = Array.isArray(data.items) ? data.items : [];
+        const startTime = data.start_time || '09:00:00';
+        
+        // Calculate timing and row numbers using the same logic as main rundown
+        const itemsWithCalculations = calculateItemsWithTiming(rawItems, startTime);
+        
         const normalizedRundownData = {
           id: data.id,
           title: data.title || 'Untitled Rundown',
-          items: Array.isArray(data.items) ? data.items : [],
+          items: itemsWithCalculations,
           columns: Array.isArray(data.columns) ? data.columns : [],
-          startTime: data.start_time || '09:00:00',
+          startTime,
           timezone: data.timezone || 'UTC',
           lastUpdated: data.updated_at,
           showcallerState: data.showcaller_state || null,
@@ -147,12 +153,18 @@ export const useSharedRundownState = () => {
         }
 
         if (data) {
+          const rawItems = Array.isArray(data.items) ? data.items : [];
+          const startTime = data.start_time || '09:00:00';
+          
+          // Calculate timing and row numbers using the same logic as main rundown
+          const itemsWithCalculations = calculateItemsWithTiming(rawItems, startTime);
+          
           const normalizedRundownData = {
             id: data.id,
             title: data.title || 'Untitled Rundown',
-            items: Array.isArray(data.items) ? data.items : [],
+            items: itemsWithCalculations,
             columns: Array.isArray(data.columns) ? data.columns : [],
-            startTime: data.start_time || '09:00:00',
+            startTime,
             timezone: data.timezone || 'UTC',
             lastUpdated: data.updated_at,
             showcallerState: data.showcaller_state || null,
