@@ -151,11 +151,22 @@ const RundownIndexContent = () => {
   const prevItemsCount = useRef(items?.length || 0);
   const hasLoggedRender = useRef(false);
   
+  // Debug log for items and visibleItems
+  useEffect(() => {
+    console.log('🐛 RundownIndexContent data update:', {
+      items: items?.length || 0,
+      visibleItems: visibleItems?.length || 0,
+      columns: visibleColumns?.length || 0,
+      isLoading
+    });
+  }, [items, visibleItems, visibleColumns, isLoading]);
+  
   if (!hasLoggedRender.current || Math.abs((items?.length || 0) - prevItemsCount.current) > 0) {
     console.log('🏗️ RUNDOWN INDEX: Component rendered with operation system', {
       rundownId,
       hasHandleCellChange: !!handleCellChange,
       itemsCount: items?.length || 0,
+      visibleItemsCount: visibleItems?.length || 0,
       visibleColumnsCount: visibleColumns?.length || 0,
       timestamp: new Date().toISOString()
     });

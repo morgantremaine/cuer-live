@@ -69,7 +69,6 @@ const OptimizedRundownTableWrapper: React.FC<OptimizedRundownTableWrapperProps> 
   visibleItems,
   ...restProps
 }) => {
-
   // Use memoized calculations - use ORIGINAL items for correct calculations
   const {
     itemsWithStatus,
