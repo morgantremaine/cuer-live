@@ -115,8 +115,8 @@ addRow(newItem)
 4. **Content Snapshots**: Structural operations preserve concurrent content edits
 
 ### Why It's Simple
-- ID-based operations eliminate position conflicts
-- Content snapshots preserve concurrent edits
+- **ID-based operations eliminate position conflicts** - Structural broadcasts carry only IDs, reordering uses local content (see detailed explanation in `dualBroadcastingPattern.md` → "Why ID-Based Operations Prevent Race Conditions")
+- Content snapshots preserve concurrent edits (in database, not broadcasts)
 - Database is single source of truth
 - No complex three-way merge needed
 

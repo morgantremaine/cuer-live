@@ -184,6 +184,168 @@ interface StructuralChange {
 }
 ```
 
+## Why ID-Based Operations Prevent Race Conditions
+
+### The Key Insight: Separation of Content and Structure
+
+**The system maintains a critical separation**: 
+- **Broadcasts** carry only **IDs and order** (structure)
+- **Local state** holds the **full item content** (data)
+- **Database saves** include **content snapshots** for persistence
+
+This separation is what prevents the classic race condition between concurrent structural changes (like reordering) and content edits (like typing in cells).
+
+### Example Scenario: Concurrent Cell Edit + Reorder
+
+**Setup:**
+- User A is editing the script field of Item #5
+- User B simultaneously reorders rows, moving Item #5 to a new position
+
+**What happens:**
+
+1. **User A types "Breaking news..."**
+   - Local state updates immediately: `items[4].script = "Breaking news..."`
+   - Cell broadcast sent: `{ type: 'cell:update', itemId: '5', field: 'script', value: 'Breaking news...' }`
+   - Database save queued (parallel)
+
+2. **User B reorders rows** (moves Item #5 from position 5 to position 2)
+   - Local state updates: items array reordered based on drag operation
+   - Structural broadcast sent: `{ type: 'items:reorder', order: ['1','3','5','2','4',...] }`
+   - Database save with content snapshot (parallel)
+
+3. **User A receives reorder broadcast**
+   ```typescript
+   // From useSimplifiedRundownState.ts lines 541-560
+   case 'items:reorder': {
+     const order = update.value?.order as string[];
+     const itemMap = new Map(stateRef.current.items.map(item => [item.id, item]));
+     
+     // CRITICAL: Reorder uses existing items from local state
+     const reorderedItems = order
+       .map(id => itemMap.get(id))  // ← Preserves all content!
+       .filter(Boolean) as RundownItem[];
+     
+     actionsRef.current.loadState({ items: reorderedItems });
+   }
+   ```
+   - **Result**: Item #5 moves to position 2 **with the updated script text intact**
+   - The broadcast only told us the new order, not new content
+
+4. **User B receives cell edit broadcast**
+   - Applies content update to Item #5 (wherever it is in their local order)
+   - **Result**: Item #5's script updates to "Breaking news..."
+
+### Why This Works
+
+**The magic is in the reordering logic:**
+```typescript
+// Step 1: Create map of existing items (WITH all their current content)
+const itemMap = new Map(stateRef.current.items.map(item => [item.id, item]));
+
+// Step 2: Reorder using IDs from broadcast
+const reorderedItems = order.map(id => itemMap.get(id))
+```
+
+**Key points:**
+1. The broadcast contains **only IDs**: `['1','3','5','2','4',...]`
+2. We map those IDs to **existing items from local state**
+3. Local state has the **latest content** (from concurrent edits)
+4. Therefore, reordering **preserves concurrent content changes**
+
+### What Would Go Wrong Without IDs
+
+**If we used position-based reordering** (common anti-pattern):
+```typescript
+❌ BAD: Position-based approach
+case 'items:reorder': {
+  // Broadcast includes full items at new positions
+  const newItems = update.value.items; // Full item objects
+  actionsRef.current.loadState({ items: newItems });
+}
+```
+
+**Problems:**
+- User A's typed text exists only in their local state
+- User B's reorder broadcast includes the OLD content (before A's edit)
+- When A receives the broadcast, it **overwrites their edit** with old data
+- Result: **Data loss** - A's changes disappear
+
+### Comparison: Position-Based vs ID-Based
+
+| Aspect | Position-Based (❌ Bad) | ID-Based (✅ Good) |
+|--------|------------------------|-------------------|
+| **Broadcast Payload** | Full items with content | Only IDs and order |
+| **Payload Size** | Large (~10-50KB) | Small (~500 bytes) |
+| **Content Source** | Broadcast (stale) | Local state (fresh) |
+| **Concurrent Edits** | Lost/overwritten | Preserved |
+| **Network Usage** | High | Low |
+| **Race Conditions** | Frequent | Eliminated |
+
+### Code Evidence
+
+**Reordering preserves content** (from `useSimplifiedRundownState.ts`):
+```typescript
+// Lines 546-556
+const itemMap = new Map(stateRef.current.items.map(item => [item.id, item]));
+
+const reorderedItems = order
+  .map(id => itemMap.get(id))  // Uses local content, not broadcast content
+  .filter(Boolean) as RundownItem[];
+
+if (reorderedItems.length === stateRef.current.items.length) {
+  actionsRef.current.loadState({ items: reorderedItems });
+}
+```
+
+**Cell updates target by ID** (from `useSimplifiedRundownState.ts`):
+```typescript
+// Lines 428-434
+case 'cell:update': {
+  const { itemId, field, value } = update.value || {};
+  if (itemId && field) {
+    const updatedItems = stateRef.current.items.map(item =>
+      item.id === itemId ? { ...item, [field]: value } : item  // ID-based targeting
+    );
+    actionsRef.current.loadState({ items: updatedItems });
+  }
+}
+```
+
+### Content Snapshots: Database Only, Not Broadcasts
+
+**Important clarification**: Content snapshots are used for **database persistence**, not real-time broadcasts:
+
+```typescript
+// Database save includes content snapshot
+await saveStructuralOperation({
+  operation: 'reorder',
+  order: itemIds,
+  contentSnapshot: items  // ← Full content for database merge
+});
+
+// But the broadcast only includes IDs
+cellBroadcast.broadcast(rundownId, 'items:reorder', {
+  order: itemIds  // ← Only IDs, not content
+});
+```
+
+**Why this matters:**
+- **Broadcasts are immediate** and need to be small (low latency)
+- **Database saves are parallel** and can include full content (for conflict resolution)
+- The database merges the content snapshot with any concurrent cell edits
+- Users receive instant structural updates (from broadcast) with their local content intact
+
+### Summary
+
+**ID-based operations prevent race conditions because:**
+1. Structural broadcasts carry **only IDs**, not content
+2. Reordering uses **local state content** (which has concurrent edits)
+3. Content updates target items **by ID** (position-independent)
+4. Database snapshots handle **persistence**, not real-time sync
+5. Users see **instant updates** without data loss
+
+**Result**: User A can edit Item #5's content while User B reorders rows, and both operations succeed without conflict. This is the foundation of reliable real-time collaboration.
+
 ## Removed Systems (Phase 5)
 
 ### LocalShadow System (Removed)

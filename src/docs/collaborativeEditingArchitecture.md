@@ -75,9 +75,9 @@ moveRows() → broadcast + parallel DB save
 ```
 
 #### Race Condition Prevention (Current Approach)
-- **ID-Based Operations**: Use item IDs (not positions) for cell updates
+- **ID-Based Operations**: Use item IDs (not positions) for all operations - structural broadcasts carry only IDs and order, not content. When reordering, we map IDs to existing local state items, which preserves concurrent content edits. This eliminates the classic race condition where a reorder could overwrite uncommitted edits. (See detailed explanation in `dualBroadcastingPattern.md` → "Why ID-Based Operations Prevent Race Conditions")
 - **Dual Broadcasting**: Immediate UI broadcast + parallel database persistence
-- **Content Snapshots**: Structural operations include content snapshot to preserve concurrent edits
+- **Content Snapshots**: Database saves include content snapshot for persistence and conflict resolution (NOT included in broadcasts)
 - **Timestamp Validation**: Database checks timestamps to detect conflicts
 
 ### 4. State Synchronization
