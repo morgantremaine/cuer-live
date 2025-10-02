@@ -25,6 +25,7 @@ export interface RundownContainerProps {
   getRowStatus: (item: RundownItem, currentTime: Date) => 'upcoming' | 'current' | 'completed';
   calculateHeaderDuration: (index: number) => string;
   onUpdateItem: (id: string, field: string, value: string) => void;
+  onCellBlur?: (itemId: string, field: string) => void;
   onCellClick: (itemId: string, field: string) => void;
   onKeyDown: (e: React.KeyboardEvent, itemId: string, field: string) => void;
   onToggleColorPicker: (itemId: string) => void;

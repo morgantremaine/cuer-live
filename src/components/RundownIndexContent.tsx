@@ -8,6 +8,7 @@ import { OperationCoordinationIndicator } from '@/components/coordination/Operat
 import { useRundownStateCoordination } from '@/hooks/useRundownStateCoordination';
 import { useIndexHandlers } from '@/hooks/useIndexHandlers';
 import { useCellEditIntegration } from '@/hooks/useCellEditIntegration';
+import { useTextDebounce } from '@/hooks/useTextDebounce';
 // Column management now handled by useSimplifiedRundownState internally
 import { useSharedRundownLayout } from '@/hooks/useSharedRundownLayout';
 import { calculateEndTime } from '@/utils/rundownCalculations';
@@ -15,6 +16,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { useRundownZoom } from '@/hooks/useRundownZoom';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { supabase } from '@/integrations/supabase/client';
+import { isTextField } from '@/utils/fieldClassification';
 // Import timing test to run calculations check
 import '@/utils/timingValidationTest';
 
@@ -104,6 +106,15 @@ const RundownIndexContent = () => {
     onUnsavedChanges: () => {
       console.log('⚠️ RUNDOWN INDEX: Operation system unsaved changes detected');
     }
+  });
+
+  // Add text debouncing for efficient text operations
+  const { debounceOperation, flushCell } = useTextDebounce({
+    onFlush: (itemId, field, value) => {
+      console.log('⏱️ RUNDOWN INDEX: Flushing debounced text operation', { itemId, field });
+      handleCellChange(itemId, field, value);
+    },
+    debounceMs: 300 // Wait 300ms after user stops typing
   });
 
   // Only log significant changes, not every render
@@ -587,18 +598,31 @@ const RundownIndexContent = () => {
         getRowStatus={getRowStatusForContainer}
         calculateHeaderDuration={calculateHeaderDuration}
         onUpdateItem={(id, field, value) => {
-          console.log('📝 RUNDOWN INDEX: onUpdateItem called (from typing)', {
+          console.log('📝 RUNDOWN INDEX: onUpdateItem called', {
             id,
             field,
             value: typeof value === 'string' ? value.substring(0, 50) : value,
-            source: 'typing'
+            isTextField: isTextField(field)
           });
           
           // For immediate UI responsiveness, update the legacy system first
           updateItem(id, field, value);
           
-          // Then route through operation system for collaboration
-          handleCellChange(id, field, value);
+          // Route through appropriate operation system based on field type
+          if (isTextField(field)) {
+            // Text fields: debounce operations for efficiency
+            debounceOperation(id, field, value);
+          } else {
+            // Non-text fields: immediate operations for instant collaboration
+            handleCellChange(id, field, value);
+          }
+        }}
+        onCellBlur={(itemId, field) => {
+          // Flush any pending text operations when user navigates away
+          if (isTextField(field)) {
+            console.log('🔄 RUNDOWN INDEX: Cell blur - flushing pending operation', { itemId, field });
+            flushCell(itemId, field);
+          }
         }}
         onCellClick={handleCellClickWrapper}
         onKeyDown={handleKeyDownWrapper}
